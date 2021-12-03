@@ -36,6 +36,16 @@ public class ClassPathManager {
           .filter(clazz -> !clazz.isAnnotationPresent(EntitySubclass.class))
           .collect(Collectors.toMap(com.googlecode.objectify.Key::getKind, identity()));
 
+  /**
+   * Class name registry allowing us to obtain the class name the unqualified class, which is all
+   * the datastore key gives us. Note that entities annotated with @EntitySubclass are removed
+   * because they share the same kind of the key with their parent class.
+   */
+  public static final Map<Class<?>, String> CLASS_NAME_REGISTRY =
+      ALL_CLASSES.stream()
+          .filter(clazz -> !clazz.isAnnotationPresent(EntitySubclass.class))
+          .collect(Collectors.toMap(identity(), com.googlecode.objectify.Key::getKind));
+
   @VisibleForTesting
   public static void addTestEntityClass(Class<?> clazz) {
     CLASS_REGISTRY.put(com.googlecode.objectify.Key.getKind(clazz), clazz);
@@ -44,5 +54,10 @@ public class ClassPathManager {
   public static <T> Class<T> getClass(String className) {
     checkArgument(CLASS_REGISTRY.containsKey(className), "Class not found in class registry");
     return (Class<T>) CLASS_REGISTRY.get(className);
+  }
+
+  public static <T> String getClassName(Class<T> clazz) {
+    checkArgument(CLASS_NAME_REGISTRY.containsKey(clazz), "Class not found in class name registry");
+    return CLASS_NAME_REGISTRY.get(clazz);
   }
 }

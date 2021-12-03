@@ -23,6 +23,7 @@ import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
@@ -51,9 +52,14 @@ import org.junit.jupiter.api.Test;
 public class ClassPathManagerTest {
   @Test
   void getClass_classInClassRegistry_returnsClass() throws ClassNotFoundException {
-    // Below are all classes supported by CLASS_REGISTRY. THis test breaks if someone changes a
-    // classname without preserving the original name.
-
+    /**
+     * Class names are used in stringified vkeys, which can be present in task queues. Class name is
+     * required to create a vkey. Changing these names could break task queue entries that are
+     * present during a rollout. If you want to change the names of any of the classses supported in
+     * CLASS_REGISTRY, you'll need to introduce some mechanism to deal with this. The classes below
+     * are all classes supported in CLASS_REGISTRY. This test breaks if someone changes a classname
+     * without preserving the original name.
+     */
     assertThat(ClassPathManager.getClass("ForeignKeyContactIndex"))
         .isEqualTo(ForeignKeyContactIndex.class);
     assertThat(ClassPathManager.getClass("Modification")).isEqualTo(Modification.class);
@@ -98,6 +104,67 @@ public class ClassPathManagerTest {
         assertThrows(
             IllegalArgumentException.class, () -> ClassPathManager.getClass("DomainHistory"));
     assertThat(thrown).hasMessageThat().contains("Class not found in class registry");
+  }
+
+  @Test
+  void getClassName_classNotInClassRegistry_throwsException() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ClassPathManager.getClassName(DomainHistory.class));
+    assertThat(thrown).hasMessageThat().contains("Class not found in class name registry");
+  }
+
+  @Test
+  void getClassName() {
+    /**
+     * Class names are used in stringified vkeys, which can be present in task queues. Class name is
+     * required to create a vkey. Changing these names could break task queue entries that are
+     * present during a rollout. If you want to change the names of any of the classses supported in
+     * CLASS_NAME_REGISTRY, you'll need to introduce some mechanism to deal with this. The classes
+     * below are all classes supported in CLASS_NAME_REGISTRY. This test breaks if someone changes a
+     * classname without preserving the original name.
+     */
+    assertThat(ClassPathManager.getClassName(ForeignKeyContactIndex.class))
+        .isEqualTo("ForeignKeyContactIndex");
+    assertThat(ClassPathManager.getClassName(Modification.class)).isEqualTo("Modification");
+    assertThat(ClassPathManager.getClassName(CommitLogCheckpoint.class))
+        .isEqualTo("CommitLogCheckpoint");
+    assertThat(ClassPathManager.getClassName(CommitLogManifest.class))
+        .isEqualTo("CommitLogManifest");
+    assertThat(ClassPathManager.getClassName(AllocationToken.class)).isEqualTo("AllocationToken");
+    assertThat(ClassPathManager.getClassName(OneTime.class)).isEqualTo("OneTime");
+    assertThat(ClassPathManager.getClassName(Cursor.class)).isEqualTo("Cursor");
+    assertThat(ClassPathManager.getClassName(RdeRevision.class)).isEqualTo("RdeRevision");
+    assertThat(ClassPathManager.getClassName(HostResource.class)).isEqualTo("HostResource");
+    assertThat(ClassPathManager.getClassName(Recurring.class)).isEqualTo("Recurring");
+    assertThat(ClassPathManager.getClassName(Registrar.class)).isEqualTo("Registrar");
+    assertThat(ClassPathManager.getClassName(ContactResource.class)).isEqualTo("ContactResource");
+    assertThat(ClassPathManager.getClassName(Cancellation.class)).isEqualTo("Cancellation");
+    assertThat(ClassPathManager.getClassName(RegistrarContact.class)).isEqualTo("RegistrarContact");
+    assertThat(ClassPathManager.getClassName(CommitLogBucket.class)).isEqualTo("CommitLogBucket");
+    assertThat(ClassPathManager.getClassName(LastSqlTransaction.class))
+        .isEqualTo("LastSqlTransaction");
+    assertThat(ClassPathManager.getClassName(CommitLogCheckpointRoot.class))
+        .isEqualTo("CommitLogCheckpointRoot");
+    assertThat(ClassPathManager.getClassName(GaeUserIdConverter.class))
+        .isEqualTo("GaeUserIdConverter");
+    assertThat(ClassPathManager.getClassName(EppResourceIndexBucket.class))
+        .isEqualTo("EppResourceIndexBucket");
+    assertThat(ClassPathManager.getClassName(Registry.class)).isEqualTo("Registry");
+    assertThat(ClassPathManager.getClassName(EntityGroupRoot.class)).isEqualTo("EntityGroupRoot");
+    assertThat(ClassPathManager.getClassName(Lock.class)).isEqualTo("Lock");
+    assertThat(ClassPathManager.getClassName(DomainBase.class)).isEqualTo("DomainBase");
+    assertThat(ClassPathManager.getClassName(CommitLogMutation.class))
+        .isEqualTo("CommitLogMutation");
+    assertThat(ClassPathManager.getClassName(HistoryEntry.class)).isEqualTo("HistoryEntry");
+    assertThat(ClassPathManager.getClassName(PollMessage.class)).isEqualTo("PollMessage");
+    assertThat(ClassPathManager.getClassName(ForeignKeyHostIndex.class))
+        .isEqualTo("ForeignKeyHostIndex");
+    assertThat(ClassPathManager.getClassName(ServerSecret.class)).isEqualTo("ServerSecret");
+    assertThat(ClassPathManager.getClassName(EppResourceIndex.class)).isEqualTo("EppResourceIndex");
+    assertThat(ClassPathManager.getClassName(ForeignKeyDomainIndex.class))
+        .isEqualTo("ForeignKeyDomainIndex");
   }
 
   @Test
