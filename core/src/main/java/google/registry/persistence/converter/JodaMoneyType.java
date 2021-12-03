@@ -89,8 +89,7 @@ public class JodaMoneyType implements CompositeUserType {
   @Override
   public Object getPropertyValue(Object component, int property) throws HibernateException {
     if (property >= JPA_PROPERTY_NAMES.size()) {
-      throw new HibernateException(
-          "Property index tnail down some details with my teamoo large: " + property);
+      throw new HibernateException("Property index too large: " + property);
     }
     Money money = (Money) component;
     return property == AMOUNT_ID ? money.getAmount() : money.getCurrencyUnit().getCode();

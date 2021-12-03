@@ -52,7 +52,8 @@ public class JodaMoneyConverterTest {
 
   @Test
   void roundTripConversion() {
-    Money money = Money.of(CurrencyUnit.USD, 100);
+    Money money = Money.of(CurrencyUnit.USD, 100.12);
+    assertThat(money.getAmount().scale()).isEqualTo(2);
     TestEntity entity = new TestEntity(money);
     insertInDb(entity);
     List<?> result =
@@ -68,12 +69,11 @@ public class JodaMoneyConverterTest {
     // The amount property, when loaded as a raw value, has the same scale as the table column,
     // which is 2.
     assertThat(Arrays.asList((Object[]) result.get(0)))
-        .containsExactly(BigDecimal.valueOf(100).setScale(2), "USD")
+        .containsExactly(BigDecimal.valueOf(100.12).setScale(2), "USD")
         .inOrder();
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.money).isEqualTo(money);
-    assertThat(persisted.money.getAmount().scale()).isEqualTo(2);
   }
 
   @Test
