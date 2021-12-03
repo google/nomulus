@@ -291,6 +291,37 @@ public class DomainHistoryTest extends EntityTestCase {
         .isEqualTo("xn--kittyat-yxa.tld");
   }
 
+  @TestSqlOnly
+  void testFillingHistory_missingDigest() {
+    createTld("tld");
+    DomainBase baseDomain = createDomainWithContactsAndHosts();
+    DomainBase domain =
+        baseDomain
+            .asBuilder()
+            .setDsData(
+                ImmutableSet.of(
+                    DelegationSignerData.create(0, 1, 2, new byte[] {}, baseDomain.getRepoId()),
+                    DelegationSignerData.create(3, 4, 5, null, baseDomain.getRepoId())))
+            .build();
+    DomainHistory domainHistory =
+        new DomainHistory.Builder()
+            .setDomainRepoId(domain.getRepoId())
+            .setRegistrarId(domain.getCurrentSponsorRegistrarId())
+            .setModificationTime(fakeClock.nowUtc())
+            .setType(HistoryEntry.Type.DOMAIN_CREATE)
+            .build();
+    jpaTm()
+        .transact(
+            () -> {
+              domain.beforeSqlSaveOnReplay();
+              jpaTm().put(domain);
+              domainHistory.beforeSqlSaveOnReplay();
+              jpaTm().put(domainHistory);
+            });
+    assertThat(DatabaseHelper.loadByEntity(domain).getDsData()).isEmpty();
+    assertThat(DatabaseHelper.loadByEntity(domainHistory).getDsDataHistories()).isEmpty();
+  }
+
   static DomainBase createDomainWithContactsAndHosts() {
     createTld("tld");
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");

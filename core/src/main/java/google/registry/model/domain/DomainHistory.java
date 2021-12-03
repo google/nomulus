@@ -318,7 +318,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
       domainHistory.nsHosts = nullToEmptyImmutableCopy(domainHistory.domainContent.nsHosts);
       domainHistory.dsDataHistories =
           nullToEmptyImmutableCopy(domainHistory.domainContent.getDsData()).stream()
-              .filter(dsData -> dsData.getDigest() != null)
+              .filter(dsData -> dsData.getDigest() != null && dsData.getDigest().length > 0)
               .map(dsData -> DomainDsDataHistory.createFrom(domainHistory.id, dsData))
               .collect(toImmutableSet());
       domainHistory.gracePeriodHistories =
