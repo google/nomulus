@@ -30,7 +30,6 @@ import static google.registry.cron.CronModule.RUN_IN_EMPTY_PARAM;
 import static google.registry.model.tld.Registries.getTldsOfType;
 import static google.registry.model.tld.Registry.TldType.REAL;
 import static google.registry.model.tld.Registry.TldType.TEST;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ArrayListMultimap;
@@ -39,7 +38,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
-import com.google.protobuf.Timestamp;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
@@ -49,7 +47,6 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import google.registry.util.CloudTasksUtils;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Stream;
@@ -165,22 +162,7 @@ public final class TldFanoutAction implements Runnable {
       params = ArrayListMultimap.create(params);
       params.put(RequestParameters.PARAM_TLD, tld);
     }
-    Instant scheduleTime =
-        Instant.ofEpochMilli(
-            clock
-                .nowUtc()
-                .plusMillis(
-                    jitterSeconds
-                        .map(seconds -> random.nextInt((int) SECONDS.toMillis(seconds)))
-                        .orElse(0))
-                .getMillis());
-    return Task.newBuilder(
-            CloudTasksUtils.createPostTask(endpoint, Service.BACKEND.toString(), params))
-        .setScheduleTime(
-            Timestamp.newBuilder()
-                .setSeconds(scheduleTime.getEpochSecond())
-                .setNanos(scheduleTime.getNano())
-                .build())
-        .build();
+    return CloudTasksUtils.createPostTask(
+        endpoint, Service.BACKEND.toString(), params, clock, jitterSeconds);
   }
 }
