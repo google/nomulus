@@ -53,6 +53,7 @@ import google.registry.persistence.BillingVKey.BillingEventVKey;
 import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithLongVKey;
+import google.registry.persistence.converter.JodaMoneyType;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -66,6 +67,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.PostLoad;
 import javax.persistence.Transient;
+import org.hibernate.annotations.Columns;
+import org.hibernate.annotations.Type;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 
@@ -312,10 +315,8 @@ public abstract class BillingEvent extends ImmutableObject
   public static class OneTime extends BillingEvent implements DatastoreAndSqlEntity {
 
     /** The billable value. */
-    @AttributeOverrides({
-      @AttributeOverride(name = "money.amount", column = @Column(name = "cost_amount")),
-      @AttributeOverride(name = "money.currency", column = @Column(name = "cost_currency"))
-    })
+    @Type(type = JodaMoneyType.TYPE_NAME)
+    @Columns(columns = {@Column(name = "cost_amount"), @Column(name = "cost_currency")})
     Money cost;
 
     /** When the cost should be billed. */
