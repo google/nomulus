@@ -211,6 +211,15 @@
   </cron>
   -->
 
+  <cron>
+    <url><![CDATA[/_dr/cron/replicateToDatastore]]></url>
+    <description>
+      Replays recent transactions from SQL to the Datastore secondary backend.
+    </description>
+    <schedule>every 3 minutes</schedule>
+    <target>backend</target>
+  </cron>
+
   <!--
     The next two wipeout jobs are required when crash has production data.
    -->
