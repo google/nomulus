@@ -14,18 +14,13 @@
 
 package google.registry.model.translators;
 
-import static com.google.common.base.Functions.identity;
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.EntityClasses.ALL_CLASSES;
 
 import com.google.appengine.api.datastore.Key;
-import com.google.common.annotations.VisibleForTesting;
-import com.googlecode.objectify.annotation.EntitySubclass;
+import google.registry.model.common.ClassPathManager;
 import google.registry.persistence.VKey;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 /**
@@ -35,15 +30,6 @@ import javax.annotation.Nullable;
  * followed by a (url-unsafe) ampersand delimiter and the SQL key.
  */
 public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey, Key> {
-
-  // Class registry allowing us to restore the original class object from the unqualified class
-  // name, which is all the datastore key gives us.
-  // Note that entities annotated with @EntitySubclass are removed because they share the same
-  // kind of the key with their parent class.
-  private static final Map<String, Class<?>> CLASS_REGISTRY =
-      ALL_CLASSES.stream()
-          .filter(clazz -> !clazz.isAnnotationPresent(EntitySubclass.class))
-          .collect(Collectors.toMap(com.googlecode.objectify.Key::getKind, identity()));
 
   public VKeyTranslatorFactory() {
     super(VKey.class);
@@ -67,7 +53,7 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
     }
 
     // Try to create the VKey from its reference type.
-    Class<T> clazz = (Class<T>) CLASS_REGISTRY.get(key.getKind());
+    Class<T> clazz = ClassPathManager.getClass(key.getKind());
     checkArgument(clazz != null, "Unknown Key type: %s", key.getKind());
     try {
       Method createVKeyMethod =
@@ -90,11 +76,6 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
       // is probably an error so let's reported.
       throw new RuntimeException(e);
     }
-  }
-
-  @VisibleForTesting
-  public static void addTestEntityClass(Class<?> clazz) {
-    CLASS_REGISTRY.put(com.googlecode.objectify.Key.getKind(clazz), clazz);
   }
 
   @Override

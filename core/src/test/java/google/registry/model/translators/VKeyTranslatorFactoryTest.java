@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.common.ClassPathManager;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+/** Unit tests for {@link VKeyTranslatorFactory}. */
 public class VKeyTranslatorFactoryTest {
 
   @RegisterExtension
@@ -45,7 +47,7 @@ public class VKeyTranslatorFactoryTest {
 
   @BeforeAll
   static void beforeAll() {
-    VKeyTranslatorFactory.addTestEntityClass(TestObject.class);
+    ClassPathManager.addTestEntityClass(TestObject.class);
   }
 
   @Test
