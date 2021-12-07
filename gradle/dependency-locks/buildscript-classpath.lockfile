@@ -8,7 +8,8 @@ com.diffplug.gradle.spotless:com.diffplug.gradle.spotless.gradle.plugin:3.25.0
 com.diffplug.spotless:spotless-lib-extra:1.25.0
 com.diffplug.spotless:spotless-lib:1.25.0
 com.diffplug.spotless:spotless-plugin-gradle:3.25.0
-com.dorongold.task-tree:com.dorongold.task-tree.gradle.plugin:1.5
+com.dorongold.plugins:task-tree:2.1.0
+com.dorongold.task-tree:com.dorongold.task-tree.gradle.plugin:2.1.0
 com.github.jengelman.gradle.plugins:shadow:5.1.0
 com.github.johnrengelman.shadow:com.github.johnrengelman.shadow.gradle.plugin:5.1.0
 com.github.node-gradle.node:com.github.node-gradle.node.gradle.plugin:3.0.1
@@ -30,7 +31,6 @@ com.netflix.nebula:gradle-lint-plugin:16.0.2
 com.netflix.nebula:nebula-gradle-interop:1.0.11
 commons-io:commons-io:2.6
 commons-lang:commons-lang:2.6
-gradle.plugin.com.dorongold.plugins:task-tree:1.5
 javax.inject:javax.inject:1
 junit:junit:4.12
 nebula.lint:nebula.lint.gradle.plugin:16.0.2

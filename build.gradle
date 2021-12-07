@@ -46,7 +46,7 @@ plugins {
   id 'com.diffplug.gradle.spotless' version '3.25.0'
 
   id 'jacoco'
-  id 'com.dorongold.task-tree' version '1.5'
+  id 'com.dorongold.task-tree' version '2.1.0'
 }
 
 node {
