@@ -48,7 +48,8 @@ public class ClassPathManager {
 
   @VisibleForTesting
   public static void addTestEntityClass(Class<?> clazz) {
-    CLASS_REGISTRY.put(com.googlecode.objectify.Key.getKind(clazz), clazz);
+    CLASS_REGISTRY.put(clazz.getSimpleName(), clazz);
+    CLASS_NAME_REGISTRY.put(clazz, clazz.getSimpleName());
   }
 
   public static <T> Class<T> getClass(String className) {
