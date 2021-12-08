@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.assertPollMessages;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -47,6 +48,8 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     createTld("tld");
     inject.setStaticField(Ofy.class, "clock", fakeClock);
     domain = persistActiveDomain("example.tld");
+    persistNewRegistrar("AdminRegistrar");
+    command.registryAdminClientId = "AdminRegistrar";
     fakeClock.advanceOneMilli();
   }
 
@@ -59,11 +62,11 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
         .that(synthetic)
         .bySuperuser(true)
         .and()
-        .hasMetadataReason("Manual enqueueing of poll message")
+        .hasMetadataReason("Manual enqueueing of poll message: This domain is bad")
         .and()
         .hasNoXml()
         .and()
-        .hasRegistrarId("TheRegistrar")
+        .hasRegistrarId("AdminRegistrar")
         .and()
         .hasModificationTime(fakeClock.nowUtc())
         .and()
@@ -79,30 +82,94 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
   }
 
   @TestOfyAndSql
-  void testSuccess_specifyClientId() throws Exception {
+  void testSuccess_specifyClientIds() throws Exception {
+    persistNewRegistrar("foobaz");
     runCommandForced(
-        "--domain=example.tld", "--message=This domain needs work", "--client=NewRegistrar");
+        "--domain=example.tld",
+        "--message=This domain needs work",
+        "--clients=TheRegistrar,NewRegistrar,foobaz");
 
     HistoryEntry synthetic = getOnlyHistoryEntryOfType(domain, SYNTHETIC);
     assertAboutHistoryEntries()
         .that(synthetic)
         .bySuperuser(true)
         .and()
-        .hasMetadataReason("Manual enqueueing of poll message")
+        .hasMetadataReason("Manual enqueueing of poll message: This domain needs work")
         .and()
         .hasNoXml()
         .and()
-        .hasRegistrarId("NewRegistrar")
+        .hasRegistrarId("AdminRegistrar")
         .and()
         .hasModificationTime(fakeClock.nowUtc())
         .and()
         .hasMetadataRequestedByRegistrar(false);
+    assertPollMessages(
+        "TheRegistrar",
+        new PollMessage.OneTime.Builder()
+            .setParent(synthetic)
+            .setMsg("This domain needs work")
+            .setRegistrarId("TheRegistrar")
+            .setEventTime(fakeClock.nowUtc())
+            .build());
     assertPollMessages(
         "NewRegistrar",
         new PollMessage.OneTime.Builder()
             .setParent(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("NewRegistrar")
+            .setEventTime(fakeClock.nowUtc())
+            .build());
+    assertPollMessages(
+        "foobaz",
+        new PollMessage.OneTime.Builder()
+            .setParent(synthetic)
+            .setMsg("This domain needs work")
+            .setRegistrarId("foobaz")
+            .setEventTime(fakeClock.nowUtc())
+            .build());
+  }
+
+  @TestOfyAndSql
+  void testSuccess_sendToAllRegistrars() throws Exception {
+    persistNewRegistrar("foobaz");
+    runCommandForced("--domain=example.tld", "--message=This domain needs work", "--all=true");
+
+    HistoryEntry synthetic = getOnlyHistoryEntryOfType(domain, SYNTHETIC);
+    assertAboutHistoryEntries()
+        .that(synthetic)
+        .bySuperuser(true)
+        .and()
+        .hasMetadataReason("Manual enqueueing of poll message: This domain needs work")
+        .and()
+        .hasNoXml()
+        .and()
+        .hasRegistrarId("AdminRegistrar")
+        .and()
+        .hasModificationTime(fakeClock.nowUtc())
+        .and()
+        .hasMetadataRequestedByRegistrar(false);
+    assertPollMessages(
+        "TheRegistrar",
+        new PollMessage.OneTime.Builder()
+            .setParent(synthetic)
+            .setMsg("This domain needs work")
+            .setRegistrarId("TheRegistrar")
+            .setEventTime(fakeClock.nowUtc())
+            .build());
+    assertPollMessages(
+        "NewRegistrar",
+        new PollMessage.OneTime.Builder()
+            .setParent(synthetic)
+            .setMsg("This domain needs work")
+            .setRegistrarId("NewRegistrar")
+            .setEventTime(fakeClock.nowUtc())
+            .build());
+    assertPollMessages(
+        "foobaz",
+        new PollMessage.OneTime.Builder()
+            .setParent(synthetic)
+            .setMsg("This domain needs work")
+            .setRegistrarId("foobaz")
             .setEventTime(fakeClock.nowUtc())
             .build());
   }
@@ -130,5 +197,19 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> runCommandForced("--domain=example.tld"));
     assertThat(thrown).hasMessageThat().contains("The following option is required: -m, --message");
+  }
+
+  @TestOfyAndSql
+  void testCantSpecifyClientIdsAndAll() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--domain=example.tld",
+                    "--message=Domain is ended",
+                    "--all=true",
+                    "--clients=TheRegistrar"));
+    assertThat(thrown).hasMessageThat().isEqualTo("Cannot specify both --all and --clients");
   }
 }

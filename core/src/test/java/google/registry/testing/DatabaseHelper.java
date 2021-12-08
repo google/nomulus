@@ -96,6 +96,7 @@ import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
@@ -758,6 +759,7 @@ public class DatabaseHelper {
             .setRegistrarId(registrarId)
             .setRegistrarName(registrarName)
             .setType(type)
+            .setState(State.ACTIVE)
             .setIanaIdentifier(ianaIdentifier)
             .setLocalizedAddress(
                 new RegistrarAddress.Builder()
