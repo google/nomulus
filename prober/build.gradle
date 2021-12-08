@@ -17,48 +17,56 @@ apply plugin: 'java'
 createUberJar('deployJar', 'prober', 'google.registry.monitoring.blackbox.Prober')
 
 dependencies {
-    def deps = rootProject.dependencyMap
+  def deps = rootProject.dependencyMap
 
-    compile deps['com.google.auto.value:auto-value-annotations']
-    compile deps['com.google.code.findbugs:jsr305']
-    compile deps['com.google.code.gson:gson']
-    compile deps['com.google.dagger:dagger']
-    compile deps['com.google.flogger:flogger']
-    compile deps['com.google.guava:guava']
-    compile deps['com.google.monitoring-client:metrics']
-    compile deps['io.netty:netty-buffer']
-    compile deps['io.netty:netty-codec']
-    compile deps['io.netty:netty-codec-http']
-    compile deps['io.netty:netty-common']
-    compile deps['io.netty:netty-handler']
-    compile deps['io.netty:netty-transport']
-    compile deps['javax.inject:javax.inject']
-    compile deps['joda-time:joda-time']
-    compile deps['org.bouncycastle:bcpkix-jdk15on']
-    compile deps['org.bouncycastle:bcprov-jdk15on']
-    compile deps['xerces:xmlParserAPIs']
-    compile deps['xpp3:xpp3']
-    compile project(':common')
-    compile project(':util')
-    compile project(':networking')
+  compile deps['com.google.auto.value:auto-value-annotations']
+  compile deps['com.google.code.findbugs:jsr305']
+  compile deps['com.google.code.gson:gson']
+  compile deps['com.google.dagger:dagger']
+  compile deps['com.google.flogger:flogger']
+  compile deps['com.google.guava:guava']
+  compile deps['com.google.monitoring-client:metrics']
+  compile deps['io.netty:netty-buffer']
+  compile deps['io.netty:netty-codec']
+  compile deps['io.netty:netty-codec-http']
+  compile deps['io.netty:netty-common']
+  compile deps['io.netty:netty-handler']
+  compile deps['io.netty:netty-transport']
+  compile deps['javax.inject:javax.inject']
+  compile deps['joda-time:joda-time']
+  compile deps['org.bouncycastle:bcpkix-jdk15on']
+  compile deps['org.bouncycastle:bcprov-jdk15on']
+  compile deps['xerces:xmlParserAPIs']
+  compile deps['xpp3:xpp3']
+  compile project(':common')
+  compile project(':util')
+  compile project(':networking')
 
-    runtime deps['com.google.flogger:flogger-system-backend']
-    runtime deps['com.google.auto.value:auto-value']
-    runtime deps['io.netty:netty-tcnative-boringssl-static']
+  runtime deps['com.google.flogger:flogger-system-backend']
+  runtime deps['com.google.auto.value:auto-value']
+  runtime deps['io.netty:netty-tcnative-boringssl-static']
 
-    testCompile deps['com.google.monitoring-client:contrib']
-    testCompile deps['com.google.truth:truth']
-    testCompile deps['org.junit.jupiter:junit-jupiter-api']
-    testCompile deps['org.junit.jupiter:junit-jupiter-engine']
-    testCompile deps['org.junit.jupiter:junit-jupiter-params']
-    testCompile deps['org.mockito:mockito-core']
-    testCompile project(path: ':common', configuration: 'testing')
-    testCompile project(path: ':networking', configuration: 'testRuntime')
+  testCompile deps['com.google.monitoring-client:contrib']
+  testCompile deps['com.google.truth:truth']
+  testCompile deps['junit:junit']
+  testCompile deps['org.junit.jupiter:junit-jupiter-api']
+  testCompile deps['org.junit.jupiter:junit-jupiter-engine']
+  testCompile deps['org.junit.jupiter:junit-jupiter-params']
+  testCompile deps['org.junit.platform:junit-platform-runner']
+  testCompile deps['org.junit.platform:junit-platform-suite-api']
+  testCompile deps['org.mockito:mockito-core']
+  testCompile deps['org.testcontainers:junit-jupiter']
+  testCompile project(path: ':common', configuration: 'testing')
+  testCompile project(path: ':networking', configuration: 'testRuntime')
 
-    // Include auto-value in compile until nebula-lint understands
-    // annotationProcessor
-    annotationProcessor deps['com.google.auto.value:auto-value']
-    testAnnotationProcessor deps['com.google.auto.value:auto-value']
-    annotationProcessor deps['com.google.dagger:dagger-compiler']
-    testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
+  // Include auto-value in compile until nebula-lint understands
+  // annotationProcessor
+  annotationProcessor deps['com.google.auto.value:auto-value']
+  testAnnotationProcessor deps['com.google.auto.value:auto-value']
+  annotationProcessor deps['com.google.dagger:dagger-compiler']
+  testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
+}
+
+test {
+  useJUnitPlatform()
 }

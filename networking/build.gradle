@@ -34,15 +34,23 @@ dependencies {
   runtime deps['io.netty:netty-tcnative-boringssl-static']
 
   testCompile deps['com.google.truth:truth']
+  testCompile deps['junit:junit']
+  testCompile deps['org.bouncycastle:bcpkix-jdk15on']
+  testCompile deps['org.bouncycastle:bcprov-jdk15on']
   testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
   testCompile deps['org.junit.jupiter:junit-jupiter-params']
-  testCompile deps['org.bouncycastle:bcpkix-jdk15on']
-  testCompile deps['org.bouncycastle:bcprov-jdk15on']
+  testCompile deps['org.junit.platform:junit-platform-runner']
+  testCompile deps['org.junit.platform:junit-platform-suite-api']
+  testCompile deps['org.testcontainers:junit-jupiter']
   testCompile project(path: ':common', configuration: 'testing')
 
   annotationProcessor deps['com.google.dagger:dagger-compiler']
   testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
+}
+
+test {
+  useJUnitPlatform()
 }
 
 // Make testing artifacts available to be depended up on by other projects.
