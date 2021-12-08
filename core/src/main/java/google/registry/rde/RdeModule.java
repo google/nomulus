@@ -45,6 +45,7 @@ public abstract class RdeModule {
   public static final String PARAM_WATERMARK = "watermark";
   public static final String PARAM_WATERMARKS = "watermarks";
   public static final String PARAM_MANUAL = "manual";
+  public static final String PARAM_BEAM = "beam";
   public static final String PARAM_DIRECTORY = "directory";
   public static final String PARAM_MODE = "mode";
   public static final String PARAM_REVISION = "revision";
@@ -70,6 +71,12 @@ public abstract class RdeModule {
   @Parameter(PARAM_MANUAL)
   static boolean provideManual(HttpServletRequest req) {
     return extractBooleanParameter(req, PARAM_MANUAL);
+  }
+
+  @Provides
+  @Parameter(PARAM_BEAM)
+  static boolean provideBeam(HttpServletRequest req) {
+    return extractBooleanParameter(req, PARAM_BEAM);
   }
 
   @Provides

@@ -264,6 +264,11 @@ public final class RdeStagingAction implements Runnable {
   @Inject @Config("beamStagingBucketUrl") String stagingBucketUrl;
   @Inject @Config("rdeBucket") String rdeBucket;
   @Inject @Parameter(RdeModule.PARAM_MANUAL) boolean manual;
+
+  @Inject
+  @Parameter(RdeModule.PARAM_BEAM)
+  boolean beam;
+
   @Inject @Parameter(RdeModule.PARAM_DIRECTORY) Optional<String> directory;
   @Inject @Parameter(RdeModule.PARAM_MODE) ImmutableSet<String> modeStrings;
   @Inject @Parameter(RequestParameters.PARAM_TLDS) ImmutableSet<String> tlds;
@@ -289,7 +294,7 @@ public final class RdeStagingAction implements Runnable {
       logger.atInfo().log("Pending deposit: %s", pending);
     }
     ValidationMode validationMode = lenient ? LENIENT : STRICT;
-    if (tm().isOfy()) {
+    if (tm().isOfy() && !beam) {
       RdeStagingMapper mapper = new RdeStagingMapper(validationMode, pendings);
       RdeStagingReducer reducer = reducerFactory.create(validationMode, gcsUtils);
       mrRunner
@@ -381,6 +386,9 @@ public final class RdeStagingAction implements Runnable {
     }
     if (revision.isPresent()) {
       throw new BadRequestException("Revision parameter not allowed in standard operation");
+    }
+    if (beam) {
+      throw new BadRequestException("Beam parameter not allowed in standard operation");
     }
 
     return ImmutableSetMultimap.copyOf(

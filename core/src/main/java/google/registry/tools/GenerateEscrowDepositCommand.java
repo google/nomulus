@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 import static google.registry.model.tld.Registries.assertTldsExist;
+import static google.registry.rde.RdeModule.PARAM_BEAM;
 import static google.registry.rde.RdeModule.PARAM_DIRECTORY;
 import static google.registry.rde.RdeModule.PARAM_LENIENT;
 import static google.registry.rde.RdeModule.PARAM_MANUAL;
@@ -75,6 +76,14 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
   private Boolean lenient = false;
 
   @Parameter(
+      names = {"-b", "--beam"},
+      description =
+          "Whether to explicitly launch the beam pipeline instead of letting the action decide"
+              + " which one to run.",
+      arity = 1)
+  private Boolean beam = false;
+
+  @Parameter(
       names = {"-r", "--revision"},
       description = "Revision number. Use >0 for resends.")
   private Integer revision;
@@ -129,6 +138,7 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
             .param(PARAM_MODE, mode.toString())
             .param(PARAM_DIRECTORY, outdir)
             .param(PARAM_LENIENT, lenient.toString())
+            .param(PARAM_BEAM, beam.toString())
             .param(PARAM_TLDS, tlds.stream().collect(Collectors.joining(",")))
             .param(
                 PARAM_WATERMARKS,
