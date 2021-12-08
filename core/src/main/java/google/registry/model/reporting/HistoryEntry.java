@@ -16,6 +16,7 @@ package google.registry.model.reporting;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.googlecode.objectify.Key.getKind;
+import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -317,9 +318,13 @@ public class HistoryEntry extends ImmutableObject
 
   /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
   @SuppressWarnings("UnusedMethod")
-  private void setDomainTransactionRecords(Set<DomainTransactionRecord> domainTransactionRecords) {
-    this.domainTransactionRecords =
-        domainTransactionRecords == null ? null : ImmutableSet.copyOf(domainTransactionRecords);
+  protected void setDomainTransactionRecords(Set<DomainTransactionRecord> domainTransactionRecords) {
+    if (this.domainTransactionRecords == null) {
+      this.domainTransactionRecords = domainTransactionRecords;
+    } else if (!this.domainTransactionRecords.equals(domainTransactionRecords)) {
+      this.domainTransactionRecords.clear();
+      this.domainTransactionRecords.addAll(nullToEmpty(domainTransactionRecords));
+    }
   }
 
   /**

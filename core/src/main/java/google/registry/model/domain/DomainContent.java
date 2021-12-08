@@ -505,19 +505,34 @@ public class DomainContent extends EppResource
   // Hibernate needs this in order to populate nsHosts but no one else should ever use it
   @SuppressWarnings("UnusedMethod")
   private void setNsHosts(Set<VKey<HostResource>> nsHosts) {
-    this.nsHosts = forceEmptyToNull(nsHosts);
+    if (this.nsHosts == null) {
+      this.nsHosts = forceEmptyToNull(nsHosts);
+    } else if (!this.nsHosts.equals(nsHosts)) {
+      this.nsHosts.clear();
+      this.nsHosts.addAll(nullToEmpty(nsHosts));
+    }
   }
 
   // Hibernate needs this in order to populate gracePeriods but no one else should ever use it
   @SuppressWarnings("UnusedMethod")
   private void setInternalGracePeriods(Set<GracePeriod> gracePeriods) {
-    this.gracePeriods = gracePeriods;
+    if (this.gracePeriods == null) {
+      this.gracePeriods = gracePeriods;
+    } else if (!this.gracePeriods.equals(gracePeriods)) {
+      this.gracePeriods.clear();
+      this.gracePeriods.addAll(nullToEmpty(gracePeriods));
+    }
   }
 
   // Hibernate needs this in order to populate dsData but no one else should ever use it
   @SuppressWarnings("UnusedMethod")
   private void setInternalDelegationSignerData(Set<DelegationSignerData> dsData) {
-    this.dsData = dsData;
+    if (this.dsData == null) {
+      this.dsData = dsData;
+    } else if (!this.dsData.equals(dsData)) {
+      this.dsData.clear();
+      this.dsData.addAll(nullToEmpty(dsData));
+    }
   }
 
   public final String getCurrentSponsorRegistrarId() {

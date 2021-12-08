@@ -209,7 +209,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   @SuppressWarnings("unused")
   private void setInternalDomainTransactionRecords(
       Set<DomainTransactionRecord> domainTransactionRecords) {
-    this.domainTransactionRecords = domainTransactionRecords;
+    super.setDomainTransactionRecords(domainTransactionRecords);
   }
 
   @Id
