@@ -86,6 +86,7 @@ import javax.persistence.Embedded;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.PostLoad;
 import javax.persistence.Transient;
+import org.hibernate.collection.internal.PersistentSet;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
@@ -508,16 +509,37 @@ public class DomainContent extends EppResource
     this.nsHosts = forceEmptyToNull(nsHosts);
   }
 
+  // Note: for the two methods below, how we wish to treat the Hibernate setters depends on the
+  // current state of the object and what's passed in. The key principle is that we wish to maintain
+  // the link between parent and child objects, meaning that we should keep around whichever of the
+  // two sets (the parameter vs the class variable and clear/populate that as appropriate.
+  //
+  // If the class variable is a PersistentSet and we overwrite it here, Hibernate will throw
+  // an exception "A collection with cascade=”all-delete-orphan” was no longer referenced by the
+  // owning entity instance". See https://stackoverflow.com/questions/5587482 for more details.
+
   // Hibernate needs this in order to populate gracePeriods but no one else should ever use it
   @SuppressWarnings("UnusedMethod")
   private void setInternalGracePeriods(Set<GracePeriod> gracePeriods) {
-    this.gracePeriods = gracePeriods;
+    if (this.gracePeriods instanceof PersistentSet) {
+      Set<GracePeriod> nonNullGracePeriods = nullToEmpty(gracePeriods);
+      this.gracePeriods.retainAll(nonNullGracePeriods);
+      this.gracePeriods.addAll(nonNullGracePeriods);
+    } else {
+      this.gracePeriods = gracePeriods;
+    }
   }
 
   // Hibernate needs this in order to populate dsData but no one else should ever use it
   @SuppressWarnings("UnusedMethod")
   private void setInternalDelegationSignerData(Set<DelegationSignerData> dsData) {
-    this.dsData = dsData;
+    if (this.dsData instanceof PersistentSet) {
+      Set<DelegationSignerData> nonNullDsData = nullToEmpty(dsData);
+      this.dsData.retainAll(nonNullDsData);
+      this.dsData.addAll(nonNullDsData);
+    } else {
+      this.dsData = dsData;
+    }
   }
 
   public final String getCurrentSponsorRegistrarId() {
