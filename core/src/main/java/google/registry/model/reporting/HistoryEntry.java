@@ -16,6 +16,7 @@ package google.registry.model.reporting;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.googlecode.objectify.Key.getKind;
+import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -63,6 +64,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 import org.apache.commons.lang3.BooleanUtils;
+import org.hibernate.collection.internal.PersistentSet;
 import org.joda.time.DateTime;
 
 /**
@@ -317,9 +319,23 @@ public class HistoryEntry extends ImmutableObject
 
   /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
   @SuppressWarnings("UnusedMethod")
-  private void setDomainTransactionRecords(Set<DomainTransactionRecord> domainTransactionRecords) {
-    this.domainTransactionRecords =
-        domainTransactionRecords == null ? null : ImmutableSet.copyOf(domainTransactionRecords);
+  protected void setDomainTransactionRecords(
+      Set<DomainTransactionRecord> domainTransactionRecords) {
+    // Note: how we wish to treat this Hibernate setter depends on the current state of the object
+    // and what's passed in. The key principle is that we wish to maintain the link between parent
+    // and child objects, meaning that we should keep around whichever of the two sets (the
+    // parameter vs the class variable and clear/populate that as appropriate.
+    //
+    // If the class variable is a PersistentSet and we overwrite it here, Hibernate will throw
+    // an exception "A collection with cascade=”all-delete-orphan” was no longer referenced by the
+    // owning entity instance". See https://stackoverflow.com/questions/5587482 for more details.
+    if (this.domainTransactionRecords instanceof PersistentSet) {
+      Set<DomainTransactionRecord> nonNullRecords = nullToEmpty(domainTransactionRecords);
+      this.domainTransactionRecords.retainAll(nonNullRecords);
+      this.domainTransactionRecords.addAll(nonNullRecords);
+    } else {
+      this.domainTransactionRecords = domainTransactionRecords;
+    }
   }
 
   /**
