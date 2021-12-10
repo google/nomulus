@@ -72,14 +72,14 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
       description =
           "Whether to run RDE in LENIENT mode, which omits validation of the generated "
               + "XML deposit files.")
-  private Boolean lenient = false;
+  private boolean lenient = false;
 
   @Parameter(
       names = {"-b", "--beam"},
       description =
           "Whether to explicitly launch the beam pipeline instead of letting the action decide"
               + " which one to run.")
-  private Boolean beam = false;
+  private boolean beam = false;
 
   @Parameter(
       names = {"-r", "--revision"},
@@ -135,8 +135,8 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
             .param(PARAM_MANUAL, String.valueOf(true))
             .param(PARAM_MODE, mode.toString())
             .param(PARAM_DIRECTORY, outdir)
-            .param(PARAM_LENIENT, lenient.toString())
-            .param(PARAM_BEAM, beam.toString())
+            .param(PARAM_LENIENT, Boolean.toString(lenient))
+            .param(PARAM_BEAM, Boolean.toString(beam))
             .param(PARAM_TLDS, tlds.stream().collect(Collectors.joining(",")))
             .param(
                 PARAM_WATERMARKS,
