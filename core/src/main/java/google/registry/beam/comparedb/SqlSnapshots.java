@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Streams;
 import google.registry.beam.common.RegistryJpaIO;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.bulkquery.BulkQueryEntities;
 import google.registry.model.bulkquery.DomainBaseLite;
@@ -76,6 +77,7 @@ import org.apache.beam.sdk.values.TypeDescriptors;
  * contains optimizations specifically for the production database at the current size, e.g.,
  * parallel queries for select tables.
  */
+@DeleteAfterMigration
 public final class SqlSnapshots {
 
   private SqlSnapshots() {}

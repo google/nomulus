@@ -21,6 +21,7 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
 import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +29,7 @@ import java.io.OutputStream;
 import java.util.Iterator;
 
 /** Utilities for working with backups. */
+@DeleteAfterMigration
 public class BackupUtils {
 
   /** Keys for user metadata fields on commit log files in GCS. */

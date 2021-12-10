@@ -21,6 +21,7 @@ import com.google.appengine.api.datastore.QueryResultIterator;
 import com.google.appengine.tools.mapreduce.InputReader;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.cmd.Query;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogManifest;
 import java.util.NoSuchElementException;
@@ -28,6 +29,7 @@ import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
 /** {@link InputReader} that maps over {@link CommitLogManifest}. */
+@DeleteAfterMigration
 class CommitLogManifestReader
     extends RetryingInputReader<Key<CommitLogManifest>, Key<CommitLogManifest>> {
 

@@ -23,6 +23,7 @@ import com.google.appengine.api.datastore.QueryResultIterator;
 import com.google.appengine.tools.mapreduce.InputReader;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.cmd.Query;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
 import java.util.NoSuchElementException;
@@ -40,6 +41,7 @@ import javax.annotation.Nullable;
  *
  * <p>I is the internal Objectify read type, while T is the InputReader return type.
  */
+@DeleteAfterMigration
 abstract class RetryingInputReader<I, T> extends InputReader<T> {
 
   private static final long serialVersionUID = -4897677478541818899L;

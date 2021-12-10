@@ -20,6 +20,7 @@ import static google.registry.backup.BackupUtils.createDeserializingIterator;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
@@ -38,6 +39,7 @@ import java.util.Iterator;
  * <p>This class is adapted from {@link RestoreCommitLogsAction}, and will be used in the initial
  * population of the Cloud SQL database.
  */
+@DeleteAfterMigration
 public final class CommitLogImports {
 
   private CommitLogImports() {}

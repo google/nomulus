@@ -39,6 +39,7 @@ import google.registry.bigquery.BigqueryUtils.WriteDisposition;
 import google.registry.bigquery.CheckedBigquery;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.export.BigqueryPollJobAction.BigqueryPollJobEnqueuer;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.request.Action;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.InternalServerErrorException;
@@ -53,6 +54,7 @@ import javax.inject.Inject;
     path = UploadDatastoreBackupAction.PATH,
     method = POST,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+@DeleteAfterMigration
 public class UploadDatastoreBackupAction implements Runnable {
 
   /** Parameter names for passing parameters into the servlet. */

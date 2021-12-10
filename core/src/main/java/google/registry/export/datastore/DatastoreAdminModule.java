@@ -18,11 +18,13 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.util.GoogleCredentialsBundle;
 import javax.inject.Singleton;
 
 /** Dagger module that configures provision of {@link DatastoreAdmin}. */
 @Module
+@DeleteAfterMigration
 public abstract class DatastoreAdminModule {
 
   @Singleton

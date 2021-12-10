@@ -21,12 +21,14 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
+import google.registry.model.annotations.DeleteAfterMigration;
 import org.joda.time.DateTime;
 
 /**
  * Helpers for determining the fully qualified paths to Nomulus backup files. A backup consists of a
  * Datastore export and Nomulus CommitLogs that overlap with the export.
  */
+@DeleteAfterMigration
 public final class BackupPaths {
 
   private BackupPaths() {}

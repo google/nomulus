@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.api.client.json.GenericJson;
 import com.google.api.client.util.Key;
 import com.google.common.collect.ImmutableList;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Collection;
 import java.util.List;
 
@@ -29,6 +30,7 @@ import java.util.List;
  * <p>Please note that properties not used by Domain Registry are not included, e.g., {@code
  * namespaceIds}.
  */
+@DeleteAfterMigration
 public class EntityFilter extends GenericJson {
 
   @Key private List<String> kinds = ImmutableList.of();

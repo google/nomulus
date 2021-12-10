@@ -21,12 +21,14 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityClasses;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.annotations.VirtualEntity;
 
 /** Constants related to export code. */
+@DeleteAfterMigration
 public final class AnnotatedEntities {
 
   /** Returns the names of kinds to include in Datastore backups. */

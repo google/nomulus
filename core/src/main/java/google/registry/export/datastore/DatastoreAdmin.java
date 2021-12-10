@@ -26,6 +26,7 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.util.Key;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -33,6 +34,7 @@ import java.util.Optional;
  * Java client to <a href="https://cloud.google.com/datastore/docs/reference/admin/rest/">Cloud
  * Datastore Admin REST API</a>.
  */
+@DeleteAfterMigration
 public class DatastoreAdmin extends AbstractGoogleJsonClient {
 
   private static final String ROOT_URL = "https://datastore.googleapis.com/v1/";

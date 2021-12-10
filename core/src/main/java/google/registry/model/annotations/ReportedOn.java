@@ -23,6 +23,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation for an Objectify {@link Entity} to indicate that it should be exported to BigQuery.
  */
+@DeleteAfterMigration
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 public @interface ReportedOn {}

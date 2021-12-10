@@ -33,6 +33,7 @@ import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import google.registry.export.datastore.DatastoreAdmin;
 import google.registry.export.datastore.Operation;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.request.Action;
 import google.registry.request.HttpException;
 import google.registry.request.HttpException.BadRequestException;
@@ -60,6 +61,7 @@ import org.joda.time.format.PeriodFormat;
     method = {POST, GET},
     automaticallyPrintOk = true,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+@DeleteAfterMigration
 public class CheckBackupAction implements Runnable {
 
   /** Parameter names for passing parameters into this action. */

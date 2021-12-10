@@ -19,6 +19,7 @@ import com.google.appengine.api.datastore.EntityTranslator;
 import com.google.appengine.api.datastore.Key;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
 import java.io.Serializable;
@@ -76,6 +77,7 @@ import javax.annotation.Nullable;
  * property type in this class.
  */
 @AutoValue
+@DeleteAfterMigration
 public abstract class VersionedEntity implements Serializable {
 
   private static final long serialVersionUID = 1L;

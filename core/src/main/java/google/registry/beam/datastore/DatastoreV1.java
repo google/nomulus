@@ -53,6 +53,7 @@ import com.google.datastore.v1.client.DatastoreOptions;
 import com.google.datastore.v1.client.QuerySplitter;
 import com.google.protobuf.Int32Value;
 import com.google.rpc.Code;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.io.Serializable;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -80,6 +81,7 @@ import org.joda.time.Duration;
  * Contains an adaptation of {@link org.apache.beam.sdk.io.gcp.datastore.DatastoreV1.Read}. See
  * {@link MultiRead} for details.
  */
+@DeleteAfterMigration
 public class DatastoreV1 {
 
   // A package-private constructor to prevent direct instantiation from outside of this package

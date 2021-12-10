@@ -23,6 +23,7 @@ import com.googlecode.objectify.Key;
 import google.registry.backup.VersionedEntity;
 import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.initsql.Transforms.RemoveDomainBaseForeignKeys;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.Cursor;
 import google.registry.model.contact.ContactResource;
@@ -94,6 +95,7 @@ import org.joda.time.DateTime;
  * may start writing {@code DomainBase} entities before all {@code Registry}, {@code Registrar} and
  * {@code ContactResource} entities have been persisted.
  */
+@DeleteAfterMigration
 public class InitSqlPipeline implements Serializable {
 
   /**

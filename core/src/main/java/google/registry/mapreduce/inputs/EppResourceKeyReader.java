@@ -18,6 +18,7 @@ import com.google.appengine.tools.mapreduce.InputReader;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import java.util.NoSuchElementException;
@@ -27,6 +28,7 @@ import java.util.NoSuchElementException;
  *
  * <p>When mapping over keys we can't distinguish between Objectify polymorphic types.
  */
+@DeleteAfterMigration
 class EppResourceKeyReader<R extends EppResource> extends EppResourceBaseReader<Key<R>> {
 
   private static final long serialVersionUID = -428232054739189774L;

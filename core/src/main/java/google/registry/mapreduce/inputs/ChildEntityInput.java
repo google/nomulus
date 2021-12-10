@@ -22,12 +22,14 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.index.EppResourceIndexBucket;
 
 /**
  * A MapReduce {@link Input} that loads all child objects of a given set of types, that are children
  * of given {@link EppResource} types.
  */
+@DeleteAfterMigration
 class ChildEntityInput<R extends EppResource, I extends ImmutableObject>
     extends EppResourceBaseInput<I> {
 

@@ -34,6 +34,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
@@ -68,6 +69,7 @@ import org.joda.time.Seconds;
     method = Method.POST,
     automaticallyPrintOk = true,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+@DeleteAfterMigration
 public class ReplayCommitLogsToSqlAction implements Runnable {
 
   static final String PATH = "/_dr/task/replayCommitLogsToSql";

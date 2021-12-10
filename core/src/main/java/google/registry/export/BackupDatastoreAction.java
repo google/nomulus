@@ -21,6 +21,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig;
 import google.registry.export.datastore.DatastoreAdmin;
 import google.registry.export.datastore.Operation;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.request.Action;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.Response;
@@ -46,6 +47,7 @@ import javax.inject.Inject;
     method = POST,
     automaticallyPrintOk = true,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+@DeleteAfterMigration
 public class BackupDatastoreAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

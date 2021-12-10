@@ -27,6 +27,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import java.io.IOException;
@@ -34,9 +35,10 @@ import java.util.NoSuchElementException;
 import javax.annotation.Nullable;
 
 /**
- * Reader that maps over {@link EppResourceIndex} and returns resources that are children of
- * {@link EppResource} objects.
+ * Reader that maps over {@link EppResourceIndex} and returns resources that are children of {@link
+ * EppResource} objects.
  */
+@DeleteAfterMigration
 class ChildEntityReader<R extends EppResource, I extends ImmutableObject> extends InputReader<I> {
 
   private static final long serialVersionUID = 7481761146349663848L;
