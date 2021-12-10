@@ -48,7 +48,6 @@ import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import google.registry.util.CloudTasksUtils;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 
@@ -96,8 +95,6 @@ public final class TldFanoutAction implements Runnable {
           RUN_IN_EMPTY_PARAM,
           EXCLUDE_PARAM,
           JITTER_SECONDS_PARAM);
-
-  private static final Random random = new Random();
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
