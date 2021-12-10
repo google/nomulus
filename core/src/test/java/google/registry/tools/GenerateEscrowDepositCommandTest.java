@@ -193,7 +193,7 @@ public class GenerateEscrowDepositCommandTest
         "--tld=tld",
         "--watermark=2017-01-01T00:00:00Z",
         "--mode=thin",
-        "--lenient=true",
+        "--lenient",
         "-r 42",
         "-o test");
 
@@ -217,7 +217,7 @@ public class GenerateEscrowDepositCommandTest
         "--tld=tld",
         "--watermark=2017-01-01T00:00:00Z",
         "--mode=thin",
-        "--beam=true",
+        "--beam",
         "-r 42",
         "-o test");
 

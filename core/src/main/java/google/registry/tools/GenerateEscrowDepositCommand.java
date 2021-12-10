@@ -71,16 +71,14 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
       names = {"-l", "--lenient"},
       description =
           "Whether to run RDE in LENIENT mode, which omits validation of the generated "
-              + "XML deposit files.",
-      arity = 1)
+              + "XML deposit files.")
   private Boolean lenient = false;
 
   @Parameter(
       names = {"-b", "--beam"},
       description =
           "Whether to explicitly launch the beam pipeline instead of letting the action decide"
-              + " which one to run.",
-      arity = 1)
+              + " which one to run.")
   private Boolean beam = false;
 
   @Parameter(
