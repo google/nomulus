@@ -16,7 +16,9 @@ package google.registry.tools;
 
 import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 import static google.registry.model.tld.Registries.assertTldsExist;
+import static google.registry.rde.RdeModule.PARAM_BEAM;
 import static google.registry.rde.RdeModule.PARAM_DIRECTORY;
+import static google.registry.rde.RdeModule.PARAM_LENIENT;
 import static google.registry.rde.RdeModule.PARAM_MANUAL;
 import static google.registry.rde.RdeModule.PARAM_MODE;
 import static google.registry.rde.RdeModule.PARAM_REVISION;
@@ -64,6 +66,20 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
       names = {"-m", "--mode"},
       description = "Mode of operation: FULL for RDE deposits, THIN for BRDA deposits.")
   private RdeMode mode = RdeMode.FULL;
+
+  @Parameter(
+      names = {"-l", "--lenient"},
+      description =
+          "Whether to run RDE in LENIENT mode, which omits validation of the generated "
+              + "XML deposit files.")
+  private boolean lenient = false;
+
+  @Parameter(
+      names = {"-b", "--beam"},
+      description =
+          "Whether to explicitly launch the beam pipeline instead of letting the action decide"
+              + " which one to run.")
+  private boolean beam = false;
 
   @Parameter(
       names = {"-r", "--revision"},
@@ -119,6 +135,8 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
             .param(PARAM_MANUAL, String.valueOf(true))
             .param(PARAM_MODE, mode.toString())
             .param(PARAM_DIRECTORY, outdir)
+            .param(PARAM_LENIENT, Boolean.toString(lenient))
+            .param(PARAM_BEAM, Boolean.toString(beam))
             .param(PARAM_TLDS, tlds.stream().collect(Collectors.joining(",")))
             .param(
                 PARAM_WATERMARKS,
