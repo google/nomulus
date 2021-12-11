@@ -263,7 +263,6 @@ dependencies {
   testCompile deps['org.apache.ftpserver:ftpserver-core']
   compile deps['org.apache.httpcomponents:httpclient']
   compile deps['org.apache.httpcomponents:httpcore']
-  runtime deps['org.apache.logging.log4j:log4j-core']
   testCompile deps['org.apache.sshd:sshd-core']
   testCompile deps['org.apache.sshd:sshd-scp']
   testCompile deps['org.apache.sshd:sshd-sftp']

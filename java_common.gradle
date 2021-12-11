@@ -63,6 +63,9 @@ configurations {
     // See https://issues.apache.org/jira/browse/BEAM-8862
     it.exclude group: 'org.mockito', module: 'mockito-core'
   }
+  all.each {
+    it.exclude group: 'org.apache.logging.log4j'
+  }
 }
 
 dependencies {
