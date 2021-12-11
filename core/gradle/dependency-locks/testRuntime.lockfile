@@ -246,8 +246,6 @@ org.apache.ftpserver:ftplet-api:1.0.6
 org.apache.ftpserver:ftpserver-core:1.0.6
 org.apache.httpcomponents:httpclient:4.5.13
 org.apache.httpcomponents:httpcore:4.4.14
-org.apache.logging.log4j:log4j-api:2.15.0
-org.apache.logging.log4j:log4j-core:2.15.0
 org.apache.mina:mina-core:2.0.4
 org.apache.sshd:sshd-core:2.0.0
 org.apache.sshd:sshd-scp:2.0.0
