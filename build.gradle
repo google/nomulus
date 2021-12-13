@@ -20,6 +20,9 @@ buildscript {
     // Lock buildscript dependencies.
     configurations.classpath {
       resolutionStrategy.activateDependencyLocking()
+
+      // See java_common.gradle for explanation.
+      exclude group: 'org.apache.logging.log4j'
     }
   }
 
