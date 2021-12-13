@@ -14,6 +14,7 @@
 
 package google.registry.model.bulkquery;
 
+import com.google.common.base.Objects;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.host.HostResource;
 import google.registry.model.replay.SqlOnlyEntity;
@@ -46,5 +47,24 @@ public class DomainHistoryHost implements Serializable, SqlOnlyEntity {
 
   public VKey<HostResource> getHostVKey() {
     return VKey.create(HostResource.class, hostRepoId);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof DomainHistoryHost)) {
+      return false;
+    }
+    DomainHistoryHost that = (DomainHistoryHost) o;
+    return Objects.equal(domainHistoryHistoryRevisionId, that.domainHistoryHistoryRevisionId)
+        && Objects.equal(domainHistoryDomainRepoId, that.domainHistoryDomainRepoId)
+        && Objects.equal(hostRepoId, that.hostRepoId);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(domainHistoryHistoryRevisionId, domainHistoryDomainRepoId, hostRepoId);
   }
 }

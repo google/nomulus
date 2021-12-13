@@ -261,16 +261,19 @@ public final class Transforms {
                     .iterator()));
   }
 
-  // Production data repair configs go below. See b/185954992.
+  // Production data repair configs go below. See b/185954992. Note that the CommitLog replay
+  // process does not filter out the ignored entities listed below, a mistake that we do not fix
+  // for operational convenience. Instead, the Database comparison tool will filter them out. See
+  // ValidateSqlUtils.java for more information.
 
   // Prober domains in bad state, without associated contacts, hosts, billings, and non-synthesized
   // history. They can be safely ignored.
-  private static final ImmutableSet<String> IGNORED_DOMAINS =
+  public static final ImmutableSet<String> IGNORED_DOMAINS =
       ImmutableSet.of("6AF6D2-IQCANT", "2-IQANYT");
 
   // Prober hosts referencing phantom registrars. They and their associated history entries can be
   // safely ignored.
-  private static final ImmutableSet<String> IGNORED_HOSTS =
+  public static final ImmutableSet<String> IGNORED_HOSTS =
       ImmutableSet.of(
           "4E21_WJ0TEST-GOOGLE",
           "4E21_WJ1TEST-GOOGLE",
@@ -279,7 +282,7 @@ public final class Transforms {
 
   // Prober contacts referencing phantom registrars. They and their associated history entries can
   // be safely ignored.
-  private static final ImmutableSet<String> IGNORED_CONTACTS =
+  public static final ImmutableSet<String> IGNORED_CONTACTS =
       ImmutableSet.of(
           "1_WJ0TEST-GOOGLE", "1_WJ1TEST-GOOGLE", "1_WJ2TEST-GOOGLE", "1_WJ3TEST-GOOGLE");
 
@@ -300,6 +303,13 @@ public final class Transforms {
       return !IGNORED_HOSTS.contains(roid);
     }
     if (entity.getKind().equals("HistoryEntry")) {
+      // DOMAIN_APPLICATION_CREATE is deprecated type and should not be migrated.
+      // The Enum name DOMAIN_APPLICATION_CREATE no longer exists in Java and cannot
+      // be deserialized.
+      if (Objects.equals(entity.getProperty("type"), "DOMAIN_APPLICATION_CREATE")) {
+        return false;
+      }
+
       // Remove production bad data: Histories of ignored EPP resources:
       com.google.appengine.api.datastore.Key parentKey = entity.getKey().getParent();
       if (parentKey.getKind().equals("ContactResource")) {
@@ -314,14 +324,6 @@ public final class Transforms {
         String domainRoid = parentKey.getName();
         return !IGNORED_DOMAINS.contains(domainRoid);
       }
-    }
-    // End of production-specific checks.
-
-    if (entity.getKind().equals("HistoryEntry")) {
-      // DOMAIN_APPLICATION_CREATE is deprecated type and should not be migrated.
-      // The Enum name DOMAIN_APPLICATION_CREATE no longer exists in Java and cannot
-      // be deserialized.
-      return !Objects.equals(entity.getProperty("type"), "DOMAIN_APPLICATION_CREATE");
     }
     return true;
   }
