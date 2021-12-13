@@ -76,11 +76,15 @@ dependencies {
 
   testCompile deps['com.google.monitoring-client:contrib']
   testCompile deps['com.google.truth:truth']
-  testCompile deps['org.yaml:snakeyaml']
+  testCompile deps['junit:junit']
   testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
   testCompile deps['org.junit.jupiter:junit-jupiter-params']
+  testCompile deps['org.junit.platform:junit-platform-runner']
+  testCompile deps['org.junit.platform:junit-platform-suite-api']
   testCompile deps['org.mockito:mockito-core']
+  testCompile deps['org.testcontainers:junit-jupiter']
+  testCompile deps['org.yaml:snakeyaml']
   testCompile project(path: ':common', configuration: 'testing')
   testCompile project(path: ':networking', configuration: 'testRuntime')
 
@@ -90,4 +94,8 @@ dependencies {
   testAnnotationProcessor deps['com.google.auto.value:auto-value']
   annotationProcessor deps['com.google.dagger:dagger-compiler']
   testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
+}
+
+test {
+  useJUnitPlatform()
 }

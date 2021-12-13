@@ -25,8 +25,16 @@ dependencies {
 
   testCompile deps['com.google.truth:truth']
   testCompile deps['com.thoughtworks.qdox:qdox']
+  testCompile deps['junit:junit']
   testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
+  testCompile deps['org.junit.platform:junit-platform-runner']
+  testCompile deps['org.junit.platform:junit-platform-suite-api']
+  testCompile deps['org.testcontainers:junit-jupiter']
+}
+
+test {
+  useJUnitPlatform()
 }
 
 sourceCompatibility = '11'

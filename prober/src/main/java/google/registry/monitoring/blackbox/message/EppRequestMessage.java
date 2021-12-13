@@ -14,6 +14,7 @@
 
 package google.registry.monitoring.blackbox.message;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import google.registry.monitoring.blackbox.exception.EppClientException;
 import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
@@ -146,5 +147,17 @@ public class EppRequestMessage extends EppMessage implements OutboundMessageType
   @Override
   public String responseName() {
     return expectedResponse.name();
+  }
+
+  /**
+   * Returns a String representation using the {@link #name()}, {@link #responseName()}, and {@link
+   * #message} (if non-null).
+   *
+   * <p>This is primarily for parameterized test case usage, which requires a sensible <code>
+   * toString</code> for the purposes of test method naming.
+   */
+  @Override
+  public String toString() {
+    return Joiner.on('_').skipNulls().join(name(), responseName(), super.toString());
   }
 }
