@@ -40,8 +40,6 @@ org.apache.ant:ant-launcher:1.9.7
 org.apache.ant:ant:1.9.7
 org.apache.commons:commons-compress:1.20
 org.apache.commons:commons-lang3:3.8.1
-org.apache.logging.log4j:log4j-api:2.11.0
-org.apache.logging.log4j:log4j-core:2.11.0
 org.apache.maven:maven-artifact:3.6.2
 org.apache.maven:maven-builder-support:3.6.2
 org.apache.maven:maven-model-builder:3.6.2
