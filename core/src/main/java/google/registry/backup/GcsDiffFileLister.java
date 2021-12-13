@@ -91,7 +91,7 @@ class GcsDiffFileLister {
 
         // If we hit a gap, quit.
         if (blobInfo == null) {
-          logger.atInfo().log(
+          logger.atWarning().log(
               "Gap discovered in sequence terminating at %s, missing file: %s",
               sequence.lastKey(), filename);
           logger.atInfo().log("Found sequence from %s to %s.", checkpointTime, lastTime);
@@ -167,6 +167,10 @@ class GcsDiffFileLister {
             break;
           }
           if (!sequence.containsKey(key)) {
+            // Recalculate the sequence for purely informational purposes.
+            logger.atWarning().log(
+                "Fork found in commit log history.  The following sequence "
+                    + "is disconnected from the sequence of the final commit:");
             constructDiffSequence(gcsBucket, upperBoundTimesToBlobInfo, fromTime, key, sequence);
             checkForMoreExtraDiffs = true;
             inconsistentFileSet = true;
