@@ -19,9 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -295,23 +293,6 @@ public class Cursor extends ImmutableObject implements DatastoreAndSqlEntity, Un
     public CursorId(CursorType type, String scope) {
       this.type = type;
       this.scope = scope;
-    }
-
-    /**
-     * A deterministic string representation of a {@link CursorId}. See {@link
-     * ImmutableObject#toString} for more information.
-     */
-    @Override
-    public String toString() {
-      return String.format(
-                  "%s: {\n%s",
-                  getClass().getSimpleName(),
-                  Joiner.on('\n')
-                      .join(
-                          ImmutableSortedMap.<String, Object>of("scope", scope, "type", type)
-                              .entrySet()))
-              .replaceAll("\n", "\n    ")
-          + "\n}";
     }
   }
 }

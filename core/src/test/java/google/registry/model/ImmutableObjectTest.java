@@ -68,11 +68,8 @@ public class ImmutableObjectTest {
   @Test
   void testToString_simpleClass() {
     SimpleObject object = new SimpleObject("foo", null);
-    assertThat(object.toString()).isEqualTo(""
-        + "SimpleObject (@" + System.identityHashCode(object) + "): {\n"
-        + "    a=foo\n"
-        + "    b=null\n"
-        + "}");
+    assertThat(object.toString())
+        .isEqualTo("" + "SimpleObject: {\n" + "    a=foo\n" + "    b=null\n" + "}");
   }
 
   @Test
@@ -332,8 +329,8 @@ public class ImmutableObjectTest {
 
     // The hash code test test is implicit in "equals", it is added here just for clarity.
     assertThat(instance1.hashCode()).isEqualTo(instance2.hashCode());
-    assertThat(instance1.toString()).matches(
-        "(?s)HasInsignificantFields (.*): \\{\\s*significant=significant\\s*\\}\\s*");
+    assertThat(instance1.toString())
+        .matches("(?s)HasInsignificantFields: \\{\\s*significant=significant\\s*\\}\\s*");
   }
 
   static class HasInsignificantFields extends ImmutableObject {

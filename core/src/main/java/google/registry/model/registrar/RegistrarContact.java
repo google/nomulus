@@ -32,9 +32,7 @@ import static java.util.stream.Collectors.joining;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Enums;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
@@ -414,24 +412,6 @@ public class RegistrarContact extends ImmutableObject
     public RegistrarPocId(String emailAddress, String registrarId) {
       this.emailAddress = emailAddress;
       this.registrarId = registrarId;
-    }
-
-    /**
-     * A deterministic string representation of a {@link RegistrarPocId}. See {@link
-     * ImmutableObject#toString} for more information.
-     */
-    @Override
-    public String toString() {
-      return String.format(
-                  "%s: {\n%s",
-                  getClass().getSimpleName(),
-                  Joiner.on('\n')
-                      .join(
-                          ImmutableSortedMap.<String, Object>of(
-                                  "emailAddress", emailAddress, "registrarId", registrarId)
-                              .entrySet()))
-              .replaceAll("\n", "\n    ")
-          + "\n}";
     }
   }
 

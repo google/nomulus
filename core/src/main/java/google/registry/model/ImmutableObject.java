@@ -156,10 +156,6 @@ public abstract class ImmutableObject implements Cloneable {
    *   }
    * }
    * </pre>
-   *
-   * <p>This method makes use of {@link #toStringHelper}, which embeds {@link
-   * System#identityHashCode} in the output string. Subclasses that require deterministic string
-   * representations <em>across</em> JVM instances should override this method.
    */
   @Override
   public String toString() {
@@ -185,11 +181,9 @@ public abstract class ImmutableObject implements Cloneable {
 
   public String toStringHelper(SortedMap<String, Object> fields) {
     return String.format(
-        "%s (@%s): {\n%s",
-        getClass().getSimpleName(),
-        System.identityHashCode(this),
-        Joiner.on('\n').join(fields.entrySet()))
-            .replaceAll("\n", "\n    ") + "\n}";
+                "%s: {\n%s", getClass().getSimpleName(), Joiner.on('\n').join(fields.entrySet()))
+            .replaceAll("\n", "\n    ")
+        + "\n}";
   }
 
   /** Helper function to recursively hydrate an ImmutableObject. */
