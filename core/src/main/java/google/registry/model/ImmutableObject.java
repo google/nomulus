@@ -156,10 +156,6 @@ public abstract class ImmutableObject implements Cloneable {
    *   }
    * }
    * </pre>
-   *
-   * <p>This method makes use of {@link #toStringHelper}, which embeds {@link
-   * System#identityHashCode} in the output string. Subclasses that require deterministic string
-   * representations <em>across</em> JVM instances should override this method.
    */
   @Override
   public String toString() {
