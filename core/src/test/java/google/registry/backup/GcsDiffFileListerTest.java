@@ -32,11 +32,11 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
 import com.google.common.util.concurrent.MoreExecutors;
 import google.registry.gcs.GcsUtils;
 import google.registry.testing.AppEngineExtension;
+import google.registry.util.JdkLoggerConfig;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.logging.LogRecord;
@@ -67,7 +67,7 @@ public class GcsDiffFileListerTest {
     for (int i = 0; i < 5; i++) {
       addGcsFile(i, i + 1);
     }
-    LoggerConfig.getConfig(GcsDiffFileLister.class).addHandler(logHandler);
+    JdkLoggerConfig.getConfig(GcsDiffFileLister.class).addHandler(logHandler);
   }
 
   private Iterable<DateTime> extractTimesFromDiffFiles(ImmutableList<BlobInfo> diffFiles) {

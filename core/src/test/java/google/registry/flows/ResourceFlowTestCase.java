@@ -28,7 +28,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
-import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
@@ -48,6 +47,7 @@ import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.util.JdkLoggerConfig;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.logging.Level;
 import javax.annotation.Nullable;
@@ -72,7 +72,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     // Attach TestLogHandler to the root logger so it has access to all log messages.
     // Note that in theory for assertIcannReportingActivityFieldLogged() below it would suffice to
     // attach it only to the FlowRunner logger, but for some reason this doesn't work for all flows.
-    LoggerConfig.getConfig("").addHandler(logHandler);
+    JdkLoggerConfig.getConfig("").addHandler(logHandler);
   }
 
   @Nullable

@@ -21,7 +21,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.eppcommon.Trid;
@@ -29,6 +28,7 @@ import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
+import google.registry.util.JdkLoggerConfig;
 import java.util.Map;
 import java.util.Optional;
 import org.json.simple.JSONValue;
@@ -58,7 +58,7 @@ class FlowReporterTest {
 
   @BeforeEach
   void beforeEach() {
-    LoggerConfig.getConfig(FlowReporter.class).addHandler(handler);
+    JdkLoggerConfig.getConfig(FlowReporter.class).addHandler(handler);
     flowReporter.trid = Trid.create("client-123", "server-456");
     flowReporter.registrarId = "TheRegistrar";
     flowReporter.inputXmlBytes = "<xml/>".getBytes(UTF_8);

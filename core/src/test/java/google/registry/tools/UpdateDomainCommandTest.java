@@ -33,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.flogger.LoggerConfig;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -50,6 +49,7 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.util.CapturingLogHandler;
+import google.registry.util.JdkLoggerConfig;
 import java.util.logging.Level;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,12 +70,12 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     inject.setStaticField(Ofy.class, "clock", fakeClock);
     command.clock = fakeClock;
     domain = persistActiveDomain("example.tld");
-    LoggerConfig.getConfig(UpdateDomainCommand.class).addHandler(logHandler);
+    JdkLoggerConfig.getConfig(UpdateDomainCommand.class).addHandler(logHandler);
   }
 
   @AfterEach
   void afterEach() {
-    LoggerConfig.getConfig(UpdateDomainCommand.class).removeHandler(logHandler);
+    JdkLoggerConfig.getConfig(UpdateDomainCommand.class).removeHandler(logHandler);
   }
 
   @TestOfyAndSql

@@ -21,7 +21,8 @@ buildscript {
     configurations.classpath {
       resolutionStrategy.activateDependencyLocking()
 
-      // See java_common.gradle for explanation.
+      // log4j has high-profile security vulnerabilities. It's a transitive
+      // dependency used by Gradle itself during build, and not strictly needed.
       exclude group: 'org.apache.logging.log4j'
     }
   }
@@ -185,6 +186,12 @@ allprojects {
       println "Java dependencies: Using Maven Central..."
       mavenCentral()
       google()
+      maven {
+        url "https://packages.confluent.io/maven/"
+        content {
+          includeGroup "io.confluent"
+        }
+      }
     }
   }
 

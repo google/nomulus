@@ -29,7 +29,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.eppcommon.Trid;
@@ -39,6 +38,7 @@ import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
+import google.registry.util.JdkLoggerConfig;
 import java.util.List;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -79,7 +79,7 @@ class FlowRunnerTest {
 
   @BeforeEach
   void beforeEach() {
-    LoggerConfig.getConfig(FlowRunner.class).addHandler(handler);
+    JdkLoggerConfig.getConfig(FlowRunner.class).addHandler(handler);
     flowRunner.registrarId = "TheRegistrar";
     flowRunner.credentials = new PasswordOnlyTransportCredentials();
     flowRunner.eppRequestSource = EppRequestSource.UNIT_TEST;
