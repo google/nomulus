@@ -392,19 +392,26 @@ public final class RegistryConfig {
 
     @Provides
     @Config("cloudSqlJdbcUrl")
-    public static String providesCloudSqlJdbcUrl(RegistryConfigSettings config) {
+    public static String provideCloudSqlJdbcUrl(RegistryConfigSettings config) {
       return config.cloudSql.jdbcUrl;
     }
 
     @Provides
     @Config("cloudSqlInstanceConnectionName")
-    public static String providesCloudSqlInstanceConnectionName(RegistryConfigSettings config) {
+    public static String provideCloudSqlInstanceConnectionName(RegistryConfigSettings config) {
       return config.cloudSql.instanceConnectionName;
     }
 
     @Provides
+    @Config("cloudSqlReplicaInstanceConnectionName")
+    public static Optional<String> provideCloudSqlReplicaInstanceConnectionName(
+        RegistryConfigSettings config) {
+      return Optional.ofNullable(config.cloudSql.replicaInstanceConnectionName);
+    }
+
+    @Provides
     @Config("cloudSqlDbInstanceName")
-    public static String providesCloudSqlDbInstance(RegistryConfigSettings config) {
+    public static String provideCloudSqlDbInstance(RegistryConfigSettings config) {
       // Format of instanceConnectionName: project-id:region:instance-name
       int lastColonIndex = config.cloudSql.instanceConnectionName.lastIndexOf(':');
       return config.cloudSql.instanceConnectionName.substring(lastColonIndex + 1);

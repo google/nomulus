@@ -56,6 +56,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.registrar.Registrar;
+import google.registry.persistence.PersistenceModule.JpaTransactionManagerType;
 import google.registry.request.Action;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
@@ -340,6 +341,9 @@ public final class RdeStagingAction implements Runnable {
                                           .encode(stagingKeyBytes))
                                   .put("registryEnvironment", RegistryEnvironment.get().name())
                                   .put("workerMachineType", machineType)
+                                  .put(
+                                      "jpaTransactionManagerType",
+                                      JpaTransactionManagerType.READ_ONLY_REPLICA.toString())
                                   // TODO (jianglai): Investigate turning off public IPs (for which
                                   // there is a quota) in order to increase the total number of
                                   // workers allowed (also under quota).

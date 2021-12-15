@@ -12,6 +12,12 @@
       ]
     },
     {
+      "name": "jpaTransactionManagerType",
+      "label": "The type of JPA transaction manager to use",
+      "helpText": "The standard SQL instance or a read-only replica may be used",
+      "regexes": ["^REGULAR|READ_ONLY_REPLICA$"]
+    },
+    {
       "name": "pendings",
       "label": "The pendings deposits to generate.",
       "helpText": "A TLD to PendingDeposit map that is serialized and Base64 URL-safe encoded.",

@@ -19,6 +19,7 @@ import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.keyring.kms.KmsModule;
 import google.registry.persistence.PersistenceModule.AppEngineJpaTm;
+import google.registry.persistence.PersistenceModule.ReadOnlyReplicaJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.util.UtilsModule;
@@ -40,4 +41,7 @@ public interface PersistenceComponent {
 
   @AppEngineJpaTm
   JpaTransactionManager appEngineJpaTransactionManager();
+
+  @ReadOnlyReplicaJpaTm
+  JpaTransactionManager readOnlyReplicaJpaTransactionManager();
 }

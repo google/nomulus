@@ -122,8 +122,11 @@ public abstract class PersistenceModule {
       @Config("cloudSqlJdbcUrl") String jdbcUrl,
       @Config("cloudSqlInstanceConnectionName") String instanceConnectionName,
       @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs) {
-    return createPartialSqlConfigs(
-        jdbcUrl, instanceConnectionName, defaultConfigs, Optional.empty());
+    HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
+    overrides.put(Environment.URL, jdbcUrl);
+    overrides.put(HIKARI_DS_SOCKET_FACTORY, "com.google.cloud.sql.postgres.SocketFactory");
+    overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, instanceConnectionName);
+    return ImmutableMap.copyOf(overrides);
   }
 
   /**
@@ -181,22 +184,6 @@ public abstract class PersistenceModule {
     isolationOverride
         .map(Provider::get)
         .ifPresent(isolation -> overrides.put(Environment.ISOLATION, isolation.name()));
-    return ImmutableMap.copyOf(overrides);
-  }
-
-  @VisibleForTesting
-  static ImmutableMap<String, String> createPartialSqlConfigs(
-      String jdbcUrl,
-      String instanceConnectionName,
-      ImmutableMap<String, String> defaultConfigs,
-      Optional<Provider<TransactionIsolationLevel>> isolationOverride) {
-    HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
-    overrides.put(Environment.URL, jdbcUrl);
-    overrides.put(HIKARI_DS_SOCKET_FACTORY, "com.google.cloud.sql.postgres.SocketFactory");
-    overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, instanceConnectionName);
-    isolationOverride
-        .map(Provider::get)
-        .ifPresent(override -> overrides.put(Environment.ISOLATION, override.name()));
     return ImmutableMap.copyOf(overrides);
   }
 
@@ -280,6 +267,36 @@ public abstract class PersistenceModule {
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
+  @Provides
+  @Singleton
+  @ReadOnlyReplicaJpaTm
+  static JpaTransactionManager provideReadOnlyReplicaJpaTm(
+      SqlCredentialStore credentialStore,
+      @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
+      @Config("cloudSqlReplicaInstanceConnectionName")
+          Optional<String> replicaInstanceConnectionName,
+      Clock clock) {
+    HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
+    setSqlCredential(credentialStore, new RobotUser(RobotId.NOMULUS), overrides);
+    replicaInstanceConnectionName.ifPresent(
+        name -> overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, name));
+    return new JpaTransactionManagerImpl(create(overrides), clock);
+  }
+
+  @Provides
+  @Singleton
+  @BeamReadOnlyReplicaJpaTm
+  static JpaTransactionManager provideBeamReadOnlyReplicaJpaTm(
+      @BeamPipelineCloudSqlConfigs ImmutableMap<String, String> beamCloudSqlConfigs,
+      @Config("cloudSqlReplicaInstanceConnectionName")
+          Optional<String> replicaInstanceConnectionName,
+      Clock clock) {
+    HashMap<String, String> overrides = Maps.newHashMap(beamCloudSqlConfigs);
+    replicaInstanceConnectionName.ifPresent(
+        name -> overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, name));
+    return new JpaTransactionManagerImpl(create(overrides), clock);
+  }
+
   /** Constructs the {@link EntityManagerFactory} instance. */
   @VisibleForTesting
   static EntityManagerFactory create(
@@ -357,7 +374,12 @@ public abstract class PersistenceModule {
      * The {@link JpaTransactionManager} optimized for bulk loading multi-level JPA entities. Please
      * see {@link google.registry.model.bulkquery.BulkQueryEntities} for more information.
      */
-    BULK_QUERY
+    BULK_QUERY,
+    /**
+     * The {@link JpaTransactionManager} that uses the read-only Postgres replica if configured, or
+     * the standard DB if not.
+     */
+    READ_ONLY_REPLICA
   }
 
   /** Dagger qualifier for JDBC {@link Connection} with schema management privilege. */
@@ -382,6 +404,22 @@ public abstract class PersistenceModule {
   @Qualifier
   @Documented
   public @interface BeamBulkQueryJpaTm {}
+
+  /**
+   * Dagger qualifier for {@link JpaTransactionManager} used inside BEAM pipelines that uses the
+   * read-only Postgres replica if one is configured (otherwise it uses the standard DB).
+   */
+  @Qualifier
+  @Documented
+  public @interface BeamReadOnlyReplicaJpaTm {}
+
+  /**
+   * Dagger qualifier for {@link JpaTransactionManager} that uses the read-only Postgres replica if
+   * one is configured (otherwise it uses the standard DB).
+   */
+  @Qualifier
+  @Documented
+  public @interface ReadOnlyReplicaJpaTm {}
 
   /** Dagger qualifier for {@link JpaTransactionManager} used for Nomulus tool. */
   @Qualifier

@@ -23,6 +23,7 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.BeamBulkQueryJpaTm;
 import google.registry.persistence.PersistenceModule.BeamJpaTm;
+import google.registry.persistence.PersistenceModule.BeamReadOnlyReplicaJpaTm;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.privileges.secretmanager.SecretManagerModule;
@@ -58,6 +59,13 @@ public interface RegistryPipelineComponent {
    */
   @BeamBulkQueryJpaTm
   Lazy<JpaTransactionManager> getBulkQueryJpaTransactionManager();
+
+  /**
+   * A {@link JpaTransactionManager} that uses the Postgres read-only replica if configured (uses
+   * the standard DB otherwise).
+   */
+  @BeamReadOnlyReplicaJpaTm
+  Lazy<JpaTransactionManager> getReadOnlyReplicaJpaTransactionManager();
 
   @Component.Builder
   interface Builder {
