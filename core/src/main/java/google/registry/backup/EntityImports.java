@@ -20,10 +20,12 @@ import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import com.google.storage.onestore.v3.OnestoreEntity.Path;
 import com.google.storage.onestore.v3.OnestoreEntity.Property.Meaning;
 import com.google.storage.onestore.v3.OnestoreEntity.PropertyValue.ReferenceValue;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /** Utilities for handling imported Datastore entities. */
+@DeleteAfterMigration
 public class EntityImports {
 
   /**

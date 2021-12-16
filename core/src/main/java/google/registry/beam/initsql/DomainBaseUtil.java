@@ -18,9 +18,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.appengine.api.datastore.Entity;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Objects;
 
 /** Helper for manipulating {@code DomainBase} when migrating from Datastore to SQL database */
+@DeleteAfterMigration
 final class DomainBaseUtil {
 
   private DomainBaseUtil() {}

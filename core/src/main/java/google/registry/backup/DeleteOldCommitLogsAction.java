@@ -35,6 +35,7 @@ import google.registry.mapreduce.MapreduceRunner;
 import google.registry.mapreduce.inputs.CommitLogManifestInput;
 import google.registry.mapreduce.inputs.EppResourceInputs;
 import google.registry.model.EppResource;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.translators.CommitLogRevisionsTranslatorFactory;
@@ -68,6 +69,7 @@ import org.joda.time.Duration;
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 // No longer needed in SQL. Subject to future removal.
 @Deprecated
+@DeleteAfterMigration
 public final class DeleteOldCommitLogsAction implements Runnable {
 
   private static final int NUM_MAP_SHARDS = 20;

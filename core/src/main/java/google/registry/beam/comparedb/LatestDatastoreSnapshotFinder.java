@@ -24,6 +24,7 @@ import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.gcs.GcsUtils;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.util.Clock;
 import google.registry.util.UtilsModule;
 import java.io.IOException;
@@ -37,6 +38,7 @@ import org.joda.time.Instant;
 import org.joda.time.Interval;
 
 /** Finds the necessary information for loading the most recent Datastore snapshot. */
+@DeleteAfterMigration
 public class LatestDatastoreSnapshotFinder {
   private final String projectId;
   private final GcsUtils gcsUtils;

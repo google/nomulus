@@ -40,6 +40,7 @@ import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogManifest;
@@ -63,6 +64,7 @@ import org.joda.time.DateTime;
     method = Action.Method.POST,
     automaticallyPrintOk = true,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+@DeleteAfterMigration
 public final class ExportCommitLogDiffAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

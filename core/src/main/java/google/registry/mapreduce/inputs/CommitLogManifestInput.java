@@ -18,6 +18,7 @@ import com.google.appengine.tools.mapreduce.Input;
 import com.google.appengine.tools.mapreduce.InputReader;
 import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogManifest;
 import java.util.List;
@@ -25,6 +26,7 @@ import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
 /** Base class for {@link Input} classes that map over {@link CommitLogManifest}. */
+@DeleteAfterMigration
 public class CommitLogManifestInput extends Input<Key<CommitLogManifest>> {
 
   private static final long serialVersionUID = 6744322799131602384L;

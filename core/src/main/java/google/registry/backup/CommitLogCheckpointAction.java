@@ -22,6 +22,7 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.request.Action;
@@ -48,6 +49,7 @@ import org.joda.time.DateTime;
     method = Action.Method.GET,
     automaticallyPrintOk = true,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+@DeleteAfterMigration
 public final class CommitLogCheckpointAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

@@ -26,6 +26,7 @@ import com.google.appengine.api.taskqueue.TaskOptions.Method;
 import com.google.common.flogger.FluentLogger;
 import google.registry.bigquery.CheckedBigquery;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.request.Action;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.Parameter;
@@ -40,6 +41,7 @@ import javax.inject.Inject;
     path = UpdateSnapshotViewAction.PATH,
     method = POST,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+@DeleteAfterMigration
 public class UpdateSnapshotViewAction implements Runnable {
 
   /** Headers for passing parameters into the servlet. */

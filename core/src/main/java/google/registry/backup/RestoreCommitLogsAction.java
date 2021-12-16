@@ -37,6 +37,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
@@ -64,6 +65,7 @@ import org.joda.time.DateTime;
     method = Action.Method.POST,
     automaticallyPrintOk = true,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+@DeleteAfterMigration
 public class RestoreCommitLogsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

@@ -15,10 +15,12 @@
 package google.registry.beam.initsql;
 
 import google.registry.beam.common.RegistryPipelineOptions;
+import google.registry.model.annotations.DeleteAfterMigration;
 import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.Validation;
 
 /** Pipeline options for {@link InitSqlPipeline} */
+@DeleteAfterMigration
 public interface InitSqlPipelineOptions extends RegistryPipelineOptions {
 
   @Description("The root directory of the export to load.")

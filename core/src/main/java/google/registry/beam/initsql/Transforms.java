@@ -37,6 +37,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import google.registry.backup.CommitLogImports;
 import google.registry.backup.VersionedEntity;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
@@ -80,6 +81,7 @@ import org.joda.time.DateTime;
  * {@link PTransform Pipeline transforms} used in pipelines that load from both Datastore export
  * files and Nomulus CommitLog files.
  */
+@DeleteAfterMigration
 public final class Transforms {
 
   private Transforms() {}

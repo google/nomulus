@@ -24,6 +24,7 @@ import com.googlecode.objectify.Key;
 import google.registry.mapreduce.MapreduceRunner;
 import google.registry.mapreduce.inputs.EppResourceInputs;
 import google.registry.model.EppResource;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
@@ -56,6 +57,7 @@ import javax.inject.Inject;
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 // No longer needed in SQL. Subject to future removal.
 @Deprecated
+@DeleteAfterMigration
 public class ResaveAllEppResourcesAction implements Runnable {
 
   @Inject MapreduceRunner mrRunner;

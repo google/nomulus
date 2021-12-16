@@ -14,22 +14,7 @@
 
 package google.registry.model.annotations;
 
-import com.googlecode.objectify.annotation.Entity;
-import google.registry.model.common.EntityGroupRoot;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 /**
- * Annotation for an Objectify {@link Entity} to indicate that it is in the cross-TLD entity group.
- *
- * <p>This means that the entity's <code>@Parent</code> field has to have the value of {@link
- * EntityGroupRoot#getCrossTldKey}.
+ * Annotation to indicate a class that should be deleted after the database migration is complete.
  */
-@DeleteAfterMigration
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE})
-@Inherited
-public @interface InCrossTld {}
+public @interface DeleteAfterMigration {}

@@ -22,6 +22,7 @@ import com.google.api.client.util.Key;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.export.datastore.DatastoreAdmin.Get;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.util.Clock;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +35,7 @@ import org.joda.time.Duration;
  *
  * <p>{@link Operation} instances are parsed from the JSON payload in Datastore response messages.
  */
+@DeleteAfterMigration
 public class Operation extends GenericJson {
 
   private static final String STATE_SUCCESS = "SUCCESSFUL";

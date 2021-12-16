@@ -17,6 +17,7 @@ package google.registry.model;
 import com.google.apphosting.api.ApiProxy;
 import com.google.apphosting.api.ApiProxy.Environment;
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.ofy.ObjectifyService;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -39,6 +40,7 @@ import java.lang.reflect.Proxy;
  * <p>Note that conversion from Objectify objects to Datastore {@code Entities} still requires the
  * Datastore service.
  */
+@DeleteAfterMigration
 public class AppEngineEnvironment {
 
   private Environment environment;

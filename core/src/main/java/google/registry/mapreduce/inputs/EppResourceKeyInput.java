@@ -21,6 +21,7 @@ import com.google.appengine.tools.mapreduce.InputReader;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.index.EppResourceIndexBucket;
 
 /**
@@ -28,6 +29,7 @@ import google.registry.model.index.EppResourceIndexBucket;
  *
  * <p>When mapping over keys we can't distinguish between Objectify polymorphic types.
  */
+@DeleteAfterMigration
 class EppResourceKeyInput<R extends EppResource> extends EppResourceBaseInput<Key<R>> {
 
   private static final long serialVersionUID = -5426821384707653743L;

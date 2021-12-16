@@ -15,6 +15,8 @@
 package google.registry.beam.comparedb;
 
 import google.registry.beam.common.RegistryPipelineOptions;
+import google.registry.model.annotations.DeleteAfterMigration;
 
 /** BEAM pipeline options for {@link ValidateSqlPipeline}. */
+@DeleteAfterMigration
 public interface ValidateSqlPipelineOptions extends RegistryPipelineOptions {}

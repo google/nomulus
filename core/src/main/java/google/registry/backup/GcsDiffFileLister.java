@@ -33,6 +33,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import google.registry.backup.BackupModule.Backups;
 import google.registry.gcs.GcsUtils;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
@@ -44,6 +45,7 @@ import javax.inject.Provider;
 import org.joda.time.DateTime;
 
 /** Utility class to list commit logs diff files stored on GCS. */
+@DeleteAfterMigration
 class GcsDiffFileLister {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

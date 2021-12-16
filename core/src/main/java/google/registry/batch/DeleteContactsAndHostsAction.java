@@ -73,6 +73,7 @@ import google.registry.mapreduce.inputs.EppResourceInputs;
 import google.registry.mapreduce.inputs.NullInput;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
@@ -114,6 +115,7 @@ import org.joda.time.Duration;
     service = Action.Service.BACKEND,
     path = "/_dr/task/deleteContactsAndHosts",
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+@DeleteAfterMigration
 public class DeleteContactsAndHostsAction implements Runnable {
 
   static final String KIND_CONTACT = getKind(ContactResource.class);

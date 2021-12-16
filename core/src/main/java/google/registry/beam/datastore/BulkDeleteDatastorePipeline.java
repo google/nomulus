@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.datastore.v1.Entity;
 import google.registry.config.RegistryEnvironment;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.beam.sdk.Pipeline;
@@ -79,6 +80,7 @@ import org.apache.beam.sdk.values.TupleTagList;
  * types in the Datastore using the {@code --numOfKindsHint} argument. If the default value for this
  * parameter is too low, performance will suffer.
  */
+@DeleteAfterMigration
 public class BulkDeleteDatastorePipeline {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

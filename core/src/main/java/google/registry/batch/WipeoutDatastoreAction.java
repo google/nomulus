@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -45,6 +46,7 @@ import javax.inject.Inject;
     service = Action.Service.BACKEND,
     path = "/_dr/task/wipeOutDatastore",
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+@DeleteAfterMigration
 public class WipeoutDatastoreAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

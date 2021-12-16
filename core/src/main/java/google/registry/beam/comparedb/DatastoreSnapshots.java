@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.backup.VersionedEntity;
 import google.registry.beam.initsql.Transforms;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.Cursor;
 import google.registry.model.contact.ContactHistory;
@@ -51,6 +52,7 @@ import org.apache.beam.sdk.values.TupleTagList;
 import org.joda.time.DateTime;
 
 /** Utilities for loading Datastore snapshots. */
+@DeleteAfterMigration
 public final class DatastoreSnapshots {
 
   private DatastoreSnapshots() {}

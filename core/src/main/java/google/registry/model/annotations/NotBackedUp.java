@@ -24,6 +24,7 @@ import java.lang.annotation.Target;
  * Annotation for an Objectify {@link Entity} to indicate that it should not be backed up by the
  * default Datastore backup configuration (it may be backed up by something else).
  */
+@DeleteAfterMigration
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface NotBackedUp {
