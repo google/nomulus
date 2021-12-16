@@ -138,8 +138,8 @@ def main():
     if args.directory and os.path.exists(dir):
         pr(f'Reusing directory {dir}\n')
         os.chdir(dir)
-        run('git', 'fetch', 'git@github.com:google/nomulus', 'master:master')
-        run('git', 'checkout', 'master')
+        run('git', 'fetch', 'git@github.com:google/nomulus', 'master')
+        run('git', 'checkout', 'origin/master')
     else:
         run('git', 'clone', 'git@github.com:google/nomulus', dir)
         os.chdir(dir)
@@ -175,7 +175,7 @@ def main():
         # Print the list of packages that were removed.
         for package in old_packages:
             if package not in new_packages:
-                pr('removed ', b':'.join(package))
+                pr('removed ', b':'.join(package), '\n')
     else:
         pr('Package versions not updated!\n')
 
