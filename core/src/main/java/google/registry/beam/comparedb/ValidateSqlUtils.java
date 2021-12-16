@@ -306,7 +306,7 @@ final class ValidateSqlUtils {
    *
    * <p>{@link EppResource} entities created by the prober are deleted by a cron job that bypasses
    * the CommitLog mechanism. As a result, their deletions are not propagated to SQL, creating two
-   * types of mismatches: an entity exist in both databases but differ in lastUpdateTime and
+   * types of mismatches: an entity exists in both databases but differs in lastUpdateTime and
    * deletionTime; an entity only exists in the SQL database.
    *
    * <p>In production, there are few placeholder {@link Registrar registrars} that do not exist in
@@ -323,7 +323,7 @@ final class ValidateSqlUtils {
     if (entity instanceof HistoryEntry) {
       HistoryEntry historyEntry = (HistoryEntry) entity;
       if (historyEntry.getRegistrarId().startsWith("prober-")) {
-        // Not all prober entities has "prober-" as registrar prefix.
+        // Not all prober entities have "prober-" as registrar prefix.
         return true;
       }
       if (Objects.equals(historyEntry.getReason(), "Deletion of prober data")) {
@@ -339,7 +339,7 @@ final class ValidateSqlUtils {
         return true;
       }
       if (domainHistory.getDomainRepoId() != null) {
-        // Some synthetic events only has domainRepoId.
+        // Some synthetic events only have domainRepoId.
         String repoId = domainHistory.getDomainRepoId();
         if (Transforms.IGNORED_DOMAINS.contains(repoId)) {
           return true;

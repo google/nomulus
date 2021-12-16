@@ -88,7 +88,7 @@ public class ValidateSqlPipeline {
 
   @VisibleForTesting
   void run(Pipeline pipeline) {
-    // TODO(weiminyu): ensure migration stage is DATA_STORE_PRIMARY or DATA_STORE_PRIMARY_READ_ONLY
+    // TODO(weiminyu): ensure migration stage is DATASTORE_PRIMARY or DATASTORE_PRIMARY_READ_ONLY
     Optional<Lock> lock = acquireCommitLogReplayLock();
     if (lock.isPresent()) {
       logger.atInfo().log("Acquired CommitLog Replay lock.");
