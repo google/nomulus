@@ -395,9 +395,11 @@ public abstract class PollMessage extends ImmutableObject
       super.onLoad();
       // Take the Objectify-specific fields and map them to the SQL-specific fields, if applicable
       if (!isNullOrEmpty(contactPendingActionNotificationResponses)) {
+        contactId = contactPendingActionNotificationResponses.get(0).getId().value;
         pendingActionNotificationResponse = contactPendingActionNotificationResponses.get(0);
       }
       if (!isNullOrEmpty(hostPendingActionNotificationResponses)) {
+        hostId = hostPendingActionNotificationResponses.get(0).nameOrId.value;
         pendingActionNotificationResponse = hostPendingActionNotificationResponses.get(0);
       }
       if (!isNullOrEmpty(contactTransferResponses)) {

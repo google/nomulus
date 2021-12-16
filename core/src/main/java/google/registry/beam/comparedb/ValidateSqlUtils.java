@@ -19,9 +19,14 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
+import google.registry.beam.initsql.Transforms;
+import google.registry.config.RegistryEnvironment;
+import google.registry.model.BackupGroupRoot;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
+import google.registry.model.billing.BillingEvent;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainContent;
@@ -29,6 +34,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.host.HostHistory;
 import google.registry.model.poll.PollMessage;
+import google.registry.model.registrar.Registrar;
 import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.HistoryEntry;
 import java.lang.reflect.Field;
@@ -50,6 +56,10 @@ final class ValidateSqlUtils {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private ValidateSqlUtils() {}
+
+  private static final ImmutableSet<String> PROBER_CELLS = ImmutableSet.of("IQ", "LG", "TL");
+  private static final ImmutableSet<String> PROBER_TYPES =
+      ImmutableSet.of("ANYT", "ANYTES", "CANARY");
 
   /**
    * Query template for finding the median value of the {@code history_revision_id} column in one of
@@ -153,6 +163,9 @@ final class ValidateSqlUtils {
       totalCounters.get(counterKey).inc();
 
       if (entities.size() == 1) {
+        if (isSpecialCaseProberEntity(entities.get(0))) {
+          return;
+        }
         missingCounters.get(counterKey).inc();
         // Temporary debugging help. See logDiff() above.
         if (!logPrinted) {
@@ -203,6 +216,15 @@ final class ValidateSqlUtils {
    */
   static SqlEntity normalizeEppResource(SqlEntity eppResource) {
     try {
+      if (isSpecialCaseProberEntity(eppResource)) {
+        // Clearing some timestamps. See isSpecialCaseProberEntity() for reasons.
+        Field lastUpdateTime = BackupGroupRoot.class.getDeclaredField("updateTimestamp");
+        lastUpdateTime.setAccessible(true);
+        lastUpdateTime.set(eppResource, null);
+        Field deletionTime = EppResource.class.getDeclaredField("deletionTime");
+        deletionTime.setAccessible(true);
+        deletionTime.set(eppResource, null);
+      }
       Field authField =
           eppResource instanceof DomainContent
               ? DomainContent.class.getDeclaredField("authInfo")
@@ -246,6 +268,7 @@ final class ValidateSqlUtils {
         Field domainContent = DomainHistory.class.getDeclaredField("domainContent");
         domainContent.setAccessible(true);
         domainContent.set(historyEntry, null);
+        // Convert empty domainTransactionRecords to null for comparison.
         Field domainTransactionRecords =
             HistoryEntry.class.getDeclaredField("domainTransactionRecords");
         domainTransactionRecords.setAccessible(true);
@@ -253,6 +276,16 @@ final class ValidateSqlUtils {
         if (domainTransactionRecordsValue != null && domainTransactionRecordsValue.isEmpty()) {
           domainTransactionRecords.set(historyEntry, null);
         }
+        // DomainHistory in Datastore does not have the following properties either:
+        Field nsHosts = DomainHistory.class.getDeclaredField("nsHosts");
+        nsHosts.setAccessible(true);
+        nsHosts.set(historyEntry, null);
+        Field dsDataHistories = DomainHistory.class.getDeclaredField("dsDataHistories");
+        dsDataHistories.setAccessible(true);
+        dsDataHistories.set(historyEntry, null);
+        Field gracePeriodHistories = DomainHistory.class.getDeclaredField("gracePeriodHistories");
+        gracePeriodHistories.setAccessible(true);
+        gracePeriodHistories.set(historyEntry, null);
       } else if (historyEntry instanceof ContactHistory) {
         Field contactBase = ContactHistory.class.getDeclaredField("contactBase");
         contactBase.setAccessible(true);
@@ -266,5 +299,87 @@ final class ValidateSqlUtils {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * Returns {@code true} if {@code entity} is created by the prober and needs special treatment.
+   *
+   * <p>{@link EppResource} entities created by the prober are deleted by a cron job that bypasses
+   * the CommitLog mechanism. As a result, their deletions are not propagated to SQL, creating two
+   * types of mismatches: an entity exists in both databases but differs in lastUpdateTime and
+   * deletionTime; an entity only exists in the SQL database.
+   *
+   * <p>In production, there are few placeholder {@link Registrar registrars} that do not exist in
+   * Datastore. They were manually created to in SQL to solve a one-time problem (see b/187946868
+   * for details). They can be ignored in the database comparison.
+   */
+  static boolean isSpecialCaseProberEntity(Object entity) {
+    if (entity instanceof EppResource) {
+      EppResource host = (EppResource) entity;
+      if (host.getPersistedCurrentSponsorRegistrarId().startsWith("prober-")) {
+        return true;
+      }
+    }
+    if (entity instanceof HistoryEntry) {
+      HistoryEntry historyEntry = (HistoryEntry) entity;
+      if (historyEntry.getRegistrarId().startsWith("prober-")) {
+        // Not all prober entities have "prober-" as registrar prefix.
+        return true;
+      }
+      if (Objects.equals(historyEntry.getReason(), "Deletion of prober data")) {
+        // Soft-delete event in Datastore that is not propagated to SQL.
+        return true;
+      }
+    }
+    if (entity instanceof DomainHistory) {
+      DomainHistory domainHistory = (DomainHistory) entity;
+      if (domainHistory.getDomainContent().isPresent()
+          && domainHistory.getDomainContent().get().getDomainName().startsWith("prober-")) {
+        // Asynchronously replicated event in SQL.
+        return true;
+      }
+      if (domainHistory.getDomainRepoId() != null) {
+        // Some synthetic events only have domainRepoId.
+        String repoId = domainHistory.getDomainRepoId();
+        if (Transforms.IGNORED_DOMAINS.contains(repoId)) {
+          return true;
+        }
+        String suffix = repoId.substring(repoId.indexOf('-') + 1);
+        String cell = suffix.substring(0, 2);
+        suffix = suffix.substring(2);
+        if (PROBER_CELLS.contains(cell) && PROBER_TYPES.contains(suffix)) {
+          return true;
+        }
+      }
+    }
+    if (entity instanceof ContactHistory) {
+      if (Transforms.IGNORED_CONTACTS.contains(((ContactHistory) entity).getContactRepoId())) {
+        return true;
+      }
+    }
+    if (entity instanceof HostHistory) {
+      if (Transforms.IGNORED_HOSTS.contains(((HostHistory) entity).getHostRepoId())) {
+        return true;
+      }
+    }
+    if (entity instanceof BillingEvent) {
+      BillingEvent event = (BillingEvent) entity;
+      if (event.getRegistrarId().startsWith("prober-")) {
+        return true;
+      }
+    }
+    if (entity instanceof PollMessage) {
+      if (((PollMessage) entity).getRegistrarId().startsWith("prober-")) {
+        return true;
+      }
+    }
+    if (RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION)
+        && entity instanceof Registrar) {
+      Registrar registrar = (Registrar) entity;
+      if (registrar.getRegistrarId().startsWith("prober-wj-")) {
+        return true;
+      }
+    }
+    return false;
   }
 }
