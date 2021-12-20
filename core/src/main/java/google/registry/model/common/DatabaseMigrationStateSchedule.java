@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryEnvironment;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.replay.SqlOnlyEntity;
 import java.time.Duration;
@@ -39,6 +40,7 @@ import org.joda.time.DateTime;
  * <p>The entity is stored in SQL throughout the entire migration so as to have a single point of
  * access.
  */
+@DeleteAfterMigration
 @Entity
 public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements SqlOnlyEntity {
 
