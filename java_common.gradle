@@ -63,11 +63,6 @@ configurations {
     // See https://issues.apache.org/jira/browse/BEAM-8862
     it.exclude group: 'org.mockito', module: 'mockito-core'
   }
-  all.each {
-    // log4j has high-profile security vulnerabilities. It's a transitive dependency used by some
-    // Apache Beam packages. Excluding it does not impact our troubleshooting needs.
-    it.exclude group: 'org.apache.logging.log4j'
-  }
 }
 
 dependencies {

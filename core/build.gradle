@@ -257,7 +257,7 @@ dependencies {
   compile deps['org.apache.beam:beam-sdks-java-core']
   compile deps['org.apache.beam:beam-sdks-java-extensions-google-cloud-platform-core']
   compile deps['org.apache.beam:beam-sdks-java-io-google-cloud-platform']
-  testCompile deps['org.apache.commons:commons-lang3']
+  compile deps['org.apache.commons:commons-lang3']
   testCompile deps['org.apache.commons:commons-text']
   testCompile deps['org.apache.ftpserver:ftplet-api']
   testCompile deps['org.apache.ftpserver:ftpserver-core']

@@ -25,7 +25,6 @@ import com.google.appengine.api.log.LogService;
 import com.google.appengine.api.log.RequestLogs;
 import com.google.apphosting.api.ApiProxy;
 import com.google.common.collect.ImmutableList;
-import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
 import google.registry.testing.AppEngineExtension;
 import java.util.logging.Level;
@@ -62,13 +61,13 @@ final class RequestStatusCheckerImplTest {
 
   @BeforeEach
   void beforeEach() {
-    LoggerConfig.getConfig(RequestStatusCheckerImpl.class).addHandler(logHandler);
+    JdkLoggerConfig.getConfig(RequestStatusCheckerImpl.class).addHandler(logHandler);
     RequestStatusCheckerImpl.logService = mock(LogService.class);
   }
 
   @AfterEach
   void afterEach() {
-    LoggerConfig.getConfig(RequestStatusCheckerImpl.class).removeHandler(logHandler);
+    JdkLoggerConfig.getConfig(RequestStatusCheckerImpl.class).removeHandler(logHandler);
   }
 
   // If a logId is unrecognized, it could be that the log hasn't been uploaded yet - so we assume

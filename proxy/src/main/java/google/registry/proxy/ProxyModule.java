@@ -28,7 +28,6 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
 import com.google.cloud.storage.StorageOptions;
-import com.google.common.flogger.LoggerConfig;
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
 import dagger.Module;
@@ -45,6 +44,7 @@ import google.registry.proxy.WhoisProtocolModule.WhoisProtocol;
 import google.registry.proxy.handler.ProxyProtocolHandler;
 import google.registry.util.Clock;
 import google.registry.util.GoogleCredentialsBundle;
+import google.registry.util.JdkLoggerConfig;
 import google.registry.util.SystemClock;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
@@ -110,7 +110,7 @@ public class ProxyModule {
    */
   private void configureLogging() {
     // Remove all other handlers on the root logger to avoid double logging.
-    LoggerConfig rootLoggerConfig = LoggerConfig.getConfig("");
+    JdkLoggerConfig rootLoggerConfig = JdkLoggerConfig.getConfig("");
     Arrays.asList(rootLoggerConfig.getHandlers()).forEach(rootLoggerConfig::removeHandler);
 
     // If running on in a non-local environment, use GCP JSON formatter.
@@ -128,10 +128,10 @@ public class ProxyModule {
       // set to Level.FINE if the --log parameter is passed, so that it does not filter out logs
       // that the LoggingHandler writes. Otherwise the logs are silently ignored because the default
       // JUL logger level is Level.INFO.
-      LoggerConfig.getConfig(LoggingHandler.class).setLevel(Level.FINE);
+      JdkLoggerConfig.getConfig(LoggingHandler.class).setLevel(Level.FINE);
       // Log source IP information if --log parameter is passed. This is considered PII and should
       // only be used in non-production environment for debugging purpose.
-      LoggerConfig.getConfig(ProxyProtocolHandler.class).setLevel(Level.FINE);
+      JdkLoggerConfig.getConfig(ProxyProtocolHandler.class).setLevel(Level.FINE);
     }
   }
 

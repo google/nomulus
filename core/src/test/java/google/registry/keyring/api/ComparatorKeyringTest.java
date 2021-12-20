@@ -21,8 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
+import google.registry.util.JdkLoggerConfig;
 import java.io.IOException;
 import java.util.logging.Level;
 import org.bouncycastle.bcpg.BCPGKey;
@@ -78,12 +78,12 @@ class ComparatorKeyringTest {
 
   @BeforeEach
   void beforeEach() {
-    LoggerConfig.getConfig(ComparatorKeyring.class).addHandler(testLogHandler);
+    JdkLoggerConfig.getConfig(ComparatorKeyring.class).addHandler(testLogHandler);
   }
 
   @AfterEach
   void afterEach() {
-    LoggerConfig.getConfig(ComparatorKeyring.class).removeHandler(testLogHandler);
+    JdkLoggerConfig.getConfig(ComparatorKeyring.class).removeHandler(testLogHandler);
   }
 
   @Test
