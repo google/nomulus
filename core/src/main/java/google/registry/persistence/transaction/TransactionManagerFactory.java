@@ -35,7 +35,7 @@ import org.joda.time.DateTime;
 
 /** Factory class to create {@link TransactionManager} instance. */
 // TODO: Rename this to PersistenceFactory and move to persistence package.
-public class TransactionManagerFactory {
+public final class TransactionManagerFactory {
 
   private static final DatastoreTransactionManager ofyTm = createTransactionManager();
 
@@ -46,6 +46,8 @@ public class TransactionManagerFactory {
   @NonFinalForTesting
   private static Supplier<JpaTransactionManager> jpaTm =
       Suppliers.memoize(TransactionManagerFactory::createJpaTransactionManager);
+
+  private static boolean onBeam = false;
 
   private TransactionManagerFactory() {}
 
@@ -85,6 +87,9 @@ public class TransactionManagerFactory {
   public static TransactionManager tm() {
     if (tmForTest.isPresent()) {
       return tmForTest.get();
+    }
+    if (onBeam) {
+      return jpaTm();
     }
     return DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC))
             .getPrimaryDatabase()
@@ -127,6 +132,7 @@ public class TransactionManagerFactory {
   public static void setJpaTmOnBeamWorker(Supplier<JpaTransactionManager> jpaTmSupplier) {
     checkNotNull(jpaTmSupplier, "jpaTmSupplier");
     jpaTm = Suppliers.memoize(jpaTmSupplier::get);
+    onBeam = true;
   }
 
   /**

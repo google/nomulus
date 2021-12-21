@@ -167,13 +167,13 @@ public class RdeIO {
           Optional.ofNullable(key.revision())
               .orElseGet(() -> RdeRevision.getNextRevision(tld, watermark, mode));
       String id = RdeUtil.timestampToId(watermark);
-      String prefix = options.getJobName();
-      String basename = RdeNamingUtils.makeRydeFilename(tld, watermark, mode, 1, revision);
+      String prefix =
+          options.getJobName()
+              + '/'
+              + RdeNamingUtils.makeRydeFilename(tld, watermark, mode, 1, revision);
       if (key.manual()) {
         checkState(key.directoryWithTrailingSlash() != null, "Manual subdirectory not specified");
-        prefix = prefix + "/manual/" + key.directoryWithTrailingSlash() + basename;
-      } else {
-        prefix = prefix + '/' + basename;
+        prefix = "manual/" + key.directoryWithTrailingSlash() + prefix;
       }
       BlobId xmlFilename = BlobId.of(rdeBucket, prefix + ".xml.ghostryde");
       // This file will contain the byte length (ASCII) of the raw unencrypted XML.
