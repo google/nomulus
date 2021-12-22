@@ -497,13 +497,13 @@ public class RdePipelineTest {
 
     verifyFiles(ImmutableMap.of(brdaKey, brdaFragments, rdeKey, rdeFragments), true);
 
-    assertThat(gcsUtils.listFolderObjects("gcs-bucket", "rde-job/"))
+    assertThat(gcsUtils.listFolderObjects("gcs-bucket", "manual/test/rde-job/"))
         .containsExactly(
-            "manual/test/soy_2000-01-01_thin_S1_R0.xml.length",
-            "manual/test/soy_2000-01-01_thin_S1_R0.xml.ghostryde",
-            "manual/test/soy_2000-01-01_full_S1_R0.xml.length",
-            "manual/test/soy_2000-01-01_full_S1_R0.xml.ghostryde",
-            "manual/test/soy_2000-01-01_full_S1_R0-report.xml.ghostryde");
+            "soy_2000-01-01_thin_S1_R0.xml.length",
+            "soy_2000-01-01_thin_S1_R0.xml.ghostryde",
+            "soy_2000-01-01_full_S1_R0.xml.length",
+            "soy_2000-01-01_full_S1_R0.xml.ghostryde",
+            "soy_2000-01-01_full_S1_R0-report.xml.ghostryde");
 
     assertThat(loadCursorTime(CursorType.BRDA)).isEquivalentAccordingToCompareTo(now);
     assertThat(loadRevision(now, THIN)).isEqualTo(0);
@@ -521,7 +521,7 @@ public class RdePipelineTest {
     rdePipeline.persistData(fragments);
     pipeline.run().waitUntilFinish();
 
-    String prefix = manual ? "rde-job/manual/test/" : "rde-job/";
+    String prefix = manual ? "manual/test/rde-job/" : "rde-job/";
     String revision = manual ? "R0" : "R1";
 
     // BRDA
