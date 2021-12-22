@@ -40,7 +40,7 @@ final class GetResourceByKeyCommand implements CommandWithRemoteApi {
   boolean expand;
 
   @Override
-  public void run() throws Exception {
+  public void run() {
     for (String keyString : mainParameters) {
       System.out.println("\n");
       VKey<EppResource> resourceKey =

@@ -17,6 +17,7 @@ package google.registry.module.backend;
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
 import dagger.Lazy;
+import google.registry.batch.BatchModule;
 import google.registry.bigquery.BigqueryModule;
 import google.registry.config.CloudTasksUtilsModule;
 import google.registry.config.CredentialModule;
@@ -55,6 +56,7 @@ import javax.inject.Singleton;
     modules = {
       AuthModule.class,
       BackendRequestComponentModule.class,
+      BatchModule.class,
       BigqueryModule.class,
       ConfigModule.class,
       CloudTasksUtilsModule.class,

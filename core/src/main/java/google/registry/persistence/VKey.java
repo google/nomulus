@@ -142,7 +142,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    * "@ofy:agR0ZXN0cjELEg9FbnRpdHlHcm91cFJvb3QiCWNyb3NzLXRsZAwLEgpUZXN0T2JqZWN0IgNmb28M", where sql
    * key and ofy key values are encoded in Base64.
    */
-  public static <T> VKey<T> create(String keyString) throws Exception {
+  public static <T> VKey<T> create(String keyString) {
     if (!keyString.startsWith(CLASS_TYPE + KV_SEPARATOR)) {
       // to handle the existing ofy key string
       return fromWebsafeKey(keyString);

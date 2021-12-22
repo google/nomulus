@@ -22,7 +22,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
@@ -50,7 +49,7 @@ public class ResaveEntityAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private final Key<ImmutableObject> resourceKey;
+  private final String resourceKey;
   private final DateTime requestedTime;
   private final ImmutableSortedSet<DateTime> resaveTimes;
   private final AsyncTaskEnqueuer asyncTaskEnqueuer;
@@ -58,7 +57,7 @@ public class ResaveEntityAction implements Runnable {
 
   @Inject
   ResaveEntityAction(
-      @Parameter(PARAM_RESOURCE_KEY) Key<ImmutableObject> resourceKey,
+      @Parameter(PARAM_RESOURCE_KEY) String resourceKey,
       @Parameter(PARAM_REQUESTED_TIME) DateTime requestedTime,
       @Parameter(PARAM_RESAVE_TIMES) ImmutableSet<DateTime> resaveTimes,
       AsyncTaskEnqueuer asyncTaskEnqueuer,
@@ -76,15 +75,14 @@ public class ResaveEntityAction implements Runnable {
         "Re-saving entity %s which was enqueued at %s.", resourceKey, requestedTime);
     tm().transact(
             () -> {
-              // TODO(/207363014): figure out if this should modified for vkey string replacement
-              ImmutableObject entity = tm().loadByKey(VKey.from(resourceKey));
+              ImmutableObject entity = tm().loadByKey(VKey.create(resourceKey));
               tm().put(
                       (entity instanceof EppResource)
                           ? ((EppResource) entity).cloneProjectedAtTime(tm().getTransactionTime())
                           : entity);
               if (!resaveTimes.isEmpty()) {
                 asyncTaskEnqueuer.enqueueAsyncResave(
-                    VKey.from(resourceKey), requestedTime, resaveTimes);
+                    VKey.create(resourceKey), requestedTime, resaveTimes);
               }
             });
     response.setPayload("Entity re-saved.");

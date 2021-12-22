@@ -33,10 +33,8 @@ import static google.registry.request.RequestParameters.extractSetOfDatetimePara
 
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.model.ImmutableObject;
 import google.registry.request.Parameter;
 import java.util.Optional;
 import javax.inject.Named;
@@ -79,9 +77,8 @@ public class BatchModule {
 
   @Provides
   @Parameter(PARAM_RESOURCE_KEY)
-  // TODO(b/207363014): figure out if this needs to be modified for vkey string replacement
-  static Key<ImmutableObject> provideResourceKey(HttpServletRequest req) {
-    return Key.create(extractRequiredParameter(req, PARAM_RESOURCE_KEY));
+  static String provideResourceKey(HttpServletRequest req) {
+    return extractRequiredParameter(req, PARAM_RESOURCE_KEY);
   }
 
   @Provides

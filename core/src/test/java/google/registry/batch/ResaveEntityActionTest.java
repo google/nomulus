@@ -33,8 +33,6 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
-import com.googlecode.objectify.Key;
-import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -84,9 +82,7 @@ public class ResaveEntityActionTest {
   }
 
   private void runAction(
-      Key<ImmutableObject> resourceKey,
-      DateTime requestedTime,
-      ImmutableSortedSet<DateTime> resaveTimes) {
+      String resourceKey, DateTime requestedTime, ImmutableSortedSet<DateTime> resaveTimes) {
     ResaveEntityAction action =
         new ResaveEntityAction(
             resourceKey, requestedTime, resaveTimes, asyncTaskEnqueuer, response);
@@ -110,7 +106,10 @@ public class ResaveEntityActionTest {
             DateTime.parse("2017-01-02T10:11:00Z"));
     clock.advanceOneMilli();
     assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("TheRegistrar");
-    runAction(Key.create(domain), DateTime.parse("2016-02-06T10:00:01Z"), ImmutableSortedSet.of());
+    runAction(
+        domain.createVKey().getOfyKey().getString(),
+        DateTime.parse("2016-02-06T10:00:01Z"),
+        ImmutableSortedSet.of());
     DomainBase resavedDomain = loadByEntity(domain);
     assertThat(resavedDomain.getCurrentSponsorRegistrarId()).isEqualTo("NewRegistrar");
     verify(response).setPayload("Entity re-saved.");
@@ -137,7 +136,10 @@ public class ResaveEntityActionTest {
     DateTime requestedTime = clock.nowUtc();
 
     assertThat(domain.getGracePeriods()).isNotEmpty();
-    runAction(Key.create(domain), requestedTime, ImmutableSortedSet.of(requestedTime.plusDays(5)));
+    runAction(
+        domain.createVKey().getOfyKey().getString(),
+        requestedTime,
+        ImmutableSortedSet.of(requestedTime.plusDays(5)));
     DomainBase resavedDomain = loadByEntity(domain);
     assertThat(resavedDomain.getGracePeriods()).isEmpty();
 

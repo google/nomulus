@@ -42,7 +42,7 @@ public final class ResaveEntitiesCommand extends MutatingCommand {
   List<String> mainParameters;
 
   @Override
-  protected void init() throws Exception {
+  protected void init() {
     for (List<String> batch : partition(mainParameters, BATCH_SIZE)) {
       for (String websafeKey : batch) {
         ImmutableObject entity =
