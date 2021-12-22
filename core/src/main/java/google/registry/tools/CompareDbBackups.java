@@ -17,6 +17,7 @@ package google.registry.tools;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.io.File;
 
 /**
@@ -27,6 +28,7 @@ import java.io.File;
  * two-level directory hierarchy with data files in level-db format (output-*) and Datastore
  * metadata files (*.export_metadata).
  */
+@DeleteAfterMigration
 class CompareDbBackups {
   private static final String DS_V3_BACKUP_FILE_PREFIX = "output-";
 

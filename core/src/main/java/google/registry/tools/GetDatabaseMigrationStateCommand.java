@@ -15,12 +15,14 @@
 package google.registry.tools;
 
 import com.beust.jcommander.Parameters;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationStateTransition;
 import google.registry.model.common.TimedTransitionProperty;
 
 /** A command to check the current Registry 3.0 migration state of the database. */
+@DeleteAfterMigration
 @Parameters(separators = " =", commandDescription = "Check current Registry 3.0 migration state")
 public class GetDatabaseMigrationStateCommand implements CommandWithRemoteApi {
 

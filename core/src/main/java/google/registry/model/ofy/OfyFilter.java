@@ -14,6 +14,7 @@
 
 package google.registry.model.ofy;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.io.IOException;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -23,6 +24,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
 /** A filter that statically registers types with Objectify. */
+@DeleteAfterMigration
 public class OfyFilter implements Filter {
 
   @Override

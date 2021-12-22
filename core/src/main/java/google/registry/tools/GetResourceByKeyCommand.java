@@ -20,12 +20,12 @@ import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.EppResource;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.persistence.VKey;
 import java.util.List;
 
-/**
- * Command to get info on a Datastore resource by websafe key.
- */
+/** Command to get info on a Datastore resource by websafe key. */
+@DeleteAfterMigration
 @Parameters(separators = " =", commandDescription = "Fetch a Datastore resource by websafe key")
 final class GetResourceByKeyCommand implements CommandWithRemoteApi {
 

@@ -17,6 +17,7 @@ package google.registry.model.ofy;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Objectify;
 import google.registry.model.BackupGroupRoot;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Arrays;
 import java.util.Map;
 import org.joda.time.DateTime;
@@ -25,6 +26,7 @@ import org.joda.time.DateTime;
  * Exception when trying to write to Datastore with a timestamp that is inconsistent with a partial
  * ordering on transactions that touch the same entities.
  */
+@DeleteAfterMigration
 class TimestampInversionException extends RuntimeException {
 
   static String getFileAndLine(StackTraceElement callsite) {

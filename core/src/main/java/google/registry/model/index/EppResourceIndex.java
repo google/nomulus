@@ -24,12 +24,14 @@ import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.EppResource;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.replay.DatastoreOnlyEntity;
 
 /** An index that allows for quick enumeration of all EppResource entities (e.g. via map reduce). */
 @ReportedOn
 @Entity
+@DeleteAfterMigration
 public class EppResourceIndex extends BackupGroupRoot implements DatastoreOnlyEntity {
 
   @Id String id;

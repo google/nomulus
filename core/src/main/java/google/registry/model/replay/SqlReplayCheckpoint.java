@@ -17,12 +17,14 @@ package google.registry.model.replay;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.CrossTldSingleton;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import org.joda.time.DateTime;
 
 @Entity
+@DeleteAfterMigration
 public class SqlReplayCheckpoint extends CrossTldSingleton implements SqlOnlyEntity {
 
   @Column(nullable = false)

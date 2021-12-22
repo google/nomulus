@@ -18,8 +18,10 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyFactory;
 import com.googlecode.objectify.impl.ObjectifyImpl;
+import google.registry.model.annotations.DeleteAfterMigration;
 
 /** Registry-specific Objectify subclass that exposes the keys used in the current session. */
+@DeleteAfterMigration
 public class SessionKeyExposingObjectify extends ObjectifyImpl<SessionKeyExposingObjectify> {
 
   public SessionKeyExposingObjectify(ObjectifyFactory factory) {

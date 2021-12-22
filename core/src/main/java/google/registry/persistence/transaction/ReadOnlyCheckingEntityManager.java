@@ -16,6 +16,7 @@ package google.registry.persistence.transaction;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.assertNotReadOnlyMode;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.List;
 import java.util.Map;
 import javax.persistence.EntityGraph;
@@ -34,6 +35,7 @@ import javax.persistence.criteria.CriteriaUpdate;
 import javax.persistence.metamodel.Metamodel;
 
 /** An {@link EntityManager} that throws exceptions on write actions if in read-only mode. */
+@DeleteAfterMigration
 public class ReadOnlyCheckingEntityManager implements EntityManager {
 
   private final EntityManager delegate;

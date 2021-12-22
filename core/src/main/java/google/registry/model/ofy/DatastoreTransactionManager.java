@@ -33,6 +33,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Result;
 import com.googlecode.objectify.cmd.Query;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainHistory;
@@ -55,6 +56,7 @@ import javax.persistence.NonUniqueResultException;
 import org.joda.time.DateTime;
 
 /** Datastore implementation of {@link TransactionManager}. */
+@DeleteAfterMigration
 public class DatastoreTransactionManager implements TransactionManager {
 
   private Ofy injectedOfy;

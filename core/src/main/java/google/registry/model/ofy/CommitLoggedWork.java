@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.util.Clock;
 import java.util.HashSet;
 import java.util.Map;
@@ -39,6 +40,7 @@ import java.util.function.Supplier;
 import org.joda.time.DateTime;
 
 /** Wrapper for {@link Supplier} that associates a time with each attempt. */
+@DeleteAfterMigration
 class CommitLoggedWork<R> implements Runnable {
 
   private final Supplier<R> work;

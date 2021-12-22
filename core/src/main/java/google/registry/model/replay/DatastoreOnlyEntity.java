@@ -14,9 +14,11 @@
 
 package google.registry.model.replay;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Optional;
 
 /** An entity that is only stored in Datastore, that should not be replayed to SQL. */
+@DeleteAfterMigration
 public interface DatastoreOnlyEntity extends DatastoreEntity {
   @Override
   default Optional<SqlEntity> toSqlEntity() {

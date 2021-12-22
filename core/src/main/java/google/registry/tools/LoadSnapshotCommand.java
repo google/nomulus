@@ -26,12 +26,14 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import google.registry.bigquery.BigqueryUtils.SourceFormat;
 import google.registry.export.AnnotatedEntities;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 /** Command to load Datastore snapshots into Bigquery. */
+@DeleteAfterMigration
 @Parameters(separators = " =", commandDescription = "Load Datastore snapshot into Bigquery")
 final class LoadSnapshotCommand extends BigqueryCommand {
 

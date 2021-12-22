@@ -31,6 +31,7 @@ import com.googlecode.objectify.annotation.Id;
 import google.registry.config.RegistryConfig;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.replay.DatastoreOnlyEntity;
@@ -51,6 +52,7 @@ import org.joda.time.DateTime;
  */
 @Entity
 @NotBackedUp(reason = Reason.COMMIT_LOGS)
+@DeleteAfterMigration
 public class CommitLogBucket extends ImmutableObject implements Buildable, DatastoreOnlyEntity {
 
   /**

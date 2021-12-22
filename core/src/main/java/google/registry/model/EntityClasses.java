@@ -15,6 +15,7 @@
 package google.registry.model;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.EntityGroupRoot;
@@ -45,6 +46,7 @@ import google.registry.model.server.ServerSecret;
 import google.registry.model.tld.Registry;
 
 /** Sets of classes of the Objectify-registered entities in use throughout the model. */
+@DeleteAfterMigration
 public final class EntityClasses {
 
   /** Set of entity classes. */

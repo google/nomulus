@@ -14,9 +14,11 @@
 
 package google.registry.model.replay;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Optional;
 
 /** An entity that has the same Java object representation in SQL and Datastore. */
+@DeleteAfterMigration
 public interface DatastoreAndSqlEntity extends DatastoreEntity, SqlEntity {
 
   @Override

@@ -16,6 +16,7 @@ package google.registry.model.ofy;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.annotations.DeleteAfterMigration;
 
 /**
  * Contains the mapping from class names to SQL-replay-write priorities.
@@ -26,6 +27,7 @@ import com.google.common.collect.ImmutableMap;
  * values represent an earlier write (and later delete). Higher-valued classes can have foreign keys
  * on lower-valued classes, but not vice versa.
  */
+@DeleteAfterMigration
 public class EntityWritePriorities {
 
   /**

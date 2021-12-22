@@ -19,12 +19,14 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableSortedMap;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.tools.params.TransitionListParameter.MigrationStateTransitions;
 import org.joda.time.DateTime;
 
 /** Command to set the Registry 3.0 database migration state schedule. */
+@DeleteAfterMigration
 @Parameters(
     separators = " =",
     commandDescription = "Set the current database migration state schedule.")

@@ -29,6 +29,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.BackupGroupRoot;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.VirtualEntity;
 import java.io.Serializable;
@@ -40,6 +41,7 @@ import java.util.Map;
 import java.util.Set;
 
 /** Visualizes the schema parentage tree. */
+@DeleteAfterMigration
 @Parameters(commandDescription = "Generate a model schema file")
 final class GetSchemaTreeCommand implements Command {
 

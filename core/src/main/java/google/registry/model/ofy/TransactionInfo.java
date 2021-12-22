@@ -26,10 +26,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Map;
 import org.joda.time.DateTime;
 
 /** Metadata for an {@link Ofy} transaction that saves commit logs. */
+@DeleteAfterMigration
 public class TransactionInfo {
 
   @VisibleForTesting

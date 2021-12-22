@@ -37,6 +37,7 @@ import com.googlecode.objectify.ObjectifyFactory;
 import com.googlecode.objectify.cmd.Deleter;
 import com.googlecode.objectify.cmd.Loader;
 import com.googlecode.objectify.cmd.Saver;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.ofy.ReadOnlyWork.KillTransactionException;
@@ -59,6 +60,7 @@ import org.joda.time.Duration;
  * simpler to wrap {@link Objectify} rather than extend it because this way we can remove some
  * methods that we don't really want exposed and add some shortcuts.
  */
+@DeleteAfterMigration
 public class Ofy {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

@@ -23,6 +23,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.googlecode.objectify.Key;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.persistence.transaction.Transaction;
 import org.joda.time.DateTime;
@@ -31,11 +32,12 @@ import org.joda.time.DateTime;
  * Objectify translator for {@code ImmutableSortedMap<DateTime, Key<CommitLogManifest>>} fields.
  *
  * <p>This translator is responsible for doing three things:
+ *
  * <ol>
- * <li>Translating the data into two lists of {@code Date} and {@code Key} objects, in a manner
- *   similar to {@code @Mapify}.
- * <li>Inserting a key to the transaction's {@link CommitLogManifest} on save.
- * <li>Truncating the map to include only the last key per day for the last 30 days.
+ *   <li>Translating the data into two lists of {@code Date} and {@code Key} objects, in a manner
+ *       similar to {@code @Mapify}.
+ *   <li>Inserting a key to the transaction's {@link CommitLogManifest} on save.
+ *   <li>Truncating the map to include only the last key per day for the last 30 days.
  * </ol>
  *
  * <p>This allows you to have a field on your model object that tracks historical revisions of
@@ -46,6 +48,7 @@ import org.joda.time.DateTime;
  *
  * @see google.registry.model.EppResource
  */
+@DeleteAfterMigration
 public final class CommitLogRevisionsTranslatorFactory
     extends ImmutableSortedMapTranslatorFactory<DateTime, Key<CommitLogManifest>> {
 

@@ -16,6 +16,7 @@ package google.registry.persistence.transaction;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.assertNotReadOnlyMode;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -29,6 +30,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
 
 /** A {@link TypedQuery <T>} that throws exceptions on write actions if in read-only mode. */
+@DeleteAfterMigration
 class ReadOnlyCheckingTypedQuery<T> implements TypedQuery<T> {
 
   private final TypedQuery<T> delegate;
