@@ -42,6 +42,7 @@ import google.registry.request.Modules.UrlFetchTransportModule;
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
 import google.registry.tools.javascrap.BackfillRegistryLocksCommand;
+import google.registry.tools.javascrap.CompareEscrowDepositsCommand;
 import google.registry.tools.javascrap.DeleteContactByRoidCommand;
 import google.registry.tools.javascrap.HardDeleteHostCommand;
 import google.registry.util.UtilsModule;
@@ -92,6 +93,8 @@ interface RegistryToolComponent {
   void inject(CheckDomainClaimsCommand command);
 
   void inject(CheckDomainCommand command);
+
+  void inject(CompareEscrowDepositsCommand command);
 
   void inject(CountDomainsCommand command);
 
