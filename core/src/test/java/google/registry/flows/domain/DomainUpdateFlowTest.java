@@ -99,7 +99,9 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
+import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
@@ -949,6 +951,13 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setParent(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
             .setRegistrarId("NewRegistrar")
             .setMsg("The registry administrator has added the status(es) [serverHold].")
+            .setResponseData(
+                ImmutableList.of(
+                    DomainPendingActionNotificationResponse.create(
+                        "example.tld",
+                        true,
+                        Trid.create("ABC-12345", "server-trid"),
+                        clock.nowUtc())))
             .build());
   }
 
@@ -983,6 +992,13 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setMsg(
                 "The registry administrator has removed the status(es) [serverHold,"
                     + " serverTransferProhibited, serverUpdateProhibited].")
+            .setResponseData(
+                ImmutableList.of(
+                    DomainPendingActionNotificationResponse.create(
+                        "example.tld",
+                        true,
+                        Trid.create("ABC-12345", "server-trid"),
+                        clock.nowUtc())))
             .build());
   }
 
@@ -1015,6 +1031,13 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 "The registry administrator has added the status(es) [serverHold,"
                     + " serverRenewProhibited] and removed the status(es)"
                     + " [serverTransferProhibited].")
+            .setResponseData(
+                ImmutableList.of(
+                    DomainPendingActionNotificationResponse.create(
+                        "example.tld",
+                        true,
+                        Trid.create("ABC-12345", "server-trid"),
+                        clock.nowUtc())))
             .build());
   }
 
