@@ -43,6 +43,7 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDel
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
@@ -77,9 +78,11 @@ import google.registry.model.domain.secdns.SecDnsUpdateExtension;
 import google.registry.model.domain.superuser.DomainUpdateSuperuserExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Registry;
@@ -149,6 +152,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
   @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
+  @Inject Trid trid;
   @Inject DomainHistory.Builder historyBuilder;
   @Inject DnsQueue dnsQueue;
   @Inject EppResponse.Builder responseBuilder;
@@ -360,6 +364,10 @@ public final class DomainUpdateFlow implements TransactionalFlow {
             .setEventTime(now)
             .setRegistrarId(existingDomain.getCurrentSponsorRegistrarId())
             .setMsg(msg)
+            .setResponseData(
+                ImmutableList.of(
+                    DomainPendingActionNotificationResponse.create(
+                        existingDomain.getDomainName(), true, trid, now)))
             .build());
   }
 }

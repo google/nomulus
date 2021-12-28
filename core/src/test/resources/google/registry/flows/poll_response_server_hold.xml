@@ -8,6 +8,16 @@
       <msg>The registry administrator has added the status(es) [serverHold].
       </msg>
     </msgQ>
+    <resData>
+      <domain:panData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name paResult="1">example.tld</domain:name>
+        <domain:paTRID>
+          <clTRID>ABC-12345</clTRID>
+          <svTRID>server-trid</svTRID>
+        </domain:paTRID>
+        <domain:paDate>2000-06-02T13:00:00Z</domain:paDate>
+      </domain:panData>
+    </resData>
     <trID>
       <clTRID>ABC-12345</clTRID>
       <svTRID>server-trid</svTRID>
