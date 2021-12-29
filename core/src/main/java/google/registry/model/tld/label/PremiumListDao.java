@@ -28,8 +28,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Streams;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.util.NonFinalForTesting;
 import java.math.BigDecimal;
@@ -56,8 +56,7 @@ public class PremiumListDao {
    * <p>This is cached for a shorter duration because we need to periodically reload this entity to
    * check if a new revision has been published, and if so, then use that.
    *
-   * <p>We also cache the absence of premium lists with a given name to avoid unnecessary pointless
-   * lookups. Note that this cache is only applicable to PremiumList objects stored in SQL.
+   * <p>We also cache the absence of premium lists with a given name to avoid pointless lookups.
    */
   @NonFinalForTesting
   static LoadingCache<String, Optional<PremiumList>> premiumListCache =
@@ -170,11 +169,10 @@ public class PremiumListDao {
 
               if (!isNullOrEmpty(premiumList.getLabelsToPrices())) {
                 ImmutableSet.Builder<PremiumEntry> entries = new ImmutableSet.Builder<>();
-                premiumList.getLabelsToPrices().entrySet().stream()
+                premiumList
+                    .getLabelsToPrices()
                     .forEach(
-                        entry ->
-                            entries.add(
-                                PremiumEntry.create(revisionId, entry.getValue(), entry.getKey())));
+                        (key, value) -> entries.add(PremiumEntry.create(revisionId, value, key)));
                 jpaTm().insertAll(entries.build());
               }
             });
@@ -217,7 +215,7 @@ public class PremiumListDao {
    *
    * <p>This is an expensive operation and should only be used when the entire list is required.
    */
-  public static Iterable<PremiumEntry> loadPremiumEntries(PremiumList premiumList) {
+  public static List<PremiumEntry> loadPremiumEntries(PremiumList premiumList) {
     return jpaTm()
         .transact(
             () ->
@@ -254,15 +252,14 @@ public class PremiumListDao {
    *
    * <p>This is an expensive operation and should only be used when the entire list is required.
    */
-  public static Iterable<PremiumEntry> loadAllPremiumEntries(String premiumListName) {
+  public static ImmutableList<PremiumEntry> loadAllPremiumEntries(String premiumListName) {
     PremiumList premiumList =
         getLatestRevision(premiumListName)
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(
                         String.format("No premium list with name %s.", premiumListName)));
-    Iterable<PremiumEntry> entries = loadPremiumEntries(premiumList);
-    return Streams.stream(entries)
+    return loadPremiumEntries(premiumList).stream()
         .map(
             premiumEntry ->
                 new PremiumEntry.Builder()

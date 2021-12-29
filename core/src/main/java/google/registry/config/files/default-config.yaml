@@ -221,6 +221,17 @@ hibernate:
   hikariMinimumIdle: 1
   hikariMaximumPoolSize: 10
   hikariIdleTimeout: 300000
+  # The batch size is basically the number of insertions / updates in a single
+  # transaction that will be batched together into one INSERT/UPDATE statement.
+  # A larger batch size is useful when inserting or updating many entities in a
+  # single transaction. Hibernate docs
+  # (https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html)
+  # recommend between 10 and 50.
+  jdbcBatchSize: 50
+  # The fetch size is the number of entities retrieved at a time from the
+  # database cursor. Here we set a small default geared toward Nomulus server
+  # transactions. Large queries can override the defaults on a per-query basis.
+  jdbcFetchSize: 20
 
 cloudSql:
   # jdbc url for the Cloud SQL database.

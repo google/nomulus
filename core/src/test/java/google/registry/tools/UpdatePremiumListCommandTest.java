@@ -14,17 +14,20 @@
 
 package google.registry.tools;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.model.tld.label.PremiumListDao;
 import java.io.File;
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -46,12 +49,10 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     Optional<PremiumList> list = PremiumListDao.getLatestRevision(TLD_TEST);
     // ensure that no premium list is created before running the command
     assertThat(list.isPresent()).isTrue();
-    // ensure that there's value in existing premium list;
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
-    ImmutableSet<String> entries = command.getExistingPremiumEntry(list.get());
-    assertThat(entries.size()).isEqualTo(1);
     // data from @beforeEach of CreateOrUpdatePremiumListCommandTestCase.java
-    assertThat(entries.contains("doge,USD 9090.00")).isTrue();
+    assertThat(PremiumListDao.loadPremiumEntries(list.get()))
+        .comparingElementsUsing(immutableObjectCorrespondence("revisionId"))
+        .containsExactly(PremiumEntry.create(0L, new BigDecimal("9090.00"), "doge"));
   }
 
   @Test
@@ -77,11 +78,9 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     command.inputFile = Paths.get(tmpFile.getPath());
     runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
 
-    ImmutableSet<String> entries =
-        command.getExistingPremiumEntry(PremiumListDao.getLatestRevision(TLD_TEST).get());
-    assertThat(entries.size()).isEqualTo(1);
-    // verify that list is updated; cannot use only string since price is formatted;
-    assertThat(entries.contains("eth,USD 9999.00")).isTrue();
+    assertThat(PremiumListDao.loadAllPremiumEntries(TLD_TEST))
+        .comparingElementsUsing(immutableObjectCorrespondence("revisionId"))
+        .containsExactly(PremiumEntry.create(0L, new BigDecimal("9999.00"), "eth"));
   }
 
   @Test
@@ -98,11 +97,9 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     command.inputFile = Paths.get(newPremiumFile.getPath());
     runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
 
-    ImmutableSet<String> entries =
-        command.getExistingPremiumEntry(PremiumListDao.getLatestRevision(TLD_TEST).get());
-    assertThat(entries.size()).isEqualTo(1);
-    // verify that list is updated; cannot use only string since price is formatted;
-    assertThat(entries.contains("eth,USD 9999.00")).isTrue();
+    assertThat(PremiumListDao.loadAllPremiumEntries(TLD_TEST))
+        .comparingElementsUsing(immutableObjectCorrespondence("revisionId"))
+        .containsExactly(PremiumEntry.create(0L, new BigDecimal("9999.00"), "eth"));
   }
 
   @Test
@@ -116,12 +113,11 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
 
     // assert all three lines from premiumTerms are added
-    ImmutableSet<String> entries =
-        command.getExistingPremiumEntry(PremiumListDao.getLatestRevision(TLD_TEST).get());
-    assertThat(entries.size()).isEqualTo(3);
-    assertThat(entries.contains("foo,USD 9000.00")).isTrue();
-    assertThat(entries.contains("doge,USD 100.00")).isTrue();
-    assertThat(entries.contains("elon,USD 2021.00")).isTrue();
+    assertThat(
+            PremiumListDao.loadAllPremiumEntries(TLD_TEST).stream()
+                .map(Object::toString)
+                .collect(toImmutableList()))
+        .containsExactly("foo, 9000.00", "doge, 100.00", "elon, 2021.00");
   }
 
   @Test

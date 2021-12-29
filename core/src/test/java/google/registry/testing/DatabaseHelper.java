@@ -60,7 +60,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
 import com.google.common.net.InetAddresses;
 import com.googlecode.objectify.Key;
 import google.registry.dns.writer.VoidDnsWriter;
@@ -1264,7 +1263,7 @@ public class DatabaseHelper {
 
   /** Returns the entire map of {@link PremiumEntry}s for the given {@link PremiumList}. */
   public static ImmutableMap<String, PremiumEntry> loadPremiumEntries(PremiumList premiumList) {
-    return Streams.stream(PremiumListDao.loadAllPremiumEntries(premiumList.getName()))
+    return PremiumListDao.loadAllPremiumEntries(premiumList.getName()).stream()
         .collect(toImmutableMap(PremiumEntry::getDomainLabel, Function.identity()));
   }
 

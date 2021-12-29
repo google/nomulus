@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.Streams;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.model.tld.label.PremiumListDao;
@@ -40,7 +39,7 @@ public class GetPremiumListCommand implements CommandWithRemoteApi {
         System.out.printf(
             "%s:\n%s\n",
             premiumListName,
-            Streams.stream(PremiumListDao.loadAllPremiumEntries(premiumListName))
+            PremiumListDao.loadAllPremiumEntries(premiumListName).stream()
                 .sorted(Comparator.comparing(PremiumEntry::getDomainLabel))
                 .map(premiumEntry -> premiumEntry.toString(premiumList.get().getCurrency()))
                 .collect(Collectors.joining("\n")));

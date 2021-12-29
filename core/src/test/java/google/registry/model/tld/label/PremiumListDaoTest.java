@@ -14,6 +14,7 @@
 
 package google.registry.model.tld.label;
 
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
@@ -24,14 +25,18 @@ import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.Duration.standardDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.flogger.FluentLogger;
 import google.registry.persistence.transaction.TransactionManagerUtil;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestCacheExtension;
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +45,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PremiumListDao}. */
 public class PremiumListDaoTest {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final FakeClock fakeClock = new FakeClock();
 
@@ -258,6 +265,27 @@ public class PremiumListDaoTest {
     TransactionManagerUtil.transactIfJpaTm(
         () -> PremiumListDao.save("testname", USD, ImmutableList.of("test,USD 1")));
     assertThat(PremiumListDao.premiumListCache.getIfPresent("testname")).isNull();
+  }
+
+  @Test
+  void testSave_largeSize_savedQuickly() {
+    Stopwatch stopwatch = Stopwatch.createStarted();
+    ImmutableMap<String, BigDecimal> prices =
+        IntStream.range(0, 20000).boxed().collect(toImmutableMap(String::valueOf, BigDecimal::new));
+    PremiumList list =
+        new PremiumList.Builder()
+            .setName("testname")
+            .setCurrency(USD)
+            .setLabelsToPrices(prices)
+            .setCreationTimestamp(fakeClock.nowUtc())
+            .build();
+    PremiumListDao.save(list);
+    long duration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
+    if (duration >= 6000) {
+      // Don't fail directly since we can't rely on what sort of machines the test is running on
+      logger.atSevere().log(
+          "Expected premium list update to take 2-3 seconds but it took %d ms", duration);
+    }
   }
 
   private static Money moneyOf(CurrencyUnit unit, double amount) {

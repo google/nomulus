@@ -21,7 +21,6 @@ import static com.google.common.hash.Funnels.stringFunnel;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Streams;
 import com.google.common.hash.BloomFilter;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
@@ -86,9 +85,8 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
    */
   public synchronized ImmutableMap<String, BigDecimal> getLabelsToPrices() {
     if (labelsToPrices == null) {
-      Iterable<PremiumEntry> entries = PremiumListDao.loadAllPremiumEntries(name);
       labelsToPrices =
-          Streams.stream(entries)
+          PremiumListDao.loadAllPremiumEntries(name).stream()
               .collect(
                   toImmutableMap(
                       PremiumEntry::getDomainLabel,

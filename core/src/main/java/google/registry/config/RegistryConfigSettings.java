@@ -120,6 +120,8 @@ public class RegistryConfigSettings {
     public String hikariMinimumIdle;
     public String hikariMaximumPoolSize;
     public String hikariIdleTimeout;
+    public String jdbcBatchSize;
+    public String jdbcFetchSize;
   }
 
   /** Configuration for Cloud SQL. */
