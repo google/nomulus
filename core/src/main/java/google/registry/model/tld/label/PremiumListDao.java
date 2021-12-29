@@ -19,6 +19,7 @@ import static google.registry.config.RegistryConfig.getDomainLabelListCacheDurat
 import static google.registry.config.RegistryConfig.getSingletonCachePersistDuration;
 import static google.registry.config.RegistryConfig.getStaticPremiumListMaxCachedEntries;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
@@ -156,24 +157,22 @@ public class PremiumListDao {
     return save(PremiumListUtils.parseToPremiumList(name, currencyUnit, inputData));
   }
 
+  /** Saves the given premium list (and its premium list entries) to Cloud SQL. */
   public static PremiumList save(PremiumList premiumList) {
-    jpaTm().transact(() -> jpaTm().insert(premiumList));
-    premiumListCache.invalidate(premiumList.getName());
     jpaTm()
         .transact(
             () -> {
-              if (premiumList.getLabelsToPrices() != null) {
-                Optional<PremiumList> savedPremiumList =
-                    PremiumListDao.getLatestRevision(premiumList.getName());
+              jpaTm().insert(premiumList);
+              jpaTm().getEntityManager().flush(); // This populates the revisionId.
+              long revisionId = premiumList.getRevisionId();
+
+              if (!isNullOrEmpty(premiumList.getLabelsToPrices())) {
                 ImmutableSet.Builder<PremiumEntry> entries = new ImmutableSet.Builder<>();
                 premiumList.getLabelsToPrices().entrySet().stream()
                     .forEach(
                         entry ->
                             entries.add(
-                                PremiumEntry.create(
-                                    savedPremiumList.get().getRevisionId(),
-                                    entry.getValue(),
-                                    entry.getKey())));
+                                PremiumEntry.create(revisionId, entry.getValue(), entry.getKey())));
                 jpaTm().insertAll(entries.build());
               }
             });
