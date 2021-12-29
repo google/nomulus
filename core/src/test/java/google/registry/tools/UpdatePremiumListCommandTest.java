@@ -85,6 +85,27 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   }
 
   @Test
+  void commandRun_successUpdateList_whenExistingListIsEmpty() throws Exception {
+    File existingPremiumFile = tmpDir.resolve(TLD_TEST + ".txt").toFile();
+    Files.asCharSink(existingPremiumFile, UTF_8).write("");
+
+    File newPremiumFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
+    String newPremiumListData = "eth,USD 9999";
+    Files.asCharSink(newPremiumFile, UTF_8).write(newPremiumListData);
+
+    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
+    // data come from @beforeEach of CreateOrUpdatePremiumListCommandTestCase.java
+    command.inputFile = Paths.get(newPremiumFile.getPath());
+    runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
+
+    ImmutableSet<String> entries =
+        command.getExistingPremiumEntry(PremiumListDao.getLatestRevision(TLD_TEST).get());
+    assertThat(entries.size()).isEqualTo(1);
+    // verify that list is updated; cannot use only string since price is formatted;
+    assertThat(entries.contains("eth,USD 9999.00")).isTrue();
+  }
+
+  @Test
   void commandRun_successUpdateMultiLineList() throws Exception {
     File tmpFile = tmpDir.resolve(TLD_TEST + ".txt").toFile();
     String premiumTerms = "foo,USD 9000\ndoge,USD 100\nelon,USD 2021";
@@ -112,7 +133,7 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     command.inputFile = tmpPath;
     command.name = TLD_TEST;
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
-    assertThat(thrown).hasMessageThat().contains("Input cannot be empty");
+    assertThat(thrown).hasMessageThat().isEqualTo("New premium list data cannot be empty");
   }
 
   @Test
