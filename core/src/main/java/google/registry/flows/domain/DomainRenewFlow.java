@@ -135,12 +135,12 @@ public final class DomainRenewFlow implements TransactionalFlow {
   @Inject DomainRenewFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(FeeRenewCommandExtension.class, MetadataExtension.class);
     flowCustomLogic.beforeValidation();
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
     verifyRegistrarIsActive(registrarId);
+    extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     Renew command = (Renew) resourceCommand;
     // Loads the target resource if it exists

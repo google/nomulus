@@ -139,14 +139,14 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   @Inject DomainTransferRequestFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(
         DomainTransferRequestSuperuserExtension.class,
         FeeTransferCommandExtension.class,
         MetadataExtension.class);
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(gainingClientId);
     verifyRegistrarIsActive(gainingClientId);
+    extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
     Optional<DomainTransferRequestSuperuserExtension> superuserExtension =

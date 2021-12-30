@@ -91,11 +91,11 @@ public final class DomainInfoFlow implements Flow {
   DomainInfoFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(FeeInfoCommandExtensionV06.class);
     flowCustomLogic.beforeValidation();
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     DateTime now = clock.nowUtc();
     DomainBase domain = verifyExistence(
         DomainBase.class, targetId, loadByForeignKey(DomainBase.class, targetId, now));

@@ -82,8 +82,8 @@ public final class DomainClaimsCheckFlow implements Flow {
   @Override
   public EppResponse run() throws EppException {
     extensionManager.register(LaunchCheckExtension.class, AllocationTokenExtension.class);
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     if (eppInput.getSingleExtension(AllocationTokenExtension.class).isPresent()) {
       throw new DomainClaimsCheckNotAllowedWithAllocationTokens();
     }

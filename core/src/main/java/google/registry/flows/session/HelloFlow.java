@@ -27,7 +27,7 @@ import javax.inject.Inject;
  *
  * @error {@link google.registry.flows.FlowUtils.GenericXmlSyntaxErrorException}
  */
-public class HelloFlow implements Flow {
+public final class HelloFlow implements Flow {
 
   @Inject ExtensionManager extensionManager;
   @Inject Clock clock;

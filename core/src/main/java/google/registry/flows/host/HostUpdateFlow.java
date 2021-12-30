@@ -125,10 +125,10 @@ public final class HostUpdateFlow implements TransactionalFlow {
   @Inject HostUpdateFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     Update command = (Update) resourceCommand;
     Change change = command.getInnerChange();
     String suppliedNewHostName = change.getFullyQualifiedHostName();

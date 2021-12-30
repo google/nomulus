@@ -168,8 +168,8 @@ public final class DomainUpdateFlow implements TransactionalFlow {
         SecDnsUpdateExtension.class,
         DomainUpdateSuperuserExtension.class);
     flowCustomLogic.beforeValidation();
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     Update command = cloneAndLinkReferences((Update) resourceCommand, now);
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);

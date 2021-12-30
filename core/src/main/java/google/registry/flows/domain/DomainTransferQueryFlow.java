@@ -67,9 +67,9 @@ public final class DomainTransferQueryFlow implements Flow {
   @Inject DomainTransferQueryFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
-    extensionManager.validate();  // There are no legal extensions for this flow.
+  public EppResponse run() throws EppException {
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate(); // There are no legal extensions for this flow.
     DateTime now = clock.nowUtc();
     DomainBase domain = loadAndVerifyExistence(DomainBase.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, domain);

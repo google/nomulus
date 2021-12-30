@@ -138,12 +138,12 @@ public final class DomainDeleteFlow implements TransactionalFlow {
   @Inject DomainDeleteFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(
         MetadataExtension.class, SecDnsCreateExtension.class, DomainDeleteSuperuserExtension.class);
     flowCustomLogic.beforeValidation();
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     // Loads the target resource if it exists
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);

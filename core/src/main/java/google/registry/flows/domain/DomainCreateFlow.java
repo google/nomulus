@@ -198,7 +198,7 @@ import org.joda.time.Duration;
  * @error {@link DomainPricingLogic.AllocationTokenInvalidForPremiumNameException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_CREATE)
-public class DomainCreateFlow implements TransactionalFlow {
+public final class DomainCreateFlow implements TransactionalFlow {
 
   /** Anchor tenant creates should always be for 2 years, since they get 2 years free. */
   private static final int ANCHOR_TENANT_CREATE_VALID_YEARS = 2;
@@ -219,7 +219,7 @@ public class DomainCreateFlow implements TransactionalFlow {
   @Inject DomainCreateFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(
         FeeCreateCommandExtension.class,
         SecDnsCreateExtension.class,
@@ -227,9 +227,9 @@ public class DomainCreateFlow implements TransactionalFlow {
         LaunchCreateExtension.class,
         AllocationTokenExtension.class);
     flowCustomLogic.beforeValidation();
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
     verifyRegistrarIsActive(registrarId);
+    extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     DomainCommand.Create command = cloneAndLinkReferences((Create) resourceCommand, now);
     Period period = command.getPeriod();

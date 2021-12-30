@@ -65,10 +65,10 @@ public final class ContactInfoFlow implements Flow {
   ContactInfoFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     DateTime now = clock.nowUtc();
-    extensionManager.validate(); // There are no legal extensions for this flow.
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate(); // There are no legal extensions for this flow.
     ContactResource contact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     if (!isSuperuser) {
       verifyResourceOwnership(registrarId, contact);

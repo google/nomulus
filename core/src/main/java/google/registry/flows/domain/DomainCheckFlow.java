@@ -135,8 +135,8 @@ public final class DomainCheckFlow implements Flow {
     extensionManager.register(
         FeeCheckCommandExtension.class, LaunchCheckExtension.class, AllocationTokenExtension.class);
     flowCustomLogic.beforeValidation();
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     ImmutableList<String> domainNames = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(domainNames, maxChecks);
     DateTime now = clock.nowUtc();

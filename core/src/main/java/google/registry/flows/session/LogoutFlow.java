@@ -30,7 +30,7 @@ import javax.inject.Inject;
  *
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  */
-public class LogoutFlow implements Flow {
+public final class LogoutFlow implements Flow {
 
   @Inject ExtensionManager extensionManager;
   @Inject @RegistrarId String registrarId;
@@ -39,9 +39,9 @@ public class LogoutFlow implements Flow {
   @Inject LogoutFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
-    extensionManager.validate();  // There are no legal extensions for this flow.
+  public EppResponse run() throws EppException {
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate(); // There are no legal extensions for this flow.
     sessionMetadata.invalidate();
     return responseBuilder.setResultFromCode(SUCCESS_AND_CLOSE).build();
   }

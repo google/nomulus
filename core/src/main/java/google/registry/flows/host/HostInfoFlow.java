@@ -62,8 +62,8 @@ public final class HostInfoFlow implements Flow {
 
   @Override
   public EppResponse run() throws EppException {
-    extensionManager.validate();  // There are no legal extensions for this flow.
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate(); // There are no legal extensions for this flow.
     validateHostName(targetId);
     DateTime now = clock.nowUtc();
     HostResource host = loadAndVerifyExistence(HostResource.class, targetId, now);
