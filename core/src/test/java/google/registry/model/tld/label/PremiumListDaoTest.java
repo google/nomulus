@@ -22,6 +22,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.Duration.standardDays;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -237,6 +238,15 @@ public class PremiumListDaoTest {
     assertThat(PremiumListDao.getPremiumPrice("premlist", "gold")).hasValue(moneyOf(JPY, 1000));
     assertThat(PremiumListDao.getPremiumPrice("premlist", "palladium"))
         .hasValue(moneyOf(JPY, 15000));
+  }
+
+  @Test
+  void testSave_throwsOnEmptyInputData() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> PremiumListDao.save("test-list", CurrencyUnit.GBP, ImmutableList.of()));
+    assertThat(thrown).hasMessageThat().isEqualTo("New premium list data cannot be empty");
   }
 
   @Test

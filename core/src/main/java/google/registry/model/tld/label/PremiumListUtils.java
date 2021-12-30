@@ -14,7 +14,6 @@
 
 package google.registry.model.tld.label;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
@@ -38,7 +37,6 @@ public class PremiumListUtils {
             .setCreationTimestamp(DateTime.now(UTC))
             .build();
     ImmutableMap<String, PremiumEntry> prices = partialPremiumList.parse(inputData);
-    checkArgument(inputData.size() > 0, "Input cannot be empty");
     Map<String, BigDecimal> priceAmounts = Maps.transformValues(prices, PremiumEntry::getValue);
     return partialPremiumList.asBuilder().setLabelsToPrices(priceAmounts).build();
   }

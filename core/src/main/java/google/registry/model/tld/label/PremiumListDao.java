@@ -14,6 +14,7 @@
 
 package google.registry.model.tld.label;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
 import static google.registry.config.RegistryConfig.getSingletonCachePersistDuration;
@@ -154,6 +155,7 @@ public class PremiumListDao {
   }
 
   public static PremiumList save(String name, CurrencyUnit currencyUnit, List<String> inputData) {
+    checkArgument(!inputData.isEmpty(), "New premium list data cannot be empty");
     return save(PremiumListUtils.parseToPremiumList(name, currencyUnit, inputData));
   }
 
