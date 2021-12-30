@@ -92,10 +92,10 @@ public final class HostDeleteFlow implements TransactionalFlow {
   HostDeleteFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
     checkLinkedDomains(targetId, now, HostResource.class, DomainBase::getNameservers);

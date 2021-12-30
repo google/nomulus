@@ -128,14 +128,14 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
   @Inject DomainRestoreRequestFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(
         FeeUpdateCommandExtension.class,
         MetadataExtension.class,
         RgpUpdateExtension.class);
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
     verifyRegistrarIsActive(registrarId);
+    extensionManager.validate();
     Update command = (Update) resourceCommand;
     DateTime now = tm().getTransactionTime();
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);

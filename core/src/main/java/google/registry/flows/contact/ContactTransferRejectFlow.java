@@ -72,10 +72,10 @@ public final class ContactTransferRejectFlow implements TransactionalFlow {
   @Inject ContactTransferRejectFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, existingContact);

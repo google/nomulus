@@ -88,10 +88,10 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
   @Inject DomainTransferRejectFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
     Registry registry = Registry.get(existingDomain.getTld());

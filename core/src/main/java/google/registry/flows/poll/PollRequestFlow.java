@@ -47,7 +47,7 @@ import org.joda.time.DateTime;
  *
  * @error {@link PollRequestFlow.UnexpectedMessageIdException}
  */
-public class PollRequestFlow implements Flow {
+public final class PollRequestFlow implements Flow {
 
   @Inject ExtensionManager extensionManager;
   @Inject @RegistrarId String registrarId;
@@ -57,9 +57,9 @@ public class PollRequestFlow implements Flow {
   @Inject PollRequestFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
-    extensionManager.validate();  // There are no legal extensions for this flow.
+  public EppResponse run() throws EppException {
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate(); // There are no legal extensions for this flow.
     if (!messageId.isEmpty()) {
       throw new UnexpectedMessageIdException();
     }

@@ -63,9 +63,9 @@ public final class ContactTransferQueryFlow implements Flow {
   @Inject ContactTransferQueryFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
-    extensionManager.validate();  // There are no legal extensions for this flow.
+  public EppResponse run() throws EppException {
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate(); // There are no legal extensions for this flow.
     ContactResource contact =
         loadAndVerifyExistence(ContactResource.class, targetId, clock.nowUtc());
     verifyOptionalAuthInfo(authInfo, contact);

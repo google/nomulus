@@ -131,6 +131,17 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @TestOfyAndSql
+  void testNotLoggedIn_takesPrecedenceOverUndeclaredExtensions() {
+    // Attempt to use the fee extension, but there is no login session and no supported extensions.
+    setEppInput("domain_check_fee_v06.xml", ImmutableMap.of("CURRENCY", "USD"));
+    sessionMetadata.setRegistrarId(null);
+    sessionMetadata.setServiceExtensionUris(ImmutableSet.of());
+    // NotLoggedIn should be thrown, not UndeclaredServiceExtensionException.
+    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @TestOfyAndSql
   void testSuccess_nothingExists() throws Exception {
     doCheckTest(
         create(true, "example1.tld", null),

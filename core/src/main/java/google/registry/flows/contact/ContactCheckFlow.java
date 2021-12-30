@@ -56,9 +56,9 @@ public final class ContactCheckFlow implements Flow {
   @Inject ContactCheckFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
-    extensionManager.validate();  // There are no legal extensions for this flow.
+  public EppResponse run() throws EppException {
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate(); // There are no legal extensions for this flow.
     ImmutableList<String> targetIds = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(targetIds, maxChecks);
     ImmutableSet<String> existingIds =

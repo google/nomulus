@@ -74,14 +74,14 @@ public final class ContactTransferApproveFlow implements TransactionalFlow {
   @Inject ContactTransferApproveFlow() {}
 
   /**
-   * <p>The logic in this flow, which handles client approvals, very closely parallels the logic in
+   * The logic in this flow, which handles client approvals, very closely parallels the logic in
    * {@link ContactResource#cloneProjectedAtTime} which handles implicit server approvals.
    */
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, existingContact);

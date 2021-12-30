@@ -100,10 +100,10 @@ public final class HostCreateFlow implements TransactionalFlow {
   HostCreateFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     Create command = (Create) resourceCommand;
     DateTime now = tm().getTransactionTime();
     verifyResourceDoesNotExist(HostResource.class, targetId, now, registrarId);

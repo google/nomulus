@@ -86,10 +86,10 @@ public final class DomainTransferCancelFlow implements TransactionalFlow {
   @Inject DomainTransferCancelFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, existingDomain);

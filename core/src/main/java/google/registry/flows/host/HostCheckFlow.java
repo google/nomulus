@@ -56,9 +56,9 @@ public final class HostCheckFlow implements Flow {
   @Inject HostCheckFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
-    extensionManager.validate();  // There are no legal extensions for this flow.
+  public EppResponse run() throws EppException {
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate(); // There are no legal extensions for this flow.
     ImmutableList<String> hostnames = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(hostnames, maxChecks);
     ImmutableSet<String> existingIds =

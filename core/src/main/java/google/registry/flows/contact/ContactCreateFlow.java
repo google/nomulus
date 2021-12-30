@@ -70,10 +70,10 @@ public final class ContactCreateFlow implements TransactionalFlow {
   @Inject ContactCreateFlow() {}
 
   @Override
-  public final EppResponse run() throws EppException {
+  public EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
-    extensionManager.validate();
     validateRegistrarIsLoggedIn(registrarId);
+    extensionManager.validate();
     Create command = (Create) resourceCommand;
     DateTime now = tm().getTransactionTime();
     verifyResourceDoesNotExist(ContactResource.class, targetId, now, registrarId);
