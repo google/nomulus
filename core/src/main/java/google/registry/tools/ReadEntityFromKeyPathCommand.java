@@ -25,6 +25,7 @@ import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.domain.DomainBase;
 import google.registry.persistence.VKey;
 import google.registry.util.NonFinalForTesting;
@@ -40,6 +41,7 @@ import java.util.List;
  * <p>The key path is the value of column __key__.path of the entity's BigQuery table. Its value is
  * converted from the entity's key.
  */
+@DeleteAfterMigration
 abstract class ReadEntityFromKeyPathCommand<T> extends MutatingCommand {
 
   @Parameter(

@@ -28,6 +28,7 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.appengine.api.datastore.TransactionOptions;
 import com.google.common.collect.ImmutableList;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -35,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 
 /** A proxy for {@link AsyncDatastoreService} that exposes call counts. */
+@DeleteAfterMigration
 public class RequestCapturingAsyncDatastoreService implements AsyncDatastoreService {
 
   private final AsyncDatastoreService delegate;

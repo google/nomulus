@@ -19,12 +19,14 @@ import static com.google.common.base.Predicates.subtypeOf;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.collect.Ordering;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 /** Utility methods for getting the version of the model schema from the model code. */
+@DeleteAfterMigration
 public final class SchemaVersion {
 
   /**

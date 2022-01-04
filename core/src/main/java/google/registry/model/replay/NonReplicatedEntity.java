@@ -14,6 +14,7 @@
 
 package google.registry.model.replay;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Optional;
 
 /**
@@ -21,6 +22,7 @@ import java.util.Optional;
  *
  * <p>We expect that this is a result of the entity being dually-written.
  */
+@DeleteAfterMigration
 public interface NonReplicatedEntity extends DatastoreEntity, SqlEntity {
 
   @Override

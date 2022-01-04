@@ -19,6 +19,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.BackupGroupRoot;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.replay.DatastoreOnlyEntity;
 import javax.annotation.Nullable;
 
@@ -37,6 +38,7 @@ import javax.annotation.Nullable;
  * entity group for the single namespace where global data applicable for all TLDs lived.
  */
 @Entity
+@DeleteAfterMigration
 public class EntityGroupRoot extends BackupGroupRoot implements DatastoreOnlyEntity {
 
   @SuppressWarnings("unused")

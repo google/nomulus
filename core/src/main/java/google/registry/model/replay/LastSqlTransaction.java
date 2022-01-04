@@ -22,9 +22,11 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 
 /** Datastore entity to keep track of the last SQL transaction imported into the datastore. */
 @Entity
+@DeleteAfterMigration
 public class LastSqlTransaction extends ImmutableObject implements DatastoreOnlyEntity {
 
   /** The key for this singleton. */

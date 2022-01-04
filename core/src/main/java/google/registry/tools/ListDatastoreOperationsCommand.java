@@ -20,6 +20,7 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import google.registry.export.datastore.DatastoreAdmin;
 import google.registry.export.datastore.DatastoreAdmin.ListOperations;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.util.Clock;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -28,6 +29,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /** Command that lists Datastore operations. */
+@DeleteAfterMigration
 @Parameters(separators = " =", commandDescription = "List Datastore operations.")
 public class ListDatastoreOperationsCommand implements Command {
 

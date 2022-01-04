@@ -14,10 +14,12 @@
 
 package google.registry.model.ofy;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.util.Clock;
 import java.util.function.Supplier;
 
 /** Wrapper for {@link Supplier} that disallows mutations and fails the transaction at the end. */
+@DeleteAfterMigration
 class ReadOnlyWork<R> extends CommitLoggedWork<R> {
 
   ReadOnlyWork(Supplier<R> work, Clock clock) {

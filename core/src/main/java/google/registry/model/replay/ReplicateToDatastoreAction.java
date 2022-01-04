@@ -27,6 +27,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
@@ -53,6 +54,7 @@ import org.joda.time.Duration;
     automaticallyPrintOk = true,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 @VisibleForTesting
+@DeleteAfterMigration
 public class ReplicateToDatastoreAction implements Runnable {
   public static final String PATH = "/_dr/cron/replicateToDatastore";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

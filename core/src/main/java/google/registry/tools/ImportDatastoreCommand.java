@@ -22,6 +22,7 @@ import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import google.registry.export.datastore.DatastoreAdmin;
 import google.registry.export.datastore.Operation;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
@@ -35,6 +36,7 @@ import org.joda.time.Duration;
  * href="http://playbooks/domain_registry/procedures/backup-restore-testing.md">the playbook</a> for
  * the entire process.
  */
+@DeleteAfterMigration
 @Parameters(separators = " =", commandDescription = "Imports a backup of the Datastore.")
 public class ImportDatastoreCommand extends ConfirmingCommand {
 

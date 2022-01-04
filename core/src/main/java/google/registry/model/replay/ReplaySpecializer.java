@@ -14,6 +14,7 @@
 
 package google.registry.model.replay;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.persistence.VKey;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -25,6 +26,7 @@ import java.lang.reflect.Method;
  * not directly present in the other database. This class allows us to do that by using reflection
  * to invoke special class methods if they are present.
  */
+@DeleteAfterMigration
 public class ReplaySpecializer {
 
   public static void beforeSqlDelete(VKey<?> key) {

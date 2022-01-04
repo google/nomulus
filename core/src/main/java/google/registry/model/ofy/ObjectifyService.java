@@ -35,6 +35,7 @@ import google.registry.config.RegistryEnvironment;
 import google.registry.model.Buildable;
 import google.registry.model.EntityClasses;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.translators.BloomFilterOfStringTranslatorFactory;
 import google.registry.model.translators.CidrAddressBlockTranslatorFactory;
 import google.registry.model.translators.CommitLogRevisionsTranslatorFactory;
@@ -52,6 +53,7 @@ import google.registry.model.translators.VKeyTranslatorFactory;
  * objects. The class contains a static initializer to call factory().register(...) on all
  * persistable objects in this package.
  */
+@DeleteAfterMigration
 public class ObjectifyService {
 
   /** A singleton instance of our Ofy wrapper. */

@@ -21,13 +21,15 @@ import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Result;
 import com.googlecode.objectify.cmd.Saver;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Arrays;
 import java.util.Map;
 
 /**
- * A Saver that forwards to {@code ofy().save()}, but can be augmented via subclassing to
- * do custom processing on the entities to be saved prior to their saving.
+ * A Saver that forwards to {@code ofy().save()}, but can be augmented via subclassing to do custom
+ * processing on the entities to be saved prior to their saving.
  */
+@DeleteAfterMigration
 abstract class AugmentedSaver implements Saver {
   private final Saver delegate = ofy().save();
 

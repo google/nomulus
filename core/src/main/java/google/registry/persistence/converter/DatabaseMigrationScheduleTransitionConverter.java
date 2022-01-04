@@ -15,6 +15,7 @@
 package google.registry.persistence.converter;
 
 import com.google.common.collect.Maps;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationStateTransition;
@@ -23,6 +24,7 @@ import javax.persistence.Converter;
 import org.joda.time.DateTime;
 
 /** JPA converter for {@link DatabaseMigrationStateSchedule} transitions. */
+@DeleteAfterMigration
 @Converter(autoApply = true)
 public class DatabaseMigrationScheduleTransitionConverter
     extends TimedTransitionPropertyConverterBase<MigrationState, MigrationStateTransition> {

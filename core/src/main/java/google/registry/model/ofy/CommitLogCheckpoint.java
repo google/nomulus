@@ -25,6 +25,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.replay.DatastoreOnlyEntity;
@@ -45,6 +46,7 @@ import org.joda.time.DateTime;
  */
 @Entity
 @NotBackedUp(reason = Reason.COMMIT_LOGS)
+@DeleteAfterMigration
 public class CommitLogCheckpoint extends ImmutableObject implements DatastoreOnlyEntity {
 
   /** Shared singleton parent entity for commit log checkpoints. */

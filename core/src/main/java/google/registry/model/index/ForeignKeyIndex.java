@@ -43,6 +43,7 @@ import com.googlecode.objectify.annotation.Index;
 import google.registry.config.RegistryConfig;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.EppResource;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
@@ -65,6 +66,7 @@ import org.joda.time.Duration;
  * the foreign key string. The instance is never deleted, but it is updated if a newer entity
  * becomes the active entity.
  */
+@DeleteAfterMigration
 public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroupRoot {
 
   /** The {@link ForeignKeyIndex} type for {@link ContactResource} entities. */

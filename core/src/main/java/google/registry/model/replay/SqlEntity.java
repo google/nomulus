@@ -16,6 +16,7 @@ package google.registry.model.replay;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Optional;
 
 /**
@@ -25,6 +26,7 @@ import java.util.Optional;
  * <p>This will be used when replaying SQL transactions into Datastore, during the second,
  * SQL-primary, phase of the migration from Datastore to SQL.
  */
+@DeleteAfterMigration
 public interface SqlEntity {
 
   Optional<DatastoreEntity> toDatastoreEntity();

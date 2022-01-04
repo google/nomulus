@@ -19,11 +19,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.SchemaVersion;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
 /** Generates the schema file used for model versioning. */
+@DeleteAfterMigration
 @Parameters(commandDescription = "Generate a model schema file")
 final class GetSchemaCommand implements Command {
 

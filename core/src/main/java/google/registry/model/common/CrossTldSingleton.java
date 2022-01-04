@@ -20,11 +20,13 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.InCrossTld;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 
 /** A singleton entity in Datastore. */
+@DeleteAfterMigration
 @MappedSuperclass
 @InCrossTld
 public abstract class CrossTldSingleton extends ImmutableObject {

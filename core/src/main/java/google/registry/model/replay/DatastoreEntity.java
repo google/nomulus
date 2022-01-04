@@ -14,6 +14,7 @@
 
 package google.registry.model.replay;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Optional;
 
 /**
@@ -24,6 +25,7 @@ import java.util.Optional;
  * transactions and data into the secondary SQL store during the first, Datastore-primary, phase of
  * the migration.
  */
+@DeleteAfterMigration
 public interface DatastoreEntity {
 
   Optional<SqlEntity> toSqlEntity();

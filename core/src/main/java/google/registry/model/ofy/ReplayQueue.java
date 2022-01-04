@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.replay.DatastoreEntity;
 import google.registry.model.replay.ReplaySpecializer;
 import google.registry.persistence.VKey;
@@ -34,6 +35,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  *
  * <p>This code is to be removed when the actual replay cron job is implemented.
  */
+@DeleteAfterMigration
 public class ReplayQueue {
 
   static ConcurrentLinkedQueue<ImmutableMap<Key<?>, Object>> queue =
