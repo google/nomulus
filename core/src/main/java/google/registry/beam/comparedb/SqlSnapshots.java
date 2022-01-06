@@ -14,15 +14,22 @@
 
 package google.registry.beam.comparedb;
 
+import static com.google.common.base.Preconditions.checkState;
 import static google.registry.beam.comparedb.ValidateSqlUtils.createSqlEntityTupleTag;
 import static google.registry.beam.comparedb.ValidateSqlUtils.getMedianIdForHistoryTable;
 
+import com.google.auto.value.AutoValue;
+import com.google.common.base.Strings;
 import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Streams;
 import google.registry.beam.common.RegistryJpaIO;
+import google.registry.beam.common.RegistryJpaIO.Read;
+import google.registry.model.EppResource;
+import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.bulkquery.BulkQueryEntities;
@@ -50,8 +57,10 @@ import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
+import google.registry.util.DateTimeUtils;
 import java.io.Serializable;
 import java.util.Optional;
+import javax.persistence.Entity;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.Flatten;
@@ -65,6 +74,7 @@ import org.apache.beam.sdk.values.PCollectionList;
 import org.apache.beam.sdk.values.PCollectionTuple;
 import org.apache.beam.sdk.values.TypeDescriptor;
 import org.apache.beam.sdk.values.TypeDescriptors;
+import org.joda.time.DateTime;
 
 /**
  * Utilities for loading SQL snapshots.
@@ -113,28 +123,48 @@ public final class SqlSnapshots {
   public static PCollectionTuple loadCloudSqlSnapshotByType(
       Pipeline pipeline,
       ImmutableSet<Class<? extends SqlEntity>> sqlEntityTypes,
-      Optional<String> snapshotId) {
+      Optional<String> snapshotId,
+      Optional<DateTime> compareStartTime) {
     PCollectionTuple perTypeSnapshots = PCollectionTuple.empty(pipeline);
     for (Class<? extends SqlEntity> clazz : sqlEntityTypes) {
       if (clazz == DomainBase.class) {
         perTypeSnapshots =
             perTypeSnapshots.and(
                 createSqlEntityTupleTag(DomainBase.class),
-                loadAndAssembleDomainBase(pipeline, snapshotId));
+                loadAndAssembleDomainBase(pipeline, snapshotId, compareStartTime));
         continue;
       }
       if (clazz == DomainHistory.class) {
         perTypeSnapshots =
             perTypeSnapshots.and(
                 createSqlEntityTupleTag(DomainHistory.class),
-                loadAndAssembleDomainHistory(pipeline, snapshotId));
+                loadAndAssembleDomainHistory(pipeline, snapshotId, compareStartTime));
         continue;
       }
       if (clazz == ContactHistory.class) {
         perTypeSnapshots =
             perTypeSnapshots.and(
                 createSqlEntityTupleTag(ContactHistory.class),
-                loadContactHistory(pipeline, snapshotId));
+                loadContactHistory(pipeline, snapshotId, compareStartTime));
+        continue;
+      }
+      if (clazz == HostHistory.class) {
+        perTypeSnapshots =
+            perTypeSnapshots.and(
+                createSqlEntityTupleTag(HostHistory.class),
+                loadHostHistory(
+                    pipeline, snapshotId, compareStartTime.orElse(DateTimeUtils.START_OF_TIME)));
+        continue;
+      }
+      if (EppResource.class.isAssignableFrom(clazz) && compareStartTime.isPresent()) {
+        perTypeSnapshots =
+            perTypeSnapshots.and(
+                createSqlEntityTupleTag(clazz),
+                pipeline.apply(
+                    "SQL Load " + clazz.getSimpleName(),
+                    buildEppResourceQueryWithTimeFilter(
+                            clazz, SqlEntity.class, snapshotId, compareStartTime.get())
+                        .withSnapshot(snapshotId.orElse(null))));
         continue;
       }
       perTypeSnapshots =
@@ -155,20 +185,33 @@ public final class SqlSnapshots {
    * @see BulkQueryEntities
    */
   public static PCollection<SqlEntity> loadAndAssembleDomainBase(
-      Pipeline pipeline, Optional<String> snapshotId) {
+      Pipeline pipeline, Optional<String> snapshotId, Optional<DateTime> compareStartTime) {
     PCollection<KV<String, Serializable>> baseObjects =
-        readAllAndAssignKey(pipeline, DomainBaseLite.class, DomainBaseLite::getRepoId, snapshotId);
+        readAllAndAssignKey(
+            pipeline,
+            DomainBaseLite.class,
+            DomainBaseLite::getRepoId,
+            snapshotId,
+            compareStartTime);
     PCollection<KV<String, Serializable>> gracePeriods =
-        readAllAndAssignKey(pipeline, GracePeriod.class, GracePeriod::getDomainRepoId, snapshotId);
+        readAllAndAssignKey(
+            pipeline,
+            GracePeriod.class,
+            GracePeriod::getDomainRepoId,
+            snapshotId,
+            compareStartTime);
     PCollection<KV<String, Serializable>> delegationSigners =
         readAllAndAssignKey(
             pipeline,
             DelegationSignerData.class,
             DelegationSignerData::getDomainRepoId,
-            snapshotId);
+            snapshotId,
+            compareStartTime);
     PCollection<KV<String, Serializable>> domainHosts =
-        readAllAndAssignKey(pipeline, DomainHost.class, DomainHost::getDomainRepoId, snapshotId);
+        readAllAndAssignKey(
+            pipeline, DomainHost.class, DomainHost::getDomainRepoId, snapshotId, compareStartTime);
 
+    DateTime nullableCompareStartTime = compareStartTime.orElse(null);
     return PCollectionList.of(
             ImmutableList.of(baseObjects, gracePeriods, delegationSigners, domainHosts))
         .apply("SQL Merge DomainBase parts", Flatten.pCollections())
@@ -184,6 +227,14 @@ public final class SqlSnapshots {
                     TypedClassifier partsByType = new TypedClassifier(kv.getValue());
                     ImmutableSet<DomainBaseLite> baseObjects =
                         partsByType.getAllOf(DomainBaseLite.class);
+                    if (nullableCompareStartTime != null) {
+                      Verify.verify(
+                          baseObjects.size() <= 1,
+                          "Found duplicate DomainBaseLite object per repoId: " + kv.getKey());
+                      if (baseObjects.isEmpty()) {
+                        return;
+                      }
+                    }
                     Verify.verify(
                         baseObjects.size() == 1,
                         "Expecting one DomainBaseLite object per repoId: " + kv.getKey());
@@ -202,19 +253,20 @@ public final class SqlSnapshots {
   /**
    * Loads all {@link ContactHistory} entities from the database.
    *
-   * <p>This method uses two queries to load data in parallel. This is a performance optimization
-   * specifically for the production database.
+   * <p>This method uses two queries to load data in parallel. This is a
+   * performancDatabaseMigrationStateSchedulee optimization specifically for the production
+   * database.
    */
-  static PCollection<SqlEntity> loadContactHistory(Pipeline pipeline, Optional<String> snapshotId) {
-    long medianId =
-        getMedianIdForHistoryTable("ContactHistory")
-            .orElseThrow(
-                () -> new IllegalStateException("Not a valid database: no ContactHistory."));
+  static PCollection<SqlEntity> loadContactHistory(
+      Pipeline pipeline, Optional<String> snapshotId, Optional<DateTime> compareStartTime) {
+    PartitionedQuery partitionedQuery =
+        buildPartitonedHistoryQuery(ContactHistory.class, compareStartTime);
     PCollection<SqlEntity> part1 =
         pipeline.apply(
             "SQL Load ContactHistory first half",
             RegistryJpaIO.read(
-                    String.format("select c from ContactHistory c where id <= %s", medianId),
+                    partitionedQuery.firstHalfQuery(),
+                    partitionedQuery.parameters(),
                     false,
                     SqlEntity.class::cast)
                 .withSnapshot(snapshotId.orElse(null)));
@@ -222,13 +274,27 @@ public final class SqlSnapshots {
         pipeline.apply(
             "SQL Load ContactHistory second half",
             RegistryJpaIO.read(
-                    String.format("select c from ContactHistory c where id > %s", medianId),
+                    partitionedQuery.secondHalfQuery(),
+                    partitionedQuery.parameters(),
                     false,
                     SqlEntity.class::cast)
                 .withSnapshot(snapshotId.orElse(null)));
     return PCollectionList.of(part1)
         .and(part2)
         .apply("Combine ContactHistory parts", Flatten.pCollections());
+  }
+
+  /** Loads all {@link HostHistory} entities from the database. */
+  static PCollection<SqlEntity> loadHostHistory(
+      Pipeline pipeline, Optional<String> snapshotId, DateTime compareStartTime) {
+    return pipeline.apply(
+        "SQL Load HostHistory",
+        RegistryJpaIO.read(
+                "select c from HostHistory c where :compareStartTime  < modificationTime",
+                ImmutableMap.of("compareStartTime", compareStartTime),
+                false,
+                SqlEntity.class::cast)
+            .withSnapshot(snapshotId.orElse(null)));
   }
 
   /**
@@ -240,16 +306,15 @@ public final class SqlSnapshots {
    * @see BulkQueryEntities
    */
   static PCollection<SqlEntity> loadAndAssembleDomainHistory(
-      Pipeline pipeline, Optional<String> snapshotId) {
-    long medianId =
-        getMedianIdForHistoryTable("DomainHistory")
-            .orElseThrow(
-                () -> new IllegalStateException("Not a valid database: no DomainHistory."));
+      Pipeline pipeline, Optional<String> snapshotId, Optional<DateTime> compareStartTime) {
+    PartitionedQuery partitionedQuery =
+        buildPartitonedHistoryQuery(DomainHistoryLite.class, compareStartTime);
     PCollection<KV<String, Serializable>> baseObjectsPart1 =
         queryAndAssignKey(
             pipeline,
             "first half",
-            String.format("select c from DomainHistory c where id <= %s", medianId),
+            partitionedQuery.firstHalfQuery(),
+            partitionedQuery.parameters(),
             DomainHistoryLite.class,
             compose(DomainHistoryLite::getDomainHistoryId, DomainHistoryId::toString),
             snapshotId);
@@ -257,7 +322,8 @@ public final class SqlSnapshots {
         queryAndAssignKey(
             pipeline,
             "second half",
-            String.format("select c from DomainHistory c where id > %s", medianId),
+            partitionedQuery.secondHalfQuery(),
+            partitionedQuery.parameters(),
             DomainHistoryLite.class,
             compose(DomainHistoryLite::getDomainHistoryId, DomainHistoryId::toString),
             snapshotId);
@@ -266,26 +332,31 @@ public final class SqlSnapshots {
             pipeline,
             GracePeriodHistory.class,
             compose(GracePeriodHistory::getDomainHistoryId, DomainHistoryId::toString),
-            snapshotId);
+            snapshotId,
+            compareStartTime);
     PCollection<KV<String, Serializable>> delegationSigners =
         readAllAndAssignKey(
             pipeline,
             DomainDsDataHistory.class,
             compose(DomainDsDataHistory::getDomainHistoryId, DomainHistoryId::toString),
-            snapshotId);
+            snapshotId,
+            compareStartTime);
     PCollection<KV<String, Serializable>> domainHosts =
         readAllAndAssignKey(
             pipeline,
             DomainHistoryHost.class,
             compose(DomainHistoryHost::getDomainHistoryId, DomainHistoryId::toString),
-            snapshotId);
+            snapshotId,
+            compareStartTime);
     PCollection<KV<String, Serializable>> transactionRecords =
         readAllAndAssignKey(
             pipeline,
             DomainTransactionRecord.class,
             compose(DomainTransactionRecord::getDomainHistoryId, DomainHistoryId::toString),
-            snapshotId);
+            snapshotId,
+            compareStartTime);
 
+    DateTime nullableCompareStartTime = compareStartTime.orElse(null);
     return PCollectionList.of(
             ImmutableList.of(
                 baseObjectsPart1,
@@ -307,6 +378,15 @@ public final class SqlSnapshots {
                     TypedClassifier partsByType = new TypedClassifier(kv.getValue());
                     ImmutableSet<DomainHistoryLite> baseObjects =
                         partsByType.getAllOf(DomainHistoryLite.class);
+                    if (nullableCompareStartTime != null) {
+                      Verify.verify(
+                          baseObjects.size() <= 1,
+                          "Found duplicate DomainHistoryLite object per domainHistoryId: "
+                              + kv.getKey());
+                      if (baseObjects.isEmpty()) {
+                        return;
+                      }
+                    }
                     Verify.verify(
                         baseObjects.size() == 1,
                         "Expecting one DomainHistoryLite object per domainHistoryId: "
@@ -328,12 +408,19 @@ public final class SqlSnapshots {
       Pipeline pipeline,
       Class<R> type,
       SerializableFunction<R, String> keyFunction,
-      Optional<String> snapshotId) {
+      Optional<String> snapshotId,
+      Optional<DateTime> compareStartTime) {
+    Read<R, R> queryObject;
+    if (compareStartTime.isPresent() && EppResource.class.isAssignableFrom(type)) {
+      queryObject =
+          buildEppResourceQueryWithTimeFilter(type, type, snapshotId, compareStartTime.get());
+    } else {
+      queryObject =
+          RegistryJpaIO.read(() -> CriteriaQueryBuilder.create(type).build())
+              .withSnapshot(snapshotId.orElse(null));
+    }
     return pipeline
-        .apply(
-            "SQL Load " + type.getSimpleName(),
-            RegistryJpaIO.read(() -> CriteriaQueryBuilder.create(type).build())
-                .withSnapshot(snapshotId.orElse(null)))
+        .apply("SQL Load " + type.getSimpleName(), queryObject)
         .apply(
             "Assign Key to " + type.getSimpleName(),
             MapElements.into(
@@ -346,13 +433,15 @@ public final class SqlSnapshots {
       Pipeline pipeline,
       String diffrentiator,
       String jplQuery,
+      ImmutableMap<String, Object> queryParameters,
       Class<R> type,
       SerializableFunction<R, String> keyFunction,
       Optional<String> snapshotId) {
     return pipeline
         .apply(
             "SQL Load " + type.getSimpleName() + " " + diffrentiator,
-            RegistryJpaIO.read(jplQuery, false, type::cast).withSnapshot(snapshotId.orElse(null)))
+            RegistryJpaIO.read(jplQuery, queryParameters, false, type::cast)
+                .withSnapshot(snapshotId.orElse(null)))
         .apply(
             "Assign Key to " + type.getSimpleName() + " " + diffrentiator,
             MapElements.into(
@@ -365,6 +454,71 @@ public final class SqlSnapshots {
   private static <R, I, T> SerializableFunction<R, T> compose(
       SerializableFunction<R, I> f1, SerializableFunction<I, T> f2) {
     return r -> f2.apply(f1.apply(r));
+  }
+
+  static <R, T> Read<R, T> buildEppResourceQueryWithTimeFilter(
+      Class<R> entityType,
+      Class<T> castOutputAsType,
+      Optional<String> snapshotId,
+      DateTime compareStartTime) {
+    String tableName = getJpaEntityName(entityType);
+    String jpql =
+        String.format("select c from %s c where :compareStartTime < updateTimestamp", tableName);
+    return RegistryJpaIO.read(
+            jpql,
+            ImmutableMap.of("compareStartTime", UpdateAutoTimestamp.create(compareStartTime)),
+            false,
+            (R x) -> castOutputAsType.cast(x))
+        .withSnapshot(snapshotId.orElse(null));
+  }
+
+  static PartitionedQuery buildPartitonedHistoryQuery(
+      Class<?> entityType, Optional<DateTime> compareStartTime) {
+    String tableName = getJpaEntityName(entityType);
+    Verify.verify(
+        !Strings.isNullOrEmpty(tableName), "Invalid entity type %s", entityType.getSimpleName());
+    long medianId =
+        getMedianIdForHistoryTable(tableName)
+            .orElseThrow(() -> new IllegalStateException("Not a valid database: no " + tableName));
+    String firstHalfQuery = String.format("select c from %s c where id <= :historyId", tableName);
+    String secondHalfQuery = String.format("select c from %s c where id > :historyId", tableName);
+    if (compareStartTime.isPresent()) {
+      String timeFilter = "  and :compareStartTime  < modificationTime";
+      firstHalfQuery += timeFilter;
+      secondHalfQuery += timeFilter;
+      return PartitionedQuery.createPartitionedQuery(
+          firstHalfQuery,
+          secondHalfQuery,
+          ImmutableMap.of("historyId", medianId, "compareStartTime", compareStartTime.get()));
+    } else {
+      return PartitionedQuery.createPartitionedQuery(
+          firstHalfQuery, secondHalfQuery, ImmutableMap.of("historyId", medianId));
+    }
+  }
+
+  private static String getJpaEntityName(Class entityType) {
+    Entity entityAnnotation = (Entity) entityType.getAnnotation(Entity.class);
+    checkState(
+        entityAnnotation != null, "Unexpected non-entity type %s", entityType.getSimpleName());
+    return Strings.isNullOrEmpty(entityAnnotation.name())
+        ? entityType.getSimpleName()
+        : entityAnnotation.name();
+  }
+
+  /** Contains two queries that partition the target table in two. */
+  @AutoValue
+  abstract static class PartitionedQuery {
+    abstract String firstHalfQuery();
+
+    abstract String secondHalfQuery();
+
+    abstract ImmutableMap<String, Object> parameters();
+
+    public static PartitionedQuery createPartitionedQuery(
+        String firstHalfQuery, String secondHalfQuery, ImmutableMap<String, Object> parameters) {
+      return new AutoValue_SqlSnapshots_PartitionedQuery(
+          firstHalfQuery, secondHalfQuery, parameters);
+    }
   }
 
   /** Container that receives mixed-typed data and groups them by {@link Class}. */

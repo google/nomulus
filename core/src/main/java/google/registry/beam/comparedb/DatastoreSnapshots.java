@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.backup.VersionedEntity;
 import google.registry.beam.initsql.Transforms;
+import google.registry.model.EppResource;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.Cursor;
@@ -42,6 +43,7 @@ import google.registry.model.tld.Registry;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.annotation.Nullable;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -93,7 +95,8 @@ public final class DatastoreSnapshots {
       String commitLogDir,
       DateTime commitLogFromTime,
       DateTime commitLogToTime,
-      Set<Class<?>> kinds) {
+      Set<Class<?>> kinds,
+      Optional<DateTime> compareStartTime) {
     PCollectionTuple snapshot =
         pipeline.apply(
             "Load Datastore snapshot.",
@@ -112,11 +115,11 @@ public final class DatastoreSnapshots {
         perTypeSnapshots =
             perTypeSnapshots.and(
                 createSqlEntityTupleTag((Class<? extends SqlEntity>) kind),
-                datastoreEntityToPojo(perKindSnapshot, kind.getSimpleName()));
+                datastoreEntityToPojo(perKindSnapshot, kind.getSimpleName(), compareStartTime));
         continue;
       }
       Verify.verify(kind == HistoryEntry.class, "Unexpected Non-SqlEntity class: %s", kind);
-      PCollectionTuple historyEntriesByType = splitHistoryEntry(perKindSnapshot);
+      PCollectionTuple historyEntriesByType = splitHistoryEntry(perKindSnapshot, compareStartTime);
       for (Map.Entry<TupleTag<?>, PCollection<?>> entry :
           historyEntriesByType.getAll().entrySet()) {
         perTypeSnapshots = perTypeSnapshots.and(entry.getKey().getId(), entry.getValue());
@@ -129,7 +132,9 @@ public final class DatastoreSnapshots {
    * Splits a {@link PCollection} of {@link HistoryEntry HistoryEntries} into three collections of
    * its child entities by type.
    */
-  static PCollectionTuple splitHistoryEntry(PCollection<VersionedEntity> historyEntries) {
+  static PCollectionTuple splitHistoryEntry(
+      PCollection<VersionedEntity> historyEntries, Optional<DateTime> compareStartTime) {
+    DateTime nullableStartTime = compareStartTime.orElse(null);
     return historyEntries.apply(
         "Split HistoryEntry by Resource Type",
         ParDo.of(
@@ -138,6 +143,7 @@ public final class DatastoreSnapshots {
                   public void processElement(
                       @Element VersionedEntity historyEntry, MultiOutputReceiver out) {
                     Optional.ofNullable(Transforms.convertVersionedEntityToSqlEntity(historyEntry))
+                        .filter(e -> isEntityIncludedForComparison(e, nullableStartTime))
                         .ifPresent(
                             sqlEntity ->
                                 out.get(createSqlEntityTupleTag(sqlEntity.getClass()))
@@ -155,7 +161,8 @@ public final class DatastoreSnapshots {
    * objects.
    */
   static PCollection<SqlEntity> datastoreEntityToPojo(
-      PCollection<VersionedEntity> entities, String desc) {
+      PCollection<VersionedEntity> entities, String desc, Optional<DateTime> compareStartTime) {
+    DateTime nullableStartTime = compareStartTime.orElse(null);
     return entities.apply(
         "Datastore Entity to Pojo " + desc,
         ParDo.of(
@@ -164,8 +171,23 @@ public final class DatastoreSnapshots {
               public void processElement(
                   @Element VersionedEntity entity, OutputReceiver<SqlEntity> out) {
                 Optional.ofNullable(Transforms.convertVersionedEntityToSqlEntity(entity))
+                    .filter(e -> isEntityIncludedForComparison(e, nullableStartTime))
                     .ifPresent(out::output);
               }
             }));
+  }
+
+  static boolean isEntityIncludedForComparison(
+      SqlEntity entity, @Nullable DateTime compareStartTime) {
+    if (compareStartTime == null) {
+      return true;
+    }
+    if (entity instanceof HistoryEntry) {
+      return compareStartTime.isBefore(((HistoryEntry) entity).getModificationTime());
+    }
+    if (entity instanceof EppResource) {
+      return compareStartTime.isBefore(((EppResource) entity).getUpdateTimestamp().getTimestamp());
+    }
+    return true;
   }
 }

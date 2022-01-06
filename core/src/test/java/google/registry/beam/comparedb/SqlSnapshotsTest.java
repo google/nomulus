@@ -88,6 +88,7 @@ class SqlSnapshotsTest {
                 DomainHistory.class,
                 ContactResource.class,
                 HostResource.class),
+            Optional.empty(),
             Optional.empty());
     PAssert.that(sqlSnapshot.get(createSqlEntityTupleTag(Registry.class)))
         .containsInAnyOrder(setupHelper.registry);

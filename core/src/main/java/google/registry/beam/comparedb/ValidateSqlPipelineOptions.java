@@ -16,7 +16,19 @@ package google.registry.beam.comparedb;
 
 import google.registry.beam.common.RegistryPipelineOptions;
 import google.registry.model.annotations.DeleteAfterMigration;
+import javax.annotation.Nullable;
+import org.apache.beam.sdk.options.Description;
 
 /** BEAM pipeline options for {@link ValidateSqlPipeline}. */
 @DeleteAfterMigration
-public interface ValidateSqlPipelineOptions extends RegistryPipelineOptions {}
+public interface ValidateSqlPipelineOptions extends RegistryPipelineOptions {
+
+  @Description(
+      "For history entries and EPP resources, only those modified strictly after this time are "
+          + "included in comparison. Value is in ISO8601 format. "
+          + "Other entity types are not affected.")
+  @Nullable
+  String getComparisonStartTimestamp();
+
+  void setComparisonStartTimestamp(String comparisonStartTimestamp);
+}
