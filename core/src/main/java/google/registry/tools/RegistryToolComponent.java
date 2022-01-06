@@ -19,6 +19,7 @@ import dagger.Component;
 import dagger.Lazy;
 import google.registry.batch.BatchModule;
 import google.registry.bigquery.BigqueryModule;
+import google.registry.config.CloudTasksUtilsModule;
 import google.registry.config.CredentialModule.LocalCredentialJson;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
@@ -64,6 +65,7 @@ import javax.inject.Singleton;
       BigqueryModule.class,
       ConfigModule.class,
       CloudDnsWriterModule.class,
+      CloudTasksUtilsModule.class,
       DatastoreAdminModule.class,
       DatastoreServiceModule.class,
       DummyKeyringModule.class,
