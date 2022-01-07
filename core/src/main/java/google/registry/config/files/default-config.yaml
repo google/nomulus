@@ -231,6 +231,7 @@ cloudSql:
   jdbcUrl: jdbc:postgresql://localhost
   # This name is used by Cloud SQL when connecting to the database.
   instanceConnectionName: project-id:region:instance-id
+  replicaInstanceConnectionName: null
 
 cloudDns:
   # Set both properties to null in Production.
