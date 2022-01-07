@@ -42,7 +42,11 @@ class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
     persistActiveContact("sh8013");
     runCommand("sh8013");
     assertInStdout("contactId=sh8013");
-    assertInStdout("Websafe key: agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
+    assertInStdout(
+        "Websafe key: "
+            + "kind:ContactResource"
+            + "@sql:rO0ABXQABjItUk9JRA"
+            + "@ofy:agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
   }
 
   @Test
@@ -50,7 +54,11 @@ class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
     persistActiveContact("sh8013");
     runCommand("sh8013", "--expand");
     assertInStdout("contactId=sh8013");
-    assertInStdout("Websafe key: agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
+    assertInStdout(
+        "Websafe key: "
+            + "kind:ContactResource"
+            + "@sql:rO0ABXQABjItUk9JRA"
+            + "@ofy:agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
     assertNotInStdout("LiveRef");
   }
 
@@ -61,8 +69,16 @@ class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
     runCommand("sh8013", "jd1234");
     assertInStdout("contactId=sh8013");
     assertInStdout("contactId=jd1234");
-    assertInStdout("Websafe key: agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
-    assertInStdout("Websafe key: agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjMtUk9JRAw");
+    assertInStdout(
+        "Websafe key: "
+            + "kind:ContactResource"
+            + "@sql:rO0ABXQABjItUk9JRA"
+            + "@ofy:agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
+    assertInStdout(
+        "Websafe key: "
+            + "kind:ContactResource"
+            + "@sql:rO0ABXQABjItUk9JRA"
+            + "@ofy:agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
   }
 
   @Test

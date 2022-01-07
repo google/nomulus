@@ -103,7 +103,7 @@ public class AsyncTaskEnqueuerTest {
             .method("POST")
             .header("Host", "backend.hostname.fake")
             .header("content-type", "application/x-www-form-urlencoded")
-            .param(PARAM_RESOURCE_KEY, contact.createVKey().getOfyKey().getString())
+            .param(PARAM_RESOURCE_KEY, contact.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, clock.nowUtc().toString())
             .etaDelta(
                 standardDays(5).minus(standardSeconds(30)),
@@ -125,7 +125,7 @@ public class AsyncTaskEnqueuerTest {
             .method("POST")
             .header("Host", "backend.hostname.fake")
             .header("content-type", "application/x-www-form-urlencoded")
-            .param(PARAM_RESOURCE_KEY, contact.createVKey().getOfyKey().getString())
+            .param(PARAM_RESOURCE_KEY, contact.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, now.toString())
             .param(PARAM_RESAVE_TIMES, "2015-05-20T14:34:56.000Z,2015-05-21T15:34:56.000Z")
             .etaDelta(

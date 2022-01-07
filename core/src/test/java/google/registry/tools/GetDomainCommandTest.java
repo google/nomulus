@@ -43,7 +43,11 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     runCommand("example.tld");
     assertInStdout("fullyQualifiedDomainName=example.tld");
     assertInStdout("contact=Key<?>(ContactResource(\"3-ROID\"))");
-    assertInStdout("Websafe key: agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw");
+    assertInStdout(
+        "Websafe key: "
+            + "kind:DomainBase"
+            + "@sql:rO0ABXQABTItVExE"
+            + "@ofy:agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw");
   }
 
   @Test
@@ -52,7 +56,11 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     runCommand("example.tld", "--expand");
     assertInStdout("fullyQualifiedDomainName=example.tld");
     assertInStdout("contactId=contact1234");
-    assertInStdout("Websafe key: agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw");
+    assertInStdout(
+        "Websafe key: "
+            + "kind:DomainBase"
+            + "@sql:rO0ABXQABTItVExE"
+            + "@ofy:agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw");
     assertNotInStdout("LiveRef");
   }
 
@@ -63,8 +71,16 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     runCommand("example.tld", "example2.tld");
     assertInStdout("fullyQualifiedDomainName=example.tld");
     assertInStdout("fullyQualifiedDomainName=example2.tld");
-    assertInStdout("Websafe key: agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw");
-    assertInStdout("Websafe key: agR0ZXN0chULEgpEb21haW5CYXNlIgU0LVRMRAw");
+    assertInStdout(
+        "Websafe key: "
+            + "kind:DomainBase"
+            + "@sql:rO0ABXQABTQtVExE"
+            + "@ofy:agR0ZXN0chULEgpEb21haW5CYXNlIgU0LVRMRAw");
+    assertInStdout(
+        "Websafe key: "
+            + "kind:DomainBase"
+            + "@sql:rO0ABXQABTQtVExE"
+            + "@ofy:agR0ZXN0chULEgpEb21haW5CYXNlIgU0LVRMRAw");
   }
 
   @Test

@@ -16,6 +16,7 @@ package google.registry.flows;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
@@ -146,7 +147,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     TaskMatcher expected =
         new TaskMatcher()
             .etaDelta(Duration.standardSeconds(75), Duration.standardSeconds(105)) // expected: 90
-            .param("resourceKey", resource.createVKey().getOfyKey().getString())
+            .param(PARAM_RESOURCE_KEY, resource.createVKey().stringify())
             .param("requestingClientId", requestingClientId)
             .param("serverTransactionId", trid.getServerTransactionId())
             .param("isSuperuser", Boolean.toString(isSuperuser))

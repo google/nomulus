@@ -144,7 +144,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    */
   public static <T> VKey<T> create(String keyString) {
     if (!keyString.startsWith(CLASS_TYPE + KV_SEPARATOR)) {
-      // to handle the existing ofy key string
+      // handle the existing ofy key string
       return fromWebsafeKey(keyString);
     } else {
       ImmutableMap<String, String> kvs =
@@ -307,6 +307,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
     if (maybeGetSqlKey().isPresent()) {
       key += DELIMITER + SQL_LOOKUP_KEY + KV_SEPARATOR + SerializeUtils.stringify(getSqlKey());
     }
+    // getString() method returns a Base64 encoded web safe of ofy key
     if (maybeGetOfyKey().isPresent()) {
       key += DELIMITER + OFY_LOOKUP_KEY + KV_SEPARATOR + getOfyKey().getString();
     }

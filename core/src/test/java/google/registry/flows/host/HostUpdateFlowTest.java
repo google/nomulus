@@ -16,6 +16,7 @@ package google.registry.flows.host;
 
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.batch.AsyncTaskEnqueuer.PARAM_HOST_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -230,7 +231,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertTasksEnqueued(
         QUEUE_ASYNC_HOST_RENAME,
         new TaskMatcher()
-            .param("hostKey", renamedHost.createVKey().getOfyKey().getString())
+            .param(PARAM_HOST_KEY, renamedHost.createVKey().stringify())
             .param("requestedTime", clock.nowUtc().toString()));
   }
 

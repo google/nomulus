@@ -52,6 +52,26 @@ class ResaveEntitiesCommandTest extends CommandTestCase<ResaveEntitiesCommand> {
         .containsExactlyElementsIn(auditedOfy().load().entities(contact1, contact2).values());
   }
 
+  @Test
+  void testSuccess_createsCommitLogs_withNewWebsafeKey() throws Exception {
+    ContactResource contact1 = persistActiveContact("contact1");
+    ContactResource contact2 = persistActiveContact("contact2");
+    deleteEntitiesOfTypes(CommitLogManifest.class, CommitLogMutation.class);
+    assertThat(auditedOfy().load().type(CommitLogManifest.class).keys()).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogMutation.class).keys()).isEmpty();
+    runCommandForced(contact1.createVKey().stringify(), contact2.createVKey().stringify());
+
+    assertThat(auditedOfy().load().type(CommitLogManifest.class).keys()).hasSize(1);
+    Iterable<ImmutableObject> savedEntities =
+        transform(
+            auditedOfy().load().type(CommitLogMutation.class).list(),
+            mutation -> auditedOfy().load().fromEntity(mutation.getEntity()));
+    // Reload the contacts before asserting, since their update times will have changed.
+    auditedOfy().clearSessionCache();
+    assertThat(savedEntities)
+        .containsExactlyElementsIn(auditedOfy().load().entities(contact1, contact2).values());
+  }
+
   @SafeVarargs
   private static void deleteEntitiesOfTypes(Class<? extends ImmutableObject>... types) {
     for (Class<? extends ImmutableObject> type : types) {

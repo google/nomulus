@@ -29,6 +29,7 @@ import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.common.ClassPathManager;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.host.HostResource;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
@@ -205,6 +206,29 @@ class VKeyTest {
   void testCreate_stringifedVKey_sqlOnlyVKeyString() {
     assertThat(VKey.create("kind:TestObject@sql:rO0ABXQAA2Zvbw"))
         .isEqualTo(VKey.createSql(TestObject.class, "foo"));
+  }
+
+  @Test
+  void testCreate_stringifiedVKey_resourceKeyFromTaskQueue() throws Exception {
+    VKey<HostResource> vkeyFromNewWebsafeKey =
+        VKey.create(
+            "kind:HostResource@sql:rO0ABXQADzZCQjJGNDc2LUdPT0dMRQ@ofy:ahdzfm"
+                + "RvbWFpbi1yZWdpc3RyeS1hbHBoYXIhCxIMSG9zdFJlc291cmNlIg82QkIyRjQ3Ni1HT09HTEUM");
+
+    assertThat(vkeyFromNewWebsafeKey.getSqlKey()).isEqualTo("6BB2F476-GOOGLE");
+    assertThat(vkeyFromNewWebsafeKey.getOfyKey().getString())
+        .isEqualTo(
+            "ahdzfmRvbWFpb"
+                + "i1yZWdpc3RyeS1hbHBoYXIhCxIMSG9zdFJlc291cmNlIg82QkIyRjQ3Ni1HT09HTEUM");
+
+    // the ofy portion of the new vkey string representation was the old vkey string representation
+    VKey<HostResource> vkeyFromOldWebsafeString =
+        VKey.fromWebsafeKey(
+            "ahdzfmRvbW"
+                + "Fpbi1yZWdpc3RyeS1hbHBoYXIhCxIMSG9zdFJlc291cmNlIg82QkIyRjQ3Ni1HT09HTEUM");
+
+    // the following is assertion is ensure backwork compatibility
+    assertThat(vkeyFromNewWebsafeKey).isEqualTo(vkeyFromOldWebsafeString);
   }
 
   @Test

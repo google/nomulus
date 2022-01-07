@@ -110,7 +110,7 @@ public final class AsyncTaskEnqueuer {
             .method(Method.POST)
             .header("Host", backendHostname)
             .countdownMillis(etaDuration.getMillis())
-            .param(PARAM_RESOURCE_KEY, entityKey.getOfyKey().getString())
+            .param(PARAM_RESOURCE_KEY, entityKey.stringify())
             .param(PARAM_REQUESTED_TIME, now.toString());
     if (whenToResave.size() > 1) {
       task.param(PARAM_RESAVE_TIMES, Joiner.on(',').join(whenToResave.tailSet(firstResave, false)));
@@ -131,7 +131,7 @@ public final class AsyncTaskEnqueuer {
     TaskOptions task =
         TaskOptions.Builder.withMethod(Method.PULL)
             .countdownMillis(asyncDeleteDelay.getMillis())
-            .param(PARAM_RESOURCE_KEY, resourceToDelete.createVKey().getOfyKey().getString())
+            .param(PARAM_RESOURCE_KEY, resourceToDelete.createVKey().stringify())
             .param(PARAM_REQUESTING_CLIENT_ID, requestingRegistrarId)
             .param(PARAM_SERVER_TRANSACTION_ID, trid.getServerTransactionId())
             .param(PARAM_IS_SUPERUSER, Boolean.toString(isSuperuser))
@@ -148,7 +148,7 @@ public final class AsyncTaskEnqueuer {
     addTaskToQueueWithRetry(
         asyncDnsRefreshPullQueue,
         TaskOptions.Builder.withMethod(Method.PULL)
-            .param(PARAM_HOST_KEY, hostKey.getOfyKey().getString())
+            .param(PARAM_HOST_KEY, hostKey.stringify())
             .param(PARAM_REQUESTED_TIME, now.toString()));
   }
 

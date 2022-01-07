@@ -27,6 +27,7 @@ import google.registry.model.EppResource;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.replay.DatastoreOnlyEntity;
+import google.registry.persistence.VKey;
 
 /** An index that allows for quick enumeration of all EppResource entities (e.g. via map reduce). */
 @ReportedOn
@@ -66,8 +67,9 @@ public class EppResourceIndex extends BackupGroupRoot implements DatastoreOnlyEn
     EppResourceIndex instance = instantiate(EppResourceIndex.class);
     instance.reference = resourceKey;
     instance.kind = resourceKey.getKind();
-    // TODO(b/207368050): figure out if this value has ever been used other than test cases
-    instance.id = resourceKey.getString(); // creates a web-safe key string
+    // creates a web-safe key string, this value is never used
+    // TODO(b/211785379): remove unused id
+    instance.id = VKey.from(resourceKey).stringify();
     instance.bucket = bucket;
     return instance;
   }
