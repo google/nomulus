@@ -19,11 +19,21 @@
 # expanded in the copies sent to Spinnaker, we preserve the brackets around
 # them for safe pattern matching during release.
 # See https://github.com/spinnaker/spinnaker/issues/3028 for more information.
-steps:
-# Delete unused GAE versions.
+#
 # GAE has a limit of ~250 versions per-project, including unused versions. We
 # therefore need to periodically delete old versions. This GCB job finds all
 # stopped versions and delete all but the last 3 (in case we need to rollback).
+steps:
+# Pull the credential for nomulus tool.
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    gcloud secrets versions access latest \
+      --secret nomulus-tool-cloudbuild-credential > tool-credential.json
+# Delete unused GAE versions.
 - name: 'gcr.io/$PROJECT_ID/builder:latest'
   entrypoint: /bin/bash
   args:
@@ -35,6 +45,8 @@ steps:
     else
       project_id="domain-registry-${_ENV}"
     fi
+
+    gcloud auth activate-service-account --key-file=tool-credential.json
 
     for service in default pubapi backend tools
     do
