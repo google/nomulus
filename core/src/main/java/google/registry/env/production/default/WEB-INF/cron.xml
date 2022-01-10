@@ -350,6 +350,15 @@
   </cron>
 
   <cron>
+    <url><![CDATA[/_dr/cron/replicateToDatastore]]></url>
+    <description>
+      Replays recent transactions from SQL to the Datastore secondary backend.
+    </description>
+    <schedule>every 3 minutes</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
     <url><![CDATA[/_dr/task/wipeOutContactHistoryPii]]></url>
     <description>
       This job runs weekly to wipe out PII fields of ContactHistory entities
