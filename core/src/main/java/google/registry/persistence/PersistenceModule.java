@@ -20,6 +20,8 @@ import static google.registry.config.RegistryConfig.getHibernateHikariConnection
 import static google.registry.config.RegistryConfig.getHibernateHikariIdleTimeout;
 import static google.registry.config.RegistryConfig.getHibernateHikariMaximumPoolSize;
 import static google.registry.config.RegistryConfig.getHibernateHikariMinimumIdle;
+import static google.registry.config.RegistryConfig.getHibernateJdbcBatchSize;
+import static google.registry.config.RegistryConfig.getHibernateJdbcFetchSize;
 import static google.registry.config.RegistryConfig.getHibernateLogSqlQueries;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -76,14 +78,8 @@ public abstract class PersistenceModule {
   public static final String HIKARI_DS_CLOUD_SQL_INSTANCE =
       "hibernate.hikari.dataSource.cloudSqlInstance";
 
-  /**
-   * Postgresql-specific: driver default fetch size is 0, which disables streaming result sets. Here
-   * we set a small default geared toward Nomulus server transactions. Large queries can override
-   * the defaults using {@link JpaTransactionManager#setQueryFetchSize}.
-   */
+  public static final String JDBC_BATCH_SIZE = "hibernate.jdbc.batch_size";
   public static final String JDBC_FETCH_SIZE = "hibernate.jdbc.fetch_size";
-
-  private static final int DEFAULT_SERVER_FETCH_SIZE = 20;
 
   @VisibleForTesting
   @Provides
@@ -111,7 +107,8 @@ public abstract class PersistenceModule {
     properties.put(HIKARI_MAXIMUM_POOL_SIZE, getHibernateHikariMaximumPoolSize());
     properties.put(HIKARI_IDLE_TIMEOUT, getHibernateHikariIdleTimeout());
     properties.put(Environment.DIALECT, NomulusPostgreSQLDialect.class.getName());
-    properties.put(JDBC_FETCH_SIZE, Integer.toString(DEFAULT_SERVER_FETCH_SIZE));
+    properties.put(JDBC_BATCH_SIZE, getHibernateJdbcBatchSize());
+    properties.put(JDBC_FETCH_SIZE, getHibernateJdbcFetchSize());
     return properties.build();
   }
 

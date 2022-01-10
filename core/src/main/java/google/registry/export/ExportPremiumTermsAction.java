@@ -26,7 +26,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
@@ -143,7 +142,7 @@ public class ExportPremiumTermsAction implements Runnable {
         PremiumListDao.getLatestRevision(premiumListName).isPresent(),
         "Could not load premium list for " + tld);
     SortedSet<String> premiumTerms =
-        Streams.stream(PremiumListDao.loadAllPremiumEntries(premiumListName))
+        PremiumListDao.loadAllPremiumEntries(premiumListName).stream()
             .map(PremiumEntry::toString)
             .collect(ImmutableSortedSet.toImmutableSortedSet(String::compareTo));
 

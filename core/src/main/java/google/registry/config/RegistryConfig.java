@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.util.TaskQueueUtils;
 import google.registry.util.YamlUtils;
 import java.lang.annotation.Documented;
@@ -1529,6 +1530,31 @@ public final class RegistryConfig {
   /** Returns the idle timeout for HikariCP. */
   public static String getHibernateHikariIdleTimeout() {
     return CONFIG_SETTINGS.get().hibernate.hikariIdleTimeout;
+  }
+
+  /**
+   * JDBC-specific: driver default batch size is 0, which means that every INSERT statement will be
+   * sent to the database individually. Batching allows us to group together multiple inserts into
+   * one single INSERT statement which can dramatically increase speed in situations with many
+   * inserts.
+   *
+   * <p>Hibernate docs, i.e.
+   * https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html,
+   * recommend between 10 and 50.
+   */
+  public static String getHibernateJdbcBatchSize() {
+    return CONFIG_SETTINGS.get().hibernate.jdbcBatchSize;
+  }
+
+  /**
+   * Returns the JDBC fetch size.
+   *
+   * <p>Postgresql-specific: driver default fetch size is 0, which disables streaming result sets.
+   * Here we set a small default geared toward Nomulus server transactions. Large queries can
+   * override the defaults using {@link JpaTransactionManager#setQueryFetchSize}.
+   */
+  public static String getHibernateJdbcFetchSize() {
+    return CONFIG_SETTINGS.get().hibernate.jdbcFetchSize;
   }
 
   /** Returns the roid suffix to be used for the roids of all contacts and hosts. */
