@@ -21,7 +21,7 @@
           <secDNS:dsData>
             <secDNS:keyTag>7</secDNS:keyTag>
             <secDNS:alg>8</secDNS:alg>
-            <secDNS:digestType>9</secDNS:digestType>
+            <secDNS:digestType>1</secDNS:digestType>
             <secDNS:digest>12AB</secDNS:digest>
           </secDNS:dsData>
           <secDNS:dsData>

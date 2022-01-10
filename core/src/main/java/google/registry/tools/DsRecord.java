@@ -46,6 +46,9 @@ abstract class DsRecord {
         "digest should be even-lengthed hex, but is %s (length %s)",
         digest,
         digest.length());
+    checkArgument(
+        DigestType.fromWireValue(digestType) != null, "DS record uses an unrecognized digest type");
+    checkArgument(Algorithm.fromWireValue(alg) != null, "DS record uses an unrecognized algorithm");
     return new AutoValue_DsRecord(keyTag, alg, digestType, digest);
   }
 
