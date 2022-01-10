@@ -60,6 +60,13 @@ class YamlUtilsTest {
         .isEqualTo(join("one: ay", "two: bee", "threeMap: {time: money}"));
   }
 
+  @Test
+  void testSuccess_customKeysNotInDefault() {
+    String defaultYaml = "{keyOne: a}";
+    String customYaml = "{keyTwo: b}";
+    assertThat(mergeYaml(defaultYaml, customYaml)).isEqualTo("{keyOne: a, keyTwo: b}\n");
+  }
+
   private static String join(CharSequence... strings) {
     return Joiner.on('\n').join(strings) + "\n";
   }

@@ -14,7 +14,7 @@
 
 package google.registry.util;
 
-
+import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import java.util.Map;
 import java.util.Optional;
@@ -100,6 +100,9 @@ public final class YamlUtils {
         newValue = customMap.get(key);
       }
       defaultMap.put(key, newValue);
+    }
+    for (String key : Sets.difference(customMap.keySet(), defaultMap.keySet())) {
+      defaultMap.put(key, customMap.get(key));
     }
     return defaultMap;
   }
