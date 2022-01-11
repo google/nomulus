@@ -253,9 +253,8 @@ public final class SqlSnapshots {
   /**
    * Loads all {@link ContactHistory} entities from the database.
    *
-   * <p>This method uses two queries to load data in parallel. This is a
-   * performancDatabaseMigrationStateSchedulee optimization specifically for the production
-   * database.
+   * <p>This method uses two queries to load data in parallel. This is a performance optimization
+   * specifically for the production database.
    */
   static PCollection<SqlEntity> loadContactHistory(
       Pipeline pipeline, Optional<String> snapshotId, Optional<DateTime> compareStartTime) {
