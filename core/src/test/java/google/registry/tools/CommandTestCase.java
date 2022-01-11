@@ -134,7 +134,7 @@ public abstract class CommandTestCase<C extends Command> {
   }
 
   /** Writes the data to a named temporary file and then returns a path to the file. */
-  private String writeToNamedTmpFile(String filename, byte[] data) throws IOException {
+  protected String writeToNamedTmpFile(String filename, byte[] data) throws IOException {
     Path tmpFile = tmpDir.resolve(filename);
     Files.write(data, tmpFile.toFile());
     return tmpFile.toString();
@@ -151,7 +151,7 @@ public abstract class CommandTestCase<C extends Command> {
   }
 
   /** Writes the data to a temporary file and then returns a path to the file. */
-  String writeToTmpFile(byte[] data) throws IOException {
+  public String writeToTmpFile(byte[] data) throws IOException {
     return writeToNamedTmpFile("tmp_file", data);
   }
 
@@ -220,7 +220,7 @@ public abstract class CommandTestCase<C extends Command> {
     assertThat(getStderrAsString()).doesNotContain(expected);
   }
 
-  String getStdoutAsString() {
+  protected String getStdoutAsString() {
     return new String(stdout.toByteArray(), UTF_8);
   }
 

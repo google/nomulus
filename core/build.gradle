@@ -676,9 +676,9 @@ Optional<List<String>> getToolArgsList() {
 
 // To run the nomulus tools with these command line tokens:
 // "--foo", "bar baz", "--qux=quz"
-//   gradle registryTool --args="--foo 'bar baz' --qux=quz"
+//   gradle core:registryTool --args="--foo 'bar baz' --qux=quz"
 // or:
-//   gradle registryTool --PtoolArgs="--foo|bar baz|--qux=quz"
+//   gradle core:registryTool -PtoolArgs="--foo|bar baz|--qux=quz"
 // Note that the delimiting pipe can be backslash escaped if it is part of a
 // parameter.
 ext.createToolTask = {
