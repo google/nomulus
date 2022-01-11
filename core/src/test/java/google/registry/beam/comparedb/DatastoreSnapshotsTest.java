@@ -28,6 +28,7 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import java.io.Serializable;
 import java.nio.file.Path;
+import java.util.Optional;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.values.PCollectionTuple;
@@ -83,7 +84,8 @@ class DatastoreSnapshotsTest {
             setupHelper.commitLogDir.getAbsolutePath(),
             START_TIME,
             fakeClock.nowUtc().plusMillis(1),
-            ImmutableSet.copyOf(DatastoreSetupHelper.ALL_KINDS));
+            ImmutableSet.copyOf(DatastoreSetupHelper.ALL_KINDS),
+            Optional.empty());
     PAssert.that(tuple.get(ValidateSqlUtils.createSqlEntityTupleTag(Registrar.class)))
         .containsInAnyOrder(setupHelper.registrar1, setupHelper.registrar2);
     PAssert.that(tuple.get(ValidateSqlUtils.createSqlEntityTupleTag(DomainHistory.class)))

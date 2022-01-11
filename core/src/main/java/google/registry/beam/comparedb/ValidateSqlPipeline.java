@@ -126,6 +126,9 @@ public class ValidateSqlPipeline {
         .getCoderRegistry()
         .registerCoderForClass(SqlEntity.class, SerializableCoder.of(Serializable.class));
 
+    Optional<DateTime> compareStartTime =
+        Optional.ofNullable(options.getComparisonStartTimestamp()).map(DateTime::parse);
+
     PCollectionTuple datastoreSnapshot =
         DatastoreSnapshots.loadDatastoreSnapshotByKind(
             pipeline,
@@ -135,11 +138,12 @@ public class ValidateSqlPipeline {
             // Increase by 1ms since we want to include commitLogs latestCommitLogTime but
             // this parameter is exclusive.
             latestCommitLogTime.plusMillis(1),
-            DatastoreSnapshots.ALL_DATASTORE_KINDS);
+            DatastoreSnapshots.ALL_DATASTORE_KINDS,
+            compareStartTime);
 
     PCollectionTuple cloudSqlSnapshot =
         SqlSnapshots.loadCloudSqlSnapshotByType(
-            pipeline, SqlSnapshots.ALL_SQL_ENTITIES, sqlSnapshotId);
+            pipeline, SqlSnapshots.ALL_SQL_ENTITIES, sqlSnapshotId, compareStartTime);
 
     verify(
         datastoreSnapshot.getAll().keySet().equals(cloudSqlSnapshot.getAll().keySet()),
