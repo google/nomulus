@@ -15,20 +15,31 @@
 package google.registry.tools.javascrap;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.rde.RdeTestData;
 import google.registry.tools.CommandTestCase;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CompareEscrowDepositsCommand}. */
 class CompareEscrowDepositsCommandTest extends CommandTestCase<CompareEscrowDepositsCommand> {
 
   @Test
+  void testFailure_wrongNumberOfFiles() throws Exception {
+    String file1 = writeToNamedTmpFile("file1", "foo".getBytes(StandardCharsets.UTF_8));
+    String file2 = writeToNamedTmpFile("file2", "bar".getBytes(StandardCharsets.UTF_8));
+    String file3 = writeToNamedTmpFile("file3", "baz".getBytes(StandardCharsets.UTF_8));
+    assertThrows(IllegalArgumentException.class, () -> runCommand(file1));
+    assertThrows(IllegalArgumentException.class, () -> runCommand(file1, file2, file3));
+  }
+
+  @Test
   void testSuccess_sameContentDifferentOrder() throws Exception {
     String file1 = writeToNamedTmpFile("file1", RdeTestData.loadBytes("deposit_full.xml").read());
     String file2 =
         writeToNamedTmpFile("file2", RdeTestData.loadBytes("deposit_full_out_of_order.xml").read());
-    runCommand("-i1=" + file1, "-i2=" + file2);
+    runCommand(file1, file2);
     assertThat(getStdoutAsString())
         .contains("The two deposits contain the same domains and registrars.");
   }
@@ -38,7 +49,7 @@ class CompareEscrowDepositsCommandTest extends CommandTestCase<CompareEscrowDepo
     String file1 = writeToNamedTmpFile("file1", RdeTestData.loadBytes("deposit_full.xml").read());
     String file2 =
         writeToNamedTmpFile("file2", RdeTestData.loadBytes("deposit_full_different.xml").read());
-    runCommand("-i1=" + file1, "-i2=" + file2);
+    runCommand(file1, file2);
     assertThat(getStdoutAsString())
         .isEqualTo(
             "domains only in deposit1:\n"

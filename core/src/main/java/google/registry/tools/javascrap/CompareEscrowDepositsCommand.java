@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2022 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 package google.registry.tools.javascrap;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Sets.difference;
 
@@ -36,6 +37,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -55,16 +57,10 @@ import javax.xml.bind.JAXBElement;
 public final class CompareEscrowDepositsCommand implements Command {
 
   @Parameter(
-      names = {"-i1", "--input1"},
-      description = "XML escrow deposit file 1. May be plain XML or an XML GhostRyDE file.",
+      description =
+          "Two XML escrow deposit files. Each may be a plain XML or an XML GhostRyDE file.",
       validateWith = PathParameter.InputFile.class)
-  private Path input1 = null;
-
-  @Parameter(
-      names = {"-i2", "--input2"},
-      description = "XML escrow deposit file 2. May be plain XML or an XML GhostRyDE file.",
-      validateWith = PathParameter.InputFile.class)
-  private Path input2 = null;
+  private List<Path> inputs;
 
   @Inject Provider<Keyring> keyring;
 
@@ -79,8 +75,12 @@ public final class CompareEscrowDepositsCommand implements Command {
 
   @Override
   public void run() throws Exception {
-    XjcRdeDeposit deposit1 = getDeposit(input1);
-    XjcRdeDeposit deposit2 = getDeposit(input2);
+    checkArgument(
+        inputs.size() == 2,
+        "Must supply 2 files to compare, but %s was/were supplied.",
+        inputs.size());
+    XjcRdeDeposit deposit1 = getDeposit(inputs.get(0));
+    XjcRdeDeposit deposit2 = getDeposit(inputs.get(1));
     compareXmlDeposits(deposit1, deposit2);
   }
 
