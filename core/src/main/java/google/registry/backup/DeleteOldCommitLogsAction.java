@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.mapreduce.MapreduceRunner.PARAM_DRY_RUN;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
@@ -288,7 +288,8 @@ public final class DeleteOldCommitLogsAction implements Runnable {
       }
 
       DeletionResult deletionResult =
-          tm().transactNew(
+          ofyTm()
+              .transactNew(
                   () -> {
                     CommitLogManifest manifest = auditedOfy().load().key(manifestKey).now();
                     // It is possible that the same manifestKey was run twice, if a shard had to be
