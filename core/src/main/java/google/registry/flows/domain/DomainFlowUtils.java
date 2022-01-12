@@ -129,6 +129,7 @@ import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.persistence.VKey;
 import google.registry.tldconfig.idn.IdnLabelValidator;
+import google.registry.tools.DigestType;
 import google.registry.util.Idn;
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -144,6 +145,7 @@ import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.xbill.DNS.DNSSEC.Algorithm;
 
 /** Static utility functions for domain flows. */
 public class DomainFlowUtils {
@@ -297,6 +299,25 @@ public class DomainFlowUtils {
       throw new TooManyDsRecordsException(
           String.format(
               "A maximum of %s DS records are allowed per domain.", MAX_DS_RECORDS_PER_DOMAIN));
+    }
+    for (DelegationSignerData data : dsData) {
+      // Attempt to convert numeric code for algorithm into its String representation to check its
+      // validity
+      try {
+        Algorithm.string(data.getAlgorithm());
+      } catch (IllegalArgumentException e) {
+        throw new InvalidDsRecordException(
+            String.format(
+                "Domain contains a DS record with an invalid algorithm wire value of %d",
+                data.getAlgorithm()));
+      }
+
+      if (!DigestType.fromWireValue(data.getDigestType()).isPresent()) {
+        throw new InvalidDsRecordException(
+            String.format(
+                "Domain contains a DS record with an invalid digest type of %d",
+                data.getDigestType()));
+      }
     }
   }
 
@@ -1213,6 +1234,13 @@ public class DomainFlowUtils {
   /** Too many DS records set on a domain. */
   static class TooManyDsRecordsException extends ParameterValuePolicyErrorException {
     public TooManyDsRecordsException(String message) {
+      super(message);
+    }
+  }
+
+  /** Domain has an invalid DS record. */
+  static class InvalidDsRecordException extends ParameterValuePolicyErrorException {
+    public InvalidDsRecordException(String message) {
       super(message);
     }
   }

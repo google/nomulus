@@ -14,6 +14,8 @@
 
 package google.registry.tools;
 
+import java.util.Optional;
+
 /**
  * Enumerates the DNSSEC digest types for use with Delegation Signer records.
  *
@@ -40,13 +42,13 @@ public enum DigestType {
   }
 
   /** Fetches a DigestType enumeration constant by its IANA assigned value. */
-  public static DigestType fromWireValue(int wireValue) {
+  public static Optional<DigestType> fromWireValue(int wireValue) {
     for (DigestType alg : DigestType.values()) {
       if (alg.getWireValue() == wireValue) {
-        return alg;
+        return Optional.of(alg);
       }
     }
-    return null;
+    return Optional.empty();
   }
 
   /** Fetches a value in the range [0, 255] that encodes this DS digest type on the wire. */

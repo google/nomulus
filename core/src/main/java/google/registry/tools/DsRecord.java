@@ -26,6 +26,7 @@ import com.google.common.io.BaseEncoding;
 import com.google.template.soy.data.SoyListData;
 import com.google.template.soy.data.SoyMapData;
 import java.util.List;
+import org.xbill.DNS.DNSSEC.Algorithm;
 
 @AutoValue
 abstract class DsRecord {
@@ -47,8 +48,19 @@ abstract class DsRecord {
         digest,
         digest.length());
     checkArgument(
-        DigestType.fromWireValue(digestType) != null, "DS record uses an unrecognized digest type");
-    checkArgument(Algorithm.fromWireValue(alg) != null, "DS record uses an unrecognized algorithm");
+        DigestType.fromWireValue(digestType).isPresent(),
+        "DS record uses an unrecognized digest type: %d",
+        digestType);
+
+    // Attempt to convert numeric code for algorithm into its String representation to check its
+    // validity
+    try {
+      Algorithm.string(alg);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          String.format("DS record uses an unrecognized algorithm: %d", alg), e.getCause());
+    }
+
     return new AutoValue_DsRecord(keyTag, alg, digestType, digest);
   }
 
