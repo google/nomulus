@@ -242,6 +242,9 @@ cloudSql:
   jdbcUrl: jdbc:postgresql://localhost
   # This name is used by Cloud SQL when connecting to the database.
   instanceConnectionName: project-id:region:instance-id
+  # If non-null, we will use this instance for certain read-only actions or
+  # pipelines, e.g. RDE, in order to offload some work from the primary
+  # instance. Expect any write actions on this instance to fail.
   replicaInstanceConnectionName: null
 
 cloudDns:
