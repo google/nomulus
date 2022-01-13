@@ -206,7 +206,7 @@ public class ReadOnlyCheckingEntityManager implements EntityManager {
   }
 
   @Override
-  public Query createNativeQuery(String sqlString) {
+  public ReadOnlyCheckingQuery createNativeQuery(String sqlString) {
     return new ReadOnlyCheckingQuery(delegate.createNativeQuery(sqlString));
   }
 
