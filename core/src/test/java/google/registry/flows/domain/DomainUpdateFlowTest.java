@@ -72,6 +72,7 @@ import google.registry.flows.domain.DomainFlowUtils.DuplicateContactForRoleExcep
 import google.registry.flows.domain.DomainFlowUtils.EmptySecDnsUpdateException;
 import google.registry.flows.domain.DomainFlowUtils.FeesMismatchException;
 import google.registry.flows.domain.DomainFlowUtils.FeesRequiredForNonFreeOperationException;
+import google.registry.flows.domain.DomainFlowUtils.InvalidDsRecordException;
 import google.registry.flows.domain.DomainFlowUtils.LinkedResourceInPendingDeleteProhibitsOperationException;
 import google.registry.flows.domain.DomainFlowUtils.LinkedResourcesDoNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.MaxSigLifeChangeNotSupportedException;
@@ -814,10 +815,34 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @TestOfyAndSql
+  void testFailure_secDnsinvalidDigestType() throws Exception {
+    ImmutableSet.Builder<DelegationSignerData> builder = new ImmutableSet.Builder<>();
+    builder.add(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2}));
+
+    setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);
+    persistResource(
+        newDomainBase(getUniqueIdFromCommand()).asBuilder().setDsData(builder.build()).build());
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @TestOfyAndSql
+  void testFailure_secDnsInvalidAlgorithm() throws Exception {
+    ImmutableSet.Builder<DelegationSignerData> builder = new ImmutableSet.Builder<>();
+    builder.add(DelegationSignerData.create(1, 999, 2, new byte[] {0, 1, 2}));
+
+    setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);
+    persistResource(
+        newDomainBase(getUniqueIdFromCommand()).asBuilder().setDsData(builder.build()).build());
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @TestOfyAndSql
   void testFailure_secDnsTooManyDsRecords() throws Exception {
     ImmutableSet.Builder<DelegationSignerData> builder = new ImmutableSet.Builder<>();
     for (int i = 0; i < 8; ++i) {
-      builder.add(DelegationSignerData.create(i, 2, 3, new byte[] {0, 1, 2}));
+      builder.add(DelegationSignerData.create(i, 2, 2, new byte[] {0, 1, 2}));
     }
 
     setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);

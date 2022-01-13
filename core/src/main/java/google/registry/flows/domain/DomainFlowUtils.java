@@ -295,28 +295,31 @@ public class DomainFlowUtils {
 
   /** Check that the DS data that will be set on a domain is valid. */
   static void validateDsData(Set<DelegationSignerData> dsData) throws EppException {
-    if (dsData != null && dsData.size() > MAX_DS_RECORDS_PER_DOMAIN) {
-      throw new TooManyDsRecordsException(
-          String.format(
-              "A maximum of %s DS records are allowed per domain.", MAX_DS_RECORDS_PER_DOMAIN));
-    }
-    for (DelegationSignerData data : dsData) {
-      // Attempt to convert numeric code for algorithm into its String representation to check its
-      // validity
-      try {
-        Algorithm.string(data.getAlgorithm());
-      } catch (IllegalArgumentException e) {
-        throw new InvalidDsRecordException(
+    if (dsData != null) {
+      if (dsData.size() > MAX_DS_RECORDS_PER_DOMAIN) {
+        throw new TooManyDsRecordsException(
             String.format(
-                "Domain contains a DS record with an invalid algorithm wire value of %d",
-                data.getAlgorithm()));
+                "A maximum of %s DS records are allowed per domain.", MAX_DS_RECORDS_PER_DOMAIN));
       }
+      // TODO(sarahbot@): Add signature length verification
+      for (DelegationSignerData data : dsData) {
+        // Attempt to convert numeric code for algorithm into its String representation to check its
+        // validity
+        try {
+          Algorithm.string(data.getAlgorithm());
+        } catch (IllegalArgumentException e) {
+          throw new InvalidDsRecordException(
+              String.format(
+                  "Domain contains a DS record with an invalid algorithm wire value of %d",
+                  data.getAlgorithm()));
+        }
 
-      if (!DigestType.fromWireValue(data.getDigestType()).isPresent()) {
-        throw new InvalidDsRecordException(
-            String.format(
-                "Domain contains a DS record with an invalid digest type of %d",
-                data.getDigestType()));
+        if (!DigestType.fromWireValue(data.getDigestType()).isPresent()) {
+          throw new InvalidDsRecordException(
+              String.format(
+                  "Domain contains a DS record with an invalid digest type of %d",
+                  data.getDigestType()));
+        }
       }
     }
   }
