@@ -17,7 +17,7 @@ package google.registry.backup;
 import static google.registry.backup.ExportCommitLogDiffAction.LOWER_CHECKPOINT_TIME_PARAM;
 import static google.registry.backup.ExportCommitLogDiffAction.UPPER_CHECKPOINT_TIME_PARAM;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.collect.ImmutableMultimap;
@@ -67,7 +67,8 @@ public final class CommitLogCheckpointAction implements Runnable {
     final CommitLogCheckpoint checkpoint = strategy.computeCheckpoint();
     logger.atInfo().log(
         "Generated candidate checkpoint for time: %s", checkpoint.getCheckpointTime());
-    tm().transact(
+    ofyTm()
+        .transact(
             () -> {
               DateTime lastWrittenTime = CommitLogCheckpointRoot.loadRoot().getLastWrittenTime();
               if (isBeforeOrAt(checkpoint.getCheckpointTime(), lastWrittenTime)) {
