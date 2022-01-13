@@ -98,11 +98,7 @@ class TldFanoutActionTest {
   }
 
   private void assertTaskWithoutTld() {
-    cloudTasksHelper.assertTasksEnqueued(
-        QUEUE,
-        new TaskMatcher()
-            .url(ENDPOINT)
-            .header("content-type", "application/x-www-form-urlencoded"));
+    cloudTasksHelper.assertTasksEnqueued(QUEUE, new TaskMatcher().url(ENDPOINT));
   }
 
   @Test

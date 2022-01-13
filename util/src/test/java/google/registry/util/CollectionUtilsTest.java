@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +43,12 @@ class CollectionUtilsTest {
     assertThat(map).isNull();
     assertThat(convertedMap).isNotNull();
     assertThat(convertedMap).isEmpty();
+  }
+
+  @Test
+  void testNullOrEmptyMultimap() {
+    assertThat(CollectionUtils.isNullOrEmpty((Multimap<?, ?>) null)).isTrue();
+    assertThat(CollectionUtils.isNullOrEmpty(ImmutableMultimap.of())).isTrue();
   }
 
   @Test

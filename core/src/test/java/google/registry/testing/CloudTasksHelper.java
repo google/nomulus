@@ -227,22 +227,20 @@ public class CloudTasksHelper implements Serializable {
               });
       headers = headerBuilder.build();
       ImmutableMultimap.Builder<String, String> paramBuilder = new ImmutableMultimap.Builder<>();
-      String query = null;
+      // Note that UriParameters.parse() does not throw an IAE on a bad query string (e.g. one
+      // where parameters are not properly URL-encoded); it always does a best-effort parse.
       if (method == HttpMethod.GET) {
-        query = uri.getQuery();
-      } else if (method == HttpMethod.POST) {
+        paramBuilder.putAll(UriParameters.parse(uri.getQuery()));
+      } else if (method == HttpMethod.POST && !task.getAppEngineHttpRequest().getBody().isEmpty()) {
         assertThat(
                 headers.containsEntry(
                     Ascii.toLowerCase(HttpHeaders.CONTENT_TYPE), MediaType.FORM_DATA.toString()))
             .isTrue();
-        query = task.getAppEngineHttpRequest().getBody().toString(StandardCharsets.UTF_8);
+        paramBuilder.putAll(
+            UriParameters.parse(
+                task.getAppEngineHttpRequest().getBody().toString(StandardCharsets.UTF_8)));
       }
-      if (query != null) {
-        // Note that UriParameters.parse() does not throw an IAE on a bad query string (e.g. one
-        // where parameters are not properly URL-encoded); it always does a best-effort parse.
-        paramBuilder.putAll(UriParameters.parse(query));
-        params = paramBuilder.build();
-      }
+      params = paramBuilder.build();
     }
 
     public Map<String, Object> toMap() {

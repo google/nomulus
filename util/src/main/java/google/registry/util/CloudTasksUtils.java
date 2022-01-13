@@ -106,30 +106,34 @@ public class CloudTasksUtils implements Serializable {
     checkArgument(
         path != null && !path.isEmpty() && path.charAt(0) == '/',
         "The path must start with a '/'.");
+    checkArgument(
+        method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST),
+        "HTTP method %s is used. Only GET and POST are allowed.",
+        method);
     AppEngineHttpRequest.Builder requestBuilder =
         AppEngineHttpRequest.newBuilder()
             .setHttpMethod(method)
             .setAppEngineRouting(AppEngineRouting.newBuilder().setService(service).build());
-    Escaper escaper = UrlEscapers.urlPathSegmentEscaper();
-    String encodedParams =
-        Joiner.on("&")
-            .join(
-                params.entries().stream()
-                    .map(
-                        entry ->
-                            String.format(
-                                "%s=%s",
-                                escaper.escape(entry.getKey()), escaper.escape(entry.getValue())))
-                    .collect(toImmutableList()));
-    if (method == HttpMethod.GET) {
-      path = String.format("%s?%s", path, encodedParams);
-    } else if (method == HttpMethod.POST) {
-      requestBuilder
-          .putHeaders(HttpHeaders.CONTENT_TYPE, MediaType.FORM_DATA.toString())
-          .setBody(ByteString.copyFrom(encodedParams, StandardCharsets.UTF_8));
-    } else {
-      throw new IllegalArgumentException(
-          String.format("HTTP method %s is used. Only GET and POST are allowed.", method));
+
+    if (!CollectionUtils.isNullOrEmpty(params)) {
+      Escaper escaper = UrlEscapers.urlPathSegmentEscaper();
+      String encodedParams =
+          Joiner.on("&")
+              .join(
+                  params.entries().stream()
+                      .map(
+                          entry ->
+                              String.format(
+                                  "%s=%s",
+                                  escaper.escape(entry.getKey()), escaper.escape(entry.getValue())))
+                      .collect(toImmutableList()));
+      if (method == HttpMethod.GET) {
+        path = String.format("%s?%s", path, encodedParams);
+      } else {
+        requestBuilder
+            .putHeaders(HttpHeaders.CONTENT_TYPE, MediaType.FORM_DATA.toString())
+            .setBody(ByteString.copyFrom(encodedParams, StandardCharsets.UTF_8));
+      }
     }
     requestBuilder.setRelativeUri(path);
     return Task.newBuilder().setAppEngineHttpRequest(requestBuilder.build()).build();

@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
@@ -77,6 +78,48 @@ public class CloudTasksUtilsTest {
         .isEqualTo("application/x-www-form-urlencoded");
     assertThat(task.getAppEngineHttpRequest().getBody().toString(StandardCharsets.UTF_8))
         .isEqualTo("key1=val1&key2=val2&key1=val3");
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_createGetTasks_withNullParams() {
+    Task task = CloudTasksUtils.createGetTask("/the/path", "myservice", null);
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_createPostTasks_withNullParams() {
+    Task task = CloudTasksUtils.createPostTask("/the/path", "myservice", null);
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(task.getAppEngineHttpRequest().getBody().toString(StandardCharsets.UTF_8)).isEmpty();
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_createGetTasks_withEmptyParams() {
+    Task task = CloudTasksUtils.createGetTask("/the/path", "myservice", ImmutableMultimap.of());
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_createPostTasks_withEmptyParams() {
+    Task task = CloudTasksUtils.createPostTask("/the/path", "myservice", ImmutableMultimap.of());
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(task.getAppEngineHttpRequest().getBody().toString(StandardCharsets.UTF_8)).isEmpty();
     assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
   }
 

@@ -49,6 +49,11 @@ public class CollectionUtils {
     return potentiallyNull == null || potentiallyNull.isEmpty();
   }
 
+  /** Checks if a Multimap is null or empty. */
+  public static boolean isNullOrEmpty(@Nullable Multimap<?, ?> potentiallyNull) {
+    return potentiallyNull == null || potentiallyNull.isEmpty();
+  }
+
   /** Turns a null set into an empty set. JAXB leaves lots of null sets lying around. */
   public static <T> Set<T> nullToEmpty(@Nullable Set<T> potentiallyNull) {
     return firstNonNull(potentiallyNull, ImmutableSet.of());
