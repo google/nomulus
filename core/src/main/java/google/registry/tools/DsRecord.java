@@ -49,19 +49,24 @@ abstract class DsRecord {
         digest.length());
     checkArgument(
         DigestType.fromWireValue(digestType).isPresent(),
-        "DS record uses an unrecognized digest type: %d",
-        digestType);
+        String.format("DS record uses an unrecognized digest type: %d", digestType));
 
-    // Attempt to convert numeric code for algorithm into its String representation to check its
-    // validity
-    try {
-      Algorithm.string(alg);
-    } catch (IllegalArgumentException e) {
+    if (!validateAlgorithm(alg)) {
       throw new IllegalArgumentException(
-          String.format("DS record uses an unrecognized algorithm: %d", alg), e.getCause());
+          String.format("DS record uses an unrecognized algorithm: %d", alg));
     }
 
     return new AutoValue_DsRecord(keyTag, alg, digestType, digest);
+  }
+
+  private static boolean validateAlgorithm(int alg) {
+    if (alg > 255 || alg < 0) {
+      return false;
+    }
+    // Algorithms that are reserved or unassigned will just return a string representation of their
+    // integer wire value.
+    String algorithm = Algorithm.string(alg);
+    return !algorithm.equals(Integer.toString(alg));
   }
 
   /**

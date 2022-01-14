@@ -630,6 +630,28 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
   }
 
   @TestOfyAndSql
+  void testFailure_invalidDsRecordAlgorithm() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--client=NewRegistrar", "--add_ds_records=1 299 2 abcd", "example.tld"));
+    assertThat(thrown).hasMessageThat().contains("DS record uses an unrecognized algorithm: 299");
+  }
+
+  @TestOfyAndSql
+  void testFailure_invalidDsRecordDigestType() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--client=NewRegistrar", "--add_ds_records=1 2 3 abcd", "example.tld"));
+    assertThat(thrown).hasMessageThat().contains("DS record uses an unrecognized digest type: 3");
+  }
+
+  @TestOfyAndSql
   void testFailure_provideDsRecordsAndAddDsRecords() {
     IllegalArgumentException thrown =
         assertThrows(
