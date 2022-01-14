@@ -302,26 +302,37 @@ public class DomainFlowUtils {
                 "A maximum of %s DS records are allowed per domain.", MAX_DS_RECORDS_PER_DOMAIN));
       }
       // TODO(sarahbot@): Add signature length verification
-      for (DelegationSignerData data : dsData) {
-        // Attempt to convert numeric code for algorithm into its String representation to check its
-        // validity
-        try {
-          Algorithm.string(data.getAlgorithm());
-        } catch (IllegalArgumentException e) {
-          throw new InvalidDsRecordException(
-              String.format(
-                  "Domain contains a DS record with an invalid algorithm wire value of %d",
-                  data.getAlgorithm()));
-        }
-
-        if (!DigestType.fromWireValue(data.getDigestType()).isPresent()) {
-          throw new InvalidDsRecordException(
-              String.format(
-                  "Domain contains a DS record with an invalid digest type of %d",
-                  data.getDigestType()));
-        }
+      ImmutableList<DelegationSignerData> invalidAlgorithms =
+          dsData.stream()
+              .filter(ds -> !validateAlgorithm(ds.getAlgorithm()))
+              .collect(toImmutableList());
+      if (!invalidAlgorithms.isEmpty()) {
+        throw new InvalidDsRecordException(
+            String.format(
+                "Domain contains DS record(s) with an invalid algorithm wire value: %s",
+                invalidAlgorithms));
+      }
+      ImmutableList<DelegationSignerData> invalidDigestTypes =
+          dsData.stream()
+              .filter(ds -> !DigestType.fromWireValue(ds.getDigestType()).isPresent())
+              .collect(toImmutableList());
+      if (!invalidDigestTypes.isEmpty()) {
+        throw new InvalidDsRecordException(
+            String.format(
+                "Domain contains DS record(s) with an invalid digest type: %s",
+                invalidDigestTypes));
       }
     }
+  }
+
+  static boolean validateAlgorithm(int alg) {
+    if (alg > 255 || alg < 0) {
+      return false;
+    }
+    // Algorithms that are reserved or unassigned will just return a string representation of their
+    // integer wire value.
+    String algorithm = Algorithm.string(alg);
+    return !algorithm.equals(Integer.toString(alg));
   }
 
   /** We only allow specifying years in a period. */

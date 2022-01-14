@@ -808,12 +808,13 @@ statuses are updated at once.
     *   Nameservers not specified for domain on TLD with nameserver allow list.
     *   Registrant is not allow-listed for this TLD.
 *   2306
-    *   Cannot add and remove the same value.
-    *   More than one contact for a given role is not allowed.
-    *   Missing type attribute for contact.
-    *   The secDNS:all element must have value 'true' if present.
-    *   Too many DS records set on a domain.
-    *   Too many nameservers set on this domain.
+    * Cannot add and remove the same value.
+    * More than one contact for a given role is not allowed.
+    * Missing type attribute for contact.
+    * The secDNS:all element must have value 'true' if present.
+    * Too many DS records set on a domain.
+    * Too many nameservers set on this domain.
+    * Invalid DS record(s) set on a domain.
 *   2400
     *   Registry is currently undergoing maintenance and is in read-only mode.
 

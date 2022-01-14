@@ -106,6 +106,7 @@ import google.registry.flows.domain.DomainFlowUtils.FeeDescriptionParseException
 import google.registry.flows.domain.DomainFlowUtils.FeesMismatchException;
 import google.registry.flows.domain.DomainFlowUtils.FeesRequiredDuringEarlyAccessProgramException;
 import google.registry.flows.domain.DomainFlowUtils.FeesRequiredForPremiumNameException;
+import google.registry.flows.domain.DomainFlowUtils.InvalidDsRecordException;
 import google.registry.flows.domain.DomainFlowUtils.InvalidIdnDomainLabelException;
 import google.registry.flows.domain.DomainFlowUtils.InvalidPunycodeException;
 import google.registry.flows.domain.DomainFlowUtils.InvalidTcnIdChecksumException;
@@ -999,6 +1000,22 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_dsdata_9_records.xml");
     persistContactsAndHosts();
     EppException thrown = assertThrows(TooManyDsRecordsException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @TestOfyAndSql
+  void testFailure_secDnsInvalidDigestType() throws Exception {
+    setEppInput("domain_create_dsdata_bad_digest_types.xml");
+    persistContactsAndHosts();
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @TestOfyAndSql
+  void testFailure_secDnsInvalidAlgorithm() throws Exception {
+    setEppInput("domain_create_dsdata_bad_algorithms.xml");
+    persistContactsAndHosts();
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 

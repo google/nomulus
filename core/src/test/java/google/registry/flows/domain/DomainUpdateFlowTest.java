@@ -815,7 +815,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @TestOfyAndSql
-  void testFailure_secDnsinvalidDigestType() throws Exception {
+  void testFailure_secDnsInvalidDigestType() throws Exception {
     ImmutableSet.Builder<DelegationSignerData> builder = new ImmutableSet.Builder<>();
     builder.add(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2}));
 
@@ -827,14 +827,44 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @TestOfyAndSql
-  void testFailure_secDnsInvalidAlgorithm() throws Exception {
+  void testFailure_secDnsMultipleInvalidDigestTypes() throws Exception {
     ImmutableSet.Builder<DelegationSignerData> builder = new ImmutableSet.Builder<>();
-    builder.add(DelegationSignerData.create(1, 999, 2, new byte[] {0, 1, 2}));
+    builder.add(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2}));
+    builder.add(DelegationSignerData.create(2, 2, 6, new byte[] {0, 1, 2}));
 
     setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);
     persistResource(
         newDomainBase(getUniqueIdFromCommand()).asBuilder().setDsData(builder.build()).build());
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertThat(thrown).hasMessageThat().contains("digestType=3");
+    assertThat(thrown).hasMessageThat().contains("digestType=6");
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @TestOfyAndSql
+  void testFailure_secDnsInvalidAlgorithm() throws Exception {
+    ImmutableSet.Builder<DelegationSignerData> builder = new ImmutableSet.Builder<>();
+    builder.add(DelegationSignerData.create(1, 99, 2, new byte[] {0, 1, 2}));
+
+    setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);
+    persistResource(
+        newDomainBase(getUniqueIdFromCommand()).asBuilder().setDsData(builder.build()).build());
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @TestOfyAndSql
+  void testFailure_secDnsMultipleInvalidAlgorithms() throws Exception {
+    ImmutableSet.Builder<DelegationSignerData> builder = new ImmutableSet.Builder<>();
+    builder.add(DelegationSignerData.create(1, 998, 2, new byte[] {0, 1, 2}));
+    builder.add(DelegationSignerData.create(2, 99, 2, new byte[] {0, 1, 2}));
+
+    setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);
+    persistResource(
+        newDomainBase(getUniqueIdFromCommand()).asBuilder().setDsData(builder.build()).build());
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertThat(thrown).hasMessageThat().contains("algorithm=998");
+    assertThat(thrown).hasMessageThat().contains("algorithm=99");
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
