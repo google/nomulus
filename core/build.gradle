@@ -708,6 +708,9 @@ createToolTask(
 createToolTask(
     'validateSqlPipeline', 'google.registry.beam.comparedb.ValidateSqlPipeline')
 
+createToolTask(
+    'validateDatastorePipeline', 'google.registry.beam.comparedb.ValidateDatastorePipeline')
+
 
 createToolTask(
     'jpaDemoPipeline', 'google.registry.beam.common.JpaDemoPipeline')

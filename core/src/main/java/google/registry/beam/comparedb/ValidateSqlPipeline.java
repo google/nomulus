@@ -26,6 +26,9 @@ import google.registry.beam.common.RegistryPipelineWorkerInitializer;
 import google.registry.beam.comparedb.LatestDatastoreSnapshotFinder.DatastoreSnapshotInfo;
 import google.registry.beam.comparedb.ValidateSqlUtils.CompareSqlEntity;
 import google.registry.model.annotations.DeleteAfterMigration;
+import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.replay.SqlEntity;
@@ -35,6 +38,7 @@ import google.registry.persistence.PersistenceModule.JpaTransactionManagerType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.util.RequestStatusChecker;
+import google.registry.util.SystemClock;
 import java.io.Serializable;
 import java.util.Optional;
 import org.apache.beam.sdk.Pipeline;
@@ -76,21 +80,16 @@ public class ValidateSqlPipeline {
       java.time.Duration.ofSeconds(30);
 
   private final ValidateSqlPipelineOptions options;
-  private final DatastoreSnapshotInfo mostRecentExport;
+  private final LatestDatastoreSnapshotFinder datastoreSnapshotFinder;
 
   public ValidateSqlPipeline(
-      ValidateSqlPipelineOptions options, DatastoreSnapshotInfo mostRecentExport) {
+      ValidateSqlPipelineOptions options, LatestDatastoreSnapshotFinder datastoreSnapshotFinder) {
     this.options = options;
-    this.mostRecentExport = mostRecentExport;
-  }
-
-  void run() {
-    run(Pipeline.create(options));
+    this.datastoreSnapshotFinder = datastoreSnapshotFinder;
   }
 
   @VisibleForTesting
   void run(Pipeline pipeline) {
-    // TODO(weiminyu): ensure migration stage is DATASTORE_PRIMARY or DATASTORE_PRIMARY_READ_ONLY
     Optional<Lock> lock = acquireCommitLogReplayLock();
     if (lock.isPresent()) {
       logger.atInfo().log("Acquired CommitLog Replay lock.");
@@ -101,6 +100,8 @@ public class ValidateSqlPipeline {
     try {
       DateTime latestCommitLogTime =
           TransactionManagerFactory.jpaTm().transact(() -> SqlReplayCheckpoint.get());
+      DatastoreSnapshotInfo mostRecentExport =
+          datastoreSnapshotFinder.getSnapshotInfo(latestCommitLogTime.toInstant());
       Preconditions.checkState(
           latestCommitLogTime.isAfter(mostRecentExport.exportInterval().getEnd()),
           "Cannot recreate Datastore snapshot since target time is in the middle of an export.");
@@ -109,7 +110,16 @@ public class ValidateSqlPipeline {
         lock.ifPresent(Lock::releaseSql);
         lock = Optional.empty();
 
-        setupPipeline(pipeline, Optional.of(databaseSnapshot.getSnapshotId()), latestCommitLogTime);
+        logger.atInfo().log(
+            "Starting comparison with export at %s and latestCommitLogTime at %s",
+            mostRecentExport.exportDir(), latestCommitLogTime);
+
+        setupPipeline(
+            pipeline,
+            Optional.of(databaseSnapshot.getSnapshotId()),
+            mostRecentExport,
+            latestCommitLogTime,
+            Optional.ofNullable(options.getComparisonStartTimestamp()).map(DateTime::parse));
         State state = pipeline.run().waitUntilFinish();
         if (!State.DONE.equals(state)) {
           throw new IllegalStateException("Unexpected pipeline state: " + state);
@@ -120,14 +130,15 @@ public class ValidateSqlPipeline {
     }
   }
 
-  void setupPipeline(
-      Pipeline pipeline, Optional<String> sqlSnapshotId, DateTime latestCommitLogTime) {
+  static void setupPipeline(
+      Pipeline pipeline,
+      Optional<String> sqlSnapshotId,
+      DatastoreSnapshotInfo mostRecentExport,
+      DateTime latestCommitLogTime,
+      Optional<DateTime> compareStartTime) {
     pipeline
         .getCoderRegistry()
         .registerCoderForClass(SqlEntity.class, SerializableCoder.of(Serializable.class));
-
-    Optional<DateTime> compareStartTime =
-        Optional.ofNullable(options.getComparisonStartTimestamp()).map(DateTime::parse);
 
     PCollectionTuple datastoreSnapshot =
         DatastoreSnapshots.loadDatastoreSnapshotByKind(
@@ -216,6 +227,10 @@ public class ValidateSqlPipeline {
         return "ValidateSqlPipeline";
       }
 
+      LatestDatastoreSnapshotFinder datastoreSnapshotFinder =
+          DaggerLatestDatastoreSnapshotFinder_LatestDatastoreSnapshotFinderFinderComponent.create()
+              .datastoreSnapshotInfoFinder();
+
       @Override
       public boolean isRunning(String requestLogId) {
         return true;
@@ -234,11 +249,16 @@ public class ValidateSqlPipeline {
     // Reuse Dataflow worker initialization code to set up JPA in the pipeline harness.
     new RegistryPipelineWorkerInitializer().beforeProcessing(options);
 
-    DatastoreSnapshotInfo mostRecentExport =
-        DaggerLatestDatastoreSnapshotFinder_LatestDatastoreSnapshotFinderFinderComponent.create()
-            .datastoreSnapshotInfoFinder()
-            .getSnapshotInfo();
+    MigrationState state =
+        DatabaseMigrationStateSchedule.getValueAtTime(new SystemClock().nowUtc());
+    if (!state.getReplayDirection().equals(ReplayDirection.DATASTORE_TO_SQL)) {
+      throw new IllegalStateException("This pipeline is not designed for migration phase " + state);
+    }
 
-    new ValidateSqlPipeline(options, mostRecentExport).run(Pipeline.create(options));
+    LatestDatastoreSnapshotFinder datastoreSnapshotFinder =
+        DaggerLatestDatastoreSnapshotFinder_LatestDatastoreSnapshotFinderFinderComponent.create()
+            .datastoreSnapshotInfoFinder();
+
+    new ValidateSqlPipeline(options, datastoreSnapshotFinder).run(Pipeline.create(options));
   }
 }
