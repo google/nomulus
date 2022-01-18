@@ -15,6 +15,7 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.rdap.RdapTestHelper.assertThat;
 import static google.registry.rdap.RdapTestHelper.parseJsonObject;
 import static google.registry.request.Action.Method.POST;
@@ -45,6 +46,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.ReplicaSimulatingJpaTransactionManager;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
@@ -93,39 +95,27 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   }
 
   private JsonObject generateActualJson(RequestType requestType, String paramValue, String cursor) {
-    action.requestPath = actionPath;
-    action.requestMethod = POST;
-    String requestTypeParam = null;
+    String requestTypeParam;
     switch (requestType) {
       case NAME:
         action.nameParam = Optional.of(paramValue);
-        action.nsLdhNameParam = Optional.empty();
-        action.nsIpParam = Optional.empty();
         requestTypeParam = "name";
         break;
       case NS_LDH_NAME:
-        action.nameParam = Optional.empty();
         action.nsLdhNameParam = Optional.of(paramValue);
-        action.nsIpParam = Optional.empty();
         requestTypeParam = "nsLdhName";
         break;
       case NS_IP:
-        action.nameParam = Optional.empty();
-        action.nsLdhNameParam = Optional.empty();
         action.nsIpParam = Optional.of(paramValue);
         requestTypeParam = "nsIp";
         break;
       default:
-        action.nameParam = Optional.empty();
-        action.nsLdhNameParam = Optional.empty();
-        action.nsIpParam = Optional.empty();
         requestTypeParam = "";
         break;
     }
     if (paramValue != null) {
       if (cursor == null) {
         action.parameterMap = ImmutableListMultimap.of(requestTypeParam, paramValue);
-        action.cursorTokenParam = Optional.empty();
       } else {
         action.parameterMap =
             ImmutableListMultimap.of(requestTypeParam, paramValue, "cursor", cursor);
@@ -381,6 +371,12 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             clock.nowUtc()));
 
     action.requestMethod = POST;
+    action.nameParam = Optional.empty();
+    action.nsLdhNameParam = Optional.empty();
+    action.nsIpParam = Optional.empty();
+    action.cursorTokenParam = Optional.empty();
+    action.requestPath = actionPath;
+    action.readOnlyJpaTm = jpaTm();
   }
 
   private JsonObject generateExpectedJsonForTwoDomainsNsReply() {
@@ -726,6 +722,18 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     login("evilregistrar");
     runSuccessfulTestWithCatLol(RequestType.NAME, "cat.lol", "rdap_domain.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
+  }
+
+  @TestSqlOnly
+  void testDomainMatch_readOnlyReplica() {
+    login("evilregistrar");
+    rememberWildcardType("cat.lol");
+    action.readOnlyJpaTm = new ReplicaSimulatingJpaTransactionManager(jpaTm());
+    action.nameParam = Optional.of("cat.lol");
+    action.parameterMap = ImmutableListMultimap.of("name", "cat.lol");
+    action.run();
+    assertThat(response.getPayload()).contains("Yes Virginia <script>");
+    assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @TestOfyAndSql

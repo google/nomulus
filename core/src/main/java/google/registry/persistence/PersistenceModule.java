@@ -277,6 +277,8 @@ public abstract class PersistenceModule {
     setSqlCredential(credentialStore, new RobotUser(RobotId.NOMULUS), overrides);
     replicaInstanceConnectionName.ifPresent(
         name -> overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, name));
+    overrides.put(
+        Environment.ISOLATION, TransactionIsolationLevel.TRANSACTION_READ_COMMITTED.name());
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -291,6 +293,8 @@ public abstract class PersistenceModule {
     HashMap<String, String> overrides = Maps.newHashMap(beamCloudSqlConfigs);
     replicaInstanceConnectionName.ifPresent(
         name -> overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, name));
+    overrides.put(
+        Environment.ISOLATION, TransactionIsolationLevel.TRANSACTION_READ_COMMITTED.name());
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
