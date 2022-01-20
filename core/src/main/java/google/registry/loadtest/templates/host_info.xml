@@ -3,7 +3,7 @@
     <info>
       <host:info
        xmlns:host="urn:ietf:params:xml:ns:host-1.0">
-        <host:name>%host%.example.com</host:name>
+        <host:name>%host%.examplehost.com</host:name>
       </host:info>
     </info>
     <clTRID>trid</clTRID>

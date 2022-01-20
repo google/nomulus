@@ -6,7 +6,7 @@
         <domain:name>%domain%.%tld%</domain:name>
         <domain:period unit="y">2</domain:period>
         <domain:ns>
-          <domain:hostObj>%host%.example.com</domain:hostObj>
+          <domain:hostObj>%host%.examplehost.com</domain:hostObj>
         </domain:ns>
         <domain:registrant>%contact%</domain:registrant>
         <domain:contact type="admin">%contact%</domain:contact>

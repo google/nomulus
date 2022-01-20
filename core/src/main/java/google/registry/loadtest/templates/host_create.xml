@@ -3,7 +3,8 @@
     <create>
       <host:create
        xmlns:host="urn:ietf:params:xml:ns:host-1.0">
-        <host:name>%host%.example.com</host:name>
+        <host:name>%host%.examplehost.com</host:name>
+        <host:addr ip="v4">192.0.2.2</host:addr>
       </host:create>
     </create>
     <clTRID>trid</clTRID>

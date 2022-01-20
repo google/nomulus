@@ -18,7 +18,7 @@
         </contact:postalInfo>
         <contact:voice x="1234">+1.7035555555</contact:voice>
         <contact:fax>+1.7035555556</contact:fax>
-        <contact:email>jdoe@example.com</contact:email>
+        <contact:email>jdoe@examplehost.com</contact:email>
         <contact:authInfo>
           <contact:pw>2fooBAR</contact:pw>
         </contact:authInfo>
