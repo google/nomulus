@@ -18,7 +18,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
@@ -38,8 +37,10 @@ import com.google.common.primitives.Booleans;
 import com.googlecode.objectify.cmd.Query;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.PersistenceModule.ReadOnlyReplicaJpaTm;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
@@ -91,7 +92,11 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
   @Inject @Parameter("name") Optional<String> nameParam;
   @Inject @Parameter("nsLdhName") Optional<String> nsLdhNameParam;
   @Inject @Parameter("nsIp") Optional<String> nsIpParam;
-  @Inject public RdapDomainSearchAction() {
+
+  @Inject @ReadOnlyReplicaJpaTm JpaTransactionManager readOnlyJpaTm;
+
+  @Inject
+  public RdapDomainSearchAction() {
     super("domain search", EndpointType.DOMAINS);
   }
 
@@ -223,32 +228,31 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
       resultSet = getMatchingResources(query, true, querySizeLimit);
     } else {
       resultSet =
-          jpaTm()
-              .transact(
-                  () -> {
-                    CriteriaBuilder criteriaBuilder =
-                        jpaTm().getEntityManager().getCriteriaBuilder();
-                    CriteriaQueryBuilder<DomainBase> queryBuilder =
-                        CriteriaQueryBuilder.create(DomainBase.class)
-                            .where(
-                                "fullyQualifiedDomainName",
-                                criteriaBuilder::like,
-                                String.format("%s%%", partialStringQuery.getInitialString()))
-                            .orderByAsc("fullyQualifiedDomainName");
-                    if (cursorString.isPresent()) {
-                      queryBuilder =
-                          queryBuilder.where(
-                              "fullyQualifiedDomainName",
-                              criteriaBuilder::greaterThan,
-                              cursorString.get());
-                    }
-                    if (partialStringQuery.getSuffix() != null) {
-                      queryBuilder =
-                          queryBuilder.where(
-                              "tld", criteriaBuilder::equal, partialStringQuery.getSuffix());
-                    }
-                    return getMatchingResourcesSql(queryBuilder, true, querySizeLimit);
-                  });
+          readOnlyJpaTm.transact(
+              () -> {
+                CriteriaBuilder criteriaBuilder =
+                    readOnlyJpaTm.getEntityManager().getCriteriaBuilder();
+                CriteriaQueryBuilder<DomainBase> queryBuilder =
+                    CriteriaQueryBuilder.create(DomainBase.class)
+                        .where(
+                            "fullyQualifiedDomainName",
+                            criteriaBuilder::like,
+                            String.format("%s%%", partialStringQuery.getInitialString()))
+                        .orderByAsc("fullyQualifiedDomainName");
+                if (cursorString.isPresent()) {
+                  queryBuilder =
+                      queryBuilder.where(
+                          "fullyQualifiedDomainName",
+                          criteriaBuilder::greaterThan,
+                          cursorString.get());
+                }
+                if (partialStringQuery.getSuffix() != null) {
+                  queryBuilder =
+                      queryBuilder.where(
+                          "tld", criteriaBuilder::equal, partialStringQuery.getSuffix());
+                }
+                return getMatchingResourcesSql(queryBuilder, true, querySizeLimit);
+              });
     }
     return makeSearchResults(resultSet);
   }
@@ -270,20 +274,19 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
       resultSet = getMatchingResources(query, true, querySizeLimit);
     } else {
       resultSet =
-          jpaTm()
-              .transact(
-                  () -> {
-                    CriteriaQueryBuilder<DomainBase> builder =
-                        queryItemsSql(
-                                DomainBase.class,
-                                "tld",
-                                tld,
-                                Optional.of("fullyQualifiedDomainName"),
-                                cursorString,
-                                DeletedItemHandling.INCLUDE)
-                            .orderByAsc("fullyQualifiedDomainName");
-                    return getMatchingResourcesSql(builder, true, querySizeLimit);
-                  });
+          readOnlyJpaTm.transact(
+              () -> {
+                CriteriaQueryBuilder<DomainBase> builder =
+                    queryItemsSql(
+                            DomainBase.class,
+                            "tld",
+                            tld,
+                            Optional.of("fullyQualifiedDomainName"),
+                            cursorString,
+                            DeletedItemHandling.INCLUDE)
+                        .orderByAsc("fullyQualifiedDomainName");
+                return getMatchingResourcesSql(builder, true, querySizeLimit);
+              });
     }
     return makeSearchResults(resultSet);
   }
@@ -354,28 +357,28 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
           .map(VKey::from)
           .collect(toImmutableSet());
     } else {
-      return jpaTm()
-          .transact(
-              () -> {
-                CriteriaQueryBuilder<HostResource> builder =
-                    queryItemsSql(
-                        HostResource.class,
-                        "fullyQualifiedHostName",
-                        partialStringQuery,
-                        Optional.empty(),
-                        DeletedItemHandling.EXCLUDE);
-                if (desiredRegistrar.isPresent()) {
-                  builder =
-                      builder.where(
-                          "currentSponsorClientId",
-                          jpaTm().getEntityManager().getCriteriaBuilder()::equal,
-                          desiredRegistrar.get());
-                }
-                return getMatchingResourcesSql(builder, true, maxNameserversInFirstStage)
-                    .resources().stream()
-                    .map(HostResource::createVKey)
-                    .collect(toImmutableSet());
-              });
+      return readOnlyJpaTm.transact(
+          () -> {
+            CriteriaQueryBuilder<HostResource> builder =
+                queryItemsSql(
+                    HostResource.class,
+                    "fullyQualifiedHostName",
+                    partialStringQuery,
+                    Optional.empty(),
+                    DeletedItemHandling.EXCLUDE);
+            if (desiredRegistrar.isPresent()) {
+              builder =
+                  builder.where(
+                      "currentSponsorClientId",
+                      readOnlyJpaTm.getEntityManager().getCriteriaBuilder()::equal,
+                      desiredRegistrar.get());
+            }
+            return getMatchingResourcesSql(builder, true, maxNameserversInFirstStage)
+                .resources()
+                .stream()
+                .map(HostResource::createVKey)
+                .collect(toImmutableSet());
+          });
     }
   }
 
@@ -509,21 +512,20 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
         parameters.put("desiredRegistrar", desiredRegistrar.get());
       }
       hostKeys =
-          jpaTm()
-              .transact(
-                  () -> {
-                    javax.persistence.Query query =
-                        jpaTm()
-                            .getEntityManager()
-                            .createNativeQuery(queryBuilder.toString())
-                            .setMaxResults(maxNameserversInFirstStage);
-                    parameters.build().forEach(query::setParameter);
-                    @SuppressWarnings("unchecked")
-                    Stream<String> resultStream = query.getResultStream();
-                    return resultStream
-                        .map(repoId -> VKey.create(HostResource.class, repoId))
-                        .collect(toImmutableSet());
-                  });
+          readOnlyJpaTm.transact(
+              () -> {
+                javax.persistence.Query query =
+                    readOnlyJpaTm
+                        .getEntityManager()
+                        .createNativeQuery(queryBuilder.toString())
+                        .setMaxResults(maxNameserversInFirstStage);
+                parameters.build().forEach(query::setParameter);
+                @SuppressWarnings("unchecked")
+                Stream<String> resultStream = query.getResultStream();
+                return resultStream
+                    .map(repoId -> VKey.create(HostResource.class, repoId))
+                    .collect(toImmutableSet());
+              });
     }
     return searchByNameserverRefs(hostKeys);
   }
@@ -568,39 +570,38 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
         }
         stream.forEach(domainSetBuilder::add);
       } else {
-        jpaTm()
-            .transact(
-                () -> {
-                  for (VKey<HostResource> hostKey : hostKeys) {
-                    CriteriaQueryBuilder<DomainBase> queryBuilder =
-                        CriteriaQueryBuilder.create(DomainBase.class)
-                            .whereFieldContains("nsHosts", hostKey)
-                            .orderByAsc("fullyQualifiedDomainName");
-                    CriteriaBuilder criteriaBuilder =
-                        jpaTm().getEntityManager().getCriteriaBuilder();
-                    if (!shouldIncludeDeleted()) {
-                      queryBuilder =
-                          queryBuilder.where(
-                              "deletionTime", criteriaBuilder::greaterThan, getRequestTime());
-                    }
-                    if (cursorString.isPresent()) {
-                      queryBuilder =
-                          queryBuilder.where(
-                              "fullyQualifiedDomainName",
-                              criteriaBuilder::greaterThan,
-                              cursorString.get());
-                    }
-                    jpaTm()
-                        .criteriaQuery(queryBuilder.build())
-                        .getResultStream()
-                        .filter(this::isAuthorized)
-                        .forEach(
-                            (domain) -> {
-                              Hibernate.initialize(domain.getDsData());
-                              domainSetBuilder.add(domain);
-                            });
-                  }
-                });
+        readOnlyJpaTm.transact(
+            () -> {
+              for (VKey<HostResource> hostKey : hostKeys) {
+                CriteriaQueryBuilder<DomainBase> queryBuilder =
+                    CriteriaQueryBuilder.create(DomainBase.class)
+                        .whereFieldContains("nsHosts", hostKey)
+                        .orderByAsc("fullyQualifiedDomainName");
+                CriteriaBuilder criteriaBuilder =
+                    readOnlyJpaTm.getEntityManager().getCriteriaBuilder();
+                if (!shouldIncludeDeleted()) {
+                  queryBuilder =
+                      queryBuilder.where(
+                          "deletionTime", criteriaBuilder::greaterThan, getRequestTime());
+                }
+                if (cursorString.isPresent()) {
+                  queryBuilder =
+                      queryBuilder.where(
+                          "fullyQualifiedDomainName",
+                          criteriaBuilder::greaterThan,
+                          cursorString.get());
+                }
+                readOnlyJpaTm
+                    .criteriaQuery(queryBuilder.build())
+                    .getResultStream()
+                    .filter(this::isAuthorized)
+                    .forEach(
+                        (domain) -> {
+                          Hibernate.initialize(domain.getDsData());
+                          domainSetBuilder.add(domain);
+                        });
+              }
+            });
       }
     }
     List<DomainBase> domains = domainSetBuilder.build().asList();
