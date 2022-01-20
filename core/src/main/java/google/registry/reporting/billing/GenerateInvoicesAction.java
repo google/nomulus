@@ -32,6 +32,7 @@ import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
+import google.registry.persistence.PersistenceModule;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
@@ -120,17 +121,16 @@ public class GenerateInvoicesAction implements Runnable {
               .setContainerSpecGcsPath(
                   String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
               .setParameters(
-                  ImmutableMap.of(
-                      "yearMonth",
-                      yearMonth.toString("yyyy-MM"),
-                      "invoiceFilePrefix",
-                      invoiceFilePrefix,
-                      "database",
-                      database.name(),
-                      "billingBucketUrl",
-                      billingBucketUrl,
-                      "registryEnvironment",
-                      RegistryEnvironment.get().name()));
+                  new ImmutableMap.Builder<String, String>()
+                      .put("yearMonth", yearMonth.toString("yyyy-MM"))
+                      .put("invoiceFilePrefix", invoiceFilePrefix)
+                      .put("database", database.name())
+                      .put("billingBucketUrl", billingBucketUrl)
+                      .put("registryEnvironment", RegistryEnvironment.get().name())
+                      .put(
+                          "jpaTransactionManagerType",
+                          PersistenceModule.JpaTransactionManagerType.READ_ONLY_REPLICA.toString())
+                      .build());
       LaunchFlexTemplateResponse launchResponse =
           dataflow
               .projects()
