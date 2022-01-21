@@ -248,6 +248,9 @@ public class RdeIO {
       // Now that we're done, output roll the cursor forward.
       if (key.manual()) {
         logger.atInfo().log("Manual operation; not advancing cursor or enqueuing upload task.");
+        // Temporary measure to run RDE in beam in parallel with the daily MapReduce based RDE runs.
+      } else if (tm().isOfy()) {
+        logger.atInfo().log("Ofy is primary TM; not advancing cursor or enqueuing upload task.");
       } else {
         outputReceiver.output(KV.of(key, revision));
       }

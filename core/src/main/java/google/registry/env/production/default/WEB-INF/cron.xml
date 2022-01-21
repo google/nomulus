@@ -37,6 +37,19 @@
   </cron>
 
   <cron>
+    <url>/_dr/task/rdeStaging?beam=true</url>
+    <description>
+      This job generates a full RDE escrow deposit as a single gigantic XML
+      document using the Beam pipeline regardless of the current TM
+      configuration and streams it to cloud storage. It does not trigger the
+      subsequent upload tasks and is meant to run parallel with the main cron
+      job in order to compare the results from both runs.
+    </description>
+    <schedule>every 8 hours from 00:07 to 20:00</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=rde-upload&endpoint=/_dr/task/rdeUpload&forEachRealTld]]></url>
     <description>
       This job is a no-op unless RdeUploadCursor falls behind for some reason.
