@@ -66,7 +66,7 @@ public class LatestDatastoreSnapshotFinder {
      * "2021-11-19T06:00:00_76493/2021-11-19T06:00:00_76493.overall_export_metadata".
      */
     Optional<String> metaFilePathOptional =
-        findNewestExportMetadataFileBeforeTime(bucketName, exportEndTimeUpperBound, 2);
+        findNewestExportMetadataFileBeforeTime(bucketName, exportEndTimeUpperBound, 5);
     if (!metaFilePathOptional.isPresent()) {
       throw new NoSuchElementException("No exports found over the past 2 days.");
     }
@@ -125,12 +125,12 @@ public class LatestDatastoreSnapshotFinder {
 
   /** Holds information about a Datastore snapshot. */
   @AutoValue
-  abstract static class DatastoreSnapshotInfo {
-    abstract String exportDir();
+  public abstract static class DatastoreSnapshotInfo {
+    public abstract String exportDir();
 
-    abstract String commitLogDir();
+    public abstract String commitLogDir();
 
-    abstract Interval exportInterval();
+    public abstract Interval exportInterval();
 
     static DatastoreSnapshotInfo create(
         String exportDir, String commitLogDir, Interval exportOperationInterval) {

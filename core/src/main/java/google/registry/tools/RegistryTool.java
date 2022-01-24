@@ -110,6 +110,7 @@ public final class RegistryTool {
           .put("set_num_instances", SetNumInstancesCommand.class)
           .put("set_sql_replay_checkpoint", SetSqlReplayCheckpointCommand.class)
           .put("setup_ote", SetupOteCommand.class)
+          .put("sync_datastore_to_sql", SyncDatastoreToSqlCommand.class)
           .put("uniform_rapid_suspension", UniformRapidSuspensionCommand.class)
           .put("unlock_domain", UnlockDomainCommand.class)
           .put("unrenew_domain", UnrenewDomainCommand.class)

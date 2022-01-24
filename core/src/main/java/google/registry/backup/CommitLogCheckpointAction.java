@@ -30,6 +30,7 @@ import google.registry.request.Action.Service;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import google.registry.util.CloudTasksUtils;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -64,33 +65,55 @@ public final class CommitLogCheckpointAction implements Runnable {
 
   @Override
   public void run() {
+    createCheckPointAndStartAsyncExport();
+  }
+
+  /**
+   * Creates a {@link CommitLogCheckpoint} and initiates an asynchronous export task.
+   *
+   * <p>Since the export action to GCS may be slow, it is invoked asynchronously through the Cloud
+   * Task service. It is important that the {@code enqueue} method be called within the transaction
+   * that persists the checkpoint, otherwise when an enqueue invocation fails a checkpoint may
+   * become an orphan. Enqueuing within the transaction does introduce a potential race condition
+   * with {@link ExportCommitLogDiffAction}, when Cloud Task manages to start that action before the
+   * transaction commits and the new checkpoint becomes visible. In such cases, the action fails and
+   * is retried by Cloud Task.
+   *
+   * @return the {@code CommitLogCheckpoint} to be exported
+   */
+  public Optional<CommitLogCheckpoint> createCheckPointAndStartAsyncExport() {
     final CommitLogCheckpoint checkpoint = strategy.computeCheckpoint();
     logger.atInfo().log(
         "Generated candidate checkpoint for time: %s", checkpoint.getCheckpointTime());
-    ofyTm()
-        .transact(
-            () -> {
-              DateTime lastWrittenTime = CommitLogCheckpointRoot.loadRoot().getLastWrittenTime();
-              if (isBeforeOrAt(checkpoint.getCheckpointTime(), lastWrittenTime)) {
-                logger.atInfo().log(
-                    "Newer checkpoint already written at time: %s", lastWrittenTime);
-                return;
-              }
-              auditedOfy()
-                  .saveIgnoringReadOnlyWithoutBackup()
-                  .entities(
-                      checkpoint, CommitLogCheckpointRoot.create(checkpoint.getCheckpointTime()));
-              // Enqueue a diff task between previous and current checkpoints.
-              cloudTasksUtils.enqueue(
-                  QUEUE_NAME,
-                  CloudTasksUtils.createPostTask(
-                      ExportCommitLogDiffAction.PATH,
-                      Service.BACKEND.toString(),
-                      ImmutableMultimap.of(
-                          LOWER_CHECKPOINT_TIME_PARAM,
-                          lastWrittenTime.toString(),
-                          UPPER_CHECKPOINT_TIME_PARAM,
-                          checkpoint.getCheckpointTime().toString())));
-            });
+    boolean isCheckPointPersisted =
+        ofyTm()
+            .transact(
+                () -> {
+                  DateTime lastWrittenTime =
+                      CommitLogCheckpointRoot.loadRoot().getLastWrittenTime();
+                  if (isBeforeOrAt(checkpoint.getCheckpointTime(), lastWrittenTime)) {
+                    logger.atInfo().log(
+                        "Newer checkpoint already written at time: %s", lastWrittenTime);
+                    return false;
+                  }
+                  auditedOfy()
+                      .saveIgnoringReadOnlyWithoutBackup()
+                      .entities(
+                          checkpoint,
+                          CommitLogCheckpointRoot.create(checkpoint.getCheckpointTime()));
+                  // Enqueue a diff task between previous and current checkpoints.
+                  cloudTasksUtils.enqueue(
+                      QUEUE_NAME,
+                      CloudTasksUtils.createPostTask(
+                          ExportCommitLogDiffAction.PATH,
+                          Service.BACKEND.toString(),
+                          ImmutableMultimap.of(
+                              LOWER_CHECKPOINT_TIME_PARAM,
+                              lastWrittenTime.toString(),
+                              UPPER_CHECKPOINT_TIME_PARAM,
+                              checkpoint.getCheckpointTime().toString())));
+                  return true;
+                });
+    return isCheckPointPersisted ? Optional.of(checkpoint) : Optional.empty();
   }
 }

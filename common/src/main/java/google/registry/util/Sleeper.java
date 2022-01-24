@@ -41,4 +41,20 @@ public interface Sleeper {
    * @see com.google.common.util.concurrent.Uninterruptibles#sleepUninterruptibly
    */
   void sleepUninterruptibly(ReadableDuration duration);
+
+  /**
+   * Puts the current thread to interruptible sleep.
+   *
+   * <p>This is a convenience method for {@link #sleep} that properly converts an {@link
+   * InterruptedException} to a {@link RuntimeException}.
+   */
+  default void sleepInterruptibly(ReadableDuration duration) {
+    try {
+      sleep(duration);
+    } catch (InterruptedException e) {
+      // Restore current thread's interrupted state.
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted.", e);
+    }
+  }
 }

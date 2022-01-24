@@ -15,6 +15,7 @@
 package google.registry.model.replay;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.replay.ReplicateToDatastoreAction.applyTransaction;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
@@ -158,23 +159,23 @@ public class ReplicateToDatastoreActionTest {
 
     // Write a transaction and run just the batch fetch.
     insertInDb(foo);
-    List<TransactionEntity> txns1 = action.getTransactionBatch();
+    List<TransactionEntity> txns1 = action.getTransactionBatchAtSnapshot();
     assertThat(txns1).hasSize(1);
 
     // Write a second transaction and do another batch fetch.
     insertInDb(bar);
-    List<TransactionEntity> txns2 = action.getTransactionBatch();
+    List<TransactionEntity> txns2 = action.getTransactionBatchAtSnapshot();
     assertThat(txns2).hasSize(2);
 
     // Apply the first batch.
-    action.applyTransaction(txns1.get(0));
+    applyTransaction(txns1.get(0));
 
     // Remove the foo record so we can ensure that this transaction doesn't get doublle-played.
     ofyTm().transact(() -> ofyTm().delete(foo.key()));
 
     // Apply the second batch.
     for (TransactionEntity txn : txns2) {
-      action.applyTransaction(txn);
+      applyTransaction(txn);
     }
 
     // Verify that the first transaction didn't get replayed but the second one did.
@@ -212,10 +213,9 @@ public class ReplicateToDatastoreActionTest {
     // Force the last transaction id back to -1 so that we look for transaction 0.
     ofyTm().transact(() -> ofyTm().insert(new LastSqlTransaction(-1)));
 
-    List<TransactionEntity> txns = action.getTransactionBatch();
+    List<TransactionEntity> txns = action.getTransactionBatchAtSnapshot();
     assertThat(txns).hasSize(1);
-    assertThat(
-            assertThrows(IllegalStateException.class, () -> action.applyTransaction(txns.get(0))))
+    assertThat(assertThrows(IllegalStateException.class, () -> applyTransaction(txns.get(0))))
         .hasMessageThat()
         .isEqualTo("Missing transaction: last txn id = -1, next available txn = 1");
   }

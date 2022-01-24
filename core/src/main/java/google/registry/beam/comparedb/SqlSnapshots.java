@@ -37,7 +37,6 @@ import google.registry.model.bulkquery.DomainBaseLite;
 import google.registry.model.bulkquery.DomainHistoryHost;
 import google.registry.model.bulkquery.DomainHistoryLite;
 import google.registry.model.bulkquery.DomainHost;
-import google.registry.model.common.Cursor;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
@@ -99,7 +98,7 @@ public final class SqlSnapshots {
   static final ImmutableSet<Class<? extends SqlEntity>> ALL_SQL_ENTITIES =
       ImmutableSet.of(
           Registry.class,
-          Cursor.class,
+          // Cursor.class,
           Registrar.class,
           ContactResource.class,
           RegistrarContact.class,
