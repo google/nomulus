@@ -44,42 +44,52 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
     this.delegate = delegate;
   }
 
+  @Override
   public void teardown() {
     delegate.teardown();
   }
 
+  @Override
   public EntityManager getStandaloneEntityManager() {
     return delegate.getStandaloneEntityManager();
   }
 
+  @Override
   public EntityManager getEntityManager() {
     return delegate.getEntityManager();
   }
 
+  @Override
   public JpaTransactionManager setDatabaseSnapshot(String snapshotId) {
     return delegate.setDatabaseSnapshot(snapshotId);
   }
 
+  @Override
   public <T> TypedQuery<T> query(String sqlString, Class<T> resultClass) {
     return delegate.query(sqlString, resultClass);
   }
 
+  @Override
   public <T> TypedQuery<T> criteriaQuery(CriteriaQuery<T> criteriaQuery) {
     return delegate.criteriaQuery(criteriaQuery);
   }
 
+  @Override
   public Query query(String sqlString) {
     return delegate.query(sqlString);
   }
 
+  @Override
   public boolean inTransaction() {
     return delegate.inTransaction();
   }
 
+  @Override
   public void assertInTransaction() {
     delegate.assertInTransaction();
   }
 
+  @Override
   public <T> T transact(Supplier<T> work) {
     return delegate.transact(
         () -> {
@@ -88,14 +98,17 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
         });
   }
 
+  @Override
   public <T> T transactWithoutBackup(Supplier<T> work) {
     return transact(work);
   }
 
+  @Override
   public <T> T transactNoRetry(Supplier<T> work) {
     return transact(work);
   }
 
+  @Override
   public void transact(Runnable work) {
     transact(
         () -> {
@@ -104,188 +117,234 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
         });
   }
 
+  @Override
   public void transactNoRetry(Runnable work) {
     transact(work);
   }
 
+  @Override
   public <T> T transactNew(Supplier<T> work) {
     return transact(work);
   }
 
+  @Override
   public void transactNew(Runnable work) {
     transact(work);
   }
 
+  @Override
   public <T> T transactNewReadOnly(Supplier<T> work) {
     return transact(work);
   }
 
+  @Override
   public void transactNewReadOnly(Runnable work) {
     transact(work);
   }
 
+  @Override
   public <T> T doTransactionless(Supplier<T> work) {
     return delegate.doTransactionless(work);
   }
 
+  @Override
   public DateTime getTransactionTime() {
     return delegate.getTransactionTime();
   }
 
+  @Override
   public void insert(Object entity) {
     delegate.insert(entity);
   }
 
+  @Override
   public void insertAll(ImmutableCollection<?> entities) {
     delegate.insertAll(entities);
   }
 
+  @Override
   public void insertAll(ImmutableObject... entities) {
     delegate.insertAll(entities);
   }
 
+  @Override
   public void insertWithoutBackup(ImmutableObject entity) {
     delegate.insertWithoutBackup(entity);
   }
 
+  @Override
   public void insertAllWithoutBackup(ImmutableCollection<?> entities) {
     delegate.insertAllWithoutBackup(entities);
   }
 
+  @Override
   public void put(Object entity) {
     delegate.put(entity);
   }
 
+  @Override
   public void putAll(ImmutableObject... entities) {
     delegate.putAll(entities);
   }
 
+  @Override
   public void putAll(ImmutableCollection<?> entities) {
     delegate.putAll(entities);
   }
 
+  @Override
   public void putWithoutBackup(ImmutableObject entity) {
     delegate.putWithoutBackup(entity);
   }
 
+  @Override
   public void putAllWithoutBackup(ImmutableCollection<?> entities) {
     delegate.putAllWithoutBackup(entities);
   }
 
+  @Override
   public void update(Object entity) {
     delegate.update(entity);
   }
 
+  @Override
   public void updateAll(ImmutableCollection<?> entities) {
     delegate.updateAll(entities);
   }
 
+  @Override
   public void updateAll(ImmutableObject... entities) {
     delegate.updateAll(entities);
   }
 
+  @Override
   public void updateWithoutBackup(ImmutableObject entity) {
     delegate.updateWithoutBackup(entity);
   }
 
+  @Override
   public void updateAllWithoutBackup(ImmutableCollection<?> entities) {
     delegate.updateAllWithoutBackup(entities);
   }
 
+  @Override
   public <T> boolean exists(VKey<T> key) {
     return delegate.exists(key);
   }
 
+  @Override
   public boolean exists(Object entity) {
     return delegate.exists(entity);
   }
 
+  @Override
   public <T> Optional<T> loadByKeyIfPresent(VKey<T> key) {
     return delegate.loadByKeyIfPresent(key);
   }
 
+  @Override
   public <T> ImmutableMap<VKey<? extends T>, T> loadByKeysIfPresent(
       Iterable<? extends VKey<? extends T>> vKeys) {
     return delegate.loadByKeysIfPresent(vKeys);
   }
 
+  @Override
   public <T> ImmutableList<T> loadByEntitiesIfPresent(Iterable<T> entities) {
     return delegate.loadByEntitiesIfPresent(entities);
   }
 
+  @Override
   public <T> T loadByKey(VKey<T> key) {
     return delegate.loadByKey(key);
   }
 
+  @Override
   public <T> ImmutableMap<VKey<? extends T>, T> loadByKeys(
       Iterable<? extends VKey<? extends T>> vKeys) {
     return delegate.loadByKeys(vKeys);
   }
 
+  @Override
   public <T> T loadByEntity(T entity) {
     return delegate.loadByEntity(entity);
   }
 
+  @Override
   public <T> ImmutableList<T> loadByEntities(Iterable<T> entities) {
     return delegate.loadByEntities(entities);
   }
 
+  @Override
   public <T> ImmutableList<T> loadAllOf(Class<T> clazz) {
     return delegate.loadAllOf(clazz);
   }
 
+  @Override
   public <T> Stream<T> loadAllOfStream(Class<T> clazz) {
     return delegate.loadAllOfStream(clazz);
   }
 
+  @Override
   public <T> Optional<T> loadSingleton(Class<T> clazz) {
     return delegate.loadSingleton(clazz);
   }
 
+  @Override
   public void delete(VKey<?> key) {
     delegate.delete(key);
   }
 
+  @Override
   public void delete(Iterable<? extends VKey<?>> vKeys) {
     delegate.delete(vKeys);
   }
 
+  @Override
   public <T> T delete(T entity) {
     return delegate.delete(entity);
   }
 
+  @Override
   public void deleteWithoutBackup(VKey<?> key) {
     delegate.deleteWithoutBackup(key);
   }
 
+  @Override
   public void deleteWithoutBackup(Iterable<? extends VKey<?>> keys) {
     delegate.deleteWithoutBackup(keys);
   }
 
+  @Override
   public void deleteWithoutBackup(Object entity) {
     delegate.deleteWithoutBackup(entity);
   }
 
+  @Override
   public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
     return delegate.createQueryComposer(entity);
   }
 
+  @Override
   public void clearSessionCache() {
     delegate.clearSessionCache();
   }
 
+  @Override
   public boolean isOfy() {
     return delegate.isOfy();
   }
 
+  @Override
   public void putIgnoringReadOnlyWithoutBackup(Object entity) {
     delegate.putIgnoringReadOnlyWithoutBackup(entity);
   }
 
+  @Override
   public void deleteIgnoringReadOnlyWithoutBackup(VKey<?> key) {
     delegate.deleteIgnoringReadOnlyWithoutBackup(key);
   }
 
+  @Override
   public <T> void assertDelete(VKey<T> key) {
     delegate.assertDelete(key);
   }
