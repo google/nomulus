@@ -53,11 +53,11 @@ public class LatestDatastoreSnapshotFinder {
   }
 
   /**
-   * Finds information of the most recent Datastore snapshot, including the GCS folder of the
-   * exported data files and the start and stop times of the export. The folder of the CommitLogs is
-   * also included in the return.
+   * Finds information of the most recent Datastore snapshot that ends strictly before {@code
+   * exportEndTimeUpperBound}, including the GCS folder of the exported data files and the start and
+   * stop times of the export. The folder of the CommitLogs is also included in the return.
    */
-  public DatastoreSnapshotInfo getSnapshotInfo() {
+  public DatastoreSnapshotInfo getSnapshotInfo(Instant exportEndTimeUpperBound) {
     String bucketName = RegistryConfig.getDatastoreBackupsBucket().substring("gs://".length());
     /**
      * Find the bucket-relative path to the overall metadata file of the last Datastore export.
@@ -65,7 +65,8 @@ public class LatestDatastoreSnapshotFinder {
      * return value is like
      * "2021-11-19T06:00:00_76493/2021-11-19T06:00:00_76493.overall_export_metadata".
      */
-    Optional<String> metaFilePathOptional = findMostRecentExportMetadataFile(bucketName, 2);
+    Optional<String> metaFilePathOptional =
+        findNewestExportMetadataFileBeforeTime(bucketName, exportEndTimeUpperBound, 2);
     if (!metaFilePathOptional.isPresent()) {
       throw new NoSuchElementException("No exports found over the past 2 days.");
     }
@@ -85,8 +86,9 @@ public class LatestDatastoreSnapshotFinder {
   }
 
   /**
-   * Finds the bucket-relative path of the overall export metadata file, in the given bucket,
-   * searching back up to {@code lookBackDays} days, including today.
+   * Finds the latest Datastore export that ends strictly before {@code endTimeUpperBound} and
+   * returns the bucket-relative path of the overall export metadata file, in the given bucket. The
+   * search goes back for up to {@code lookBackDays} days in time, including today.
    *
    * <p>The overall export metadata file is the last file created during a Datastore export. All
    * data has been exported by the creation time of this file. The name of this file, like that of
@@ -95,7 +97,8 @@ public class LatestDatastoreSnapshotFinder {
    * <p>An example return value: {@code
    * 2021-11-19T06:00:00_76493/2021-11-19T06:00:00_76493.overall_export_metadata}.
    */
-  private Optional<String> findMostRecentExportMetadataFile(String bucketName, int lookBackDays) {
+  private Optional<String> findNewestExportMetadataFileBeforeTime(
+      String bucketName, Instant endTimeUpperBound, int lookBackDays) {
     DateTime today = clock.nowUtc();
     for (int day = 0; day < lookBackDays; day++) {
       String dateString = today.minusDays(day).toString("yyyy-MM-dd");
@@ -107,7 +110,11 @@ public class LatestDatastoreSnapshotFinder {
                 .sorted(Comparator.<String>naturalOrder().reversed())
                 .findFirst();
         if (metaFilePath.isPresent()) {
-          return metaFilePath;
+          BlobInfo blobInfo = gcsUtils.getBlobInfo(BlobId.of(bucketName, metaFilePath.get()));
+          Instant exportEndTime = new Instant(blobInfo.getCreateTime());
+          if (exportEndTime.isBefore(endTimeUpperBound)) {
+            return metaFilePath;
+          }
         }
       } catch (IOException ioe) {
         throw new RuntimeException(ioe);
