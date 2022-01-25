@@ -15,14 +15,8 @@
 package google.registry.tools;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.tools.javascrap.BackfillRegistryLocksCommand;
-import google.registry.tools.javascrap.BackfillSpec11ThreatMatchesCommand;
 import google.registry.tools.javascrap.CompareEscrowDepositsCommand;
-import google.registry.tools.javascrap.DeleteContactByRoidCommand;
 import google.registry.tools.javascrap.HardDeleteHostCommand;
-import google.registry.tools.javascrap.PopulateNullRegistrarFieldsCommand;
-import google.registry.tools.javascrap.RemoveIpAddressCommand;
-import google.registry.tools.javascrap.ResaveAllTldsCommand;
 
 /** Container class to create and run remote commands against a Datastore instance. */
 public final class RegistryTool {
@@ -36,8 +30,6 @@ public final class RegistryTool {
   public static final ImmutableMap<String, Class<? extends Command>> COMMAND_MAP =
       new ImmutableMap.Builder<String, Class<? extends Command>>()
           .put("ack_poll_messages", AckPollMessagesCommand.class)
-          .put("backfill_registry_locks", BackfillRegistryLocksCommand.class)
-          .put("backfill_spec11_threat_matches", BackfillSpec11ThreatMatchesCommand.class)
           .put("canonicalize_labels", CanonicalizeLabelsCommand.class)
           .put("check_domain", CheckDomainCommand.class)
           .put("check_domain_claims", CheckDomainClaimsCommand.class)
@@ -57,7 +49,6 @@ public final class RegistryTool {
           .put("curl", CurlCommand.class)
           .put("dedupe_one_time_billing_event_ids", DedupeOneTimeBillingEventIdsCommand.class)
           .put("delete_allocation_tokens", DeleteAllocationTokensCommand.class)
-          .put("delete_contact_by_roid", DeleteContactByRoidCommand.class)
           .put("delete_domain", DeleteDomainCommand.class)
           .put("delete_host", DeleteHostCommand.class)
           .put("delete_premium_list", DeletePremiumListCommand.class)
@@ -107,12 +98,9 @@ public final class RegistryTool {
           .put("login", LoginCommand.class)
           .put("logout", LogoutCommand.class)
           .put("pending_escrow", PendingEscrowCommand.class)
-          .put("populate_null_registrar_fields", PopulateNullRegistrarFieldsCommand.class)
           .put("registrar_contact", RegistrarContactCommand.class)
-          .put("remove_ip_address", RemoveIpAddressCommand.class)
           .put("remove_registry_one_key", RemoveRegistryOneKeyCommand.class)
           .put("renew_domain", RenewDomainCommand.class)
-          .put("resave_all_tlds", ResaveAllTldsCommand.class)
           .put("resave_entities", ResaveEntitiesCommand.class)
           .put("resave_environment_entities", ResaveEnvironmentEntitiesCommand.class)
           .put("resave_epp_resource", ResaveEppResourceCommand.class)

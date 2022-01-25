@@ -42,9 +42,7 @@ import google.registry.request.Modules.URLFetchServiceModule;
 import google.registry.request.Modules.UrlFetchTransportModule;
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
-import google.registry.tools.javascrap.BackfillRegistryLocksCommand;
 import google.registry.tools.javascrap.CompareEscrowDepositsCommand;
-import google.registry.tools.javascrap.DeleteContactByRoidCommand;
 import google.registry.tools.javascrap.HardDeleteHostCommand;
 import google.registry.util.UtilsModule;
 import google.registry.whois.NonCachingWhoisModule;
@@ -90,8 +88,6 @@ import javax.inject.Singleton;
 interface RegistryToolComponent {
   void inject(AckPollMessagesCommand command);
 
-  void inject(BackfillRegistryLocksCommand command);
-
   void inject(CheckDomainClaimsCommand command);
 
   void inject(CheckDomainCommand command);
@@ -111,8 +107,6 @@ interface RegistryToolComponent {
   void inject(CreateRegistrarCommand command);
 
   void inject(CreateTldCommand command);
-
-  void inject(DeleteContactByRoidCommand command);
 
   void inject(EncryptEscrowDepositCommand command);
 
