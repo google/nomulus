@@ -327,7 +327,7 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
                     "--techs=crr-tech",
                     "--ds_records=1 2 3 abcd",
                     "example.tld"));
-    assertThat(thrown).hasMessageThat().contains("DS record uses an unrecognized digest type");
+    assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized digest type: 3");
   }
 
   @Test
@@ -343,7 +343,7 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
                     "--techs=crr-tech",
                     "--ds_records=1 999 4 abcd",
                     "example.tld"));
-    assertThat(thrown).hasMessageThat().contains("DS record uses an unrecognized algorithm");
+    assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized algorithm: 999");
   }
 
   @Test

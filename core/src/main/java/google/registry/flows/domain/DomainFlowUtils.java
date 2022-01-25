@@ -325,7 +325,7 @@ public class DomainFlowUtils {
     }
   }
 
-  static boolean validateAlgorithm(int alg) {
+  public static boolean validateAlgorithm(int alg) {
     if (alg > 255 || alg < 0) {
       return false;
     }

@@ -637,7 +637,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             () ->
                 runCommandForced(
                     "--client=NewRegistrar", "--add_ds_records=1 299 2 abcd", "example.tld"));
-    assertThat(thrown).hasMessageThat().contains("DS record uses an unrecognized algorithm: 299");
+    assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized algorithm: 299");
   }
 
   @TestOfyAndSql
@@ -648,7 +648,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             () ->
                 runCommandForced(
                     "--client=NewRegistrar", "--add_ds_records=1 2 3 abcd", "example.tld"));
-    assertThat(thrown).hasMessageThat().contains("DS record uses an unrecognized digest type: 3");
+    assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized digest type: 3");
   }
 
   @TestOfyAndSql
