@@ -91,9 +91,15 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
 
   @Override
   public <T> T transact(Supplier<T> work) {
+    if (delegate.inTransaction()) {
+      return work.get();
+    }
     return delegate.transact(
         () -> {
-          delegate.getEntityManager().createQuery("SET TRANSACTION READ ONLY").executeUpdate();
+          delegate
+              .getEntityManager()
+              .createNativeQuery("SET TRANSACTION READ ONLY")
+              .executeUpdate();
           return work.get();
         });
   }
