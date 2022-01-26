@@ -1,0 +1,42 @@
+{
+  "name": "Validate Datastore with Cloud SQL",
+  "description": "An Apache Beam batch pipeline that compares Datastore with the primary Cloud SQL database.",
+  "parameters": [
+    {
+      "name": "registryEnvironment",
+      "label": "The Registry environment.",
+      "helpText": "The Registry environment.",
+      "is_optional": false,
+      "regexes": [
+        "^PRODUCTION|SANDBOX|CRASH|QA|ALPHA$"
+      ]
+    },
+    {
+      "name": "isolationOverride",
+      "label": "The desired SQL transaction isolation level.",
+      "helpText": "The desired SQL transaction isolation level.",
+      "is_optional": true,
+      "regexes": [
+        "^[0-9A-Z_]+$"
+      ]
+    },
+    {
+      "name": "sqlSnapshotId",
+      "label": "The ID of an exported Cloud SQL (Postgresql) snapshot.",
+      "helpText": "The ID of an exported Cloud SQL (Postgresql) snapshot.",
+      "is_optional": true
+    },
+    {
+      "name": "latestCommitLogTimestamp",
+      "label": "Nomulus CommitLog start time",
+      "helpText": "The latest entity update time allowed for inclusion in validation, in ISO8601 format.",
+      "is_optional": false
+    },
+    {
+      "name": "comparisonStartTimestamp",
+      "label": "Only entities updated at or after this time are included for validation.",
+      "helpText": "The earliest entity update time allowed for inclusion in validation, in ISO8601 format.",
+      "is_optional": true
+    }
+  ]
+}

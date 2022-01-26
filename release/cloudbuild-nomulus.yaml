@@ -96,7 +96,9 @@ steps:
       google.registry.beam.invoicing.InvoicingPipeline \
       google/registry/beam/invoicing_pipeline_metadata.json \
       google.registry.beam.rde.RdePipeline \
-      google/registry/beam/rde_pipeline_metadata.json
+      google/registry/beam/rde_pipeline_metadata.json \
+      google.registry.beam.comparedb.ValidateDatastorePipeline \
+      google/registry/beam/validate_datastore_pipeline_metadata.json
 # Tentatively build and publish Cloud SQL schema jar here, before schema release
 # process is finalized. Also publish nomulus:core jars that are needed for
 # server/schema compatibility tests.

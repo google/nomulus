@@ -796,6 +796,11 @@ if (environment == 'alpha') {
               mainClass: 'google.registry.beam.rde.RdePipeline',
               metaData : 'google/registry/beam/rde_pipeline_metadata.json'
           ],
+      validateDatastore  :
+          [
+              mainClass: 'google.registry.beam.comparedb.ValidateDatastorePipeline',
+              metaData: 'google/registry/beam/validate_datastore_pipeline_metadata.json'
+          ],
   ]
   project.tasks.create("stageBeamPipelines") {
     doLast {
