@@ -1,0 +1,21 @@
+{
+  "name": "Validate Cloud SQL with Datastore being primary",
+  "description": "An Apache Beam batch pipeline that compares Cloud SQL with the primary Datastore.",
+  "parameters": [
+    {
+      "name": "registryEnvironment",
+      "label": "The Registry environment.",
+      "helpText": "The Registry environment.",
+      "is_optional": false,
+      "regexes": [
+        "^PRODUCTION|SANDBOX|CRASH|QA|ALPHA$"
+      ]
+    },
+    {
+      "name": "comparisonStartTimestamp",
+      "label": "Only entities updated at or after this time are included for validation.",
+      "helpText": "The earliest entity update time allowed for inclusion in validation, in ISO8601 format.",
+      "is_optional": true
+    }
+  ]
+}
