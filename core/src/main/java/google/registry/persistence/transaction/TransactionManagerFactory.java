@@ -14,8 +14,8 @@
 
 package google.registry.persistence.transaction;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.appengine.api.utils.SystemProperty;
@@ -47,6 +47,10 @@ public final class TransactionManagerFactory {
   private static Supplier<JpaTransactionManager> jpaTm =
       Suppliers.memoize(TransactionManagerFactory::createJpaTransactionManager);
 
+  @NonFinalForTesting
+  private static Supplier<JpaTransactionManager> replicaJpaTm =
+      Suppliers.memoize(TransactionManagerFactory::createReplicaJpaTransactionManager);
+
   private static boolean onBeam = false;
 
   private TransactionManagerFactory() {}
@@ -56,6 +60,14 @@ public final class TransactionManagerFactory {
     // by calling setJpaTm().
     if (isInAppEngine()) {
       return DaggerPersistenceComponent.create().appEngineJpaTransactionManager();
+    } else {
+      return DummyJpaTransactionManager.create();
+    }
+  }
+
+  private static JpaTransactionManager createReplicaJpaTransactionManager() {
+    if (isInAppEngine()) {
+      return DaggerPersistenceComponent.create().readOnlyReplicaJpaTransactionManager();
     } else {
       return DummyJpaTransactionManager.create();
     }
@@ -108,6 +120,21 @@ public final class TransactionManagerFactory {
     return jpaTm.get();
   }
 
+  /** Returns a read-only {@link JpaTransactionManager} instance if configured. */
+  public static JpaTransactionManager replicaJpaTm() {
+    return replicaJpaTm.get();
+  }
+
+  /**
+   * Returns a {@link TransactionManager} that uses a replica database if one exists.
+   *
+   * <p>In Datastore mode, this is unchanged from the regular transaction manager. In SQL mode,
+   * however, this will be a reference to the read-only replica database if one is configured.
+   */
+  public static TransactionManager replicaTm() {
+    return tm().isOfy() ? tm() : replicaJpaTm();
+  }
+
   /** Returns {@link DatastoreTransactionManager} instance. */
   @VisibleForTesting
   public static DatastoreTransactionManager ofyTm() {
@@ -116,12 +143,22 @@ public final class TransactionManagerFactory {
 
   /** Sets the return of {@link #jpaTm()} to the given instance of {@link JpaTransactionManager}. */
   public static void setJpaTm(Supplier<JpaTransactionManager> jpaTmSupplier) {
-    checkNotNull(jpaTmSupplier, "jpaTmSupplier");
+    checkArgumentNotNull(jpaTmSupplier, "jpaTmSupplier");
     checkState(
         RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
             || RegistryToolEnvironment.get() != null,
         "setJpamTm() should only be called by tools and tests.");
     jpaTm = Suppliers.memoize(jpaTmSupplier::get);
+  }
+
+  /** Sets the value of {@link #replicaJpaTm()} to the given {@link JpaTransactionManager}. */
+  public static void setReplicaJpaTm(Supplier<JpaTransactionManager> replicaJpaTmSupplier) {
+    checkArgumentNotNull(replicaJpaTmSupplier, "replicaJpaTmSupplier");
+    checkState(
+        RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
+            || RegistryToolEnvironment.get() != null,
+        "setReplicaJpaTm() should only be called by tools and tests.");
+    replicaJpaTm = Suppliers.memoize(replicaJpaTmSupplier::get);
   }
 
   /**
@@ -130,7 +167,7 @@ public final class TransactionManagerFactory {
    * org.apache.beam.sdk.harness.JvmInitializer}.
    */
   public static void setJpaTmOnBeamWorker(Supplier<JpaTransactionManager> jpaTmSupplier) {
-    checkNotNull(jpaTmSupplier, "jpaTmSupplier");
+    checkArgumentNotNull(jpaTmSupplier, "jpaTmSupplier");
     jpaTm = Suppliers.memoize(jpaTmSupplier::get);
     onBeam = true;
   }
