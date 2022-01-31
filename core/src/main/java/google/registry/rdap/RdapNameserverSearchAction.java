@@ -15,7 +15,7 @@
 package google.registry.rdap;
 
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
@@ -233,7 +233,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       return makeSearchResults(
           getMatchingResources(query, shouldIncludeDeleted(), querySizeLimit), CursorType.NAME);
     } else {
-      return jpaTm()
+      return replicaJpaTm()
           .transact(
               () -> {
                 CriteriaQueryBuilder<HostResource> queryBuilder =
@@ -290,11 +290,11 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       }
       queryBuilder.append(" ORDER BY repo_id ASC");
       rdapResultSet =
-          jpaTm()
+          replicaJpaTm()
               .transact(
                   () -> {
                     javax.persistence.Query query =
-                        jpaTm()
+                        replicaJpaTm()
                             .getEntityManager()
                             .createNativeQuery(queryBuilder.toString(), HostResource.class)
                             .setMaxResults(querySizeLimit);

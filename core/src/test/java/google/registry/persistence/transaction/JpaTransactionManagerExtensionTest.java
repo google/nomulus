@@ -16,6 +16,7 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -60,6 +61,17 @@ public class JpaTransactionManagerExtensionTest {
                       .getResultList();
               assertThat(results).isEmpty();
             });
+  }
+
+  @Test
+  void testReplicaJpaTm() {
+    TestEntity testEntity = new TestEntity("foo", "bar");
+    assertThat(
+            assertThrows(
+                PersistenceException.class,
+                () -> replicaJpaTm().transact(() -> replicaJpaTm().put(testEntity))))
+        .hasMessageThat()
+        .isEqualTo("Error while committing the transaction");
   }
 
   @Test

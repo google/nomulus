@@ -15,7 +15,7 @@
 package google.registry.rdap;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.rdap.RdapUtils.getRegistrarByIanaIdentifier;
@@ -277,7 +277,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
           resultSet = getMatchingResources(query, false, rdapResultSetMaxSize + 1);
         } else {
           resultSet =
-              jpaTm()
+              replicaJpaTm()
                   .transact(
                       () -> {
                         CriteriaQueryBuilder<ContactResource> builder =
@@ -399,7 +399,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
                   querySizeLimit);
         } else {
           contactResultSet =
-              jpaTm()
+              replicaJpaTm()
                   .transact(
                       () ->
                           getMatchingResourcesSql(
