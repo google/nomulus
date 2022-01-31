@@ -391,9 +391,6 @@ public final class RdeStagingAction implements Runnable {
     if (revision.isPresent()) {
       throw new BadRequestException("Revision parameter not allowed in standard operation");
     }
-    if (beam) {
-      throw new BadRequestException("Beam parameter not allowed in standard operation");
-    }
 
     return ImmutableSetMultimap.copyOf(
         Multimaps.filterValues(
