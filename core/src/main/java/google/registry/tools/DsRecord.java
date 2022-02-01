@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.IStringConverter;
 import com.google.auto.value.AutoValue;
@@ -25,6 +26,7 @@ import com.google.common.base.Splitter;
 import com.google.common.io.BaseEncoding;
 import com.google.template.soy.data.SoyListData;
 import com.google.template.soy.data.SoyMapData;
+import google.registry.flows.domain.DomainFlowUtils;
 import java.util.List;
 
 @AutoValue
@@ -46,6 +48,15 @@ abstract class DsRecord {
         "digest should be even-lengthed hex, but is %s (length %s)",
         digest,
         digest.length());
+    checkArgumentPresent(
+        DigestType.fromWireValue(digestType),
+        String.format("DS record uses an unrecognized digest type: %d", digestType));
+
+    if (!DomainFlowUtils.validateAlgorithm(alg)) {
+      throw new IllegalArgumentException(
+          String.format("DS record uses an unrecognized algorithm: %d", alg));
+    }
+
     return new AutoValue_DsRecord(keyTag, alg, digestType, digest);
   }
 

@@ -16,13 +16,13 @@
           <secDNS:dsData>
             <secDNS:keyTag>1</secDNS:keyTag>
             <secDNS:alg>2</secDNS:alg>
-            <secDNS:digestType>3</secDNS:digestType>
+            <secDNS:digestType>2</secDNS:digestType>
             <secDNS:digest>ABCD</secDNS:digest>
           </secDNS:dsData>
           <secDNS:dsData>
             <secDNS:keyTag>4</secDNS:keyTag>
             <secDNS:alg>5</secDNS:alg>
-            <secDNS:digestType>6</secDNS:digestType>
+            <secDNS:digestType>1</secDNS:digestType>
             <secDNS:digest>EF01</secDNS:digest>
           </secDNS:dsData>
         </secDNS:add>

@@ -129,6 +129,7 @@ import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.persistence.VKey;
 import google.registry.tldconfig.idn.IdnLabelValidator;
+import google.registry.tools.DigestType;
 import google.registry.util.Idn;
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -144,6 +145,7 @@ import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.xbill.DNS.DNSSEC.Algorithm;
 
 /** Static utility functions for domain flows. */
 public class DomainFlowUtils {
@@ -293,11 +295,44 @@ public class DomainFlowUtils {
 
   /** Check that the DS data that will be set on a domain is valid. */
   static void validateDsData(Set<DelegationSignerData> dsData) throws EppException {
-    if (dsData != null && dsData.size() > MAX_DS_RECORDS_PER_DOMAIN) {
-      throw new TooManyDsRecordsException(
-          String.format(
-              "A maximum of %s DS records are allowed per domain.", MAX_DS_RECORDS_PER_DOMAIN));
+    if (dsData != null) {
+      if (dsData.size() > MAX_DS_RECORDS_PER_DOMAIN) {
+        throw new TooManyDsRecordsException(
+            String.format(
+                "A maximum of %s DS records are allowed per domain.", MAX_DS_RECORDS_PER_DOMAIN));
+      }
+      // TODO(sarahbot@): Add signature length verification
+      ImmutableList<DelegationSignerData> invalidAlgorithms =
+          dsData.stream()
+              .filter(ds -> !validateAlgorithm(ds.getAlgorithm()))
+              .collect(toImmutableList());
+      if (!invalidAlgorithms.isEmpty()) {
+        throw new InvalidDsRecordException(
+            String.format(
+                "Domain contains DS record(s) with an invalid algorithm wire value: %s",
+                invalidAlgorithms));
+      }
+      ImmutableList<DelegationSignerData> invalidDigestTypes =
+          dsData.stream()
+              .filter(ds -> !DigestType.fromWireValue(ds.getDigestType()).isPresent())
+              .collect(toImmutableList());
+      if (!invalidDigestTypes.isEmpty()) {
+        throw new InvalidDsRecordException(
+            String.format(
+                "Domain contains DS record(s) with an invalid digest type: %s",
+                invalidDigestTypes));
+      }
     }
+  }
+
+  public static boolean validateAlgorithm(int alg) {
+    if (alg > 255 || alg < 0) {
+      return false;
+    }
+    // Algorithms that are reserved or unassigned will just return a string representation of their
+    // integer wire value.
+    String algorithm = Algorithm.string(alg);
+    return !algorithm.equals(Integer.toString(alg));
   }
 
   /** We only allow specifying years in a period. */
@@ -1213,6 +1248,13 @@ public class DomainFlowUtils {
   /** Too many DS records set on a domain. */
   static class TooManyDsRecordsException extends ParameterValuePolicyErrorException {
     public TooManyDsRecordsException(String message) {
+      super(message);
+    }
+  }
+
+  /** Domain has an invalid DS record. */
+  static class InvalidDsRecordException extends ParameterValuePolicyErrorException {
+    public InvalidDsRecordException(String message) {
       super(message);
     }
   }

@@ -398,6 +398,7 @@ An EPP flow that creates a new domain resource.
     *   The fee description passed in the transform command matches multiple fee
         types.
     *   The fee description passed in the transform command cannot be parsed.
+    *   Domain has an invalid DS record.
     *   Domain name starts with xn-- but is not a valid IDN.
     *   The specified trademark validator is not supported.
     *   Domain labels cannot begin with a dash.
@@ -810,6 +811,7 @@ statuses are updated at once.
 *   2306
     *   Cannot add and remove the same value.
     *   More than one contact for a given role is not allowed.
+    *   Domain has an invalid DS record.
     *   Missing type attribute for contact.
     *   The secDNS:all element must have value 'true' if present.
     *   Too many DS records set on a domain.

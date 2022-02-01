@@ -86,12 +86,12 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--add_admins=crr-admin2",
         "--add_techs=crr-tech2",
         "--add_statuses=serverDeleteProhibited",
-        "--add_ds_records=1 2 3 abcd,4 5 6 EF01",
+        "--add_ds_records=1 2 2 abcd,4 5 1 EF01",
         "--remove_nameservers=ns3.zdns.google,ns4.zdns.google",
         "--remove_admins=crr-admin1",
         "--remove_techs=crr-tech1",
         "--remove_statuses=serverHold",
-        "--remove_ds_records=7 8 9 12ab,6 5 4 34CD",
+        "--remove_ds_records=7 8 1 12ab,6 5 4 34CD",
         "--registrant=crr-admin",
         "--password=2fooBAR",
         "example.tld");
@@ -106,12 +106,12 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--add_admins=crr-admin2",
         "--add_techs=crr-tech2",
         "--add_statuses=serverDeleteProhibited",
-        "--add_ds_records=1 2 3 abcd,4 5 6 EF01",
+        "--add_ds_records=1 2 2 abcd,4 5 1 EF01",
         "--remove_nameservers=ns[3-4].zdns.google",
         "--remove_admins=crr-admin1",
         "--remove_techs=crr-tech1",
         "--remove_statuses=serverHold",
-        "--remove_ds_records=7 8 9 12ab,6 5 4 34CD",
+        "--remove_ds_records=7 8 1 12ab,6 5 4 34CD",
         "--registrant=crr-admin",
         "--password=2fooBAR",
         "example.tld");
@@ -128,12 +128,12 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--add_admins=crr-admin2",
         "--add_techs=crr-tech2",
         "--add_statuses=serverDeleteProhibited",
-        "--add_ds_records=1 2 3 abcd,4 5 6 EF01",
+        "--add_ds_records=1 2 2 abcd,4 5 1 EF01",
         "--remove_nameservers=ns[3-4].zdns.google",
         "--remove_admins=crr-admin1",
         "--remove_techs=crr-tech1",
         "--remove_statuses=serverHold",
-        "--remove_ds_records=7 8 9 12ab,6 5 4 34CD",
+        "--remove_ds_records=7 8 1 12ab,6 5 4 34CD",
         "--registrant=crr-admin",
         "--password=2fooBAR",
         "example.tld",
@@ -186,7 +186,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--add_admins=crr-admin2",
         "--add_techs=crr-tech2",
         "--add_statuses=serverDeleteProhibited",
-        "--add_ds_records=1 2 3 abcd,4 5 6 EF01",
+        "--add_ds_records=1 2 2 abcd,4 5 1 EF01",
         "example.tld");
     eppVerifier.verifySent("domain_update_add.xml");
   }
@@ -199,7 +199,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--remove_admins=crr-admin1",
         "--remove_techs=crr-tech1",
         "--remove_statuses=serverHold",
-        "--remove_ds_records=7 8 9 12ab,6 5 4 34CD",
+        "--remove_ds_records=7 8 1 12ab,6 5 4 34CD",
         "example.tld");
     eppVerifier.verifySent("domain_update_remove.xml");
   }
@@ -277,8 +277,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
 
   @TestOfyAndSql
   void testSuccess_setDsRecords() throws Exception {
-    runCommandForced(
-        "--client=NewRegistrar", "--ds_records=1 2 3 abcd,4 5 6 EF01", "example.tld");
+    runCommandForced("--client=NewRegistrar", "--ds_records=1 2 2 abcd,4 5 1 EF01", "example.tld");
     eppVerifier.verifySent("domain_update_set_ds_records.xml");
   }
 
@@ -286,7 +285,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
   void testSuccess_setDsRecords_withUnneededClear() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
-        "--ds_records=1 2 3 abcd,4 5 6 EF01",
+        "--ds_records=1 2 2 abcd,4 5 1 EF01",
         "--clear_ds_records",
         "example.tld");
     eppVerifier.verifySent("domain_update_set_ds_records.xml");
@@ -631,6 +630,28 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
   }
 
   @TestOfyAndSql
+  void testFailure_invalidDsRecordAlgorithm() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--client=NewRegistrar", "--add_ds_records=1 299 2 abcd", "example.tld"));
+    assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized algorithm: 299");
+  }
+
+  @TestOfyAndSql
+  void testFailure_invalidDsRecordDigestType() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--client=NewRegistrar", "--add_ds_records=1 2 3 abcd", "example.tld"));
+    assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized digest type: 3");
+  }
+
+  @TestOfyAndSql
   void testFailure_provideDsRecordsAndAddDsRecords() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -638,8 +659,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             () ->
                 runCommandForced(
                     "--client=NewRegistrar",
-                    "--add_ds_records=1 2 3 abcd",
-                    "--ds_records=4 5 6 EF01",
+                    "--add_ds_records=1 2 2 abcd",
+                    "--ds_records=4 5 1 EF01",
                     "example.tld"));
     assertThat(thrown)
         .hasMessageThat()
@@ -656,8 +677,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             () ->
                 runCommandForced(
                     "--client=NewRegistrar",
-                    "--remove_ds_records=7 8 9 12ab",
-                    "--ds_records=4 5 6 EF01",
+                    "--remove_ds_records=7 8 1 12ab",
+                    "--ds_records=4 5 1 EF01",
                     "example.tld"));
     assertThat(thrown)
         .hasMessageThat()
@@ -674,7 +695,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             () ->
                 runCommandForced(
                     "--client=NewRegistrar",
-                    "--add_ds_records=1 2 3 abcd",
+                    "--add_ds_records=1 2 2 abcd",
                     "--clear_ds_records",
                     "example.tld"));
     assertThat(thrown)
@@ -692,7 +713,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             () ->
                 runCommandForced(
                     "--client=NewRegistrar",
-                    "--remove_ds_records=7 8 9 12ab",
+                    "--remove_ds_records=7 8 1 12ab",
                     "--clear_ds_records",
                     "example.tld"));
     assertThat(thrown)

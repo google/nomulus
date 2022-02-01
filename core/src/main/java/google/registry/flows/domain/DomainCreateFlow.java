@@ -169,6 +169,7 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.FeesMismatchException}
  * @error {@link DomainFlowUtils.FeesRequiredDuringEarlyAccessProgramException}
  * @error {@link DomainFlowUtils.FeesRequiredForPremiumNameException}
+ * @error {@link DomainFlowUtils.InvalidDsRecordException}
  * @error {@link DomainFlowUtils.InvalidIdnDomainLabelException}
  * @error {@link DomainFlowUtils.InvalidPunycodeException}
  * @error {@link DomainFlowUtils.InvalidTcnIdChecksumException}

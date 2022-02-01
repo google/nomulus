@@ -50,7 +50,7 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
         "--admins=crr-admin",
         "--techs=crr-tech",
         "--password=2fooBAR",
-        "--ds_records=1 2 3 abcd,4 5 6 EF01",
+        "--ds_records=1 2 2 abcd,4 5 1 EF01",
         "--ds_records=60485 5  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "example.tld");
     eppVerifier.verifySent("domain_create_complete.xml");
@@ -66,7 +66,7 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
         "--admins=crr-admin",
         "--techs=crr-tech",
         "--password=2fooBAR",
-        "--ds_records=1 2 3 abcd,4 5 6 EF01",
+        "--ds_records=1 2 2 abcd,4 5 1 EF01",
         "--ds_records=60485 5  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "example.tld");
     eppVerifier.verifySent("domain_create_complete.xml");
@@ -312,6 +312,38 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
                     "--period=x",
                     "--domain=example.tld"));
     assertThat(thrown).hasMessageThat().contains("--period");
+  }
+
+  @Test
+  void testFailure_invalidDigestType() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--client=NewRegistrar",
+                    "--registrant=crr-admin",
+                    "--admins=crr-admin",
+                    "--techs=crr-tech",
+                    "--ds_records=1 2 3 abcd",
+                    "example.tld"));
+    assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized digest type: 3");
+  }
+
+  @Test
+  void testFailure_invalidAlgorithm() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--client=NewRegistrar",
+                    "--registrant=crr-admin",
+                    "--admins=crr-admin",
+                    "--techs=crr-tech",
+                    "--ds_records=1 999 4 abcd",
+                    "example.tld"));
+    assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized algorithm: 999");
   }
 
   @Test

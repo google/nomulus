@@ -114,6 +114,7 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.EmptySecDnsUpdateException}
  * @error {@link DomainFlowUtils.FeesMismatchException}
  * @error {@link DomainFlowUtils.FeesRequiredForNonFreeOperationException}
+ * @error {@link DomainFlowUtils.InvalidDsRecordException}
  * @error {@link DomainFlowUtils.LinkedResourcesDoNotExistException}
  * @error {@link DomainFlowUtils.LinkedResourceInPendingDeleteProhibitsOperationException}
  * @error {@link DomainFlowUtils.MaxSigLifeChangeNotSupportedException}
