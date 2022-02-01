@@ -39,6 +39,7 @@ PATH                                               CLASS                        
 /_dr/task/resaveAllEppResources                    ResaveAllEppResourcesAction                    GET      n  INTERNAL,API APP ADMIN
 /_dr/task/resaveEntity                             ResaveEntityAction                             POST     n  INTERNAL,API APP ADMIN
 /_dr/task/sendExpiringCertificateNotificationEmail SendExpiringCertificateNotificationEmailAction GET      n  INTERNAL,API APP ADMIN
+/_dr/task/syncDatastoreToSqlSnapshot               SyncDatastoreToSqlSnapshotAction               POST     n  INTERNAL,API APP ADMIN
 /_dr/task/syncGroupMembers                         SyncGroupMembersAction                         POST     n  INTERNAL,API APP ADMIN
 /_dr/task/syncRegistrarsSheet                      SyncRegistrarsSheetAction                      POST     n  INTERNAL,API APP ADMIN
 /_dr/task/tmchCrl                                  TmchCrlAction                                  POST     y  INTERNAL,API APP ADMIN
@@ -47,7 +48,6 @@ PATH                                               CLASS                        
 /_dr/task/updateRegistrarRdapBaseUrls              UpdateRegistrarRdapBaseUrlsAction              GET      y  INTERNAL,API APP ADMIN
 /_dr/task/updateSnapshotView                       UpdateSnapshotViewAction                       POST     n  INTERNAL,API APP ADMIN
 /_dr/task/uploadDatastoreBackup                    UploadDatastoreBackupAction                    POST     n  INTERNAL,API APP ADMIN
-/_dr/task/validateDatastoreWithSql                 ValidateDatastoreWithSqlAction                 POST     y  INTERNAL,API APP ADMIN
 /_dr/task/wipeOutCloudSql                          WipeOutCloudSqlAction                          GET      n  INTERNAL,API APP ADMIN
 /_dr/task/wipeOutContactHistoryPii                 WipeOutContactHistoryPiiAction                 GET      n  INTERNAL,API APP ADMIN
 /_dr/task/wipeOutDatastore                         WipeoutDatastoreAction                         GET      n  INTERNAL,API APP ADMIN

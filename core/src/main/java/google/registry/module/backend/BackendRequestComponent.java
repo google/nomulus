@@ -21,7 +21,7 @@ import google.registry.backup.CommitLogCheckpointAction;
 import google.registry.backup.DeleteOldCommitLogsAction;
 import google.registry.backup.ExportCommitLogDiffAction;
 import google.registry.backup.ReplayCommitLogsToSqlAction;
-import google.registry.backup.ValidateDatastoreWithSqlAction;
+import google.registry.backup.SyncDatastoreToSqlSnapshotAction;
 import google.registry.batch.BatchModule;
 import google.registry.batch.DeleteContactsAndHostsAction;
 import google.registry.batch.DeleteExpiredDomainsAction;
@@ -200,6 +200,8 @@ interface BackendRequestComponent {
 
   SendExpiringCertificateNotificationEmailAction sendExpiringCertificateNotificationEmailAction();
 
+  SyncDatastoreToSqlSnapshotAction syncDatastoreToSqlSnapshotAction();
+
   SyncGroupMembersAction syncGroupMembersAction();
 
   SyncRegistrarsSheetAction syncRegistrarsSheetAction();
@@ -219,8 +221,6 @@ interface BackendRequestComponent {
   UpdateSnapshotViewAction updateSnapshotViewAction();
 
   PublishInvoicesAction uploadInvoicesAction();
-
-  ValidateDatastoreWithSqlAction validateDatastoreWithSqlAction();
 
   WipeOutCloudSqlAction wipeOutCloudSqlAction();
 

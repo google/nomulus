@@ -17,9 +17,11 @@ package google.registry.tools;
 import static google.registry.model.replay.ReplicateToDatastoreAction.REPLICATE_TO_DATASTORE_LOCK_NAME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
+import google.registry.backup.SyncDatastoreToSqlSnapshotAction;
 import google.registry.beam.common.DatabaseSnapshot;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
@@ -33,15 +35,30 @@ import java.util.Optional;
 import java.util.UUID;
 import javax.inject.Inject;
 
-@Parameters(commandDescription = "Syncs Datastore to a Cloud SQL snapshot")
-public class SyncDatastoreToSqlCommand implements CommandWithConnection, CommandWithRemoteApi {
+/**
+ * Validates asynchronously replicated data from the primary Cloud SQL database to Datastore.
+ *
+ * <p>This command suspends the replication process (by acquiring the replication lock), take a
+ * snapshot of the Cloud SQL database, invokes a Nomulus server action to sync Datastore to this
+ * snapshot (See {@link SyncDatastoreToSqlSnapshotAction} for details), and finally launches a BEAM
+ * pipeline to compare Datastore with the given SQL snapshot.
+ *
+ * <p>This command does not lock up the SQL database. Normal processing can proceed.
+ */
+@Parameters(commandDescription = "Validates Datastore with Cloud SQL.")
+public class ValidateDatastoreWithSqlCommand
+    implements CommandWithConnection, CommandWithRemoteApi {
 
   private static final Service NOMULUS_SERVICE = Service.BACKEND;
-  private static final String NOMULUS_ENDPOINT =
-      "/_dr/task/validateDatastoreWithSql?sqlSnapshotId=%s";
+
+  @Parameter(
+      names = {"-m", "--manual"},
+      description =
+          "If true, let user launch the comparison pipeline manually out of band. "
+              + "Command will wait for user key-press to exit after syncing Datastore.")
+  boolean manualLaunchPipeline;
 
   @Inject Clock clock;
-
   private AppEngineConnection connection;
 
   @Override
@@ -60,7 +77,7 @@ public class SyncDatastoreToSqlCommand implements CommandWithConnection, Command
             REPLICATE_TO_DATASTORE_LOCK_NAME,
             null,
             ReplicateToDatastoreAction.REPLICATE_TO_DATASTORE_LOCK_LEASE_LENGTH,
-            new DummyRequestStatusChecker(),
+            new FakeRequestStatusChecker(),
             false);
     if (!lock.isPresent()) {
       throw new IllegalStateException("Cannot acquire the async propagation lock.");
@@ -69,28 +86,46 @@ public class SyncDatastoreToSqlCommand implements CommandWithConnection, Command
     try {
       try (DatabaseSnapshot snapshot = DatabaseSnapshot.createSnapshot()) {
         System.out.printf("Obtained snapshot %s\n", snapshot.getSnapshotId());
-        // Adapted from CurlCommand
         AppEngineConnection connectionToService = connection.withService(NOMULUS_SERVICE);
         String response =
             connectionToService.sendPostRequest(
-                String.format(NOMULUS_ENDPOINT, snapshot.getSnapshotId()),
+                getNomulusEndpoint(snapshot.getSnapshotId()),
                 ImmutableMap.<String, String>of(),
                 MediaType.PLAIN_TEXT_UTF_8,
                 "".getBytes(UTF_8));
         System.out.println(response);
-        System.out.print("\nEnter any key to continue:");
-        System.in.read();
+
+        lock.ifPresent(Lock::releaseSql);
+        lock = Optional.empty();
+
+        if (manualLaunchPipeline) {
+          System.out.print("\nEnter any key to continue when the pipeline ends:");
+          System.in.read();
+        } else {
+          // TODO(weiminyu): launch the BEAM pipeline and wait for it to end.
+          System.out.print("\nAutomatic pipeline launch is not supported yet.");
+        }
       }
     } finally {
       lock.ifPresent(Lock::releaseSql);
     }
   }
 
-  static class DummyRequestStatusChecker implements RequestStatusChecker {
+  private static String getNomulusEndpoint(String sqlSnapshotId) {
+    return String.format(
+        "%s?sqlSnapshotId=%s", SyncDatastoreToSqlSnapshotAction.PATH, sqlSnapshotId);
+  }
+
+  /**
+   * A fake implementation of {@link RequestStatusChecker} for managing SQL-backed locks from
+   * non-AppEngine platforms. This is only required until the Nomulus server is migrated off
+   * AppEngine.
+   */
+  static class FakeRequestStatusChecker implements RequestStatusChecker {
 
     @Override
     public String getLogId() {
-      return SyncDatastoreToSqlCommand.class.getSimpleName() + "-" + UUID.randomUUID();
+      return ValidateDatastoreWithSqlCommand.class.getSimpleName() + "-" + UUID.randomUUID();
     }
 
     @Override

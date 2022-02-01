@@ -14,51 +14,69 @@
 
 package google.registry.backup;
 
-import static google.registry.model.replay.ReplicateToDatastoreAction.REPLICATE_TO_DATASTORE_LOCK_NAME;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.common.base.Stopwatch;
 import com.google.common.flogger.FluentLogger;
 import google.registry.beam.comparedb.LatestDatastoreSnapshotFinder;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.replay.ReplicateToDatastoreAction;
-import google.registry.model.server.Lock;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.util.Clock;
-import google.registry.util.RequestStatusChecker;
 import google.registry.util.Sleeper;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
-/** */
+/**
+ * Synchronizes Datastore to a given SQL snapshot when SQL is the primary database.
+ *
+ * <p>The caller takes the responsibility for:
+ *
+ * <ul>
+ *   <li>verifying the current migration stage
+ *   <li>acquiring the {@link ReplicateToDatastoreAction#REPLICATE_TO_DATASTORE_LOCK_NAME
+ *       replication lock}, and
+ *   <li>while holding the lock, creating an SQL snapshot and invoking this action with the snapshot
+ *       id
+ *   <li>
+ * </ul>
+ *
+ * The caller may release the replication lock upon receiving the response from this action. Please
+ * refer to {@link google.registry.tools.ValidateDatastoreWithSqlCommand} for more information on
+ * usage.
+ *
+ * <p>When invoked with an SQL snapshot id, this action plays SQL transactions up to that snapshot,
+ * creates a new CommitLog checkpoint, and exports all CommitLogs to GCS up to this checkpoint. The
+ * timestamp of this checkpoint can be used to recreate a Datastore snapshot that is equivalent to
+ * the given SQL snapshot. If this action succeeds, the checkpoint timestamp is included in the
+ * response.
+ */
 @Action(
     service = Service.BACKEND,
-    path = ValidateDatastoreWithSqlAction.PATH,
+    path = SyncDatastoreToSqlSnapshotAction.PATH,
     method = Action.Method.POST,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 @DeleteAfterMigration
-public class ValidateDatastoreWithSqlAction implements Runnable {
+public class SyncDatastoreToSqlSnapshotAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  static final String PATH = "/_dr/task/validateDatastoreWithSql";
+  public static final String PATH = "/_dr/task/syncDatastoreToSqlSnapshot";
 
   static final String SQL_SNAPSHOT_ID_PARAM = "sqlSnapshotId";
 
-  private static final java.time.Duration REPLAY_LOCK_ACQUIRE_TIMEOUT =
-      java.time.Duration.ofMinutes(6);
-  private static final java.time.Duration REPLAY_LOCK_ACQUIRE_DELAY =
-      java.time.Duration.ofSeconds(30);
+  static final String SUCCESS_RESPONSE_TEMPLATE =
+      "Datastore is up-to-date with provided SQL snapshot (%s). CommitLog timestamp is (%s).";
 
-  private final Clock clock;
-  private final RequestStatusChecker requestStatusChecker;
+  private static final int COMMITLOGS_PRESENCE_CHECK_ATTEMPTS = 10;
+  private static final Duration COMMITLOGS_PRESENCE_CHECK_DELAY = Duration.standardSeconds(6);
+
   private final Response response;
   private final Sleeper sleeper;
 
@@ -68,21 +86,17 @@ public class ValidateDatastoreWithSqlAction implements Runnable {
   private final GcsDiffFileLister gcsDiffFileLister;
   private final LatestDatastoreSnapshotFinder datastoreSnapshotFinder;
   private final CommitLogCheckpointAction commitLogCheckpointAction;
-  private final Optional<String> sqlSnapshotId;
+  private final String sqlSnapshotId;
 
   @Inject
-  ValidateDatastoreWithSqlAction(
-      Clock clock,
-      RequestStatusChecker requestStatusChecker,
+  SyncDatastoreToSqlSnapshotAction(
       Response response,
       Sleeper sleeper,
       @Config("commitLogGcsBucket") String gcsBucket,
       GcsDiffFileLister gcsDiffFileLister,
       LatestDatastoreSnapshotFinder datastoreSnapshotFinder,
       CommitLogCheckpointAction commitLogCheckpointAction,
-      @Parameter(SQL_SNAPSHOT_ID_PARAM) Optional<String> sqlSnapshotId) {
-    this.clock = clock;
-    this.requestStatusChecker = requestStatusChecker;
+      @Parameter(SQL_SNAPSHOT_ID_PARAM) String sqlSnapshotId) {
     this.response = response;
     this.sleeper = sleeper;
     this.gcsBucket = gcsBucket;
@@ -94,56 +108,18 @@ public class ValidateDatastoreWithSqlAction implements Runnable {
 
   @Override
   public void run() {
-    logger.atInfo().log(
-        "Datastore validation invoked. SqlSnapshotId is %s.", sqlSnapshotId.orElse("not present"));
+    logger.atInfo().log("Datastore validation invoked. SqlSnapshotId is %s.", sqlSnapshotId);
 
-    if (sqlSnapshotId.isPresent()) {
-      CommitLogCheckpoint checkpoint = ensureDatabasesComparable(sqlSnapshotId.get());
+    try {
+      CommitLogCheckpoint checkpoint = ensureDatabasesComparable(sqlSnapshotId);
       response.setStatus(SC_OK);
       response.setPayload(
-          String.format(
-              "Datastore is up-to-date with provided SQL snapshot (%s). CommitLog timestamp is %s",
-              sqlSnapshotId.get(), checkpoint.getCheckpointTime()));
+          String.format(SUCCESS_RESPONSE_TEMPLATE, sqlSnapshotId, checkpoint.getCheckpointTime()));
       return;
+    } catch (Exception e) {
+      response.setStatus(SC_INTERNAL_SERVER_ERROR);
+      response.setPayload(e.getMessage());
     }
-    response.setStatus(SC_OK);
-    response.setPayload("NOP");
-    //
-    // MigrationState state = DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc());
-    // if (!state.getReplayDirection().equals(ReplayDirection.SQL_TO_DATASTORE)) {
-    //   String message = String.format("Validation is meaningless in migration phase %s.", state);
-    //   logger.atInfo().log(message);
-    //   response.setStatus(SC_NO_CONTENT);
-    //   response.setPayload(message);
-    //   return;
-    // }
-    // Lock lock = acquireSqlTransactionReplayLock().orElse(null);
-    // if (lock == null) {
-    //   String message = "Can't acquire ReplicateToDatastoreAction lock, aborting.";
-    //   logger.atSevere().log(message);
-    //   response.setStatus(SC_SERVICE_UNAVAILABLE);
-    //   response.setPayload(message);
-    //   return;
-    // }
-    //
-    // try {
-    //   try (DatabaseSnapshot databaseSnapshot = DatabaseSnapshot.createSnapshot()) {
-    //     ensureDatabasesComparable(databaseSnapshot.getSnapshotId());
-    //     // Release the lock so that normal replay can resume.
-    //     lock.releaseSql();
-    //     lock = null;
-    //     // TODO: launch beam pipeline to compare the snapshots.
-    //   }
-    // } catch (RuntimeException e) {
-    //   logger.atSevere().withCause(e).log("Internal error.");
-    //   response.setStatus(SC_INTERNAL_SERVER_ERROR);
-    //   response.setPayload(e.getMessage());
-    //   return;
-    // } finally {
-    //   if (lock != null) {listDiffFiles
-    //     lock.releaseSql();
-    //   }
-    // }
   }
 
   private CommitLogCheckpoint ensureDatabasesComparable(String sqlSnapshotId) {
@@ -181,40 +157,16 @@ public class ValidateDatastoreWithSqlAction implements Runnable {
             .exportInterval()
             .getStart();
     logger.atInfo().log("Found Datastore export at %s", exportStartTime);
-    for (int i = 0; i < 5; i++) {
+    for (int attempts = 0; attempts < COMMITLOGS_PRESENCE_CHECK_ATTEMPTS; attempts++) {
       try {
         gcsDiffFileLister.listDiffFiles(gcsBucket, exportStartTime, checkpoint.getCheckpointTime());
         return;
       } catch (IllegalStateException e) {
         // Gap in commitlog files. Fall through to sleep and retry.
+        logger.atInfo().log("Commitlog files not yet found on GCS.");
       }
-
-      sleeper.sleepInterruptibly(Duration.standardSeconds(30));
+      sleeper.sleepInterruptibly(COMMITLOGS_PRESENCE_CHECK_DELAY);
     }
     throw new RuntimeException("Cannot find all commitlog files.");
-  }
-
-  private Optional<Lock> acquireSqlTransactionReplayLock() {
-    Stopwatch stopwatch = Stopwatch.createStarted();
-    while (stopwatch.elapsed().minus(REPLAY_LOCK_ACQUIRE_TIMEOUT).isNegative()) {
-      Optional<Lock> lock =
-          Lock.acquireSql(
-              REPLICATE_TO_DATASTORE_LOCK_NAME,
-              null,
-              ReplicateToDatastoreAction.REPLICATE_TO_DATASTORE_LOCK_LEASE_LENGTH,
-              requestStatusChecker,
-              false);
-      if (lock.isPresent()) {
-        return lock;
-      }
-      logger.atInfo().log("Failed to acquired CommitLog Replay lock. Will retry...");
-      try {
-        Thread.sleep(REPLAY_LOCK_ACQUIRE_DELAY.toMillis());
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new RuntimeException("Interrupted.");
-      }
-    }
-    return Optional.empty();
   }
 }
