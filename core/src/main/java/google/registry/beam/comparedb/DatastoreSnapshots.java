@@ -26,6 +26,7 @@ import google.registry.beam.initsql.Transforms;
 import google.registry.model.EppResource;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.common.Cursor;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
@@ -66,7 +67,7 @@ public final class DatastoreSnapshots {
   static final ImmutableSet<Class<?>> ALL_DATASTORE_KINDS =
       ImmutableSet.of(
           Registry.class,
-          // Cursor.class,
+          Cursor.class,
           Registrar.class,
           ContactResource.class,
           RegistrarContact.class,
