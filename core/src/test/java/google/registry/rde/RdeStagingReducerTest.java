@@ -20,8 +20,6 @@ import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeMode.THIN;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,13 +39,10 @@ import google.registry.model.rde.RdeRevision;
 import google.registry.model.tld.Registry;
 import google.registry.request.RequestParameters;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.FakeClock;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeLockHandler;
-import google.registry.testing.FakeSleeper;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
-import google.registry.util.Retrier;
-import google.registry.util.TaskQueueUtils;
 import google.registry.xml.ValidationMode;
 import java.io.IOException;
 import java.util.Iterator;
@@ -74,6 +69,7 @@ class RdeStagingReducerTest {
   private static final PGPPublicKey encryptionKey =
       new FakeKeyringModule().get().getRdeStagingEncryptionKey();
   private static final DateTime now = DateTime.parse("2000-01-01TZ");
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
 
   private Fragments brdaFragments =
       new Fragments(
@@ -94,7 +90,7 @@ class RdeStagingReducerTest {
 
   private RdeStagingReducer reducer =
       new RdeStagingReducer(
-          new TaskQueueUtils(new Retrier(new FakeSleeper(new FakeClock()), 1)),
+          cloudTasksHelper.getTestCloudTasksUtils(),
           new FakeLockHandler(true),
           GCS_BUCKET,
           Duration.ZERO,
@@ -133,7 +129,7 @@ class RdeStagingReducerTest {
     assertThat(loadCursorTime(CursorType.BRDA))
         .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
     assertThat(loadRevision(THIN)).isEqualTo(1);
-    assertTasksEnqueued(
+    cloudTasksHelper.assertTasksEnqueued(
         "brda",
         new TaskMatcher()
             .url(BrdaCopyAction.PATH)
@@ -159,7 +155,7 @@ class RdeStagingReducerTest {
     // No extra operations in manual mode.
     assertThat(loadCursorTime(CursorType.BRDA)).isEquivalentAccordingToCompareTo(now);
     assertThat(loadRevision(THIN)).isEqualTo(0);
-    assertNoTasksEnqueued("brda");
+    cloudTasksHelper.assertNoTasksEnqueued("brda");
   }
 
   @Test
@@ -179,7 +175,7 @@ class RdeStagingReducerTest {
     assertThat(loadCursorTime(CursorType.RDE_STAGING))
         .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
     assertThat(loadRevision(FULL)).isEqualTo(1);
-    assertTasksEnqueued(
+    cloudTasksHelper.assertTasksEnqueued(
         "rde-upload",
         new TaskMatcher().url(RdeUploadAction.PATH).param(RequestParameters.PARAM_TLD, "soy"));
   }
@@ -200,7 +196,7 @@ class RdeStagingReducerTest {
     // No extra operations in manual mode.
     assertThat(loadCursorTime(CursorType.RDE_STAGING)).isEquivalentAccordingToCompareTo(now);
     assertThat(loadRevision(FULL)).isEqualTo(0);
-    assertNoTasksEnqueued("rde-upload");
+    cloudTasksHelper.assertNoTasksEnqueued("rde-upload");
   }
 
   private static void compareLength(String outputFile, String lengthFilename) throws IOException {

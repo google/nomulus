@@ -14,8 +14,6 @@
 
 package google.registry.rde;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
-import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
@@ -26,6 +24,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.appengine.tools.mapreduce.Reducer;
 import com.google.appengine.tools.mapreduce.ReducerInput;
 import com.google.cloud.storage.BlobId;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
@@ -36,10 +35,11 @@ import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeNamingUtils;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.tld.Registry;
+import google.registry.request.Action.Service;
 import google.registry.request.RequestParameters;
 import google.registry.request.lock.LockHandler;
 import google.registry.tldconfig.idn.IdnTableEnum;
-import google.registry.util.TaskQueueUtils;
+import google.registry.util.CloudTasksUtils;
 import google.registry.xjc.rdeheader.XjcRdeHeader;
 import google.registry.xjc.rdeheader.XjcRdeHeaderElement;
 import google.registry.xml.ValidationMode;
@@ -65,7 +65,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private final TaskQueueUtils taskQueueUtils;
+  private final CloudTasksUtils cloudTasksUtils;
   private final LockHandler lockHandler;
   private final String bucket;
   private final Duration lockTimeout;
@@ -74,14 +74,14 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
   private final GcsUtils gcsUtils;
 
   RdeStagingReducer(
-      TaskQueueUtils taskQueueUtils,
+      CloudTasksUtils cloudTasksUtils,
       LockHandler lockHandler,
       String bucket,
       Duration lockTimeout,
       byte[] stagingKeyBytes,
       ValidationMode validationMode,
       GcsUtils gcsUtils) {
-    this.taskQueueUtils = taskQueueUtils;
+    this.cloudTasksUtils = cloudTasksUtils;
     this.lockHandler = lockHandler;
     this.bucket = bucket;
     this.lockTimeout = lockTimeout;
@@ -227,22 +227,30 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
                   "Rolled forward %s on %s cursor to %s.", key.cursor(), tld, newPosition);
               RdeRevision.saveRevision(tld, watermark, mode, revision);
               if (mode == RdeMode.FULL) {
-                taskQueueUtils.enqueue(
-                    getQueue("rde-upload"),
-                    withUrl(RdeUploadAction.PATH).param(RequestParameters.PARAM_TLD, tld));
+                cloudTasksUtils.enqueue(
+                    "rde-upload",
+                    CloudTasksUtils.createPostTask(
+                        RdeUploadAction.PATH,
+                        Service.BACKEND.toString(),
+                        ImmutableMultimap.of(RequestParameters.PARAM_TLD, tld)));
               } else {
-                taskQueueUtils.enqueue(
-                    getQueue("brda"),
-                    withUrl(BrdaCopyAction.PATH)
-                        .param(RequestParameters.PARAM_TLD, tld)
-                        .param(RdeModule.PARAM_WATERMARK, watermark.toString()));
+                cloudTasksUtils.enqueue(
+                    "brda",
+                    CloudTasksUtils.createPostTask(
+                        BrdaCopyAction.PATH,
+                        Service.BACKEND.toString(),
+                        ImmutableMultimap.of(
+                            RequestParameters.PARAM_TLD,
+                            tld,
+                            RdeModule.PARAM_WATERMARK,
+                            watermark.toString())));
               }
             });
   }
 
   /** Injectible factory for creating {@link RdeStagingReducer}. */
   static class Factory {
-    @Inject TaskQueueUtils taskQueueUtils;
+    @Inject CloudTasksUtils cloudTasksUtils;
     @Inject LockHandler lockHandler;
     @Inject @Config("rdeBucket") String bucket;
     @Inject @Config("rdeStagingLockTimeout") Duration lockTimeout;
@@ -252,7 +260,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
 
     RdeStagingReducer create(ValidationMode validationMode, GcsUtils gcsUtils) {
       return new RdeStagingReducer(
-          taskQueueUtils,
+          cloudTasksUtils,
           lockHandler,
           bucket,
           lockTimeout,
