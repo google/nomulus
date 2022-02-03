@@ -113,9 +113,9 @@ public class BrdaCopyActionTest {
     action.signingKey = signingKey;
     action.stagingDecryptionKey = decryptKey;
     tm().transact(
-        () -> {
-          RdeRevision.saveRevision("lol", DateTime.parse("2010-10-17TZ"), RdeMode.THIN, 0);
-        });
+            () -> {
+              RdeRevision.saveRevision("lol", DateTime.parse("2010-10-17TZ"), RdeMode.THIN, 0);
+            });
   }
 
   @ParameterizedTest
