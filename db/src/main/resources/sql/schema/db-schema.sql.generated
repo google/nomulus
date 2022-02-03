@@ -804,6 +804,7 @@ create index IDX6w3qbtgce93cal2orjg1tw7b7 on "DomainHistory" (history_modificati
        add constraint UKat9erbh52e4lg3jw6ai9wkjj9 unique (domain_repo_id, host_repo_id);
 create index IDXj1mtx98ndgbtb1bkekahms18w on "GracePeriod" (domain_repo_id);
 create index IDXd01j17vrpjxaerxdmn8bwxs7s on "GracePeriodHistory" (domain_repo_id);
+create index IDXkpkh68n6dy5v51047yr6b0e9l on "Host" (host_name);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
 create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
 create index IDXkkwbwcwvrdkkqothkiye4jiff on "HostHistory" (host_name);

@@ -1729,6 +1729,13 @@ CREATE INDEX idxknk8gmj7s47q56cwpa6rmpt5l ON public."HostHistory" USING btree (h
 
 
 --
+-- Name: idxkpkh68n6dy5v51047yr6b0e9l; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxkpkh68n6dy5v51047yr6b0e9l ON public."Host" USING btree (host_name);
+
+
+--
 -- Name: idxlrq7v63pc21uoh3auq6eybyhl; Type: INDEX; Schema: public; Owner: -
 --
 
