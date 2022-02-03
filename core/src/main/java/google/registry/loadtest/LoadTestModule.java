@@ -43,7 +43,7 @@ public final class LoadTestModule {
   @Parameter("delaySeconds")
   static int provideDelaySeconds(HttpServletRequest req) {
     return extractOptionalIntParameter(req, "delaySeconds")
-        .orElse(Minutes.ONE.toStandardSeconds().getSeconds());
+        .orElse(120);
   }
 
   @Provides

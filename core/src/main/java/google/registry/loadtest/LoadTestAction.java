@@ -67,7 +67,7 @@ public class LoadTestAction implements Runnable {
   private static final int MAX_DOMAIN_LABEL_LENGTH = 63;
 
   private static final String EXISTING_DOMAIN = "testdomain";
-  private static final String EXISTING_CONTACT = "contact";
+  private static final String EXISTING_CONTACT = "testContact";
   private static final String EXISTING_HOST = "ns1";
 
   private static final Random random = new Random();

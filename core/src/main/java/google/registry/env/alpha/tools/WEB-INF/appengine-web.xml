@@ -5,11 +5,12 @@
   <service>tools</service>
   <threadsafe>true</threadsafe>
   <sessions-enabled>true</sessions-enabled>
-  <instance-class>B4</instance-class>
-  <basic-scaling>
-    <max-instances>5</max-instances>
-    <idle-timeout>5m</idle-timeout>
-  </basic-scaling>
+  <instance-class>B4_1G</instance-class>
+  <manual-scaling>
+    <instances>50</instances>
+<!--    <max-instances>50</max-instances>-->
+<!--    <idle-timeout>5m</idle-timeout>-->
+  </manual-scaling>
 
   <system-properties>
     <property name="java.util.logging.config.file"
