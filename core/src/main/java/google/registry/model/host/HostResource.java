@@ -34,6 +34,9 @@ import javax.persistence.AccessType;
 @ReportedOn
 @Entity
 @javax.persistence.Entity(name = "Host")
+@javax.persistence.Table(
+    name = "Host",
+    indexes = {@javax.persistence.Index(columnList = "hostName")})
 @ExternalMessagingName("host")
 @WithStringVKey
 @Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)

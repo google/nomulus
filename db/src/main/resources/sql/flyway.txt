@@ -102,3 +102,4 @@ V101__domain_add_dns_refresh_request_time.sql
 V102__add_indexes_to_domain_history_sub_tables.sql
 V103__creation_time_not_null.sql
 V104__add_transfer_response_host_id_to_poll_message.sql
+V105__add_index_on_host_name_in_host_table.sql
