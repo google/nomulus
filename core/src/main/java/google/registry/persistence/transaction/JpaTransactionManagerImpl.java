@@ -1131,7 +1131,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     private TypedQuery<T> buildQuery() {
       CriteriaQueryBuilder<T> queryBuilder =
-          CriteriaQueryBuilder.create(getEntityManager(), entityClass);
+          CriteriaQueryBuilder.create(JpaTransactionManagerImpl.this, entityClass);
       return addCriteria(queryBuilder);
     }
 
@@ -1178,7 +1178,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     @Override
     public long count() {
       CriteriaQueryBuilder<Long> queryBuilder =
-          CriteriaQueryBuilder.createCount(getEntityManager(), entityClass);
+          CriteriaQueryBuilder.createCount(JpaTransactionManagerImpl.this, entityClass);
       return addCriteria(queryBuilder).getSingleResult();
     }
 

@@ -15,7 +15,6 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.rdap.RdapTestHelper.assertThat;
 import static google.registry.rdap.RdapTestHelper.parseJsonObject;
 import static google.registry.request.Action.Method.POST;
@@ -46,7 +45,6 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.ReplicaSimulatingJpaTransactionManager;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
@@ -376,7 +374,6 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     action.nsIpParam = Optional.empty();
     action.cursorTokenParam = Optional.empty();
     action.requestPath = actionPath;
-    action.readOnlyJpaTm = jpaTm();
   }
 
   private JsonObject generateExpectedJsonForTwoDomainsNsReply() {
@@ -722,18 +719,6 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     login("evilregistrar");
     runSuccessfulTestWithCatLol(RequestType.NAME, "cat.lol", "rdap_domain.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
-  }
-
-  @TestSqlOnly
-  void testDomainMatch_readOnlyReplica() {
-    login("evilregistrar");
-    rememberWildcardType("cat.lol");
-    action.readOnlyJpaTm = new ReplicaSimulatingJpaTransactionManager(jpaTm());
-    action.nameParam = Optional.of("cat.lol");
-    action.parameterMap = ImmutableListMultimap.of("name", "cat.lol");
-    action.run();
-    assertThat(response.getPayload()).contains("Yes Virginia <script>");
-    assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @TestOfyAndSql

@@ -18,7 +18,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableList;
 import java.util.Collection;
-import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
@@ -42,12 +41,14 @@ public class CriteriaQueryBuilder<T> {
 
   private final CriteriaQuery<T> query;
   private final Root<?> root;
+  private final JpaTransactionManager jpaTm;
   private final ImmutableList.Builder<Predicate> predicates = new ImmutableList.Builder<>();
   private final ImmutableList.Builder<Order> orders = new ImmutableList.Builder<>();
 
-  private CriteriaQueryBuilder(CriteriaQuery<T> query, Root<?> root) {
+  private CriteriaQueryBuilder(CriteriaQuery<T> query, Root<?> root, JpaTransactionManager jpaTm) {
     this.query = query;
     this.root = root;
+    this.jpaTm = jpaTm;
   }
 
   /** Adds a WHERE clause to the query, given the specified operation, field, and value. */
@@ -75,18 +76,18 @@ public class CriteriaQueryBuilder<T> {
    */
   public <V> CriteriaQueryBuilder<T> whereFieldContains(String fieldName, Object value) {
     return where(
-        jpaTm().getEntityManager().getCriteriaBuilder().isMember(value, root.get(fieldName)));
+        jpaTm.getEntityManager().getCriteriaBuilder().isMember(value, root.get(fieldName)));
   }
 
   /** Orders the result by the given field ascending. */
   public CriteriaQueryBuilder<T> orderByAsc(String fieldName) {
-    orders.add(jpaTm().getEntityManager().getCriteriaBuilder().asc(root.get(fieldName)));
+    orders.add(jpaTm.getEntityManager().getCriteriaBuilder().asc(root.get(fieldName)));
     return this;
   }
 
   /** Orders the result by the given field descending. */
   public CriteriaQueryBuilder<T> orderByDesc(String fieldName) {
-    orders.add(jpaTm().getEntityManager().getCriteriaBuilder().desc(root.get(fieldName)));
+    orders.add(jpaTm.getEntityManager().getCriteriaBuilder().desc(root.get(fieldName)));
     return this;
   }
 
@@ -103,23 +104,24 @@ public class CriteriaQueryBuilder<T> {
 
   /** Creates a query builder that will SELECT from the given class. */
   public static <T> CriteriaQueryBuilder<T> create(Class<T> clazz) {
-    return create(jpaTm().getEntityManager(), clazz);
+    return create(jpaTm(), clazz);
   }
 
   /** Creates a query builder for the given entity manager. */
-  public static <T> CriteriaQueryBuilder<T> create(EntityManager em, Class<T> clazz) {
-    CriteriaQuery<T> query = em.getCriteriaBuilder().createQuery(clazz);
+  public static <T> CriteriaQueryBuilder<T> create(JpaTransactionManager jpaTm, Class<T> clazz) {
+    CriteriaQuery<T> query = jpaTm.getEntityManager().getCriteriaBuilder().createQuery(clazz);
     Root<T> root = query.from(clazz);
     query = query.select(root);
-    return new CriteriaQueryBuilder<>(query, root);
+    return new CriteriaQueryBuilder<>(query, root, jpaTm);
   }
 
   /** Creates a "count" query for the table for the class. */
-  public static <T> CriteriaQueryBuilder<Long> createCount(EntityManager em, Class<T> clazz) {
-    CriteriaBuilder builder = em.getCriteriaBuilder();
+  public static <T> CriteriaQueryBuilder<Long> createCount(
+      JpaTransactionManager jpaTm, Class<T> clazz) {
+    CriteriaBuilder builder = jpaTm.getEntityManager().getCriteriaBuilder();
     CriteriaQuery<Long> query = builder.createQuery(Long.class);
     Root<T> root = query.from(clazz);
     query = query.select(builder.count(root));
-    return new CriteriaQueryBuilder<>(query, root);
+    return new CriteriaQueryBuilder<>(query, root, jpaTm);
   }
 }
