@@ -97,7 +97,15 @@ public class RdeStagingActionDatastoreTest extends MapreduceTestCase<RdeStagingA
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
-  private final FakeClock clock = new FakeClock();
+  /**
+   * Without autoIncrement mode, the fake clock won't advance between Mapper and Reducer
+   * transactions when action is invoked, resulting in rolled back reducer transaction (due to
+   * TimestampInversionException if both transactions are mapped to the same CommitLog bucket) and
+   * multiple RdeUplaod/BrdaCopy tasks being enqueued (due to transaction retries, since Cloud Tasks
+   * enqueuing is not transactional with Datastore transactions).
+   */
+  private final FakeClock clock = new FakeClock().setAutoIncrementByOneMilli();
+
   private final FakeResponse response = new FakeResponse();
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final List<? super XjcRdeContentType> alreadyExtracted = new ArrayList<>();
@@ -465,6 +473,8 @@ public class RdeStagingActionDatastoreTest extends MapreduceTestCase<RdeStagingA
     clock.setTo(DateTime.parse("2000-01-04TZ")); // Tuesday
     action.run();
     executeTasksUntilEmpty("mapreduce", clock);
+    // TODO(b/217773051): duplicate tasks are possible though unlikely. Consider if below calls are
+    // appropriate since they don't allow duplicates.
     cloudTasksHelper.assertTasksEnqueued(
         "rde-upload",
         new TaskMatcher().url(RdeUploadAction.PATH).param(RequestParameters.PARAM_TLD, "lol"));
