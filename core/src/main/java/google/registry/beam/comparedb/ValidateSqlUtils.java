@@ -104,6 +104,7 @@ final class ValidateSqlUtils {
     private final HashMap<String, Counter> missingCounters = new HashMap<>();
     private final HashMap<String, Counter> unequalCounters = new HashMap<>();
     private final HashMap<String, Counter> badEntityCounters = new HashMap<>();
+    private final HashMap<String, Counter> duplicateEntityCounters = new HashMap<>();
 
     private volatile boolean logPrinted = false;
 
@@ -120,6 +121,8 @@ final class ValidateSqlUtils {
           counterKey, Metrics.counter("CompareDB", "Missing In One DB: " + counterKey));
       unequalCounters.put(counterKey, Metrics.counter("CompareDB", "Not Equal:" + counterKey));
       badEntityCounters.put(counterKey, Metrics.counter("CompareDB", "Bad Entities:" + counterKey));
+      duplicateEntityCounters.put(
+          counterKey, Metrics.counter("CompareDB", "Duplicate Entities:" + counterKey));
     }
 
     /**
@@ -158,11 +161,17 @@ final class ValidateSqlUtils {
       ImmutableList<SqlEntity> entities = ImmutableList.copyOf(kv.getValue());
 
       verify(!entities.isEmpty(), "Can't happen: no value for key %s.", kv.getKey());
-      verify(entities.size() <= 2, "Unexpected duplicates for key %s", kv.getKey());
 
       String counterKey = getCounterKey(entities.get(0).getClass());
       ensureCounterExists(counterKey);
       totalCounters.get(counterKey).inc();
+
+      if (entities.size() > 2) {
+        // Duplicates may happen with Cursors if imported across projects. Its key in Datastore, the
+        // id field, encodes the project name and is not fixed by the importing job.
+        duplicateEntityCounters.get(counterKey).inc();
+        return;
+      }
 
       if (entities.size() == 1) {
         if (isSpecialCaseProberEntity(entities.get(0))) {
