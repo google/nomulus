@@ -16,6 +16,7 @@ package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -27,6 +28,8 @@ import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.Keyring;
+import google.registry.model.rde.RdeMode;
+import google.registry.model.rde.RdeRevision;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
@@ -109,6 +112,10 @@ public class BrdaCopyActionTest {
     action.receiverKey = receiverKey;
     action.signingKey = signingKey;
     action.stagingDecryptionKey = decryptKey;
+    tm().transact(
+            () -> {
+              RdeRevision.saveRevision("lol", DateTime.parse("2010-10-17TZ"), RdeMode.THIN, 0);
+            });
   }
 
   @ParameterizedTest

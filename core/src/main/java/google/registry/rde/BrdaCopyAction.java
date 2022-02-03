@@ -24,6 +24,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.rde.RdeNamingUtils;
+import google.registry.model.rde.RdeRevision;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
@@ -86,7 +87,11 @@ public final class BrdaCopyAction implements Runnable {
   }
 
   private void copyAsRyde() throws IOException {
-    String nameWithoutPrefix = RdeNamingUtils.makeRydeFilename(tld, watermark, THIN, 1, 0);
+    int revision =
+        RdeRevision.getCurrentRevision(tld, watermark, THIN)
+            .orElseThrow(
+                () -> new IllegalStateException("RdeRevision was not set on generated deposit"));
+    String nameWithoutPrefix = RdeNamingUtils.makeRydeFilename(tld, watermark, THIN, 1, revision);
     String name = prefix.orElse("") + nameWithoutPrefix;
     BlobId xmlFilename = BlobId.of(stagingBucket, name + ".xml.ghostryde");
     BlobId xmlLengthFilename = BlobId.of(stagingBucket, name + ".xml.length");
