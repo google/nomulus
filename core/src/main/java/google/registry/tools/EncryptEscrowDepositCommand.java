@@ -18,6 +18,7 @@ import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import google.registry.model.rde.RdeMode;
 import google.registry.tools.params.PathParameter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,11 +47,20 @@ class EncryptEscrowDepositCommand implements CommandWithRemoteApi {
       validateWith = PathParameter.OutputDirectory.class)
   private Path outdir = Paths.get(".");
 
-  @Inject
-  EscrowDepositEncryptor encryptor;
+  @Parameter(
+      names = {"-m", "--mode"},
+      description = "Specify the escrow mode, FULL for RDE and THIN for BRDA.")
+  private RdeMode mode = RdeMode.FULL;
+
+  @Parameter(
+      names = {"-r", "--revision"},
+      description = "Specify the revision.")
+  private int revision = 0;
+
+  @Inject EscrowDepositEncryptor encryptor;
 
   @Override
   public final void run() throws Exception {
-    encryptor.encrypt(canonicalizeDomainName(tld), input, outdir);
+    encryptor.encrypt(mode, canonicalizeDomainName(tld), revision, input, outdir);
   }
 }

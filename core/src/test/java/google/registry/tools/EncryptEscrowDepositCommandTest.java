@@ -40,6 +40,8 @@ public class EncryptEscrowDepositCommandTest
     EscrowDepositEncryptor res = new EscrowDepositEncryptor();
     res.rdeReceiverKey = () -> new FakeKeyringModule().get().getRdeReceiverKey();
     res.rdeSigningKey = () -> new FakeKeyringModule().get().getRdeSigningKey();
+    res.brdaReceiverKey = () -> new FakeKeyringModule().get().getBrdaReceiverKey();
+    res.brdaSigningKey = () -> new FakeKeyringModule().get().getBrdaSigningKey();
     return res;
   }
 
@@ -59,6 +61,36 @@ public class EncryptEscrowDepositCommandTest
             "deposit.xml",
             "lol_2010-10-17_full_S1_R0.ryde",
             "lol_2010-10-17_full_S1_R0.sig",
+            "lol.pub");
+  }
+
+  @Test
+  void testSuccess_brda() throws Exception {
+    Path depositFile = tmpDir.resolve("deposit.xml");
+    Files.write(depositXml.read(), depositFile.toFile());
+    runCommand(
+        "--mode=THIN", "--tld=lol", "--input=" + depositFile, "--outdir=" + tmpDir.toString());
+    assertThat(tmpDir.toFile().list())
+        .asList()
+        .containsExactly(
+            "deposit.xml",
+            "lol_2010-10-17_thin_S1_R0.ryde",
+            "lol_2010-10-17_thin_S1_R0.sig",
+            "lol.pub");
+  }
+
+  @Test
+  void testSuccess_revision() throws Exception {
+    Path depositFile = tmpDir.resolve("deposit.xml");
+    Files.write(depositXml.read(), depositFile.toFile());
+    runCommand(
+        "--revision=1", "--tld=lol", "--input=" + depositFile, "--outdir=" + tmpDir.toString());
+    assertThat(tmpDir.toFile().list())
+        .asList()
+        .containsExactly(
+            "deposit.xml",
+            "lol_2010-10-17_full_S1_R1.ryde",
+            "lol_2010-10-17_full_S1_R1.sig",
             "lol.pub");
   }
 }

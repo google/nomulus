@@ -18,6 +18,7 @@ import static google.registry.model.rde.RdeMode.FULL;
 
 import com.google.common.io.ByteStreams;
 import google.registry.keyring.api.KeyModule.Key;
+import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeNamingUtils;
 import google.registry.rde.RdeUtil;
 import google.registry.rde.RydeEncoder;
@@ -42,26 +43,44 @@ final class EscrowDepositEncryptor {
 
   @Inject @Key("rdeSigningKey") Provider<PGPKeyPair> rdeSigningKey;
   @Inject @Key("rdeReceiverKey") Provider<PGPPublicKey> rdeReceiverKey;
+
+  @Inject
+  @Key("brdaSigningKey")
+  Provider<PGPKeyPair> brdaSigningKey;
+
+  @Inject
+  @Key("brdaReceiverKey")
+  Provider<PGPPublicKey> brdaReceiverKey;
+
   @Inject EscrowDepositEncryptor() {}
 
   /** Creates a {@code .ryde} and {@code .sig} file, provided an XML deposit file. */
-  void encrypt(String tld, Path xmlFile, Path outdir)
+  void encrypt(RdeMode mode, String tld, Integer revision, Path xmlFile, Path outdir)
       throws IOException, XmlException {
     try (InputStream xmlFileInput = Files.newInputStream(xmlFile);
         BufferedInputStream xmlInput = new BufferedInputStream(xmlFileInput, PEEK_BUFFER_SIZE)) {
       DateTime watermark = RdeUtil.peekWatermark(xmlInput);
-      String name = RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, 0);
+      String name = RdeNamingUtils.makeRydeFilename(tld, watermark, mode, 1, revision);
       Path rydePath = outdir.resolve(name + ".ryde");
       Path sigPath = outdir.resolve(name + ".sig");
       Path pubPath = outdir.resolve(tld + ".pub");
-      PGPKeyPair signingKey = rdeSigningKey.get();
+      PGPKeyPair signingKey;
+      PGPPublicKey receiverKey;
+      if (mode == FULL) {
+        signingKey = rdeSigningKey.get();
+        receiverKey = rdeReceiverKey.get();
+      } else {
+        signingKey = brdaSigningKey.get();
+        receiverKey = brdaReceiverKey.get();
+      }
       try (OutputStream rydeOutput = Files.newOutputStream(rydePath);
           OutputStream sigOutput = Files.newOutputStream(sigPath);
-          RydeEncoder rydeEncoder = new RydeEncoder.Builder()
-              .setRydeOutput(rydeOutput, rdeReceiverKey.get())
-              .setSignatureOutput(sigOutput, signingKey)
-              .setFileMetadata(name, Files.size(xmlFile), watermark)
-              .build()) {
+          RydeEncoder rydeEncoder =
+              new RydeEncoder.Builder()
+                  .setRydeOutput(rydeOutput, receiverKey)
+                  .setSignatureOutput(sigOutput, signingKey)
+                  .setFileMetadata(name, Files.size(xmlFile), watermark)
+                  .build()) {
         ByteStreams.copy(xmlInput, rydeEncoder);
       }
       try (OutputStream pubOutput = Files.newOutputStream(pubPath);
