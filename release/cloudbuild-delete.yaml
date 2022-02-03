@@ -52,8 +52,8 @@ steps:
     do
       for version in $(gcloud app versions list \
         --filter="SERVICE:$service AND SERVING_STATUS:STOPPED" \
-        --sort-by=LAST_DEPLOYED --format="value(VERSION.ID)" \
-        --project=$project_id | head -n -3)
+        --format="value(VERSION.ID,LAST_DEPLOYED)" \
+        --project=$project_id | sort -k 2 | head -n -3)
       do
         gcloud app versions delete $version --service=$service \
           --project=$project_id --quiet;
