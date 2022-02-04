@@ -43,6 +43,7 @@ import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -67,6 +68,7 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   boolean replayed = false;
   boolean inOfyContext;
   InjectExtension injectExtension = new InjectExtension();
+  Consumer<ImmutableObject> entityCheck;
   @Nullable ReplicateToDatastoreAction sqlToDsReplicator;
 
   private ReplayExtension(
@@ -232,6 +234,18 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     } while (!transactionBatch.isEmpty());
   }
 
+  /**
+   * Define an entity check for the replayer.
+   *
+   * <p>The entity check is passed the entity for all Update actions in all Transaction objects
+   * during verification of SQL -> Datastore replication. Define one of these when we need to do
+   * verifications on an object in a transaction that are not visible during a simple comparison to
+   * the current database entity.
+   */
+  public void setEntityCheck(Consumer<ImmutableObject> entityCheck) {
+    this.entityCheck = entityCheck;
+  }
+
   /** Verifies that the replaying the SQL transaction created the same entities in Datastore. */
   private void compareSqlTransaction(TransactionEntity transactionEntity) {
     Transaction transaction;
@@ -253,6 +267,11 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
         assertAboutImmutableObjects()
             .that(fromDatastore)
             .isEqualAcrossDatabases(fromTransactionEntity);
+
+        // Do the entity check if one was requested.
+        if (entityCheck != null) {
+          entityCheck.accept(fromTransactionEntity);
+        }
       } else {
         Delete delete = (Delete) mutation;
         VKey<?> key = delete.getKey();

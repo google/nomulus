@@ -111,6 +111,8 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -134,6 +136,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   private ContactResource sh8013Contact;
   private ContactResource mak21Contact;
   private ContactResource unusedContact;
+  List<DomainBase> expectedUpdates = new ArrayList<>();
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
@@ -202,7 +205,12 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setDomain(domain)
             .build());
     clock.advanceOneMilli();
+    expectUpdateFor(domain);
     return domain;
+  }
+
+  void expectUpdateFor(DomainBase domain) {
+    expectedUpdates.add(domain);
   }
 
   private void doSuccessfulTest() throws Exception {
@@ -212,9 +220,11 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   private void doSuccessfulTest(String expectedXmlFilename) throws Exception {
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile(expectedXmlFilename));
+    DomainBase domain = reloadResourceByForeignKey();
+    expectUpdateFor(domain);
     // Check that the domain was updated. These values came from the xml.
     assertAboutDomains()
-        .that(reloadResourceByForeignKey())
+        .that(domain)
         .hasStatusValue(StatusValue.CLIENT_HOLD)
         .and()
         .hasAuthInfoPwd("2BARfoo")
@@ -229,6 +239,24 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertNoBillingEvents();
     assertDnsTasksEnqueued("example.tld");
     assertLastHistoryContainsResource(reloadResourceByForeignKey());
+
+    // Verify that all timestamps are correct after SQL -> DS replay.
+    // Added to confirm that timestamps get updated correctly.
+    replayExtension.setEntityCheck(
+        entity -> {
+          if (entity instanceof DomainBase) {
+            DomainBase expectedDomain = expectedUpdates.remove(0);
+
+            // Ignore it if we enqueued a null, these are for dealing with known issues.
+            if (expectedDomain == null) {
+              return;
+            }
+            DomainBase domainEntity = (DomainBase) entity;
+            assertThat(domainEntity.getCreationTime()).isEqualTo(expectedDomain.getCreationTime());
+            assertThat(domainEntity.getUpdateTimestamp())
+                .isEqualTo(expectedDomain.getUpdateTimestamp());
+          }
+        });
   }
 
   @TestOfyAndSql
@@ -308,6 +336,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     }
     persistResource(
         reloadResourceByForeignKey().asBuilder().setNameservers(nameservers.build()).build());
+    // Add a null update here so we don't compare.
+    expectUpdateFor(null);
     clock.advanceOneMilli();
   }
 

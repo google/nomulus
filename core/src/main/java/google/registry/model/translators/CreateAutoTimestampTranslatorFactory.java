@@ -14,12 +14,10 @@
 
 package google.registry.model.translators;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.CreateAutoTimestamp;
-import google.registry.persistence.transaction.Transaction;
 import java.util.Date;
 import org.joda.time.DateTime;
 
@@ -47,13 +45,13 @@ public class CreateAutoTimestampTranslatorFactory
       /** Save a timestamp, setting it to the current time if it did not have a previous value. */
       @Override
       public Date saveValue(CreateAutoTimestamp pojoValue) {
-
-        // Don't do this if we're in the course of transaction serialization.
-        if (Transaction.inSerializationMode()) {
-          return pojoValue.getTimestamp() == null ? null : pojoValue.getTimestamp().toDate();
-        }
-
-        return firstNonNull(pojoValue.getTimestamp(), ofyTm().getTransactionTime()).toDate();
+        // Note that we use the current transaction manager -- we need to do this under JPA when we
+        // serialize the entity from a Transaction object, but we need to use the JPA transaction
+        // manager in that case.
+        return (pojoValue.getTimestamp() == null
+                ? tm().getTransactionTime()
+                : pojoValue.getTimestamp())
+            .toDate();
       }
     };
   }

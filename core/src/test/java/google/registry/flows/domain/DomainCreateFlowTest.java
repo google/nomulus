@@ -174,6 +174,8 @@ import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
@@ -190,6 +192,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   private static final String CLAIMS_KEY = "2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001";
 
   private AllocationToken allocationToken;
+  List<DomainBase> expectedUpdates = new ArrayList<>();
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
@@ -347,6 +350,21 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             createBillingEvent));
     assertDnsTasksEnqueued(getUniqueIdFromCommand());
     assertEppResourceIndexEntityFor(domain);
+
+    expectUpdateFor(domain);
+
+    // Verify that all timestamps are correct after SQL -> DS replay.
+    // Added to confirm that timestamps get updated correctly.
+    replayExtension.setEntityCheck(
+        entity -> {
+          if (entity instanceof DomainBase) {
+            DomainBase expectedDomain = expectedUpdates.remove(0);
+            DomainBase domainEntity = (DomainBase) entity;
+            assertThat(domainEntity.getCreationTime()).isEqualTo(expectedDomain.getCreationTime());
+            assertThat(domainEntity.getUpdateTimestamp())
+                .isEqualTo(expectedDomain.getUpdateTimestamp());
+          }
+        });
   }
 
   private void assertNoLordn() throws Exception {
@@ -389,6 +407,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     + ",example-one.tld,370d0b7c9223372036854775807,1,"
                     + "2009-08-16T09:00:00.016Z,2009-08-16T09:00:00.000Z");
     assertTasksEnqueued(QUEUE_CLAIMS, task);
+  }
+
+  void expectUpdateFor(DomainBase domain) {
+    expectedUpdates.add(domain);
   }
 
   private void doSuccessfulTest(
@@ -574,6 +596,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         ImmutableMap.of("DOMAIN", "otherexample.tld", "YEARS", "2"));
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "otherexample.tld")));
+    expectUpdateFor(reloadResourceByForeignKey());
   }
 
   @TestOfyAndSql
@@ -826,7 +849,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @TestOfyAndSql
   void testSuccess_existedButWasDeleted() throws Exception {
     persistContactsAndHosts();
-    persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
+    expectUpdateFor(persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1)));
     clock.advanceOneMilli();
     doSuccessfulTest();
   }
