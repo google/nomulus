@@ -87,6 +87,8 @@ public final class BrdaCopyAction implements Runnable {
   }
 
   private void copyAsRyde() throws IOException {
+    // TODO(b/217772483): consider guarding this action with a lock and check if there is work.
+    // Not urgent since file writes on GCS are atomic.
     int revision =
         RdeRevision.getCurrentRevision(tld, watermark, THIN)
             .orElseThrow(
