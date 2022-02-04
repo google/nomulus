@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Optional;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -211,6 +212,87 @@ public class CloudTasksUtilsTest {
   void testSuccess_createGetTasks_withZeroJitterSeconds() {
     Task task =
         CloudTasksUtils.createGetTask("/the/path", "myservice", params, clock, Optional.of(0));
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri())
+        .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_createGetTasks_withDelay() {
+    Task task =
+        CloudTasksUtils.createGetTask(
+            "/the/path", "myservice", params, clock, Duration.standardMinutes(10));
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri())
+        .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(Instant.ofEpochSecond(task.getScheduleTime().getSeconds()))
+        .isEqualTo(Instant.ofEpochMilli(clock.nowUtc().plusMinutes(10).getMillis()));
+  }
+
+  @Test
+  void testSuccess_createPostTasks_withDelay() {
+    Task task =
+        CloudTasksUtils.createPostTask(
+            "/the/path", "myservice", params, clock, Duration.standardMinutes(10));
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(task.getAppEngineHttpRequest().getHeadersMap().get("Content-Type"))
+        .isEqualTo("application/x-www-form-urlencoded");
+    assertThat(task.getAppEngineHttpRequest().getBody().toString(StandardCharsets.UTF_8))
+        .isEqualTo("key1=val1&key2=val2&key1=val3");
+    assertThat(task.getScheduleTime().getSeconds()).isNotEqualTo(0);
+    assertThat(Instant.ofEpochSecond(task.getScheduleTime().getSeconds()))
+        .isEqualTo(Instant.ofEpochMilli(clock.nowUtc().plusMinutes(10).getMillis()));
+  }
+
+  @Test
+  void testFailure_createGetTasks_withNegativeDelay() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                CloudTasksUtils.createGetTask(
+                    "/the/path", "myservice", params, clock, Duration.standardMinutes(-10)));
+    assertThat(thrown).hasMessageThat().isEqualTo("Negative duration is not supported.");
+  }
+
+  @Test
+  void testFailure_createPostTasks_withNegativeDelay() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                CloudTasksUtils.createGetTask(
+                    "/the/path", "myservice", params, clock, Duration.standardMinutes(-10)));
+    assertThat(thrown).hasMessageThat().isEqualTo("Negative duration is not supported.");
+  }
+
+  @Test
+  void testSuccess_createPostTasks_withZeroDelay() {
+    Task task =
+        CloudTasksUtils.createPostTask("/the/path", "myservice", params, clock, Duration.ZERO);
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(task.getAppEngineHttpRequest().getHeadersMap().get("Content-Type"))
+        .isEqualTo("application/x-www-form-urlencoded");
+    assertThat(task.getAppEngineHttpRequest().getBody().toString(StandardCharsets.UTF_8))
+        .isEqualTo("key1=val1&key2=val2&key1=val3");
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_createGetTasks_withZeroDelay() {
+    Task task =
+        CloudTasksUtils.createGetTask("/the/path", "myservice", params, clock, Duration.ZERO);
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri())
         .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");

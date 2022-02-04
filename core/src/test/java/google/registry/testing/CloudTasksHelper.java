@@ -39,6 +39,7 @@ import com.google.common.collect.Multimaps;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import com.google.common.truth.Truth8;
+import com.google.protobuf.Timestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.util.CloudTasksUtils;
 import google.registry.util.Retrier;
@@ -195,6 +196,7 @@ public class CloudTasksHelper implements Serializable {
     // tests.
     HttpMethod method = HttpMethod.POST;
     String url;
+    Timestamp scheduleTime;
     Multimap<String, String> headers = ArrayListMultimap.create();
     Multimap<String, String> params = ArrayListMultimap.create();
 
@@ -216,6 +218,7 @@ public class CloudTasksHelper implements Serializable {
           Ascii.toLowerCase(task.getAppEngineHttpRequest().getAppEngineRouting().getService());
       method = task.getAppEngineHttpRequest().getHttpMethod();
       url = uri.getPath();
+      scheduleTime = task.getScheduleTime();
       ImmutableMultimap.Builder<String, String> headerBuilder = new ImmutableMultimap.Builder<>();
       task.getAppEngineHttpRequest()
           .getHeadersMap()
@@ -251,6 +254,7 @@ public class CloudTasksHelper implements Serializable {
       builder.put("url", url);
       builder.put("headers", headers);
       builder.put("params", params);
+      builder.put("scheduleTime", scheduleTime);
       return Maps.filterValues(builder, not(in(asList(null, "", Collections.EMPTY_MAP))));
     }
   }
@@ -293,6 +297,11 @@ public class CloudTasksHelper implements Serializable {
       return this;
     }
 
+    public TaskMatcher scheduleTime(Timestamp scheduleTime) {
+      expected.scheduleTime = scheduleTime;
+      return this;
+    }
+
     public TaskMatcher param(String key, String value) {
       checkNotNull(value, "Test error: A param can never have a null value, so don't assert it");
       expected.params.put(key, value);
@@ -316,6 +325,8 @@ public class CloudTasksHelper implements Serializable {
      *
      * <p>Match fails if any headers or params expected on the TaskMatcher are not found on the
      * Task. Note that the inverse is not true (i.e. there may be extra headers on the Task).
+     *
+     * <p>Schedule time by default is Timestamp.getDefaultInstance() or null.
      */
     @Override
     public boolean test(@Nonnull Task task) {
@@ -324,6 +335,8 @@ public class CloudTasksHelper implements Serializable {
           && (expected.url == null || Objects.equals(expected.url, actual.url))
           && (expected.method == null || Objects.equals(expected.method, actual.method))
           && (expected.service == null || Objects.equals(expected.service, actual.service))
+          && (expected.scheduleTime == null
+              || Objects.equals(expected.scheduleTime, actual.scheduleTime))
           && containsEntries(actual.params, expected.params)
           && containsEntries(actual.headers, expected.headers);
     }
