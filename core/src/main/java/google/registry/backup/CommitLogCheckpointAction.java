@@ -71,14 +71,6 @@ public final class CommitLogCheckpointAction implements Runnable {
   /**
    * Creates a {@link CommitLogCheckpoint} and initiates an asynchronous export task.
    *
-   * <p>Since the export action to GCS may be slow, it is invoked asynchronously through the Cloud
-   * Task service. It is important that the {@code enqueue} method be called within the transaction
-   * that persists the checkpoint, otherwise when an enqueue invocation fails a checkpoint may
-   * become an orphan. Enqueuing within the transaction does introduce a potential race condition
-   * with {@link ExportCommitLogDiffAction}, when Cloud Task manages to start that action before the
-   * transaction commits and the new checkpoint becomes visible. In such cases, the action fails and
-   * is retried by Cloud Task.
-   *
    * @return the {@code CommitLogCheckpoint} to be exported
    */
   public Optional<CommitLogCheckpoint> createCheckPointAndStartAsyncExport() {

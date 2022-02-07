@@ -45,18 +45,17 @@ import org.joda.time.Duration;
  *       replication lock}, and
  *   <li>while holding the lock, creating an SQL snapshot and invoking this action with the snapshot
  *       id
- *   <li>
  * </ul>
  *
  * The caller may release the replication lock upon receiving the response from this action. Please
  * refer to {@link google.registry.tools.ValidateDatastoreWithSqlCommand} for more information on
  * usage.
  *
- * <p>When invoked with an SQL snapshot id, this action plays SQL transactions up to that snapshot,
- * creates a new CommitLog checkpoint, and exports all CommitLogs to GCS up to this checkpoint. The
- * timestamp of this checkpoint can be used to recreate a Datastore snapshot that is equivalent to
- * the given SQL snapshot. If this action succeeds, the checkpoint timestamp is included in the
- * response.
+ * <p>This action plays SQL transactions up to the user-specified snapshot, creates a new CommitLog
+ * checkpoint, and exports all CommitLogs to GCS up to this checkpoint. The timestamp of this
+ * checkpoint can be used to recreate a Datastore snapshot that is equivalent to the given SQL
+ * snapshot. If this action succeeds, the checkpoint timestamp is included in the response (the
+ * format of which is defined by {@link #SUCCESS_RESPONSE_TEMPLATE}).
  */
 @Action(
     service = Service.BACKEND,
@@ -69,10 +68,10 @@ public class SyncDatastoreToSqlSnapshotAction implements Runnable {
 
   public static final String PATH = "/_dr/task/syncDatastoreToSqlSnapshot";
 
-  static final String SQL_SNAPSHOT_ID_PARAM = "sqlSnapshotId";
-
-  static final String SUCCESS_RESPONSE_TEMPLATE =
+  public static final String SUCCESS_RESPONSE_TEMPLATE =
       "Datastore is up-to-date with provided SQL snapshot (%s). CommitLog timestamp is (%s).";
+
+  static final String SQL_SNAPSHOT_ID_PARAM = "sqlSnapshotId";
 
   private static final int COMMITLOGS_PRESENCE_CHECK_ATTEMPTS = 10;
   private static final Duration COMMITLOGS_PRESENCE_CHECK_DELAY = Duration.standardSeconds(6);
@@ -138,12 +137,14 @@ public class SyncDatastoreToSqlSnapshotAction implements Runnable {
   }
 
   private Optional<CommitLogCheckpoint> exportCommitLogs() {
-    // Trigger an async CommitLog export, and wait until the checkpoint is exported to GCS.
+    // Trigger an async CommitLog export to GCS. Will check file availability later.
     // Although we can add support to synchronous execution, it can disrupt the export cadence
     // when the system is busy
     Optional<CommitLogCheckpoint> checkpoint =
         commitLogCheckpointAction.createCheckPointAndStartAsyncExport();
 
+    // Failure to create checkpoint most likely caused by race with cron-triggered checkpointing.
+    // Retry once.
     if (!checkpoint.isPresent()) {
       commitLogCheckpointAction.createCheckPointAndStartAsyncExport();
     }

@@ -14,15 +14,23 @@
 
 package google.registry.tools;
 
+import static google.registry.beam.BeamUtils.createJobName;
 import static google.registry.model.replay.ReplicateToDatastoreAction.REPLICATE_TO_DATASTORE_LOCK_NAME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.google.api.services.dataflow.Dataflow;
+import com.google.api.services.dataflow.model.Job;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateParameter;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateResponse;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
 import google.registry.backup.SyncDatastoreToSqlSnapshotAction;
 import google.registry.beam.common.DatabaseSnapshot;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
@@ -31,9 +39,12 @@ import google.registry.model.server.Lock;
 import google.registry.request.Action.Service;
 import google.registry.util.Clock;
 import google.registry.util.RequestStatusChecker;
+import google.registry.util.Sleeper;
+import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 import javax.inject.Inject;
+import org.joda.time.Duration;
 
 /**
  * Validates asynchronously replicated data from the primary Cloud SQL database to Datastore.
@@ -51,6 +62,15 @@ public class ValidateDatastoreWithSqlCommand
 
   private static final Service NOMULUS_SERVICE = Service.BACKEND;
 
+  private static final String PIPELINE_NAME = "validate_datastore_pipeline";
+
+  // States indicating a job is not finished yet.
+  private static final ImmutableSet<String> DATAFLOW_JOB_RUNNING_STATES =
+      ImmutableSet.of(
+          "JOB_STATE_RUNNING", "JOB_STATE_STOPPED", "JOB_STATE_PENDING", "JOB_STATE_QUEUED");
+
+  private static final Duration JOB_POLLING_INTERVAL = Duration.standardSeconds(60);
+
   @Parameter(
       names = {"-m", "--manual"},
       description =
@@ -59,6 +79,22 @@ public class ValidateDatastoreWithSqlCommand
   boolean manualLaunchPipeline;
 
   @Inject Clock clock;
+  @Inject Dataflow dataflow;
+
+  @Inject
+  @Config("defaultJobRegion")
+  String jobRegion;
+
+  @Inject
+  @Config("beamStagingBucketUrl")
+  String stagingBucketUrl;
+
+  @Inject
+  @Config("projectId")
+  String projectId;
+
+  @Inject Sleeper sleeper;
+
   private AppEngineConnection connection;
 
   @Override
@@ -98,12 +134,27 @@ public class ValidateDatastoreWithSqlCommand
         lock.ifPresent(Lock::releaseSql);
         lock = Optional.empty();
 
+        // See SyncDatastoreToSqlSnapshotAction for response format.
+        String latestCommitTimestamp =
+            response.substring(response.lastIndexOf('(') + 1, response.lastIndexOf(')'));
+
         if (manualLaunchPipeline) {
           System.out.print("\nEnter any key to continue when the pipeline ends:");
           System.in.read();
         } else {
-          // TODO(weiminyu): launch the BEAM pipeline and wait for it to end.
-          System.out.print("\nAutomatic pipeline launch is not supported yet.");
+          Job pipelineJob =
+              launchComparisonPipeline(snapshot.getSnapshotId(), latestCommitTimestamp).getJob();
+          String jobId = pipelineJob.getId();
+
+          System.out.printf(
+              "Launched comparison pipeline %s (%s).\n", pipelineJob.getName(), jobId);
+
+          while (DATAFLOW_JOB_RUNNING_STATES.contains(getDataflowJobStatus(jobId))) {
+            sleeper.sleepInterruptibly(JOB_POLLING_INTERVAL);
+          }
+          System.out.printf(
+              "Pipeline ended with %s state. Please check counters for results.\n",
+              getDataflowJobStatus(jobId));
         }
       }
     } finally {
@@ -114,6 +165,48 @@ public class ValidateDatastoreWithSqlCommand
   private static String getNomulusEndpoint(String sqlSnapshotId) {
     return String.format(
         "%s?sqlSnapshotId=%s", SyncDatastoreToSqlSnapshotAction.PATH, sqlSnapshotId);
+  }
+
+  private LaunchFlexTemplateResponse launchComparisonPipeline(
+      String sqlSnapshotId, String latestCommitLogTimestamp) {
+    try {
+      LaunchFlexTemplateParameter parameter =
+          new LaunchFlexTemplateParameter()
+              .setJobName(createJobName("validate-datastore", clock))
+              .setContainerSpecGcsPath(
+                  String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
+              .setParameters(
+                  ImmutableMap.of(
+                      "sqlSnapshotId",
+                      sqlSnapshotId,
+                      "latestCommitLogTimestamp",
+                      latestCommitLogTimestamp,
+                      "registryEnvironment",
+                      RegistryToolEnvironment.get().name()));
+      return dataflow
+          .projects()
+          .locations()
+          .flexTemplates()
+          .launch(
+              projectId, jobRegion, new LaunchFlexTemplateRequest().setLaunchParameter(parameter))
+          .execute();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private String getDataflowJobStatus(String jobId) {
+    try {
+      return dataflow
+          .projects()
+          .locations()
+          .jobs()
+          .get(projectId, jobRegion, jobId)
+          .execute()
+          .getCurrentState();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**

@@ -76,6 +76,7 @@ import javax.inject.Singleton;
       LocalCredentialModule.class,
       PersistenceModule.class,
       RdeModule.class,
+      RegistryToolDataflowModule.class,
       RequestFactoryModule.class,
       SecretManagerModule.class,
       URLFetchServiceModule.class,
