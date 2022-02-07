@@ -59,7 +59,7 @@ public class UpdateAutoTimestampTranslatorFactory
           checkState(
               UpdateAutoTimestamp.autoUpdateEnabled(),
               "Auto-update disabled during transaction serialization.");
-          return jpaTm().getTransactionTime();
+          return jpaTm().getTransactionTime().toDate();
         }
 
         return UpdateAutoTimestamp.autoUpdateEnabled()
