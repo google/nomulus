@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.ReplayQueue;
 import google.registry.model.ofy.TransactionInfo;
@@ -41,9 +42,9 @@ import google.registry.persistence.transaction.Transaction.Update;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -68,8 +69,9 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   boolean replayed = false;
   boolean inOfyContext;
   InjectExtension injectExtension = new InjectExtension();
-  Consumer<ImmutableObject> entityCheck;
   @Nullable ReplicateToDatastoreAction sqlToDsReplicator;
+  List<DomainBase> expectedUpdates = new ArrayList<>();
+  boolean enableDomainTimestampChecks;
 
   private ReplayExtension(
       FakeClock clock, boolean compare, @Nullable ReplicateToDatastoreAction sqlToDsReplicator) {
@@ -108,6 +110,30 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     } else {
       return createWithCompare(clock);
     }
+  }
+
+  /**
+   * Enable checking of domain timestamps during replay.
+   *
+   * <p>This was added to facilitate testing of a very specific bug wherein create/update
+   * auto-timestamps serialized to the SQL -> DS Transaction table had different values from those
+   * actually stored in SQL.
+   *
+   * <p>In order to use this, you also need to use expectUpdateFor() to store the states of a
+   * DomainBase object at a given point in time.
+   */
+  public void enableDomainTimestampChecks() {
+    enableDomainTimestampChecks = true;
+  }
+
+  /**
+   * If we're doing domain time checks, add the current state of a domain to check against.
+   *
+   * <p>A null argument is a placeholder to deal with b/217952766. Basically it allows us to ignore
+   * one particular state in the sequence (where the timestamp is not what we expect it to be).
+   */
+  public void expectUpdateFor(@Nullable DomainBase domain) {
+    expectedUpdates.add(domain);
   }
 
   @Override
@@ -234,18 +260,6 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     } while (!transactionBatch.isEmpty());
   }
 
-  /**
-   * Define an entity check for the replayer.
-   *
-   * <p>The entity check is passed the entity for all Update actions in all Transaction objects
-   * during verification of SQL -> Datastore replication. Define one of these when we need to do
-   * verifications on an object in a transaction that are not visible during a simple comparison to
-   * the current database entity.
-   */
-  public void setEntityCheck(Consumer<ImmutableObject> entityCheck) {
-    this.entityCheck = entityCheck;
-  }
-
   /** Verifies that the replaying the SQL transaction created the same entities in Datastore. */
   private void compareSqlTransaction(TransactionEntity transactionEntity) {
     Transaction transaction;
@@ -268,9 +282,19 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
             .that(fromDatastore)
             .isEqualAcrossDatabases(fromTransactionEntity);
 
-        // Do the entity check if one was requested.
-        if (entityCheck != null) {
-          entityCheck.accept(fromTransactionEntity);
+        // Check DomainBase timestamps if appropriate.
+        if (enableDomainTimestampChecks && fromTransactionEntity instanceof DomainBase) {
+          DomainBase expectedDomain = expectedUpdates.remove(0);
+
+          // Just skip it if the expectedDomain is null.
+          if (expectedDomain == null) {
+            continue;
+          }
+
+          DomainBase domainEntity = (DomainBase) fromTransactionEntity;
+          assertThat(domainEntity.getCreationTime()).isEqualTo(expectedDomain.getCreationTime());
+          assertThat(domainEntity.getUpdateTimestamp())
+              .isEqualTo(expectedDomain.getUpdateTimestamp());
         }
       } else {
         Delete delete = (Delete) mutation;
