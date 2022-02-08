@@ -60,4 +60,14 @@ public abstract class BackupGroupRoot extends ImmutableObject implements UnsafeS
   protected void copyUpdateTimestamp(BackupGroupRoot other) {
     this.updateTimestamp = PreconditionsUtils.checkArgumentNotNull(other, "other").updateTimestamp;
   }
+
+  /**
+   * Resets the {@link #updateTimestamp} to force Hibernate to persist it.
+   *
+   * <p>This method is for use in setters in derived builders that do not result in the derived
+   * object being persisted.
+   */
+  protected void resetUpdateTimestamp() {
+    this.updateTimestamp = UpdateAutoTimestamp.create(null);
+  }
 }
