@@ -15,23 +15,27 @@
 package google.registry.reporting.billing;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.net.MediaType;
+import com.google.protobuf.util.Timestamps;
 import google.registry.beam.BeamActionTestBase;
 import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
+import google.registry.reporting.ReportingModule;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.util.CloudTasksUtils;
 import java.io.IOException;
+import org.joda.time.Duration;
 import org.joda.time.YearMonth;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -45,6 +49,8 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
 
   private final BillingEmailUtils emailUtils = mock(BillingEmailUtils.class);
   private FakeClock clock = new FakeClock();
+  private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+  private CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
   private GenerateInvoicesAction action;
 
   @TestOfyAndSql
@@ -60,6 +66,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
             PrimaryDatabase.DATASTORE,
             new YearMonth(2017, 10),
             emailUtils,
+            cloudTasksUtils,
             clock,
             response,
             dataflow);
@@ -68,13 +75,19 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).isEqualTo("Launched invoicing pipeline: jobid");
 
-    TaskMatcher matcher =
+    cloudTasksHelper.assertTasksEnqueued(
+        "beam-reporting",
         new TaskMatcher()
             .url("/_dr/task/publishInvoices")
-            .method("POST")
+            .method(HttpMethod.POST)
             .param("jobId", "jobid")
-            .param("yearMonth", "2017-10");
-    assertTasksEnqueued("beam-reporting", matcher);
+            .param("yearMonth", "2017-10")
+            .scheduleTime(
+                Timestamps.fromMillis(
+                    clock
+                        .nowUtc()
+                        .plus(Duration.standardMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES))
+                        .getMillis())));
   }
 
   @TestOfyAndSql
@@ -90,6 +103,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
             PrimaryDatabase.DATASTORE,
             new YearMonth(2017, 10),
             emailUtils,
+            cloudTasksUtils,
             clock,
             response,
             dataflow);
@@ -97,7 +111,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).isEqualTo("Launched invoicing pipeline: jobid");
-    assertNoTasksEnqueued("beam-reporting");
+    cloudTasksHelper.assertNoTasksEnqueued("beam-reporting");
   }
 
   @TestOfyAndSql
@@ -114,6 +128,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
             PrimaryDatabase.DATASTORE,
             new YearMonth(2017, 10),
             emailUtils,
+            cloudTasksUtils,
             clock,
             response,
             dataflow);
@@ -121,6 +136,6 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
     assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(response.getPayload()).isEqualTo("Pipeline launch failed: Pipeline error");
     verify(emailUtils).sendAlertEmail("Pipeline Launch failed due to Pipeline error");
-    assertNoTasksEnqueued("beam-reporting");
+    cloudTasksHelper.assertNoTasksEnqueued("beam-reporting");
   }
 }

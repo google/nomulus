@@ -15,20 +15,24 @@
 package google.registry.reporting.spec11;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.mockito.Mockito.when;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.net.MediaType;
+import com.google.protobuf.util.Timestamps;
 import google.registry.beam.BeamActionTestBase;
 import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
+import google.registry.reporting.ReportingModule;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.util.CloudTasksUtils;
 import java.io.IOException;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -40,6 +44,8 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
       AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2018-06-11T12:23:56Z"));
+  private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+  private CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
   private GenerateSpec11ReportAction action;
 
   @Test
@@ -56,13 +62,14 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             true,
             clock,
             response,
-            dataflow);
+            dataflow,
+            cloudTasksUtils);
     when(launch.execute()).thenThrow(new IOException("Dataflow failure"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
     assertThat(response.getPayload()).contains("Dataflow failure");
-    assertNoTasksEnqueued("beam-reporting");
+    cloudTasksHelper.assertNoTasksEnqueued("beam-reporting");
   }
 
   @Test
@@ -79,18 +86,26 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             true,
             clock,
             response,
-            dataflow);
+            dataflow,
+            cloudTasksUtils);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
     assertThat(response.getPayload()).isEqualTo("Launched Spec11 pipeline: jobid");
-    TaskMatcher matcher =
+
+    cloudTasksHelper.assertTasksEnqueued(
+        "beam-reporting",
         new TaskMatcher()
             .url("/_dr/task/publishSpec11")
-            .method("POST")
+            .method(HttpMethod.POST)
             .param("jobId", "jobid")
-            .param("date", "2018-06-11");
-    assertTasksEnqueued("beam-reporting", matcher);
+            .param("date", "2018-06-11")
+            .scheduleTime(
+                Timestamps.fromMillis(
+                    clock
+                        .nowUtc()
+                        .plus(Duration.standardMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES))
+                        .getMillis())));
   }
 
   @Test
@@ -107,11 +122,12 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             false,
             clock,
             response,
-            dataflow);
+            dataflow,
+            cloudTasksUtils);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
     assertThat(response.getPayload()).isEqualTo("Launched Spec11 pipeline: jobid");
-    assertNoTasksEnqueued("beam-reporting");
+    cloudTasksHelper.assertNoTasksEnqueued("beam-reporting");
   }
 }

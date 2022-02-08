@@ -367,6 +367,8 @@ dependencies {
   compile deps['org.flywaydb:flyway-core']
 
   closureCompiler deps['com.google.javascript:closure-compiler']
+  testCompile 'com.google.protobuf:protobuf-java-util:3.17.3'
+  testCompile 'com.google.protobuf:protobuf-java-util:3.17.3'
 }
 
 task jaxbToJava {
