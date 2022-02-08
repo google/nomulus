@@ -14,8 +14,6 @@
 
 package google.registry.loadtest;
 
-import static com.google.appengine.api.taskqueue.QueueConstants.maxTasksPerAdd;
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Lists.partition;
@@ -24,16 +22,20 @@ import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.util.Arrays.asList;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.google.appengine.api.taskqueue.TaskOptions;
+import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.flogger.FluentLogger;
+import com.google.protobuf.Timestamp;
 import google.registry.config.RegistryEnvironment;
 import google.registry.request.Action;
+import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.security.XsrfTokenManager;
-import google.registry.util.TaskQueueUtils;
+import google.registry.util.CloudTasksUtils;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -62,6 +64,7 @@ public class LoadTestAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final int NUM_QUEUES = 10;
+  private static final int MAX_TASKS_PER_LOAD = 100;
   private static final int ARBITRARY_VALID_HOST_LENGTH = 40;
   private static final int MAX_CONTACT_LENGTH = 13;
   private static final int MAX_DOMAIN_LABEL_LENGTH = 63;
@@ -146,7 +149,7 @@ public class LoadTestAction implements Runnable {
   @Parameter("hostInfos")
   int hostInfosPerSecond;
 
-  @Inject TaskQueueUtils taskQueueUtils;
+  @Inject CloudTasksUtils cloudTasksUtils;
 
   private final String xmlContactCreateTmpl;
   private final String xmlContactCreateFail;
@@ -208,7 +211,7 @@ public class LoadTestAction implements Runnable {
     ImmutableList<String> contactNames = contactNamesBuilder.build();
     ImmutableList<String> hostPrefixes = hostPrefixesBuilder.build();
 
-    ImmutableList.Builder<TaskOptions> tasks = new ImmutableList.Builder<>();
+    ImmutableList.Builder<Task> tasks = new ImmutableList.Builder<>();
     for (int offsetSeconds = 0; offsetSeconds < runSeconds; offsetSeconds++) {
       DateTime startSecond = initialStartSecond.plusSeconds(offsetSeconds);
       // The first "failed" creates might actually succeed if the object doesn't already exist, but
@@ -254,7 +257,7 @@ public class LoadTestAction implements Runnable {
                   .collect(toImmutableList()),
               startSecond));
     }
-    ImmutableList<TaskOptions> taskOptions = tasks.build();
+    ImmutableList<Task> taskOptions = tasks.build();
     enqueue(taskOptions);
     logger.atInfo().log("Added %d total load test tasks.", taskOptions.size());
   }
@@ -322,28 +325,50 @@ public class LoadTestAction implements Runnable {
     return name.toString();
   }
 
-  private List<TaskOptions> createTasks(List<String> xmls, DateTime start) {
-    ImmutableList.Builder<TaskOptions> tasks = new ImmutableList.Builder<>();
+  private List<Task> createTasks(List<String> xmls, DateTime start) {
+    ImmutableList.Builder<Task> tasks = new ImmutableList.Builder<>();
     for (int i = 0; i < xmls.size(); i++) {
       // Space tasks evenly within across a second.
-      int offsetMillis = (int) (1000.0 / xmls.size() * i);
+      Instant scheduleTime =
+          Instant.ofEpochMilli(start.plusMillis((int) (1000.0 / xmls.size() * i)).getMillis());
       tasks.add(
-          TaskOptions.Builder.withUrl("/_dr/epptool")
-              .etaMillis(start.getMillis() + offsetMillis)
-              .header(X_CSRF_TOKEN, xsrfToken)
-              .param("clientId", registrarId)
-              .param("superuser", Boolean.FALSE.toString())
-              .param("dryRun", Boolean.FALSE.toString())
-              .param("xml", xmls.get(i)));
+          Task.newBuilder()
+              .setAppEngineHttpRequest(
+                  CloudTasksUtils.createPostTask(
+                          "/_dr/epptool",
+                          Service.TOOLS.toString(),
+                          ImmutableMultimap.of(
+                              "clientId",
+                              registrarId,
+                              "superuser",
+                              Boolean.FALSE.toString(),
+                              "dryRun",
+                              Boolean.FALSE.toString(),
+                              "xml",
+                              xmls.get(i)))
+                      .toBuilder()
+                      .getAppEngineHttpRequest()
+                      .toBuilder()
+                      // instead of adding the X_CSRF_TOKEN to params, this remains as part of
+                      // headers because of the existing setup for authentication in {@link
+                      // google.registry.request.auth.LegacyAuthenticationMechanism}
+                      .putHeaders(X_CSRF_TOKEN, xsrfToken)
+                      .build())
+              .setScheduleTime(
+                  Timestamp.newBuilder()
+                      .setSeconds(scheduleTime.getEpochSecond())
+                      .setNanos(scheduleTime.getNano())
+                      .build())
+              .build());
     }
     return tasks.build();
   }
 
-  private void enqueue(List<TaskOptions> tasks) {
-    List<List<TaskOptions>> chunks = partition(tasks, maxTasksPerAdd());
+  private void enqueue(List<Task> tasks) {
+    List<List<Task>> chunks = partition(tasks, MAX_TASKS_PER_LOAD);
     // Farm out tasks to multiple queues to work around queue qps quotas.
     for (int i = 0; i < chunks.size(); i++) {
-      taskQueueUtils.enqueue(getQueue("load" + (i % NUM_QUEUES)), chunks.get(i));
+      cloudTasksUtils.enqueue("load" + (i % NUM_QUEUES), chunks.get(i));
     }
   }
 }

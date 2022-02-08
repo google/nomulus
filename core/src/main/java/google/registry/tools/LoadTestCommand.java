@@ -27,9 +27,9 @@ import google.registry.model.tld.Registries;
 class LoadTestCommand extends ConfirmingCommand
     implements CommandWithConnection, CommandWithRemoteApi {
 
-  // This is a mostly arbitrary value, roughly an hour and a quarter.  It served as a generous
+  // This is a mostly arbitrary value, roughly two and a half hours.  It served as a generous
   // timespan for initial backup/restore testing, but has no other special significance.
-  private static final int DEFAULT_RUN_SECONDS = 4600;
+  private static final int DEFAULT_RUN_SECONDS = 9200;
 
   @Parameter(
       names = {"--tld"},

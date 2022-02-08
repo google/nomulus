@@ -52,7 +52,7 @@ class LoadTestCommandTest extends CommandTestCase<LoadTestCommand> {
             .put("hostInfos", 1)
             .put("domainInfos", 1)
             .put("contactInfos", 1)
-            .put("runSeconds", 4600)
+            .put("runSeconds", 9200)
             .build();
     verify(connection)
         .sendPostRequest(

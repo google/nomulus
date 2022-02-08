@@ -17,6 +17,7 @@ package google.registry.module.tools;
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
 import dagger.Lazy;
+import google.registry.config.CloudTasksUtilsModule;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.export.DriveModule;
@@ -49,6 +50,7 @@ import javax.inject.Singleton;
       ConfigModule.class,
       CredentialModule.class,
       CustomLogicFactoryModule.class,
+      CloudTasksUtilsModule.class,
       DatastoreServiceModule.class,
       DirectoryModule.class,
       DummyKeyringModule.class,
