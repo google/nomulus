@@ -319,6 +319,7 @@ dependencies {
   testCompile deps['com.google.appengine:appengine-testing']
   testCompile deps['com.google.guava:guava-testlib']
   testCompile deps['com.google.monitoring-client:contrib']
+  testCompile deps['com.google.protobuf:protobuf-java-util']
   testCompile deps['com.google.truth:truth']
   testCompile deps['com.google.truth.extensions:truth-java8-extension']
   testCompile deps['org.checkerframework:checker-qual']
@@ -367,8 +368,6 @@ dependencies {
   compile deps['org.flywaydb:flyway-core']
 
   closureCompiler deps['com.google.javascript:closure-compiler']
-  testCompile 'com.google.protobuf:protobuf-java-util:3.17.3'
-  testCompile 'com.google.protobuf:protobuf-java-util:3.17.3'
 }
 
 task jaxbToJava {
