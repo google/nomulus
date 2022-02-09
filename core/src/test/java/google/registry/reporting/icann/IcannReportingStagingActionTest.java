@@ -15,29 +15,32 @@
 package google.registry.reporting.icann;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.protobuf.util.Timestamps;
 import google.registry.bigquery.BigqueryJobFailureException;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
 import google.registry.util.SendEmailService;
 import java.util.Optional;
 import javax.mail.internet.InternetAddress;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.joda.time.YearMonth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,6 +54,7 @@ class IcannReportingStagingActionTest {
   private YearMonth yearMonth = new YearMonth(2017, 6);
   private String subdir = "default/dir";
   private IcannReportingStagingAction action;
+  private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
 
   @RegisterExtension
   final AppEngineExtension appEngine =
@@ -72,6 +76,8 @@ class IcannReportingStagingActionTest {
     action.sender = new InternetAddress("sender@example.com");
     action.recipient = new InternetAddress("recipient@example.com");
     action.emailService = mock(SendEmailService.class);
+    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    action.clock = new FakeClock(DateTime.parse("2021-01-02T11:00:00Z"));
 
     when(stager.stageReports(yearMonth, subdir, ReportType.ACTIVITY))
         .thenReturn(ImmutableList.of("a", "b"));
@@ -79,9 +85,15 @@ class IcannReportingStagingActionTest {
         .thenReturn(ImmutableList.of("c", "d"));
   }
 
-  private static void assertUploadTaskEnqueued() {
-    TaskMatcher matcher = new TaskMatcher().url("/_dr/task/icannReportingUpload").method("POST");
-    assertTasksEnqueued("retryable-cron-tasks", matcher);
+  private void assertUploadTaskEnqueued() {
+    cloudTasksHelper.assertTasksEnqueued(
+        "retryable-cron-tasks",
+        new TaskMatcher()
+            .url("/_dr/task/icannReportingUpload")
+            .method(HttpMethod.POST)
+            .scheduleTime(
+                Timestamps.fromMillis(
+                    action.clock.nowUtc().plus(Duration.standardMinutes(2)).getMillis())));
   }
 
   @Test
@@ -157,7 +169,7 @@ class IcannReportingStagingActionTest {
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
     // Assert no upload task enqueued
-    assertNoTasksEnqueued("retryable-cron-tasks");
+    cloudTasksHelper.assertNoTasksEnqueued("retryable-cron-tasks");
   }
 
   @Test
