@@ -347,6 +347,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             createBillingEvent));
     assertDnsTasksEnqueued(getUniqueIdFromCommand());
     assertEppResourceIndexEntityFor(domain);
+
+    replayExtension.expectUpdateFor(domain);
+
+    // Verify that all timestamps are correct after SQL -> DS replay.
+    // Added to confirm that timestamps get updated correctly.
+    replayExtension.enableDomainTimestampChecks();
   }
 
   private void assertNoLordn() throws Exception {
@@ -574,6 +580,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         ImmutableMap.of("DOMAIN", "otherexample.tld", "YEARS", "2"));
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "otherexample.tld")));
+    replayExtension.expectUpdateFor(reloadResourceByForeignKey());
   }
 
   @TestOfyAndSql
@@ -826,7 +833,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @TestOfyAndSql
   void testSuccess_existedButWasDeleted() throws Exception {
     persistContactsAndHosts();
-    persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
+    replayExtension.expectUpdateFor(
+        persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1)));
     clock.advanceOneMilli();
     doSuccessfulTest();
   }

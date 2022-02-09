@@ -202,6 +202,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setDomain(domain)
             .build());
     clock.advanceOneMilli();
+    replayExtension.expectUpdateFor(domain);
     return domain;
   }
 
@@ -212,9 +213,11 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   private void doSuccessfulTest(String expectedXmlFilename) throws Exception {
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile(expectedXmlFilename));
+    DomainBase domain = reloadResourceByForeignKey();
+    replayExtension.expectUpdateFor(domain);
     // Check that the domain was updated. These values came from the xml.
     assertAboutDomains()
-        .that(reloadResourceByForeignKey())
+        .that(domain)
         .hasStatusValue(StatusValue.CLIENT_HOLD)
         .and()
         .hasAuthInfoPwd("2BARfoo")
@@ -229,6 +232,10 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertNoBillingEvents();
     assertDnsTasksEnqueued("example.tld");
     assertLastHistoryContainsResource(reloadResourceByForeignKey());
+
+    // Verify that all timestamps are correct after SQL -> DS replay.
+    // Added to confirm that timestamps get updated correctly.
+    replayExtension.enableDomainTimestampChecks();
   }
 
   @TestOfyAndSql
@@ -308,6 +315,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     }
     persistResource(
         reloadResourceByForeignKey().asBuilder().setNameservers(nameservers.build()).build());
+    // Add a null update here so we don't compare.
+    replayExtension.expectUpdateFor(null);
     clock.advanceOneMilli();
   }
 
