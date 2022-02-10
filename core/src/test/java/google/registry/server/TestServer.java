@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.SimpleTimeLimiter;
+import google.registry.ui.server.registrar.RegistrarSettingsAction;
 import google.registry.util.UrlChecker;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -96,6 +97,7 @@ public final class TestServer {
   /** Starts the HTTP server in a new thread and returns once it's online. */
   public void start() {
     try {
+      RegistrarSettingsAction.setIsInTestDriverToTrue();
       server.start();
     } catch (Exception e) {
       throwIfUnchecked(e);
@@ -128,14 +130,16 @@ public final class TestServer {
   /** Stops the HTTP server. */
   public void stop() {
     try {
-      Void unusedReturnValue = SimpleTimeLimiter.create(newCachedThreadPool())
-          .callWithTimeout(
-              () -> {
-                server.stop();
-                return null;
-              },
-              SHUTDOWN_TIMEOUT_MS,
-              TimeUnit.MILLISECONDS);
+      Void unusedReturnValue =
+          SimpleTimeLimiter.create(newCachedThreadPool())
+              .callWithTimeout(
+                  () -> {
+                    server.stop();
+                    RegistrarSettingsAction.setIsInTestDriverToFalse();
+                    return null;
+                  },
+                  SHUTDOWN_TIMEOUT_MS,
+                  TimeUnit.MILLISECONDS);
     } catch (Exception e) {
       throwIfUnchecked(e);
       throw new RuntimeException(e);

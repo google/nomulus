@@ -46,6 +46,7 @@ import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import google.registry.ui.server.SendEmailUtils;
@@ -97,6 +98,8 @@ public abstract class RegistrarSettingsActionTestCase {
 
   RegistrarContact techContact;
 
+  CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+
   @BeforeEach
   public void beforeEachRegistrarSettingsActionTestCase() throws Exception {
     // Registrar "TheRegistrar" has access to TLD "currenttld" but not to "newtld".
@@ -132,6 +135,8 @@ public abstract class RegistrarSettingsActionTestCase {
             2048,
             ImmutableSet.of("secp256r1", "secp384r1"),
             clock);
+    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+
     inject.setStaticField(Ofy.class, "clock", clock);
     when(req.getMethod()).thenReturn("POST");
     when(rsp.getWriter()).thenReturn(new PrintWriter(writer));

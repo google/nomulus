@@ -14,8 +14,6 @@
 
 package google.registry.export.sheet;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
-import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
@@ -23,7 +21,6 @@ import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.appengine.api.taskqueue.TaskOptions.Method;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
@@ -100,7 +97,7 @@ public class SyncRegistrarsSheetAction implements Runnable {
   }
 
   public static final String PATH = "/_dr/task/syncRegistrarsSheet";
-  private static final String QUEUE = "sheet";
+  public static final String QUEUE = "sheet";
   private static final String LOCK_NAME = "Synchronize registrars sheet";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -143,12 +140,5 @@ public class SyncRegistrarsSheetAction implements Runnable {
       // max-concurrent-requests for this very reason.
       Result.LOCKED.send(response, null);
     }
-  }
-
-  /**
-   * Enqueues a sync registrar sheet task targeting the App Engine service specified by hostname.
-   */
-  public static void enqueueRegistrarSheetSync(String hostname) {
-    getQueue(QUEUE).add(withUrl(PATH).method(Method.GET).header("Host", hostname));
   }
 }

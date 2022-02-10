@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.config.RegistryEnvironment.PRODUCTION;
-import static google.registry.export.sheet.SyncRegistrarsSheetAction.enqueueRegistrarSheetSync;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
@@ -32,18 +31,21 @@ import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryEnvironment;
+import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registrar.RegistrarContact.Type;
 import google.registry.request.Action;
+import google.registry.request.Action.Service;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.ForbiddenException;
 import google.registry.request.JsonActionRunner;
@@ -58,6 +60,7 @@ import google.registry.ui.forms.FormFieldException;
 import google.registry.ui.server.RegistrarFormFields;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.AppEngineServiceUtils;
+import google.registry.util.CloudTasksUtils;
 import google.registry.util.CollectionUtils;
 import google.registry.util.DiffUtils;
 import java.util.HashSet;
@@ -88,6 +91,22 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   static final String ARGS_PARAM = "args";
   static final String ID_PARAM = "id";
 
+  /**
+   * Allows task enqueueing to be disabled when executing registrar console test cases.
+   *
+   * <p>The existing workflow in UI test cases triggers task enqueueing, which was not an issue with
+   * Task Queue since it's a native App Engine feature simulated by the App Engine SDK's
+   * environment. However, with Cloud Tasks, the server enqueues and fails to deliver to the actual
+   * Cloud Tasks endpoint due to lack of permission.
+   *
+   * <p>One way to allow enqueuing in backend test and avoid enqueuing in UI test is to disable
+   * enqueuing when the test server starts and enable enqueueing once the test server stops. This
+   * can be done by utilizing a ThreadLocal<Boolean> variable isInTestDriver, which is set to false
+   * by default. Enqueuing is allowed only if the value of isInTestDriver is false. It's set to true
+   * in start() and set to false in stop() inside TestDriver.java, a class used in testing.
+   */
+  private static ThreadLocal<Boolean> isInTestDriver = ThreadLocal.withInitial(() -> false);
+
   @Inject JsonActionRunner jsonActionRunner;
   @Inject AppEngineServiceUtils appEngineServiceUtils;
   @Inject RegistrarConsoleMetrics registrarConsoleMetrics;
@@ -95,11 +114,20 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;
   @Inject AuthResult authResult;
   @Inject CertificateChecker certificateChecker;
+  @Inject CloudTasksUtils cloudTasksUtils;
 
   @Inject RegistrarSettingsAction() {}
 
   private static boolean hasPhone(RegistrarContact contact) {
     return contact.getPhoneNumber() != null;
+  }
+
+  public static void setIsInTestDriverToFalse() {
+    isInTestDriver.set(false);
+  }
+
+  public static void setIsInTestDriverToTrue() {
+    isInTestDriver.set(true);
   }
 
   @Override
@@ -170,6 +198,26 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     }
   }
 
+  @AutoValue
+  abstract static class EmailInfo {
+    abstract Registrar registrar();
+
+    abstract Registrar updatedRegistrar();
+
+    abstract ImmutableSet<RegistrarContact> contacts();
+
+    abstract ImmutableSet<RegistrarContact> updatedContacts();
+
+    static EmailInfo create(
+        Registrar registrar,
+        Registrar updatedRegistrar,
+        ImmutableSet<RegistrarContact> contacts,
+        ImmutableSet<RegistrarContact> updatedContacts) {
+      return new AutoValue_RegistrarSettingsAction_EmailInfo(
+          registrar, updatedRegistrar, contacts, updatedContacts);
+    }
+  }
+
   private RegistrarResult read(String registrarId) {
     return RegistrarResult.create("Success", loadRegistrarUnchecked(registrarId));
   }
@@ -183,70 +231,67 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   }
 
   private RegistrarResult update(final Map<String, ?> args, String registrarId) {
-    tm().transact(
-            () -> {
-              // We load the registrar here rather than outside of the transaction - to make
-              // sure we have the latest version. This one is loaded inside the transaction, so it's
-              // guaranteed to not change before we update it.
-              Registrar registrar = loadRegistrarUnchecked(registrarId);
-              // Detach the registrar to avoid Hibernate object-updates, since we wish to email
-              // out the diffs between the existing and updated registrar objects
-              if (!tm().isOfy()) {
-                jpaTm().getEntityManager().detach(registrar);
-              }
-              // Verify that the registrar hasn't been changed.
-              // To do that - we find the latest update time (or null if the registrar has been
-              // deleted) and compare to the update time from the args. The update time in the args
-              // comes from the read that gave the UI the data - if it's out of date, then the UI
-              // had out of date data.
-              DateTime latest = registrar.getLastUpdateTime();
-              DateTime latestFromArgs =
-                  RegistrarFormFields.LAST_UPDATE_TIME.extractUntyped(args).get();
-              if (!latestFromArgs.equals(latest)) {
-                logger.atWarning().log(
-                    "Registrar changed since reading the data!"
-                        + " Last updated at %s, but args data last updated at %s.",
-                    latest, latestFromArgs);
-                throw new IllegalStateException(
-                    "Registrar has been changed by someone else. Please reload and retry.");
-              }
-
-              // Keep the current contacts so we can later check that no required contact was
-              // removed, email the changes to the contacts
-              ImmutableSet<RegistrarContact> contacts = registrar.getContacts();
-
-              Registrar updatedRegistrar = registrar;
-              // Do OWNER only updates to the registrar from the request.
-              updatedRegistrar = checkAndUpdateOwnerControlledFields(updatedRegistrar, args);
-              // Do ADMIN only updates to the registrar from the request.
-              updatedRegistrar = checkAndUpdateAdminControlledFields(updatedRegistrar, args);
-
-              // read the contacts from the request.
-              ImmutableSet<RegistrarContact> updatedContacts =
-                  readContacts(registrar, contacts, args);
-
-              // Save the updated contacts
-              if (!updatedContacts.equals(contacts)) {
-                if (!registrarAccessor.hasRoleOnRegistrar(Role.OWNER, registrar.getRegistrarId())) {
-                  throw new ForbiddenException("Only OWNERs can update the contacts");
-                }
-                checkContactRequirements(contacts, updatedContacts);
-                RegistrarContact.updateContacts(updatedRegistrar, updatedContacts);
-                updatedRegistrar =
-                    updatedRegistrar.asBuilder().setContactsRequireSyncing(true).build();
-              }
-
-              // Save the updated registrar
-              if (!updatedRegistrar.equals(registrar)) {
-                tm().put(updatedRegistrar);
-              }
-
-              // Email the updates
-              sendExternalUpdatesIfNecessary(
-                  registrar, contacts, updatedRegistrar, updatedContacts);
-            });
+    // Email the updates
+    sendExternalUpdatesIfNecessary(tm().transact(() -> saveUpdates(args, registrarId)));
     // Reload the result outside of the transaction to get the most recent version
     return RegistrarResult.create("Saved " + registrarId, loadRegistrarUnchecked(registrarId));
+  }
+
+  /** Saves the updates and returns info needed for the update email */
+  private EmailInfo saveUpdates(final Map<String, ?> args, String registrarId) {
+    // We load the registrar here rather than outside of the transaction - to make
+    // sure we have the latest version. This one is loaded inside the transaction, so it's
+    // guaranteed to not change before we update it.
+    Registrar registrar = loadRegistrarUnchecked(registrarId);
+    // Detach the registrar to avoid Hibernate object-updates, since we wish to email
+    // out the diffs between the existing and updated registrar objects
+    if (!tm().isOfy()) {
+      jpaTm().getEntityManager().detach(registrar);
+    }
+    // Verify that the registrar hasn't been changed.
+    // To do that - we find the latest update time (or null if the registrar has been
+    // deleted) and compare to the update time from the args. The update time in the args
+    // comes from the read that gave the UI the data - if it's out of date, then the UI
+    // had out of date data.
+    DateTime latest = registrar.getLastUpdateTime();
+    DateTime latestFromArgs = RegistrarFormFields.LAST_UPDATE_TIME.extractUntyped(args).get();
+    if (!latestFromArgs.equals(latest)) {
+      logger.atWarning().log(
+          "Registrar changed since reading the data!"
+              + " Last updated at %s, but args data last updated at %s.",
+          latest, latestFromArgs);
+      throw new IllegalStateException(
+          "Registrar has been changed by someone else. Please reload and retry.");
+    }
+
+    // Keep the current contacts so we can later check that no required contact was
+    // removed, email the changes to the contacts
+    ImmutableSet<RegistrarContact> contacts = registrar.getContacts();
+
+    Registrar updatedRegistrar = registrar;
+    // Do OWNER only updates to the registrar from the request.
+    updatedRegistrar = checkAndUpdateOwnerControlledFields(updatedRegistrar, args);
+    // Do ADMIN only updates to the registrar from the request.
+    updatedRegistrar = checkAndUpdateAdminControlledFields(updatedRegistrar, args);
+
+    // read the contacts from the request.
+    ImmutableSet<RegistrarContact> updatedContacts = readContacts(registrar, contacts, args);
+
+    // Save the updated contacts
+    if (!updatedContacts.equals(contacts)) {
+      if (!registrarAccessor.hasRoleOnRegistrar(Role.OWNER, registrar.getRegistrarId())) {
+        throw new ForbiddenException("Only OWNERs can update the contacts");
+      }
+      checkContactRequirements(contacts, updatedContacts);
+      RegistrarContact.updateContacts(updatedRegistrar, updatedContacts);
+      updatedRegistrar = updatedRegistrar.asBuilder().setContactsRequireSyncing(true).build();
+    }
+
+    // Save the updated registrar
+    if (!updatedRegistrar.equals(registrar)) {
+      tm().put(updatedRegistrar);
+    }
+    return EmailInfo.create(registrar, updatedRegistrar, contacts, updatedContacts);
   }
 
   private Map<String, Object> expandRegistrarWithContacts(
@@ -575,26 +620,30 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    * sends an email with a diff of the changes to the configured notification email address and all
    * contact addresses and enqueues a task to re-sync the registrar sheet.
    */
-  private void sendExternalUpdatesIfNecessary(
-      Registrar existingRegistrar,
-      ImmutableSet<RegistrarContact> existingContacts,
-      Registrar updatedRegistrar,
-      ImmutableSet<RegistrarContact> updatedContacts) {
+  private void sendExternalUpdatesIfNecessary(EmailInfo emailInfo) {
+    ImmutableSet<RegistrarContact> existingContacts = emailInfo.contacts();
     if (!sendEmailUtils.hasRecipients() && existingContacts.isEmpty()) {
       return;
     }
-
+    Registrar existingRegistrar = emailInfo.registrar();
     Map<?, ?> diffs =
         DiffUtils.deepDiff(
             expandRegistrarWithContacts(existingContacts, existingRegistrar),
-            expandRegistrarWithContacts(updatedContacts, updatedRegistrar),
+            expandRegistrarWithContacts(emailInfo.updatedContacts(), emailInfo.updatedRegistrar()),
             true);
     @SuppressWarnings("unchecked")
     Set<String> changedKeys = (Set<String>) diffs.keySet();
     if (CollectionUtils.difference(changedKeys, "lastUpdateTime").isEmpty()) {
       return;
     }
-    enqueueRegistrarSheetSync(appEngineServiceUtils.getCurrentVersionHostname("backend"));
+    if (!isInTestDriver.get()) {
+      // Enqueues a sync registrar sheet task if enqueuing is not triggered by console tests and
+      // there's an update besides the lastUpdateTime
+      cloudTasksUtils.enqueue(
+          SyncRegistrarsSheetAction.QUEUE,
+          CloudTasksUtils.createGetTask(
+              SyncRegistrarsSheetAction.PATH, Service.BACKEND.toString(), ImmutableMultimap.of()));
+    }
     String environment = Ascii.toLowerCase(String.valueOf(RegistryEnvironment.get()));
     sendEmailUtils.sendEmail(
         String.format(

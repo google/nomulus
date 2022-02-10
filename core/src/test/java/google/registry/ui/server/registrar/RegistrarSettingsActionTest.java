@@ -18,13 +18,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -37,9 +36,9 @@ import google.registry.model.registrar.Registrar;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.testing.CertificateSamples;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.SystemPropertyExtension;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.EmailMessage;
@@ -56,6 +55,7 @@ import org.mockito.ArgumentCaptor;
 @DualDatabaseTest
 class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
 
+
   @RegisterExtension
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
@@ -70,10 +70,12 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
     ArgumentCaptor<EmailMessage> contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);
     verify(emailService).sendEmail(contentCaptor.capture());
     assertThat(contentCaptor.getValue().body()).isEqualTo(expectedEmailBody);
-    assertTasksEnqueued("sheet", new TaskMatcher()
-        .url(SyncRegistrarsSheetAction.PATH)
-        .method("GET")
-        .header("Host", "backend.hostname"));
+    cloudTasksHelper.assertTasksEnqueued(
+        "sheet",
+        new TaskMatcher()
+            .url(SyncRegistrarsSheetAction.PATH)
+            .service("Backend")
+            .method(HttpMethod.GET));
     assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
   }
 
@@ -86,7 +88,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
         "results", ImmutableList.of(),
         "message",
         "One email address (etphonehome@example.com) cannot be used for multiple contacts");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: ContactRequirementException");
   }
 
@@ -103,7 +105,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
             "status", "ERROR",
             "results", ImmutableList.of(),
             "message", "TestUserId doesn't have access to registrar TheRegistrar");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
     assertMetric(CLIENT_ID, "read", "[]", "ERROR: ForbiddenException");
   }
 
@@ -134,7 +136,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
         "field", "lastUpdateTime",
         "results", ImmutableList.of(),
         "message", "This field is required.");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: FormFieldException");
   }
 
@@ -153,7 +155,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
         "field", "emailAddress",
         "results", ImmutableList.of(),
         "message", "This field is required.");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: FormFieldException");
   }
 
@@ -171,7 +173,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
             "status", "ERROR",
             "results", ImmutableList.of(),
             "message", "TestUserId doesn't have access to registrar TheRegistrar");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
     assertMetric(CLIENT_ID, "update", "[]", "ERROR: ForbiddenException");
   }
 
@@ -190,7 +192,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
         "field", "emailAddress",
         "results", ImmutableList.of(),
         "message", "Please enter a valid email address.");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: FormFieldException");
   }
 
@@ -209,7 +211,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
         "field", "lastUpdateTime",
         "results", ImmutableList.of(),
         "message", "Not a valid ISO date-time string.");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: FormFieldException");
   }
 
@@ -228,7 +230,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
         "field", "emailAddress",
         "results", ImmutableList.of(),
         "message", "Please only use ASCII-US characters.");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: FormFieldException");
   }
 
@@ -405,7 +407,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
             "Certificate validity period is too long; it must be less than or equal to 398"
                 + " days.");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: IllegalArgumentException");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
   }
 
   @TestOfyAndSql
@@ -430,7 +432,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
             "Certificate is expired.\nCertificate validity period is too long; it must be less"
                 + " than or equal to 398 days.");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: IllegalArgumentException");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
   }
 
   @TestOfyAndSql
@@ -473,7 +475,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
 
     assertThat(response).containsEntry("status", "SUCCESS");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
   }
 
   @TestOfyAndSql
@@ -498,7 +500,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
             "Certificate validity period is too long; it must be less than or equal to 398"
                 + " days.");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: IllegalArgumentException");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
   }
 
   @TestOfyAndSql
@@ -523,7 +525,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
             "Certificate is expired.\nCertificate validity period is too long; it must be less"
                 + " than or equal to 398 days.");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: IllegalArgumentException");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
   }
 
   @TestOfyAndSql
@@ -555,7 +557,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
             "results", ImmutableList.of(),
             "message", "Cannot add allowed TLDs if there is no WHOIS abuse contact set.");
     assertMetric(CLIENT_ID, "update", "[ADMIN]", "ERROR: IllegalArgumentException");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
   }
 
   @TestOfyAndSql
@@ -577,7 +579,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
             "results", ImmutableList.of(),
             "message", "TLDs do not exist: invalidtld");
     assertMetric(CLIENT_ID, "update", "[ADMIN]", "ERROR: IllegalArgumentException");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
   }
 
   @TestOfyAndSql
@@ -599,7 +601,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
             "results", ImmutableList.of(),
             "message", "Can't remove allowed TLDs using the console.");
     assertMetric(CLIENT_ID, "update", "[ADMIN]", "ERROR: ForbiddenException");
-    assertNoTasksEnqueued("sheet");
+    cloudTasksHelper.assertNoTasksEnqueued("sheet");
   }
 
   @TestOfyAndSql

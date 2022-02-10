@@ -232,7 +232,7 @@ public class CloudTasksHelper implements Serializable {
       ImmutableMultimap.Builder<String, String> paramBuilder = new ImmutableMultimap.Builder<>();
       // Note that UriParameters.parse() does not throw an IAE on a bad query string (e.g. one
       // where parameters are not properly URL-encoded); it always does a best-effort parse.
-      if (method == HttpMethod.GET) {
+      if (method == HttpMethod.GET && uri.getQuery() != null) {
         paramBuilder.putAll(UriParameters.parse(uri.getQuery()));
       } else if (method == HttpMethod.POST && !task.getAppEngineHttpRequest().getBody().isEmpty()) {
         assertThat(
