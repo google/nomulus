@@ -59,6 +59,10 @@ public class ReplicateToDatastoreAction implements Runnable {
   public static final String PATH = "/_dr/cron/replicateToDatastore";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  /** Name of the lock that ensures sequential execution of replays. */
+  public static final String REPLICATE_TO_DATASTORE_LOCK_NAME =
+      ReplicateToDatastoreAction.class.getSimpleName();
+
   /**
    * Number of transactions to fetch from SQL. The rationale for 200 is that we're processing these
    * every minute and our production instance currently does about 2 mutations per second, so this
@@ -66,7 +70,7 @@ public class ReplicateToDatastoreAction implements Runnable {
    */
   public static final int BATCH_SIZE = 200;
 
-  private static final Duration LEASE_LENGTH = standardHours(1);
+  public static final Duration REPLICATE_TO_DATASTORE_LOCK_LEASE_LENGTH = standardHours(1);
 
   private final Clock clock;
   private final RequestStatusChecker requestStatusChecker;
@@ -81,21 +85,26 @@ public class ReplicateToDatastoreAction implements Runnable {
   }
 
   @VisibleForTesting
-  public List<TransactionEntity> getTransactionBatch() {
+  public List<TransactionEntity> getTransactionBatchAtSnapshot() {
+    return getTransactionBatchAtSnapshot(Optional.empty());
+  }
+
+  static List<TransactionEntity> getTransactionBatchAtSnapshot(Optional<String> snapshotId) {
     // Get the next batch of transactions that we haven't replicated.
     LastSqlTransaction lastSqlTxnBeforeBatch = ofyTm().transact(LastSqlTransaction::load);
     try {
       return jpaTm()
           .transactWithoutBackup(
-              () ->
-                  jpaTm()
-                      .query(
-                          "SELECT txn FROM TransactionEntity txn WHERE id >"
-                              + " :lastId ORDER BY id",
-                          TransactionEntity.class)
-                      .setParameter("lastId", lastSqlTxnBeforeBatch.getTransactionId())
-                      .setMaxResults(BATCH_SIZE)
-                      .getResultList());
+              () -> {
+                snapshotId.ifPresent(jpaTm()::setDatabaseSnapshot);
+                return jpaTm()
+                    .query(
+                        "SELECT txn FROM TransactionEntity txn WHERE id >" + " :lastId ORDER BY id",
+                        TransactionEntity.class)
+                    .setParameter("lastId", lastSqlTxnBeforeBatch.getTransactionId())
+                    .setMaxResults(BATCH_SIZE)
+                    .getResultList();
+              });
     } catch (NoResultException e) {
       return ImmutableList.of();
     }
@@ -108,7 +117,7 @@ public class ReplicateToDatastoreAction implements Runnable {
    * <p>Throws an exception if a fatal error occurred and the batch should be aborted
    */
   @VisibleForTesting
-  public void applyTransaction(TransactionEntity txnEntity) {
+  public static void applyTransaction(TransactionEntity txnEntity) {
     logger.atInfo().log("Applying a single transaction Cloud SQL -> Cloud Datastore.");
     try (UpdateAutoTimestamp.DisableAutoUpdateResource disabler =
         UpdateAutoTimestamp.disableAutoUpdate()) {
@@ -174,7 +183,11 @@ public class ReplicateToDatastoreAction implements Runnable {
     }
     Optional<Lock> lock =
         Lock.acquireSql(
-            this.getClass().getSimpleName(), null, LEASE_LENGTH, requestStatusChecker, false);
+            REPLICATE_TO_DATASTORE_LOCK_NAME,
+            null,
+            REPLICATE_TO_DATASTORE_LOCK_LEASE_LENGTH,
+            requestStatusChecker,
+            false);
     if (!lock.isPresent()) {
       String message = "Can't acquire ReplicateToDatastoreAction lock, aborting.";
       logger.atSevere().log(message);
@@ -203,10 +216,14 @@ public class ReplicateToDatastoreAction implements Runnable {
   }
 
   private int replayAllTransactions() {
+    return replayAllTransactions(Optional.empty());
+  }
+
+  public static int replayAllTransactions(Optional<String> snapshotId) {
     int numTransactionsReplayed = 0;
     List<TransactionEntity> transactionBatch;
     do {
-      transactionBatch = getTransactionBatch();
+      transactionBatch = getTransactionBatchAtSnapshot(snapshotId);
       for (TransactionEntity transaction : transactionBatch) {
         applyTransaction(transaction);
         numTransactionsReplayed++;

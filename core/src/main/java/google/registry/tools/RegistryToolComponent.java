@@ -76,6 +76,7 @@ import javax.inject.Singleton;
       LocalCredentialModule.class,
       PersistenceModule.class,
       RdeModule.class,
+      RegistryToolDataflowModule.class,
       RequestFactoryModule.class,
       SecretManagerModule.class,
       URLFetchServiceModule.class,
@@ -169,6 +170,8 @@ interface RegistryToolComponent {
   void inject(UpdateRegistrarCommand command);
 
   void inject(UpdateTldCommand command);
+
+  void inject(ValidateDatastoreWithSqlCommand command);
 
   void inject(ValidateEscrowDepositCommand command);
 
