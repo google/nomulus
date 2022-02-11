@@ -679,20 +679,21 @@ public class DomainBaseSqlTest {
     DateTime originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
     DateTime transactionTime =
-        jpaTm().transact(
-            () -> {
-              HostResource host2 =
-                  new HostResource.Builder()
-                      .setRepoId("host2")
-                      .setHostName("ns2.example.com")
-                      .setCreationRegistrarId("registrar1")
-                      .setPersistedCurrentSponsorRegistrarId("registrar2")
-                      .build();
-              insertInDb(host2);
-              domain = persisted.asBuilder().addNameserver(host2.createVKey()).build();
-              updateInDb(domain);
-              return jpaTm().getTransactionTime();
-            });
+        jpaTm()
+            .transact(
+                () -> {
+                  HostResource host2 =
+                      new HostResource.Builder()
+                          .setRepoId("host2")
+                          .setHostName("ns2.example.com")
+                          .setCreationRegistrarId("registrar1")
+                          .setPersistedCurrentSponsorRegistrarId("registrar2")
+                          .build();
+                  insertInDb(host2);
+                  domain = persisted.asBuilder().addNameserver(host2.createVKey()).build();
+                  updateInDb(domain);
+                  return jpaTm().getTransactionTime();
+                });
     domain = loadByKey(domain.createVKey());
     assertThat(domain.getUpdateTimestamp().getTimestamp()).isEqualTo(transactionTime);
     assertThat(domain.getUpdateTimestamp().getTimestamp()).isNotEqualTo(originalUpdateTime);
@@ -705,15 +706,19 @@ public class DomainBaseSqlTest {
     DateTime originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
     DateTime transactionTime =
-        jpaTm().transact(
-            () -> {
-              domain = persisted.asBuilder()
-                  .setDsData(
-                      ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
-                  .build();
-              updateInDb(domain);
-              return jpaTm().getTransactionTime();
-            });
+        jpaTm()
+            .transact(
+                () -> {
+                  domain =
+                      persisted
+                          .asBuilder()
+                          .setDsData(
+                              ImmutableSet.of(
+                                  DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+                          .build();
+                  updateInDb(domain);
+                  return jpaTm().getTransactionTime();
+                });
     domain = loadByKey(domain.createVKey());
     assertThat(domain.getUpdateTimestamp().getTimestamp()).isEqualTo(transactionTime);
     assertThat(domain.getUpdateTimestamp().getTimestamp()).isNotEqualTo(originalUpdateTime);
