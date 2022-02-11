@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
+import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
@@ -604,6 +605,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       managedEntity = getEntityManager().merge(entity);
     }
     getEntityManager().remove(managedEntity);
+    transactionInfo.get().addDelete(VKey.from(Key.create(entity)));
     return managedEntity;
   }
 

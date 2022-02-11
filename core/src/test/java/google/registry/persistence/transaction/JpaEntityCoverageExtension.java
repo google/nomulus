@@ -49,7 +49,7 @@ public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEach
           // TransactionEntity is trivial; its persistence is tested in TransactionTest.
           "TransactionEntity");
 
-  private static final ImmutableSet<Class<?>> ALL_JPA_ENTITIES =
+  public static final ImmutableSet<Class<?>> ALL_JPA_ENTITIES =
       PersistenceXmlUtility.getManagedClasses().stream()
           .filter(e -> !IGNORE_ENTITIES.contains(e.getSimpleName()))
           .filter(e -> e.isAnnotationPresent(Entity.class))

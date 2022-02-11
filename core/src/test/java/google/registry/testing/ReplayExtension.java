@@ -14,17 +14,23 @@
 
 package google.registry.testing;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 
+import static org.junit.Assert.fail;
 import com.google.common.base.Ascii;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Streams;
+import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
+import google.registry.model.EntityClasses;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.CommitLogBucket;
@@ -34,6 +40,7 @@ import google.registry.model.replay.DatastoreEntity;
 import google.registry.model.replay.ReplicateToDatastoreAction;
 import google.registry.model.replay.SqlEntity;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.JpaEntityCoverageExtension;
 import google.registry.persistence.transaction.JpaTransactionManagerImpl;
 import google.registry.persistence.transaction.Transaction;
 import google.registry.persistence.transaction.Transaction.Delete;
@@ -43,6 +50,7 @@ import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -63,6 +71,43 @@ import org.mockito.Mockito;
  * both databases after performing the replay.
  */
 public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private static ImmutableSet<String> NON_REPLICATED_TYPES =
+      ImmutableSet.of(
+          "PremiumList",
+          "PremiumListRevision",
+          "PremiumListEntry",
+          "ReservedList",
+          "RdeRevision",
+          "ServerSecret",
+          "SignedMarkRevocationList",
+          "ClaimsListShard",
+          "TmchCrl",
+          "EppResourceIndex",
+          "ForeignKeyIndex",
+          "ForeignKeyHostIndex",
+          "ForeignKeyContactIndex",
+          "ForeignKeyDomainIndex");
+
+  // Entity classes to be ignored during the final database comparison.  Note that this is just a
+  // mash-up of Datastore and SQL classes, and used for filtering both sets.  We could split them
+  // out, but there is plenty of overlap and no name collisions so it doesn't matter very much.
+  private static ImmutableSet<String> IGNORED_ENTITIES =
+      Streams.concat(
+          ImmutableSet.of(
+              // History entries *should* be comparable, but this isn't working yet so exclude them.
+              "GracePeriod",
+              "GracePeriodHistory",
+              "HistoryEntry",
+              "DomainHistory",
+
+              "CommitLogBucket",
+              "CommitLogManifest",
+              "CommitLogMutation",
+              "PremiumEntry").stream(),
+          NON_REPLICATED_TYPES.stream()).collect(toImmutableSet());
 
   FakeClock clock;
   boolean compare;
@@ -170,23 +215,6 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     }
   }
 
-  private static ImmutableSet<String> NON_REPLICATED_TYPES =
-      ImmutableSet.of(
-          "PremiumList",
-          "PremiumListRevision",
-          "PremiumListEntry",
-          "ReservedList",
-          "RdeRevision",
-          "ServerSecret",
-          "SignedMarkRevocationList",
-          "ClaimsListShard",
-          "TmchCrl",
-          "EppResourceIndex",
-          "ForeignKeyIndex",
-          "ForeignKeyHostIndex",
-          "ForeignKeyContactIndex",
-          "ForeignKeyDomainIndex");
-
   public void replay() {
     if (!replayed) {
       if (inOfyContext) {
@@ -258,6 +286,9 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
         clock.advanceOneMilli();
       }
     } while (!transactionBatch.isEmpty());
+
+    // Now that everything has been replayed, compare the databases.
+    compareDatabases();
   }
 
   /** Verifies that the replaying the SQL transaction created the same entities in Datastore. */
@@ -304,5 +335,69 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
             .isFalse();
       }
     }
+  }
+
+  /** Compares the final state of both databases after replay is complete. */
+  private void compareDatabases() {
+    boolean gotDiffs = false;
+
+    // Build a map containing all of the SQL entities indexed by their key.
+    HashMap<Object, Object> sqlEntities = new HashMap<>();
+    for (Class<?> cls : JpaEntityCoverageExtension.ALL_JPA_ENTITIES) {
+      if (IGNORED_ENTITIES.contains(cls.getSimpleName())) {
+        continue;
+      }
+
+      jpaTm().transact(() -> jpaTm().loadAllOfStream(cls)
+                            .forEach(
+                                e -> sqlEntities.put(getSqlKey(e), e)));
+    }
+
+    for (Class<? extends ImmutableObject> cls : EntityClasses.ALL_CLASSES) {
+      if (IGNORED_ENTITIES.contains(cls.getSimpleName())) {
+        continue;
+      }
+
+      for (ImmutableObject entity : auditedOfy().load().type(cls).list()) {
+        // Find the entity in SQL and verify that it's the same.
+        Object sqlKey = VKey.from(Key.create(entity)).getSqlKey();
+        ImmutableObject sqlEntity =
+            (ImmutableObject) sqlEntities.get(sqlKey);
+        Optional<SqlEntity> expectedSqlEntity = ((DatastoreEntity) entity).toSqlEntity();
+        if (expectedSqlEntity.isPresent()) {
+          // Check for null just so we get a better error message.
+          if (sqlEntity == null) {
+            logger.atSevere().log("Entity %s is in Datastore but not in SQL.",  Key.create(entity));
+            gotDiffs = true;
+          } else {
+            assertAboutImmutableObjects()
+                .that((ImmutableObject) expectedSqlEntity.get())
+                .isEqualAcrossDatabases(sqlEntity);
+          }
+        } else {
+          logger.atInfo().log("Datastore entity has no sql representation for %s",
+                              Key.create(entity));
+        }
+        sqlEntities.remove(sqlKey);
+      }
+    }
+
+    // Report any objects that
+    if (!sqlEntities.isEmpty()) {
+      for (Object item : sqlEntities.values()) {
+        logger.atSevere().log("Entity of %s found in SQL but not in datastore: %s",
+                        item.getClass().getName(), item);
+      }
+      gotDiffs = true;
+    }
+
+    if (gotDiffs) {
+      fail("There were differences between the final SQL and Datastore contents.");
+    }
+  }
+
+  private static Object getSqlKey(Object entity) {
+    return jpaTm().getEntityManager().getEntityManagerFactory().getPersistenceUnitUtil()
+        .getIdentifier(entity);
   }
 }

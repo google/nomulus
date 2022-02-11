@@ -41,7 +41,7 @@ import org.joda.time.DateTime;
 
 /** Wrapper for {@link Supplier} that associates a time with each attempt. */
 @DeleteAfterMigration
-class CommitLoggedWork<R> implements Runnable {
+public class CommitLoggedWork<R> implements Runnable {
 
   private final Supplier<R> work;
   private final Clock clock;
