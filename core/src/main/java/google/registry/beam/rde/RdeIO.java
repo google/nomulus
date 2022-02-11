@@ -304,7 +304,7 @@ public class RdeIO {
                 if (key.mode() == RdeMode.FULL) {
                   cloudTasksUtils.enqueue(
                       RDE_UPLOAD_QUEUE,
-                      CloudTasksUtils.createPostTask(
+                      cloudTasksUtils.createPostTask(
                           RdeUploadAction.PATH,
                           Service.BACKEND.getServiceId(),
                           ImmutableMultimap.of(
@@ -315,7 +315,7 @@ public class RdeIO {
                 } else {
                   cloudTasksUtils.enqueue(
                       BRDA_QUEUE,
-                      CloudTasksUtils.createPostTask(
+                      cloudTasksUtils.createPostTask(
                           BrdaCopyAction.PATH,
                           Service.BACKEND.getServiceId(),
                           ImmutableMultimap.of(

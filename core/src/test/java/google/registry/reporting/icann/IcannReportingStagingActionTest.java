@@ -54,7 +54,8 @@ class IcannReportingStagingActionTest {
   private YearMonth yearMonth = new YearMonth(2017, 6);
   private String subdir = "default/dir";
   private IcannReportingStagingAction action;
-  private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+  private FakeClock clock = new FakeClock(DateTime.parse("2021-01-02T11:00:00Z"));
+  private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
 
   @RegisterExtension
   final AppEngineExtension appEngine =
@@ -77,7 +78,6 @@ class IcannReportingStagingActionTest {
     action.recipient = new InternetAddress("recipient@example.com");
     action.emailService = mock(SendEmailService.class);
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
-    action.clock = new FakeClock(DateTime.parse("2021-01-02T11:00:00Z"));
 
     when(stager.stageReports(yearMonth, subdir, ReportType.ACTIVITY))
         .thenReturn(ImmutableList.of("a", "b"));
@@ -91,9 +91,7 @@ class IcannReportingStagingActionTest {
         new TaskMatcher()
             .url("/_dr/task/icannReportingUpload")
             .method(HttpMethod.POST)
-            .scheduleTime(
-                Timestamps.fromMillis(
-                    action.clock.nowUtc().plus(Duration.standardMinutes(2)).getMillis())));
+            .scheduleTime(clock.nowUtc().plus(Duration.standardMinutes(2))));
   }
 
   @Test

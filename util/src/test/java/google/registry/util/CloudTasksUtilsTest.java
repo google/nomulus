@@ -43,10 +43,10 @@ public class CloudTasksUtilsTest {
   // Use a LinkedListMultimap to preserve order of the inserted entries for assertion.
   private final LinkedListMultimap<String, String> params = LinkedListMultimap.create();
   private final SerializableCloudTasksClient mockClient = mock(SerializableCloudTasksClient.class);
+  private final FakeClock clock = new FakeClock(DateTime.parse("2021-11-08"));
   private final CloudTasksUtils cloudTasksUtils =
       new CloudTasksUtils(
-          new Retrier(new FakeSleeper(new FakeClock()), 1), "project", "location", mockClient);
-  private final Clock clock = new FakeClock(DateTime.parse("2021-11-08"));
+          new Retrier(new FakeSleeper(clock), 1), clock, "project", "location", mockClient);
 
   @BeforeEach
   void beforeEach() {
@@ -59,7 +59,7 @@ public class CloudTasksUtilsTest {
 
   @Test
   void testSuccess_createGetTasks() {
-    Task task = CloudTasksUtils.createGetTask("/the/path", "myservice", params);
+    Task task = cloudTasksUtils.createGetTask("/the/path", "myservice", params);
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri())
         .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");
@@ -70,7 +70,7 @@ public class CloudTasksUtilsTest {
 
   @Test
   void testSuccess_createPostTasks() {
-    Task task = CloudTasksUtils.createPostTask("/the/path", "myservice", params);
+    Task task = cloudTasksUtils.createPostTask("/the/path", "myservice", params);
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
     assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
@@ -84,7 +84,7 @@ public class CloudTasksUtilsTest {
 
   @Test
   void testSuccess_createGetTasks_withNullParams() {
-    Task task = CloudTasksUtils.createGetTask("/the/path", "myservice", null);
+    Task task = cloudTasksUtils.createGetTask("/the/path", "myservice", null);
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
     assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
@@ -94,7 +94,7 @@ public class CloudTasksUtilsTest {
 
   @Test
   void testSuccess_createPostTasks_withNullParams() {
-    Task task = CloudTasksUtils.createPostTask("/the/path", "myservice", null);
+    Task task = cloudTasksUtils.createPostTask("/the/path", "myservice", null);
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
     assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
@@ -105,7 +105,7 @@ public class CloudTasksUtilsTest {
 
   @Test
   void testSuccess_createGetTasks_withEmptyParams() {
-    Task task = CloudTasksUtils.createGetTask("/the/path", "myservice", ImmutableMultimap.of());
+    Task task = cloudTasksUtils.createGetTask("/the/path", "myservice", ImmutableMultimap.of());
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
     assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
@@ -115,7 +115,7 @@ public class CloudTasksUtilsTest {
 
   @Test
   void testSuccess_createPostTasks_withEmptyParams() {
-    Task task = CloudTasksUtils.createPostTask("/the/path", "myservice", ImmutableMultimap.of());
+    Task task = cloudTasksUtils.createPostTask("/the/path", "myservice", ImmutableMultimap.of());
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
     assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
@@ -128,7 +128,7 @@ public class CloudTasksUtilsTest {
   @Test
   void testSuccess_createGetTasks_withJitterSeconds() {
     Task task =
-        CloudTasksUtils.createGetTask("/the/path", "myservice", params, clock, Optional.of(100));
+        cloudTasksUtils.createGetTaskWithJitter("/the/path", "myservice", params, Optional.of(100));
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri())
         .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");
@@ -147,7 +147,7 @@ public class CloudTasksUtilsTest {
   @Test
   void testSuccess_createPostTasks_withJitterSeconds() {
     Task task =
-        CloudTasksUtils.createPostTask("/the/path", "myservice", params, clock, Optional.of(1));
+        cloudTasksUtils.createPostTaskWithJitter("/the/path", "myservice", params, Optional.of(1));
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
     assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
@@ -169,7 +169,8 @@ public class CloudTasksUtilsTest {
   @Test
   void testSuccess_createPostTasks_withEmptyJitterSeconds() {
     Task task =
-        CloudTasksUtils.createPostTask("/the/path", "myservice", params, clock, Optional.empty());
+        cloudTasksUtils.createPostTaskWithJitter(
+            "/the/path", "myservice", params, Optional.empty());
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
     assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
@@ -184,7 +185,7 @@ public class CloudTasksUtilsTest {
   @Test
   void testSuccess_createGetTasks_withEmptyJitterSeconds() {
     Task task =
-        CloudTasksUtils.createGetTask("/the/path", "myservice", params, clock, Optional.empty());
+        cloudTasksUtils.createGetTaskWithJitter("/the/path", "myservice", params, Optional.empty());
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri())
         .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");
@@ -196,7 +197,7 @@ public class CloudTasksUtilsTest {
   @Test
   void testSuccess_createPostTasks_withZeroJitterSeconds() {
     Task task =
-        CloudTasksUtils.createPostTask("/the/path", "myservice", params, clock, Optional.of(0));
+        cloudTasksUtils.createPostTaskWithJitter("/the/path", "myservice", params, Optional.of(0));
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
     assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
@@ -211,7 +212,7 @@ public class CloudTasksUtilsTest {
   @Test
   void testSuccess_createGetTasks_withZeroJitterSeconds() {
     Task task =
-        CloudTasksUtils.createGetTask("/the/path", "myservice", params, clock, Optional.of(0));
+        cloudTasksUtils.createGetTaskWithJitter("/the/path", "myservice", params, Optional.of(0));
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri())
         .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");
@@ -223,8 +224,8 @@ public class CloudTasksUtilsTest {
   @Test
   void testSuccess_createGetTasks_withDelay() {
     Task task =
-        CloudTasksUtils.createGetTask(
-            "/the/path", "myservice", params, clock, Duration.standardMinutes(10));
+        cloudTasksUtils.createGetTaskWithDelay(
+            "/the/path", "myservice", params, Duration.standardMinutes(10));
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri())
         .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");
@@ -237,8 +238,8 @@ public class CloudTasksUtilsTest {
   @Test
   void testSuccess_createPostTasks_withDelay() {
     Task task =
-        CloudTasksUtils.createPostTask(
-            "/the/path", "myservice", params, clock, Duration.standardMinutes(10));
+        cloudTasksUtils.createPostTaskWithDelay(
+            "/the/path", "myservice", params, Duration.standardMinutes(10));
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
     assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
@@ -258,8 +259,8 @@ public class CloudTasksUtilsTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                CloudTasksUtils.createGetTask(
-                    "/the/path", "myservice", params, clock, Duration.standardMinutes(-10)));
+                cloudTasksUtils.createGetTaskWithDelay(
+                    "/the/path", "myservice", params, Duration.standardMinutes(-10)));
     assertThat(thrown).hasMessageThat().isEqualTo("Negative duration is not supported.");
   }
 
@@ -269,15 +270,15 @@ public class CloudTasksUtilsTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                CloudTasksUtils.createGetTask(
-                    "/the/path", "myservice", params, clock, Duration.standardMinutes(-10)));
+                cloudTasksUtils.createGetTaskWithDelay(
+                    "/the/path", "myservice", params, Duration.standardMinutes(-10)));
     assertThat(thrown).hasMessageThat().isEqualTo("Negative duration is not supported.");
   }
 
   @Test
   void testSuccess_createPostTasks_withZeroDelay() {
     Task task =
-        CloudTasksUtils.createPostTask("/the/path", "myservice", params, clock, Duration.ZERO);
+        cloudTasksUtils.createPostTaskWithDelay("/the/path", "myservice", params, Duration.ZERO);
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
     assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
@@ -292,7 +293,7 @@ public class CloudTasksUtilsTest {
   @Test
   void testSuccess_createGetTasks_withZeroDelay() {
     Task task =
-        CloudTasksUtils.createGetTask("/the/path", "myservice", params, clock, Duration.ZERO);
+        cloudTasksUtils.createGetTaskWithDelay("/the/path", "myservice", params, Duration.ZERO);
     assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
     assertThat(task.getAppEngineHttpRequest().getRelativeUri())
         .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");
@@ -305,26 +306,26 @@ public class CloudTasksUtilsTest {
   void testFailure_illegalPath() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> CloudTasksUtils.createPostTask("the/path", "myservice", params));
+        () -> cloudTasksUtils.createPostTask("the/path", "myservice", params));
     assertThrows(
         IllegalArgumentException.class,
-        () -> CloudTasksUtils.createPostTask(null, "myservice", params));
+        () -> cloudTasksUtils.createPostTask(null, "myservice", params));
     assertThrows(
         IllegalArgumentException.class,
-        () -> CloudTasksUtils.createPostTask("", "myservice", params));
+        () -> cloudTasksUtils.createPostTask("", "myservice", params));
   }
 
   @Test
   void testSuccess_enqueueTask() {
-    Task task = CloudTasksUtils.createGetTask("/the/path", "myservice", params);
+    Task task = cloudTasksUtils.createGetTask("/the/path", "myservice", params);
     cloudTasksUtils.enqueue("test-queue", task);
     verify(mockClient).enqueue("project", "location", "test-queue", task);
   }
 
   @Test
   void testSuccess_enqueueTasks_varargs() {
-    Task task1 = CloudTasksUtils.createGetTask("/the/path", "myservice", params);
-    Task task2 = CloudTasksUtils.createGetTask("/other/path", "yourservice", params);
+    Task task1 = cloudTasksUtils.createGetTask("/the/path", "myservice", params);
+    Task task2 = cloudTasksUtils.createGetTask("/other/path", "yourservice", params);
     cloudTasksUtils.enqueue("test-queue", task1, task2);
     verify(mockClient).enqueue("project", "location", "test-queue", task1);
     verify(mockClient).enqueue("project", "location", "test-queue", task2);
@@ -332,8 +333,8 @@ public class CloudTasksUtilsTest {
 
   @Test
   void testSuccess_enqueueTasks_iterable() {
-    Task task1 = CloudTasksUtils.createGetTask("/the/path", "myservice", params);
-    Task task2 = CloudTasksUtils.createGetTask("/other/path", "yourservice", params);
+    Task task1 = cloudTasksUtils.createGetTask("/the/path", "myservice", params);
+    Task task2 = cloudTasksUtils.createGetTask("/other/path", "yourservice", params);
     cloudTasksUtils.enqueue("test-queue", ImmutableList.of(task1, task2));
     verify(mockClient).enqueue("project", "location", "test-queue", task1);
     verify(mockClient).enqueue("project", "location", "test-queue", task2);

@@ -21,6 +21,7 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.config.CredentialModule.DefaultCredential;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.util.Clock;
 import google.registry.util.CloudTasksUtils;
 import google.registry.util.CloudTasksUtils.GcpCloudTasksClient;
 import google.registry.util.CloudTasksUtils.SerializableCloudTasksClient;
@@ -46,8 +47,9 @@ public abstract class CloudTasksUtilsModule {
       @Config("projectId") String projectId,
       @Config("locationId") String locationId,
       SerializableCloudTasksClient client,
-      Retrier retrier) {
-    return new CloudTasksUtils(retrier, projectId, locationId, client);
+      Retrier retrier,
+      Clock clock) {
+    return new CloudTasksUtils(retrier, clock, projectId, locationId, client);
   }
 
   // Provides a supplier instead of using a Dagger @Provider because the latter is not serializable.

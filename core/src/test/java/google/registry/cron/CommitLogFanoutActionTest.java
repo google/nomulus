@@ -33,7 +33,7 @@ class CommitLogFanoutActionTest {
 
   private static final String ENDPOINT = "/the/servlet";
   private static final String QUEUE = "the-queue";
-  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(new FakeClock());
 
   @RegisterExtension
   final AppEngineExtension appEngineExtension =
@@ -58,7 +58,6 @@ class CommitLogFanoutActionTest {
     action.endpoint = ENDPOINT;
     action.queue = QUEUE;
     action.jitterSeconds = Optional.empty();
-    action.clock = new FakeClock();
     action.run();
     List<TaskMatcher> matchers = new ArrayList<>();
     for (int bucketId : CommitLogBucket.getBucketIds()) {

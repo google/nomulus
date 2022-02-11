@@ -30,6 +30,7 @@ dependencies {
   compile deps['com.google.guava:guava']
   compile deps['com.google.http-client:google-http-client']
   compile deps['com.google.protobuf:protobuf-java']
+  compile deps['com.google.protobuf:protobuf-java-util']
   compile deps['com.google.re2j:re2j']
   compile deps['com.ibm.icu:icu4j']
   compile deps['commons-codec:commons-codec']

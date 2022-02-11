@@ -144,7 +144,7 @@ public class GenerateSpec11ReportAction implements Runnable {
       if (sendEmail) {
         cloudTasksUtils.enqueue(
             ReportingModule.BEAM_QUEUE,
-            CloudTasksUtils.createPostTask(
+            cloudTasksUtils.createPostTaskWithDelay(
                 PublishSpec11ReportAction.PATH,
                 Service.BACKEND.toString(),
                 ImmutableMultimap.of(
@@ -152,7 +152,6 @@ public class GenerateSpec11ReportAction implements Runnable {
                     jobId,
                     ReportingModule.PARAM_DATE,
                     date.toString()),
-                clock,
                 Duration.standardMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES)));
       }
       response.setStatus(SC_OK);

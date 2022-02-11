@@ -151,7 +151,7 @@ public class GenerateInvoicesAction implements Runnable {
       if (shouldPublish) {
         cloudTasksUtils.enqueue(
             ReportingModule.BEAM_QUEUE,
-            CloudTasksUtils.createPostTask(
+            cloudTasksUtils.createPostTaskWithDelay(
                 PublishInvoicesAction.PATH,
                 Service.BACKEND.toString(),
                 ImmutableMultimap.of(
@@ -159,7 +159,6 @@ public class GenerateInvoicesAction implements Runnable {
                     jobId,
                     ReportingModule.PARAM_YEAR_MONTH,
                     yearMonth.toString()),
-                clock,
                 Duration.standardMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES)));
       }
       response.setStatus(SC_OK);

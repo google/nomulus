@@ -35,10 +35,9 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import com.google.common.net.UrlEscapers;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.Timestamp;
+import com.google.protobuf.util.Timestamps;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
@@ -53,13 +52,19 @@ public class CloudTasksUtils implements Serializable {
   private static final Random random = new Random();
 
   private final Retrier retrier;
+  private final Clock clock;
   private final String projectId;
   private final String locationId;
   private final SerializableCloudTasksClient client;
 
   public CloudTasksUtils(
-      Retrier retrier, String projectId, String locationId, SerializableCloudTasksClient client) {
+      Retrier retrier,
+      Clock clock,
+      String projectId,
+      String locationId,
+      SerializableCloudTasksClient client) {
     this.retrier = retrier;
+    this.clock = clock;
     this.projectId = projectId;
     this.locationId = locationId;
     this.client = client;
@@ -102,7 +107,7 @@ public class CloudTasksUtils implements Serializable {
    *     href=ttps://cloud.google.com/appengine/docs/standard/java/taskqueue/push/creating-tasks#target>Specifyinig
    *     the worker service</a>
    */
-  private static Task createTask(
+  private Task createTask(
       String path, HttpMethod method, String service, Multimap<String, String> params) {
     checkArgument(
         path != null && !path.isEmpty() && path.charAt(0) == '/',
@@ -151,29 +156,26 @@ public class CloudTasksUtils implements Serializable {
    *     needs to be explicitly specified.
    * @param params a multi-map of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
-   * @param clock a source of time.
    * @param jitterSeconds the number of seconds that a task is randomly delayed up to.
    * @return the enqueued task.
    * @see <a
    *     href=ttps://cloud.google.com/appengine/docs/standard/java/taskqueue/push/creating-tasks#target>Specifyinig
    *     the worker service</a>
    */
-  private static Task createTask(
+  private Task createTaskWithJitter(
       String path,
       HttpMethod method,
       String service,
       Multimap<String, String> params,
-      Clock clock,
       Optional<Integer> jitterSeconds) {
     if (!jitterSeconds.isPresent() || jitterSeconds.get() <= 0) {
       return createTask(path, method, service, params);
     }
-    return createTask(
+    return createTaskWithDelay(
         path,
         method,
         service,
         params,
-        clock,
         Duration.millis(random.nextInt((int) SECONDS.toMillis(jitterSeconds.get()))));
   }
 
@@ -188,76 +190,67 @@ public class CloudTasksUtils implements Serializable {
    *     needs to be explicitly specified.
    * @param params a multi-map of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
-   * @param clock a source of time.
    * @param delay the amount of time that a task needs to delayed for.
    * @return the enqueued task.
    * @see <a
    *     href=ttps://cloud.google.com/appengine/docs/standard/java/taskqueue/push/creating-tasks#target>Specifyinig
    *     the worker service</a>
    */
-  private static Task createTask(
+  private Task createTaskWithDelay(
       String path,
       HttpMethod method,
       String service,
       Multimap<String, String> params,
-      Clock clock,
       Duration delay) {
     if (delay.isEqual(Duration.ZERO)) {
       return createTask(path, method, service, params);
     }
     checkArgument(delay.isLongerThan(Duration.ZERO), "Negative duration is not supported.");
-    Instant scheduleTime = Instant.ofEpochMilli(clock.nowUtc().getMillis() + delay.getMillis());
     return Task.newBuilder(createTask(path, method, service, params))
-        .setScheduleTime(
-            Timestamp.newBuilder()
-                .setSeconds(scheduleTime.getEpochSecond())
-                .setNanos(scheduleTime.getNano())
-                .build())
+        .setScheduleTime(Timestamps.fromMillis(clock.nowUtc().plus(delay).getMillis()))
         .build();
   }
 
-  public static Task createPostTask(String path, String service, Multimap<String, String> params) {
+  public Task createPostTask(String path, String service, Multimap<String, String> params) {
     return createTask(path, HttpMethod.POST, service, params);
   }
 
-  public static Task createGetTask(String path, String service, Multimap<String, String> params) {
+  public Task createGetTask(String path, String service, Multimap<String, String> params) {
     return createTask(path, HttpMethod.GET, service, params);
   }
 
   /**
    * Create a {@link Task} via HTTP.POST that will be randomly delayed up to {@code jitterSeconds}.
    */
-  public static Task createPostTask(
+  public Task createPostTaskWithJitter(
       String path,
       String service,
       Multimap<String, String> params,
-      Clock clock,
       Optional<Integer> jitterSeconds) {
-    return createTask(path, HttpMethod.POST, service, params, clock, jitterSeconds);
+    return createTaskWithJitter(path, HttpMethod.POST, service, params, jitterSeconds);
   }
 
   /**
    * Create a {@link Task} via HTTP.GET that will be randomly delayed up to {@code jitterSeconds}.
    */
-  public static Task createGetTask(
+  public Task createGetTaskWithJitter(
       String path,
       String service,
       Multimap<String, String> params,
-      Clock clock,
       Optional<Integer> jitterSeconds) {
-    return createTask(path, HttpMethod.GET, service, params, clock, jitterSeconds);
+    return createTaskWithJitter(path, HttpMethod.GET, service, params, jitterSeconds);
   }
 
   /** Create a {@link Task} via HTTP.POST that will be delayed for {@code delay}. */
-  public static Task createPostTask(
-      String path, String service, Multimap<String, String> params, Clock clock, Duration delay) {
-    return createTask(path, HttpMethod.POST, service, params, clock, delay);
+  public Task createPostTaskWithDelay(
+      String path, String service, Multimap<String, String> params, Duration delay) {
+    return createTaskWithDelay(path, HttpMethod.POST, service, params, delay);
   }
 
   /** Create a {@link Task} via HTTP.GET that will be delayed for {@code delay}. */
-  public static Task createGetTask(
-      String path, String service, Multimap<String, String> params, Clock clock, Duration delay) {
-    return createTask(path, HttpMethod.GET, service, params, clock, delay);
+  public Task createGetTaskWithDelay(
+      String path, String service, Multimap<String, String> params, Duration delay) {
+    return createTaskWithDelay(path, HttpMethod.GET, service, params, delay);
   }
 
   public abstract static class SerializableCloudTasksClient implements Serializable {

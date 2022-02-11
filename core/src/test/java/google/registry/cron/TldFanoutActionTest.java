@@ -45,7 +45,7 @@ class TldFanoutActionTest {
   private static final String ENDPOINT = "/the/servlet";
   private static final String QUEUE = "the-queue";
   private final FakeResponse response = new FakeResponse();
-  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(new FakeClock());
 
   @RegisterExtension
   final AppEngineExtension appEngine =
@@ -61,7 +61,6 @@ class TldFanoutActionTest {
 
   private void run(ImmutableListMultimap<String, String> params) {
     TldFanoutAction action = new TldFanoutAction();
-    action.clock = new FakeClock();
     action.params = params;
     action.endpoint = ENDPOINT;
     action.queue = QUEUE;
