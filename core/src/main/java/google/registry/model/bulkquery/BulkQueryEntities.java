@@ -74,6 +74,8 @@ public class BulkQueryEntities {
     builder.setGracePeriods(gracePeriods);
     builder.setDsData(delegationSignerData);
     builder.setNameservers(nsHosts);
+    // Restore the original update timestamp (this gets cleared when we set nameservers or DS data).
+    builder.setUpdateTimestamp(domainBaseLite.getUpdateTimestamp());
     return builder.build();
   }
 
@@ -100,6 +102,9 @@ public class BulkQueryEntities {
                   dsDataHistories.stream()
                       .map(DelegationSignerData::create)
                       .collect(toImmutableSet()))
+              // Restore the original update timestamp (this gets cleared when we set nameservers or
+              // DS data).
+              .setUpdateTimestamp(domainHistoryLite.domainContent.getUpdateTimestamp())
               .build();
       builder.setDomain(newDomainContent);
     }

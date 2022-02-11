@@ -70,4 +70,15 @@ public abstract class BackupGroupRoot extends ImmutableObject implements UnsafeS
   protected void resetUpdateTimestamp() {
     this.updateTimestamp = UpdateAutoTimestamp.create(null);
   }
+
+  /**
+   * Sets the {@link #updateTimestamp}.
+   *
+   * <p>This method is for use in the few places where we need to restore the update timestamp after
+   * mutating a collection in order to force the new timestamp to be persisted when it ordinarily
+   * wouldn't.
+   */
+  protected void setUpdateTimestamp(UpdateAutoTimestamp timestamp) {
+    updateTimestamp = timestamp;
+  }
 }
