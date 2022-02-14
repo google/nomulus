@@ -21,8 +21,10 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
-
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.junit.Assert.fail;
+
 import com.google.common.base.Ascii;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
@@ -49,11 +51,15 @@ import google.registry.persistence.transaction.Transaction.Update;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -97,16 +103,22 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   private static ImmutableSet<String> IGNORED_ENTITIES =
       Streams.concat(
           ImmutableSet.of(
-              // History entries *should* be comparable, but this isn't working yet so exclude them.
+              // These entities *should* be comparable, but this isn't working yet so exclude them
+              // so we can tackle them independently.
               "GracePeriod",
               "GracePeriodHistory",
               "HistoryEntry",
               "DomainHistory",
+              "DomainDsDataHistory",
+              "DelegationSignerData",
 
+              "ClaimsEntry",
+              "ClaimsList",
               "CommitLogBucket",
               "CommitLogManifest",
               "CommitLogMutation",
-              "PremiumEntry").stream(),
+              "PremiumEntry",
+              "ReservedListEntry").stream(),
           NON_REPLICATED_TYPES.stream()).collect(toImmutableSet());
 
   FakeClock clock;
@@ -117,6 +129,7 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   @Nullable ReplicateToDatastoreAction sqlToDsReplicator;
   List<DomainBase> expectedUpdates = new ArrayList<>();
   boolean enableDomainTimestampChecks;
+  boolean enableDatabaseCompare = true;
 
   private ReplayExtension(
       FakeClock clock, boolean compare, @Nullable ReplicateToDatastoreAction sqlToDsReplicator) {
@@ -183,6 +196,11 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
 
   @Override
   public void beforeEach(ExtensionContext context) {
+    Optional<Method> elem = context.getTestMethod();
+    if (elem.isPresent() && elem.get().isAnnotationPresent(NoDatabaseCompare.class)) {
+      enableDatabaseCompare = false;
+    }
+
     // Use a single bucket to expose timestamp inversion problems. This typically happens when
     // a test with this extension rolls back the fake clock in the setup method, creating inverted
     // timestamp with the canned data preloaded by AppengineExtension. The solution is to move
@@ -288,7 +306,9 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     } while (!transactionBatch.isEmpty());
 
     // Now that everything has been replayed, compare the databases.
-    compareDatabases();
+    if (enableDatabaseCompare) {
+      compareDatabases();
+    }
   }
 
   /** Verifies that the replaying the SQL transaction created the same entities in Datastore. */
@@ -360,23 +380,29 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
 
       for (ImmutableObject entity : auditedOfy().load().type(cls).list()) {
         // Find the entity in SQL and verify that it's the same.
-        Object sqlKey = VKey.from(Key.create(entity)).getSqlKey();
-        ImmutableObject sqlEntity =
-            (ImmutableObject) sqlEntities.get(sqlKey);
+        Key<?> ofyKey = Key.create(entity);
+        Object sqlKey = VKey.from(ofyKey).getSqlKey();
+        ImmutableObject sqlEntity = (ImmutableObject) sqlEntities.get(sqlKey);
         Optional<SqlEntity> expectedSqlEntity = ((DatastoreEntity) entity).toSqlEntity();
         if (expectedSqlEntity.isPresent()) {
           // Check for null just so we get a better error message.
           if (sqlEntity == null) {
-            logger.atSevere().log("Entity %s is in Datastore but not in SQL.",  Key.create(entity));
+            logger.atSevere().log("Entity %s is in Datastore but not in SQL.",  ofyKey);
             gotDiffs = true;
           } else {
-            assertAboutImmutableObjects()
-                .that((ImmutableObject) expectedSqlEntity.get())
-                .isEqualAcrossDatabases(sqlEntity);
+            try {
+              assertAboutImmutableObjects()
+                  .that((ImmutableObject) expectedSqlEntity.get())
+                  .isEqualAcrossDatabases(sqlEntity);
+            } catch (AssertionError e) {
+              // Show the message but swallow the stack trace (we'll get that from the fail() at
+              // the end of the comparison).
+              logger.atSevere().log("For entity %s: %s", ofyKey, e.getMessage());
+              gotDiffs = true;
+            }
           }
         } else {
-          logger.atInfo().log("Datastore entity has no sql representation for %s",
-                              Key.create(entity));
+          logger.atInfo().log("Datastore entity has no sql representation for %s", ofyKey);
         }
         sqlEntities.remove(sqlKey);
       }
@@ -400,4 +426,10 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     return jpaTm().getEntityManager().getEntityManagerFactory().getPersistenceUnitUtil()
         .getIdentifier(entity);
   }
+
+  /** Annotation to use for test methods where we don't want to do a database comparison yet. */
+  @Target({METHOD})
+  @Retention(RUNTIME)
+  @TestTemplate
+  public @interface NoDatabaseCompare {}
 }

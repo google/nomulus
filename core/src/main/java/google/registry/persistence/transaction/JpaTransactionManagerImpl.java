@@ -605,7 +605,13 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       managedEntity = getEntityManager().merge(entity);
     }
     getEntityManager().remove(managedEntity);
-    transactionInfo.get().addDelete(VKey.from(Key.create(entity)));
+
+    // We check shouldReplicate() in TransactionInfo.addDelete(), but we have to check it here as
+    // well prior to attempting to create a datastore key because a non-replicated entity may not
+    // have one.
+    if (shouldReplicate(entity.getClass())) {
+      transactionInfo.get().addDelete(VKey.from(Key.create(entity)));
+    }
     return managedEntity;
   }
 
@@ -829,6 +835,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     replaySqlToDatastoreOverrideForTest.set(Optional.empty());
   }
 
+  /** Returns true if the entity class should be replicated from SQL to datastore. */
+  private static boolean shouldReplicate(Class<?> entityClass) {
+    return !NonReplicatedEntity.class.isAssignableFrom(entityClass)
+        && !SqlOnlyEntity.class.isAssignableFrom(entityClass);
+  }
+
   private static class TransactionInfo {
     ReadOnlyCheckingEntityManager entityManager;
     boolean inTransaction = false;
@@ -883,12 +895,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       if (contentsBuilder != null && shouldReplicate(key.getKind())) {
         contentsBuilder.addDelete(key);
       }
-    }
-
-    /** Returns true if the entity class should be replicated from SQL to datastore. */
-    private boolean shouldReplicate(Class<?> entityClass) {
-      return !NonReplicatedEntity.class.isAssignableFrom(entityClass)
-          && !SqlOnlyEntity.class.isAssignableFrom(entityClass);
     }
 
     private void recordTransaction() {

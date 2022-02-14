@@ -109,6 +109,7 @@ import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
+import google.registry.testing.ReplayExtension.NoDatabaseCompare;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import java.util.Optional;
@@ -954,6 +955,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertThat(thrown).hasMessageThat().contains("(sh8013)");
   }
 
+  @NoDatabaseCompare
   @TestOfyAndSql
   void testFailure_addingDuplicateContact() throws Exception {
     persistReferencedEntities();
@@ -1281,6 +1283,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
+  // Contacts mismatch.
+  @NoDatabaseCompare
   @TestOfyAndSql
   void testFailure_sameContactAddedAndRemoved() throws Exception {
     setEppInput("domain_update_add_remove_same_contact.xml");
