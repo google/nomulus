@@ -195,7 +195,7 @@ public class DomainBaseUtilTest {
     domainTransformedByUtil = domainTransformedByUtil.asBuilder().build();
     assertAboutImmutableObjects()
         .that(domainTransformedByUtil)
-        .isEqualExceptFields(domainTransformedByOfy, "revisions");
+        .isEqualExceptFields(domainTransformedByOfy, "revisions", "updateTimestamp");
   }
 
   @Test
@@ -218,7 +218,7 @@ public class DomainBaseUtilTest {
     domainTransformedByUtil = domainTransformedByUtil.asBuilder().build();
     assertAboutImmutableObjects()
         .that(domainTransformedByUtil)
-        .isEqualExceptFields(domainWithoutFKeys, "revisions");
+        .isEqualExceptFields(domainWithoutFKeys, "revisions", "updateTimestamp");
   }
 
   @Test

@@ -895,6 +895,7 @@ public class DomainContent extends EppResource
 
     public B setDsData(ImmutableSet<DelegationSignerData> dsData) {
       getInstance().dsData = dsData;
+      getInstance().resetUpdateTimestamp();
       return thisCastToDerived();
     }
 
@@ -918,11 +919,13 @@ public class DomainContent extends EppResource
 
     public B setNameservers(VKey<HostResource> nameserver) {
       getInstance().nsHosts = ImmutableSet.of(nameserver);
+      getInstance().resetUpdateTimestamp();
       return thisCastToDerived();
     }
 
     public B setNameservers(ImmutableSet<VKey<HostResource>> nameservers) {
       getInstance().nsHosts = forceEmptyToNull(nameservers);
+      getInstance().resetUpdateTimestamp();
       return thisCastToDerived();
     }
 

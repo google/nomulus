@@ -362,6 +362,16 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
       return thisCastToDerived();
     }
 
+    /**
+     * Set the update timestamp.
+     *
+     * <p>This is provided at EppResource since BackupGroupRoot doesn't have a Builder.
+     */
+    public B setUpdateTimestamp(UpdateAutoTimestamp updateTimestamp) {
+      getInstance().setUpdateTimestamp(updateTimestamp);
+      return thisCastToDerived();
+    }
+
     /** Build the resource, nullifying empty strings and sets and setting defaults. */
     @Override
     public T build() {
