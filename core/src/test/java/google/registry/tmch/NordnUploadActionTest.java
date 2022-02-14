@@ -138,9 +138,22 @@ class NordnUploadActionTest {
   void test_convertTasksToCsv() {
     List<TaskHandle> tasks =
         ImmutableList.of(
-            makeTaskHandle("task1", "example", "csvLine1", "lordn-sunrise"),
             makeTaskHandle("task2", "example", "csvLine2", "lordn-sunrise"),
+            makeTaskHandle("task1", "example", "csvLine1", "lordn-sunrise"),
             makeTaskHandle("task3", "example", "ending", "lordn-sunrise"));
+    assertThat(NordnUploadAction.convertTasksToCsv(tasks, clock.nowUtc(), "col1,col2"))
+        .isEqualTo("1,2010-05-01T10:11:12.000Z,3\ncol1,col2\ncsvLine1\ncsvLine2\nending\n");
+  }
+
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  @Test
+  void test_convertTasksToCsv_dedupesDuplicates() {
+    List<TaskHandle> tasks =
+        ImmutableList.of(
+            makeTaskHandle("task2", "example", "csvLine2", "lordn-sunrise"),
+            makeTaskHandle("task1", "example", "csvLine1", "lordn-sunrise"),
+            makeTaskHandle("task3", "example", "ending", "lordn-sunrise"),
+            makeTaskHandle("task1", "example", "csvLine1", "lordn-sunrise"));
     assertThat(NordnUploadAction.convertTasksToCsv(tasks, clock.nowUtc(), "col1,col2"))
         .isEqualTo("1,2010-05-01T10:11:12.000Z,3\ncol1,col2\ncsvLine1\ncsvLine2\nending\n");
   }
