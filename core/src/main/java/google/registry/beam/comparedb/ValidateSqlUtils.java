@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.beam.initsql.Transforms;
 import google.registry.config.RegistryEnvironment;
-import google.registry.model.BackupGroupRoot;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.DeleteAfterMigration;
@@ -185,12 +184,19 @@ final class ValidateSqlUtils {
         }
         return;
       }
-      SqlEntity entity0;
-      SqlEntity entity1;
+      SqlEntity entity0 = entities.get(0);
+      SqlEntity entity1 = entities.get(1);
+
+      if (isSpecialCaseProberEntity(entity0) && isSpecialCaseProberEntity(entity1)) {
+        // Ignore prober-related data: their deletions are not propagated from Datastore to SQL.
+        // When code reaches here, in most cases it involves one soft deleted entity in Datastore
+        // and an SQL entity with its pre-deletion status.
+        return;
+      }
 
       try {
-        entity0 = normalizeEntity(entities.get(0));
-        entity1 = normalizeEntity(entities.get(1));
+        entity0 = normalizeEntity(entity0);
+        entity1 = normalizeEntity(entity1);
       } catch (Exception e) {
         // Temporary debugging help. See logDiff() above.
         if (!logPrinted) {
@@ -227,15 +233,6 @@ final class ValidateSqlUtils {
    */
   static SqlEntity normalizeEppResource(SqlEntity eppResource) {
     try {
-      if (isSpecialCaseProberEntity(eppResource)) {
-        // Clearing some timestamps. See isSpecialCaseProberEntity() for reasons.
-        Field lastUpdateTime = BackupGroupRoot.class.getDeclaredField("updateTimestamp");
-        lastUpdateTime.setAccessible(true);
-        lastUpdateTime.set(eppResource, null);
-        Field deletionTime = EppResource.class.getDeclaredField("deletionTime");
-        deletionTime.setAccessible(true);
-        deletionTime.set(eppResource, null);
-      }
       Field authField =
           eppResource instanceof DomainContent
               ? DomainContent.class.getDeclaredField("authInfo")
