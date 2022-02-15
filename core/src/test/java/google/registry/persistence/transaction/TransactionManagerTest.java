@@ -30,6 +30,7 @@ import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.model.ofy.Ofy;
+import google.registry.model.replay.NonReplicatedEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.TransactionManagerFactory.ReadOnlyModeException;
 import google.registry.testing.AppEngineExtension;
@@ -448,7 +449,7 @@ public class TransactionManagerTest {
 
   @Entity(name = "TxnMgrTestEntity")
   @javax.persistence.Entity(name = "TestEntity")
-  private static class TestEntity extends TestEntityBase {
+  private static class TestEntity extends TestEntityBase implements NonReplicatedEntity {
 
     private String data;
 

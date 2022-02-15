@@ -267,9 +267,16 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
     Map<String, Object> response =
         action.handleJsonRequest(
             ImmutableMap.of(
-                "op", "update",
-                "id", CLIENT_ID,
-                "args", setter.apply(registrar.asBuilder(), newValue).build().toJsonMap()));
+                "op",
+                "update",
+                "id",
+                CLIENT_ID,
+                "args",
+                setter
+                    .apply(registrar.asBuilder(), newValue)
+                    .setLastUpdateTime(registrar.getLastUpdateTime())
+                    .build()
+                    .toJsonMap()));
     Registrar updatedRegistrar = loadRegistrar(CLIENT_ID);
     persistResource(registrar);
 
@@ -320,7 +327,11 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
                 "id",
                 CLIENT_ID,
                 "args",
-                setter.apply(registrar.asBuilder(), newValue).build().toJsonMap()));
+                setter
+                    .apply(registrar.asBuilder(), newValue)
+                    .setLastUpdateTime(registrar.getLastUpdateTime())
+                    .build()
+                    .toJsonMap()));
     Registrar updatedRegistrar = loadRegistrar(CLIENT_ID);
     persistResource(registrar);
 

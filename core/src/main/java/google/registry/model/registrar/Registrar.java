@@ -46,6 +46,7 @@ import static google.registry.util.X509Utils.loadCertificate;
 import static java.util.Comparator.comparing;
 import static java.util.function.Predicate.isEqual;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
@@ -824,6 +825,7 @@ public class Registrar extends ImmutableObject
 
     public Builder setAllowedTlds(Set<String> allowedTlds) {
       getInstance().allowedTlds = ImmutableSortedSet.copyOf(assertTldsExist(allowedTlds));
+      getInstance().lastUpdateTime = UpdateAutoTimestamp.create(null);
       return this;
     }
 
@@ -988,6 +990,16 @@ public class Registrar extends ImmutableObject
 
     public Builder setRegistryLockAllowed(boolean registryLockAllowed) {
       getInstance().registryLockAllowed = registryLockAllowed;
+      return this;
+    }
+
+    /**
+     * This lets tests set the update timestamp in cases where setting fields resets the timestamp
+     * and breaks the verification that an object has not been updated since it was copied.
+     */
+    @VisibleForTesting
+    public Builder setLastUpdateTime(DateTime timestamp) {
+      getInstance().lastUpdateTime = UpdateAutoTimestamp.create(timestamp);
       return this;
     }
 

@@ -599,10 +599,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertNoLordn();
   }
 
-  // TODO(b/219481886): This test (and all other tests in this file annotated with NoDatabaseCompare
-  // that don't have a comment) fails database comparison because of the Registrar's
-  // lastUpdateTimestamp.
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testFailure_domainNameExistsAsTld_lowercase() {
     createTlds("foo.tld", "tld");
@@ -612,7 +608,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testFailure_domainNameExistsAsTld_uppercase() {
     createTlds("foo.tld", "tld");
@@ -622,7 +617,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testFailure_generalAvailability_withEncodedSignedMark() {
     createTld("tld", GENERAL_AVAILABILITY);
@@ -635,7 +629,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testFailure_generalAvailability_superuserMismatchedEncodedSignedMark() {
     createTld("tld", GENERAL_AVAILABILITY);
@@ -987,7 +980,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testFailure_claimsNoticeProvided_claimsPeriodEnded() {
     setEppInput("domain_create_claim_notice.xml");
@@ -1201,7 +1193,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testSuccess_anchorTenant_withMetadataExtension() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
@@ -1213,7 +1204,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertNoLordn();
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testSuccess_anchorTenantInSunrise_withMetadataExtension() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
@@ -1712,7 +1702,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testFailure_predelegation() {
     createTld("tld", PREDELEGATION);
@@ -1722,7 +1711,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testFailure_startDateSunrise_missingLaunchExtension() {
     createTld("tld", START_DATE_SUNRISE);
@@ -1732,7 +1720,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testFailure_quietPeriod() {
     createTld("tld", QUIET_PERIOD);
@@ -1742,7 +1729,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testSuccess_superuserPredelegation() throws Exception {
     createTld("tld", PREDELEGATION);
@@ -1751,7 +1737,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response.xml", SUPERUSER, ImmutableMap.of("DOMAIN", "example.tld"));
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testSuccess_superuserStartDateSunrise_isSuperuser() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
@@ -1760,7 +1745,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response.xml", SUPERUSER, ImmutableMap.of("DOMAIN", "example.tld"));
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testSuccess_superuserQuietPeriod() throws Exception {
     createTld("tld", QUIET_PERIOD);
@@ -2118,7 +2102,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doFailingDomainNameTest("xn--k3hel9n7bxlu1e.tld", InvalidIdnDomainLabelException.class);
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testFailure_startDateSunriseRegistration_missingSignedMark() {
     createTld("tld", START_DATE_SUNRISE);
@@ -2129,7 +2112,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testSuccess_superuserStartDateSunriseRegistration_isSuperuser() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
@@ -2139,7 +2121,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response.xml", SUPERUSER, ImmutableMap.of("DOMAIN", "example.tld"));
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testSuccess_startDateSunriseRegistration_withEncodedSignedMark() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
@@ -2157,7 +2138,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   /** Test that missing type= argument on launch create works in start-date sunrise. */
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testSuccess_startDateSunriseRegistration_withEncodedSignedMark_noType() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
@@ -2185,7 +2165,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testFail_startDateSunriseRegistration_markNotYetValid() {
     createTld("tld", START_DATE_SUNRISE);
@@ -2199,7 +2178,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testFail_startDateSunriseRegistration_markExpired() {
     createTld("tld", START_DATE_SUNRISE);
@@ -2213,7 +2191,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @NoDatabaseCompare
+
   @TestOfyAndSql
   void testFailure_startDateSunriseRegistration_withClaimsNotice() {
     createTld("tld", START_DATE_SUNRISE);

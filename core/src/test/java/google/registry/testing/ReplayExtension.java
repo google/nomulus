@@ -102,24 +102,30 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   // out, but there is plenty of overlap and no name collisions so it doesn't matter very much.
   private static ImmutableSet<String> IGNORED_ENTITIES =
       Streams.concat(
-          ImmutableSet.of(
-              // These entities *should* be comparable, but this isn't working yet so exclude them
-              // so we can tackle them independently.
-              "GracePeriod",
-              "GracePeriodHistory",
-              "HistoryEntry",
-              "DomainHistory",
-              "DomainDsDataHistory",
-              "DelegationSignerData",
+              ImmutableSet.of(
+                  // These entities *should* be comparable, but this isn't working yet so exclude
+                  // them so we can tackle them independently.
+                  "GracePeriod",
+                  "GracePeriodHistory",
+                  "HistoryEntry",
+                  "DomainHistory",
+                  "ContactHistory",
+                  "HostHistory",
+                  "DomainDsDataHistory",
+                  "DelegationSignerData",
+                  "DomainTransactionRecord",
 
-              "ClaimsEntry",
-              "ClaimsList",
-              "CommitLogBucket",
-              "CommitLogManifest",
-              "CommitLogMutation",
-              "PremiumEntry",
-              "ReservedListEntry").stream(),
-          NON_REPLICATED_TYPES.stream()).collect(toImmutableSet());
+                  // These entities are legitimately not comparable.
+                  "ClaimsEntry",
+                  "ClaimsList",
+                  "CommitLogBucket",
+                  "CommitLogManifest",
+                  "CommitLogMutation",
+                  "PremiumEntry",
+                  "ReservedListEntry")
+                  .stream(),
+              NON_REPLICATED_TYPES.stream())
+          .collect(toImmutableSet());
 
   FakeClock clock;
   boolean compare;
@@ -368,9 +374,9 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
         continue;
       }
 
-      jpaTm().transact(() -> jpaTm().loadAllOfStream(cls)
-                            .forEach(
-                                e -> sqlEntities.put(getSqlKey(e), e)));
+      jpaTm()
+          .transact(
+              () -> jpaTm().loadAllOfStream(cls).forEach(e -> sqlEntities.put(getSqlKey(e), e)));
     }
 
     for (Class<? extends ImmutableObject> cls : EntityClasses.ALL_CLASSES) {
@@ -387,7 +393,7 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
         if (expectedSqlEntity.isPresent()) {
           // Check for null just so we get a better error message.
           if (sqlEntity == null) {
-            logger.atSevere().log("Entity %s is in Datastore but not in SQL.",  ofyKey);
+            logger.atSevere().log("Entity %s is in Datastore but not in SQL.", ofyKey);
             gotDiffs = true;
           } else {
             try {
@@ -411,8 +417,8 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     // Report any objects that
     if (!sqlEntities.isEmpty()) {
       for (Object item : sqlEntities.values()) {
-        logger.atSevere().log("Entity of %s found in SQL but not in datastore: %s",
-                        item.getClass().getName(), item);
+        logger.atSevere().log(
+            "Entity of %s found in SQL but not in datastore: %s", item.getClass().getName(), item);
       }
       gotDiffs = true;
     }
@@ -423,7 +429,10 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   }
 
   private static Object getSqlKey(Object entity) {
-    return jpaTm().getEntityManager().getEntityManagerFactory().getPersistenceUnitUtil()
+    return jpaTm()
+        .getEntityManager()
+        .getEntityManagerFactory()
+        .getPersistenceUnitUtil()
         .getIdentifier(entity);
   }
 

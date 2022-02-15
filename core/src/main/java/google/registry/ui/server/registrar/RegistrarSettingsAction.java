@@ -453,6 +453,13 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     Map<?, ?> diffs =
         DiffUtils.deepDiff(
             originalRegistrar.toDiffableFieldMap(), updatedRegistrar.toDiffableFieldMap(), true);
+
+    // It's expected that the update timestamp will be changed, as it gets reset whenever we change
+    // nested collections.  If it's the only change, just return the original registrar.
+    if (diffs.keySet().equals(ImmutableSet.of("lastUpdateTime"))) {
+      return originalRegistrar;
+    }
+
     throw new ForbiddenException(
         String.format("Unauthorized: only %s can change fields %s", allowedRole, diffs.keySet()));
   }
