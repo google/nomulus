@@ -170,7 +170,6 @@ import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
-import google.registry.testing.ReplayExtension.NoDatabaseCompare;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
@@ -555,7 +554,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   // DomainTransactionRecord is not propagated.
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testSuccess_validAllocationToken_multiUse() throws Exception {
     setEppInput(
@@ -2152,7 +2150,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertSunriseLordn("test-validate.tld");
   }
 
-  @NoDatabaseCompare
   @TestOfyAndSql
   void testFail_startDateSunriseRegistration_wrongEncodedSignedMark() {
     createTld("tld", START_DATE_SUNRISE);
