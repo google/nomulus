@@ -51,7 +51,7 @@ import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.TupleTag;
 
-/** Helpers for use by {@link ValidateSqlPipeline}. */
+/** Helpers for use by {@link ValidateDatabasePipeline}. */
 @DeleteAfterMigration
 final class ValidateSqlUtils {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -66,7 +66,7 @@ final class ValidateSqlUtils {
    * Query template for finding the median value of the {@code history_revision_id} column in one of
    * the History tables.
    *
-   * <p>The {@link ValidateSqlPipeline} uses this query to parallelize the query to some of the
+   * <p>The {@link ValidateDatabasePipeline} uses this query to parallelize the query to some of the
    * history tables. Although the {@code repo_id} column is the leading column in the primary keys
    * of these tables, in practice and with production data, division by {@code history_revision_id}
    * works slightly faster for unknown reasons.

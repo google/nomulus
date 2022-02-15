@@ -76,7 +76,10 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private static final Duration LEASE_LENGTH = standardHours(1);
+  public static final String REPLAY_TO_SQL_LOCK_NAME =
+      ReplayCommitLogsToSqlAction.class.getSimpleName();
+
+  public static final Duration REPLAY_TO_SQL_LOCK_LEASE_LENGTH = standardHours(1);
   // Stop / pause where we are if we've been replaying for more than five minutes to avoid GAE
   // request timeouts
   private static final Duration REPLAY_TIMEOUT_DURATION = Duration.standardMinutes(5);
@@ -115,7 +118,11 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     }
     Optional<Lock> lock =
         Lock.acquireSql(
-            this.getClass().getSimpleName(), null, LEASE_LENGTH, requestStatusChecker, false);
+            REPLAY_TO_SQL_LOCK_NAME,
+            null,
+            REPLAY_TO_SQL_LOCK_LEASE_LENGTH,
+            requestStatusChecker,
+            false);
     if (!lock.isPresent()) {
       String message = "Can't acquire SQL commit log replay lock, aborting.";
       logger.atSevere().log(message);

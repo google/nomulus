@@ -1,6 +1,6 @@
 {
-  "name": "Validate Datastore with Cloud SQL",
-  "description": "An Apache Beam batch pipeline that compares Datastore with the primary Cloud SQL database.",
+  "name": "Validate Datastore and Cloud SQL",
+  "description": "An Apache Beam batch pipeline that compares the data in Datastore and Cloud SQL database.",
   "parameters": [
     {
       "name": "registryEnvironment",

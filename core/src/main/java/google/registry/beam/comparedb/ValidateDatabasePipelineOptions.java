@@ -14,14 +14,15 @@
 
 package google.registry.beam.comparedb;
 
+import google.registry.beam.common.RegistryPipelineOptions;
 import google.registry.model.annotations.DeleteAfterMigration;
 import javax.annotation.Nullable;
 import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.Validation;
 
-/** BEAM pipeline options for {@link ValidateDatastorePipelineOptions}. */
+/** BEAM pipeline options for {@link ValidateDatabasePipeline}. */
 @DeleteAfterMigration
-public interface ValidateDatastorePipelineOptions extends ValidateSqlPipelineOptions {
+public interface ValidateDatabasePipelineOptions extends RegistryPipelineOptions {
 
   @Description(
       "The id of the SQL snapshot to be compared with Datastore. "
@@ -36,4 +37,13 @@ public interface ValidateDatastorePipelineOptions extends ValidateSqlPipelineOpt
   String getLatestCommitLogTimestamp();
 
   void setLatestCommitLogTimestamp(String commitLogEndTimestamp);
+
+  @Description(
+      "For history entries and EPP resources, only those modified strictly after this time are "
+          + "included in comparison. Value is in ISO8601 format. "
+          + "Other entity types are not affected.")
+  @Nullable
+  String getComparisonStartTimestamp();
+
+  void setComparisonStartTimestamp(String comparisonStartTimestamp);
 }

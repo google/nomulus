@@ -48,8 +48,7 @@ import org.joda.time.Duration;
  * </ul>
  *
  * The caller may release the replication lock upon receiving the response from this action. Please
- * refer to {@link google.registry.tools.ValidateDatastoreWithSqlCommand} for more information on
- * usage.
+ * refer to {@link google.registry.tools.ValidateDatastoreCommand} for more information on usage.
  *
  * <p>This action plays SQL transactions up to the user-specified snapshot, creates a new CommitLog
  * checkpoint, and exports all CommitLogs to GCS up to this checkpoint. The timestamp of this

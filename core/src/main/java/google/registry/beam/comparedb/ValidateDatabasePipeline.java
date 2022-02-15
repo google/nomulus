@@ -18,31 +18,20 @@ import static com.google.common.base.Verify.verify;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
 import com.google.common.flogger.FluentLogger;
-import google.registry.beam.common.DatabaseSnapshot;
+import google.registry.beam.common.RegistryPipelineOptions;
 import google.registry.beam.common.RegistryPipelineWorkerInitializer;
 import google.registry.beam.comparedb.LatestDatastoreSnapshotFinder.DatastoreSnapshotInfo;
 import google.registry.beam.comparedb.ValidateSqlUtils.CompareSqlEntity;
 import google.registry.model.annotations.DeleteAfterMigration;
-import google.registry.model.common.DatabaseMigrationStateSchedule;
-import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
-import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.replay.SqlEntity;
-import google.registry.model.replay.SqlReplayCheckpoint;
-import google.registry.model.server.Lock;
 import google.registry.persistence.PersistenceModule.JpaTransactionManagerType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
-import google.registry.persistence.transaction.TransactionManagerFactory;
-import google.registry.util.RequestStatusChecker;
-import google.registry.util.SystemClock;
 import java.io.Serializable;
 import java.util.Optional;
 import org.apache.beam.sdk.Pipeline;
-import org.apache.beam.sdk.PipelineResult.State;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.Flatten;
@@ -56,78 +45,46 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
- * Validates the asynchronous data replication process from Datastore (primary storage) to Cloud SQL
- * (secondary storage).
+ * Validates the asynchronous data replication process between Datastore and Cloud SQL.
+ *
+ * <p>This pipeline is to be launched by {@link google.registry.tools.ValidateDatastoreCommand} or
+ * {@link google.registry.tools.ValidateSqlCommand}.
  */
 @DeleteAfterMigration
-public class ValidateSqlPipeline {
+public class ValidateDatabasePipeline {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** Specifies the extra CommitLogs to load before the start of a Database export. */
   private static final Duration COMMITLOG_START_TIME_MARGIN = Duration.standardMinutes(10);
 
-  /**
-   * Name of the lock used by the commitlog replay process.
-   *
-   * <p>See {@link google.registry.backup.ReplayCommitLogsToSqlAction} for more information.
-   */
-  private static final String COMMITLOG_REPLAY_LOCK_NAME = "ReplayCommitLogsToSqlAction";
-
-  private static final Duration REPLAY_LOCK_LEASE_LENGTH = Duration.standardHours(1);
-  private static final java.time.Duration REPLAY_LOCK_ACQUIRE_TIMEOUT =
-      java.time.Duration.ofMinutes(6);
-  private static final java.time.Duration REPLAY_LOCK_ACQUIRE_DELAY =
-      java.time.Duration.ofSeconds(30);
-
-  private final ValidateSqlPipelineOptions options;
+  private final ValidateDatabasePipelineOptions options;
   private final LatestDatastoreSnapshotFinder datastoreSnapshotFinder;
 
-  public ValidateSqlPipeline(
-      ValidateSqlPipelineOptions options, LatestDatastoreSnapshotFinder datastoreSnapshotFinder) {
+  public ValidateDatabasePipeline(
+      ValidateDatabasePipelineOptions options,
+      LatestDatastoreSnapshotFinder datastoreSnapshotFinder) {
     this.options = options;
     this.datastoreSnapshotFinder = datastoreSnapshotFinder;
   }
 
   @VisibleForTesting
   void run(Pipeline pipeline) {
-    Optional<Lock> lock = acquireCommitLogReplayLock();
-    if (lock.isPresent()) {
-      logger.atInfo().log("Acquired CommitLog Replay lock.");
-    } else {
-      throw new RuntimeException("Failed to acquire CommitLog Replay lock.");
-    }
+    DateTime latestCommitLogTime = DateTime.parse(options.getLatestCommitLogTimestamp());
+    DatastoreSnapshotInfo mostRecentExport =
+        datastoreSnapshotFinder.getSnapshotInfo(latestCommitLogTime.toInstant());
 
-    try {
-      DateTime latestCommitLogTime =
-          TransactionManagerFactory.jpaTm().transact(() -> SqlReplayCheckpoint.get());
-      DatastoreSnapshotInfo mostRecentExport =
-          datastoreSnapshotFinder.getSnapshotInfo(latestCommitLogTime.toInstant());
-      Preconditions.checkState(
-          latestCommitLogTime.isAfter(mostRecentExport.exportInterval().getEnd()),
-          "Cannot recreate Datastore snapshot since target time is in the middle of an export.");
-      try (DatabaseSnapshot databaseSnapshot = DatabaseSnapshot.createSnapshot()) {
-        // Eagerly release the commitlog replay lock so that replay can resume.
-        lock.ifPresent(Lock::releaseSql);
-        lock = Optional.empty();
+    logger.atInfo().log(
+        "Comparing datastore export at %s and commitlog timestamp %s.",
+        mostRecentExport.exportDir(), latestCommitLogTime);
 
-        logger.atInfo().log(
-            "Starting comparison with export at %s and latestCommitLogTime at %s",
-            mostRecentExport.exportDir(), latestCommitLogTime);
+    setupPipeline(
+        pipeline,
+        Optional.ofNullable(options.getSqlSnapshotId()),
+        mostRecentExport,
+        latestCommitLogTime,
+        Optional.ofNullable(options.getComparisonStartTimestamp()).map(DateTime::parse));
 
-        setupPipeline(
-            pipeline,
-            Optional.of(databaseSnapshot.getSnapshotId()),
-            mostRecentExport,
-            latestCommitLogTime,
-            Optional.ofNullable(options.getComparisonStartTimestamp()).map(DateTime::parse));
-        State state = pipeline.run().waitUntilFinish();
-        if (!State.DONE.equals(state)) {
-          throw new IllegalStateException("Unexpected pipeline state: " + state);
-        }
-      }
-    } finally {
-      lock.ifPresent(Lock::releaseSql);
-    }
+    pipeline.run();
   }
 
   static void setupPipeline(
@@ -170,7 +127,7 @@ public class ValidateSqlPipeline {
           .apply("Combine from both snapshots: " + clazz.getSimpleName(), Flatten.pCollections())
           .apply(
               "Assign primary key to merged " + clazz.getSimpleName(),
-              WithKeys.of(ValidateSqlPipeline::getPrimaryKeyString).withKeyType(strings()))
+              WithKeys.of(ValidateDatabasePipeline::getPrimaryKeyString).withKeyType(strings()))
           .apply("Group by primary key " + clazz.getSimpleName(), GroupByKey.create())
           .apply("Compare " + clazz.getSimpleName(), ParDo.of(new CompareSqlEntity()));
     }
@@ -189,58 +146,12 @@ public class ValidateSqlPipeline {
     return sqlEntity.getPrimaryKeyString();
   }
 
-  private static Optional<Lock> acquireCommitLogReplayLock() {
-    Stopwatch stopwatch = Stopwatch.createStarted();
-    while (stopwatch.elapsed().minus(REPLAY_LOCK_ACQUIRE_TIMEOUT).isNegative()) {
-      Optional<Lock> lock = tryAcquireCommitLogReplayLock();
-      if (lock.isPresent()) {
-        return lock;
-      }
-      logger.atInfo().log("Failed to acquired CommitLog Replay lock. Will retry...");
-      try {
-        Thread.sleep(REPLAY_LOCK_ACQUIRE_DELAY.toMillis());
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new RuntimeException("Interrupted.");
-      }
-    }
-    return Optional.empty();
-  }
-
-  private static Optional<Lock> tryAcquireCommitLogReplayLock() {
-    return Lock.acquireSql(
-        COMMITLOG_REPLAY_LOCK_NAME,
-        null,
-        REPLAY_LOCK_LEASE_LENGTH,
-        getLockingRequestStatusChecker(),
-        false);
-  }
-
-  /**
-   * Returns a fake implementation of {@link RequestStatusChecker} that is required for lock
-   * acquisition. The default implementation is AppEngine-specific and is unusable on GCE.
-   */
-  private static RequestStatusChecker getLockingRequestStatusChecker() {
-    return new RequestStatusChecker() {
-      @Override
-      public String getLogId() {
-        return "ValidateSqlPipeline";
-      }
-
-      LatestDatastoreSnapshotFinder datastoreSnapshotFinder =
-          DaggerLatestDatastoreSnapshotFinder_LatestDatastoreSnapshotFinderFinderComponent.create()
-              .datastoreSnapshotInfoFinder();
-
-      @Override
-      public boolean isRunning(String requestLogId) {
-        return true;
-      }
-    };
-  }
-
   public static void main(String[] args) {
-    ValidateSqlPipelineOptions options =
-        PipelineOptionsFactory.fromArgs(args).withValidation().as(ValidateSqlPipelineOptions.class);
+    ValidateDatabasePipelineOptions options =
+        PipelineOptionsFactory.fromArgs(args)
+            .withValidation()
+            .as(ValidateDatabasePipelineOptions.class);
+    RegistryPipelineOptions.validateRegistryPipelineOptions(options);
 
     // Defensively set important options.
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ);
@@ -249,16 +160,10 @@ public class ValidateSqlPipeline {
     // Reuse Dataflow worker initialization code to set up JPA in the pipeline harness.
     new RegistryPipelineWorkerInitializer().beforeProcessing(options);
 
-    MigrationState state =
-        DatabaseMigrationStateSchedule.getValueAtTime(new SystemClock().nowUtc());
-    if (!state.getReplayDirection().equals(ReplayDirection.DATASTORE_TO_SQL)) {
-      throw new IllegalStateException("This pipeline is not designed for migration phase " + state);
-    }
-
     LatestDatastoreSnapshotFinder datastoreSnapshotFinder =
         DaggerLatestDatastoreSnapshotFinder_LatestDatastoreSnapshotFinderFinderComponent.create()
             .datastoreSnapshotInfoFinder();
 
-    new ValidateSqlPipeline(options, datastoreSnapshotFinder).run(Pipeline.create(options));
+    new ValidateDatabasePipeline(options, datastoreSnapshotFinder).run(Pipeline.create(options));
   }
 }
