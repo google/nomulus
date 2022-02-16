@@ -72,9 +72,6 @@ import org.mockito.Mockito;
  * that extension are also replayed. If AppEngineExtension is not used,
  * JpaTransactionManagerExtension must be, and this extension should be ordered _after_
  * JpaTransactionManagerExtension so that writes to SQL work.
- *
- * <p>If the "compare" flag is set in the constructor, this will also compare all touched objects in
- * both databases after performing the replay.
  */
 public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
 
@@ -128,7 +125,6 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
           .collect(toImmutableSet());
 
   FakeClock clock;
-  boolean compare;
   boolean replayed = false;
   boolean inOfyContext;
   InjectExtension injectExtension = new InjectExtension();
@@ -138,14 +134,13 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   boolean enableDatabaseCompare = true;
 
   private ReplayExtension(
-      FakeClock clock, boolean compare, @Nullable ReplicateToDatastoreAction sqlToDsReplicator) {
+      FakeClock clock, @Nullable ReplicateToDatastoreAction sqlToDsReplicator) {
     this.clock = clock;
-    this.compare = compare;
     this.sqlToDsReplicator = sqlToDsReplicator;
   }
 
   public static ReplayExtension createWithCompare(FakeClock clock) {
-    return new ReplayExtension(clock, true, null);
+    return new ReplayExtension(clock, null);
   }
 
   // This allows us to disable the replay tests from an environment variable in specific
@@ -168,7 +163,6 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     if (replayTestsEnabled()) {
       return new ReplayExtension(
           clock,
-          true,
           new ReplicateToDatastoreAction(
               clock, Mockito.mock(RequestStatusChecker.class), new FakeResponse()));
     } else {
@@ -263,34 +257,32 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     ImmutableMap<Key<?>, Object> changes = ReplayQueue.replay();
 
     // Compare JPA to OFY, if requested.
-    if (compare) {
-      for (ImmutableMap.Entry<Key<?>, Object> entry : changes.entrySet()) {
-        // Don't verify non-replicated types.
-        if (NON_REPLICATED_TYPES.contains(entry.getKey().getKind())) {
-          continue;
-        }
-
-        // Since the object may have changed in datastore by the time we're doing the replay, we
-        // have to compare the current value in SQL (which we just mutated) against the value that
-        // we originally would have persisted (that being the object in the entry).
-        VKey<?> vkey = VKey.from(entry.getKey());
-        jpaTm()
-            .transact(
-                () -> {
-                  Optional<?> jpaValue = jpaTm().loadByKeyIfPresent(vkey);
-                  if (entry.getValue().equals(TransactionInfo.Delete.SENTINEL)) {
-                    assertThat(jpaValue.isPresent()).isFalse();
-                  } else {
-                    ImmutableObject immutJpaObject = (ImmutableObject) jpaValue.get();
-                    assertAboutImmutableObjects().that(immutJpaObject).hasCorrectHashValue();
-                    assertAboutImmutableObjects()
-                        .that(immutJpaObject)
-                        .isEqualAcrossDatabases(
-                            (ImmutableObject)
-                                ((DatastoreEntity) entry.getValue()).toSqlEntity().get());
-                  }
-                });
+    for (ImmutableMap.Entry<Key<?>, Object> entry : changes.entrySet()) {
+      // Don't verify non-replicated types.
+      if (NON_REPLICATED_TYPES.contains(entry.getKey().getKind())) {
+        continue;
       }
+
+      // Since the object may have changed in datastore by the time we're doing the replay, we
+      // have to compare the current value in SQL (which we just mutated) against the value that
+      // we originally would have persisted (that being the object in the entry).
+      VKey<?> vkey = VKey.from(entry.getKey());
+      jpaTm()
+          .transact(
+              () -> {
+                Optional<?> jpaValue = jpaTm().loadByKeyIfPresent(vkey);
+                if (entry.getValue().equals(TransactionInfo.Delete.SENTINEL)) {
+                  assertThat(jpaValue.isPresent()).isFalse();
+                } else {
+                  ImmutableObject immutJpaObject = (ImmutableObject) jpaValue.get();
+                  assertAboutImmutableObjects().that(immutJpaObject).hasCorrectHashValue();
+                  assertAboutImmutableObjects()
+                      .that(immutJpaObject)
+                      .isEqualAcrossDatabases(
+                          (ImmutableObject)
+                              ((DatastoreEntity) entry.getValue()).toSqlEntity().get());
+                }
+              });
     }
   }
 
@@ -304,9 +296,7 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
       transactionBatch = sqlToDsReplicator.getTransactionBatchAtSnapshot();
       for (TransactionEntity txn : transactionBatch) {
         ReplicateToDatastoreAction.applyTransaction(txn);
-        if (compare) {
-          ofyTm().transact(() -> compareSqlTransaction(txn));
-        }
+        ofyTm().transact(() -> compareSqlTransaction(txn));
         clock.advanceOneMilli();
       }
     } while (!transactionBatch.isEmpty());
