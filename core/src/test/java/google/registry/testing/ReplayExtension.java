@@ -414,7 +414,8 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
       }
     }
 
-    // Report any objects that
+    // Report any objects in the SQL set that we didn't remove while iterating over the Datastore
+    // objects.
     if (!sqlEntities.isEmpty()) {
       for (Object item : sqlEntities.values()) {
         logger.atSevere().log(
