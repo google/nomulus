@@ -133,8 +133,7 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   boolean enableDomainTimestampChecks;
   boolean enableDatabaseCompare = true;
 
-  private ReplayExtension(
-      FakeClock clock, @Nullable ReplicateToDatastoreAction sqlToDsReplicator) {
+  private ReplayExtension(FakeClock clock, @Nullable ReplicateToDatastoreAction sqlToDsReplicator) {
     this.clock = clock;
     this.sqlToDsReplicator = sqlToDsReplicator;
   }
