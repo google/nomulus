@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
+import java.io.ByteArrayInputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SignatureException;
@@ -44,19 +45,22 @@ class TmchCrlActionTest extends TmchActionTestCase {
   @Test
   void testSuccess() throws Exception {
     clock.setTo(DateTime.parse("2013-07-24TZ"));
-    when(httpResponse.getContent()).thenReturn(
-        readResourceBytes(TmchCertificateAuthority.class, "icann-tmch.crl").read());
+    when(httpUrlConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                readResourceBytes(TmchCertificateAuthority.class, "icann-tmch.crl").read()));
     newTmchCrlAction(TmchCaMode.PRODUCTION).run();
-    verify(httpResponse).getContent();
-    verify(fetchService).fetch(httpRequest.capture());
-    assertThat(httpRequest.getValue().getURL().toString()).isEqualTo("http://sloth.lol/tmch.crl");
+    verify(httpUrlConnection).getInputStream();
+    assertThat(connectedUrls).containsExactly(new URL("http://sloth.lol/tmch.crl"));
   }
 
   @Test
   void testFailure_crlTooOld() throws Exception {
     clock.setTo(DateTime.parse("2020-01-01TZ"));
-    when(httpResponse.getContent())
-        .thenReturn(loadBytes(TmchCrlActionTest.class, "icann-tmch-pilot-old.crl").read());
+    when(httpUrlConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                loadBytes(TmchCrlActionTest.class, "icann-tmch-pilot-old.crl").read()));
     TmchCrlAction action = newTmchCrlAction(TmchCaMode.PILOT);
     Exception e = assertThrows(Exception.class, action::run);
     assertThat(e).hasCauseThat().isInstanceOf(CRLException.class);
@@ -69,8 +73,10 @@ class TmchCrlActionTest extends TmchActionTestCase {
   @Test
   void testFailure_crlNotSignedByRoot() throws Exception {
     clock.setTo(DateTime.parse("2013-07-24TZ"));
-    when(httpResponse.getContent())
-        .thenReturn(readResourceBytes(TmchCertificateAuthority.class, "icann-tmch.crl").read());
+    when(httpUrlConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                readResourceBytes(TmchCertificateAuthority.class, "icann-tmch.crl").read()));
     Exception e = assertThrows(Exception.class, newTmchCrlAction(TmchCaMode.PILOT)::run);
     assertThat(e).hasCauseThat().isInstanceOf(SignatureException.class);
     assertThat(e).hasCauseThat().hasMessageThat().isEqualTo("Signature does not match.");
@@ -79,8 +85,10 @@ class TmchCrlActionTest extends TmchActionTestCase {
   @Test
   void testFailure_crlNotYetValid() throws Exception {
     clock.setTo(DateTime.parse("1984-01-01TZ"));
-    when(httpResponse.getContent()).thenReturn(
-        readResourceBytes(TmchCertificateAuthority.class, "icann-tmch-pilot.crl").read());
+    when(httpUrlConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                readResourceBytes(TmchCertificateAuthority.class, "icann-tmch-pilot.crl").read()));
     Exception e = assertThrows(Exception.class, newTmchCrlAction(TmchCaMode.PILOT)::run);
     assertThat(e).hasCauseThat().isInstanceOf(CertificateNotYetValidException.class);
   }

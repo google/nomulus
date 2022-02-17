@@ -14,15 +14,11 @@
 
 package google.registry.tmch;
 
-import static com.google.appengine.api.urlfetch.FetchOptions.Builder.validateCertificate;
-import static com.google.appengine.api.urlfetch.HTTPMethod.GET;
+import static google.registry.request.UrlConnectionUtils.getResponseBytes;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.appengine.api.urlfetch.HTTPRequest;
-import com.google.appengine.api.urlfetch.HTTPResponse;
-import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteSource;
@@ -32,9 +28,11 @@ import google.registry.request.HttpException.ConflictException;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.Response;
+import google.registry.request.UrlConnectionService;
 import google.registry.request.auth.Auth;
-import google.registry.util.UrlFetchException;
+import google.registry.util.UrlConnectionException;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map.Entry;
 import javax.inject.Inject;
@@ -68,7 +66,8 @@ public final class NordnVerifyAction implements Runnable {
 
   @Inject LordnRequestInitializer lordnRequestInitializer;
   @Inject Response response;
-  @Inject URLFetchService fetchService;
+  @Inject UrlConnectionService urlConnectionService;
+
   @Inject @Header(URL_HEADER) URL url;
   @Inject @Header(HEADER_ACTION_LOG_ID) String actionLogId;
   @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
@@ -96,51 +95,49 @@ public final class NordnVerifyAction implements Runnable {
   @VisibleForTesting
   LordnLog verify() throws IOException {
     logger.atInfo().log("LORDN verify task %s: Sending request to URL %s", actionLogId, url);
-    HTTPRequest req = new HTTPRequest(url, GET, validateCertificate().setDeadline(60d));
-    lordnRequestInitializer.initialize(req, tld);
-    HTTPResponse rsp;
+    HttpURLConnection connection = urlConnectionService.createConnection(url);
+    lordnRequestInitializer.initialize(connection, tld);
     try {
-      rsp = fetchService.fetch(req);
-    } catch (IOException e) {
-      throw new IOException(
-          String.format("Error connecting to MarksDB at URL %s", url), e);
-    }
-    logger.atInfo().log(
-        "LORDN verify task %s response: HTTP response code %d, response data: %s",
-        actionLogId, rsp.getResponseCode(), rsp.getContent());
-    if (rsp.getResponseCode() == SC_NO_CONTENT) {
-      // Send a 400+ status code so App Engine will retry the task.
-      throw new ConflictException("Not ready");
-    }
-    if (rsp.getResponseCode() != SC_OK) {
-      throw new UrlFetchException(
-          String.format("LORDN verify task %s: Failed to verify LORDN upload to MarksDB.",
-              actionLogId),
-          req, rsp);
-    }
-    LordnLog log =
-        LordnLog.parse(ByteSource.wrap(rsp.getContent()).asCharSource(UTF_8).readLines());
-    if (log.getStatus() == LordnLog.Status.ACCEPTED) {
-      logger.atInfo().log("LORDN verify task %s: Upload accepted.", actionLogId);
-    } else {
-      logger.atSevere().log(
-          "LORDN verify task %s: Upload rejected with reason: %s", actionLogId, log);
-    }
-    for (Entry<String, LordnLog.Result> result : log) {
-      switch (result.getValue().getOutcome()) {
-        case OK:
-          break;
-        case WARNING:
-          // fall through
-        case ERROR:
-          logger.atWarning().log(result.toString());
-          break;
-        default:
-          logger.atWarning().log(
-              "LORDN verify task %s: Unexpected outcome: %s", actionLogId, result);
-          break;
+      int responseCode = connection.getResponseCode();
+      logger.atInfo().log(
+          "LORDN verify task %s response: HTTP response code %d", actionLogId, responseCode);
+      if (responseCode == SC_NO_CONTENT) {
+        // Send a 400+ status code so App Engine will retry the task.
+        throw new ConflictException("Not ready");
       }
+      if (responseCode != SC_OK) {
+        throw new UrlConnectionException(
+            String.format(
+                "LORDN verify task %s: Failed to verify LORDN upload to MarksDB.", actionLogId),
+            connection);
+      }
+      LordnLog log =
+          LordnLog.parse(
+              ByteSource.wrap(getResponseBytes(connection)).asCharSource(UTF_8).readLines());
+      if (log.getStatus() == LordnLog.Status.ACCEPTED) {
+        logger.atInfo().log("LORDN verify task %s: Upload accepted.", actionLogId);
+      } else {
+        logger.atSevere().log(
+            "LORDN verify task %s: Upload rejected with reason: %s", actionLogId, log);
+      }
+      for (Entry<String, LordnLog.Result> result : log) {
+        switch (result.getValue().getOutcome()) {
+          case OK:
+            break;
+          case WARNING:
+            // fall through
+          case ERROR:
+            logger.atWarning().log(result.toString());
+            break;
+          default:
+            logger.atWarning().log(
+                "LORDN verify task %s: Unexpected outcome: %s", actionLogId, result);
+            break;
+        }
+      }
+      return log;
+    } catch (IOException e) {
+      throw new IOException(String.format("Error connecting to MarksDB at URL %s", url), e);
     }
-    return log;
   }
 }
