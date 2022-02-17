@@ -46,4 +46,10 @@ public interface ValidateDatabasePipelineOptions extends RegistryPipelineOptions
   String getComparisonStartTimestamp();
 
   void setComparisonStartTimestamp(String comparisonStartTimestamp);
+
+  @Description("The GCS bucket where discrepancies found during comparison should be logged.")
+  @Nullable
+  String getDiffOutputGcsBucket();
+
+  void setDiffOutputGcsBucket(String gcsBucket);
 }

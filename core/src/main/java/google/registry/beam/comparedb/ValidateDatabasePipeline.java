@@ -18,6 +18,7 @@ import static com.google.common.base.Verify.verify;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.common.flogger.FluentLogger;
 import google.registry.beam.common.RegistryPipelineOptions;
 import google.registry.beam.common.RegistryPipelineWorkerInitializer;
@@ -29,10 +30,12 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.replay.SqlEntity;
 import google.registry.persistence.PersistenceModule.JpaTransactionManagerType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
+import google.registry.util.SystemClock;
 import java.io.Serializable;
 import java.util.Optional;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.coders.SerializableCoder;
+import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.Flatten;
 import org.apache.beam.sdk.transforms.GroupByKey;
@@ -77,12 +80,22 @@ public class ValidateDatabasePipeline {
         "Comparing datastore export at %s and commitlog timestamp %s.",
         mostRecentExport.exportDir(), latestCommitLogTime);
 
+    Optional<String> outputPath =
+        Optional.ofNullable(options.getDiffOutputGcsBucket())
+            .map(
+                bucket ->
+                    String.format(
+                        "gs://%s/validate_database/%s/diffs.txt",
+                        bucket, new SystemClock().nowUtc()));
+    outputPath.ifPresent(path -> logger.atInfo().log("Discrepancies will be logged to %s", path));
+
     setupPipeline(
         pipeline,
         Optional.ofNullable(options.getSqlSnapshotId()),
         mostRecentExport,
         latestCommitLogTime,
-        Optional.ofNullable(options.getComparisonStartTimestamp()).map(DateTime::parse));
+        Optional.ofNullable(options.getComparisonStartTimestamp()).map(DateTime::parse),
+        outputPath);
 
     pipeline.run();
   }
@@ -92,7 +105,8 @@ public class ValidateDatabasePipeline {
       Optional<String> sqlSnapshotId,
       DatastoreSnapshotInfo mostRecentExport,
       DateTime latestCommitLogTime,
-      Optional<DateTime> compareStartTime) {
+      Optional<DateTime> compareStartTime,
+      Optional<String> diffOutputPath) {
     pipeline
         .getCoderRegistry()
         .registerCoderForClass(SqlEntity.class, SerializableCoder.of(Serializable.class));
@@ -117,19 +131,41 @@ public class ValidateDatabasePipeline {
         datastoreSnapshot.getAll().keySet().equals(cloudSqlSnapshot.getAll().keySet()),
         "Expecting the same set of types in both snapshots.");
 
+    PCollectionList<String> diffLogs = PCollectionList.empty(pipeline);
+
     for (Class<? extends SqlEntity> clazz : SqlSnapshots.ALL_SQL_ENTITIES) {
       TupleTag<SqlEntity> tag = ValidateSqlUtils.createSqlEntityTupleTag(clazz);
       verify(
           datastoreSnapshot.has(tag), "Missing %s in Datastore snapshot.", clazz.getSimpleName());
       verify(cloudSqlSnapshot.has(tag), "Missing %s in Cloud SQL snapshot.", clazz.getSimpleName());
-      PCollectionList.of(datastoreSnapshot.get(tag))
-          .and(cloudSqlSnapshot.get(tag))
-          .apply("Combine from both snapshots: " + clazz.getSimpleName(), Flatten.pCollections())
+      diffLogs =
+          diffLogs.and(
+              PCollectionList.of(datastoreSnapshot.get(tag))
+                  .and(cloudSqlSnapshot.get(tag))
+                  .apply(
+                      "Combine from both snapshots: " + clazz.getSimpleName(),
+                      Flatten.pCollections())
+                  .apply(
+                      "Assign primary key to merged " + clazz.getSimpleName(),
+                      WithKeys.of(ValidateDatabasePipeline::getPrimaryKeyString)
+                          .withKeyType(strings()))
+                  .apply("Group by primary key " + clazz.getSimpleName(), GroupByKey.create())
+                  .apply("Compare " + clazz.getSimpleName(), ParDo.of(new CompareSqlEntity())));
+    }
+    if (diffOutputPath.isPresent()) {
+      diffLogs
+          .apply("Gather diff logs", Flatten.pCollections())
           .apply(
-              "Assign primary key to merged " + clazz.getSimpleName(),
-              WithKeys.of(ValidateDatabasePipeline::getPrimaryKeyString).withKeyType(strings()))
-          .apply("Group by primary key " + clazz.getSimpleName(), GroupByKey.create())
-          .apply("Compare " + clazz.getSimpleName(), ParDo.of(new CompareSqlEntity()));
+              "Output diffs",
+              TextIO.write()
+                  .to(diffOutputPath.get())
+                  /**
+                   * Output to a single file for ease of use since diffs should be few. If this
+                   * assumption turns out not to be false, user should abort the pipeline and
+                   * investigate why.
+                   */
+                  .withoutSharding()
+                  .withDelimiter((Strings.repeat("-", 80) + "\n").toCharArray()));
     }
   }
 
