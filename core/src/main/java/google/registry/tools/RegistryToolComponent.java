@@ -39,6 +39,7 @@ import google.registry.rde.RdeModule;
 import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.Jackson2Module;
 import google.registry.request.Modules.URLFetchServiceModule;
+import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.Modules.UrlFetchTransportModule;
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
@@ -79,6 +80,7 @@ import javax.inject.Singleton;
       RegistryToolDataflowModule.class,
       RequestFactoryModule.class,
       SecretManagerModule.class,
+      UrlConnectionServiceModule.class,
       URLFetchServiceModule.class,
       UrlFetchTransportModule.class,
       UserServiceModule.class,

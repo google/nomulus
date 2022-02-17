@@ -29,6 +29,7 @@ import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 import dagger.Module;
 import dagger.Provides;
+import java.net.URL;
 import javax.inject.Singleton;
 
 /** Dagger modules for App Engine services and other vendor classes. */
@@ -42,6 +43,15 @@ public final class Modules {
     @Provides
     static DatastoreService provideDatastoreService() {
       return datastoreService;
+    }
+  }
+
+  /** Dagger module for {@link UrlConnectionService}, injectable for testing. */
+  @Module
+  public static final class UrlConnectionServiceModule {
+    @Provides
+    static UrlConnectionService provideUrlConnectionService() {
+      return URL::openConnection;
     }
   }
 
