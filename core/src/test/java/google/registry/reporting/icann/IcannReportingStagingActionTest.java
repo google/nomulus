@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.protobuf.util.Timestamps;
 import google.registry.bigquery.BigqueryJobFailureException;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.request.HttpException.BadRequestException;

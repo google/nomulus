@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.net.MediaType;
-import com.google.protobuf.util.Timestamps;
 import google.registry.beam.BeamActionTestBase;
 import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.reporting.ReportingModule;
