@@ -86,7 +86,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
 
   // Store DomainContent instead of DomainBase so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
-  @Nullable DomainContent domainContent;
+  @DoNotCompare @Nullable DomainContent domainContent;
 
   @Id
   @Access(AccessType.PROPERTY)
@@ -105,6 +105,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   // We could have reused domainContent.nsHosts here, but Hibernate throws a weird exception after
   // we change to use a composite primary key.
   // TODO(b/166776754): Investigate if we can reuse domainContent.nsHosts for storing host keys.
+  @DoNotCompare
   @ElementCollection
   @JoinTable(
       name = "DomainHistoryHost",
@@ -118,6 +119,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   @Column(name = "host_repo_id")
   Set<VKey<HostResource>> nsHosts;
 
+  @DoNotCompare
   @OneToMany(
       cascade = {CascadeType.ALL},
       fetch = FetchType.EAGER,
@@ -137,6 +139,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   // HashSet rather than ImmutableSet so that Hibernate can fill them out lazily on request
   Set<DomainDsDataHistory> dsDataHistories = new HashSet<>();
 
+  @DoNotCompare
   @OneToMany(
       cascade = {CascadeType.ALL},
       fetch = FetchType.EAGER,

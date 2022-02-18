@@ -1112,7 +1112,16 @@ public class DomainFlowUtils {
         // Only cancel fields which are cancelable
         if (cancelableFields.contains(record.getReportField())) {
           int cancelledAmount = -1 * record.getReportAmount();
-          recordsBuilder.add(record.asBuilder().setReportAmount(cancelledAmount).build());
+          // NB: It's necessary to create a new DomainTransactionRecord from scratch so that we
+          // don't retain the ID of the previous record to cancel. If we keep the ID, Hibernate
+          // will remove that record from the DB entirely as the record will be re-parented on
+          // this DomainHistory being created now.
+          recordsBuilder.add(
+              DomainTransactionRecord.create(
+                  record.getTld(),
+                  record.getReportingTime(),
+                  record.getReportField(),
+                  cancelledAmount));
         }
       }
     }

@@ -100,17 +100,12 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   private static ImmutableSet<String> IGNORED_ENTITIES =
       Streams.concat(
               ImmutableSet.of(
-                  // These entities *should* be comparable, but this isn't working yet so exclude
-                  // them so we can tackle them independently.
+                  // These entities are @Embed-ded in Datastore
+                  "DelegationSignerData",
+                  "DomainDsDataHistory",
+                  "DomainTransactionRecord",
                   "GracePeriod",
                   "GracePeriodHistory",
-                  "HistoryEntry",
-                  "DomainHistory",
-                  "ContactHistory",
-                  "HostHistory",
-                  "DomainDsDataHistory",
-                  "DelegationSignerData",
-                  "DomainTransactionRecord",
 
                   // These entities are legitimately not comparable.
                   "ClaimsEntry",

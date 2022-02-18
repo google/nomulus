@@ -64,7 +64,7 @@ public class ContactHistory extends HistoryEntry implements SqlEntity, UnsafeSer
 
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
-  @Nullable ContactBase contactBase;
+  @DoNotCompare @Nullable ContactBase contactBase;
 
   @Id
   @Access(AccessType.PROPERTY)
