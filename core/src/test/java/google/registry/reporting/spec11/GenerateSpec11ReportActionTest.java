@@ -44,7 +44,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
       AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2018-06-11T12:23:56Z"));
-  private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+  private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
   private CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
   private GenerateSpec11ReportAction action;
 
