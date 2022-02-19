@@ -40,6 +40,7 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import com.google.common.truth.Truth8;
 import com.google.protobuf.Timestamp;
+import com.google.protobuf.util.Timestamps;
 import google.registry.model.ImmutableObject;
 import google.registry.util.CloudTasksUtils;
 import google.registry.util.Retrier;
@@ -60,6 +61,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
+import org.joda.time.DateTime;
 
 /**
  * Static utility functions for testing task queues.
@@ -92,13 +94,22 @@ public class CloudTasksHelper implements Serializable {
   private static final String PROJECT_ID = "test-project";
   private static final String LOCATION_ID = "test-location";
 
-  private final Retrier retrier = new Retrier(new FakeSleeper(new FakeClock()), 1);
   private final int instanceId = nextInstanceId.getAndIncrement();
-  private final CloudTasksUtils cloudTasksUtils =
-      new CloudTasksUtils(retrier, PROJECT_ID, LOCATION_ID, new FakeCloudTasksClient());
+  private final CloudTasksUtils cloudTasksUtils;
+
+  public CloudTasksHelper(FakeClock clock) {
+    this.cloudTasksUtils =
+        new CloudTasksUtils(
+            new Retrier(new FakeSleeper(clock), 1),
+            clock,
+            PROJECT_ID,
+            LOCATION_ID,
+            new FakeCloudTasksClient());
+    testTasks.put(instanceId, Multimaps.synchronizedListMultimap(LinkedListMultimap.create()));
+  }
 
   public CloudTasksHelper() {
-    testTasks.put(instanceId, Multimaps.synchronizedListMultimap(LinkedListMultimap.create()));
+    this(new FakeClock());
   }
 
   public CloudTasksUtils getTestCloudTasksUtils() {
@@ -300,6 +311,10 @@ public class CloudTasksHelper implements Serializable {
     public TaskMatcher scheduleTime(Timestamp scheduleTime) {
       expected.scheduleTime = scheduleTime;
       return this;
+    }
+
+    public TaskMatcher scheduleTime(DateTime scheduleTime) {
+      return scheduleTime(Timestamps.fromMillis(scheduleTime.getMillis()));
     }
 
     public TaskMatcher param(String key, String value) {

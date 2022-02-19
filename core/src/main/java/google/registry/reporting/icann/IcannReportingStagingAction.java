@@ -34,7 +34,6 @@ import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.util.Clock;
 import google.registry.util.CloudTasksUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
@@ -86,7 +85,6 @@ public final class IcannReportingStagingAction implements Runnable {
   @Inject @Config("gSuiteOutgoingEmailAddress") InternetAddress sender;
   @Inject @Config("alertRecipientEmailAddress") InternetAddress recipient;
   @Inject SendEmailService emailService;
-  @Inject Clock clock;
   @Inject CloudTasksUtils cloudTasksUtils;
 
   @Inject IcannReportingStagingAction() {}
@@ -123,11 +121,10 @@ public final class IcannReportingStagingAction implements Runnable {
             logger.atInfo().log("Enqueueing report upload.");
             cloudTasksUtils.enqueue(
                 CRON_QUEUE,
-                CloudTasksUtils.createPostTask(
+                cloudTasksUtils.createPostTaskWithDelay(
                     IcannReportingUploadAction.PATH,
                     Service.BACKEND.toString(),
                     null,
-                    clock,
                     Duration.standardMinutes(2)));
             return null;
           },

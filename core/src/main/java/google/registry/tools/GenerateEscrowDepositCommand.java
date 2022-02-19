@@ -133,7 +133,7 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
     }
     cloudTasksUtils.enqueue(
         RDE_REPORT_QUEUE,
-        CloudTasksUtils.createPostTask(
+        cloudTasksUtils.createPostTask(
             RdeStagingAction.PATH, Service.BACKEND.toString(), paramsBuilder.build()));
   }
 

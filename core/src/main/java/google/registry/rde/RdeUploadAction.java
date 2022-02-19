@@ -134,7 +134,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     }
     cloudTasksUtils.enqueue(
         RDE_REPORT_QUEUE,
-        CloudTasksUtils.createPostTask(
+        cloudTasksUtils.createPostTask(
             RdeReportAction.PATH, Service.BACKEND.getServiceId(), params));
   }
 

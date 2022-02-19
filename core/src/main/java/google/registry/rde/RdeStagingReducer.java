@@ -233,14 +233,14 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
               if (mode == RdeMode.FULL) {
                 cloudTasksUtils.enqueue(
                     "rde-upload",
-                    CloudTasksUtils.createPostTask(
+                    cloudTasksUtils.createPostTask(
                         RdeUploadAction.PATH,
                         Service.BACKEND.toString(),
                         ImmutableMultimap.of(RequestParameters.PARAM_TLD, tld)));
               } else {
                 cloudTasksUtils.enqueue(
                     "brda",
-                    CloudTasksUtils.createPostTask(
+                    cloudTasksUtils.createPostTask(
                         BrdaCopyAction.PATH,
                         Service.BACKEND.toString(),
                         ImmutableMultimap.of(

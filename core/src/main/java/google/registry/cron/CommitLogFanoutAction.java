@@ -20,7 +20,6 @@ import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
-import google.registry.util.Clock;
 import google.registry.util.CloudTasksUtils;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -35,7 +34,6 @@ public final class CommitLogFanoutAction implements Runnable {
 
   public static final String BUCKET_PARAM = "bucket";
 
-  @Inject Clock clock;
   @Inject CloudTasksUtils cloudTasksUtils;
 
   @Inject @Parameter("endpoint") String endpoint;
@@ -43,18 +41,15 @@ public final class CommitLogFanoutAction implements Runnable {
   @Inject @Parameter("jitterSeconds") Optional<Integer> jitterSeconds;
   @Inject CommitLogFanoutAction() {}
 
-
-
   @Override
   public void run() {
     for (int bucketId : CommitLogBucket.getBucketIds()) {
       cloudTasksUtils.enqueue(
           queue,
-          CloudTasksUtils.createPostTask(
+          cloudTasksUtils.createPostTaskWithJitter(
               endpoint,
               Service.BACKEND.toString(),
               ImmutableMultimap.of(BUCKET_PARAM, Integer.toString(bucketId)),
-              clock,
               jitterSeconds));
     }
   }

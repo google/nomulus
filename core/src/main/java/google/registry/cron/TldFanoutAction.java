@@ -45,7 +45,6 @@ import google.registry.request.ParameterMap;
 import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.util.Clock;
 import google.registry.util.CloudTasksUtils;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -98,7 +97,6 @@ public final class TldFanoutAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Inject Clock clock;
   @Inject CloudTasksUtils cloudTasksUtils;
   @Inject Response response;
   @Inject @Parameter(ENDPOINT_PARAM) String endpoint;
@@ -159,7 +157,7 @@ public final class TldFanoutAction implements Runnable {
       params = ArrayListMultimap.create(params);
       params.put(RequestParameters.PARAM_TLD, tld);
     }
-    return CloudTasksUtils.createPostTask(
-        endpoint, Service.BACKEND.toString(), params, clock, jitterSeconds);
+    return cloudTasksUtils.createPostTaskWithJitter(
+        endpoint, Service.BACKEND.toString(), params, jitterSeconds);
   }
 }

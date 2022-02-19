@@ -125,7 +125,7 @@ public class PublishInvoicesAction implements Runnable {
   private void enqueueCopyDetailReportsTask() {
     cloudTasksUtils.enqueue(
         BillingModule.CRON_QUEUE,
-        CloudTasksUtils.createPostTask(
+        cloudTasksUtils.createPostTask(
             CopyDetailReportsAction.PATH,
             Service.BACKEND.toString(),
             ImmutableMultimap.of(PARAM_YEAR_MONTH, yearMonth.toString())));

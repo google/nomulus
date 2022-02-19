@@ -641,7 +641,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       // there's an update besides the lastUpdateTime
       cloudTasksUtils.enqueue(
           SyncRegistrarsSheetAction.QUEUE,
-          CloudTasksUtils.createGetTask(
+          cloudTasksUtils.createGetTask(
               SyncRegistrarsSheetAction.PATH, Service.BACKEND.toString(), ImmutableMultimap.of()));
     }
     String environment = Ascii.toLowerCase(String.valueOf(RegistryEnvironment.get()));

@@ -334,7 +334,8 @@ public class LoadTestAction implements Runnable {
       tasks.add(
           Task.newBuilder()
               .setAppEngineHttpRequest(
-                  CloudTasksUtils.createPostTask(
+                  cloudTasksUtils
+                      .createPostTask(
                           "/_dr/epptool",
                           Service.TOOLS.toString(),
                           ImmutableMultimap.of(
