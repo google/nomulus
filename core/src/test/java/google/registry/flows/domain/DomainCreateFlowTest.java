@@ -553,6 +553,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .hasValue(HistoryEntry.createVKey(Key.create(historyEntry)));
   }
 
+  // DomainTransactionRecord is not propagated.
   @TestOfyAndSql
   void testSuccess_validAllocationToken_multiUse() throws Exception {
     setEppInput(

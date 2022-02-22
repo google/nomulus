@@ -1035,17 +1035,20 @@ public class DomainContent extends EppResource
 
     public B setGracePeriods(ImmutableSet<GracePeriod> gracePeriods) {
       getInstance().gracePeriods = gracePeriods;
+      getInstance().resetUpdateTimestamp();
       return thisCastToDerived();
     }
 
     public B addGracePeriod(GracePeriod gracePeriod) {
       getInstance().gracePeriods = union(getInstance().getGracePeriods(), gracePeriod);
+      getInstance().resetUpdateTimestamp();
       return thisCastToDerived();
     }
 
     public B removeGracePeriod(GracePeriod gracePeriod) {
       getInstance().gracePeriods =
           CollectionUtils.difference(getInstance().getGracePeriods(), gracePeriod);
+      getInstance().resetUpdateTimestamp();
       return thisCastToDerived();
     }
 
