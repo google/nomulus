@@ -66,7 +66,7 @@ public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerial
 
   // Store HostBase instead of HostResource so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
-  @Nullable HostBase hostBase;
+  @DoNotCompare @Nullable HostBase hostBase;
 
   @Id
   @Access(AccessType.PROPERTY)

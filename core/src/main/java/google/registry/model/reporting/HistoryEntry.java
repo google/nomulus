@@ -324,7 +324,7 @@ public class HistoryEntry extends ImmutableObject
     // Note: how we wish to treat this Hibernate setter depends on the current state of the object
     // and what's passed in. The key principle is that we wish to maintain the link between parent
     // and child objects, meaning that we should keep around whichever of the two sets (the
-    // parameter vs the class variable and clear/populate that as appropriate.
+    // parameter vs the class variable) and clear/populate that as appropriate.
     //
     // If the class variable is a PersistentSet and we overwrite it here, Hibernate will throw
     // an exception "A collection with cascade=”all-delete-orphan” was no longer referenced by the
@@ -539,7 +539,7 @@ public class HistoryEntry extends ImmutableObject
 
     public B setDomainTransactionRecords(
         ImmutableSet<DomainTransactionRecord> domainTransactionRecords) {
-      getInstance().domainTransactionRecords = domainTransactionRecords;
+      getInstance().setDomainTransactionRecords(domainTransactionRecords);
       return thisCastToDerived();
     }
   }
