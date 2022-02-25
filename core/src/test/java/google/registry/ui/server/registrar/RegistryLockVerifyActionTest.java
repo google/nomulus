@@ -33,7 +33,6 @@ import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 import com.google.common.collect.ImmutableMap;
-import google.registry.batch.AsyncTaskEnqueuerTest;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
@@ -47,13 +46,13 @@ import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.UserInfo;
 import google.registry.tools.DomainLockUtils;
-import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.StringGenerator;
 import google.registry.util.StringGenerator.Alphabets;
 import javax.servlet.http.HttpServletRequest;
@@ -86,6 +85,7 @@ final class RegistryLockVerifyActionTest {
   private DomainBase domain;
   private AuthResult authResult;
   private RegistryLockVerifyAction action;
+  private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(fakeClock);
 
   @BeforeEach
   void beforeEach() {
@@ -329,10 +329,7 @@ final class RegistryLockVerifyActionTest {
     RegistryLockVerifyAction action =
         new RegistryLockVerifyAction(
             new DomainLockUtils(
-                stringGenerator,
-                "adminreg",
-                AsyncTaskEnqueuerTest.createForTesting(
-                    mock(AppEngineServiceUtils.class), fakeClock, Duration.ZERO)),
+                stringGenerator, "adminreg", cloudTasksHelper.getTestCloudTasksUtils()),
             lockVerificationCode,
             isLock);
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));

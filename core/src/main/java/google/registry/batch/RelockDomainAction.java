@@ -88,7 +88,6 @@ public class RelockDomainAction implements Runnable {
   private final SendEmailService sendEmailService;
   private final DomainLockUtils domainLockUtils;
   private final Response response;
-  private final AsyncTaskEnqueuer asyncTaskEnqueuer;
 
   @Inject
   public RelockDomainAction(
@@ -99,8 +98,7 @@ public class RelockDomainAction implements Runnable {
       @Config("supportEmail") String supportEmail,
       SendEmailService sendEmailService,
       DomainLockUtils domainLockUtils,
-      Response response,
-      AsyncTaskEnqueuer asyncTaskEnqueuer) {
+      Response response) {
     this.oldUnlockRevisionId = oldUnlockRevisionId;
     this.previousAttempts = previousAttempts;
     this.alertRecipientAddress = alertRecipientAddress;
@@ -109,7 +107,6 @@ public class RelockDomainAction implements Runnable {
     this.sendEmailService = sendEmailService;
     this.domainLockUtils = domainLockUtils;
     this.response = response;
-    this.asyncTaskEnqueuer = asyncTaskEnqueuer;
   }
 
   @Override
@@ -245,8 +242,7 @@ public class RelockDomainAction implements Runnable {
       }
     }
     Duration timeBeforeRetry = previousAttempts < ATTEMPTS_BEFORE_SLOWDOWN ? TEN_MINUTES : ONE_HOUR;
-    asyncTaskEnqueuer.enqueueDomainRelock(
-        timeBeforeRetry, oldUnlockRevisionId, previousAttempts + 1);
+    domainLockUtils.enqueueDomainRelock(timeBeforeRetry, oldUnlockRevisionId, previousAttempts + 1);
   }
 
   private void sendSuccessEmail(RegistryLock oldLock) {

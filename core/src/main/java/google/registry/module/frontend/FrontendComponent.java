@@ -46,6 +46,7 @@ import javax.inject.Singleton;
 @Component(
     modules = {
       AuthModule.class,
+      CloudTasksUtilsModule.class,
       ConfigModule.class,
       ConsoleConfigModule.class,
       CredentialModule.class,

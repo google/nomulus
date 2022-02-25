@@ -15,7 +15,6 @@
 package google.registry.batch;
 
 import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
-import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
@@ -23,19 +22,16 @@ import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
-import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardHours;
 import static org.joda.time.Duration.standardSeconds;
-import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSortedSet;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.RegistryLock;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
@@ -141,60 +137,5 @@ public class AsyncTaskEnqueuerTest {
         contact.createVKey(), clock.nowUtc(), clock.nowUtc().plusDays(31));
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
     assertLogMessage(logHandler, Level.INFO, "Ignoring async re-save");
-  }
-
-  @Test
-  void testEnqueueRelock() {
-    RegistryLock lock =
-        saveRegistryLock(
-            new RegistryLock.Builder()
-                .setLockCompletionTime(clock.nowUtc())
-                .setUnlockRequestTime(clock.nowUtc())
-                .setUnlockCompletionTime(clock.nowUtc())
-                .isSuperuser(false)
-                .setDomainName("example.tld")
-                .setRepoId("repoId")
-                .setRelockDuration(standardHours(6))
-                .setRegistrarId("TheRegistrar")
-                .setRegistrarPocId("someone@example.com")
-                .setVerificationCode("hi")
-                .build());
-    asyncTaskEnqueuer.enqueueDomainRelock(lock.getRelockDuration().get(), lock.getRevisionId(), 0);
-    assertTasksEnqueued(
-        QUEUE_ASYNC_ACTIONS,
-        new TaskMatcher()
-            .url(RelockDomainAction.PATH)
-            .method("POST")
-            .header("Host", "backend.hostname.fake")
-            .param(
-                RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
-                String.valueOf(lock.getRevisionId()))
-            .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, "0")
-            .etaDelta(
-                standardHours(6).minus(standardSeconds(30)),
-                standardHours(6).plus(standardSeconds(30))));
-  }
-
-  @MockitoSettings(strictness = Strictness.LENIENT)
-  @Test
-  void testFailure_enqueueRelock_noDuration() {
-    RegistryLock lockWithoutDuration =
-        saveRegistryLock(
-            new RegistryLock.Builder()
-                .isSuperuser(false)
-                .setDomainName("example.tld")
-                .setRepoId("repoId")
-                .setRegistrarId("TheRegistrar")
-                .setRegistrarPocId("someone@example.com")
-                .setVerificationCode("hi")
-                .build());
-    assertThat(
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> asyncTaskEnqueuer.enqueueDomainRelock(lockWithoutDuration)))
-        .hasMessageThat()
-        .isEqualTo(
-            String.format(
-                "Lock with ID %s not configured for relock", lockWithoutDuration.getRevisionId()));
   }
 }
