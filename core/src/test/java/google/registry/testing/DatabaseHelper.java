@@ -472,8 +472,10 @@ public class DatabaseHelper {
 
   public static void allowRegistrarAccess(String registrarId, String tld) {
     Registrar registrar = loadRegistrar(registrarId);
-    persistResource(
-        registrar.asBuilder().setAllowedTlds(union(registrar.getAllowedTlds(), tld)).build());
+    if (!registrar.getAllowedTlds().contains(tld)) {
+      persistResource(
+          registrar.asBuilder().setAllowedTlds(union(registrar.getAllowedTlds(), tld)).build());
+    }
   }
 
   public static void disallowRegistrarAccess(String registrarId, String tld) {

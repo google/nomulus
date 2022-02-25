@@ -825,7 +825,6 @@ public class Registrar extends ImmutableObject
 
     public Builder setAllowedTlds(Set<String> allowedTlds) {
       getInstance().allowedTlds = ImmutableSortedSet.copyOf(assertTldsExist(allowedTlds));
-      getInstance().lastUpdateTime = UpdateAutoTimestamp.create(null);
       return this;
     }
 
