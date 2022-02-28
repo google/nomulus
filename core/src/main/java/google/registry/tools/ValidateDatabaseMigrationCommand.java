@@ -32,6 +32,7 @@ import google.registry.util.Clock;
 import google.registry.util.RequestStatusChecker;
 import google.registry.util.Sleeper;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.UUID;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -52,7 +53,8 @@ abstract class ValidateDatabaseMigrationCommand
           + "--worker-machine-type=n2-standard-8 --num-workers=8 "
           + "--parameters registryEnvironment=%s "
           + "--parameters sqlSnapshotId=%s "
-          + "--parameters latestCommitLogTimestamp=%s ";
+          + "--parameters latestCommitLogTimestamp=%s "
+          + "--parameters diffOutputGcsBucket=%s ";
 
   // States indicating a job is not finished yet.
   static final ImmutableSet<String> DATAFLOW_JOB_RUNNING_STATES =
@@ -84,6 +86,13 @@ abstract class ValidateDatabaseMigrationCommand
               + " changed since this time.",
       converter = DateTimeParameter.class)
   DateTime comparisonStartTimestamp;
+
+  @Parameter(
+      names = {"-o", "--outputBucket"},
+      description =
+          "The GCS bucket where data discrepancies are logged. "
+              + "It defaults to ${projectId}-beam")
+  String outputBucket;
 
   @Inject Clock clock;
   @Inject Dataflow dataflow;
@@ -140,6 +149,10 @@ abstract class ValidateDatabaseMigrationCommand
         getDataflowJobStatus(jobId));
   }
 
+  String getOutputBucket() {
+    return Optional.ofNullable(outputBucket).orElse(projectId + "-beam");
+  }
+
   String getContainerSpecGcsPath() {
     return String.format(
         "%s/%s_metadata.json", stagingBucketUrl.replace("live", release), PIPELINE_NAME);
@@ -156,7 +169,8 @@ abstract class ValidateDatabaseMigrationCommand
             jobRegion,
             RegistryToolEnvironment.get().name(),
             snapshotId,
-            latestCommitLogTimestamp);
+            latestCommitLogTimestamp,
+            getOutputBucket());
     if (comparisonStartTimestamp == null) {
       return baseCommand;
     }
@@ -173,7 +187,8 @@ abstract class ValidateDatabaseMigrationCommand
               .put("numWorkers", "8")
               .put("sqlSnapshotId", sqlSnapshotId)
               .put("latestCommitLogTimestamp", latestCommitLogTimestamp)
-              .put("registryEnvironment", RegistryToolEnvironment.get().name());
+              .put("registryEnvironment", RegistryToolEnvironment.get().name())
+              .put("diffOutputGcsBucket", getOutputBucket());
       if (comparisonStartTimestamp != null) {
         paramsBuilder.put("comparisonStartTimestamp", comparisonStartTimestamp.toString());
       }

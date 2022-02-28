@@ -20,7 +20,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.flogger.FluentLogger;
 import google.registry.beam.initsql.Transforms;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.EppResource;
@@ -37,6 +36,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.util.DiffUtils;
 import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -54,7 +54,6 @@ import org.apache.beam.sdk.values.TupleTag;
 /** Helpers for use by {@link ValidateDatabasePipeline}. */
 @DeleteAfterMigration
 final class ValidateSqlUtils {
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private ValidateSqlUtils() {}
 
@@ -98,14 +97,12 @@ final class ValidateSqlUtils {
     return new TupleTag<SqlEntity>(actualType.getSimpleName()) {};
   }
 
-  static class CompareSqlEntity extends DoFn<KV<String, Iterable<SqlEntity>>, Void> {
+  static class CompareSqlEntity extends DoFn<KV<String, Iterable<SqlEntity>>, String> {
     private final HashMap<String, Counter> totalCounters = new HashMap<>();
     private final HashMap<String, Counter> missingCounters = new HashMap<>();
     private final HashMap<String, Counter> unequalCounters = new HashMap<>();
     private final HashMap<String, Counter> badEntityCounters = new HashMap<>();
     private final HashMap<String, Counter> duplicateEntityCounters = new HashMap<>();
-
-    private volatile boolean logPrinted = false;
 
     private String getCounterKey(Class<?> clazz) {
       return PollMessage.class.isAssignableFrom(clazz) ? "PollMessage" : clazz.getSimpleName();
@@ -124,39 +121,36 @@ final class ValidateSqlUtils {
           counterKey, Metrics.counter("CompareDB", "Duplicate Entities:" + counterKey));
     }
 
+    String duplicateEntityLog(String key, ImmutableList<SqlEntity> entities) {
+      return String.format("%s: %d entities.", key, entities.size());
+    }
+
+    String unmatchedEntityLog(String key, SqlEntity entry) {
+      // For a PollMessage only found in Datastore, key is not enough to query for it.
+      return String.format("Missing in one DB:\n%s", entry instanceof PollMessage ? entry : key);
+    }
+
     /**
      * A rudimentary debugging helper that prints the first pair of unequal entities in each worker.
      * This will be removed when we start exporting such entities to GCS.
      */
-    void logDiff(String key, Object entry0, Object entry1) {
-      if (logPrinted) {
-        return;
-      }
-      logPrinted = true;
+    String unEqualEntityLog(String key, SqlEntity entry0, SqlEntity entry1) {
       Map<String, Object> fields0 = ((ImmutableObject) entry0).toDiffableFieldMap();
       Map<String, Object> fields1 = ((ImmutableObject) entry1).toDiffableFieldMap();
-      StringBuilder sb = new StringBuilder();
-      fields0.forEach(
-          (field, value) -> {
-            if (fields1.containsKey(field)) {
-              if (!Objects.equals(value, fields1.get(field))) {
-                sb.append(field + " not match: " + value + " -> " + fields1.get(field) + "\n");
-              }
-            } else {
-              sb.append(field + "Not found in entity 2\n");
-            }
-          });
-      fields1.forEach(
-          (field, value) -> {
-            if (!fields0.containsKey(field)) {
-              sb.append(field + "Not found in entity 1\n");
-            }
-          });
-      logger.atWarning().log(key + "  " + sb.toString());
+      return key + "  " + DiffUtils.prettyPrintEntityDeepDiff(fields0, fields1);
+    }
+
+    String badEntitiesLog(String key, SqlEntity entry0, SqlEntity entry1) {
+      Map<String, Object> fields0 = ((ImmutableObject) entry0).toDiffableFieldMap();
+      Map<String, Object> fields1 = ((ImmutableObject) entry1).toDiffableFieldMap();
+      return String.format(
+          "Failed to parse one or both entities for key %s:\n%s\n",
+          key, DiffUtils.prettyPrintEntityDeepDiff(fields0, fields1));
     }
 
     @ProcessElement
-    public void processElement(@Element KV<String, Iterable<SqlEntity>> kv) {
+    public void processElement(
+        @Element KV<String, Iterable<SqlEntity>> kv, OutputReceiver<String> out) {
       ImmutableList<SqlEntity> entities = ImmutableList.copyOf(kv.getValue());
 
       verify(!entities.isEmpty(), "Can't happen: no value for key %s.", kv.getKey());
@@ -169,6 +163,7 @@ final class ValidateSqlUtils {
         // Duplicates may happen with Cursors if imported across projects. Its key in Datastore, the
         // id field, encodes the project name and is not fixed by the importing job.
         duplicateEntityCounters.get(counterKey).inc();
+        out.output(duplicateEntityLog(kv.getKey(), entities) + "\n");
         return;
       }
 
@@ -177,11 +172,7 @@ final class ValidateSqlUtils {
           return;
         }
         missingCounters.get(counterKey).inc();
-        // Temporary debugging help. See logDiff() above.
-        if (!logPrinted) {
-          logPrinted = true;
-          logger.atWarning().log("Unexpected single entity: %s", kv.getKey());
-        }
+        out.output(unmatchedEntityLog(kv.getKey(), entities.get(0)) + "\n");
         return;
       }
       SqlEntity entity0 = entities.get(0);
@@ -198,17 +189,14 @@ final class ValidateSqlUtils {
         entity0 = normalizeEntity(entity0);
         entity1 = normalizeEntity(entity1);
       } catch (Exception e) {
-        // Temporary debugging help. See logDiff() above.
-        if (!logPrinted) {
-          logPrinted = true;
-          badEntityCounters.get(counterKey).inc();
-        }
+        badEntityCounters.get(counterKey).inc();
+        out.output(badEntitiesLog(kv.getKey(), entity0, entity1));
         return;
       }
 
       if (!Objects.equals(entity0, entity1)) {
         unequalCounters.get(counterKey).inc();
-        logDiff(kv.getKey(), entities.get(0), entities.get(1));
+        out.output(unEqualEntityLog(kv.getKey(), entities.get(0), entities.get(1)));
       }
     }
   }

@@ -24,7 +24,7 @@
       "name": "sqlSnapshotId",
       "label": "The ID of an exported Cloud SQL (Postgresql) snapshot.",
       "helpText": "The ID of an exported Cloud SQL (Postgresql) snapshot.",
-      "is_optional": true
+      "is_optional": false
     },
     {
       "name": "latestCommitLogTimestamp",
@@ -36,6 +36,12 @@
       "name": "comparisonStartTimestamp",
       "label": "Only entities updated at or after this time are included for validation.",
       "helpText": "The earliest entity update time allowed for inclusion in validation, in ISO8601 format.",
+      "is_optional": true
+    },
+    {
+      "name": "diffOutputGcsBucket",
+      "label": "The GCS bucket where data discrepancies should be output to.",
+      "helpText": "The GCS bucket where data discrepancies should be output to.",
       "is_optional": true
     }
   ]
