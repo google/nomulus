@@ -157,7 +157,8 @@ public class ValidateDatabasePipeline {
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ);
     options.setJpaTransactionManagerType(JpaTransactionManagerType.BULK_QUERY);
 
-    // Reuse Dataflow worker initialization code to set up JPA in the pipeline harness.
+    // Set up JPA in the pipeline harness (the locally executed part of the main() method). Reuse
+    // code in RegistryPipelineWorkerInitializer, which only applies to pipeline worker VMs.
     new RegistryPipelineWorkerInitializer().beforeProcessing(options);
 
     LatestDatastoreSnapshotFinder datastoreSnapshotFinder =
