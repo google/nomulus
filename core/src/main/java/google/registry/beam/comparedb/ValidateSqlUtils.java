@@ -36,6 +36,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.util.DiffUtils;
 import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -44,7 +45,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
 import org.apache.beam.sdk.metrics.Counter;
 import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -137,31 +137,15 @@ final class ValidateSqlUtils {
     String unEqualEntityLog(String key, SqlEntity entry0, SqlEntity entry1) {
       Map<String, Object> fields0 = ((ImmutableObject) entry0).toDiffableFieldMap();
       Map<String, Object> fields1 = ((ImmutableObject) entry1).toDiffableFieldMap();
-      StringBuilder sb = new StringBuilder();
-      fields0.forEach(
-          (field, value) -> {
-            if (fields1.containsKey(field)) {
-              if (!Objects.equals(value, fields1.get(field))) {
-                sb.append(field + " not match: " + value + " -> " + fields1.get(field) + "\n");
-              }
-            } else {
-              sb.append(field + "Not found in entity 2\n");
-            }
-          });
-      fields1.forEach(
-          (field, value) -> {
-            if (!fields0.containsKey(field)) {
-              sb.append(field + "Not found in entity 1\n");
-            }
-          });
-      return key + "  " + sb.toString();
+      return key + "  " + DiffUtils.prettyPrintEntityDeepDiff(fields0, fields1);
     }
 
     String badEntitiesLog(String key, SqlEntity entry0, SqlEntity entry1) {
+      Map<String, Object> fields0 = ((ImmutableObject) entry0).toDiffableFieldMap();
+      Map<String, Object> fields1 = ((ImmutableObject) entry1).toDiffableFieldMap();
       return String.format(
-          "Failed to parse one or both entities:\n%s\n%s\n",
-          Matcher.quoteReplacement(entry0.toString()).replaceAll("\n", "\n> "),
-          Matcher.quoteReplacement(entry1.toString()).replaceAll("\n", "\n< "));
+          "Failed to parse one or both entities for key %s:\n%s\n",
+          key, DiffUtils.prettyPrintEntityDeepDiff(fields0, fields1));
     }
 
     @ProcessElement
