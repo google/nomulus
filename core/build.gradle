@@ -707,10 +707,7 @@ createToolTask(
     'initSqlPipeline', 'google.registry.beam.initsql.InitSqlPipeline')
 
 createToolTask(
-    'validateSqlPipeline', 'google.registry.beam.comparedb.ValidateSqlPipeline')
-
-createToolTask(
-    'validateDatastorePipeline', 'google.registry.beam.comparedb.ValidateDatastorePipeline')
+    'validateDatabasePipeline', 'google.registry.beam.comparedb.ValidateDatabasePipeline')
 
 
 createToolTask(
@@ -797,15 +794,10 @@ if (environment == 'alpha') {
               mainClass: 'google.registry.beam.rde.RdePipeline',
               metaData : 'google/registry/beam/rde_pipeline_metadata.json'
           ],
-      validateDatastore  :
+      validateDatabase  :
           [
-              mainClass: 'google.registry.beam.comparedb.ValidateDatastorePipeline',
-              metaData: 'google/registry/beam/validate_datastore_pipeline_metadata.json'
-          ],
-      validateSql  :
-          [
-              mainClass: 'google.registry.beam.comparedb.ValidateSqlPipeline',
-              metaData: 'google/registry/beam/validate_sql_pipeline_metadata.json'
+              mainClass: 'google.registry.beam.comparedb.ValidateDatabasePipeline',
+              metaData: 'google/registry/beam/validate_database_pipeline_metadata.json'
           ],
   ]
   project.tasks.create("stageBeamPipelines") {
