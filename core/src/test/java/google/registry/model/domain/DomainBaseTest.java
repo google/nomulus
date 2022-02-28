@@ -75,6 +75,7 @@ public class DomainBaseTest extends EntityTestCase {
   private VKey<BillingEvent.OneTime> oneTimeBillKey;
   private VKey<BillingEvent.Recurring> recurringBillKey;
   private Key<HistoryEntry> historyEntryKey;
+  private VKey<ContactResource> contact1Key, contact2Key;
 
   @BeforeEach
   void setUp() {
@@ -88,14 +89,14 @@ public class DomainBaseTest extends EntityTestCase {
                     .setRepoId("1-COM")
                     .build())
             .createVKey();
-    VKey<ContactResource> contact1Key =
+    contact1Key =
         persistResource(
                 new ContactResource.Builder()
                     .setContactId("contact_id1")
                     .setRepoId("2-COM")
                     .build())
             .createVKey();
-    VKey<ContactResource> contact2Key =
+    contact2Key =
         persistResource(
                 new ContactResource.Builder()
                     .setContactId("contact_id2")
@@ -946,5 +947,62 @@ public class DomainBaseTest extends EntityTestCase {
       this.billingEventRecurring = billingEventRecurring;
       this.billingEventOneTime = billingEventOneTime;
     }
+  }
+
+  @Test
+  void testContactFields() {
+    VKey<ContactResource> contact3Key =
+        persistResource(
+                new ContactResource.Builder()
+                    .setContactId("contact_id3")
+                    .setRepoId("4-COM")
+                    .build())
+            .createVKey();
+    VKey<ContactResource> contact4Key =
+        persistResource(
+                new ContactResource.Builder()
+                    .setContactId("contact_id4")
+                    .setRepoId("5-COM")
+                    .build())
+            .createVKey();
+
+    // Set all of the contacts.
+    domain.setContactFields(
+        ImmutableSet.of(
+            DesignatedContact.create(Type.REGISTRANT, contact1Key),
+            DesignatedContact.create(Type.ADMIN, contact2Key),
+            DesignatedContact.create(Type.BILLING, contact3Key),
+            DesignatedContact.create(Type.TECH, contact4Key)),
+        true);
+    assertThat(domain.getRegistrant()).isEqualTo(contact1Key);
+    assertThat(domain.getAdminContact()).isEqualTo(contact2Key);
+    assertThat(domain.getBillingContact()).isEqualTo(contact3Key);
+    assertThat(domain.getTechContact()).isEqualTo(contact4Key);
+
+    // Make sure everything gets nulled out.
+    domain.setContactFields(ImmutableSet.of(), true);
+    assertThat(domain.getRegistrant()).isNull();
+    assertThat(domain.getAdminContact()).isNull();
+    assertThat(domain.getBillingContact()).isNull();
+    assertThat(domain.getTechContact()).isNull();
+
+    // Make sure that changes don't affect the registrant unless requested.
+    domain.setContactFields(
+        ImmutableSet.of(
+            DesignatedContact.create(Type.REGISTRANT, contact1Key),
+            DesignatedContact.create(Type.ADMIN, contact2Key),
+            DesignatedContact.create(Type.BILLING, contact3Key),
+            DesignatedContact.create(Type.TECH, contact4Key)),
+        false);
+    assertThat(domain.getRegistrant()).isNull();
+    assertThat(domain.getAdminContact()).isEqualTo(contact2Key);
+    assertThat(domain.getBillingContact()).isEqualTo(contact3Key);
+    assertThat(domain.getTechContact()).isEqualTo(contact4Key);
+    domain = domain.asBuilder().setRegistrant(contact1Key).build();
+    domain.setContactFields(ImmutableSet.of(), false);
+    assertThat(domain.getRegistrant()).isEqualTo(contact1Key);
+    assertThat(domain.getAdminContact()).isNull();
+    assertThat(domain.getBillingContact()).isNull();
+    assertThat(domain.getTechContact()).isNull();
   }
 }

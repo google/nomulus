@@ -779,6 +779,10 @@ public class DomainContent extends EppResource
    */
   void setContactFields(Set<DesignatedContact> contacts, boolean includeRegistrant) {
     // Set the individual contact fields.
+    billingContact = techContact = adminContact = null;
+    if (includeRegistrant) {
+      registrantContact = null;
+    }
     for (DesignatedContact contact : contacts) {
       switch (contact.getType()) {
         case BILLING:
