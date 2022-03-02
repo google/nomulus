@@ -15,8 +15,6 @@
 package google.registry.flows;
 
 import static org.joda.time.Duration.standardSeconds;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import dagger.Component;
 import dagger.Module;
@@ -33,12 +31,12 @@ import google.registry.flows.domain.DomainFlowTmchUtils;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.request.RequestScope;
 import google.registry.request.lock.LockHandler;
+import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeSleeper;
 import google.registry.tmch.TmchCertificateAuthority;
 import google.registry.tmch.TmchXmlSignature;
-import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.Clock;
 import google.registry.util.Sleeper;
 import javax.inject.Singleton;
@@ -60,35 +58,32 @@ public interface EppTestComponent {
     private EppMetric.Builder metricBuilder;
     private FakeClock clock;
     private FakeLockHandler lockHandler;
-    private AppEngineServiceUtils appEngineServiceUtils;
     private Sleeper sleeper;
+    private CloudTasksHelper cloudTasksHelper;
 
-    public static FakesAndMocksModule create() {
-      FakeClock clock = new FakeClock();
-      return create(clock, EppMetric.builderForRequest(clock));
+    public CloudTasksHelper getCloudTasksHelper() {
+      return cloudTasksHelper;
     }
 
-    public static FakesAndMocksModule create(FakeClock clock, EppMetric.Builder metricBuilder) {
-      return create(
-          clock,
-          metricBuilder,
-          new TmchXmlSignature(new TmchCertificateAuthority(TmchCaMode.PILOT, clock)));
+    public EppMetric.Builder getMetricBuilder() {
+      return metricBuilder;
     }
 
-    public static FakesAndMocksModule create(
-        FakeClock clock, EppMetric.Builder eppMetricBuilder, TmchXmlSignature tmchXmlSignature) {
+    public static FakesAndMocksModule create(FakeClock clock) {
       FakesAndMocksModule instance = new FakesAndMocksModule();
-      AppEngineServiceUtils appEngineServiceUtils = mock(AppEngineServiceUtils.class);
-      when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
+      CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
       instance.asyncTaskEnqueuer =
-          AsyncTaskEnqueuerTest.createForTesting(appEngineServiceUtils, clock, standardSeconds(90));
+          AsyncTaskEnqueuerTest.createForTesting(
+              cloudTasksHelper.getTestCloudTasksUtils(), clock, standardSeconds(90));
       instance.clock = clock;
-      instance.domainFlowTmchUtils = new DomainFlowTmchUtils(tmchXmlSignature);
-      instance.sleeper = new FakeSleeper(clock);
+      instance.domainFlowTmchUtils =
+          new DomainFlowTmchUtils(
+              new TmchXmlSignature(new TmchCertificateAuthority(TmchCaMode.PILOT, clock)));
+      instance.sleeper = new FakeSleeper(instance.clock);
       instance.dnsQueue = DnsQueue.create();
-      instance.metricBuilder = eppMetricBuilder;
-      instance.appEngineServiceUtils = appEngineServiceUtils;
+      instance.metricBuilder = EppMetric.builderForRequest(clock);
       instance.lockHandler = new FakeLockHandler(true);
+      instance.cloudTasksHelper = cloudTasksHelper;
       return instance;
     }
 
@@ -125,11 +120,6 @@ public interface EppTestComponent {
     @Provides
     EppMetric.Builder provideMetrics() {
       return metricBuilder;
-    }
-
-    @Provides
-    AppEngineServiceUtils provideAppEngineServiceUtils() {
-      return appEngineServiceUtils;
     }
 
     @Provides

@@ -33,7 +33,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
-import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
 import google.registry.flows.picker.FlowPicker;
 import google.registry.model.billing.BillingEvent;
@@ -45,14 +44,13 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestDataHelper;
-import google.registry.tmch.TmchCertificateAuthority;
-import google.registry.tmch.TmchXmlSignature;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import google.registry.xml.ValidationMode;
 import java.util.Arrays;
@@ -88,7 +86,7 @@ public abstract class FlowTestCase<F extends Flow> {
   protected FakeClock clock = new FakeClock(DateTime.now(UTC));
   protected TransportCredentials credentials = new PasswordOnlyTransportCredentials();
   protected EppRequestSource eppRequestSource = EppRequestSource.UNIT_TEST;
-  private TmchXmlSignature testTmchXmlSignature = null;
+  protected CloudTasksHelper cloudTasksHelper;
 
   private EppMetric.Builder eppMetricBuilder;
 
@@ -229,13 +227,12 @@ public abstract class FlowTestCase<F extends Flow> {
     // Assert that the xml triggers the flow we expect.
     assertThat(FlowPicker.getFlowClass(eppLoader.getEpp()))
         .isEqualTo(new TypeInstantiator<F>(getClass()){}.getExactType());
+
+    FakesAndMocksModule fakesAndMocksModule = FakesAndMocksModule.create(clock);
+    cloudTasksHelper = fakesAndMocksModule.getCloudTasksHelper();
     // Run the flow.
-    TmchXmlSignature tmchXmlSignature =
-        testTmchXmlSignature != null
-            ? testTmchXmlSignature
-            : new TmchXmlSignature(new TmchCertificateAuthority(tmchCaMode, clock));
     return DaggerEppTestComponent.builder()
-        .fakesAndMocksModule(FakesAndMocksModule.create(clock, eppMetricBuilder, tmchXmlSignature))
+        .fakesAndMocksModule(fakesAndMocksModule)
         .build()
         .startRequest()
         .flowComponentBuilder()
@@ -299,8 +296,6 @@ public abstract class FlowTestCase<F extends Flow> {
     tm().clearSessionCache();
     return output;
   }
-
-  private TmchCaMode tmchCaMode = TmchCaMode.PILOT;
 
   public EppOutput dryRunFlowAssertResponse(String xml, String... ignoredPaths) throws Exception {
     List<Object> beforeEntities = DatabaseHelper.loadAllEntities();

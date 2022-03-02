@@ -43,12 +43,11 @@ import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.HostResourceSubject.assertAboutHosts;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.joda.time.Duration.standardSeconds;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -106,10 +105,10 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import java.util.Map;
@@ -514,18 +513,16 @@ class DomainTransferRequestFlowTest
     assertPollMessagesEmitted(expectedExpirationTime, implicitTransferTime);
     assertAboutDomainAfterAutomaticTransfer(
         expectedExpirationTime, implicitTransferTime, Period.create(1, Unit.YEARS));
-    assertTasksEnqueued(
+    cloudTasksHelper.assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
             .url(ResaveEntityAction.PATH)
-            .method("POST")
-            .header("Host", "backend.hostname.fake")
+            .method(HttpMethod.POST)
+            .service("backend")
             .header("content-type", "application/x-www-form-urlencoded")
             .param(PARAM_RESOURCE_KEY, domain.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, clock.nowUtc().toString())
-            .etaDelta(
-                registry.getAutomaticTransferLength().minus(standardSeconds(30)),
-                registry.getAutomaticTransferLength().plus(standardSeconds(30))));
+            .scheduleTime(clock.nowUtc().plus(registry.getAutomaticTransferLength())));
   }
 
   private void doSuccessfulTest(

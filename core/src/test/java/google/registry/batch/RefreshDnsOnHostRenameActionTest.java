@@ -49,6 +49,7 @@ import google.registry.batch.RefreshDnsOnHostRenameAction.RefreshDnsOnHostRename
 import google.registry.dns.DnsQueue;
 import google.registry.model.host.HostResource;
 import google.registry.model.server.Lock;
+import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -59,7 +60,6 @@ import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
 import google.registry.testing.mapreduce.MapreduceTestCase;
-import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.RequestStatusChecker;
 import google.registry.util.Retrier;
 import google.registry.util.Sleeper;
@@ -89,7 +89,7 @@ public class RefreshDnsOnHostRenameActionTest
     createTld("tld");
     enqueuer =
         AsyncTaskEnqueuerTest.createForTesting(
-            mock(AppEngineServiceUtils.class), clock, Duration.ZERO);
+            new CloudTasksHelper(clock).getTestCloudTasksUtils(), clock, Duration.ZERO);
     AsyncTaskMetrics asyncTaskMetricsMock = mock(AsyncTaskMetrics.class);
     action = new RefreshDnsOnHostRenameAction();
     action.asyncTaskMetrics = asyncTaskMetricsMock;

@@ -22,14 +22,17 @@ import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.api.taskqueue.TaskOptions.Method;
 import com.google.appengine.api.taskqueue.TransientFailureException;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Multimap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
-import google.registry.util.AppEngineServiceUtils;
+import google.registry.request.Action.Service;
+import google.registry.util.CloudTasksUtils;
 import google.registry.util.Retrier;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -58,25 +61,23 @@ public final class AsyncTaskEnqueuer {
   private static final Duration MAX_ASYNC_ETA = Duration.standardDays(30);
 
   private final Duration asyncDeleteDelay;
-  private final Queue asyncActionsPushQueue;
   private final Queue asyncDeletePullQueue;
   private final Queue asyncDnsRefreshPullQueue;
-  private final AppEngineServiceUtils appEngineServiceUtils;
   private final Retrier retrier;
+
+  private CloudTasksUtils cloudTasksUtils;
 
   @Inject
   public AsyncTaskEnqueuer(
-      @Named(QUEUE_ASYNC_ACTIONS) Queue asyncActionsPushQueue,
       @Named(QUEUE_ASYNC_DELETE) Queue asyncDeletePullQueue,
       @Named(QUEUE_ASYNC_HOST_RENAME) Queue asyncDnsRefreshPullQueue,
       @Config("asyncDeleteFlowMapreduceDelay") Duration asyncDeleteDelay,
-      AppEngineServiceUtils appEngineServiceUtils,
+      CloudTasksUtils cloudTasksUtils,
       Retrier retrier) {
-    this.asyncActionsPushQueue = asyncActionsPushQueue;
     this.asyncDeletePullQueue = asyncDeletePullQueue;
     this.asyncDnsRefreshPullQueue = asyncDnsRefreshPullQueue;
     this.asyncDeleteDelay = asyncDeleteDelay;
-    this.appEngineServiceUtils = appEngineServiceUtils;
+    this.cloudTasksUtils = cloudTasksUtils;
     this.retrier = retrier;
   }
 
@@ -102,19 +103,17 @@ public final class AsyncTaskEnqueuer {
           entityKey, firstResave, MAX_ASYNC_ETA);
       return;
     }
-    logger.atInfo().log("Enqueuing async re-save of %s to run at %s.", entityKey, whenToResave);
-    String backendHostname = appEngineServiceUtils.getServiceHostname("backend");
-    TaskOptions task =
-        TaskOptions.Builder.withUrl(ResaveEntityAction.PATH)
-            .method(Method.POST)
-            .header("Host", backendHostname)
-            .countdownMillis(etaDuration.getMillis())
-            .param(PARAM_RESOURCE_KEY, entityKey.stringify())
-            .param(PARAM_REQUESTED_TIME, now.toString());
+    Multimap<String, String> params = ArrayListMultimap.create();
+    params.put(PARAM_RESOURCE_KEY, entityKey.stringify());
+    params.put(PARAM_REQUESTED_TIME, now.toString());
     if (whenToResave.size() > 1) {
-      task.param(PARAM_RESAVE_TIMES, Joiner.on(',').join(whenToResave.tailSet(firstResave, false)));
+      params.put(PARAM_RESAVE_TIMES, Joiner.on(',').join(whenToResave.tailSet(firstResave, false)));
     }
-    addTaskToQueueWithRetry(asyncActionsPushQueue, task);
+    logger.atInfo().log("Enqueuing async re-save of %s to run at %s.", entityKey, whenToResave);
+    cloudTasksUtils.enqueue(
+        QUEUE_ASYNC_ACTIONS,
+        cloudTasksUtils.createPostTaskWithDelay(
+            ResaveEntityAction.PATH, Service.BACKEND.toString(), params, etaDuration));
   }
 
   /** Enqueues a task to asynchronously delete a contact or host, by key. */

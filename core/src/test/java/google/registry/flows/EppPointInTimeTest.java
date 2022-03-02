@@ -72,7 +72,7 @@ class EppPointInTimeTest {
     SessionMetadata sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
     sessionMetadata.setRegistrarId("TheRegistrar");
     DaggerEppTestComponent.builder()
-        .fakesAndMocksModule(FakesAndMocksModule.create(clock, EppMetric.builderForRequest(clock)))
+        .fakesAndMocksModule(FakesAndMocksModule.create(clock))
         .build()
         .startRequest()
         .flowComponentBuilder()

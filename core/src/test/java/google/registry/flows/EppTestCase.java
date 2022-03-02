@@ -224,12 +224,14 @@ public class EppTestCase {
     EppRequestHandler handler = new EppRequestHandler();
     FakeResponse response = new FakeResponse();
     handler.response = response;
-    eppMetricBuilder = EppMetric.builderForRequest(clock);
-    handler.eppController = DaggerEppTestComponent.builder()
-        .fakesAndMocksModule(FakesAndMocksModule.create(clock, eppMetricBuilder))
-        .build()
-        .startRequest()
-        .eppController();
+    FakesAndMocksModule fakesAndMocksModule = FakesAndMocksModule.create(clock);
+    eppMetricBuilder = fakesAndMocksModule.getMetricBuilder();
+    handler.eppController =
+        DaggerEppTestComponent.builder()
+            .fakesAndMocksModule(fakesAndMocksModule)
+            .build()
+            .startRequest()
+            .eppController();
     handler.executeEpp(
         sessionMetadata,
         credentials,

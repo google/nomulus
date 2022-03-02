@@ -54,14 +54,13 @@ import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.Duration.standardDays;
-import static org.joda.time.Duration.standardSeconds;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -102,10 +101,10 @@ import google.registry.model.tld.Registry.TldType;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import java.util.Map;
@@ -314,17 +313,17 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
     Duration when = standardDays(3);
-    assertTasksEnqueued(
+    cloudTasksHelper.assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
             .url(ResaveEntityAction.PATH)
-            .method("POST")
-            .header("Host", "backend.hostname.fake")
+            .method(HttpMethod.POST)
+            .service("backend")
             .header("content-type", "application/x-www-form-urlencoded")
             .param(PARAM_RESOURCE_KEY, domain.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, clock.nowUtc().toString())
             .param(PARAM_RESAVE_TIMES, clock.nowUtc().plusDays(5).toString())
-            .etaDelta(when.minus(standardSeconds(30)), when.plus(standardSeconds(30))));
+            .scheduleTime(clock.nowUtc().plus(when)));
   }
 
   @TestOfyAndSql

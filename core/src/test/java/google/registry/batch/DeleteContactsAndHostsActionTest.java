@@ -91,13 +91,13 @@ import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.mapreduce.MapreduceTestCase;
-import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.RequestStatusChecker;
 import google.registry.util.Retrier;
 import google.registry.util.Sleeper;
@@ -148,7 +148,7 @@ public class DeleteContactsAndHostsActionTest
     inject.setStaticField(Ofy.class, "clock", clock);
     enqueuer =
         AsyncTaskEnqueuerTest.createForTesting(
-            mock(AppEngineServiceUtils.class), clock, Duration.ZERO);
+            new CloudTasksHelper(clock).getTestCloudTasksUtils(), clock, Duration.ZERO);
     AsyncTaskMetrics asyncTaskMetricsMock = mock(AsyncTaskMetrics.class);
     action = new DeleteContactsAndHostsAction();
     action.asyncTaskMetrics = asyncTaskMetricsMock;

@@ -25,12 +25,10 @@ import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static org.joda.time.Duration.standardDays;
-import static org.joda.time.Duration.standardSeconds;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import google.registry.model.domain.DomainBase;
@@ -40,10 +38,11 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.ofy.Ofy;
 import google.registry.request.Response;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.util.AppEngineServiceUtils;
 import org.joda.time.DateTime;
@@ -71,13 +70,14 @@ public class ResaveEntityActionTest {
   @Mock private Response response;
   private final FakeClock clock = new FakeClock(DateTime.parse("2016-02-11T10:00:00Z"));
   private AsyncTaskEnqueuer asyncTaskEnqueuer;
+  private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
 
   @BeforeEach
   void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
-    when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     asyncTaskEnqueuer =
-        AsyncTaskEnqueuerTest.createForTesting(appEngineServiceUtils, clock, Duration.ZERO);
+        AsyncTaskEnqueuerTest.createForTesting(
+            cloudTasksHelper.getTestCloudTasksUtils(), clock, Duration.ZERO);
     createTld("tld");
   }
 
@@ -143,17 +143,15 @@ public class ResaveEntityActionTest {
     DomainBase resavedDomain = loadByEntity(domain);
     assertThat(resavedDomain.getGracePeriods()).isEmpty();
 
-    assertTasksEnqueued(
+    cloudTasksHelper.assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
             .url(ResaveEntityAction.PATH)
-            .method("POST")
-            .header("Host", "backend.hostname.fake")
+            .method(HttpMethod.POST)
+            .service("backend")
             .header("content-type", "application/x-www-form-urlencoded")
             .param(PARAM_RESOURCE_KEY, resavedDomain.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, requestedTime.toString())
-            .etaDelta(
-                standardDays(5).minus(standardSeconds(30)),
-                standardDays(5).plus(standardSeconds(30))));
+            .scheduleTime(clock.nowUtc().plus(standardDays(5))));
   }
 }

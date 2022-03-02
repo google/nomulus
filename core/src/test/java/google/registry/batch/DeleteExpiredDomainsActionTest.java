@@ -39,7 +39,6 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
@@ -78,8 +77,7 @@ class DeleteExpiredDomainsActionTest {
     createTld("tld");
     EppController eppController =
         DaggerEppTestComponent.builder()
-            .fakesAndMocksModule(
-                FakesAndMocksModule.create(clock, EppMetric.builderForRequest(clock)))
+            .fakesAndMocksModule(FakesAndMocksModule.create(clock))
             .build()
             .startRequest()
             .eppController();
