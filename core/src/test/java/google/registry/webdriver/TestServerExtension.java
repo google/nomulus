@@ -33,6 +33,7 @@ import google.registry.testing.UserInfo;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -52,6 +53,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * the {@link #runInAppEngineEnvironment(Callable)} method.
  */
 public final class TestServerExtension implements BeforeEachCallback, AfterEachCallback {
+
+  private static final Duration SERVER_STATUS_POLLING_INTERVAL = Duration.ofSeconds(5);
 
   private final ImmutableList<Fixture> fixtures;
   private final AppEngineExtension appEngineExtension;
@@ -107,8 +110,11 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     serverThread = new Thread(server);
     synchronized (this) {
       serverThread.start();
-      while (!server.isRunning) {
-        this.wait();
+      while (server.serverStatus.equals(ServerStatus.NOT_STARTED)) {
+        this.wait(SERVER_STATUS_POLLING_INTERVAL.toMillis());
+      }
+      if (server.serverStatus.equals(ServerStatus.FAILED)) {
+        throw new RuntimeException("TestServer failed to start. See log for details.");
       }
     }
   }
@@ -163,6 +169,12 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     return job.get();
   }
 
+  enum ServerStatus {
+    NOT_STARTED,
+    RUNNING,
+    FAILED
+  }
+
   private final class Server implements Runnable {
 
     private ExtensionContext context;
@@ -171,7 +183,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
       this.context = context;
     }
 
-    private volatile boolean isRunning = false;
+    private volatile ServerStatus serverStatus = ServerStatus.NOT_STARTED;
 
     @Override
     public void run() {
@@ -185,6 +197,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
           appEngineExtension.afterEach(context);
         }
       } catch (Throwable e) {
+        serverStatus = ServerStatus.FAILED;
         throw new RuntimeException(e);
       }
     }
@@ -196,7 +209,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
       testServer.start();
       System.out.printf("TestServerExtension is listening on: %s\n", testServer.getUrl("/"));
       synchronized (TestServerExtension.this) {
-        isRunning = true;
+        serverStatus = ServerStatus.RUNNING;
         TestServerExtension.this.notify();
       }
       try {
