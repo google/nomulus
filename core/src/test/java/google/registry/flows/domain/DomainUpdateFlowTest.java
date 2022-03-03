@@ -981,6 +981,41 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @TestOfyAndSql
+  void testFailure_secDnsInvalidDigestLength() throws Exception {
+    setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);
+    persistResource(
+        newDomainBase(getUniqueIdFromCommand())
+            .asBuilder()
+            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 1, new byte[] {0, 1, 2})))
+            .build());
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Domain contains DS record(s) with an invalid digest length");
+  }
+
+  @TestOfyAndSql
+  void testFailure_secDnsMultipleInvalidDigestLengths() throws Exception {
+    setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);
+    persistResource(
+        newDomainBase(getUniqueIdFromCommand())
+            .asBuilder()
+            .setDsData(
+                ImmutableSet.of(
+                    DelegationSignerData.create(1, 2, 1, new byte[] {0, 1, 2, 3, 4}),
+                    DelegationSignerData.create(2, 2, 2, new byte[] {5, 6, 7})))
+            .build());
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertThat(thrown).hasMessageThat().contains("0, 1, 2, 3, 4");
+    assertThat(thrown).hasMessageThat().contains("5, 6, 7");
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Domain contains DS record(s) with an invalid digest length");
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @TestOfyAndSql
   void testFailure_secDnsInvalidAlgorithm() throws Exception {
     setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);
     persistResource(

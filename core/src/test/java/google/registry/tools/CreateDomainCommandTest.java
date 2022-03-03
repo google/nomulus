@@ -333,6 +333,22 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
   }
 
   @Test
+  void testFailure_invalidDigestLength() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--client=NewRegistrar",
+                    "--registrant=crr-admin",
+                    "--admins=crr-admin",
+                    "--techs=crr-tech",
+                    "--ds_records=1 2 1 abcd",
+                    "example.tld"));
+    assertThat(thrown).hasMessageThat().isEqualTo("DS record has an invalid digest length: ABCD");
+  }
+
+  @Test
   void testFailure_invalidAlgorithm() {
     IllegalArgumentException thrown =
         assertThrows(
