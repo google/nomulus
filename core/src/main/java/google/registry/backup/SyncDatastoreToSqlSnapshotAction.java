@@ -117,6 +117,7 @@ public class SyncDatastoreToSqlSnapshotAction implements Runnable {
           String.format(SUCCESS_RESPONSE_TEMPLATE, sqlSnapshotId, checkpoint.getCheckpointTime()));
       return;
     } catch (Throwable e) {
+      logger.atSevere().withCause(e).log("Failed to sync Datastore to SQL.");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload(getStackTrace(e));
     }
