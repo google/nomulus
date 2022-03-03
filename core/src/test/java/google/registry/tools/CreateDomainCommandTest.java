@@ -50,7 +50,8 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
         "--admins=crr-admin",
         "--techs=crr-tech",
         "--password=2fooBAR",
-        "--ds_records=1 2 2 abcd,4 5 1 EF01",
+        "--ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4 5 1"
+            + " A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
         "--ds_records=60485 5  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "example.tld");
     eppVerifier.verifySent("domain_create_complete.xml");
@@ -66,7 +67,8 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
         "--admins=crr-admin",
         "--techs=crr-tech",
         "--password=2fooBAR",
-        "--ds_records=1 2 2 abcd,4 5 1 EF01",
+        "--ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4 5 1"
+            + " A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
         "--ds_records=60485 5  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "example.tld");
     eppVerifier.verifySent("domain_create_complete.xml");
@@ -341,7 +343,8 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
                     "--registrant=crr-admin",
                     "--admins=crr-admin",
                     "--techs=crr-tech",
-                    "--ds_records=1 999 4 abcd",
+                    "--ds_records=1 999 4"
+                        + " 768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9",
                     "example.tld"));
     assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized algorithm: 999");
   }

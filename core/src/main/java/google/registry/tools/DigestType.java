@@ -26,19 +26,21 @@ import java.util.Optional;
  * https://www.iana.org/assignments/ds-rr-types/ds-rr-types.xhtml
  */
 public enum DigestType {
-  SHA1(1),
-  SHA256(2),
+  SHA1(1, 20),
+  SHA256(2, 32),
   // Algorithm number 3 is GOST R 34.11-94 and is deliberately NOT SUPPORTED.
   // This algorithm was reviewed by ise-crypto and deemed academically broken (b/207029800).
   // In addition, RFC 8624 specifies that this algorithm MUST NOT be used for DNSSEC delegations.
   // TODO(sarhabot@): Add note in Cloud DNS code to notify the Registry of any new changes to
   // supported digest types.
-  SHA384(4);
+  SHA384(4, 48);
 
   private final int wireValue;
+  private final int bytes;
 
-  DigestType(int wireValue) {
+  DigestType(int wireValue, int bytes) {
     this.wireValue = wireValue;
+    this.bytes = bytes;
   }
 
   /** Fetches a DigestType enumeration constant by its IANA assigned value. */
@@ -54,5 +56,10 @@ public enum DigestType {
   /** Fetches a value in the range [0, 255] that encodes this DS digest type on the wire. */
   public int getWireValue() {
     return wireValue;
+  }
+
+  /** Returns the expected length in bytes of the signature. */
+  public int getBytes() {
+    return bytes;
   }
 }

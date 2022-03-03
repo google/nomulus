@@ -123,13 +123,17 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, DomainBase> {
 
   private static final DelegationSignerData SOME_DSDATA =
-      DelegationSignerData.create(1, 2, 2, base16().decode("0123"));
+      DelegationSignerData.create(
+          1,
+          2,
+          2,
+          base16().decode("9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"));
   private static final ImmutableMap<String, String> OTHER_DSDATA_TEMPLATE_MAP =
       ImmutableMap.of(
           "KEY_TAG", "12346",
           "ALG", "3",
           "DIGEST_TYPE", "1",
-          "DIGEST", "38EC35D5B3A34B44C39B");
+          "DIGEST", "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3");
 
   private ContactResource sh8013Contact;
   private ContactResource mak21Contact;
@@ -523,9 +527,17 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_add.xml",
         null,
         ImmutableSet.of(
-            DelegationSignerData.create(12346, 3, 1, base16().decode("38EC35D5B3A34B44C39B"))),
+            DelegationSignerData.create(
+                12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
         ImmutableMap.of(
-            "KEY_TAG", "12346", "ALG", "3", "DIGEST_TYPE", "1", "DIGEST", "38EC35D5B3A34B44C39B"));
+            "KEY_TAG",
+            "12346",
+            "ALG",
+            "3",
+            "DIGEST_TYPE",
+            "1",
+            "DIGEST",
+            "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"));
   }
 
   @TestOfyAndSql
@@ -535,9 +547,17 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         ImmutableSet.of(SOME_DSDATA),
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(12346, 3, 1, base16().decode("38EC35D5B3A34B44C39B"))),
+            DelegationSignerData.create(
+                12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
         ImmutableMap.of(
-            "KEY_TAG", "12346", "ALG", "3", "DIGEST_TYPE", "1", "DIGEST", "38EC35D5B3A34B44C39B"));
+            "KEY_TAG",
+            "12346",
+            "ALG",
+            "3",
+            "DIGEST_TYPE",
+            "1",
+            "DIGEST",
+            "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"));
   }
 
   @TestOfyAndSql
@@ -546,7 +566,15 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_add.xml",
         ImmutableSet.of(SOME_DSDATA),
         ImmutableSet.of(SOME_DSDATA),
-        ImmutableMap.of("KEY_TAG", "1", "ALG", "2", "DIGEST_TYPE", "2", "DIGEST", "0123"));
+        ImmutableMap.of(
+            "KEY_TAG",
+            "1",
+            "ALG",
+            "2",
+            "DIGEST_TYPE",
+            "2",
+            "DIGEST",
+            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"));
   }
 
   @TestOfyAndSql
@@ -555,8 +583,23 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_add.xml",
         ImmutableSet.of(SOME_DSDATA),
         ImmutableSet.of(
-            SOME_DSDATA, DelegationSignerData.create(1, 8, 4, base16().decode("4567"))),
-        ImmutableMap.of("KEY_TAG", "1", "ALG", "8", "DIGEST_TYPE", "4", "DIGEST", "4567"));
+            SOME_DSDATA,
+            DelegationSignerData.create(
+                1,
+                8,
+                4,
+                base16()
+                    .decode(
+                        "768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9"))),
+        ImmutableMap.of(
+            "KEY_TAG",
+            "1",
+            "ALG",
+            "8",
+            "DIGEST_TYPE",
+            "4",
+            "DIGEST",
+            "768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9"));
   }
 
   // Changing any of the four fields in DelegationSignerData should result in a new object
@@ -566,8 +609,22 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_add.xml",
         ImmutableSet.of(SOME_DSDATA),
         ImmutableSet.of(
-            SOME_DSDATA, DelegationSignerData.create(12346, 2, 2, base16().decode("0123"))),
-        ImmutableMap.of("KEY_TAG", "12346", "ALG", "2", "DIGEST_TYPE", "2", "DIGEST", "0123"));
+            SOME_DSDATA,
+            DelegationSignerData.create(
+                12346,
+                2,
+                2,
+                base16()
+                    .decode("9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"))),
+        ImmutableMap.of(
+            "KEY_TAG",
+            "12346",
+            "ALG",
+            "2",
+            "DIGEST_TYPE",
+            "2",
+            "DIGEST",
+            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"));
   }
 
   @TestOfyAndSql
@@ -575,8 +632,23 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_add.xml",
         ImmutableSet.of(SOME_DSDATA),
-        ImmutableSet.of(SOME_DSDATA, DelegationSignerData.create(1, 8, 2, base16().decode("0123"))),
-        ImmutableMap.of("KEY_TAG", "1", "ALG", "8", "DIGEST_TYPE", "2", "DIGEST", "0123"));
+        ImmutableSet.of(
+            SOME_DSDATA,
+            DelegationSignerData.create(
+                1,
+                8,
+                2,
+                base16()
+                    .decode("9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"))),
+        ImmutableMap.of(
+            "KEY_TAG",
+            "1",
+            "ALG",
+            "8",
+            "DIGEST_TYPE",
+            "2",
+            "DIGEST",
+            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"));
   }
 
   @TestOfyAndSql
@@ -584,8 +656,24 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_add.xml",
         ImmutableSet.of(SOME_DSDATA),
-        ImmutableSet.of(SOME_DSDATA, DelegationSignerData.create(1, 2, 4, base16().decode("0123"))),
-        ImmutableMap.of("KEY_TAG", "1", "ALG", "2", "DIGEST_TYPE", "4", "DIGEST", "0123"));
+        ImmutableSet.of(
+            SOME_DSDATA,
+            DelegationSignerData.create(
+                1,
+                2,
+                4,
+                base16()
+                    .decode(
+                        "768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9"))),
+        ImmutableMap.of(
+            "KEY_TAG",
+            "1",
+            "ALG",
+            "2",
+            "DIGEST_TYPE",
+            "4",
+            "DIGEST",
+            "768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9"));
   }
 
   @TestOfyAndSql
@@ -593,15 +681,35 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_add.xml",
         ImmutableSet.of(SOME_DSDATA),
-        ImmutableSet.of(SOME_DSDATA, DelegationSignerData.create(1, 2, 2, base16().decode("4567"))),
-        ImmutableMap.of("KEY_TAG", "1", "ALG", "2", "DIGEST_TYPE", "2", "DIGEST", "4567"));
+        ImmutableSet.of(
+            SOME_DSDATA,
+            DelegationSignerData.create(
+                1,
+                2,
+                2,
+                base16()
+                    .decode("9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"))),
+        ImmutableMap.of(
+            "KEY_TAG",
+            "1",
+            "ALG",
+            "2",
+            "DIGEST_TYPE",
+            "2",
+            "DIGEST",
+            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"));
   }
 
   @TestOfyAndSql
   void testSuccess_secDnsAddToMaxRecords() throws Exception {
     ImmutableSet.Builder<DelegationSignerData> builder = new ImmutableSet.Builder<>();
     for (int i = 0; i < 7; ++i) {
-      builder.add(DelegationSignerData.create(i, 2, 2, new byte[] {0, 1, 2}));
+      builder.add(
+          DelegationSignerData.create(
+              i,
+              2,
+              2,
+              base16().decode("9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08")));
     }
     ImmutableSet<DelegationSignerData> commonDsData = builder.build();
 
@@ -613,7 +721,10 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 commonDsData,
                 ImmutableSet.of(
                     DelegationSignerData.create(
-                        12346, 3, 1, base16().decode("38EC35D5B3A34B44C39B"))))));
+                        12346,
+                        3,
+                        1,
+                        base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))))));
   }
 
   @TestOfyAndSql
@@ -622,7 +733,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_rem.xml",
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(12346, 3, 1, base16().decode("38EC35D5B3A34B44C39B"))),
+            DelegationSignerData.create(
+                12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
         ImmutableSet.of(SOME_DSDATA));
   }
 
@@ -633,7 +745,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_rem_all.xml",
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(12346, 3, 1, base16().decode("38EC35D5B3A34B44C39B"))),
+            DelegationSignerData.create(
+                12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
         ImmutableSet.of());
   }
 
@@ -643,17 +756,24 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_add_rem.xml",
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(12345, 3, 1, base16().decode("38EC35D5B3A34B33C99B"))),
+            DelegationSignerData.create(
+                12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(12346, 3, 1, base16().decode("38EC35D5B3A34B44C39B"))));
+            DelegationSignerData.create(
+                12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))));
   }
 
   @TestOfyAndSql
   void testSuccess_secDnsAddRemoveToMaxRecords() throws Exception {
     ImmutableSet.Builder<DelegationSignerData> builder = new ImmutableSet.Builder<>();
     for (int i = 0; i < 7; ++i) {
-      builder.add(DelegationSignerData.create(i, 2, 2, new byte[] {0, 1, 2}));
+      builder.add(
+          DelegationSignerData.create(
+              i,
+              2,
+              2,
+              base16().decode("9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08")));
     }
     ImmutableSet<DelegationSignerData> commonDsData = builder.build();
 
@@ -664,13 +784,19 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 commonDsData,
                 ImmutableSet.of(
                     DelegationSignerData.create(
-                        12345, 3, 1, base16().decode("38EC35D5B3A34B33C99B"))))),
+                        12345,
+                        3,
+                        1,
+                        base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))))),
         ImmutableSet.copyOf(
             union(
                 commonDsData,
                 ImmutableSet.of(
                     DelegationSignerData.create(
-                        12346, 3, 1, base16().decode("38EC35D5B3A34B44C39B"))))));
+                        12346,
+                        3,
+                        1,
+                        base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))))));
   }
 
   @TestOfyAndSql
@@ -680,10 +806,12 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_add_rem_same.xml",
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(12345, 3, 1, base16().decode("38EC35D5B3A34B33C99B"))),
+            DelegationSignerData.create(
+                12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(12345, 3, 1, base16().decode("38EC35D5B3A34B33C99B"))));
+            DelegationSignerData.create(
+                12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))));
   }
 
   @TestOfyAndSql

@@ -86,12 +86,14 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--add_admins=crr-admin2",
         "--add_techs=crr-tech2",
         "--add_statuses=serverDeleteProhibited",
-        "--add_ds_records=1 2 2 abcd,4 5 1 EF01",
+        "--add_ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4"
+            + " 5 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
         "--remove_nameservers=ns3.zdns.google,ns4.zdns.google",
         "--remove_admins=crr-admin1",
         "--remove_techs=crr-tech1",
         "--remove_statuses=serverHold",
-        "--remove_ds_records=7 8 1 12ab,6 5 4 34CD",
+        "--remove_ds_records=7 8 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3,6 5 4"
+            + " 768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9",
         "--registrant=crr-admin",
         "--password=2fooBAR",
         "example.tld");
@@ -106,12 +108,14 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--add_admins=crr-admin2",
         "--add_techs=crr-tech2",
         "--add_statuses=serverDeleteProhibited",
-        "--add_ds_records=1 2 2 abcd,4 5 1 EF01",
+        "--add_ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4"
+            + " 5 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
         "--remove_nameservers=ns[3-4].zdns.google",
         "--remove_admins=crr-admin1",
         "--remove_techs=crr-tech1",
         "--remove_statuses=serverHold",
-        "--remove_ds_records=7 8 1 12ab,6 5 4 34CD",
+        "--remove_ds_records=7 8 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3,6 5 4"
+            + " 768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9",
         "--registrant=crr-admin",
         "--password=2fooBAR",
         "example.tld");
@@ -128,12 +132,14 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--add_admins=crr-admin2",
         "--add_techs=crr-tech2",
         "--add_statuses=serverDeleteProhibited",
-        "--add_ds_records=1 2 2 abcd,4 5 1 EF01",
+        "--add_ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4"
+            + " 5 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
         "--remove_nameservers=ns[3-4].zdns.google",
         "--remove_admins=crr-admin1",
         "--remove_techs=crr-tech1",
         "--remove_statuses=serverHold",
-        "--remove_ds_records=7 8 1 12ab,6 5 4 34CD",
+        "--remove_ds_records=7 8 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3,6 5 4"
+            + " 768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9",
         "--registrant=crr-admin",
         "--password=2fooBAR",
         "example.tld",
@@ -186,7 +192,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--add_admins=crr-admin2",
         "--add_techs=crr-tech2",
         "--add_statuses=serverDeleteProhibited",
-        "--add_ds_records=1 2 2 abcd,4 5 1 EF01",
+        "--add_ds_records=1 2 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A,4"
+            + " 5 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
         "example.tld");
     eppVerifier.verifySent("domain_update_add.xml");
   }
@@ -199,7 +206,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--remove_admins=crr-admin1",
         "--remove_techs=crr-tech1",
         "--remove_statuses=serverHold",
-        "--remove_ds_records=7 8 1 12ab,6 5 4 34CD",
+        "--remove_ds_records=7 8 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3,6 5 4"
+            + " 768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9",
         "example.tld");
     eppVerifier.verifySent("domain_update_remove.xml");
   }
@@ -277,7 +285,11 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
 
   @TestOfyAndSql
   void testSuccess_setDsRecords() throws Exception {
-    runCommandForced("--client=NewRegistrar", "--ds_records=1 2 2 abcd,4 5 1 EF01", "example.tld");
+    runCommandForced(
+        "--client=NewRegistrar",
+        "--ds_records=1 2 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A,4 5 1"
+            + " A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+        "example.tld");
     eppVerifier.verifySent("domain_update_set_ds_records.xml");
   }
 
@@ -285,7 +297,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
   void testSuccess_setDsRecords_withUnneededClear() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
-        "--ds_records=1 2 2 abcd,4 5 1 EF01",
+        "--ds_records=1 2 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A,4 5 1"
+            + " A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
         "--clear_ds_records",
         "example.tld");
     eppVerifier.verifySent("domain_update_set_ds_records.xml");
@@ -636,7 +649,10 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             IllegalArgumentException.class,
             () ->
                 runCommandForced(
-                    "--client=NewRegistrar", "--add_ds_records=1 299 2 abcd", "example.tld"));
+                    "--client=NewRegistrar",
+                    "--add_ds_records=1 299 2"
+                        + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
+                    "example.tld"));
     assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized algorithm: 299");
   }
 
@@ -647,7 +663,10 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             IllegalArgumentException.class,
             () ->
                 runCommandForced(
-                    "--client=NewRegistrar", "--add_ds_records=1 2 3 abcd", "example.tld"));
+                    "--client=NewRegistrar",
+                    "--add_ds_records=1 2 3"
+                        + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
+                    "example.tld"));
     assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized digest type: 3");
   }
 
@@ -659,8 +678,9 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             () ->
                 runCommandForced(
                     "--client=NewRegistrar",
-                    "--add_ds_records=1 2 2 abcd",
-                    "--ds_records=4 5 1 EF01",
+                    "--add_ds_records=1 2 2"
+                        + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
+                    "--ds_records=4 5 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
                     "example.tld"));
     assertThat(thrown)
         .hasMessageThat()
@@ -677,8 +697,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             () ->
                 runCommandForced(
                     "--client=NewRegistrar",
-                    "--remove_ds_records=7 8 1 12ab",
-                    "--ds_records=4 5 1 EF01",
+                    "--remove_ds_records=7 8 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+                    "--ds_records=4 5 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
                     "example.tld"));
     assertThat(thrown)
         .hasMessageThat()
@@ -695,7 +715,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             () ->
                 runCommandForced(
                     "--client=NewRegistrar",
-                    "--add_ds_records=1 2 2 abcd",
+                    "--add_ds_records=1 2 2"
+                        + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
                     "--clear_ds_records",
                     "example.tld"));
     assertThat(thrown)
@@ -713,7 +734,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             () ->
                 runCommandForced(
                     "--client=NewRegistrar",
-                    "--remove_ds_records=7 8 1 12ab",
+                    "--remove_ds_records=7 8 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
                     "--clear_ds_records",
                     "example.tld"));
     assertThat(thrown)

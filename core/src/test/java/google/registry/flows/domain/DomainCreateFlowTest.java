@@ -856,7 +856,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutDomains()
         .that(domain)
         .hasExactlyDsData(
-            DelegationSignerData.create(12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC"))
+            DelegationSignerData.create(
+                    12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))
                 .cloneWithDomainRepoId(domain.getRepoId()));
   }
 

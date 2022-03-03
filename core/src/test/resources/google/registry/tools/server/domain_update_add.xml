@@ -23,13 +23,13 @@
             <secDNS:keyTag>1</secDNS:keyTag>
             <secDNS:alg>2</secDNS:alg>
             <secDNS:digestType>2</secDNS:digestType>
-            <secDNS:digest>ABCD</secDNS:digest>
+            <secDNS:digest>D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A</secDNS:digest>
           </secDNS:dsData>
           <secDNS:dsData>
             <secDNS:keyTag>4</secDNS:keyTag>
             <secDNS:alg>5</secDNS:alg>
             <secDNS:digestType>1</secDNS:digestType>
-            <secDNS:digest>EF01</secDNS:digest>
+            <secDNS:digest>A94A8FE5CCB19BA61C4C0873D391E987982FBBD3</secDNS:digest>
           </secDNS:dsData>
         </secDNS:add>
       </secDNS:update>
