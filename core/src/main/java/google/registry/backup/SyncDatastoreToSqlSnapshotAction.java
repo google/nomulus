@@ -29,6 +29,8 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Sleeper;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -114,9 +116,22 @@ public class SyncDatastoreToSqlSnapshotAction implements Runnable {
       response.setPayload(
           String.format(SUCCESS_RESPONSE_TEMPLATE, sqlSnapshotId, checkpoint.getCheckpointTime()));
       return;
-    } catch (Exception e) {
+    } catch (Throwable e) {
+      logger.atSevere().withCause(e).log("Failed to sync Datastore to SQL.");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
-      response.setPayload(e.getMessage());
+      response.setPayload(getStackTrace(e));
+    }
+  }
+
+  private static String getStackTrace(Throwable e) {
+    try {
+      ByteArrayOutputStream bis = new ByteArrayOutputStream();
+      PrintStream printStream = new PrintStream(bis);
+      e.printStackTrace(printStream);
+      printStream.close();
+      return bis.toString();
+    } catch (RuntimeException re) {
+      return re.getMessage();
     }
   }
 
