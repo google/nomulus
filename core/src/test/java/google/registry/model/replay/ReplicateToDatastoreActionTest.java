@@ -229,10 +229,12 @@ public class ReplicateToDatastoreActionTest {
     List<TransactionEntity> txns = action.getTransactionBatchAtSnapshot();
     assertThat(txns).hasSize(2);
     for (TransactionEntity txn : txns) {
-      System.err.println("replaying transaction " + txn.getId());
       assertThat(txn.getId()).isNotEqualTo(2);
       applyTransaction(txn);
     }
+
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(foo.key()))).isEqualTo(foo);
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(bar.key()))).isEqualTo(bar);
   }
 
   @Test
