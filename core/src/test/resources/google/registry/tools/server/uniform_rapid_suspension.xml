@@ -31,7 +31,7 @@
             <secDNS:keyTag>1</secDNS:keyTag>
             <secDNS:alg>1</secDNS:alg>
             <secDNS:digestType>1</secDNS:digestType>
-            <secDNS:digest>ABCD</secDNS:digest>
+            <secDNS:digest>A94A8FE5CCB19BA61C4C0873D391E987982FBBD3</secDNS:digest>
           </secDNS:dsData>
         </secDNS:add>
       </secDNS:update>

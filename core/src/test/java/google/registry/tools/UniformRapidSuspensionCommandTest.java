@@ -78,7 +78,7 @@ class UniformRapidSuspensionCommandTest
     runCommandForced(
         "--domain_name=evil.tld",
         "--hosts=urs1.example.com,urs2.example.com",
-        "--dsdata=1 1 1 abcd",
+        "--dsdata=1 1 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
         "--renew_one_year=false");
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
@@ -149,7 +149,7 @@ class UniformRapidSuspensionCommandTest
     runCommandForced(
         "--domain_name=evil.tld",
         "--hosts=urs1.example.com,urs2.example.com",
-        "--dsdata=1 1 1 abcd",
+        "--dsdata=1 1 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
         "--renew_one_year=false");
     eppVerifier
         .expectRegistrarId("CharlestonRoad")

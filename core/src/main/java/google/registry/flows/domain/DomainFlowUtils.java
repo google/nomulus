@@ -301,7 +301,6 @@ public class DomainFlowUtils {
             String.format(
                 "A maximum of %s DS records are allowed per domain.", MAX_DS_RECORDS_PER_DOMAIN));
       }
-      // TODO(sarahbot@): Add signature length verification
       ImmutableList<DelegationSignerData> invalidAlgorithms =
           dsData.stream()
               .filter(ds -> !validateAlgorithm(ds.getAlgorithm()))
@@ -321,6 +320,20 @@ public class DomainFlowUtils {
             String.format(
                 "Domain contains DS record(s) with an invalid digest type: %s",
                 invalidDigestTypes));
+      }
+      ImmutableList<DelegationSignerData> digestsWithInvalidDigestLength =
+          dsData.stream()
+              .filter(
+                  ds ->
+                      DigestType.fromWireValue(ds.getDigestType()).isPresent()
+                          && (ds.getDigest().length
+                              != DigestType.fromWireValue(ds.getDigestType()).get().getBytes()))
+              .collect(toImmutableList());
+      if (!digestsWithInvalidDigestLength.isEmpty()) {
+        throw new InvalidDsRecordException(
+            String.format(
+                "Domain contains DS record(s) with an invalid digest length: %s",
+                digestsWithInvalidDigestLength));
       }
     }
   }

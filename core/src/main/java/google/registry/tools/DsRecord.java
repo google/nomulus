@@ -51,6 +51,11 @@ abstract class DsRecord {
     checkArgumentPresent(
         DigestType.fromWireValue(digestType),
         String.format("DS record uses an unrecognized digest type: %d", digestType));
+    if (DigestType.fromWireValue(digestType).get().getBytes()
+        != BaseEncoding.base16().decode(digest).length) {
+      throw new IllegalArgumentException(
+          String.format("DS record has an invalid digest length: %s", digest));
+    }
 
     if (!DomainFlowUtils.validateAlgorithm(alg)) {
       throw new IllegalArgumentException(

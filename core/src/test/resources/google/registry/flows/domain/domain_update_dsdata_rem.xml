@@ -16,7 +16,7 @@
             <secDNS:keyTag>12346</secDNS:keyTag>
             <secDNS:alg>3</secDNS:alg>
             <secDNS:digestType>1</secDNS:digestType>
-            <secDNS:digest>38EC35D5B3A34B44C39B</secDNS:digest>
+            <secDNS:digest>A94A8FE5CCB19BA61C4C0873D391E987982FBBD3</secDNS:digest>
           </secDNS:dsData>
         </secDNS:rem>
       </secDNS:update>
