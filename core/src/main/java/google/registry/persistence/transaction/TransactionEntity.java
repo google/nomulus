@@ -14,6 +14,7 @@
 
 package google.registry.persistence.transaction;
 
+import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.ImmutableObject;
 import google.registry.model.replay.SqlOnlyEntity;
 import javax.persistence.Entity;
@@ -39,7 +40,8 @@ public class TransactionEntity extends ImmutableObject implements SqlOnlyEntity 
 
   TransactionEntity() {}
 
-  TransactionEntity(byte[] contents) {
+  @VisibleForTesting
+  public TransactionEntity(byte[] contents) {
     this.contents = contents;
   }
 

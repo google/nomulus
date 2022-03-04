@@ -21,16 +21,15 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.testing.TestLogHandler;
 import com.google.common.truth.Truth8;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
@@ -63,6 +62,7 @@ import org.junitpioneer.jupiter.RetryingTest;
 public class ReplicateToDatastoreActionTest {
 
   private final FakeClock fakeClock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
@@ -203,41 +203,38 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
-  void testMissingTransactions() {
-    assumeTrue(ReplayExtension.replayTestsEnabled());
-
-    // Write a transaction (should have a transaction id of 1).
+  void testNoTransactionIdUpdate() {
+    // Create an object.
     TestObject foo = TestObject.create("foo");
     insertInDb(foo);
 
-    // Force the last transaction id back to -1 so that we look for transaction 0.
-    ofyTm().transact(() -> ofyTm().insert(new LastSqlTransaction(-1)));
+    // Fail during the transaction to delete it.
+    try {
+      jpaTm()
+          .transact(
+              () -> {
+                jpaTm().delete(foo.key());
+                // Explicitly save the transaction entity to force the id update.
+                jpaTm().insert(new TransactionEntity(new byte[] {1, 2, 3}));
+                throw new RuntimeException("fail!!!");
+              });
+    } catch (Exception e) {
+      logger.atInfo().log("Got expected exception.");
+    }
 
+    TestObject bar = TestObject.create("bar");
+    insertInDb(bar);
+
+    // Make sure we have only the expected transaction ids.
     List<TransactionEntity> txns = action.getTransactionBatchAtSnapshot();
-    assertThat(txns).hasSize(1);
-    assertThat(assertThrows(IllegalStateException.class, () -> applyTransaction(txns.get(0))))
-        .hasMessageThat()
-        .isEqualTo("Missing transaction: last txn id = -1, next available txn = 1");
-  }
+    assertThat(txns).hasSize(2);
+    for (TransactionEntity txn : txns) {
+      assertThat(txn.getId()).isNotEqualTo(2);
+      applyTransaction(txn);
+    }
 
-  @Test
-  void testMissingTransactions_fullTask() {
-    assumeTrue(ReplayExtension.replayTestsEnabled());
-
-    // Write a transaction (should have a transaction id of 1).
-    TestObject foo = TestObject.create("foo");
-    insertInDb(foo);
-
-    // Force the last transaction id back to -1 so that we look for transaction 0.
-    ofyTm().transact(() -> ofyTm().insert(new LastSqlTransaction(-1)));
-    action.run();
-    assertAboutLogs()
-        .that(logHandler)
-        .hasSevereLogWithCause(
-            new IllegalStateException(
-                "Missing transaction: last txn id = -1, next available txn = 1"));
-    assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
-    assertThat(response.getPayload()).isEqualTo("Errored out replaying files.");
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(foo.key()))).isEqualTo(foo);
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(bar.key()))).isEqualTo(bar);
   }
 
   @Test
