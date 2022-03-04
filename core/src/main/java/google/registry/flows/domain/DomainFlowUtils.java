@@ -321,7 +321,7 @@ public class DomainFlowUtils {
                 "Domain contains DS record(s) with an invalid digest type: %s",
                 invalidDigestTypes));
       }
-      ImmutableList<DelegationSignerData> invalidDigestLength =
+      ImmutableList<DelegationSignerData> digestsWithInvalidDigestLength =
           dsData.stream()
               .filter(
                   ds ->
@@ -329,11 +329,11 @@ public class DomainFlowUtils {
                           && (ds.getDigest().length
                               != DigestType.fromWireValue(ds.getDigestType()).get().getBytes()))
               .collect(toImmutableList());
-      if (!invalidDigestLength.isEmpty()) {
+      if (!digestsWithInvalidDigestLength.isEmpty()) {
         throw new InvalidDsRecordException(
             String.format(
                 "Domain contains DS record(s) with an invalid digest length: %s",
-                invalidDigestLength));
+                digestsWithInvalidDigestLength));
       }
     }
   }

@@ -360,7 +360,8 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
                     "--admins=crr-admin",
                     "--techs=crr-tech",
                     "--ds_records=1 999 4"
-                        + " 768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9",
+                        + " 768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1C"
+                        + "CB126255D196047DFEDF17A0A9",
                     "example.tld"));
     assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized algorithm: 999");
   }
