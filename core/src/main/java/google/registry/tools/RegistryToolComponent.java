@@ -38,8 +38,7 @@ import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.rde.RdeModule;
 import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.Jackson2Module;
-import google.registry.request.Modules.URLFetchServiceModule;
-import google.registry.request.Modules.UrlFetchTransportModule;
+import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
 import google.registry.tools.javascrap.CompareEscrowDepositsCommand;
@@ -79,8 +78,7 @@ import javax.inject.Singleton;
       RegistryToolDataflowModule.class,
       RequestFactoryModule.class,
       SecretManagerModule.class,
-      URLFetchServiceModule.class,
-      UrlFetchTransportModule.class,
+      UrlConnectionServiceModule.class,
       UserServiceModule.class,
       UtilsModule.class,
       VoidDnsWriterModule.class,

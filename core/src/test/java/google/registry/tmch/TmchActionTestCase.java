@@ -15,21 +15,19 @@
 package google.registry.tmch;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.urlfetch.HTTPRequest;
-import com.google.appengine.api.urlfetch.HTTPResponse;
-import com.google.appengine.api.urlfetch.URLFetchService;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeClock;
+import google.registry.testing.FakeUrlConnectionService;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Common code for unit tests of classes that extend {@link Marksdb}. */
@@ -46,19 +44,19 @@ abstract class TmchActionTestCase {
   @RegisterExtension
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
-  @Mock URLFetchService fetchService;
-  @Mock HTTPResponse httpResponse;
-  @Captor ArgumentCaptor<HTTPRequest> httpRequest;
-
   final FakeClock clock = new FakeClock();
   final Marksdb marksdb = new Marksdb();
 
+  protected final HttpURLConnection httpUrlConnection = mock(HttpURLConnection.class);
+  protected final ArrayList<URL> connectedUrls = new ArrayList<>();
+  protected FakeUrlConnectionService urlConnectionService =
+      new FakeUrlConnectionService(httpUrlConnection, connectedUrls);
+
   @BeforeEach
   public void beforeEachTmchActionTestCase() throws Exception {
-    marksdb.fetchService = fetchService;
     marksdb.tmchMarksdbUrl = MARKSDB_URL;
     marksdb.marksdbPublicKey = TmchData.loadPublicKey(TmchTestData.loadBytes("pubkey"));
-    when(fetchService.fetch(any(HTTPRequest.class))).thenReturn(httpResponse);
-    when(httpResponse.getResponseCode()).thenReturn(SC_OK);
+    marksdb.urlConnectionService = urlConnectionService;
+    when(httpUrlConnection.getResponseCode()).thenReturn(SC_OK);
   }
 }

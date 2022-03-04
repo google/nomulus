@@ -16,39 +16,34 @@ package google.registry.tmch;
 
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.UrlFetchUtils.getHeaderFirst;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.urlfetch.HTTPRequest;
-import com.google.appengine.api.urlfetch.HTTPResponse;
-import com.google.appengine.api.urlfetch.URLFetchService;
 import google.registry.model.tld.Registry;
 import google.registry.request.HttpException.ConflictException;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.FakeUrlConnectionService;
+import java.io.ByteArrayInputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link NordnVerifyAction}. */
-@ExtendWith(MockitoExtension.class)
 class NordnVerifyActionTest {
 
   private static final String LOG_ACCEPTED =
@@ -81,84 +76,83 @@ class NordnVerifyActionTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Mock private URLFetchService fetchService;
-  @Mock private HTTPResponse httpResponse;
-  @Captor private ArgumentCaptor<HTTPRequest> httpRequestCaptor;
-
   private final FakeResponse response = new FakeResponse();
   private final LordnRequestInitializer lordnRequestInitializer =
       new LordnRequestInitializer(Optional.of("attack"));
   private final NordnVerifyAction action = new NordnVerifyAction();
 
+  private final HttpURLConnection httpUrlConnection = mock(HttpURLConnection.class);
+  private final FakeUrlConnectionService urlConnectionService =
+      new FakeUrlConnectionService(httpUrlConnection);
+
   @BeforeEach
   void beforeEach() throws Exception {
-    when(httpResponse.getResponseCode()).thenReturn(SC_OK);
-    when(httpResponse.getContent()).thenReturn(LOG_ACCEPTED.getBytes(UTF_8));
-    when(fetchService.fetch(any(HTTPRequest.class))).thenReturn(httpResponse);
     createTld("gtld");
     persistResource(Registry.get("gtld").asBuilder().setLordnUsername("lolcat").build());
     action.tld = "gtld";
-    action.fetchService = fetchService;
+    action.urlConnectionService = urlConnectionService;
+    when(httpUrlConnection.getResponseCode()).thenReturn(SC_OK);
+    when(httpUrlConnection.getInputStream())
+        .thenReturn(new ByteArrayInputStream(LOG_ACCEPTED.getBytes(UTF_8)));
     action.lordnRequestInitializer = lordnRequestInitializer;
     action.response = response;
     action.url = new URL("http://127.0.0.1/blobio");
   }
 
-  private HTTPRequest getCapturedHttpRequest() throws Exception {
-    verify(fetchService).fetch(httpRequestCaptor.capture());
-    return httpRequestCaptor.getAllValues().get(0);
-  }
-
   @Test
   void testSuccess_sendHttpRequest_urlIsCorrect() throws Exception {
     action.run();
-    assertThat(getCapturedHttpRequest().getURL()).isEqualTo(new URL("http://127.0.0.1/blobio"));
+    assertThat(httpUrlConnection.getURL()).isEqualTo(new URL("http://127.0.0.1/blobio"));
   }
 
   @Test
-  void testSuccess_hasLordnPassword_sendsAuthorizationHeader() throws Exception {
+  void testSuccess_hasLordnPassword_sendsAuthorizationHeader() {
     action.run();
-    assertThat(getHeaderFirst(getCapturedHttpRequest(), AUTHORIZATION))
-        .hasValue("Basic bG9sY2F0OmF0dGFjaw=="); // echo -n lolcat:attack | base64
+    verify(httpUrlConnection)
+        .setRequestProperty(
+            AUTHORIZATION, "Basic bG9sY2F0OmF0dGFjaw=="); // echo -n lolcat:attack | base64
   }
 
   @Test
-  void testSuccess_noLordnPassword_doesntSetAuthorizationHeader() throws Exception {
+  void testSuccess_noLordnPassword_doesntSetAuthorizationHeader() {
     action.lordnRequestInitializer = new LordnRequestInitializer(Optional.empty());
     action.run();
-    assertThat(getHeaderFirst(getCapturedHttpRequest(), AUTHORIZATION)).isEmpty();
+    verify(httpUrlConnection, times(0)).setRequestProperty(eq(AUTHORIZATION), anyString());
   }
 
   @Test
   void successVerifyRejected() throws Exception {
-    when(httpResponse.getContent()).thenReturn(LOG_REJECTED.getBytes(UTF_8));
+    when(httpUrlConnection.getInputStream())
+        .thenReturn(new ByteArrayInputStream(LOG_REJECTED.getBytes(UTF_8)));
     LordnLog lastLog = action.verify();
     assertThat(lastLog.getStatus()).isEqualTo(LordnLog.Status.REJECTED);
   }
 
   @Test
   void successVerifyWarnings() throws Exception {
-    when(httpResponse.getContent()).thenReturn(LOG_WARNINGS.getBytes(UTF_8));
+    when(httpUrlConnection.getInputStream())
+        .thenReturn(new ByteArrayInputStream(LOG_WARNINGS.getBytes(UTF_8)));
     LordnLog lastLog = action.verify();
     assertThat(lastLog.hasWarnings()).isTrue();
   }
 
   @Test
   void successVerifyErrors() throws Exception {
-    when(httpResponse.getContent()).thenReturn(LOG_ERRORS.getBytes(UTF_8));
+    when(httpUrlConnection.getInputStream())
+        .thenReturn(new ByteArrayInputStream(LOG_ERRORS.getBytes(UTF_8)));
     LordnLog lastLog = action.verify();
     assertThat(lastLog.hasWarnings()).isTrue();
   }
 
   @Test
-  void failureVerifyUnauthorized() {
-    when(httpResponse.getResponseCode()).thenReturn(SC_UNAUTHORIZED);
+  void failureVerifyUnauthorized() throws Exception {
+    when(httpUrlConnection.getResponseCode()).thenReturn(SC_UNAUTHORIZED);
     assertThrows(Exception.class, action::run);
   }
 
   @Test
-  void failureVerifyNotReady() {
-    when(httpResponse.getResponseCode()).thenReturn(SC_NO_CONTENT);
+  void failureVerifyNotReady() throws Exception {
+    when(httpUrlConnection.getResponseCode()).thenReturn(SC_NO_CONTENT);
     ConflictException thrown = assertThrows(ConflictException.class, action::run);
     assertThat(thrown).hasMessageThat().contains("Not ready");
   }

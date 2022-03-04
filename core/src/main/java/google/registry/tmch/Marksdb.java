@@ -14,25 +14,23 @@
 
 package google.registry.tmch;
 
-import static com.google.appengine.api.urlfetch.FetchOptions.Builder.validateCertificate;
-import static com.google.appengine.api.urlfetch.HTTPMethod.GET;
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.request.UrlConnectionUtils.getResponseBytes;
+import static google.registry.request.UrlConnectionUtils.setBasicAuth;
 import static google.registry.util.HexDumper.dumpHex;
-import static google.registry.util.UrlFetchUtils.setAuthorizationHeader;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.appengine.api.urlfetch.HTTPRequest;
-import com.google.appengine.api.urlfetch.HTTPResponse;
-import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteSource;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeyModule.Key;
-import google.registry.util.UrlFetchException;
+import google.registry.request.UrlConnectionService;
+import google.registry.util.UrlConnectionException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.Security;
 import java.security.SignatureException;
@@ -57,7 +55,8 @@ public final class Marksdb {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final int MAX_DNL_LOGGING_LENGTH = 500;
 
-  @Inject URLFetchService fetchService;
+  @Inject UrlConnectionService urlConnectionService;
+
   @Inject @Config("tmchMarksdbUrl") String tmchMarksdbUrl;
   @Inject @Key("marksdbPublicKey") PGPPublicKey marksdbPublicKey;
   @Inject Marksdb() {}
@@ -112,19 +111,16 @@ public final class Marksdb {
   }
 
   byte[] fetch(URL url, Optional<String> loginAndPassword) throws IOException {
-    HTTPRequest req = new HTTPRequest(url, GET, validateCertificate().setDeadline(60d));
-    setAuthorizationHeader(req, loginAndPassword);
-    HTTPResponse rsp;
+    HttpURLConnection connection = urlConnectionService.createConnection(url);
+    loginAndPassword.ifPresent(auth -> setBasicAuth(connection, auth));
     try {
-      rsp = fetchService.fetch(req);
+      if (connection.getResponseCode() != SC_OK) {
+        throw new UrlConnectionException("Failed to fetch from MarksDB", connection);
+      }
+      return getResponseBytes(connection);
     } catch (IOException e) {
-      throw new IOException(
-          String.format("Error connecting to MarksDB at URL %s", url), e);
+      throw new IOException(String.format("Error connecting to MarksDB at URL %s", url), e);
     }
-    if (rsp.getResponseCode() != SC_OK) {
-      throw new UrlFetchException("Failed to fetch from MarksDB", req, rsp);
-    }
-    return rsp.getContent();
   }
 
   List<String> fetchSignedCsv(Optional<String> loginAndPassword, String csvPath, String sigPath)

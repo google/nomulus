@@ -36,7 +36,6 @@ import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.Jackson2Module;
 import google.registry.request.Modules.NetHttpTransportModule;
-import google.registry.request.Modules.UrlFetchTransportModule;
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.request.auth.AuthModule;
 import google.registry.util.UtilsModule;
@@ -66,7 +65,6 @@ import javax.inject.Singleton;
       ServerTridProviderModule.class,
       StackdriverModule.class,
       ToolsRequestComponentModule.class,
-      UrlFetchTransportModule.class,
       UserServiceModule.class,
       UtilsModule.class
     })
