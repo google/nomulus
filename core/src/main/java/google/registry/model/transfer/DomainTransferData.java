@@ -94,8 +94,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
    *
    * <p>This field should be null if there is not currently a pending transfer or if the object
    * being transferred is not a domain.
-   *
-   * <p>TODO(b/158230654) Remove unused columns for TransferData in Contact table.
    */
   @IgnoreSave(IfNull.class)
   @Column(name = "transfer_billing_event_id")

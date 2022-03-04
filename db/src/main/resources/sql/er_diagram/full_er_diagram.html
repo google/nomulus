@@ -261,11 +261,11 @@ td.section {
     </tr> 
     <tr> 
      <td class="property_name">generated on</td> 
-     <td class="property_value">2022-02-03 18:23:54.985476</td> 
+     <td class="property_value">2022-03-04 22:54:56.709583</td> 
     </tr> 
     <tr>
      <td class="property_name">last flyway file</td>
-     <td id="lastFlywayFile" class="property_value">V105__add_index_on_host_name_in_host_table.sql</td>
+     <td id="lastFlywayFile" class="property_value">V106__add_missing_indexes_from_query_analyzer.sql</td>
     </tr>
    </tbody>
   </table> 
@@ -284,7 +284,7 @@ td.section {
      generated on
     </text> 
     <text text-anchor="start" x="4755.52" y="-10.8" font-family="Helvetica,sans-Serif" font-size="14.00">
-     2022-02-03 18:23:54.985476
+     2022-03-04 22:54:56.709583
     </text> 
     <polygon fill="none" stroke="#888888" points="4668.02,-4 4668.02,-44 4933.02,-44 4933.02,-4 4668.02,-4" /> <!-- allocationtoken_a08ccbef --> 
     <g id="node1" class="node"> 
@@ -6900,6 +6900,30 @@ td.section {
      <td colspan="3"></td> 
     </tr> 
     <tr> 
+     <td colspan="2" class="name">idx4ytbe5f3b39trsd4okx5ijhs4</td> 
+     <td class="description right">[non-unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">billing_event_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="2" class="name">idxku0fopwyvd57ebo8bf0jg9xo2</td> 
+     <td class="description right">[non-unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">billing_recurrence_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
      <td colspan="2" class="name">idxeokttmxtpq2hohcioe5t2242b</td> 
      <td class="description right">[non-unique index]</td> 
     </tr> 
@@ -7165,6 +7189,18 @@ td.section {
     <tr> 
      <td class="spacer"></td> 
      <td class="minwidth">billing_event_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="2" class="name">idx6ebt3nwk5ocvnremnhnlkl6ff</td> 
+     <td class="description right">[non-unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">cancellation_matching_billing_recurrence_id</td> 
      <td class="minwidth">ascending</td> 
     </tr> 
     <tr> 
@@ -9491,6 +9527,42 @@ td.section {
      <td colspan="3"></td> 
     </tr> 
     <tr> 
+     <td colspan="2" class="name">idxsfci08jgsymxy6ovh4k7r358c</td> 
+     <td class="description right">[non-unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">billing_recurrence_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="2" class="name">idx3y3k7m2bkgahm9sixiohgyrga</td> 
+     <td class="description right">[non-unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">transfer_billing_event_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="2" class="name">idxcju58vqascbpve1t7fem53ctl</td> 
+     <td class="description right">[non-unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">transfer_billing_recurrence_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
      <td colspan="2" class="name">idxnb02m43jcx24r64n8rbg22u4q</td> 
      <td class="description right">[non-unique index]</td> 
     </tr> 
@@ -10513,6 +10585,18 @@ td.section {
      <td colspan="3"></td> 
     </tr> 
     <tr> 
+     <td colspan="2" class="name">idxjw3rwtfrexyq53x9vu7qghrdt</td> 
+     <td class="description right">[non-unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">host_repo_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
      <td colspan="2" class="name">ukat9erbh52e4lg3jw6ai9wkjj9</td> 
      <td class="description right">[unique index]</td> 
     </tr> 
@@ -10800,6 +10884,30 @@ td.section {
     </tr> 
     <tr> 
      <td colspan="3" class="section">Indexes</td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="2" class="name">idxbgssjudpm428mrv0xfpvgifps</td> 
+     <td class="description right">[non-unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">billing_event_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="2" class="name">idx5u5m6clpk3nktrvtyy5umacb6</td> 
+     <td class="description right">[non-unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">billing_recurrence_id</td> 
+     <td class="minwidth">ascending</td> 
     </tr> 
     <tr> 
      <td colspan="3"></td> 
