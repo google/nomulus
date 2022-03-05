@@ -1533,6 +1533,13 @@ CREATE INDEX idx2exdfbx6oiiwnhr8j6gjpqt2j ON public."BillingCancellation" USING 
 
 
 --
+-- Name: idx3y3k7m2bkgahm9sixiohgyrga; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx3y3k7m2bkgahm9sixiohgyrga ON public."Domain" USING btree (transfer_billing_event_id);
+
+
+--
 -- Name: idx3y752kr9uh4kh6uig54vemx0l; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1540,10 +1547,24 @@ CREATE INDEX idx3y752kr9uh4kh6uig54vemx0l ON public."Contact" USING btree (creat
 
 
 --
+-- Name: idx4ytbe5f3b39trsd4okx5ijhs4; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx4ytbe5f3b39trsd4okx5ijhs4 ON public."BillingCancellation" USING btree (billing_event_id);
+
+
+--
 -- Name: idx5mnf0wn20tno4b9do88j61klr; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx5mnf0wn20tno4b9do88j61klr ON public."Domain" USING btree (deletion_time);
+
+
+--
+-- Name: idx5u5m6clpk3nktrvtyy5umacb6; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx5u5m6clpk3nktrvtyy5umacb6 ON public."GracePeriod" USING btree (billing_recurrence_id);
 
 
 --
@@ -1558,6 +1579,13 @@ CREATE INDEX idx5yfbr88439pxw0v3j86c74fp8 ON public."BillingEvent" USING btree (
 --
 
 CREATE INDEX idx67qwkjtlq5q8dv6egtrtnhqi7 ON public."HostHistory" USING btree (history_modification_time);
+
+
+--
+-- Name: idx6ebt3nwk5ocvnremnhnlkl6ff; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx6ebt3nwk5ocvnremnhnlkl6ff ON public."BillingEvent" USING btree (cancellation_matching_billing_recurrence_id);
 
 
 --
@@ -1638,10 +1666,24 @@ CREATE INDEX idxaydgox62uno9qx8cjlj5lauye ON public."PollMessage" USING btree (e
 
 
 --
+-- Name: idxbgssjudpm428mrv0xfpvgifps; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxbgssjudpm428mrv0xfpvgifps ON public."GracePeriod" USING btree (billing_event_id);
+
+
+--
 -- Name: idxbn8t4wp85fgxjl8q4ctlscx55; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idxbn8t4wp85fgxjl8q4ctlscx55 ON public."Contact" USING btree (current_sponsor_registrar_id);
+
+
+--
+-- Name: idxcju58vqascbpve1t7fem53ctl; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxcju58vqascbpve1t7fem53ctl ON public."Domain" USING btree (transfer_billing_recurrence_id);
 
 
 --
@@ -1715,6 +1757,13 @@ CREATE INDEX idxjny8wuot75b5e6p38r47wdawu ON public."BillingRecurrence" USING bt
 
 
 --
+-- Name: idxjw3rwtfrexyq53x9vu7qghrdt; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxjw3rwtfrexyq53x9vu7qghrdt ON public."DomainHost" USING btree (host_repo_id);
+
+
+--
 -- Name: idxkjt9yaq92876dstimd93hwckh; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1733,6 +1782,13 @@ CREATE INDEX idxknk8gmj7s47q56cwpa6rmpt5l ON public."HostHistory" USING btree (h
 --
 
 CREATE INDEX idxkpkh68n6dy5v51047yr6b0e9l ON public."Host" USING btree (host_name);
+
+
+--
+-- Name: idxku0fopwyvd57ebo8bf0jg9xo2; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxku0fopwyvd57ebo8bf0jg9xo2 ON public."BillingCancellation" USING btree (billing_recurrence_id);
 
 
 --
@@ -1824,6 +1880,13 @@ CREATE INDEX idxrh4xmrot9bd63o382ow9ltfig ON public."DomainHistory" USING btree 
 --
 
 CREATE INDEX idxrwl38wwkli1j7gkvtywi9jokq ON public."Domain" USING btree (tld);
+
+
+--
+-- Name: idxsfci08jgsymxy6ovh4k7r358c; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxsfci08jgsymxy6ovh4k7r358c ON public."Domain" USING btree (billing_recurrence_id);
 
 
 --
