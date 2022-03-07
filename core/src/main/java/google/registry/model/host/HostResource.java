@@ -36,7 +36,11 @@ import javax.persistence.AccessType;
 @javax.persistence.Entity(name = "Host")
 @javax.persistence.Table(
     name = "Host",
-    indexes = {@javax.persistence.Index(columnList = "hostName")})
+    indexes = {
+      @javax.persistence.Index(columnList = "hostName"),
+      @javax.persistence.Index(columnList = "deletionTime"),
+      @javax.persistence.Index(columnList = "inetAddresses")
+    })
 @ExternalMessagingName("host")
 @WithStringVKey
 @Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)

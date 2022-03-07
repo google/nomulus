@@ -1855,6 +1855,13 @@ CREATE INDEX idxoqttafcywwdn41um6kwlt0n8b ON public."BillingRecurrence" USING bt
 
 
 --
+-- Name: idxovmntef6l45tw2bsfl56tcugx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxovmntef6l45tw2bsfl56tcugx ON public."Host" USING btree (deletion_time);
+
+
+--
 -- Name: idxp3usbtvk0v1m14i5tdp4xnxgc; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1887,6 +1894,13 @@ CREATE INDEX idxqa3g92jc17e8dtiaviy4fet4x ON public."BillingCancellation" USING 
 --
 
 CREATE INDEX idxr22ciyccwi9rrqmt1ro0s59qf ON public."Domain" USING btree (tech_contact);
+
+
+--
+-- Name: idxrc77s1ndiemi2vwwudchye214; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxrc77s1ndiemi2vwwudchye214 ON public."Host" USING btree (inet_addresses);
 
 
 --
