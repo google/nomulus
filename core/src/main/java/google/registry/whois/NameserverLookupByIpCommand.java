@@ -64,11 +64,17 @@ final class NameserverLookupByIpCommand implements WhoisCommand {
           jpaTm()
               .transact(
                   () ->
-                      // We cannot query @Convert-ed fields in HQL so we must use native Postgres
+                      // We cannot query @Convert-ed fields in HQL so we must use native Postgres.
                       jpaTm()
                           .getEntityManager()
+                          /**
+                           * Using array_operator <@ (contained-by) with gin index on inet_address.
+                           * Without gin index, this is slightly slower than the alternative form of
+                           * ':address = ANY(inet_address)'.
+                           */
                           .createNativeQuery(
-                              "SELECT * From \"Host\" WHERE :address = ANY(inet_addresses) AND "
+                              "SELECT * From \"Host\" WHERE "
+                                  + "ARRAY[ CAST(:address AS TEXT) ] <@ inet_addresses AND "
                                   + "deletion_time > CAST(:now AS timestamptz)",
                               HostResource.class)
                           .setParameter("address", InetAddresses.toAddrString(ipAddress))
