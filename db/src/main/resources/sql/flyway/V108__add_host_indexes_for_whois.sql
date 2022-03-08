@@ -12,4 +12,5 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-CREATE INDEX IDXrc77s1ndiemi2vwwudchye214 ON "Host" USING GIN (inet_addresses);
+CREATE INDEX IF NOT EXISTS IDXrc77s1ndiemi2vwwudchye214
+  ON "Host" USING GIN (inet_addresses);
