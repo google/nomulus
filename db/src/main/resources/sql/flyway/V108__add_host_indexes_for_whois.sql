@@ -12,6 +12,5 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-
-CREATE INDEX IDXovmntef6l45tw2bsfl56tcugx ON "Host" (deletion_time);
-CREATE INDEX IDXrc77s1ndiemi2vwwudchye214 ON "Host" (inet_addresses);
+CREATE INDEX IF NOT EXISTS IDXrc77s1ndiemi2vwwudchye214
+  ON "Host" USING GIN (inet_addresses);
