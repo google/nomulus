@@ -55,6 +55,12 @@ following steps:
     one. The generated SQL file from the previous step should help. New create
     table statements can be used as is, whereas alter table statements should be
     written to change any existing tables.
+    
+    Note that each incremental file MUST be limited to changes to a single
+    table (otherwise it may hit deadlock when applying on sandbox/production
+    where it'll be competing against live traffic that may also be locking said
+    tables but in a different order). It's OK to include these separate Flyway
+    scripts in a single PR.
 
     This script should be stored in a new file in the
     `db/src/main/resources/sql/flyway` folder using the naming pattern
