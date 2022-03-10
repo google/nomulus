@@ -113,6 +113,12 @@ public class BatchModule {
   }
 
   @Provides
+  @Parameter(ResaveAllEppResourcesPipelineAction.PARAM_FAST)
+  static Optional<Boolean> provideIsFast(HttpServletRequest req) {
+    return extractOptionalBooleanParameter(req, ResaveAllEppResourcesPipelineAction.PARAM_FAST);
+  }
+
+  @Provides
   @Named(QUEUE_ASYNC_ACTIONS)
   static Queue provideAsyncActionsPushQueue() {
     return getQueue(QUEUE_ASYNC_ACTIONS);

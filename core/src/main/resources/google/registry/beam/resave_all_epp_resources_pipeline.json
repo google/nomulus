@@ -1,0 +1,30 @@
+{
+  "name": "Resave all EPP Resources",
+  "description": "An Apache Beam pipeline that resaves all (or potentially only changed) EPP resources",
+  "parameters": [
+    {
+      "name": "registryEnvironment",
+      "label": "The Registry environment.",
+      "helpText": "The Registry environment.",
+      "is_optional": false,
+      "regexes": [
+        "^PRODUCTION|SANDBOX|CRASH|QA|ALPHA$"
+      ]
+    },
+    {
+      "name": "isolationOverride",
+      "label": "The desired SQL transaction isolation level.",
+      "helpText": "The desired SQL transaction isolation level.",
+      "is_optional": true,
+      "regexes": [
+        "^[0-9A-Z_]+$"
+      ]
+    },
+    {
+      "name": "fast",
+      "label": "Whether or not to attempt to only save changed resources",
+      "helpText": "If true, we will attempt to only save resources that possibly have expired transfers, grace periods, etc",
+      "is_optional": false
+    }
+  ]
+}

@@ -158,7 +158,7 @@ public class InitSqlPipeline implements Serializable {
                     .addAll(toKindStrings(PHASE_TWO_ORDERED))
                     .build()));
 
-    // Set up the pipeline to write entity kinds from PHASE_ONE_ORDERED to SQL. Return a object
+    // Set up the pipeline to write entity kinds from PHASE_ONE_ORDERED to SQL. Return an object
     // that signals the completion of the phase.
     PCollection<Void> blocker =
         scheduleOnePhaseWrites(datastoreSnapshot, PHASE_ONE_ORDERED, Optional.empty(), null);
