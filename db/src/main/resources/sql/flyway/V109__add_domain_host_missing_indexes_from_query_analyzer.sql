@@ -12,7 +12,5 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-
-CREATE INDEX IDXbgfmveqa7e5hn689koikwn70r ON "BillingEvent" (domain_repo_id);
-CREATE INDEX IDXoqttafcywwdn41um6kwlt0n8b ON "BillingRecurrence" (domain_repo_id);
-CREATE INDEX IDXl8vobbecsd32k4ksavdfx8st6 ON "BillingCancellation" (domain_repo_id);
+CREATE INDEX IF NOT EXISTS IDXjw3rwtfrexyq53x9vu7qghrdt
+  ON "DomainHost" (host_repo_id);
