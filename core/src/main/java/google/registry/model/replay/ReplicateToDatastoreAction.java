@@ -127,12 +127,16 @@ public class ReplicateToDatastoreAction implements Runnable {
                 // Reload the last transaction id, which could possibly have changed.
                 LastSqlTransaction lastSqlTxn = LastSqlTransaction.load();
                 long nextTxnId = lastSqlTxn.getTransactionId() + 1;
-                if (nextTxnId < txnEntity.getId()) {
-                  // Missing transaction id.  This can happen normally.  If a transaction gets
-                  // rolled back, the sequence counter doesn't.
+
+                // Skip missing transactions.  Missed transactions can happen normally.  If a
+                // transaction gets rolled back, the sequence counter doesn't.
+                while (nextTxnId < txnEntity.getId()) {
                   logger.atWarning().log(
                       "Ignoring transaction %s, which does not exist.", nextTxnId);
-                } else if (nextTxnId > txnEntity.getId()) {
+                  ++nextTxnId;
+                }
+
+                if (nextTxnId > txnEntity.getId()) {
                   // We've already replayed this transaction.  This shouldn't happen, as GAE cron
                   // is supposed to avoid overruns and this action shouldn't be executed from any
                   // other context, but it's not harmful as we can just ignore the transaction.  Log
