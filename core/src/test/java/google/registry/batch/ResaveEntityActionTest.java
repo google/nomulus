@@ -44,7 +44,6 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestOfyAndSql;
-import google.registry.util.AppEngineServiceUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,7 +65,6 @@ public class ResaveEntityActionTest {
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
-  @Mock private AppEngineServiceUtils appEngineServiceUtils;
   @Mock private Response response;
   private final FakeClock clock = new FakeClock(DateTime.parse("2016-02-11T10:00:00Z"));
   private AsyncTaskEnqueuer asyncTaskEnqueuer;

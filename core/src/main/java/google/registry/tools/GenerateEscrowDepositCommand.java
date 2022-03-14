@@ -33,7 +33,6 @@ import google.registry.model.rde.RdeMode;
 import google.registry.rde.RdeStagingAction;
 import google.registry.request.Action.Service;
 import google.registry.tools.params.DateTimeParameter;
-import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.CloudTasksUtils;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -89,8 +88,6 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
       description = "Specify output subdirectory (under GCS RDE bucket, directory manual).",
       required = true)
   private String outdir;
-
-  @Inject AppEngineServiceUtils appEngineServiceUtils;
 
   @Inject CloudTasksUtils cloudTasksUtils;
 

@@ -31,8 +31,6 @@ import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STAT
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardHours;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableList;
@@ -55,7 +53,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.SqlHelper;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.UserInfo;
-import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.Optional;
 import java.util.Set;
@@ -96,8 +93,6 @@ public final class DomainLockUtilsTest {
     HostResource host = persistActiveHost("ns1.example.net");
     domain = persistResource(newDomainBase(DOMAIN_NAME, host));
 
-    AppEngineServiceUtils appEngineServiceUtils = mock(AppEngineServiceUtils.class);
-    when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     domainLockUtils =
         new DomainLockUtils(
             new DeterministicStringGenerator(Alphabets.BASE_58),

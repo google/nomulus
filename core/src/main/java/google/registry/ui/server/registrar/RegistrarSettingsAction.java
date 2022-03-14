@@ -59,7 +59,6 @@ import google.registry.ui.forms.FormException;
 import google.registry.ui.forms.FormFieldException;
 import google.registry.ui.server.RegistrarFormFields;
 import google.registry.ui.server.SendEmailUtils;
-import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.CloudTasksUtils;
 import google.registry.util.CollectionUtils;
 import google.registry.util.DiffUtils;
@@ -108,7 +107,6 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   private static ThreadLocal<Boolean> isInTestDriver = ThreadLocal.withInitial(() -> false);
 
   @Inject JsonActionRunner jsonActionRunner;
-  @Inject AppEngineServiceUtils appEngineServiceUtils;
   @Inject RegistrarConsoleMetrics registrarConsoleMetrics;
   @Inject SendEmailUtils sendEmailUtils;
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;
