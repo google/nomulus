@@ -14,6 +14,9 @@
 
 package google.registry.tools;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import java.util.Arrays;
 import java.util.Optional;
 
 /**
@@ -43,14 +46,12 @@ public enum DigestType {
     this.bytes = bytes;
   }
 
+  private static final ImmutableMap<Integer, DigestType> WIRE_VALUE_TO_DIGEST_TYPE =
+      Maps.uniqueIndex(Arrays.stream(DigestType.values()).iterator(), DigestType::getWireValue);
+
   /** Fetches a DigestType enumeration constant by its IANA assigned value. */
   public static Optional<DigestType> fromWireValue(int wireValue) {
-    for (DigestType alg : DigestType.values()) {
-      if (alg.getWireValue() == wireValue) {
-        return Optional.of(alg);
-      }
-    }
-    return Optional.empty();
+    return Optional.ofNullable(WIRE_VALUE_TO_DIGEST_TYPE.get(wireValue));
   }
 
   /** Fetches a value in the range [0, 255] that encodes this DS digest type on the wire. */
