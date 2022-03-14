@@ -59,49 +59,18 @@ class SendExpiringCertificateNotificationEmailActionTest {
   private static final String EXPIRATION_WARNING_EMAIL_BODY_TEXT =
       " Dear %1$s,\n"
           + "\n"
-          + "    We would like to inform you that your %2$s SSL certificate will expire at\n"
-          + "    %3$s. Please take note that using expired certificates will prevent\n"
-          + "    successful Registry login.\n"
+          + "We would like to inform you that your %2$s certificate will expire at %3$s."
           + "\n"
-          + "    Kindly update your production account certificate within the support\n"
-          + "    console using the following steps:\n"
+          + " Kind update your account using the following steps: "
           + "\n"
-          + "      1. Navigate to support.registry.google and login using your\n"
-          + "    %4$s@registry.google credentials.\n"
-          + "          * If this is your first time logging in, you will be prompted to\n"
-          + "          reset your password, so please keep your new password safe.\n"
-          + "          * If you are already logged in with some other Google account(s) but\n"
-          + "          not your %4$s@registry.google account, you need to click on\n"
-          + "          “Add Account” and login using your %4$s@registry.google credentials.\n"
-          + "      2. Select “Settings > Security” from the left navigation bar.\n"
-          + "      3. Click “Edit” on the top left corner.\n"
-          + "      4. Enter your full certificate string\n"
-          + "         (including lines -----BEGIN CERTIFICATE----- and\n"
-          + "         -----END CERTIFICATE-----) in the box.\n"
-          + "      5. Click “Save”. If there are validation issues with the form, you will\n"
-          + "         be prompted to fix them and click “Save” again.\n"
-          + "\n"
-          + "    A failover SSL certificate can also be added in order to prevent connection\n"
-          + "    issues once your main certificate expires. Connecting with either of the\n"
-          + "    certificates will work with our production EPP server.\n"
-          + "\n"
-          + "    Further information about our EPP connection requirements can be found in\n"
-          + "    section 9.2 in the updated Technical Guide in your Google Drive folder.\n"
-          + "\n"
-          + "    Note that account certificate changes take a few minutes to become\n"
-          + "    effective and that the existing connections will remain unaffected by\n"
-          + "    the change.\n"
-          + "\n"
-          + "    If you also would like to update your OT&E account certificate, please send\n"
-          + "    an email from your primary or technical contact to\n"
-          + "    registry-support@google.com and include the full certificate string\n"
-          + "    (including lines -----BEGIN CERTIFICATE----- and -----END CERTIFICATE-----).\n"
-          + "\n"
-          + "    Regards,\n"
-          + "    Google Registry\n";
+          + "  1. Navigate to support and login using your %4$s@registry.example credentials.\n"
+          + "  2. Click Settings -> Privacy on the top left corner.\n"
+          + "  3. Click Edit and enter certificate string."
+          + "  3. Click Save"
+          + "Regards,"
+          + "Example Registry";
 
-  private static final String EXPIRATION_WARNING_EMAIL_SUBJECT_TEXT =
-      "[Important] Expiring SSL certificate for Google " + "Registry EPP connection";
+  private static final String EXPIRATION_WARNING_EMAIL_SUBJECT_TEXT = "Expiration Warning Email";
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
@@ -623,11 +592,11 @@ class SendExpiringCertificateNotificationEmailActionTest {
     assertThat(emailBody).contains(registrarName);
     assertThat(emailBody).contains(certificateType.getDisplayName());
     assertThat(emailBody).contains(certExpirationDateStr);
-    assertThat(emailBody).contains(registrarId + "@registry.google");
-    assertThat(emailBody).doesNotContain("%1$s@registry.google");
-    assertThat(emailBody).doesNotContain("%2$s@registry.google");
-    assertThat(emailBody).doesNotContain("%3$s@registry.google");
-    assertThat(emailBody).doesNotContain("%4$s@registry.google");
+    assertThat(emailBody).contains(registrarId + "@registry.example");
+    assertThat(emailBody).doesNotContain("%1$s");
+    assertThat(emailBody).doesNotContain("%2$s");
+    assertThat(emailBody).doesNotContain("%3$s");
+    assertThat(emailBody).doesNotContain("%4$s");
   }
 
   @TestOfyAndSql
