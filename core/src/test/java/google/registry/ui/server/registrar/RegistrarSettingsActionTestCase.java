@@ -50,7 +50,6 @@ import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import google.registry.ui.server.SendEmailUtils;
-import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import java.io.PrintWriter;
@@ -88,7 +87,6 @@ public abstract class RegistrarSettingsActionTestCase {
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
-  @Mock AppEngineServiceUtils appEngineServiceUtils;
   @Mock HttpServletRequest req;
   @Mock HttpServletResponse rsp;
   @Mock SendEmailService emailService;
@@ -112,8 +110,6 @@ public abstract class RegistrarSettingsActionTestCase {
         getOnlyElement(loadRegistrar(CLIENT_ID).getContactsOfType(RegistrarContact.Type.TECH));
 
     action.registrarAccessor = null;
-    action.appEngineServiceUtils = appEngineServiceUtils;
-    when(appEngineServiceUtils.getCurrentVersionHostname("backend")).thenReturn("backend.hostname");
     action.jsonActionRunner =
         new JsonActionRunner(ImmutableMap.of(), new JsonResponse(new ResponseImpl(rsp)));
     action.sendEmailUtils =

@@ -46,7 +46,12 @@ import org.joda.time.DateTime;
  */
 @Embed
 @Entity
-@Table(indexes = @Index(columnList = "domainRepoId"))
+@Table(
+    indexes = {
+      @Index(columnList = "domainRepoId"),
+      @Index(columnList = "billing_event_id"),
+      @Index(columnList = "billing_recurrence_id")
+    })
 public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntity {
 
   @Id

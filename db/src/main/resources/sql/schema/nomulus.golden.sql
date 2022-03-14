@@ -1890,6 +1890,13 @@ CREATE INDEX idxr22ciyccwi9rrqmt1ro0s59qf ON public."Domain" USING btree (tech_c
 
 
 --
+-- Name: idxrc77s1ndiemi2vwwudchye214; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxrc77s1ndiemi2vwwudchye214 ON public."Host" USING gin (inet_addresses);
+
+
+--
 -- Name: idxrh4xmrot9bd63o382ow9ltfig; Type: INDEX; Schema: public; Owner: -
 --
 

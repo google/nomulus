@@ -763,12 +763,15 @@ create index IDXih4b2tea127p5rb61gje6e1y2 on "BillingCancellation" (registrar_id
 create index IDX2exdfbx6oiiwnhr8j6gjpqt2j on "BillingCancellation" (event_time);
 create index IDXl8vobbecsd32k4ksavdfx8st6 on "BillingCancellation" (domain_repo_id);
 create index IDXqa3g92jc17e8dtiaviy4fet4x on "BillingCancellation" (billing_time);
+create index IDX4ytbe5f3b39trsd4okx5ijhs4 on "BillingCancellation" (billing_event_id);
+create index IDXku0fopwyvd57ebo8bf0jg9xo2 on "BillingCancellation" (billing_recurrence_id);
 create index IDXqspv57gj2led8ly42fq01t7m7 on "BillingEvent" (registrar_id);
 create index IDX5yfbr88439pxw0v3j86c74fp8 on "BillingEvent" (event_time);
 create index IDX6py6ocrab0ivr76srcd2okpnq on "BillingEvent" (billing_time);
 create index IDXplxf9v56p0wg8ws6qsvd082hk on "BillingEvent" (synthetic_creation_time);
 create index IDXbgfmveqa7e5hn689koikwn70r on "BillingEvent" (domain_repo_id);
 create index IDXcesda59ssop44kklytpb292hn on "BillingEvent" (allocation_token);
+create index IDX6ebt3nwk5ocvnremnhnlkl6ff on "BillingEvent" (cancellation_matching_billing_recurrence_id);
 create index IDXd3gxhkh0jk694pjvh9pyn7wjc on "BillingRecurrence" (registrar_id);
 create index IDX6syykou4nkc7hqa5p8r92cpch on "BillingRecurrence" (event_time);
 create index IDXoqttafcywwdn41um6kwlt0n8b on "BillingRecurrence" (domain_repo_id);
@@ -795,6 +798,9 @@ create index IDXr22ciyccwi9rrqmt1ro0s59qf on "Domain" (tech_contact);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
 create index IDXa7fu0bqynfb79rr80528b4jqt on "Domain" (registrant_contact);
 create index IDXcws5mvmpl8o10wrhde780ors2 on "Domain" (dns_refresh_request_time);
+create index IDXsfci08jgsymxy6ovh4k7r358c on "Domain" (billing_recurrence_id);
+create index IDX3y3k7m2bkgahm9sixiohgyrga on "Domain" (transfer_billing_event_id);
+create index IDXcju58vqascbpve1t7fem53ctl on "Domain" (transfer_billing_recurrence_id);
 create index IDXrh4xmrot9bd63o382ow9ltfig on "DomainHistory" (creation_time);
 create index IDXaro1omfuaxjwmotk3vo00trwm on "DomainHistory" (history_registrar_id);
 create index IDXsu1nam10cjes9keobapn5jvxj on "DomainHistory" (history_type);
@@ -802,10 +808,13 @@ create index IDX6w3qbtgce93cal2orjg1tw7b7 on "DomainHistory" (history_modificati
 
     alter table if exists "DomainHistoryHost" 
        add constraint UKt2e7ae3t8gcsxd13wjx2ka7ij unique (domain_history_history_revision_id, domain_history_domain_repo_id, host_repo_id);
+create index IDXjw3rwtfrexyq53x9vu7qghrdt on "DomainHost" (host_repo_id);
 
     alter table if exists "DomainHost" 
        add constraint UKat9erbh52e4lg3jw6ai9wkjj9 unique (domain_repo_id, host_repo_id);
 create index IDXj1mtx98ndgbtb1bkekahms18w on "GracePeriod" (domain_repo_id);
+create index IDXbgssjudpm428mrv0xfpvgifps on "GracePeriod" (billing_event_id);
+create index IDX5u5m6clpk3nktrvtyy5umacb6 on "GracePeriod" (billing_recurrence_id);
 create index IDXd01j17vrpjxaerxdmn8bwxs7s on "GracePeriodHistory" (domain_repo_id);
 create index IDXkpkh68n6dy5v51047yr6b0e9l on "Host" (host_name);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);

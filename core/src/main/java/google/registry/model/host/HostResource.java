@@ -36,6 +36,17 @@ import javax.persistence.AccessType;
 @javax.persistence.Entity(name = "Host")
 @javax.persistence.Table(
     name = "Host",
+    /**
+     * A gin index defined on the inet_addresses field ({@link HostBase#inetAddresses} cannot be
+     * declared here because JPA/Hibernate does not support index type specification. As a result,
+     * the hibernate-generated schema (which is for reference only) does not have this index.
+     *
+     * <p>There are Hibernate-specific solutions for adding this index to Hibernate's domain model.
+     * We could either declare the index in hibernate.cfg.xml or add it to the {@link
+     * org.hibernate.cfg.Configuration} instance for {@link SessionFactory} instantiation (which
+     * would prevent us from using JPA standard bootstrapping). For now, there is no obvious benefit
+     * doing either.
+     */
     indexes = {@javax.persistence.Index(columnList = "hostName")})
 @ExternalMessagingName("host")
 @WithStringVKey

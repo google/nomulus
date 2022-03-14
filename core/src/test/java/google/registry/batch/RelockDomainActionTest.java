@@ -31,8 +31,6 @@ import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -51,7 +49,6 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.UserInfo;
 import google.registry.tools.DomainLockUtils;
-import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import google.registry.util.StringGenerator.Alphabets;
@@ -110,11 +107,6 @@ public class RelockDomainActionTest {
         domainLockUtils.administrativelyApplyUnlock(
             DOMAIN_NAME, CLIENT_ID, false, Optional.empty());
     assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
-
-    AppEngineServiceUtils appEngineServiceUtils = mock(AppEngineServiceUtils.class);
-    lenient()
-        .when(appEngineServiceUtils.getServiceHostname("backend"))
-        .thenReturn("backend.hostname.fake");
 
     action = createAction(oldLock.getRevisionId());
   }

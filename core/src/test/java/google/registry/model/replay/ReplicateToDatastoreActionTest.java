@@ -208,18 +208,20 @@ public class ReplicateToDatastoreActionTest {
     TestObject foo = TestObject.create("foo");
     insertInDb(foo);
 
-    // Fail during the transaction to delete it.
-    try {
-      jpaTm()
-          .transact(
-              () -> {
-                jpaTm().delete(foo.key());
-                // Explicitly save the transaction entity to force the id update.
-                jpaTm().insert(new TransactionEntity(new byte[] {1, 2, 3}));
-                throw new RuntimeException("fail!!!");
-              });
-    } catch (Exception e) {
-      logger.atInfo().log("Got expected exception.");
+    // Fail two transactions.
+    for (int i = 0; i < 2; ++i) {
+      try {
+        jpaTm()
+            .transact(
+                () -> {
+                  jpaTm().delete(foo.key());
+                  // Explicitly save the transaction entity to force the id update.
+                  jpaTm().insert(new TransactionEntity(new byte[] {1, 2, 3}));
+                  throw new RuntimeException("fail!!!");
+                });
+      } catch (Exception e) {
+        logger.atInfo().log("Got expected exception.");
+      }
     }
 
     TestObject bar = TestObject.create("bar");
@@ -230,11 +232,13 @@ public class ReplicateToDatastoreActionTest {
     assertThat(txns).hasSize(2);
     for (TransactionEntity txn : txns) {
       assertThat(txn.getId()).isNotEqualTo(2);
+      assertThat(txn.getId()).isNotEqualTo(3);
       applyTransaction(txn);
     }
 
     assertThat(ofyTm().transact(() -> ofyTm().loadByKey(foo.key()))).isEqualTo(foo);
     assertThat(ofyTm().transact(() -> ofyTm().loadByKey(bar.key()))).isEqualTo(bar);
+    assertThat(ofyTm().transact(() -> LastSqlTransaction.load()).getTransactionId()).isEqualTo(4);
   }
 
   @Test
