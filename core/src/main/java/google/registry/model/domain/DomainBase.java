@@ -69,7 +69,10 @@ import org.joda.time.DateTime;
       @Index(columnList = "techContact"),
       @Index(columnList = "tld"),
       @Index(columnList = "registrantContact"),
-      @Index(columnList = "dnsRefreshRequestTime")
+      @Index(columnList = "dnsRefreshRequestTime"),
+      @Index(columnList = "billing_recurrence_id"),
+      @Index(columnList = "transfer_billing_event_id"),
+      @Index(columnList = "transfer_billing_recurrence_id")
     })
 @WithStringVKey
 @ExternalMessagingName("domain")
@@ -89,7 +92,10 @@ public class DomainBase extends DomainContent
   @ElementCollection
   @JoinTable(
       name = "DomainHost",
-      indexes = {@Index(columnList = "domain_repo_id,host_repo_id", unique = true)})
+      indexes = {
+        @Index(columnList = "domain_repo_id,host_repo_id", unique = true),
+        @Index(columnList = "host_repo_id")
+      })
   @Access(AccessType.PROPERTY)
   @Column(name = "host_repo_id")
   public Set<VKey<HostResource>> getNsHosts() {

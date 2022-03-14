@@ -308,7 +308,8 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "eventTime"),
         @javax.persistence.Index(columnList = "billingTime"),
         @javax.persistence.Index(columnList = "syntheticCreationTime"),
-        @javax.persistence.Index(columnList = "allocationToken")
+        @javax.persistence.Index(columnList = "allocationToken"),
+        @javax.persistence.Index(columnList = "cancellation_matching_billing_recurrence_id")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_event_id"))
   @WithLongVKey(compositeKey = true)
@@ -614,7 +615,9 @@ public abstract class BillingEvent extends ImmutableObject
       indexes = {
         @javax.persistence.Index(columnList = "registrarId"),
         @javax.persistence.Index(columnList = "eventTime"),
-        @javax.persistence.Index(columnList = "billingTime")
+        @javax.persistence.Index(columnList = "billingTime"),
+        @javax.persistence.Index(columnList = "billing_event_id"),
+        @javax.persistence.Index(columnList = "billing_recurrence_id")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_cancellation_id"))
   @WithLongVKey(compositeKey = true)
