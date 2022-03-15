@@ -58,21 +58,22 @@ public final class Registries {
         () ->
             tm().doTransactionless(
                     () -> {
-                      ImmutableSet<String> tlds =
-                          tm().isOfy()
-                              ? auditedOfy()
-                                  .load()
-                                  .type(Registry.class)
-                                  .ancestor(getCrossTldKey())
-                                  .keys()
-                                  .list()
-                                  .stream()
-                                  .map(Key::getName)
-                                  .collect(toImmutableSet())
-                              : tm().loadAllOf(Registry.class).stream()
-                                  .map(Registry::getTldStr)
-                                  .collect(toImmutableSet());
-                      return Registry.getAll(tlds).stream()
+                      if (tm().isOfy()) {
+                        ImmutableSet<String> tlds =
+                            auditedOfy()
+                                .load()
+                                .type(Registry.class)
+                                .ancestor(getCrossTldKey())
+                                .keys()
+                                .list()
+                                .stream()
+                                .map(Key::getName)
+                                .collect(toImmutableSet());
+                        return Registry.getAll(tlds).stream()
+                            .map(e -> Maps.immutableEntry(e.getTldStr(), e.getTldType()))
+                            .collect(entriesToImmutableMap());
+                      }
+                      return tm().loadAllOf(Registry.class).stream()
                           .map(e -> Maps.immutableEntry(e.getTldStr(), e.getTldType()))
                           .collect(entriesToImmutableMap());
                     }));
