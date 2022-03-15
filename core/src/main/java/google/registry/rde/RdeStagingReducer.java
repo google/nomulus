@@ -202,6 +202,14 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
       logger.atInfo().log("Manual operation; not advancing cursor or enqueuing upload task.");
       return;
     }
+    // We need to save the revision in a separate transaction because the subsequent upload/copy
+    // action reads the most current revision from the database. If it is done in the same
+    // transaction with the enqueueing, the action might start running before the transaction is
+    // committed, due to Cloud Tasks not being transaction aware, unlike Task Queue. The downside
+    // is that if for some reason the second transaction is rolled back, the revision update is not
+    // undone. But this should be fine since the next run will just increment the revision and start
+    // over.
+    tm().transact(() -> RdeRevision.saveRevision(tld, watermark, mode, revision));
     tm().transact(
             () -> {
               Registry registry = Registry.get(tld);

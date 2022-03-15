@@ -271,10 +271,19 @@ public class RdeIO {
     @ProcessElement
     public void processElement(
         @Element KV<PendingDeposit, Integer> input, PipelineOptions options) {
+      PendingDeposit key = input.getKey();
+      // We need to save the revision in a separate transaction because the subsequent upload/copy
+      // action reads the most current revision from the database. If it is done in the same
+      // transaction with the enqueueing, the action might start running before the transaction is
+      // committed, due to Cloud Tasks not being transaction aware. The downside is that if for some
+      // reason the second transaction is rolled back, the revision update is not undone. But this
+      // should be fine since the next run will just increment the revision and start over.
+      tm().transact(
+              () ->
+                  RdeRevision.saveRevision(
+                      key.tld(), key.watermark(), key.mode(), input.getValue()));
       tm().transact(
               () -> {
-                PendingDeposit key = input.getKey();
-                int revision = input.getValue();
                 Registry registry = Registry.get(key.tld());
                 Optional<Cursor> cursor =
                     transactIfJpaTm(
@@ -296,7 +305,6 @@ public class RdeIO {
                 tm().put(Cursor.create(key.cursor(), newPosition, registry));
                 logger.atInfo().log(
                     "Rolled forward %s on %s cursor to %s.", key.cursor(), key.tld(), newPosition);
-                RdeRevision.saveRevision(key.tld(), key.watermark(), key.mode(), revision);
                 // Enqueueing a task is a side effect that is not undone if the transaction rolls
                 // back. So this may result in multiple copies of the same task being processed.
                 // This is fine because the RdeUploadAction is guarded by a lock and tracks progress
