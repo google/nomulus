@@ -1799,6 +1799,13 @@ CREATE INDEX idxku0fopwyvd57ebo8bf0jg9xo2 ON public."BillingCancellation" USING 
 
 
 --
+-- Name: idxl49vydnq0h5j1piefwjy4i8er; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxl49vydnq0h5j1piefwjy4i8er ON public."Host" USING btree (current_sponsor_registrar_id);
+
+
+--
 -- Name: idxl8vobbecsd32k4ksavdfx8st6; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1852,6 +1859,13 @@ CREATE INDEX idxoqd7n4hbx86hvlgkilq75olas ON public."Contact" USING btree (conta
 --
 
 CREATE INDEX idxoqttafcywwdn41um6kwlt0n8b ON public."BillingRecurrence" USING btree (domain_repo_id);
+
+
+--
+-- Name: idxovmntef6l45tw2bsfl56tcugx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxovmntef6l45tw2bsfl56tcugx ON public."Host" USING btree (deletion_time);
 
 
 --
@@ -1929,6 +1943,13 @@ CREATE INDEX idxsu1nam10cjes9keobapn5jvxj ON public."DomainHistory" USING btree 
 --
 
 CREATE INDEX idxsudwswtwqnfnx2o1hx4s0k0g5 ON public."ContactHistory" USING btree (history_modification_time);
+
+
+--
+-- Name: idxy98mebut8ix1v07fjxxdkqcx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxy98mebut8ix1v07fjxxdkqcx ON public."Host" USING btree (creation_time);
 
 
 --
