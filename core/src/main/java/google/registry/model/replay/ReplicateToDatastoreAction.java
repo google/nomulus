@@ -143,6 +143,7 @@ public class ReplicateToDatastoreAction implements Runnable {
    * </ol>
    */
   private static void applyMissingTransactions() {
+    long now = jpaTm().getTransactionTime().getMillis();
     ImmutableList<ReplayGap> gaps = ofyTm().loadAllOf(ReplayGap.class);
     jpaTm()
         .query("SELECT txn from TransactionEntity txn WHERE id IN :gapIds", TransactionEntity.class)
@@ -177,7 +178,6 @@ public class ReplicateToDatastoreAction implements Runnable {
             });
 
     // Clean up any gaps that have expired.
-    long now = jpaTm().getTransactionTime().getMillis();
     ofyTm()
         .transact(
             () ->
