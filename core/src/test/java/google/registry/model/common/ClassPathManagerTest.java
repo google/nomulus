@@ -41,6 +41,7 @@ import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.replay.LastSqlTransaction;
+import google.registry.model.replay.ReplayGap;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
@@ -74,6 +75,7 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("HostResource")).isEqualTo(HostResource.class);
     assertThat(ClassPathManager.getClass("Recurring")).isEqualTo(Recurring.class);
     assertThat(ClassPathManager.getClass("Registrar")).isEqualTo(Registrar.class);
+    assertThat(ClassPathManager.getClass("ReplayGap")).isEqualTo(ReplayGap.class);
     assertThat(ClassPathManager.getClass("ContactResource")).isEqualTo(ContactResource.class);
     assertThat(ClassPathManager.getClass("Cancellation")).isEqualTo(Cancellation.class);
     assertThat(ClassPathManager.getClass("RegistrarContact")).isEqualTo(RegistrarContact.class);
@@ -141,6 +143,7 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClassName(HostResource.class)).isEqualTo("HostResource");
     assertThat(ClassPathManager.getClassName(Recurring.class)).isEqualTo("Recurring");
     assertThat(ClassPathManager.getClassName(Registrar.class)).isEqualTo("Registrar");
+    assertThat(ClassPathManager.getClassName(ReplayGap.class)).isEqualTo("ReplayGap");
     assertThat(ClassPathManager.getClassName(ContactResource.class)).isEqualTo("ContactResource");
     assertThat(ClassPathManager.getClassName(Cancellation.class)).isEqualTo("Cancellation");
     assertThat(ClassPathManager.getClassName(RegistrarContact.class)).isEqualTo("RegistrarContact");

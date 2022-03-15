@@ -641,6 +641,10 @@ class google.registry.model.replay.LastSqlTransaction {
   @Id long id;
   long transactionId;
 }
+class google.registry.model.replay.ReplayGap {
+  @Id long transactionId;
+  org.joda.time.DateTime timestamp;
+}
 class google.registry.model.reporting.DomainTransactionRecord {
   google.registry.model.reporting.DomainTransactionRecord$TransactionReportField reportField;
   java.lang.Integer reportAmount;

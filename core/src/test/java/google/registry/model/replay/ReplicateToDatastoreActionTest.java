@@ -27,11 +27,13 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.testing.TestLogHandler;
 import com.google.common.truth.Truth8;
+import com.googlecode.objectify.Key;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.domain.token.AllocationToken;
@@ -39,6 +41,8 @@ import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.server.Lock;
+import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.JpaTransactionManagerImpl;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
@@ -48,9 +52,13 @@ import google.registry.testing.InjectExtension;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestObject;
 import google.registry.util.RequestStatusChecker;
+import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
@@ -242,6 +250,64 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
+  void testTransactionGapReplay() {
+    insertInDb(TestObject.create("foo"));
+    DeferredCommit deferred = new DeferredCommit(fakeClock);
+    TestObject bar = TestObject.create("bar");
+    deferred.transact(() -> jpaTm().insert(bar));
+    TestObject baz = TestObject.create("baz");
+    insertInDb(baz);
+
+    action.run();
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(bar.key())).isPresent()).isFalse();
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(baz.key()))).isEqualTo(baz);
+    VKey<ReplayGap> gapKey = VKey.createOfy(ReplayGap.class, Key.create(ReplayGap.class, 2));
+    Truth8.assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(gapKey))).isPresent();
+
+    deferred.commit();
+    resetAction();
+    action.run();
+
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(bar.key()))).isEqualTo(bar);
+    // Verify that the gap record has been cleaned up.
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(gapKey).isPresent())).isFalse();
+  }
+
+  @Test
+  void testGapRecordExpiration() {
+    insertInDb(TestObject.create("foo"));
+
+    // Fail a transaction, create a gap.
+    try {
+      jpaTm()
+          .transact(
+              () -> {
+                jpaTm().insert(TestObject.create("other"));
+                // Explicitly save the transaction entity to force the id update.
+                jpaTm().insert(new TransactionEntity(new byte[] {1, 2, 3}));
+                throw new RuntimeException("fail!!!");
+              });
+    } catch (Exception e) {
+      logger.atInfo().log("Got expected exception.");
+    }
+
+    insertInDb(TestObject.create("bar"));
+
+    action.run();
+
+    // Verify that the gap record has been created
+    VKey<ReplayGap> gapKey = VKey.createOfy(ReplayGap.class, Key.create(ReplayGap.class, 2));
+    Truth8.assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(gapKey))).isPresent();
+
+    fakeClock.advanceBy(Duration.millis(ReplicateToDatastoreAction.MAX_GAP_RETENTION + 1));
+    resetAction();
+    action.run();
+
+    // Verify that the gap record has been destroyed.
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(gapKey)).isPresent()).isFalse();
+  }
+
+  @Test
   void testBeforeDatastoreSaveCallback() {
     assumeTrue(ReplayExtension.replayTestsEnabled());
 
@@ -326,5 +392,64 @@ public class ReplicateToDatastoreActionTest {
     RequestStatusChecker requestStatusChecker = mock(RequestStatusChecker.class);
     when(requestStatusChecker.getLogId()).thenReturn("logId");
     action = new ReplicateToDatastoreAction(fakeClock, requestStatusChecker, response);
+  }
+
+  /**
+   * Deep fake of EntityManagerFactory -> EntityManager -> EntityTransaction that allows us to defer
+   * the actual commit until after the other transactions are replayed.
+   */
+  static class DeferredCommit {
+
+    FakeClock clock;
+    EntityTransaction realTransaction;
+
+    DeferredCommit(FakeClock clock) {
+      this.clock = clock;
+    }
+
+    private static <T> T makeProxy(
+        Class<T> iface, T delegate, String method, Supplier<?> supplier) {
+      return (T)
+          Proxy.newProxyInstance(
+              delegate.getClass().getClassLoader(),
+              new Class[] {iface},
+              (proxy, meth, args) -> {
+                if (meth.getName().equals(method)) {
+                  return supplier.get();
+                } else {
+                  return meth.invoke(delegate, args);
+                }
+              });
+    }
+
+    EntityManager createEntityManagerProxy(EntityManager orgEntityManager) {
+      return makeProxy(
+          EntityManager.class,
+          orgEntityManager,
+          "getTransaction",
+          () ->
+              makeProxy(
+                  EntityTransaction.class,
+                  realTransaction = orgEntityManager.getTransaction(),
+                  "commit",
+                  () -> null));
+    }
+
+    void commit() {
+      realTransaction.commit();
+    }
+
+    void transact(Runnable runnable) {
+      EntityManagerFactory orgEmf =
+          jpaTm().transact(() -> jpaTm().getEntityManager().getEntityManagerFactory());
+      EntityManagerFactory emfProxy =
+          makeProxy(
+              EntityManagerFactory.class,
+              orgEmf,
+              "createEntityManager",
+              () -> createEntityManagerProxy(orgEmf.createEntityManager()));
+
+      new JpaTransactionManagerImpl(emfProxy, clock).transact(runnable);
+    }
   }
 }

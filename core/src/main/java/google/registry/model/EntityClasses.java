@@ -40,6 +40,7 @@ import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.replay.LastSqlTransaction;
+import google.registry.model.replay.ReplayGap;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
@@ -86,6 +87,7 @@ public final class EntityClasses {
           Registrar.class,
           RegistrarContact.class,
           Registry.class,
+          ReplayGap.class,
           ServerSecret.class);
 
   private EntityClasses() {}
