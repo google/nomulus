@@ -72,10 +72,11 @@ public final class Registries {
                         return Registry.getAll(tlds).stream()
                             .map(e -> Maps.immutableEntry(e.getTldStr(), e.getTldType()))
                             .collect(entriesToImmutableMap());
+                      } else {
+                        return tm().loadAllOf(Registry.class).stream()
+                            .map(e -> Maps.immutableEntry(e.getTldStr(), e.getTldType()))
+                            .collect(entriesToImmutableMap());
                       }
-                      return tm().loadAllOf(Registry.class).stream()
-                          .map(e -> Maps.immutableEntry(e.getTldStr(), e.getTldType()))
-                          .collect(entriesToImmutableMap());
                     }));
   }
 
