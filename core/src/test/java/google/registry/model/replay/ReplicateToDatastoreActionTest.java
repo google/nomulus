@@ -299,7 +299,7 @@ public class ReplicateToDatastoreActionTest {
     VKey<ReplayGap> gapKey = VKey.createOfy(ReplayGap.class, Key.create(ReplayGap.class, 2));
     Truth8.assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(gapKey))).isPresent();
 
-    fakeClock.advanceBy(Duration.millis(ReplicateToDatastoreAction.MAX_GAP_RETENTION + 1));
+    fakeClock.advanceBy(Duration.millis(ReplicateToDatastoreAction.MAX_GAP_RETENTION_MILLIS + 1));
     resetAction();
     action.run();
 

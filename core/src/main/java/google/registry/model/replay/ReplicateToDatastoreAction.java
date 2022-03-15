@@ -76,7 +76,7 @@ public class ReplicateToDatastoreAction implements Runnable {
    * The longest time that we'll keep trying to resolve a gap in the Transaction table in
    * milliseconds, after which, the gap record will be deleted.
    */
-  public static final long MAX_GAP_RETENTION = 300000;
+  public static final long MAX_GAP_RETENTION_MILLIS = 300000;
 
   public static final Duration REPLICATE_TO_DATASTORE_LOCK_LEASE_LENGTH = standardHours(1);
 
@@ -110,13 +110,12 @@ public class ReplicateToDatastoreAction implements Runnable {
       return jpaTm()
           .transactWithoutBackup(
               () -> {
-                // Unless we're doing a snapshot, we'll want to fill in any gaps in the transaction
-                // log that have since become available before processing the next batch.
-                if (!snapshotId.isPresent()) {
-                  applyMissingTransactions();
-                }
-
                 snapshotId.ifPresent(jpaTm()::setDatabaseSnapshot);
+
+                // Fill in any gaps in the transaction log that have since become available before
+                // processing the next batch.
+                applyMissingTransactions();
+
                 return jpaTm()
                     .query(
                         "SELECT txn FROM TransactionEntity txn WHERE id >" + " :lastId ORDER BY id",
@@ -185,7 +184,7 @@ public class ReplicateToDatastoreAction implements Runnable {
                 gaps.stream()
                     .forEach(
                         gap -> {
-                          if (now - gap.getTimestamp().getMillis() > MAX_GAP_RETENTION) {
+                          if (now - gap.getTimestamp().getMillis() > MAX_GAP_RETENTION_MILLIS) {
                             auditedOfy().deleteIgnoringReadOnlyWithoutBackup().entity(gap);
                             logger.atInfo().log("Removed expired gap %s", gap);
                           }
