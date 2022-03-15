@@ -24,6 +24,7 @@ import static com.google.common.collect.Maps.filterValues;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -38,6 +39,8 @@ import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.Key;
 import google.registry.model.tld.Registry.TldType;
 import java.util.Optional;
+import java.util.stream.Stream;
+import javax.persistence.EntityManager;
 
 /** Utilities for finding and listing {@link Registry} entities. */
 public final class Registries {
@@ -73,8 +76,14 @@ public final class Registries {
                             .map(e -> Maps.immutableEntry(e.getTldStr(), e.getTldType()))
                             .collect(entriesToImmutableMap());
                       } else {
-                        return tm().loadAllOf(Registry.class).stream()
-                            .map(e -> Maps.immutableEntry(e.getTldStr(), e.getTldType()))
+                        EntityManager entityManager = jpaTm().getEntityManager();
+                        Stream<?> resultStream =
+                            entityManager
+                                .createQuery("SELECT tldStrId, tldType FROM Tld")
+                                .getResultStream();
+                        return resultStream
+                            .map(e -> ((Object[]) e))
+                            .map(e -> Maps.immutableEntry((String) e[0], ((TldType) e[1])))
                             .collect(entriesToImmutableMap());
                       }
                     }));
