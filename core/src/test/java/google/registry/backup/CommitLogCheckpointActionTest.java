@@ -47,11 +47,10 @@ public class CommitLogCheckpointActionTest {
 
   private DateTime now = DateTime.now(UTC);
   private CommitLogCheckpointAction task = new CommitLogCheckpointAction();
-  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(new FakeClock(now));
 
   @BeforeEach
   void beforeEach() {
-    task.clock = new FakeClock(now);
     task.strategy = strategy;
     task.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(strategy.computeCheckpoint())
@@ -68,7 +67,8 @@ public class CommitLogCheckpointActionTest {
         new TaskMatcher()
             .url(ExportCommitLogDiffAction.PATH)
             .param(ExportCommitLogDiffAction.LOWER_CHECKPOINT_TIME_PARAM, START_OF_TIME.toString())
-            .param(ExportCommitLogDiffAction.UPPER_CHECKPOINT_TIME_PARAM, now.toString()));
+            .param(ExportCommitLogDiffAction.UPPER_CHECKPOINT_TIME_PARAM, now.toString())
+            .scheduleTime(now.plus(CommitLogCheckpointAction.ENQUEUE_DELAY_SECONDS)));
     assertThat(loadRoot().getLastWrittenTime()).isEqualTo(now);
   }
 
@@ -82,7 +82,8 @@ public class CommitLogCheckpointActionTest {
         new TaskMatcher()
             .url(ExportCommitLogDiffAction.PATH)
             .param(ExportCommitLogDiffAction.LOWER_CHECKPOINT_TIME_PARAM, oneMinuteAgo.toString())
-            .param(ExportCommitLogDiffAction.UPPER_CHECKPOINT_TIME_PARAM, now.toString()));
+            .param(ExportCommitLogDiffAction.UPPER_CHECKPOINT_TIME_PARAM, now.toString())
+            .scheduleTime(now.plus(CommitLogCheckpointAction.ENQUEUE_DELAY_SECONDS)));
     assertThat(loadRoot().getLastWrittenTime()).isEqualTo(now);
   }
 

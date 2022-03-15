@@ -28,11 +28,11 @@ import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.auth.Auth;
-import google.registry.util.Clock;
 import google.registry.util.CloudTasksUtils;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 /**
  * Action that saves commit log checkpoints to Datastore and kicks off a diff export task.
@@ -57,7 +57,22 @@ public final class CommitLogCheckpointAction implements Runnable {
 
   private static final String QUEUE_NAME = "export-commits";
 
-  @Inject Clock clock;
+  /**
+   * The amount of time enqueueing should be delayed.
+   *
+   * <p>The {@link ExportCommitLogDiffAction} is enqueued in {@link CommitLogCheckpointAction},
+   * which is inside a Datastore transaction that persists the checkpoint to be exported. After the
+   * switch to CloudTasks API, the task may be invoked before the Datastore transaction commits.
+   * When this happens, the checkpoint is not found which leads to {@link
+   * com.google.common.base.VerifyException}.
+   *
+   * <p>In order to invoke the task after the transaction commits, a reasonable delay should be
+   * added to each task. The latency of the request is mostly in the range of 4-6 seconds; Choosing
+   * a value 30% greater than the upper bound should solve the issue invoking a task before the
+   * transaction commits.
+   */
+  static final Duration ENQUEUE_DELAY_SECONDS = Duration.standardSeconds(8);
+
   @Inject CommitLogCheckpointStrategy strategy;
   @Inject CloudTasksUtils cloudTasksUtils;
 
@@ -96,14 +111,15 @@ public final class CommitLogCheckpointAction implements Runnable {
                   // Enqueue a diff task between previous and current checkpoints.
                   cloudTasksUtils.enqueue(
                       QUEUE_NAME,
-                      cloudTasksUtils.createPostTask(
+                      cloudTasksUtils.createPostTaskWithDelay(
                           ExportCommitLogDiffAction.PATH,
                           Service.BACKEND.toString(),
                           ImmutableMultimap.of(
                               LOWER_CHECKPOINT_TIME_PARAM,
                               lastWrittenTime.toString(),
                               UPPER_CHECKPOINT_TIME_PARAM,
-                              checkpoint.getCheckpointTime().toString())));
+                              checkpoint.getCheckpointTime().toString()),
+                          ENQUEUE_DELAY_SECONDS));
                   return true;
                 });
     return isCheckPointPersisted ? Optional.of(checkpoint) : Optional.empty();
