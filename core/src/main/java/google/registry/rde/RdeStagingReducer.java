@@ -233,7 +233,6 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
               tm().put(Cursor.create(key.cursor(), newPosition, registry));
               logger.atInfo().log(
                   "Rolled forward %s on %s cursor to %s.", key.cursor(), tld, newPosition);
-              RdeRevision.saveRevision(tld, watermark, mode, revision);
               // Enqueueing a task is a side effect that is not undone if the transaction rolls
               // back. So this may result in multiple copies of the same task being processed. This
               // is fine because the RdeUploadAction is guarded by a lock and tracks progress by
