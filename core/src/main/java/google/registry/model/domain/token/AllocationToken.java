@@ -76,6 +76,8 @@ import org.joda.time.DateTime;
       @javax.persistence.Index(
           columnList = "domainName",
           name = "allocation_token_domain_name_idx"),
+      @javax.persistence.Index(columnList = "tokenType"),
+      @javax.persistence.Index(columnList = "redemption_domain_repo_id")
     })
 public class AllocationToken extends BackupGroupRoot implements Buildable, DatastoreAndSqlEntity {
 
