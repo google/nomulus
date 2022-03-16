@@ -27,9 +27,9 @@ import org.joda.time.DateTime;
  * Tracks gaps in transaction ids when replicating from SQL to datastore.
  *
  * <p>SQL -&gt; DS replication uses a Transaction table indexed by a SEQUENCE column, which normally
- * increments monotonically for each committed transaction.  Gaps in this sequence can occur when a
+ * increments monotonically for each committed transaction. Gaps in this sequence can occur when a
  * transaction is rolled back or when a transaction has been initiated but not committed to the
- * table at the time of a query.  To protect us from the latter scenario, we need to keep track of
+ * table at the time of a query. To protect us from the latter scenario, we need to keep track of
  * these gaps and replay any of them that have been filled in since we processed their batch.
  */
 @DeleteAfterMigration
