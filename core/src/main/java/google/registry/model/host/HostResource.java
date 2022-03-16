@@ -47,7 +47,12 @@ import javax.persistence.AccessType;
      * would prevent us from using JPA standard bootstrapping). For now, there is no obvious benefit
      * doing either.
      */
-    indexes = {@javax.persistence.Index(columnList = "hostName")})
+    indexes = {
+      @javax.persistence.Index(columnList = "hostName"),
+      @javax.persistence.Index(columnList = "creationTime"),
+      @javax.persistence.Index(columnList = "deletionTime"),
+      @javax.persistence.Index(columnList = "currentSponsorRegistrarId")
+    })
 @ExternalMessagingName("host")
 @WithStringVKey
 @Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)
