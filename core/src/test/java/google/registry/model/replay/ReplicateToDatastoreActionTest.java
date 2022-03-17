@@ -273,6 +273,41 @@ public class ReplicateToDatastoreActionTest {
     assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(gapKey).isPresent())).isFalse();
   }
 
+  /** Verify that we can handle creation and deletion of > 25 gap records. */
+  @Test
+  void testLargeNumberOfGaps() {
+    // Fail thirty transactions.
+    for (int i = 0; i < 30; ++i) {
+      try {
+        jpaTm()
+            .transact(
+                () -> {
+                  insertInDb(TestObject.create("foo"));
+                  // Explicitly save the transaction entity to force the id update.
+                  jpaTm().insert(new TransactionEntity(new byte[] {1, 2, 3}));
+                  throw new RuntimeException("fail!!!");
+                });
+      } catch (Exception e) {
+        ;
+      }
+    }
+
+    TestObject bar = TestObject.create("bar");
+    insertInDb(bar);
+
+    // Verify that the transaction was successfully applied and that we have generated 30 gap
+    // records.
+    action.run();
+    Truth8.assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(bar.key()))).isPresent();
+    assertThat(ofyTm().loadAllOf(ReplayGap.class).size()).isEqualTo(30);
+
+    // Verify that we can clean up this many gap records after expiration.
+    fakeClock.advanceBy(Duration.millis(ReplicateToDatastoreAction.MAX_GAP_RETENTION_MILLIS + 1));
+    resetAction();
+    action.run();
+    assertThat(ofyTm().loadAllOf(ReplayGap.class).size()).isEqualTo(0);
+  }
+
   @Test
   void testGapRecordExpiration() {
     insertInDb(TestObject.create("foo"));
