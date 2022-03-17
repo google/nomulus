@@ -1624,6 +1624,13 @@ CREATE INDEX idx8nr0ke9mrrx4ewj6pd2ag4rmr ON public."Domain" USING btree (creati
 
 
 --
+-- Name: idx9g3s7mjv1yn4t06nqid39whss; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx9g3s7mjv1yn4t06nqid39whss ON public."AllocationToken" USING btree (token_type);
+
+
+--
 -- Name: idx9q53px6r302ftgisqifmc6put; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1943,6 +1950,13 @@ CREATE INDEX idxsu1nam10cjes9keobapn5jvxj ON public."DomainHistory" USING btree 
 --
 
 CREATE INDEX idxsudwswtwqnfnx2o1hx4s0k0g5 ON public."ContactHistory" USING btree (history_modification_time);
+
+
+--
+-- Name: idxtmlqd31dpvvd2g1h9i7erw6aj; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxtmlqd31dpvvd2g1h9i7erw6aj ON public."AllocationToken" USING btree (redemption_domain_repo_id);
 
 
 --
