@@ -64,6 +64,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
   private static final long serialVersionUID = 60326234579091203L;
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final Duration ENQUEUE_DELAY = Duration.standardMinutes(1);
 
   private final CloudTasksUtils cloudTasksUtils;
   private final LockHandler lockHandler;
@@ -234,27 +235,32 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
               logger.atInfo().log(
                   "Rolled forward %s on %s cursor to %s.", key.cursor(), tld, newPosition);
               // Enqueueing a task is a side effect that is not undone if the transaction rolls
-              // back. So this may result in multiple copies of the same task being processed. This
-              // is fine because the RdeUploadAction is guarded by a lock and tracks progress by
-              // cursor. The BrdaCopyAction writes a file to GCS, which is an atomic action.
+              // back. So this may result in multiple copies of the same task being processed.
+              // This is fine because the RdeUploadAction is guarded by a lock and tracks progress
+              // by cursor. The BrdaCopyAction writes a file to GCS, which is an atomic action. It
+              // is also guarded by a cursor to not run before the cursor is updated. We also
+              // include a delay to minimize the chance that the enqueued job executes before the
+              // transaction is committed, which triggers a retry.
               if (mode == RdeMode.FULL) {
                 cloudTasksUtils.enqueue(
                     "rde-upload",
-                    cloudTasksUtils.createPostTask(
+                    cloudTasksUtils.createPostTaskWithDelay(
                         RdeUploadAction.PATH,
                         Service.BACKEND.toString(),
-                        ImmutableMultimap.of(RequestParameters.PARAM_TLD, tld)));
+                        ImmutableMultimap.of(RequestParameters.PARAM_TLD, tld),
+                        ENQUEUE_DELAY));
               } else {
                 cloudTasksUtils.enqueue(
                     "brda",
-                    cloudTasksUtils.createPostTask(
+                    cloudTasksUtils.createPostTaskWithDelay(
                         BrdaCopyAction.PATH,
                         Service.BACKEND.toString(),
                         ImmutableMultimap.of(
                             RequestParameters.PARAM_TLD,
                             tld,
                             RdeModule.PARAM_WATERMARK,
-                            watermark.toString())));
+                            watermark.toString()),
+                        ENQUEUE_DELAY));
               }
             });
   }

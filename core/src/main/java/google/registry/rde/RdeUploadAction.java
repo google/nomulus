@@ -148,7 +148,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
       throw new NoContentException(
           String.format(
               "Waiting on RdeStagingAction for TLD %s to send %s upload; "
-                  + "last RDE staging completion was at %s",
+                  + "last RDE staging completion was before %s",
               tld, watermark, stagingCursorTime));
     }
     DateTime sftpCursorTime =
