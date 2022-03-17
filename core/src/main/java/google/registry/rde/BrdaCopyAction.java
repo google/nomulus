@@ -14,8 +14,13 @@
 
 package google.registry.rde;
 
+import static google.registry.model.common.Cursor.CursorType.BRDA;
+import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.rde.RdeMode.THIN;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.cloud.storage.BlobId;
 import com.google.common.flogger.FluentLogger;
@@ -23,9 +28,11 @@ import com.google.common.io.ByteStreams;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.KeyModule.Key;
+import google.registry.model.common.Cursor;
 import google.registry.model.rde.RdeNamingUtils;
 import google.registry.model.rde.RdeRevision;
 import google.registry.request.Action;
+import google.registry.request.HttpException.NoContentException;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.auth.Auth;
@@ -89,6 +96,16 @@ public final class BrdaCopyAction implements Runnable {
   private void copyAsRyde() throws IOException {
     // TODO(b/217772483): consider guarding this action with a lock and check if there is work.
     // Not urgent since file writes on GCS are atomic.
+    Optional<Cursor> cursor =
+        transactIfJpaTm(() -> tm().loadByKeyIfPresent(Cursor.createVKey(BRDA, tld)));
+    DateTime brdaCursorTime = getCursorTimeOrStartOfTime(cursor);
+    if (isBeforeOrAt(brdaCursorTime, watermark)) {
+      throw new NoContentException(
+          String.format(
+              "Waiting on RdeStagingAction for TLD %s to copy BRDA deposit for %s to GCS; "
+                  + "last BRDA staging completion was before %s",
+              tld, watermark, brdaCursorTime));
+    }
     int revision =
         RdeRevision.getCurrentRevision(tld, watermark, THIN)
             .orElseThrow(

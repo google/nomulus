@@ -68,6 +68,7 @@ import org.apache.beam.sdk.values.PDone;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 public class RdeIO {
 
@@ -261,6 +262,7 @@ public class RdeIO {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final long serialVersionUID = 5822176227753327224L;
+    private static final Duration ENQUEUE_DELAY = Duration.standardMinutes(1);
 
     private final CloudTasksUtils cloudTasksUtils;
 
@@ -271,6 +273,7 @@ public class RdeIO {
     @ProcessElement
     public void processElement(
         @Element KV<PendingDeposit, Integer> input, PipelineOptions options) {
+
       tm().transact(
               () -> {
                 PendingDeposit key = input.getKey();
@@ -296,26 +299,30 @@ public class RdeIO {
                 tm().put(Cursor.create(key.cursor(), newPosition, registry));
                 logger.atInfo().log(
                     "Rolled forward %s on %s cursor to %s.", key.cursor(), key.tld(), newPosition);
-                RdeRevision.saveRevision(key.tld(), key.watermark(), key.mode(), revision);
+                RdeRevision.saveRevision(key.tld(), key.watermark(), key.mode(), input.getValue());
                 // Enqueueing a task is a side effect that is not undone if the transaction rolls
                 // back. So this may result in multiple copies of the same task being processed.
                 // This is fine because the RdeUploadAction is guarded by a lock and tracks progress
-                // by cursor. The BrdaCopyAction writes a file to GCS, which is an atomic action.
+                // by cursor. The BrdaCopyAction writes a file to GCS, which is an atomic action. It
+                // is also guarded by a cursor to not run before the cursor is updated. We also
+                // include a delay to minimize the chance that the enqueued job executes before the
+                // transaction is committed, which triggers a retry.
                 if (key.mode() == RdeMode.FULL) {
                   cloudTasksUtils.enqueue(
                       RDE_UPLOAD_QUEUE,
-                      cloudTasksUtils.createPostTask(
+                      cloudTasksUtils.createPostTaskWithDelay(
                           RdeUploadAction.PATH,
                           Service.BACKEND.getServiceId(),
                           ImmutableMultimap.of(
                               RequestParameters.PARAM_TLD,
                               key.tld(),
                               RdeModule.PARAM_PREFIX,
-                              options.getJobName() + '/')));
+                              options.getJobName() + '/'),
+                          ENQUEUE_DELAY));
                 } else {
                   cloudTasksUtils.enqueue(
                       BRDA_QUEUE,
-                      cloudTasksUtils.createPostTask(
+                      cloudTasksUtils.createPostTaskWithDelay(
                           BrdaCopyAction.PATH,
                           Service.BACKEND.getServiceId(),
                           ImmutableMultimap.of(
@@ -324,7 +331,8 @@ public class RdeIO {
                               RdeModule.PARAM_WATERMARK,
                               key.watermark().toString(),
                               RdeModule.PARAM_PREFIX,
-                              options.getJobName() + '/')));
+                              options.getJobName() + '/'),
+                          ENQUEUE_DELAY));
                 }
               });
     }

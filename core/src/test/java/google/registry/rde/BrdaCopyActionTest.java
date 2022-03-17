@@ -16,9 +16,13 @@ package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.google.cloud.storage.BlobId;
@@ -28,8 +32,11 @@ import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.Keyring;
+import google.registry.model.common.Cursor;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeRevision;
+import google.registry.model.tld.Registry;
+import google.registry.request.HttpException.NoContentException;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
@@ -104,6 +111,7 @@ public class BrdaCopyActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
+    createTld("lol");
     action.gcsUtils = gcsUtils;
     action.tld = "lol";
     action.watermark = DateTime.parse("2010-10-17TZ");
@@ -116,6 +124,20 @@ public class BrdaCopyActionTest {
             () -> {
               RdeRevision.saveRevision("lol", DateTime.parse("2010-10-17TZ"), RdeMode.THIN, 0);
             });
+    persistResource(Cursor.create(BRDA, action.watermark.plusDays(1), Registry.get("lol")));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"", "job-name/"})
+  void testRun_stagingNotFinished_throws204(String prefix) throws Exception {
+    persistResource(Cursor.create(BRDA, action.watermark, Registry.get("lol")));
+    NoContentException thrown = assertThrows(NoContentException.class, () -> runAction(prefix));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Waiting on RdeStagingAction for TLD lol to copy BRDA deposit for"
+                + " 2010-10-17T00:00:00.000Z to GCS; last BRDA staging completion was before"
+                + " 2010-10-17T00:00:00.000Z");
   }
 
   @ParameterizedTest
