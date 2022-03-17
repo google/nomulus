@@ -14,18 +14,14 @@
 
 package google.registry.export;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
-import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 import static google.registry.bigquery.BigqueryUtils.toJobReferenceString;
 
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobReference;
-import com.google.appengine.api.taskqueue.Queue;
-import com.google.appengine.api.taskqueue.TaskHandle;
-import com.google.appengine.api.taskqueue.TaskOptions;
-import com.google.appengine.api.taskqueue.TaskOptions.Method;
+import com.google.cloud.tasks.v2.Task;
 import com.google.common.flogger.FluentLogger;
+import com.google.protobuf.ByteString;
 import dagger.Lazy;
 import google.registry.request.Action;
 import google.registry.request.Header;
@@ -33,12 +29,10 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.NotModifiedException;
 import google.registry.request.Payload;
 import google.registry.request.auth.Auth;
-import google.registry.util.TaskQueueUtils;
+import google.registry.util.CloudTasksUtils;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import javax.inject.Inject;
 import org.joda.time.Duration;
 
@@ -67,11 +61,14 @@ public class BigqueryPollJobAction implements Runnable {
   static final Duration POLL_COUNTDOWN = Duration.standardSeconds(20);
 
   @Inject Bigquery bigquery;
-  @Inject TaskQueueUtils taskQueueUtils;
+  @Inject CloudTasksUtils cloudTasksUtils;
+
   @Inject @Header(CHAINED_TASK_QUEUE_HEADER) Lazy<String> chainedQueueName;
   @Inject @Header(PROJECT_ID_HEADER) String projectId;
   @Inject @Header(JOB_ID_HEADER) String jobId;
-  @Inject @Payload byte[] payload;
+
+  @Inject @Payload ByteString payload;
+
   @Inject BigqueryPollJobAction() {}
 
   @Override
@@ -79,20 +76,25 @@ public class BigqueryPollJobAction implements Runnable {
     boolean jobOutcome =
         checkJobOutcome(); // Throws a NotModifiedException if the job hasn't completed.
     // If the job failed, do not enqueue the next step.
-    if (!jobOutcome || payload == null || payload.length == 0) {
+    if (!jobOutcome || payload == null || payload.size() == 0) {
       return;
     }
     // If there is a payload, it's a chained task, so enqueue it.
-    TaskOptions task;
+    Task task;
     try {
-      task = (TaskOptions) new ObjectInputStream(new ByteArrayInputStream(payload)).readObject();
+      task =
+          (Task)
+              new ObjectInputStream(new ByteArrayInputStream(payload.toByteArray())).readObject();
     } catch (ClassNotFoundException | IOException e) {
       throw new BadRequestException("Cannot deserialize task from payload", e);
     }
-    String taskName = taskQueueUtils.enqueue(getQueue(chainedQueueName.get()), task).getName();
+    Task enqueuedTask = cloudTasksUtils.enqueue(chainedQueueName.get(), task);
     logger.atInfo().log(
         "Added chained task %s for %s to queue %s: %s",
-        taskName, task.getUrl(), chainedQueueName.get(), task);
+        enqueuedTask.getName(),
+        enqueuedTask.getAppEngineHttpRequest().getRelativeUri(),
+        chainedQueueName.get(),
+        enqueuedTask);
   }
 
   /**
@@ -123,52 +125,5 @@ public class BigqueryPollJobAction implements Runnable {
     }
     logger.atInfo().log("Bigquery job succeeded - %s.", jobRefString);
     return true;
-  }
-
-
-  /** Helper class to enqueue a bigquery poll job. */
-  public static class BigqueryPollJobEnqueuer {
-
-    private final TaskQueueUtils taskQueueUtils;
-
-    @Inject
-    BigqueryPollJobEnqueuer(TaskQueueUtils taskQueueUtils) {
-      this.taskQueueUtils = taskQueueUtils;
-    }
-
-    /** Enqueue a task to poll for the success or failure of the referenced BigQuery job. */
-    public TaskHandle enqueuePollTask(JobReference jobRef) {
-      return taskQueueUtils.enqueue(
-          getQueue(QUEUE), createCommonPollTask(jobRef).method(Method.GET));
-    }
-
-    /**
-     * Enqueue a task to poll for the success or failure of the referenced BigQuery job and to
-     * launch the provided task in the specified queue if the job succeeds.
-     */
-    public TaskHandle enqueuePollTask(
-        JobReference jobRef, TaskOptions chainedTask, Queue chainedTaskQueue) throws IOException {
-      // Serialize the chainedTask into a byte array to put in the task payload.
-      ByteArrayOutputStream taskBytes = new ByteArrayOutputStream();
-      new ObjectOutputStream(taskBytes).writeObject(chainedTask);
-      return taskQueueUtils.enqueue(
-          getQueue(QUEUE),
-          createCommonPollTask(jobRef)
-              .method(Method.POST)
-              .header(CHAINED_TASK_QUEUE_HEADER, chainedTaskQueue.getQueueName())
-              .payload(taskBytes.toByteArray()));
-    }
-
-    /**
-     * Enqueue a task to poll for the success or failure of the referenced BigQuery job and to
-     * launch the provided task in the specified queue if the job succeeds.
-     */
-    private static TaskOptions createCommonPollTask(JobReference jobRef) {
-      // Omit host header so that task will be run on the current backend/module.
-      return withUrl(PATH)
-          .countdownMillis(POLL_COUNTDOWN.getMillis())
-          .header(PROJECT_ID_HEADER, jobRef.getProjectId())
-          .header(JOB_ID_HEADER, jobRef.getJobId());
-    }
   }
 }

@@ -14,15 +14,7 @@
 
 package google.registry.export;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.export.UpdateSnapshotViewAction.QUEUE;
-import static google.registry.export.UpdateSnapshotViewAction.UPDATE_SNAPSHOT_DATASET_ID_PARAM;
-import static google.registry.export.UpdateSnapshotViewAction.UPDATE_SNAPSHOT_KIND_PARAM;
-import static google.registry.export.UpdateSnapshotViewAction.UPDATE_SNAPSHOT_TABLE_ID_PARAM;
-import static google.registry.export.UpdateSnapshotViewAction.UPDATE_SNAPSHOT_VIEWNAME_PARAM;
-import static google.registry.export.UpdateSnapshotViewAction.createViewUpdateTask;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -38,7 +30,6 @@ import com.google.common.collect.Iterables;
 import google.registry.bigquery.CheckedBigquery;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,23 +70,6 @@ public class UpdateSnapshotViewActionTest {
     action.viewName = "latest_datastore_export";
     action.projectId = "myproject";
     action.tableId = "12345_fookind";
-  }
-
-  @Test
-  void testSuccess_createViewUpdateTask() {
-    getQueue(QUEUE)
-        .add(
-            createViewUpdateTask(
-                "some_dataset", "12345_fookind", "fookind", "latest_datastore_export"));
-    assertTasksEnqueued(
-        QUEUE,
-        new TaskMatcher()
-            .url(UpdateSnapshotViewAction.PATH)
-            .method("POST")
-            .param(UPDATE_SNAPSHOT_DATASET_ID_PARAM, "some_dataset")
-            .param(UPDATE_SNAPSHOT_TABLE_ID_PARAM, "12345_fookind")
-            .param(UPDATE_SNAPSHOT_KIND_PARAM, "fookind")
-            .param(UPDATE_SNAPSHOT_VIEWNAME_PARAM, "latest_datastore_export"));
   }
 
   @Test

@@ -17,16 +17,19 @@ package google.registry.export;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.export.CheckBackupAction.CHECK_BACKUP_KINDS_TO_LOAD_PARAM;
 import static google.registry.export.CheckBackupAction.CHECK_BACKUP_NAME_PARAM;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static org.mockito.Mockito.when;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.base.Joiner;
+import com.google.protobuf.util.Timestamps;
 import google.registry.export.datastore.DatastoreAdmin;
 import google.registry.export.datastore.DatastoreAdmin.Export;
 import google.registry.export.datastore.Operation;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
+import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,13 +49,15 @@ public class BackupDatastoreActionTest {
   @Mock private Operation backupOperation;
 
   private final FakeResponse response = new FakeResponse();
+  private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
   private final BackupDatastoreAction action = new BackupDatastoreAction();
 
   @BeforeEach
   void beforeEach() throws Exception {
     action.datastoreAdmin = datastoreAdmin;
     action.response = response;
-
+    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    action.clock = new FakeClock();
     when(datastoreAdmin.export(
             "gs://registry-project-id-datastore-backups", AnnotatedEntities.getBackupKinds()))
         .thenReturn(exportRequest);
@@ -66,7 +71,7 @@ public class BackupDatastoreActionTest {
   @Test
   void testBackup_enqueuesPollTask() {
     action.run();
-    assertTasksEnqueued(
+    cloudTasksHelper.assertTasksEnqueued(
         CheckBackupAction.QUEUE,
         new TaskMatcher()
             .url(CheckBackupAction.PATH)
@@ -74,7 +79,10 @@ public class BackupDatastoreActionTest {
             .param(
                 CHECK_BACKUP_KINDS_TO_LOAD_PARAM,
                 Joiner.on(",").join(AnnotatedEntities.getReportingKinds()))
-            .method("POST"));
+            .method(HttpMethod.POST)
+            .scheduleTime(
+                Timestamps.fromMillis(
+                    action.clock.nowUtc().plus(CheckBackupAction.POLL_COUNTDOWN).getMillis())));
     assertThat(response.getPayload())
         .isEqualTo(
             "Datastore backup started with name: "

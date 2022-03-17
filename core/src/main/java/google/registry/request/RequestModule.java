@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
+import com.google.protobuf.ByteString;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
@@ -179,6 +180,16 @@ public final class RequestModule {
   static byte[] providePayloadAsBytes(HttpServletRequest req) {
     try {
       return ByteStreams.toByteArray(req.getInputStream());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Provides
+  @Payload
+  static ByteString providePayloadAsByteString(HttpServletRequest req) {
+    try {
+      return ByteString.copyFrom(ByteStreams.toByteArray(req.getInputStream()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

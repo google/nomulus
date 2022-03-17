@@ -21,8 +21,6 @@ import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.Table;
 import com.google.api.services.bigquery.model.TableReference;
 import com.google.api.services.bigquery.model.ViewDefinition;
-import com.google.appengine.api.taskqueue.TaskOptions;
-import com.google.appengine.api.taskqueue.TaskOptions.Method;
 import com.google.common.flogger.FluentLogger;
 import google.registry.bigquery.CheckedBigquery;
 import google.registry.config.RegistryConfig.Config;
@@ -84,17 +82,6 @@ public class UpdateSnapshotViewAction implements Runnable {
 
   @Inject
   UpdateSnapshotViewAction() {}
-
-  /** Create a task for updating a snapshot view. */
-  static TaskOptions createViewUpdateTask(
-      String datasetId, String tableId, String kindName, String viewName) {
-    return TaskOptions.Builder.withUrl(PATH)
-        .method(Method.POST)
-        .param(UPDATE_SNAPSHOT_DATASET_ID_PARAM, datasetId)
-        .param(UPDATE_SNAPSHOT_TABLE_ID_PARAM, tableId)
-        .param(UPDATE_SNAPSHOT_KIND_PARAM, kindName)
-        .param(UPDATE_SNAPSHOT_VIEWNAME_PARAM, viewName);
-  }
 
   @Override
   public void run() {

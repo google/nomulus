@@ -14,9 +14,7 @@
 
 package google.registry.export;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.base.MoreObjects.firstNonNull;
-import static google.registry.export.UpdateSnapshotViewAction.createViewUpdateTask;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.api.services.bigquery.Bigquery;
@@ -25,27 +23,33 @@ import com.google.api.services.bigquery.model.JobConfiguration;
 import com.google.api.services.bigquery.model.JobConfigurationLoad;
 import com.google.api.services.bigquery.model.JobReference;
 import com.google.api.services.bigquery.model.TableReference;
-import com.google.appengine.api.taskqueue.TaskHandle;
-import com.google.appengine.api.taskqueue.TaskOptions;
-import com.google.appengine.api.taskqueue.TaskOptions.Method;
+import com.google.cloud.tasks.v2.Task;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.net.HttpHeaders;
+import com.google.common.net.MediaType;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.util.Timestamps;
 import google.registry.bigquery.BigqueryUtils.SourceFormat;
 import google.registry.bigquery.BigqueryUtils.WriteDisposition;
 import google.registry.bigquery.CheckedBigquery;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.export.BigqueryPollJobAction.BigqueryPollJobEnqueuer;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.request.Action;
+import google.registry.request.Action.Service;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
+import google.registry.util.Clock;
+import google.registry.util.CloudTasksUtils;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import javax.inject.Inject;
 
 /** Action to load a Datastore backup from Google Cloud Storage into BigQuery. */
@@ -75,7 +79,9 @@ public class UploadDatastoreBackupAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject CheckedBigquery checkedBigquery;
-  @Inject BigqueryPollJobEnqueuer bigqueryPollEnqueuer;
+  @Inject CloudTasksUtils cloudTasksUtils;
+  @Inject Clock clock;
+
   @Inject @Config("projectId") String projectId;
 
   @Inject
@@ -92,18 +98,6 @@ public class UploadDatastoreBackupAction implements Runnable {
 
   @Inject
   UploadDatastoreBackupAction() {}
-
-  /** Enqueue a task for starting a backup load. */
-  public static TaskHandle enqueueUploadBackupTask(
-      String backupId, String gcsFile, ImmutableSet<String> kinds) {
-    return getQueue(QUEUE)
-        .add(
-            TaskOptions.Builder.withUrl(PATH)
-                .method(Method.POST)
-                .param(UPLOAD_BACKUP_ID_PARAM, backupId)
-                .param(UPLOAD_BACKUP_FOLDER_PARAM, gcsFile)
-                .param(UPLOAD_BACKUP_KINDS_PARAM, Joiner.on(',').join(kinds)));
-  }
 
   @Override
   public void run() {
@@ -142,12 +136,46 @@ public class UploadDatastoreBackupAction implements Runnable {
       Job job = makeLoadJob(jobRef, sourceUri, tableId);
       bigquery.jobs().insert(projectId, job).execute();
 
-      // Enqueue a task to check on the load job's completion, and if it succeeds, to update a
-      // well-known view in BigQuery to point at the newly loaded backup table for this kind.
-      bigqueryPollEnqueuer.enqueuePollTask(
-          jobRef,
-          createViewUpdateTask(BACKUP_DATASET, tableId, kindName, LATEST_BACKUP_VIEW_NAME),
-          getQueue(UpdateSnapshotViewAction.QUEUE));
+      // Serialize the chainedTask into a byte array to put in the task payload.
+      ByteArrayOutputStream taskBytes = new ByteArrayOutputStream();
+      new ObjectOutputStream(taskBytes)
+          .writeObject(
+              cloudTasksUtils.createPostTask(
+                  UpdateSnapshotViewAction.PATH,
+                  Service.BACKEND.toString(),
+                  ImmutableMultimap.of(
+                      UpdateSnapshotViewAction.UPDATE_SNAPSHOT_DATASET_ID_PARAM,
+                      BACKUP_DATASET,
+                      UpdateSnapshotViewAction.UPDATE_SNAPSHOT_TABLE_ID_PARAM,
+                      tableId,
+                      UpdateSnapshotViewAction.UPDATE_SNAPSHOT_KIND_PARAM,
+                      kindName,
+                      UpdateSnapshotViewAction.UPDATE_SNAPSHOT_VIEWNAME_PARAM,
+                      LATEST_BACKUP_VIEW_NAME)));
+
+      // Enqueues a task to poll for the success or failure of the referenced BigQuery job and to
+      // launch the provided task in the specified queue if the job succeeds.
+      cloudTasksUtils.enqueue(
+          BigqueryPollJobAction.QUEUE,
+          Task.newBuilder()
+              .setAppEngineHttpRequest(
+                  cloudTasksUtils
+                      .createPostTask(BigqueryPollJobAction.PATH, Service.BACKEND.toString(), null)
+                      .getAppEngineHttpRequest()
+                      .toBuilder()
+                      .putHeaders(BigqueryPollJobAction.PROJECT_ID_HEADER, jobRef.getProjectId())
+                      .putHeaders(BigqueryPollJobAction.JOB_ID_HEADER, jobRef.getJobId())
+                      .putHeaders(
+                          BigqueryPollJobAction.CHAINED_TASK_QUEUE_HEADER,
+                          UpdateSnapshotViewAction.QUEUE)
+                      // need to include CONTENT_TYPE in header when body is not empty
+                      .putHeaders(HttpHeaders.CONTENT_TYPE, MediaType.FORM_DATA.toString())
+                      .setBody(ByteString.copyFrom(taskBytes.toByteArray()))
+                      .build())
+              .setScheduleTime(
+                  Timestamps.fromMillis(
+                      clock.nowUtc().plus(BigqueryPollJobAction.POLL_COUNTDOWN).getMillis()))
+              .build());
 
       builder.append(String.format(" - %s:%s\n", projectId, jobId));
       logger.atInfo().log("Submitted load job %s:%s.", projectId, jobId);
