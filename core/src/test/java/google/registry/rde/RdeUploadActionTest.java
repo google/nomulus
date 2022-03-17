@@ -420,7 +420,7 @@ public class RdeUploadActionTest {
         .hasMessageThat()
         .isEqualTo(
             "Waiting on RdeStagingAction for TLD tld to send 2010-10-17T00:00:00.000Z upload; "
-                + "last RDE staging completion was at 2010-10-17T00:00:00.000Z");
+                + "last RDE staging completion was before 2010-10-17T00:00:00.000Z");
   }
 
   @TestOfyAndSql
@@ -437,8 +437,9 @@ public class RdeUploadActionTest {
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "Waiting on 120 minute SFTP cooldown for TLD tld to send 2010-10-17T00:00:00.000Z "
-                + "upload; last upload attempt was at 2010-10-16T22:23:00.000Z (97 minutes ago)");
+            "Waiting on 120 minute SFTP cooldown for TLD tld to send 2010-10-17T00:00:00.000Z"
+                + " upload; last upload attempt was at 2010-10-16T22:23:00.000Z (97 minutes"
+                + " ago)");
   }
 
   private String slurp(InputStream is) throws IOException {
