@@ -107,7 +107,7 @@ public class CertificateChecker {
     // https://stackoverflow.com/questions/49895713/how-to-find-the-matching-curve-name-from-an-ecpublickey.
     if (key instanceof ECPublicKey) {
       ECPublicKey ecKey = (ECPublicKey) key;
-      params = EC5Util.convertSpec(ecKey.getParams(), false);
+      params = EC5Util.convertSpec(ecKey.getParams());
     } else if (key instanceof org.bouncycastle.jce.interfaces.ECPublicKey) {
       org.bouncycastle.jce.interfaces.ECPublicKey ecKey =
           (org.bouncycastle.jce.interfaces.ECPublicKey) key;
