@@ -73,7 +73,6 @@ public class UploadDatastoreBackupActionTest {
       mock(Bigquery.Datasets.Insert.class);
   private UploadDatastoreBackupAction action;
   private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
-  private CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
 
   @BeforeEach
   void beforeEach() throws Exception {

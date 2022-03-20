@@ -234,15 +234,6 @@ public class RdeUploadActionTest {
     RdeUploadAction action = createAction(null);
     action.prefix = Optional.of("job-name/");
     action.tld = "lol";
-    gcsUtils.delete(GHOSTRYDE_FILE);
-    gcsUtils.createFromBytes(
-        GHOSTRYDE_FILE_WITH_PREFIX, Ghostryde.encode(DEPOSIT_XML.read(), encryptKey));
-    gcsUtils.delete(LENGTH_FILE);
-    gcsUtils.createFromBytes(
-        LENGTH_FILE_WITH_PREFIX, Long.toString(DEPOSIT_XML.size()).getBytes(UTF_8));
-    gcsUtils.delete(REPORT_FILE);
-    gcsUtils.createFromBytes(
-        REPORT_FILE_WITH_PREFIX, Ghostryde.encode(REPORT_XML.read(), encryptKey));
     action.run();
     verify(runner)
         .lockRunAndRollForward(
