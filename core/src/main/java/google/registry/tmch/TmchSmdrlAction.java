@@ -22,7 +22,7 @@ import google.registry.model.smd.SignedMarkRevocationList;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import java.io.IOException;
-import java.security.SignatureException;
+import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -51,7 +51,7 @@ public final class TmchSmdrlAction implements Runnable {
     List<String> lines;
     try {
       lines = marksdb.fetchSignedCsv(marksdbSmdrlLoginAndPassword, SMDRL_CSV_PATH, SMDRL_SIG_PATH);
-    } catch (SignatureException | IOException | PGPException e) {
+    } catch (GeneralSecurityException | IOException | PGPException e) {
       throw new RuntimeException(e);
     }
     SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(lines);

@@ -32,6 +32,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.security.Security;
 import java.security.SignatureException;
 import java.util.Arrays;
@@ -110,7 +111,8 @@ public final class Marksdb {
     }
   }
 
-  byte[] fetch(URL url, Optional<String> loginAndPassword) throws IOException {
+  byte[] fetch(URL url, Optional<String> loginAndPassword)
+      throws IOException, GeneralSecurityException {
     HttpURLConnection connection = urlConnectionService.createConnection(url);
     loginAndPassword.ifPresent(auth -> setBasicAuth(connection, auth));
     try {
@@ -124,7 +126,7 @@ public final class Marksdb {
   }
 
   List<String> fetchSignedCsv(Optional<String> loginAndPassword, String csvPath, String sigPath)
-      throws IOException, SignatureException, PGPException {
+      throws IOException, GeneralSecurityException, PGPException {
     checkArgument(
         loginAndPassword.isPresent(), "Cannot fetch from MarksDB without login credentials");
 
