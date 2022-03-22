@@ -86,19 +86,6 @@ final class SetNumInstancesCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() {
-
-    // ImmutableSet<Service> services =
-    //     serviceNames.stream()
-    //         .map(s -> s.toUpperCase(Locale.US))
-    //         .map(
-    //             name ->
-    //                 checkArgumentPresent(
-    //                     Enums.getIfPresent(Service.class, name).toJavaUtil(),
-    //                     "Invalid service '%s'. Allowed values are %s",
-    //                     name,
-    //                     ALL_DEPLOYED_SERVICES))
-    //         .collect(toImmutableSet());
-
     if (nonLiveVersions) {
       checkArgument(versions.isEmpty(), "--versions cannot be set if --non_live_versions is set");
 
