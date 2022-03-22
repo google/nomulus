@@ -457,39 +457,6 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
   }
 
   @TestOfyAndSql
-  void testUpdate_failoverClientCertificateWithViolationsAlreadyExistedSucceeds() {
-    // TODO(sarahbot): remove this test after November 1, 2020.
-
-    // The frontend will always send the entire registrar entity back for an update, so the checks
-    // on the certificate should only run if it is a new certificate
-
-    // Set a bad certificate before checks on uploads are enforced
-    clock.setTo(DateTime.parse("2018-07-02T00:00:00Z"));
-    Registrar existingRegistrar = loadRegistrar(CLIENT_ID);
-    existingRegistrar =
-        existingRegistrar
-            .asBuilder()
-            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT, clock.nowUtc())
-            .build();
-    persistResource(existingRegistrar);
-
-    // Update with the same certificate after enforcement starts
-    clock.setTo(DateTime.parse("2020-11-02T00:00:00Z"));
-    Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
-    args.put("failoverClientCertificate", CertificateSamples.SAMPLE_CERT);
-    Map<String, Object> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "op", "update",
-                "id", CLIENT_ID,
-                "args", args));
-
-    assertThat(response).containsEntry("status", "SUCCESS");
-    assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
-    cloudTasksHelper.assertNoTasksEnqueued("sheet");
-  }
-
-  @TestOfyAndSql
   void testUpdate_failoverClientCertificateWithViolationsFails() {
     clock.setTo(DateTime.parse("2020-11-02T00:00:00Z"));
     Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());

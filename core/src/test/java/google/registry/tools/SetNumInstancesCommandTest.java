@@ -58,22 +58,28 @@ public class SetNumInstancesCommandTest extends CommandTestCase<SetNumInstancesC
 
   @Test
   void test_emptyService_throwsException() {
-    IllegalArgumentException thrown =
+    ParameterException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            ParameterException.class,
             () -> runCommand("--services=", "--versions=version", "--num_instances=5"));
-    assertThat(thrown).hasMessageThat().contains("Invalid service ''");
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            "Invalid value for -s parameter. Allowed values:[DEFAULT, TOOLS, BACKEND, PUBAPI]");
   }
 
   @Test
   void test_invalidService_throwsException() {
-    IllegalArgumentException thrown =
+    ParameterException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            ParameterException.class,
             () ->
                 runCommand(
                     "--services=INVALID,DEFAULT", "--versions=version", "--num_instances=5"));
-    assertThat(thrown).hasMessageThat().contains("Invalid service 'INVALID'");
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            "Invalid value for -s parameter. Allowed values:[DEFAULT, TOOLS, BACKEND, PUBAPI]");
   }
 
   @Test
