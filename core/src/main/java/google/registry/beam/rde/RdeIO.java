@@ -277,7 +277,6 @@ public class RdeIO {
       tm().transact(
               () -> {
                 PendingDeposit key = input.getKey();
-                int revision = input.getValue();
                 Registry registry = Registry.get(key.tld());
                 Optional<Cursor> cursor =
                     transactIfJpaTm(
