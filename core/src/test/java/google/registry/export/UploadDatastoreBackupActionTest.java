@@ -48,7 +48,6 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
-import google.registry.util.CloudTasksUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -73,7 +72,6 @@ public class UploadDatastoreBackupActionTest {
       mock(Bigquery.Datasets.Insert.class);
   private UploadDatastoreBackupAction action;
   private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
-  private CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
 
   @BeforeEach
   void beforeEach() throws Exception {
