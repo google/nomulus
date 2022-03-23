@@ -116,7 +116,10 @@ CREATE TABLE public."BillingRecurrence" (
     reason text NOT NULL,
     domain_name text NOT NULL,
     recurrence_end_time timestamp with time zone,
-    recurrence_time_of_year text
+    recurrence_time_of_year text,
+    renewal_price_behavior text,
+    renewal_price_currency text,
+    renewal_price_amount numeric(19,2)
 );
 
 

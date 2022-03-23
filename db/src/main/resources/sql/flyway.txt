@@ -112,3 +112,4 @@ V111__add_billingcancellation_missing_indexes.sql
 V112__add_billingrecurrence_missing_indexes.sql
 V113__add_host_missing_indexes.sql
 V114__add_allocation_token_indexes.sql
+V115__add_renewal_columns_to_billing_event.sql
