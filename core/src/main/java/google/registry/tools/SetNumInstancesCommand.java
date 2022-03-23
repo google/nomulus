@@ -15,18 +15,14 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSetMultimap.flatteningToImmutableSetMultimap;
 import static google.registry.util.CollectionUtils.nullToEmpty;
-import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.api.services.appengine.v1.Appengine;
-import com.google.common.base.Enums;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
@@ -35,8 +31,6 @@ import google.registry.request.Action.Service;
 import google.registry.util.AppEngineServiceUtils;
 import java.io.IOException;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 import javax.inject.Inject;
 
 /** A command to set the number of instances for an App Engine service. */
@@ -49,19 +43,18 @@ final class SetNumInstancesCommand implements CommandWithRemoteApi {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private static final ImmutableSet<Service> ALL_DEPLOYED_SERVICES =
-      ImmutableSet.copyOf(Service.values());
+  private static final ImmutableList<Service> ALL_DEPLOYED_SERVICES =
+      ImmutableList.copyOf(Service.values());
 
   private static final ImmutableMap<String, Service> SERVICE_ID_TO_SERVICE =
       Maps.uniqueIndex(ALL_DEPLOYED_SERVICES, Service::getServiceId);
 
-  // TODO(b/119629679): Use List<Service> after upgrading jcommander to latest version.
   @Parameter(
       names = {"-s", "--services"},
       description =
           "Comma-delimited list of App Engine services to set. "
               + "Allowed values: [DEFAULT, TOOLS, BACKEND, PUBAPI]")
-  private List<String> serviceNames = ImmutableList.of();
+  private List<Service> services = ImmutableList.of();
 
   @Parameter(
       names = {"-v", "--versions"},
@@ -93,19 +86,6 @@ final class SetNumInstancesCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() {
-
-    ImmutableSet<Service> services =
-        serviceNames.stream()
-            .map(s -> s.toUpperCase(Locale.US))
-            .map(
-                name ->
-                    checkArgumentPresent(
-                        Enums.getIfPresent(Service.class, name).toJavaUtil(),
-                        "Invalid service '%s'. Allowed values are %s",
-                        name,
-                        ALL_DEPLOYED_SERVICES))
-            .collect(toImmutableSet());
-
     if (nonLiveVersions) {
       checkArgument(versions.isEmpty(), "--versions cannot be set if --non_live_versions is set");
 
@@ -149,7 +129,7 @@ final class SetNumInstancesCommand implements CommandWithRemoteApi {
         version, service, numInstances);
   }
 
-  private ImmutableSetMultimap<Service, String> getAllLiveVersionsMap(Set<Service> services) {
+  private ImmutableSetMultimap<Service, String> getAllLiveVersionsMap(List<Service> services) {
     try {
       return nullToEmpty(appengine.apps().services().list(projectId).execute().getServices())
           .stream()
@@ -165,7 +145,8 @@ final class SetNumInstancesCommand implements CommandWithRemoteApi {
     }
   }
 
-  private ImmutableSetMultimap<Service, String> getManualScalingVersionsMap(Set<Service> services) {
+  private ImmutableSetMultimap<Service, String> getManualScalingVersionsMap(
+      List<Service> services) {
     return services.stream()
         .collect(
             flatteningToImmutableSetMultimap(

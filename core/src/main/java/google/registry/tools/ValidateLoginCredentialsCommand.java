@@ -56,7 +56,6 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
       validateWith = PathParameter.InputFile.class)
   private Path clientCertificatePath;
 
-  // TODO(sarahbot@): Remove this after hash fallback is removed
   @Nullable
   @Parameter(
       names = {"-h", "--cert_hash"},

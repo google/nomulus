@@ -194,18 +194,6 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
     return clone;
   }
 
-  /**
-   * Returns a clone of this {@link GracePeriod} with {@link #billingEventRecurring} set to the
-   * given value.
-   *
-   * <p>TODO(b/162231099): Remove this function after duplicate id issue is solved.
-   */
-  public GracePeriod cloneWithRecurringBillingEvent(VKey<BillingEvent.Recurring> recurring) {
-    GracePeriod clone = clone(this);
-    clone.billingEventRecurring = BillingRecurrenceVKey.create(recurring);
-    return clone;
-  }
-
   /** Entity class to represent a historic {@link GracePeriod}. */
   @Entity(name = "GracePeriodHistory")
   @Table(indexes = @Index(columnList = "domainRepoId"))
