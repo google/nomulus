@@ -19,11 +19,19 @@ import static google.registry.beam.comparedb.ValidateSqlUtils.getMedianIdForHist
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static org.joda.time.DateTimeZone.UTC;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import com.google.common.truth.Truth;
+import google.registry.beam.comparedb.ValidateSqlUtils.DiffableFieldNormalizer;
 import google.registry.model.bulkquery.TestSetupHelper;
+import google.registry.model.contact.ContactAddress;
+import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DomainHistory;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
+import google.registry.util.DiffUtils;
+import java.util.Map;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -59,5 +67,30 @@ class ValidateSqlUtilsTest {
     Truth.assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(DomainHistory.class))).hasSize(2);
     assertThat(getMedianIdForHistoryTable("DomainHistory"))
         .hasValue(setupHelper.domainHistory.getId());
+  }
+
+  @Test
+  void diffableFieldNormalizer() {
+    ContactResource contactResource =
+        new ContactResource.Builder()
+            .setLocalizedPostalInfo(
+                new PostalInfo.Builder()
+                    .setType(PostalInfo.Type.LOCALIZED)
+                    .setAddress(
+                        new ContactAddress.Builder()
+                            .setStreet(ImmutableList.of("111 8th Ave", ""))
+                            .setCity("New York")
+                            .setState("NY")
+                            .setZip("10011")
+                            .setCountryCode("US")
+                            .build())
+                    .build())
+            .build();
+    Map<String, Object> origMap = contactResource.toDiffableFieldMap();
+    Map<String, Object> trimmedMap = Maps.transformEntries(origMap, new DiffableFieldNormalizer());
+    // In the trimmed map, localizedPostalInfo.address.street only has one element in the list,
+    // thus the output: 'null -> '
+    Truth.assertThat(DiffUtils.prettyPrintEntityDeepDiff(trimmedMap, origMap))
+        .isEqualTo("localizedPostalInfo.address.street.1: null -> \n");
   }
 }
