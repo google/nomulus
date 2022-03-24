@@ -33,6 +33,7 @@ import google.registry.keyring.api.KeyModule;
 import google.registry.keyring.kms.KmsModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.NomulusToolJpaTm;
+import google.registry.persistence.PersistenceModule.ReadOnlyReplicaJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.rde.RdeModule;
@@ -186,6 +187,9 @@ interface RegistryToolComponent {
 
   @NomulusToolJpaTm
   Lazy<JpaTransactionManager> nomulusToolJpaTransactionManager();
+
+  @ReadOnlyReplicaJpaTm
+  Lazy<JpaTransactionManager> nomulusToolReplicaJpaTransactionManager();
 
   @Component.Builder
   interface Builder {
