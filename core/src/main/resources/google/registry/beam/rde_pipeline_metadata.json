@@ -59,6 +59,14 @@
       ]
     },
     {
+      "name": "numWorkers",
+      "label": "The initial number of workers to request.",
+      "helpText": "See https://cloud.google.com/dataflow/docs/guides/deploying-a-pipeline#horizontal-autoscaling",
+      "regexes": [
+        "[0-9]+"
+      ]
+    },
+    {
       "name": "usePublicIps",
       "label": "Whether the GCE workers are assigned public IPs",
       "helpText": "Public IPs have an associated cost and there's a quota per region on the total number of public IPs assigned at a given time. If the service only needs to access GCP APIs, it's better to not use public IP, but one needs to configure the network accordingly. See https://cloud.google.com/dataflow/docs/guides/routes-firewall.",
