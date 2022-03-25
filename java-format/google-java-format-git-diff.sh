@@ -139,10 +139,11 @@ function isJavaFormatNeededOnDiffs() {
 
   if [[ ${modifiedLineCount} -ne 0 ]]; then
     echo "true"
+    exit 1
   else
     echo "false"
+    exit 0
   fi
-  exit 0
 }
 
 # The main function of this script:
