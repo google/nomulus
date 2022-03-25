@@ -37,6 +37,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junitpioneer.jupiter.RetryingTest;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -106,7 +107,7 @@ public class DatabaseSnapshotTest {
     try (DatabaseSnapshot databaseSnapshot = DatabaseSnapshot.createSnapshot()) {}
   }
 
-  @Test
+  @RetryingTest(2) // TODO(b/226945065) revert to @Test when DatbaseMigrationSchedule is removed.
   void readSnapshot() {
     try (DatabaseSnapshot databaseSnapshot = DatabaseSnapshot.createSnapshot()) {
       Registry snapshotRegistry =
@@ -120,7 +121,7 @@ public class DatabaseSnapshotTest {
     }
   }
 
-  @Test
+  @RetryingTest(2) // TODO(b/226945065) revert to @Test when DatbaseMigrationSchedule is removed.
   void readSnapshot_withSubsequentChange() {
     try (DatabaseSnapshot databaseSnapshot = DatabaseSnapshot.createSnapshot()) {
       Registry updated =
