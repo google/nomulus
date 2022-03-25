@@ -442,6 +442,11 @@ beam:
   # core count per machine may be preferable in order to preserve IP addresses.
   # See: https://cloud.google.com/compute/quotas#cpu_quota
   highPerformanceMachineType: n2-standard-4
+  # The initial number of workers requested. This can help speed up the pipeline
+  # which otherwise would take some time to spin up the necessary number of
+  # works. Autoscaling is still in effect to reduce the number of workers if
+  # not in use.
+  initialWorkerCount: 24
   stagingBucketUrl: gcs-bucket-with-staged-templates
 
 keyring:

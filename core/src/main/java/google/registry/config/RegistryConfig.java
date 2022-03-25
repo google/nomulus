@@ -577,6 +577,19 @@ public final class RegistryConfig {
     }
 
     /**
+     * Returns initial number of workers used for a Beam pipeline. Autoscaling can still in effect.
+     *
+     * @see <a
+     *     href=https://cloud.google.com/dataflow/docs/guides/deploying-a-pipeline#horizontal-autoscaling>
+     *     Horizontal Autoscaling </a>
+     */
+    @Provides
+    @Config("initialWorkerCount")
+    public static String provideInitialWorkerCount(RegistryConfigSettings config) {
+      return config.beam.initialWorkerCount;
+    }
+
+    /**
      * Returns the default job region to run Apache Beam (Cloud Dataflow) jobs in.
      *
      * @see google.registry.beam.invoicing.InvoicingPipeline

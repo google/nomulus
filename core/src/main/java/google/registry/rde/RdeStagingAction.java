@@ -261,6 +261,10 @@ public final class RdeStagingAction implements Runnable {
   @Config("highPerformanceMachineType")
   String machineType;
 
+  @Inject
+  @Config("initialWorkerCount")
+  String numWorkers;
+
   @Inject @Config("transactionCooldown") Duration transactionCooldown;
   @Inject @Config("beamStagingBucketUrl") String stagingBucketUrl;
   @Inject @Config("rdeBucket") String rdeBucket;
@@ -341,6 +345,7 @@ public final class RdeStagingAction implements Runnable {
                                           .encode(stagingKeyBytes))
                                   .put("registryEnvironment", RegistryEnvironment.get().name())
                                   .put("workerMachineType", machineType)
+                                  .put("numWorkers", numWorkers)
                                   .put(
                                       "jpaTransactionManagerType",
                                       JpaTransactionManagerType.READ_ONLY_REPLICA.toString())
