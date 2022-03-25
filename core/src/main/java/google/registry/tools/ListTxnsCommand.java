@@ -14,34 +14,21 @@
 
 package google.registry.tools;
 
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
 import google.registry.model.common.Cursor;
-import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.tld.Registries;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
-import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.Transaction;
 import google.registry.persistence.transaction.TransactionEntity;
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /** Lists {@link Cursor} timestamps used by locking rolling cursor tasks, like in RDE. */
 @Parameters(separators = " =", commandDescription = "Lists the contents of the Transaction table.")
@@ -50,9 +37,11 @@ final class ListTxnsCommand implements CommandWithRemoteApi {
   @Parameter(names = "--infile", description = "Parse an input file instead of reading from db.")
   private String infile;
 
-  @Parameter(names = "--full_dump",
-             description = "Do a full dump of the contents of the transaction.  Without this, "
-                + "just write transactions as CSV lines suitable for ingestion via --infile.")
+  @Parameter(
+      names = "--full_dump",
+      description =
+          "Do a full dump of the contents of the transaction.  Without this, "
+              + "just write transactions as CSV lines suitable for ingestion via --infile.")
   private boolean fullDump = false;
 
   @Override
@@ -82,16 +71,18 @@ final class ListTxnsCommand implements CommandWithRemoteApi {
     List<TransactionEntity> results;
 
     do {
-      final long txnId = lastTransactionId;  // For use in the lambda.
+      final long txnId = lastTransactionId; // For use in the lambda.
       results =
-          replicaJpaTm().transact(
-              () ->
-                replicaJpaTm()
-                    .query("select t from TransactionEntity t where id > :lastTransactionId",
-                           TransactionEntity.class)
-                    .setParameter("lastTransactionId", txnId)
-                    .setMaxResults(1000)
-                    .getResultList());
+          replicaJpaTm()
+              .transact(
+                  () ->
+                      replicaJpaTm()
+                          .query(
+                              "select t from TransactionEntity t where id > :lastTransactionId",
+                              TransactionEntity.class)
+                          .setParameter("lastTransactionId", txnId)
+                          .setMaxResults(1000)
+                          .getResultList());
 
       for (TransactionEntity txn : results) {
         writeRecord(txn.getId(), txn.getContents());
@@ -119,8 +110,7 @@ final class ListTxnsCommand implements CommandWithRemoteApi {
       }
       System.out.println(">>>");
     } else {
-        System.out.printf("%s,%s\n", id, BaseEncoding.base64().encode(contents));
+      System.out.printf("%s,%s\n", id, BaseEncoding.base64().encode(contents));
     }
   }
-
 }
