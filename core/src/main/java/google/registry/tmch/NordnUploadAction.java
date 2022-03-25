@@ -54,6 +54,7 @@ import google.registry.util.UrlConnectionException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Random;
@@ -116,7 +117,7 @@ public final class NordnUploadAction implements Runnable {
   public void run() {
     try {
       processLordnTasks();
-    } catch (IOException e) {
+    } catch (IOException | GeneralSecurityException e) {
       throw new RuntimeException(e);
     }
   }
@@ -161,7 +162,7 @@ public final class NordnUploadAction implements Runnable {
     }
   }
 
-  private void processLordnTasks() throws IOException {
+  private void processLordnTasks() throws IOException, GeneralSecurityException {
     checkArgument(phase.equals(PARAM_LORDN_PHASE_SUNRISE)
         || phase.equals(PARAM_LORDN_PHASE_CLAIMS),
         "Invalid phase specified to Nordn servlet: %s.", phase);
@@ -194,7 +195,8 @@ public final class NordnUploadAction implements Runnable {
    * @see <a href="http://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.3">TMCH
    *     functional specifications - LORDN File</a>
    */
-  private void uploadCsvToLordn(String urlPath, String csvData) throws IOException {
+  private void uploadCsvToLordn(String urlPath, String csvData)
+      throws IOException, GeneralSecurityException {
     String url = tmchMarksdbUrl + urlPath;
     logger.atInfo().log(
         "LORDN upload task %s: Sending to URL: %s ; data: %s", actionLogId, url, csvData);

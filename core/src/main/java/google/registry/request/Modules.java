@@ -29,6 +29,8 @@ import dagger.Module;
 import dagger.Provides;
 import java.net.HttpURLConnection;
 import javax.inject.Singleton;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 
 /** Dagger modules for App Engine services and other vendor classes. */
 public final class Modules {
@@ -49,7 +51,16 @@ public final class Modules {
   public static final class UrlConnectionServiceModule {
     @Provides
     static UrlConnectionService provideUrlConnectionService() {
-      return url -> (HttpURLConnection) url.openConnection();
+      return url -> {
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        if (connection instanceof HttpsURLConnection) {
+          HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
+          SSLContext tls13Context = SSLContext.getInstance("TLSv1.3");
+          tls13Context.init(null, null, null);
+          httpsConnection.setSSLSocketFactory(tls13Context.getSocketFactory());
+        }
+        return connection;
+      };
     }
   }
 

@@ -34,6 +34,7 @@ import google.registry.util.UrlConnectionException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.util.Map.Entry;
 import javax.inject.Inject;
 
@@ -77,7 +78,7 @@ public final class NordnVerifyAction implements Runnable {
   public void run() {
     try {
       verify();
-    } catch (IOException e) {
+    } catch (IOException | GeneralSecurityException e) {
       throw new RuntimeException(e);
     }
   }
@@ -89,11 +90,11 @@ public final class NordnVerifyAction implements Runnable {
    * available.
    *
    * @throws ConflictException if MarksDB has not yet finished processing the LORDN upload
-   * @see <a href="http://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.3.1">
-   *     TMCH functional specifications LORDN Log File</a>
+   * @see <a href="http://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.3.1">TMCH
+   *     functional specifications LORDN Log File</a>
    */
   @VisibleForTesting
-  LordnLog verify() throws IOException {
+  LordnLog verify() throws IOException, GeneralSecurityException {
     logger.atInfo().log("LORDN verify task %s: Sending request to URL %s", actionLogId, url);
     HttpURLConnection connection = urlConnectionService.createConnection(url);
     lordnRequestInitializer.initialize(connection, tld);

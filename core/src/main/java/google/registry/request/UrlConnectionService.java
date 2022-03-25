@@ -17,9 +17,10 @@ package google.registry.request;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 
 /** Functional interface for opening a connection from a URL, injectable for testing. */
 public interface UrlConnectionService {
 
-  HttpURLConnection createConnection(URL url) throws IOException;
+  HttpURLConnection createConnection(URL url) throws IOException, GeneralSecurityException;
 }
