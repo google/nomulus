@@ -92,6 +92,7 @@ public final class RegistryTool {
           .put("list_registrars", ListRegistrarsCommand.class)
           .put("list_reserved_lists", ListReservedListsCommand.class)
           .put("list_tlds", ListTldsCommand.class)
+          .put("list_txns", ListTxnsCommand.class)
           .put("load_snapshot", LoadSnapshotCommand.class)
           .put("load_test", LoadTestCommand.class)
           .put("lock_domain", LockDomainCommand.class)

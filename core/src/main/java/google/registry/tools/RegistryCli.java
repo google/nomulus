@@ -250,6 +250,8 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
       // Cloud SQL after the database migration. Note that the DB password is stored in Datastore
       // and it is already initialized above.
       TransactionManagerFactory.setJpaTm(() -> component.nomulusToolJpaTransactionManager().get());
+      TransactionManagerFactory.setReplicaJpaTm(
+          () -> component.nomulusToolReplicaJpaTransactionManager().get());
     }
 
     command.run();
