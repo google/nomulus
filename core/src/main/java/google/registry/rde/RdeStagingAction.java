@@ -263,7 +263,7 @@ public final class RdeStagingAction implements Runnable {
 
   @Inject
   @Config("initialWorkerCount")
-  String numWorkers;
+  int numWorkers;
 
   @Inject @Config("transactionCooldown") Duration transactionCooldown;
   @Inject @Config("beamStagingBucketUrl") String stagingBucketUrl;
@@ -345,7 +345,7 @@ public final class RdeStagingAction implements Runnable {
                                           .encode(stagingKeyBytes))
                                   .put("registryEnvironment", RegistryEnvironment.get().name())
                                   .put("workerMachineType", machineType)
-                                  .put("numWorkers", numWorkers)
+                                  .put("numWorkers", String.valueOf(numWorkers))
                                   .put(
                                       "jpaTransactionManagerType",
                                       JpaTransactionManagerType.READ_ONLY_REPLICA.toString())

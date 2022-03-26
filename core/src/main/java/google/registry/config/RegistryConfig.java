@@ -585,7 +585,7 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("initialWorkerCount")
-    public static String provideInitialWorkerCount(RegistryConfigSettings config) {
+    public static int provideInitialWorkerCount(RegistryConfigSettings config) {
       return config.beam.initialWorkerCount;
     }
 
