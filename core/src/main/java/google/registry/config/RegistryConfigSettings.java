@@ -137,6 +137,7 @@ public class RegistryConfigSettings {
   public static class Beam {
     public String defaultJobRegion;
     public String highPerformanceMachineType;
+    public int initialWorkerCount;
     public String stagingBucketUrl;
   }
 
