@@ -32,6 +32,7 @@ import static java.util.Arrays.asList;
 import com.google.cloud.storage.BlobId;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Ordering;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
 import com.jcraft.jsch.JSch;
@@ -122,7 +123,6 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   @Inject @Key("rdeSigningKey") PGPKeyPair signingKey;
   @Inject @Key("rdeStagingDecryptionKey") PGPPrivateKey stagingDecryptionKey;
   @Inject RdeUploadAction() {}
-
   @Override
   public void run() {
     logger.atInfo().log("Attempting to acquire RDE upload lock for TLD '%s'.", tld);
@@ -140,6 +140,27 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
 
   @Override
   public void runWithLock(final DateTime watermark) throws Exception {
+    // If a prefix is not provided, but we are in SQL mode, try to determine the prefix. This should
+    // only happen when the RDE upload cron job runs to catch up any un-retried (i. e. expected)
+    // RDE failures.
+    if (prefix.isEmpty() && !tm().isOfy()) {
+      // The prefix is always in the format of: rde-2022-02-21t00-00-00z-2022-02-21t00-07-33z, where
+      // the first datetime is the watermark and the second one is the time when the RDE beam job
+      // launched. We search for the latest folder that starts with "rde-[watermark]".
+      String partialPrefix =
+          String.format("rde-%s", watermark.toString("yyyy-MM-dd't'HH-mm-ss'z'"));
+      String latestFilenameSuffix =
+          gcsUtils.listFolderObjects(bucket, partialPrefix).stream()
+              .max(Ordering.natural())
+              .orElse(null);
+      if (latestFilenameSuffix == null) {
+        throw new NoContentException(
+            String.format("RDE deposit for TLD %s on %s does not exist", tld, watermark));
+      }
+      int firstSlashPosition = latestFilenameSuffix.indexOf('/');
+      prefix =
+          Optional.of(partialPrefix + latestFilenameSuffix.substring(0, firstSlashPosition + 1));
+    }
     logger.atInfo().log("Verifying readiness to upload the RDE deposit.");
     Optional<Cursor> cursor =
         transactIfJpaTm(() -> tm().loadByKeyIfPresent(Cursor.createVKey(RDE_STAGING, tld)));
@@ -241,9 +262,9 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
                     .setSignatureOutput(sigOut, signingKey)
                     .setFileMetadata(nameWithoutPrefix, xmlLength, watermark)
                     .build()) {
-            long bytesCopied = ByteStreams.copy(ghostrydeDecoder, rydeEncoder);
+          long bytesCopied = ByteStreams.copy(ghostrydeDecoder, rydeEncoder);
           logger.atInfo().log("Uploaded %,d bytes to path '%s'.", bytesCopied, rydeFilename);
-          }
+        }
         String sigFilename = nameWithoutPrefix + ".sig";
         BlobId sigGcsFilename = BlobId.of(bucket, name + ".sig");
         byte[] signature = sigOut.toByteArray();
