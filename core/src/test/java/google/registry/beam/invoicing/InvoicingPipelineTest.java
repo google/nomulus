@@ -24,6 +24,8 @@ import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.money.CurrencyUnit.JPY;
+import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -338,7 +340,7 @@ class InvoicingPipelineTest {
                 + "LEFT JOIN BillingCancellation c ON b.id = c.refOneTime.billingId\n"
                 + "LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent ="
                 + " cr.refRecurring.billingId\n"
-                + "WHERE r.billingIdentifier IS NOT NULL\n"
+                + "WHERE r.billingAccountMap IS NOT NULL\n"
                 + "AND r.type = 'REAL'\n"
                 + "AND t.invoicingEnabled IS TRUE\n"
                 + "AND b.billingTime BETWEEN CAST('2017-10-01' AS timestamp) AND CAST('2017-11-01'"
@@ -362,18 +364,22 @@ class InvoicingPipelineTest {
     persistNewRegistrar("NewRegistrar");
     persistNewRegistrar("TheRegistrar");
     Registrar registrar1 = persistNewRegistrar("theRegistrar");
-    registrar1 = registrar1.asBuilder().setBillingIdentifier(234L).build();
+    registrar1 =
+        registrar1
+            .asBuilder()
+            .setBillingAccountMap(ImmutableMap.of(JPY, "234", USD, "234"))
+            .build();
     persistResource(registrar1);
     Registrar registrar2 = persistNewRegistrar("bestdomains");
     registrar2 =
         registrar2
             .asBuilder()
-            .setBillingIdentifier(456L)
+            .setBillingAccountMap(ImmutableMap.of(USD, "456"))
             .setPoNumber(Optional.of("116688"))
             .build();
     persistResource(registrar2);
     Registrar registrar3 = persistNewRegistrar("anotherRegistrar");
-    registrar3 = registrar3.asBuilder().setBillingIdentifier(789L).build();
+    registrar3 = registrar3.asBuilder().setBillingAccountMap(ImmutableMap.of(USD, "789")).build();
     persistResource(registrar3);
 
     Registry test =
@@ -397,10 +403,8 @@ class InvoicingPipelineTest {
     DomainBase domain6 = persistActiveDomain("locked.test");
     DomainBase domain7 = persistActiveDomain("update-prohibited.test");
 
-    persistOneTimeBillingEvent(
-        1, domain1, registrar1, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
-    persistOneTimeBillingEvent(
-        2, domain2, registrar1, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
+    persistOneTimeBillingEvent(1, domain1, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
+    persistOneTimeBillingEvent(2, domain2, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
     persistOneTimeBillingEvent(
         3,
         domain3,
@@ -410,31 +414,27 @@ class InvoicingPipelineTest {
         Money.ofMajor(CurrencyUnit.JPY, 70),
         DateTime.parse("2017-09-29T00:00:00.0Z"),
         DateTime.parse("2017-10-02T00:00:00.0Z"));
-    persistOneTimeBillingEvent(
-        4, domain4, registrar2, Reason.RENEW, 1, Money.of(CurrencyUnit.USD, 20.5));
+    persistOneTimeBillingEvent(4, domain4, registrar2, Reason.RENEW, 1, Money.of(USD, 20.5));
     persistOneTimeBillingEvent(
         5,
         domain5,
         registrar3,
         Reason.CREATE,
         1,
-        Money.of(CurrencyUnit.USD, 0),
+        Money.of(USD, 0),
         DateTime.parse("2017-10-04T00:00:00.0Z"),
         DateTime.parse("2017-10-04T00:00:00.0Z"),
         Flag.SUNRISE,
         Flag.ANCHOR_TENANT);
-    persistOneTimeBillingEvent(
-        6, domain6, registrar1, Reason.SERVER_STATUS, 0, Money.of(CurrencyUnit.USD, 0));
-    persistOneTimeBillingEvent(
-        7, domain7, registrar1, Reason.SERVER_STATUS, 0, Money.of(CurrencyUnit.USD, 20));
+    persistOneTimeBillingEvent(6, domain6, registrar1, Reason.SERVER_STATUS, 0, Money.of(USD, 0));
+    persistOneTimeBillingEvent(7, domain7, registrar1, Reason.SERVER_STATUS, 0, Money.of(USD, 20));
 
     // Add billing event for a non-billable registrar
     Registrar registrar4 = persistNewRegistrar("noBillRegistrar");
-    registrar4 = registrar4.asBuilder().setBillingIdentifier(null).build();
+    registrar4 = registrar4.asBuilder().setBillingAccountMap(null).build();
     persistResource(registrar4);
     DomainBase domain8 = persistActiveDomain("non-billable.test");
-    persistOneTimeBillingEvent(
-        8, domain8, registrar4, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
+    persistOneTimeBillingEvent(8, domain8, registrar4, Reason.RENEW, 3, Money.of(USD, 20.5));
 
     // Add billing event for a non-real registrar
     Registrar registrar5 = persistNewRegistrar("notRealRegistrar");
@@ -442,19 +442,17 @@ class InvoicingPipelineTest {
         registrar5
             .asBuilder()
             .setIanaIdentifier(null)
-            .setBillingIdentifier(456L)
+            .setBillingAccountMap(ImmutableMap.of(USD, "456"))
             .setType(Registrar.Type.OTE)
             .build();
     persistResource(registrar5);
     DomainBase domain9 = persistActiveDomain("not-real.test");
-    persistOneTimeBillingEvent(
-        9, domain9, registrar5, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
+    persistOneTimeBillingEvent(9, domain9, registrar5, Reason.RENEW, 3, Money.of(USD, 20.5));
 
     // Add billing event for a non-invoicing TLD
     createTld("nobill");
     DomainBase domain10 = persistActiveDomain("test.nobill");
-    persistOneTimeBillingEvent(
-        10, domain10, registrar1, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
+    persistOneTimeBillingEvent(10, domain10, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
 
     // Add billing event before October 2017
     DomainBase domain11 = persistActiveDomain("july.test");
@@ -471,8 +469,7 @@ class InvoicingPipelineTest {
     // Add a billing event with a corresponding cancellation
     DomainBase domain12 = persistActiveDomain("cancel.test");
     OneTime oneTime =
-        persistOneTimeBillingEvent(
-            12, domain12, registrar1, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
+        persistOneTimeBillingEvent(12, domain12, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
     DomainHistory domainHistory = persistDomainHistory(domain12, registrar1);
 
     Cancellation cancellation =
@@ -507,8 +504,7 @@ class InvoicingPipelineTest {
             .build();
     persistResource(recurring);
     OneTime oneTimeRecurring =
-        persistOneTimeBillingEvent(
-            13, domain13, registrar1, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
+        persistOneTimeBillingEvent(13, domain13, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
     oneTimeRecurring =
         oneTimeRecurring
             .asBuilder()

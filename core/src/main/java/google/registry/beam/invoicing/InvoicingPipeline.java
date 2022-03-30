@@ -127,7 +127,7 @@ public class InvoicingPipeline implements Serializable {
         DateTimeUtils.toZonedDateTime(oneTime.getBillingTime(), ZoneId.of("UTC")),
         DateTimeUtils.toZonedDateTime(oneTime.getEventTime(), ZoneId.of("UTC")),
         registrar.getRegistrarId(),
-        registrar.getBillingIdentifier().toString(),
+        registrar.getBillingAccountMap().get(oneTime.getCost().getCurrencyUnit()),
         registrar.getPoNumber().orElse(""),
         DomainNameUtils.getTldFromDomainName(oneTime.getTargetId()),
         oneTime.getReason().toString(),
