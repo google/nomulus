@@ -40,7 +40,7 @@ public final class TmchCrlAction implements Runnable {
   @Inject TmchCertificateAuthority tmchCertificateAuthority;
   @Inject TmchCrlAction() {}
 
-  /** Synchronously fetches latest ICANN TMCH CRL and saves it to Datastore. */
+  /** Synchronously fetches latest ICANN TMCH CRL and saves it to the database. */
   @Override
   public void run() {
     try {

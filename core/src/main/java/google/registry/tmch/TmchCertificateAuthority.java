@@ -41,8 +41,8 @@ import javax.inject.Inject;
  * Helper methods for accessing ICANN's TMCH root certificate and revocation list.
  *
  * <p>There are two CRLs, a real one for the production environment and a pilot one for
- * non-production environments. The Datastore singleton {@link TmchCrl} entity is used to cache this
- * CRL once loaded and will always contain the proper one corresponding to the environment.
+ * non-production environments. The singleton {@link TmchCrl} entity is used to cache this CRL once
+ * loaded and will always contain the proper one corresponding to the environment.
  *
  * <p>The CRTs do not change and are included as files in the codebase that are not refreshed. They
  * were downloaded from https://ca.icann.org/tmch.crt and https://ca.icann.org/tmch_pilot.crt
@@ -66,7 +66,7 @@ public final class TmchCertificateAuthority {
   }
 
   /**
-   * A cached supplier that loads the CRL from Datastore or chooses a default value.
+   * A cached supplier that loads the CRL from the database or chooses a default value.
    *
    * <p>We keep the cache here rather than caching TmchCrl in the model, because loading the CRL
    * string into an X509CRL instance is expensive and should itself be cached.
@@ -132,7 +132,7 @@ public final class TmchCertificateAuthority {
   }
 
   /**
-   * Update to the latest TMCH X.509 certificate revocation list and save it to Datastore.
+   * Update to the latest TMCH X.509 certificate revocation list and save it to the database.
    *
    * <p>Your ASCII-armored CRL must be signed by the current ICANN root certificate.
    *

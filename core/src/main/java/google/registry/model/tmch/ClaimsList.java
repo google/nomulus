@@ -70,8 +70,7 @@ public class ClaimsList extends ImmutableObject implements SqlOnlyEntity {
    *
    * <p>Note that the value of this field is parsed from the claims list file(See this <a
    * href="https://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.1">RFC</>), it is
-   * the DNL List creation datetime from the rfc. Since this field has been used by Datastore, we
-   * cannot change its name until we finish the migration.
+   * the DNL List creation datetime from the rfc.
    *
    * <p>TODO(b/177567432): Rename this field to tmdbGenerationTime.
    */
