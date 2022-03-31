@@ -1355,7 +1355,43 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
   }
 
   @TestOfyOnly
-  void testModification_duringReadOnlyPhase() throws Exception {
+  void testSuccess_nonHostRename_inNoAsyncPhase_succeeds() throws Exception {
+    setEppInput("host_update_name_unchanged.xml");
+    createTld("tld");
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryNoAsync(clock);
+    DomainBase domain = persistActiveDomain("example.tld");
+    HostResource oldHost = persistActiveSubordinateHost(oldHostName(), domain);
+    clock.advanceOneMilli();
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
+    // The example xml doesn't do a host rename, so reloading the host should work.
+    assertAboutHosts()
+        .that(reloadResourceByForeignKey())
+        .hasLastSuperordinateChange(oldHost.getLastSuperordinateChange())
+        .and()
+        .hasSuperordinateDomain(domain.createVKey())
+        .and()
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
+        .and()
+        .hasLastTransferTime(null)
+        .and()
+        .hasOnlyOneHistoryEntryWhich()
+        .hasType(HistoryEntry.Type.HOST_UPDATE);
+    assertDnsTasksEnqueued("ns1.example.tld");
+    DatabaseHelper.removeDatabaseMigrationSchedule();
+  }
+
+  @TestOfyOnly
+  void testRename_duringNoAsyncPhase_fails() throws Exception {
+    createTld("tld");
+    persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryNoAsync(clock);
+    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    DatabaseHelper.removeDatabaseMigrationSchedule();
+  }
+
+  @TestOfyOnly
+  void testModification_duringReadOnlyPhase_fails() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
     DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);

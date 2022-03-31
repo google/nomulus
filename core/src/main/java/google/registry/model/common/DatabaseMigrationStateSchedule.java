@@ -30,6 +30,7 @@ import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.replay.SqlOnlyEntity;
 import java.time.Duration;
+import java.util.Arrays;
 import javax.persistence.Entity;
 import javax.persistence.PersistenceException;
 import org.joda.time.DateTime;
@@ -62,11 +63,28 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements
    * not the phase is read-only.
    */
   public enum MigrationState {
+    /** Datastore is the only DB being used. */
     DATASTORE_ONLY(PrimaryDatabase.DATASTORE, false, ReplayDirection.NO_REPLAY),
+
+    /** Datastore is the primary DB, with changes replicated to Cloud SQL. */
     DATASTORE_PRIMARY(PrimaryDatabase.DATASTORE, false, ReplayDirection.DATASTORE_TO_SQL),
+
+    /** Datastore is the primary DB, with replication, and async actions are disallowed. */
+    DATASTORE_PRIMARY_NO_ASYNC(PrimaryDatabase.DATASTORE, false, ReplayDirection.DATASTORE_TO_SQL),
+
+    /** Datastore is the primary DB, with replication, and all mutating actions are disallowed. */
     DATASTORE_PRIMARY_READ_ONLY(PrimaryDatabase.DATASTORE, true, ReplayDirection.DATASTORE_TO_SQL),
+
+    /**
+     * Cloud SQL is the primary DB, with replication back to Datastore, and all mutating actions are
+     * disallowed.
+     */
     SQL_PRIMARY_READ_ONLY(PrimaryDatabase.CLOUD_SQL, true, ReplayDirection.SQL_TO_DATASTORE),
+
+    /** Cloud SQL is the primary DB, with changes replicated to Datastore. */
     SQL_PRIMARY(PrimaryDatabase.CLOUD_SQL, false, ReplayDirection.SQL_TO_DATASTORE),
+
+    /** Cloud SQL is the only DB being used. */
     SQL_ONLY(PrimaryDatabase.CLOUD_SQL, false, ReplayDirection.NO_REPLAY);
 
     private final PrimaryDatabase primaryDatabase;
@@ -146,11 +164,17 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements
             .putAll(
                 MigrationState.DATASTORE_PRIMARY,
                 MigrationState.DATASTORE_ONLY,
+                MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
+            .putAll(
+                MigrationState.DATASTORE_PRIMARY_NO_ASYNC,
+                MigrationState.DATASTORE_ONLY,
+                MigrationState.DATASTORE_PRIMARY,
                 MigrationState.DATASTORE_PRIMARY_READ_ONLY)
             .putAll(
                 MigrationState.DATASTORE_PRIMARY_READ_ONLY,
                 MigrationState.DATASTORE_ONLY,
                 MigrationState.DATASTORE_PRIMARY,
+                MigrationState.DATASTORE_PRIMARY_NO_ASYNC,
                 MigrationState.SQL_PRIMARY_READ_ONLY,
                 MigrationState.SQL_PRIMARY)
             .putAll(
@@ -165,10 +189,9 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements
                 MigrationState.SQL_ONLY,
                 MigrationState.SQL_PRIMARY_READ_ONLY,
                 MigrationState.SQL_PRIMARY);
+
     // In addition, we can always transition from a state to itself (useful when updating the map).
-    for (MigrationState migrationState : MigrationState.values()) {
-      builder.put(migrationState, migrationState);
-    }
+    Arrays.stream(MigrationState.values()).forEach(state -> builder.put(state, state));
     return builder.build();
   }
 
@@ -246,7 +269,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements
    * A provided map of transitions may be valid by itself (i.e. it shifts states properly, doesn't
    * skip states, and doesn't backtrack incorrectly) while still being invalid. In addition to the
    * transitions in the map being valid, the single transition from the current map at the current
-   * time to the new map at the current time time must also be valid.
+   * time to the new map at the current time must also be valid.
    */
   private static void validateTransitionAtCurrentTime(
       TimedTransitionProperty<MigrationState, MigrationStateTransition> newTransitions) {

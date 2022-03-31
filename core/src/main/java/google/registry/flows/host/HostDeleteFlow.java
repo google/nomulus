@@ -22,6 +22,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
+import static google.registry.persistence.transaction.TransactionManagerFactory.assertAsyncActionsAreAllowed;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -96,6 +97,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
     extensionManager.register(MetadataExtension.class);
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
+    assertAsyncActionsAreAllowed();
     DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
     checkLinkedDomains(targetId, now, HostResource.class, DomainBase::getNameservers);

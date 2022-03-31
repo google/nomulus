@@ -255,6 +255,15 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
   }
 
   @TestOfyOnly
+  void testModification_duringNoAsyncPhase() throws Exception {
+    persistActiveContact(getUniqueIdFromCommand());
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryNoAsync(clock);
+    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    DatabaseHelper.removeDatabaseMigrationSchedule();
+  }
+
+  @TestOfyOnly
   void testModification_duringReadOnlyPhase() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
