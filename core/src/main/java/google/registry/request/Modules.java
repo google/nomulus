@@ -23,14 +23,14 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.appengine.api.datastore.DatastoreService;
+import com.google.appengine.api.urlfetch.URLFetchService;
+import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 import dagger.Module;
 import dagger.Provides;
 import java.net.HttpURLConnection;
 import javax.inject.Singleton;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
 
 /** Dagger modules for App Engine services and other vendor classes. */
 public final class Modules {
@@ -51,16 +51,18 @@ public final class Modules {
   public static final class UrlConnectionServiceModule {
     @Provides
     static UrlConnectionService provideUrlConnectionService() {
-      return url -> {
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        if (connection instanceof HttpsURLConnection) {
-          HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
-          SSLContext tls13Context = SSLContext.getInstance("TLSv1.3");
-          tls13Context.init(null, null, null);
-          httpsConnection.setSSLSocketFactory(tls13Context.getSocketFactory());
-        }
-        return connection;
-      };
+      return url -> (HttpURLConnection) url.openConnection();
+    }
+  }
+
+  /** Dagger module for {@link URLFetchService}. */
+  @Module
+  public static final class UrlFetchServiceModule {
+    private static final URLFetchService fetchService = URLFetchServiceFactory.getURLFetchService();
+
+    @Provides
+    static URLFetchService provideUrlFetchService() {
+      return fetchService;
     }
   }
 
