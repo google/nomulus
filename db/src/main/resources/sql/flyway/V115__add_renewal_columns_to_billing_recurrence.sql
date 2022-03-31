@@ -12,6 +12,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-alter table "BillingRecurrence" add column renewal_price_behavior text;
+alter table "BillingRecurrence" add column renewal_price_behavior text default 'DEFAULT' not null;
 alter table "BillingRecurrence" add column renewal_price_currency text;
 alter table "BillingRecurrence" add column renewal_price_amount numeric(19, 2);

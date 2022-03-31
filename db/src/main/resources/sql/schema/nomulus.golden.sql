@@ -117,7 +117,7 @@ CREATE TABLE public."BillingRecurrence" (
     domain_name text NOT NULL,
     recurrence_end_time timestamp with time zone,
     recurrence_time_of_year text,
-    renewal_price_behavior text,
+    renewal_price_behavior text DEFAULT 'DEFAULT'::text NOT NULL,
     renewal_price_currency text,
     renewal_price_amount numeric(19,2)
 );
