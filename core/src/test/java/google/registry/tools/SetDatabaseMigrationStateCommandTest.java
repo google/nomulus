@@ -64,14 +64,21 @@ public class SetDatabaseMigrationStateCommandTest
   void testSuccess_fullSchedule() throws Exception {
     DateTime now = fakeClock.nowUtc();
     DateTime datastorePrimary = now.plusHours(1);
-    DateTime datastorePrimaryReadOnly = now.plusHours(2);
-    DateTime sqlPrimary = now.plusHours(3);
-    DateTime sqlOnly = now.plusHours(4);
+    DateTime datastorePrimaryNoAsync = now.plusHours(2);
+    DateTime datastorePrimaryReadOnly = now.plusHours(3);
+    DateTime sqlPrimary = now.plusHours(4);
+    DateTime sqlOnly = now.plusHours(5);
     runCommandForced(
         String.format(
             "--migration_schedule=%s=DATASTORE_ONLY,%s=DATASTORE_PRIMARY,"
-                + "%s=DATASTORE_PRIMARY_READ_ONLY,%s=SQL_PRIMARY,%s=SQL_ONLY",
-            START_OF_TIME, datastorePrimary, datastorePrimaryReadOnly, sqlPrimary, sqlOnly));
+                + "%s=DATASTORE_PRIMARY_NO_ASYNC,%s=DATASTORE_PRIMARY_READ_ONLY,"
+                + "%s=SQL_PRIMARY,%s=SQL_ONLY",
+            START_OF_TIME,
+            datastorePrimary,
+            datastorePrimaryNoAsync,
+            datastorePrimaryReadOnly,
+            sqlPrimary,
+            sqlOnly));
     assertThat(DatabaseMigrationStateSchedule.get().toValueMap())
         .containsExactlyEntriesIn(
             ImmutableSortedMap.of(
@@ -79,6 +86,8 @@ public class SetDatabaseMigrationStateCommandTest
                 MigrationState.DATASTORE_ONLY,
                 datastorePrimary,
                 MigrationState.DATASTORE_PRIMARY,
+                datastorePrimaryNoAsync,
+                MigrationState.DATASTORE_PRIMARY_NO_ASYNC,
                 datastorePrimaryReadOnly,
                 MigrationState.DATASTORE_PRIMARY_READ_ONLY,
                 sqlPrimary,
@@ -110,8 +119,9 @@ public class SetDatabaseMigrationStateCommandTest
     runCommandForced(
         String.format(
             "--migration_schedule=%s=DATASTORE_ONLY,%s=DATASTORE_PRIMARY,"
-                + "%s=DATASTORE_PRIMARY_READ_ONLY,%s=DATASTORE_PRIMARY",
-            START_OF_TIME, now.plusHours(1), now.plusHours(2), now.plusHours(3)));
+                + "%s=DATASTORE_PRIMARY_NO_ASYNC,%s=DATASTORE_PRIMARY_READ_ONLY,"
+                + "%s=DATASTORE_PRIMARY",
+            START_OF_TIME, now.plusHours(1), now.plusHours(2), now.plusHours(3), now.plusHours(4)));
     assertThat(DatabaseMigrationStateSchedule.get().toValueMap())
         .containsExactlyEntriesIn(
             ImmutableSortedMap.of(
@@ -120,8 +130,10 @@ public class SetDatabaseMigrationStateCommandTest
                 now.plusHours(1),
                 MigrationState.DATASTORE_PRIMARY,
                 now.plusHours(2),
-                MigrationState.DATASTORE_PRIMARY_READ_ONLY,
+                MigrationState.DATASTORE_PRIMARY_NO_ASYNC,
                 now.plusHours(3),
+                MigrationState.DATASTORE_PRIMARY_READ_ONLY,
+                now.plusHours(4),
                 MigrationState.DATASTORE_PRIMARY));
   }
 
@@ -152,9 +164,12 @@ public class SetDatabaseMigrationStateCommandTest
                 () ->
                     runCommandForced(
                         String.format(
-                            "--migration_schedule=%s=DATASTORE_ONLY,"
-                                + "%s=DATASTORE_PRIMARY,%s=DATASTORE_PRIMARY_READ_ONLY",
-                            START_OF_TIME, now.minusHours(2), now.minusHours(1)))))
+                            "--migration_schedule=%s=DATASTORE_ONLY,%s=DATASTORE_PRIMARY,"
+                                + "%s=DATASTORE_PRIMARY_NO_ASYNC,%s=DATASTORE_PRIMARY_READ_ONLY",
+                            START_OF_TIME,
+                            now.minusHours(3),
+                            now.minusHours(2),
+                            now.minusHours(1)))))
         .hasMessageThat()
         .isEqualTo(
             "Cannot transition from current state-as-of-now DATASTORE_ONLY "

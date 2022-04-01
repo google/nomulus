@@ -17,6 +17,7 @@ package google.registry.model.common;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_ONLY;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_PRIMARY;
+import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_PRIMARY_NO_ASYNC;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_PRIMARY_READ_ONLY;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.SQL_ONLY;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.SQL_PRIMARY;
@@ -71,10 +72,12 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
     runValidTransition(DATASTORE_ONLY, DATASTORE_PRIMARY);
 
     runValidTransition(DATASTORE_PRIMARY, DATASTORE_ONLY);
-    runValidTransition(DATASTORE_PRIMARY, DATASTORE_PRIMARY_READ_ONLY);
+    runValidTransition(DATASTORE_PRIMARY, DATASTORE_PRIMARY_NO_ASYNC);
+    runValidTransition(DATASTORE_PRIMARY_NO_ASYNC, DATASTORE_PRIMARY_READ_ONLY);
 
     runValidTransition(DATASTORE_PRIMARY_READ_ONLY, DATASTORE_ONLY);
     runValidTransition(DATASTORE_PRIMARY_READ_ONLY, DATASTORE_PRIMARY);
+    runValidTransition(DATASTORE_PRIMARY_READ_ONLY, DATASTORE_PRIMARY_NO_ASYNC);
     runValidTransition(DATASTORE_PRIMARY_READ_ONLY, SQL_PRIMARY_READ_ONLY);
     runValidTransition(DATASTORE_PRIMARY_READ_ONLY, SQL_PRIMARY);
 
@@ -94,6 +97,7 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
     runInvalidTransition(DATASTORE_ONLY, SQL_PRIMARY);
     runInvalidTransition(DATASTORE_ONLY, SQL_ONLY);
 
+    runInvalidTransition(DATASTORE_PRIMARY, DATASTORE_PRIMARY_READ_ONLY);
     runInvalidTransition(DATASTORE_PRIMARY, SQL_PRIMARY_READ_ONLY);
     runInvalidTransition(DATASTORE_PRIMARY, SQL_PRIMARY);
     runInvalidTransition(DATASTORE_PRIMARY, SQL_ONLY);
@@ -124,7 +128,8 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
         ImmutableSortedMap.<DateTime, MigrationState>naturalOrder()
             .put(START_OF_TIME, DATASTORE_ONLY)
             .put(startTime.plusHours(1), DATASTORE_PRIMARY)
-            .put(startTime.plusHours(2), DATASTORE_PRIMARY_READ_ONLY)
+            .put(startTime.plusHours(2), DATASTORE_PRIMARY_NO_ASYNC)
+            .put(startTime.plusHours(3), DATASTORE_PRIMARY_READ_ONLY)
             .build();
     assertThat(
             assertThrows(
@@ -163,7 +168,8 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
     fakeClock.setTo(START_OF_TIME.plusDays(1));
     AllocationToken token =
         new AllocationToken.Builder().setToken("token").setTokenType(TokenType.SINGLE_USE).build();
-    runValidTransition(DATASTORE_PRIMARY, DATASTORE_PRIMARY_READ_ONLY);
+    runValidTransition(DATASTORE_PRIMARY, DATASTORE_PRIMARY_NO_ASYNC);
+    runValidTransition(DATASTORE_PRIMARY_NO_ASYNC, DATASTORE_PRIMARY_READ_ONLY);
     assertThrows(ReadOnlyModeException.class, () -> persistResource(token));
     runValidTransition(DATASTORE_PRIMARY_READ_ONLY, SQL_PRIMARY_READ_ONLY);
     assertThrows(ReadOnlyModeException.class, () -> persistResource(token));

@@ -54,10 +54,12 @@ public class GetDatabaseMigrationStateCommandTest
             now.plusHours(1),
             MigrationState.DATASTORE_PRIMARY,
             now.plusHours(2),
-            MigrationState.DATASTORE_PRIMARY_READ_ONLY,
+            MigrationState.DATASTORE_PRIMARY_NO_ASYNC,
             now.plusHours(3),
-            MigrationState.SQL_PRIMARY,
+            MigrationState.DATASTORE_PRIMARY_READ_ONLY,
             now.plusHours(4),
+            MigrationState.SQL_PRIMARY,
+            now.plusHours(5),
             MigrationState.SQL_ONLY);
     jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(transitions));
     runCommand();

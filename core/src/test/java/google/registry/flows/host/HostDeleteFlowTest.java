@@ -358,6 +358,15 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
+  @TestOfyOnly
+  void testModification_duringNoAsyncPhase() {
+    persistActiveHost("ns1.example.tld");
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryNoAsync(clock);
+    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    DatabaseHelper.removeDatabaseMigrationSchedule();
+  }
+
   private void assertOfyDeleteSuccess(String registrarId, String clientTrid, boolean isSuperuser)
       throws Exception {
     HostResource deletedHost = reloadResourceByForeignKey();

@@ -25,6 +25,7 @@ import static google.registry.model.ResourceTransferUtils.handlePendingTransferO
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.transfer.TransferStatus.SERVER_CANCELLED;
+import static google.registry.persistence.transaction.TransactionManagerFactory.assertAsyncActionsAreAllowed;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -94,6 +95,7 @@ public final class ContactDeleteFlow implements TransactionalFlow {
     extensionManager.register(MetadataExtension.class);
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
+    assertAsyncActionsAreAllowed();
     DateTime now = tm().getTransactionTime();
     checkLinkedDomains(targetId, now, ContactResource.class, DomainBase::getReferencedContacts);
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);

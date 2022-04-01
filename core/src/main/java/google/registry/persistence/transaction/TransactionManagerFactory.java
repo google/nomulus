@@ -15,6 +15,7 @@
 package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_PRIMARY_NO_ASYNC;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -23,6 +24,7 @@ import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import google.registry.config.RegistryEnvironment;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.model.ofy.DatastoreTransactionManager;
@@ -194,6 +196,22 @@ public final class TransactionManagerFactory {
 
   public static void assertNotReadOnlyMode() {
     if (DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC)).isReadOnly()) {
+      throw new ReadOnlyModeException();
+    }
+  }
+
+  /**
+   * Asserts that async actions (contact/host deletes and host renames) are allowed.
+   *
+   * <p>These are allowed at all times except during the {@link
+   * DatabaseMigrationStateSchedule.MigrationState#DATASTORE_PRIMARY_NO_ASYNC} stage. Note that
+   * {@link ReadOnlyModeException} may well be thrown during other read-only stages inside the
+   * transaction manager; this method specifically checks only async actions.
+   */
+  @DeleteAfterMigration
+  public static void assertAsyncActionsAreAllowed() {
+    if (DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC))
+        .equals(DATASTORE_PRIMARY_NO_ASYNC)) {
       throw new ReadOnlyModeException();
     }
   }
