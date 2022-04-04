@@ -14,6 +14,7 @@
 
 package google.registry.beam.invoicing;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.beam.BeamUtils.getQueryFromFile;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
@@ -53,6 +54,7 @@ import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.TypeDescriptor;
+import org.joda.money.CurrencyUnit;
 
 /**
  * Definition of a Dataflow Flex pipeline template, which generates a given month's invoices.
@@ -122,12 +124,19 @@ public class InvoicingPipeline implements Serializable {
     google.registry.model.billing.BillingEvent.OneTime oneTime =
         (google.registry.model.billing.BillingEvent.OneTime) row[0];
     Registrar registrar = (Registrar) row[1];
+    CurrencyUnit currency = oneTime.getCost().getCurrencyUnit();
+    checkState(
+        registrar.getBillingAccountMap().containsKey(currency),
+        "Registrar %s does not have a product account key for the currency unit: %s",
+        registrar.getRegistrarId(),
+        currency);
+
     return BillingEvent.create(
         oneTime.getId(),
         DateTimeUtils.toZonedDateTime(oneTime.getBillingTime(), ZoneId.of("UTC")),
         DateTimeUtils.toZonedDateTime(oneTime.getEventTime(), ZoneId.of("UTC")),
         registrar.getRegistrarId(),
-        registrar.getBillingIdentifier().toString(),
+        registrar.getBillingAccountMap().get(currency),
         registrar.getPoNumber().orElse(""),
         DomainNameUtils.getTldFromDomainName(oneTime.getTargetId()),
         oneTime.getReason().toString(),

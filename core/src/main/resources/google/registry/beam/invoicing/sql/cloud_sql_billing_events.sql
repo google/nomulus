@@ -31,7 +31,7 @@ JOIN Domain d ON b.domainRepoId = d.repoId
 JOIN Tld t ON t.tldStrId = d.tld
 LEFT JOIN BillingCancellation c ON b.id = c.refOneTime.billingId
 LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent = cr.refRecurring.billingId
-WHERE r.billingIdentifier IS NOT NULL
+WHERE r.billingAccountMap IS NOT NULL
 AND r.type = 'REAL'
 AND t.invoicingEnabled IS TRUE
 AND b.billingTime BETWEEN CAST('%FIRST_TIMESTAMP_OF_MONTH%' AS timestamp) AND CAST('%LAST_TIMESTAMP_OF_MONTH%' AS timestamp)
