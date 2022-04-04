@@ -38,7 +38,9 @@ import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.security.Security;
 import java.util.Map;
+import java.util.Optional;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.postgresql.util.PSQLException;
 
 /** Container class to create and run remote commands against a Datastore instance. */
 @Parameters(separators = " =", commandDescription = "Command-line interface to the registry")
@@ -178,14 +180,30 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
 
     try {
       runCommand(command);
-    } catch (RuntimeException ex) {
-      if (Throwables.getRootCause(ex) instanceof LoginRequiredException) {
+    } catch (RuntimeException e) {
+      if (Throwables.getRootCause(e) instanceof LoginRequiredException) {
         System.err.println("===================================================================");
         System.err.println("You must login using 'nomulus login' prior to running this command.");
         System.err.println("===================================================================");
         System.exit(1);
       } else {
-        throw ex;
+        // See if this looks like the error we get when there's another instance of nomulus tool
+        // running against SQL and give the user some additional guidance if so.
+        Optional<Throwable> psqlException =
+            Throwables.getCausalChain(e).stream()
+                .filter(x -> x instanceof PSQLException)
+                .findFirst();
+        if (psqlException.isPresent() && psqlException.get().getMessage().contains("google:5432")) {
+          e.printStackTrace();
+          System.err.println("===================================================================");
+          System.err.println(
+              "This error is likely the result of having another instance of\n"
+                  + "nomulus running at the same time.  Check your system, shut down\n"
+                  + "the other instance, and try again.");
+          System.err.println("===================================================================");
+        } else {
+          throw e;
+        }
       }
     }
   }
