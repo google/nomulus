@@ -51,7 +51,8 @@ CREATE TABLE public."AllocationToken" (
     redemption_domain_repo_id text,
     token_status_transitions public.hstore,
     token_type text,
-    redemption_domain_history_id bigint
+    redemption_domain_history_id bigint,
+    renewal_price_behavior text DEFAULT 'DEFAULT'::text NOT NULL
 );
 
 
