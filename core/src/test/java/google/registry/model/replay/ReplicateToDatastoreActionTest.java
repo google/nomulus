@@ -44,6 +44,7 @@ import google.registry.model.server.Lock;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManagerImpl;
 import google.registry.persistence.transaction.TransactionEntity;
+import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
@@ -390,6 +391,49 @@ public class ReplicateToDatastoreActionTest {
         .isEqualTo(
             "Skipping ReplicateToDatastoreAction because we are in migration phase"
                 + " DATASTORE_PRIMARY.");
+  }
+
+  @Test
+  void replicationWorksInReadOnly() {
+
+    // Put us in SQL primary now, readonly in an hour, then in datastore primary after 25 hours.
+    // And we'll need the TransactionManagerFactory to use the fake clock.
+    DateTime now = fakeClock.nowUtc();
+    TransactionManagerFactory.setClock(fakeClock);
+    jpaTm()
+        .transact(
+            () ->
+                DatabaseMigrationStateSchedule.set(
+                    ImmutableSortedMap.<DateTime, MigrationState>naturalOrder()
+                        .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
+                        .put(START_OF_TIME.plusHours(1), MigrationState.DATASTORE_PRIMARY)
+                        .put(START_OF_TIME.plusHours(2), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
+                        .put(START_OF_TIME.plusHours(3), MigrationState.SQL_PRIMARY_READ_ONLY)
+                        .put(START_OF_TIME.plusHours(4), MigrationState.SQL_PRIMARY)
+                        .put(now.plusHours(1), MigrationState.SQL_PRIMARY_READ_ONLY)
+                        .put(now.plusHours(25), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
+                        .put(now.plusHours(26), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
+                        .build()));
+
+    TestObject foo = TestObject.create("foo");
+    insertInDb(foo);
+    TestObject bar = TestObject.create("bar");
+    insertInDb(bar);
+    TestObject baz = TestObject.create("baz");
+    insertInDb(baz);
+    jpaTm().transact(() -> jpaTm().delete(baz.key()));
+
+    // get to read-only
+    fakeClock.advanceBy(Duration.standardDays(1));
+
+    // process the transaction in readonly.
+    action.run();
+
+    // Forward the next day (datastore primary).  Verify that datastore has all of the changes.
+    fakeClock.advanceBy(Duration.standardDays(1));
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(foo.key()))).isEqualTo(foo);
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(bar.key()))).isEqualTo(bar);
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(baz.key()).isPresent())).isFalse();
   }
 
   @Test

@@ -17,7 +17,6 @@ package google.registry.persistence.transaction;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_PRIMARY_NO_ASYNC;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.appengine.api.utils.SystemProperty;
 import com.google.appengine.api.utils.SystemProperty.Environment.Value;
@@ -30,10 +29,11 @@ import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDataba
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.DaggerPersistenceComponent;
 import google.registry.tools.RegistryToolEnvironment;
+import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
+import google.registry.util.SystemClock;
 import java.util.Optional;
 import java.util.function.Supplier;
-import org.joda.time.DateTime;
 
 /** Factory class to create {@link TransactionManager} instance. */
 // TODO: Rename this to PersistenceFactory and move to persistence package.
@@ -43,6 +43,9 @@ public final class TransactionManagerFactory {
 
   /** Optional override to manually set the transaction manager per-test. */
   private static Optional<TransactionManager> tmForTest = Optional.empty();
+
+  /** The current clock (defined as a variable so we can override it in tests) */
+  private static Clock clock = new SystemClock();
 
   /** Supplier for jpaTm so that it is initialized only once, upon first usage. */
   @NonFinalForTesting
@@ -105,7 +108,7 @@ public final class TransactionManagerFactory {
     if (onBeam) {
       return jpaTm();
     }
-    return DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC))
+    return DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc())
             .getPrimaryDatabase()
             .equals(PrimaryDatabase.DATASTORE)
         ? ofyTm()
@@ -195,7 +198,7 @@ public final class TransactionManagerFactory {
   }
 
   public static void assertNotReadOnlyMode() {
-    if (DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC)).isReadOnly()) {
+    if (DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc()).isReadOnly()) {
       throw new ReadOnlyModeException();
     }
   }
@@ -214,6 +217,12 @@ public final class TransactionManagerFactory {
         .equals(DATASTORE_PRIMARY_NO_ASYNC)) {
       throw new ReadOnlyModeException();
     }
+  }
+
+  /** Allows us to set the clock used by the factory in unit tests. */
+  @VisibleForTesting
+  public static void setClock(Clock clock) {
+    TransactionManagerFactory.clock = clock;
   }
 
   /** Registry is currently undergoing maintenance and is in read-only mode. */
