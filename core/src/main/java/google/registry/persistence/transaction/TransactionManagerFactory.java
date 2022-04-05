@@ -213,7 +213,7 @@ public final class TransactionManagerFactory {
    */
   @DeleteAfterMigration
   public static void assertAsyncActionsAreAllowed() {
-    if (DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC))
+    if (DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc())
         .equals(DATASTORE_PRIMARY_NO_ASYNC)) {
       throw new ReadOnlyModeException();
     }
@@ -221,7 +221,7 @@ public final class TransactionManagerFactory {
 
   /** Allows us to set the clock used by the factory in unit tests. */
   @VisibleForTesting
-  public static void setClock(Clock clock) {
+  public static void setClockForTesting(Clock clock) {
     TransactionManagerFactory.clock = clock;
   }
 

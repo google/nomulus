@@ -367,9 +367,8 @@ public class ReplicateToDatastoreActionTest {
                     ImmutableSortedMap.<DateTime, MigrationState>naturalOrder()
                         .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
                         .put(START_OF_TIME.plusHours(1), MigrationState.DATASTORE_PRIMARY)
-                        .put(START_OF_TIME.plusHours(2), MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
-                        .put(START_OF_TIME.plusHours(3), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusHours(4), MigrationState.SQL_PRIMARY)
+                        .put(START_OF_TIME.plusHours(2), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
+                        .put(START_OF_TIME.plusHours(3), MigrationState.SQL_PRIMARY)
                         .put(now.plusHours(1), MigrationState.SQL_PRIMARY_READ_ONLY)
                         .put(now.plusHours(2), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
                         .put(now.plusHours(3), MigrationState.DATASTORE_PRIMARY)
@@ -399,7 +398,7 @@ public class ReplicateToDatastoreActionTest {
     // Put us in SQL primary now, readonly in an hour, then in datastore primary after 25 hours.
     // And we'll need the TransactionManagerFactory to use the fake clock.
     DateTime now = fakeClock.nowUtc();
-    TransactionManagerFactory.setClock(fakeClock);
+    TransactionManagerFactory.setClockForTesting(fakeClock);
     jpaTm()
         .transact(
             () ->
@@ -407,9 +406,10 @@ public class ReplicateToDatastoreActionTest {
                     ImmutableSortedMap.<DateTime, MigrationState>naturalOrder()
                         .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
                         .put(START_OF_TIME.plusHours(1), MigrationState.DATASTORE_PRIMARY)
-                        .put(START_OF_TIME.plusHours(2), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusHours(3), MigrationState.SQL_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusHours(4), MigrationState.SQL_PRIMARY)
+                        .put(START_OF_TIME.plusHours(2), MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
+                        .put(START_OF_TIME.plusHours(3), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
+                        .put(START_OF_TIME.plusHours(4), MigrationState.SQL_PRIMARY_READ_ONLY)
+                        .put(START_OF_TIME.plusHours(5), MigrationState.SQL_PRIMARY)
                         .put(now.plusHours(1), MigrationState.SQL_PRIMARY_READ_ONLY)
                         .put(now.plusHours(25), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
                         .put(now.plusHours(26), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
