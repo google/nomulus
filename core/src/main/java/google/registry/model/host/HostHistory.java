@@ -143,7 +143,7 @@ public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerial
     if (hostBase == null) {
       hostBase = jpaTm().getEntityManager().find(HostResource.class, getHostRepoId());
       hostBase.fullyQualifiedHostName =
-          DomainNameUtils.canonicalizeDomainName(hostBase.fullyQualifiedHostName);
+          DomainNameUtils.canonicalizeHostname(hostBase.fullyQualifiedHostName);
     }
   }
 

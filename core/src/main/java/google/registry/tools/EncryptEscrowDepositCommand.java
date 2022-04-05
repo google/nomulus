@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -61,6 +61,6 @@ class EncryptEscrowDepositCommand implements CommandWithRemoteApi {
 
   @Override
   public final void run() throws Exception {
-    encryptor.encrypt(mode, canonicalizeDomainName(tld), revision, input, outdir);
+    encryptor.encrypt(mode, canonicalizeHostname(tld), revision, input, outdir);
   }
 }

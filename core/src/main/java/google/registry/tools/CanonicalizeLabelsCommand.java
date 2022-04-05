@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
@@ -80,7 +80,7 @@ final class CanonicalizeLabelsCommand implements Command {
 
   private String canonicalize(String rawLabel) {
     try {
-      return canonicalizeDomainName(rawLabel.replaceAll(" ", ""));
+      return canonicalizeHostname(rawLabel.replaceAll(" ", ""));
     } catch (Exception e) {
       System.err.printf("Error canonicalizing %s: %s\n", rawLabel, e.getMessage());
       return "";

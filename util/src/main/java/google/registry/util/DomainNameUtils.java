@@ -39,8 +39,8 @@ public final class DomainNameUtils {
             .equals(potentialParent.parts());
   }
 
-  /** Canonicalizes a domain name by lowercasing and converting unicode to punycode. */
-  public static String canonicalizeDomainName(String label) {
+  /** Canonicalizes a hostname/domain name by lowercasing and converting unicode to punycode. */
+  public static String canonicalizeHostname(String label) {
     String labelLowercased = Ascii.toLowerCase(label);
     try {
       return Idn.toASCII(labelLowercased);

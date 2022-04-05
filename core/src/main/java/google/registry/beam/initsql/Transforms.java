@@ -22,7 +22,7 @@ import static google.registry.beam.initsql.BackupPaths.getExportFilePatterns;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static java.util.Comparator.comparing;
 import static org.apache.beam.sdk.values.TypeDescriptors.kvs;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
@@ -343,11 +343,11 @@ public final class Transforms {
       // Canonicalize old domain/host names from 2016 and earlier before we were enforcing this.
       entity.setIndexedProperty(
           "fullyQualifiedDomainName",
-          canonicalizeDomainName((String) entity.getProperty("fullyQualifiedDomainName")));
+          canonicalizeHostname((String) entity.getProperty("fullyQualifiedDomainName")));
     } else if (entity.getKind().equals("HostResource")) {
       entity.setIndexedProperty(
           "fullyQualifiedHostName",
-          canonicalizeDomainName((String) entity.getProperty("fullyQualifiedHostName")));
+          canonicalizeHostname((String) entity.getProperty("fullyQualifiedHostName")));
     }
     return entity;
   }

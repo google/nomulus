@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.testing.DatabaseHelper.assertAllocationTokens;
-import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -138,16 +138,18 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   @TestOfyAndSql
   void testSuccess_domainNames() throws Exception {
-    createTld("tld");
+    createTlds("tld", "xn--q9jyb4c");
     File domainNamesFile = tmpDir.resolve("domain_names.txt").toFile();
-    Files.asCharSink(domainNamesFile, UTF_8).write("foo1.tld\nboo2.tld\nbaz9.tld\n");
+    Files.asCharSink(domainNamesFile, UTF_8).write("foo1.tld\nboo2.tld\nçauçalito.みんな\n");
     runCommand("--domain_names_file", domainNamesFile.getPath());
     assertAllocationTokens(
         createToken("123456789ABCDEFG", null, "foo1.tld"),
         createToken("HJKLMNPQRSTUVWXY", null, "boo2.tld"),
-        createToken("Zabcdefghijkmnop", null, "baz9.tld"));
+        createToken("Zabcdefghijkmnop", null, "xn--aualito-txac.xn--q9jyb4c"));
     assertInStdout(
-        "foo1.tld,123456789ABCDEFG\nboo2.tld,HJKLMNPQRSTUVWXY\nbaz9.tld,Zabcdefghijkmnop");
+        "foo1.tld,123456789ABCDEFG",
+        "boo2.tld,HJKLMNPQRSTUVWXY",
+        "xn--aualito-txac.xn--q9jyb4c,Zabcdefghijkmnop");
   }
 
   @TestOfyAndSql

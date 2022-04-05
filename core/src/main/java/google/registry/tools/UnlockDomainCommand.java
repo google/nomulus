@@ -14,6 +14,8 @@
 
 package google.registry.tools;
 
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
+
 import com.beust.jcommander.Parameters;
 import java.util.Optional;
 
@@ -27,6 +29,7 @@ public class UnlockDomainCommand extends LockOrUnlockDomainCommand {
 
   @Override
   protected void createAndApplyRequest(String domain) {
-    domainLockUtils.administrativelyApplyUnlock(domain, clientId, true, Optional.empty());
+    domainLockUtils.administrativelyApplyUnlock(
+        canonicalizeHostname(domain), clientId, true, Optional.empty());
   }
 }

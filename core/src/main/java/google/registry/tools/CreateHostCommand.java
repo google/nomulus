@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.tools.soy.HostCreateSoyInfo;
+import google.registry.util.DomainNameUtils;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -68,7 +69,7 @@ final class CreateHostCommand extends MutatingEppToolCommand {
     addSoyRecord(
         clientId,
         new SoyMapData(
-            "hostname", hostName,
+            "hostname", DomainNameUtils.canonicalizeHostname(hostName),
             "ipv4addresses", ipv4Addresses.build(),
             "ipv6addresses", ipv6Addresses.build()));
   }

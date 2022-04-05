@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Queues.newArrayDeque;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -44,15 +43,18 @@ import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.persistence.VKey;
 import google.registry.tools.params.TransitionListParameter.TokenStatusTransitions;
 import google.registry.util.CollectionUtils;
+import google.registry.util.DomainNameUtils;
 import google.registry.util.NonFinalForTesting;
 import google.registry.util.Retrier;
 import google.registry.util.StringGenerator;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -164,11 +166,12 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
       domainNames = null;
     } else {
       domainNames =
-          newArrayDeque(
-              Splitter.on('\n')
-                  .omitEmptyStrings()
-                  .trimResults()
-                  .split(Files.asCharSource(new File(domainNamesFile), UTF_8).read()));
+          Splitter.on('\n')
+              .omitEmptyStrings()
+              .trimResults()
+              .splitToStream(Files.asCharSource(new File(domainNamesFile), UTF_8).read())
+              .map(DomainNameUtils::canonicalizeHostname)
+              .collect(Collectors.toCollection(ArrayDeque::new));
       numTokens = domainNames.size();
     }
 

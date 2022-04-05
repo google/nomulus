@@ -15,6 +15,7 @@
 package google.registry.tools.params;
 
 import com.google.common.net.InternetDomainName;
+import google.registry.util.DomainNameUtils;
 
 /** InternetDomainName CLI parameter converter/validator. */
 public final class InternetDomainNameParameter
@@ -26,6 +27,6 @@ public final class InternetDomainNameParameter
 
   @Override
   public InternetDomainName convert(String value) {
-    return InternetDomainName.from(value);
+    return InternetDomainName.from(DomainNameUtils.canonicalizeHostname(value));
   }
 }

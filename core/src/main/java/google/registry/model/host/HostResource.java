@@ -73,7 +73,7 @@ public class HostResource extends HostBase
 
   @Override
   public void beforeSqlSaveOnReplay() {
-    fullyQualifiedHostName = DomainNameUtils.canonicalizeDomainName(fullyQualifiedHostName);
+    fullyQualifiedHostName = DomainNameUtils.canonicalizeHostname(fullyQualifiedHostName);
   }
 
   @Override

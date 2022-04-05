@@ -16,7 +16,7 @@ package google.registry.model.tld.label;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.emptyToNull;
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.net.InternetDomainName;
@@ -77,7 +77,7 @@ public abstract class DomainLabelEntry<T extends Comparable<?>, D extends Domain
     public T build() {
       checkArgumentNotNull(emptyToNull(getInstance().domainLabel), "Label must be specified");
       checkArgument(
-          getInstance().domainLabel.equals(canonicalizeDomainName(getInstance().domainLabel)),
+          getInstance().domainLabel.equals(canonicalizeHostname(getInstance().domainLabel)),
           "Label '%s' must be in puny-coded, lower-case form",
           getInstance().domainLabel);
       checkArgumentNotNull(getInstance().getValue(), "Value must be specified");

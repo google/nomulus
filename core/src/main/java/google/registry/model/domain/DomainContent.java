@@ -34,7 +34,7 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.earliestOf;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -890,7 +890,7 @@ public class DomainContent extends EppResource
 
     public B setDomainName(String domainName) {
       checkArgument(
-          domainName.equals(canonicalizeDomainName(domainName)),
+          domainName.equals(canonicalizeHostname(domainName)),
           "Domain name %s not in puny-coded, lower-case form",
           domainName);
       getInstance().fullyQualifiedDomainName = domainName;

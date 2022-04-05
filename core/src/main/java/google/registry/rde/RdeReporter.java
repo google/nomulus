@@ -19,7 +19,7 @@ import static com.google.appengine.api.urlfetch.HTTPMethod.PUT;
 import static com.google.common.io.BaseEncoding.base64;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -123,7 +123,7 @@ public class RdeReporter {
 
   private URL makeReportUrl(String tld, String id) {
     try {
-      return new URL(String.format("%s/%s/%s", reportUrlPrefix, canonicalizeDomainName(tld), id));
+      return new URL(String.format("%s/%s/%s", reportUrlPrefix, canonicalizeHostname(tld), id));
     } catch (MalformedURLException e) {
       throw new RuntimeException(e);
     }

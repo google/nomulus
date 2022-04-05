@@ -55,7 +55,8 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
 
   @TestOfyAndSql
   void testSuccess_domainAndMessage() throws Exception {
-    runCommandForced("--domain=example.tld", "--message=This domain is bad");
+    // Test canonicalization to lowercase example.tld as well.
+    runCommandForced("--domain=EXAMPLE.TLD", "--message=This domain is bad");
 
     HistoryEntry synthetic = getOnlyHistoryEntryOfType(domain, SYNTHETIC);
     assertAboutHistoryEntries()

@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.CollectionUtils.findDuplicates;
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Joiner;
@@ -263,10 +263,10 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
         "Can't update roid suffixes on multiple TLDs simultaneously");
     for (String tld : tlds) {
       checkArgument(
-          tld.equals(canonicalizeDomainName(tld)),
+          tld.equals(canonicalizeHostname(tld)),
           "TLD '%s' should be given in the canonical form '%s'",
           tld,
-          canonicalizeDomainName(tld));
+          canonicalizeHostname(tld));
       checkArgument(
           !Character.isDigit(tld.charAt(0)),
           "TLDs cannot begin with a number");

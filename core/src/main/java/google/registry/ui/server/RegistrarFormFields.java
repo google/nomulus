@@ -17,7 +17,7 @@ package google.registry.ui.server;
 import static com.google.common.collect.Range.atLeast;
 import static com.google.common.collect.Range.atMost;
 import static com.google.common.collect.Range.closed;
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
@@ -334,7 +334,7 @@ public final class RegistrarFormFields {
     if (!InternetDomainName.isValid(input)) {
       throw new FormFieldException("Not a valid hostname.");
     }
-    return canonicalizeDomainName(input);
+    return canonicalizeHostname(input);
   }
 
   public static @Nullable DateTime parseDateTime(@Nullable String input) {
