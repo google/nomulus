@@ -53,6 +53,7 @@ import google.registry.testing.InjectExtension;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestObject;
 import google.registry.util.RequestStatusChecker;
+import google.registry.util.SystemClock;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.logging.Level;
@@ -106,6 +107,7 @@ public class ReplicateToDatastoreActionTest {
   void tearDown() {
     DatabaseHelper.removeDatabaseMigrationSchedule();
     fakeClock.disableAutoIncrement();
+    TransactionManagerFactory.setClockForTesting(new SystemClock());
   }
 
   @RetryingTest(4)
@@ -367,8 +369,9 @@ public class ReplicateToDatastoreActionTest {
                     ImmutableSortedMap.<DateTime, MigrationState>naturalOrder()
                         .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
                         .put(START_OF_TIME.plusHours(1), MigrationState.DATASTORE_PRIMARY)
-                        .put(START_OF_TIME.plusHours(2), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusHours(3), MigrationState.SQL_PRIMARY)
+                        .put(START_OF_TIME.plusHours(2), MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
+                        .put(START_OF_TIME.plusHours(3), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
+                        .put(START_OF_TIME.plusHours(4), MigrationState.SQL_PRIMARY)
                         .put(now.plusHours(1), MigrationState.SQL_PRIMARY_READ_ONLY)
                         .put(now.plusHours(2), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
                         .put(now.plusHours(3), MigrationState.DATASTORE_PRIMARY)
