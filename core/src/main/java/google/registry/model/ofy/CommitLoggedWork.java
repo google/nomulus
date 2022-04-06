@@ -156,7 +156,7 @@ public class CommitLoggedWork<R> implements Runnable {
             .map(entity -> (ImmutableObject) CommitLogMutation.create(manifestKey, entity))
             .collect(toImmutableSet());
     auditedOfy()
-        .saveWithoutBackup()
+        .saveIgnoringReadOnlyWithoutBackup()
         .entities(
             new ImmutableSet.Builder<>()
                 .add(manifest)

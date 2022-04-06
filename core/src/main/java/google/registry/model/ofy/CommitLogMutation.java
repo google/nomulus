@@ -69,7 +69,7 @@ public class CommitLogMutation extends ImmutableObject implements DatastoreOnlyE
    * converted to a raw Datastore Entity, serialized to bytes, and stored within the mutation.
    */
   public static CommitLogMutation create(Key<CommitLogManifest> parent, Object entity) {
-    return createFromRaw(parent, auditedOfy().save().toEntity(entity));
+    return createFromRaw(parent, auditedOfy().saveIgnoringReadOnlyWithBackup().toEntity(entity));
   }
 
   /**
