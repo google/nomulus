@@ -17,7 +17,7 @@ package google.registry.whois;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.model.tld.Registries.findTldForName;
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 
 import com.google.common.base.Joiner;
@@ -122,7 +122,7 @@ class WhoisReader {
         logger.atInfo().log(
             "Attempting domain lookup command using domain name '%s'.", tokens.get(1));
         return commandFactory.domainLookup(
-            InternetDomainName.from(canonicalizeDomainName(tokens.get(1))),
+            InternetDomainName.from(canonicalizeHostname(tokens.get(1))),
             fullOutput,
             whoisRedactedEmailText);
       } catch (IllegalArgumentException iae) {
@@ -152,8 +152,8 @@ class WhoisReader {
       try {
         logger.atInfo().log(
             "Attempting nameserver lookup command using %s as a hostname.", tokens.get(1));
-        return commandFactory.nameserverLookupByHost(InternetDomainName.from(
-            canonicalizeDomainName(tokens.get(1))));
+        return commandFactory.nameserverLookupByHost(
+            InternetDomainName.from(canonicalizeHostname(tokens.get(1))));
       } catch (IllegalArgumentException iae) {
         // Silently ignore this exception.
       }
@@ -187,7 +187,7 @@ class WhoisReader {
 
       // Try to parse it as a domain name or host name.
       try {
-        final InternetDomainName targetName = InternetDomainName.from(canonicalizeDomainName(arg1));
+        final InternetDomainName targetName = InternetDomainName.from(canonicalizeHostname(arg1));
 
         // We don't know at this point whether we have a domain name or a host name. We have to
         // search through our configured TLDs to see if there's one that prefixes the name.

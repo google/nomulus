@@ -20,6 +20,7 @@ import static com.google.common.collect.Maps.filterValues;
 import static com.google.common.io.Resources.getResource;
 import static google.registry.model.tld.Registries.findTldForNameOrThrow;
 import static google.registry.tools.CommandUtilities.addHeader;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static google.registry.xml.XmlTransformer.prettyPrint;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -83,8 +84,9 @@ abstract class EppToolCommand extends ConfirmingCommand
   protected static Multimap<String, String> validateAndGroupDomainNamesByTld(List<String> names) {
     ImmutableMultimap.Builder<String, String> builder = new ImmutableMultimap.Builder<>();
     for (String name : names) {
-      InternetDomainName tld = findTldForNameOrThrow(InternetDomainName.from(name));
-      builder.put(tld.toString(), name);
+      String canonicalDomain = canonicalizeHostname(name);
+      InternetDomainName tld = findTldForNameOrThrow(InternetDomainName.from(canonicalDomain));
+      builder.put(tld.toString(), canonicalDomain);
     }
     return builder.build();
   }

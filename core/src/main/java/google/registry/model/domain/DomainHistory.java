@@ -309,7 +309,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
     if (domainContent == null) {
       domainContent = jpaTm().getEntityManager().find(DomainBase.class, getDomainRepoId());
       domainContent.fullyQualifiedDomainName =
-          DomainNameUtils.canonicalizeDomainName(domainContent.fullyQualifiedDomainName);
+          DomainNameUtils.canonicalizeHostname(domainContent.fullyQualifiedDomainName);
       fillAuxiliaryFieldsFromDomain(this);
     }
   }

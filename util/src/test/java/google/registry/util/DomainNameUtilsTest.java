@@ -15,7 +15,7 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.DomainNameUtils.getSecondLevelDomain;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -25,37 +25,38 @@ import org.junit.jupiter.api.Test;
 class DomainNameUtilsTest {
 
   @Test
-  void testCanonicalizeDomainName_succeeds() {
-    assertThat(canonicalizeDomainName("foo")).isEqualTo("foo");
-    assertThat(canonicalizeDomainName("FOO")).isEqualTo("foo");
-    assertThat(canonicalizeDomainName("foo.tld")).isEqualTo("foo.tld");
-    assertThat(canonicalizeDomainName("xn--q9jyb4c")).isEqualTo("xn--q9jyb4c");
-    assertThat(canonicalizeDomainName("XN--Q9JYB4C")).isEqualTo("xn--q9jyb4c");
-    assertThat(canonicalizeDomainName("みんな")).isEqualTo("xn--q9jyb4c");
-    assertThat(canonicalizeDomainName("みんな.みんな")).isEqualTo("xn--q9jyb4c.xn--q9jyb4c");
-    assertThat(canonicalizeDomainName("みんな.foo")).isEqualTo("xn--q9jyb4c.foo");
-    assertThat(canonicalizeDomainName("foo.みんな")).isEqualTo("foo.xn--q9jyb4c");
-    assertThat(canonicalizeDomainName("ħ")).isEqualTo("xn--1ea");
+  void testCanonicalizeHostname_succeeds() {
+    assertThat(canonicalizeHostname("foo")).isEqualTo("foo");
+    assertThat(canonicalizeHostname("FOO")).isEqualTo("foo");
+    assertThat(canonicalizeHostname("foo.tld")).isEqualTo("foo.tld");
+    assertThat(canonicalizeHostname("xn--q9jyb4c")).isEqualTo("xn--q9jyb4c");
+    assertThat(canonicalizeHostname("XN--Q9JYB4C")).isEqualTo("xn--q9jyb4c");
+    assertThat(canonicalizeHostname("みんな")).isEqualTo("xn--q9jyb4c");
+    assertThat(canonicalizeHostname("みんな.みんな")).isEqualTo("xn--q9jyb4c.xn--q9jyb4c");
+    assertThat(canonicalizeHostname("みんな.foo")).isEqualTo("xn--q9jyb4c.foo");
+    assertThat(canonicalizeHostname("foo.みんな")).isEqualTo("foo.xn--q9jyb4c");
+    assertThat(canonicalizeHostname("BAR.foo.みんな")).isEqualTo("bar.foo.xn--q9jyb4c");
+    assertThat(canonicalizeHostname("ħ")).isEqualTo("xn--1ea");
   }
 
   @Test
-  void testCanonicalizeDomainName_allowsRdnsNames() {
-    assertThat(canonicalizeDomainName("119.63.227.45-ns1.jhz-tt.uk"))
+  void testCanonicalizeHostname_allowsRdnsNames() {
+    assertThat(canonicalizeHostname("119.63.227.45-ns1.jhz-tt.uk"))
         .isEqualTo("119.63.227.45-ns1.jhz-tt.uk");
   }
 
   @Test
-  void testCanonicalizeDomainName_throwsOn34HyphenRule() {
+  void testCanonicalizeHostname_throwsOn34HyphenRule() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> canonicalizeDomainName("119.63.227.45--ns1.jhz-tt.uk"));
+            () -> canonicalizeHostname("119.63.227.45--ns1.jhz-tt.uk"));
     assertThat(thrown).hasCauseThat().hasMessageThat().contains("HYPHEN_3_4");
   }
 
   @Test
-  void testCanonicalizeDomainName_acePrefixUnicodeChars() {
-    assertThrows(IllegalArgumentException.class, () -> canonicalizeDomainName("xn--みんな"));
+  void testCanonicalizeHostname_acePrefixUnicodeChars() {
+    assertThrows(IllegalArgumentException.class, () -> canonicalizeHostname("xn--みんな"));
   }
 
   @Test

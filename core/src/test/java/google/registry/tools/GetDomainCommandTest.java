@@ -65,6 +65,15 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
   }
 
   @Test
+  void testSuccess_canonicalizeDomainName() throws Exception {
+    createTld("xn--q9jyb4c");
+    persistActiveDomain("xn--aualito-txac.xn--q9jyb4c");
+    runCommand("çauçalito.みんな", "--expand");
+    assertInStdout("fullyQualifiedDomainName=xn--aualito-txac.xn--q9jyb4c");
+    assertInStdout("contactId=contact1234");
+  }
+
+  @Test
   void testSuccess_multipleArguments() throws Exception {
     persistActiveDomain("example.tld");
     persistActiveDomain("example2.tld");

@@ -29,7 +29,7 @@ class CreateHostCommandTest extends EppToolCommandTestCase<CreateHostCommand> {
     createTld("tld");
     runCommandForced(
         "--client=NewRegistrar",
-        "--host=example.tld",
+        "--host=example.TLD",
         "--addresses=162.100.102.99,2001:0db8:85a3:0000:0000:8a2e:0370:7334,4.5.6.7");
     eppVerifier.verifySent("host_create_complete.xml");
   }

@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static google.registry.util.DomainNameUtils.ACE_PREFIX;
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -38,7 +38,7 @@ final class ConvertIdnCommand implements Command {
       if (label.startsWith(ACE_PREFIX)) {
         System.out.println(Idn.toUnicode(Ascii.toLowerCase(label)));
       } else {
-        System.out.println(canonicalizeDomainName(label));
+        System.out.println(canonicalizeHostname(label));
       }
     }
   }

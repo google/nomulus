@@ -30,6 +30,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.util.DomainNameUtils;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -79,6 +80,7 @@ class EnqueuePollMessageCommand extends MutatingCommand {
 
   @Override
   protected final void init() {
+    domainName = DomainNameUtils.canonicalizeHostname(domainName);
     checkArgument(
         !sendToAll || isNullOrEmpty(clientIds), "Cannot specify both --all and --clients");
     tm().transact(

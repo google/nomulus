@@ -31,7 +31,7 @@ import static google.registry.monitoring.whitebox.CheckApiMetric.Status.UNKNOWN_
 import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.PREMIUM;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.STANDARD;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static org.json.simple.JSONValue.toJSONString;
 
 import com.google.common.collect.ImmutableList;
@@ -105,7 +105,7 @@ public class CheckApiAction implements Runnable {
     String domainString;
     InternetDomainName domainName;
     try {
-      domainString = canonicalizeDomainName(nullToEmpty(domain));
+      domainString = canonicalizeHostname(nullToEmpty(domain));
       domainName = validateDomainName(domainString);
     } catch (IllegalArgumentException | EppException e) {
       metricBuilder.status(INVALID_NAME);

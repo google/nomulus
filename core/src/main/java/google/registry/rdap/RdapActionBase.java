@@ -18,7 +18,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static google.registry.request.Actions.getPathForAction;
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -245,7 +245,7 @@ public abstract class RdapActionBase implements Runnable {
   }
 
   String canonicalizeName(String name) {
-    name = canonicalizeDomainName(name);
+    name = canonicalizeHostname(name);
     if (name.endsWith(".")) {
       name = name.substring(0, name.length() - 1);
     }

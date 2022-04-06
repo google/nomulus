@@ -18,6 +18,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.tools.soy.HostDeleteSoyInfo;
+import google.registry.util.DomainNameUtils;
 
 /** A command to delete a host via EPP. */
 @Parameters(separators = " =", commandDescription = "Delete host")
@@ -50,9 +51,11 @@ final class DeleteHostCommand extends MutatingEppToolCommand {
   @Override
   protected void initMutatingEppToolCommand() {
     setSoyTemplate(HostDeleteSoyInfo.getInstance(), HostDeleteSoyInfo.DELETEHOST);
-    addSoyRecord(clientId, new SoyMapData(
-        "hostName", hostName,
-        "reason", reason,
-        "requestedByRegistrar", requestedByRegistrar));
+    addSoyRecord(
+        clientId,
+        new SoyMapData(
+            "hostName", DomainNameUtils.canonicalizeHostname(hostName),
+            "reason", reason,
+            "requestedByRegistrar", requestedByRegistrar));
   }
 }

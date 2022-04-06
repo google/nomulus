@@ -19,6 +19,7 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.host.HostResource;
+import google.registry.util.DomainNameUtils;
 import java.util.List;
 
 /** Command to show one or more host resources. */
@@ -32,7 +33,9 @@ final class GetHostCommand extends GetEppResourceCommand {
 
   @Override
   public void runAndPrint() {
-    mainParameters.forEach(
-        h -> printResource("Host", h, loadByForeignKey(HostResource.class, h, readTimestamp)));
+    mainParameters.stream()
+        .map(DomainNameUtils::canonicalizeHostname)
+        .forEach(
+            h -> printResource("Host", h, loadByForeignKey(HostResource.class, h, readTimestamp)));
   }
 }

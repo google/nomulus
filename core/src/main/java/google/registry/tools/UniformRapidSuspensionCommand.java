@@ -38,6 +38,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.tools.soy.UniformRapidSuspensionSoyInfo;
+import google.registry.util.DomainNameUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -122,12 +123,14 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
   protected void initMutatingEppToolCommand() {
     superuser = true;
     DateTime now = DateTime.now(UTC);
-    ImmutableSet<String> newHostsSet = ImmutableSet.copyOf(newHosts);
+    ImmutableList<String> newCanonicalHosts =
+        newHosts.stream().map(DomainNameUtils::canonicalizeHostname).collect(toImmutableList());
+    ImmutableSet<String> newHostsSet = ImmutableSet.copyOf(newCanonicalHosts);
     Optional<DomainBase> domainOpt = loadByForeignKey(DomainBase.class, domainName, now);
     checkArgumentPresent(domainOpt, "Domain '%s' does not exist or is deleted", domainName);
     DomainBase domain = domainOpt.get();
     Set<String> missingHosts =
-        difference(newHostsSet, checkResourcesExist(HostResource.class, newHosts, now));
+        difference(newHostsSet, checkResourcesExist(HostResource.class, newCanonicalHosts, now));
     checkArgument(missingHosts.isEmpty(), "Hosts do not exist: %s", missingHosts);
     checkArgument(
         locksToPreserve.isEmpty() || undo,

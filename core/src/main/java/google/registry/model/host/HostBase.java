@@ -19,7 +19,7 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.annotation.IgnoreSave;
@@ -195,7 +195,7 @@ public class HostBase extends EppResource {
 
     public B setHostName(String hostName) {
       checkArgument(
-          hostName.equals(canonicalizeDomainName(hostName)),
+          hostName.equals(canonicalizeHostname(hostName)),
           "Host name %s not in puny-coded, lower-case form",
           hostName);
       getInstance().fullyQualifiedHostName = hostName;

@@ -38,6 +38,12 @@ class CheckDomainClaimsCommandTest extends EppToolCommandTestCase<CheckDomainCla
   }
 
   @Test
+  void testSuccess_canonicalizesInput() throws Exception {
+    runCommand("--client=NewRegistrar", "exaMPle.TLD");
+    eppVerifier.expectDryRun().verifySent("domain_check_claims.xml");
+  }
+
+  @Test
   void testSuccess_multipleTlds() throws Exception {
     runCommand("--client=NewRegistrar", "example.tld", "example.tld2");
     eppVerifier
