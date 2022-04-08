@@ -143,7 +143,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     // If a prefix is not provided, but we are in SQL mode, try to determine the prefix. This should
     // only happen when the RDE upload cron job runs to catch up any un-retried (i. e. expected)
     // RDE failures.
-    if (prefix.isEmpty() && !tm().isOfy()) {
+    if (!prefix.isPresent() && !tm().isOfy()) {
       // The prefix is always in the format of: rde-2022-02-21t00-00-00z-2022-02-21t00-07-33z, where
       // the first datetime is the watermark and the second one is the time when the RDE beam job
       // launched. We search for the latest folder that starts with "rde-[watermark]".
