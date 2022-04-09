@@ -331,12 +331,7 @@ subprojects {
 
   apply from: "${rootDir.path}/java_common.gradle"
 
-  if (project.name == 'docs') {
-    compileJava {
-      // TODO: Remove this once we are on Java 11 across the board.
-      options.release = 11
-    }
-  } else {
+  if (project.name != 'docs') {
     compileJava {
       // TODO: Remove this once we migrate off AppEngine.
       options.release = 8
