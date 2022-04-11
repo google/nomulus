@@ -45,7 +45,7 @@ steps:
     fi
     gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/${_ENV}.tar .
     tar -xvf ${_ENV}.tar
-    for filename in cron dispatch dos index queue; do
+    for filename in cron dispatch index queue; do
       gcloud -q --project $project_id app deploy \
         default/WEB-INF/appengine-generated/$filename.yaml
     done
