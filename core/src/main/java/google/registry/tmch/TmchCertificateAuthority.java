@@ -17,11 +17,11 @@ package google.registry.tmch;
 import static google.registry.config.RegistryConfig.ConfigModule.TmchCaMode.PILOT;
 import static google.registry.config.RegistryConfig.ConfigModule.TmchCaMode.PRODUCTION;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
+import static google.registry.model.CacheUtils.newCacheBuilder;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
@@ -76,9 +76,7 @@ public final class TmchCertificateAuthority {
    * persist the correct one for this given environment.
    */
   private static final LoadingCache<TmchCaMode, X509CRL> CRL_CACHE =
-      CacheBuilder.newBuilder()
-          .expireAfterWrite(
-              java.time.Duration.ofMillis(getSingletonCacheRefreshDuration().getMillis()))
+      newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
               new CacheLoader<TmchCaMode, X509CRL>() {
                 @Override

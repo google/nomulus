@@ -17,10 +17,10 @@ package google.registry.model;
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.joda.time.Duration.ZERO;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Supplier;
-import org.joda.time.Duration;
+import java.time.Duration;
 
 /** Utility methods related to caching Datastore entities. */
 public class CacheUtils {
@@ -41,8 +41,36 @@ public class CacheUtils {
    */
   public static <T> Supplier<T> tryMemoizeWithExpiration(
       Duration expiration, Supplier<T> original) {
-    return expiration.isEqual(ZERO)
+    return expiration.isZero()
         ? original
-        : memoizeWithExpiration(original, expiration.getMillis(), MILLISECONDS);
+        : memoizeWithExpiration(original, expiration.toMillis(), MILLISECONDS);
+  }
+
+  /** Creates and returns a new {@link Caffeine} builder. */
+  public static Caffeine<Object, Object> newCacheBuilder() {
+    return Caffeine.newBuilder();
+  }
+
+  /**
+   * Creates and returns a new {@link Caffeine} builder with the specified cache expiration.
+   *
+   * <p>This also sets the refresh duration to half of the cache expiration. The resultant behavior
+   * is that a cache entry is eligible to be asynchronously refreshed after access once more than
+   * half of its cache duration has elapsed, and then it is synchronously refreshed (blocking the
+   * read) once its full cache duration has elapsed. So you will never get data older than the cache
+   * expiration, but for frequently accessed keys it will be refreshed more often than that and the
+   * cost of the load will never be incurred during the read.
+   */
+  public static Caffeine<Object, Object> newCacheBuilder(Duration expireAfterWrite) {
+    Duration refreshAfterWrite = expireAfterWrite.dividedBy(2);
+    Caffeine<Object, Object> caffeine = Caffeine.newBuilder().expireAfterWrite(expireAfterWrite);
+    // In tests, the cache duration is usually set to 0, which means the cache load synchronously
+    // blocks every time it is called anyway because of the expireAfterWrite() above. Thus, setting
+    // the refreshAfterWrite won't do anything, plus it's not legal to call it with a zero value
+    // anyway (Caffeine allows expireAfterWrite to be zero but not refreshAfterWrite).
+    if (!refreshAfterWrite.isZero()) {
+      caffeine = caffeine.refreshAfterWrite(refreshAfterWrite);
+    }
+    return caffeine;
   }
 }

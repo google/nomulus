@@ -18,6 +18,7 @@ ext {
     dependencyList = [
       'args4j:args4j:2.0.26',
       'com.beust:jcommander:1.60',
+      'com.github.ben-manes.caffeine:caffeine:3.0.6',
       'com.google.api:gax:1.66.0',
       'com.google.api.grpc:proto-google-cloud-secretmanager-v1:1.4.0',
       // The two below are needed only for Datastore bulk delete pipeline.

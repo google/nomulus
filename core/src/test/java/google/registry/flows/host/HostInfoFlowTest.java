@@ -54,13 +54,10 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
   @RegisterExtension
   final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
-  HostInfoFlowTest() {
-    setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"));
-  }
-
   @BeforeEach
   void initHostTest() {
     createTld("foobar");
+    setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"));
   }
 
   private HostResource persistHostResource() throws Exception {

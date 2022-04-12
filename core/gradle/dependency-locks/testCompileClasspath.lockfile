@@ -13,6 +13,7 @@ com.fasterxml.jackson.core:jackson-databind:2.13.0
 com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.0
 com.fasterxml.jackson:jackson-bom:2.13.0
 com.fasterxml:classmate:1.5.1
+com.github.ben-manes.caffeine:caffeine:3.0.6
 com.github.docker-java:docker-java-api:3.2.7
 com.github.docker-java:docker-java-transport-zerodep:3.2.7
 com.github.docker-java:docker-java-transport:3.2.7
@@ -119,7 +120,7 @@ com.google.code.findbugs:jsr305:3.0.2
 com.google.code.gson:gson:2.8.9
 com.google.common.html.types:types:1.0.6
 com.google.dagger:dagger:2.33
-com.google.errorprone:error_prone_annotations:2.10.0
+com.google.errorprone:error_prone_annotations:2.11.0
 com.google.escapevelocity:escapevelocity:0.9.1
 com.google.flatbuffers:flatbuffers-java:1.12.0
 com.google.flogger:flogger-system-backend:0.7.4
@@ -257,7 +258,7 @@ org.bouncycastle:bcpg-jdk15on:1.67
 org.bouncycastle:bcpkix-jdk15on:1.67
 org.bouncycastle:bcprov-jdk15on:1.67
 org.checkerframework:checker-compat-qual:2.5.5
-org.checkerframework:checker-qual:3.21.0
+org.checkerframework:checker-qual:3.21.3
 org.codehaus.jackson:jackson-core-asl:1.9.13
 org.codehaus.jackson:jackson-mapper-asl:1.9.13
 org.conscrypt:conscrypt-openjdk-uber:2.5.1

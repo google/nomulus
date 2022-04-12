@@ -172,6 +172,7 @@ dependencies {
   testRuntime files(sourceSets.test.resources.srcDirs)
 
   compile deps['com.beust:jcommander']
+  compile deps['com.github.ben-manes.caffeine:caffeine']
   compile deps['com.google.api:gax']
   compile deps['com.google.api.grpc:proto-google-cloud-datastore-v1']
   compile deps['com.google.api.grpc:proto-google-common-protos']
