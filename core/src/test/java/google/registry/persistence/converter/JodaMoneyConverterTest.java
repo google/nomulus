@@ -16,6 +16,7 @@ package google.registry.persistence.converter;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
@@ -23,6 +24,7 @@ import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +36,11 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.PersistenceException;
 import org.hibernate.annotations.Columns;
 import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
+import org.joda.money.IllegalCurrencyException;
 import org.joda.money.Money;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -65,7 +69,7 @@ public class JodaMoneyConverterTest {
                         .createNativeQuery(
                             "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
                         .getResultList());
-    assertThat(result.size()).isEqualTo(1);
+    assertThat(result).hasSize(1);
     // The amount property, when loaded as a raw value, has the same scale as the table column,
     // which is 2.
     assertThat(Arrays.asList((Object[]) result.get(0)))
@@ -91,7 +95,7 @@ public class JodaMoneyConverterTest {
                         .createNativeQuery(
                             "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
                         .getResultList());
-    assertThat(result.size()).isEqualTo(1);
+    assertThat(result).hasSize(1);
     /* The amount property, when loaded as a raw value, has the same scale as the table column,
     which is 2. */
     assertThat(Arrays.asList((Object[]) result.get(0)))
@@ -136,7 +140,7 @@ public class JodaMoneyConverterTest {
                             "SELECT my_amount, my_currency, your_amount, your_currency FROM"
                                 + " \"ComplexTestEntity\" WHERE name = 'id'")
                         .getResultList());
-    assertThat(result.size()).isEqualTo(1);
+    assertThat(result).hasSize(1);
     assertThat(Arrays.asList((Object[]) result.get(0)))
         .containsExactly(
             BigDecimal.valueOf(100).setScale(2), "USD", BigDecimal.valueOf(80).setScale(2), "GBP")
@@ -153,7 +157,7 @@ public class JodaMoneyConverterTest {
                         .getResultList());
     ComplexTestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(ComplexTestEntity.class, "id"));
-    assertThat(result.size()).isEqualTo(1);
+    assertThat(result).hasSize(1);
 
     assertThat(Arrays.asList((Object[]) result.get(0)))
         .containsExactly(BigDecimal.valueOf(2000).setScale(2), "JPY")
@@ -162,6 +166,124 @@ public class JodaMoneyConverterTest {
     assertThat(persisted.myMoney).isEqualTo(myMoney);
     assertThat(persisted.yourMoney).isEqualTo(yourMoney);
     assertThat(persisted.moneyMap).containsExactlyEntriesIn(moneyMap);
+  }
+
+  /**
+   * Implicit test cases for @override method @nullSafeGet when constructing {@link Money} object
+   * with null/invalid column(s).
+   */
+  @Test
+  void testNullSafeGet_nullAmountNullCurrency_returnsNull() throws SQLException {
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .getEntityManager()
+                    .createNativeQuery(
+                        "INSERT INTO \"TestEntity\" (name, amount, currency) VALUES('id', null,"
+                            + " null)")
+                    .executeUpdate());
+    List<?> result =
+        jpaTm()
+            .transact(
+                () ->
+                    jpaTm()
+                        .getEntityManager()
+                        .createNativeQuery(
+                            "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
+                        .getResultList());
+    assertThat(result).hasSize(1);
+    assertThat(Arrays.asList((Object[]) result.get(0))).containsExactly(null, null).inOrder();
+    assertThat(
+            jpaTm()
+                .transact(
+                    () ->
+                        jpaTm()
+                            .getEntityManager()
+                            .createQuery("SELECT money FROM TestEntity WHERE name = 'id'")
+                            .getResultList())
+                .get(0))
+        .isNull();
+  }
+
+  @Test
+  void testNullSafeGet_nullAMountValidCurrency_throwsHibernateException() throws SQLException {
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .getEntityManager()
+                    .createNativeQuery(
+                        "INSERT INTO \"TestEntity\" (name, amount, currency) VALUES('id', null,"
+                            + " 'USD')")
+                    .executeUpdate());
+    List<?> result =
+        jpaTm()
+            .transact(
+                () ->
+                    jpaTm()
+                        .getEntityManager()
+                        .createNativeQuery(
+                            "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
+                        .getResultList());
+    assertThat(Arrays.asList((Object[]) result.get(0))).containsExactly(null, "USD");
+    // CurrencyUnit.of() throws HibernateException for invalid currency which leads to persistance
+    // error
+    PersistenceException thrown =
+        assertThrows(
+            PersistenceException.class,
+            () ->
+                jpaTm()
+                    .transact(
+                        () ->
+                            jpaTm()
+                                .getEntityManager()
+                                .createQuery("SELECT money FROM TestEntity WHERE name = 'id'")
+                                .getResultList()));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "org.hibernate.HibernateException: Mismatching null state between currency 'USD' and"
+                + " amount 'null'");
+  }
+
+  @Test
+  void testNullSafeGet_nullAMountInValidCurrency_throwsIllegalCurrencyException()
+      throws SQLException {
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .getEntityManager()
+                    .createNativeQuery(
+                        "INSERT INTO \"TestEntity\" (name, amount, currency) VALUES('id', 100,"
+                            + " 'INVALIDCURRENCY')")
+                    .executeUpdate());
+    List<?> result =
+        jpaTm()
+            .transact(
+                () ->
+                    jpaTm()
+                        .getEntityManager()
+                        .createNativeQuery(
+                            "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
+                        .getResultList());
+    assertThat(result).hasSize(1);
+    assertThat(Arrays.asList((Object[]) result.get(0)))
+        .containsExactly(BigDecimal.valueOf(100).setScale(2), "INVALIDCURRENCY")
+        .inOrder();
+    IllegalCurrencyException thrown =
+        assertThrows(
+            IllegalCurrencyException.class,
+            () ->
+                jpaTm()
+                    .transact(
+                        () ->
+                            jpaTm()
+                                .getEntityManager()
+                                .createQuery("SELECT money FROM TestEntity WHERE name = 'id'")
+                                .getResultList()));
+    assertThat(thrown).hasMessageThat().isEqualTo("Unknown currency 'INVALIDCURRENCY'");
   }
 
   // Override entity name to exclude outer-class name in table name. Not necessary if class is not

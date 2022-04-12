@@ -79,6 +79,9 @@
         domain_name text not null,
         recurrence_end_time timestamptz,
         recurrence_time_of_year text,
+        renewal_price_amount numeric(19, 2),
+        renewal_price_currency text,
+        renewal_price_behavior text not null,
         primary key (billing_recurrence_id)
     );
 

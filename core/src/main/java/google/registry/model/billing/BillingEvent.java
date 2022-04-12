@@ -126,7 +126,40 @@ public abstract class BillingEvent extends ImmutableObject
      * This flag will be added to any {@link OneTime} events that are created via, e.g., an
      * automated process to expand {@link Recurring} events.
      */
-    SYNTHETIC
+    SYNTHETIC;
+  }
+
+  /**
+   * Sets of renewal price behaviors that can be applied to billing recurrences.
+   *
+   * <p>When a client renews a domain, they could be charged differently, depending on factors such
+   * as the client type and the domain itself.
+   */
+  public enum RenewalPriceBehavior {
+    /**
+     * This indicates the renewal price is the default price.
+     *
+     * <p>By default, if the domain is premium, then premium price will be used. Otherwise, the
+     * standard price of the TLD will be used.
+     */
+    DEFAULT,
+    /**
+     * This indicates the domain will be renewed at standard price even if it's a premium domain.
+     *
+     * <p>We chose to name this "NONPREMIUM" rather than simply "STANDARD" to avoid confusion
+     * between "STANDARD" and "DEFAULT".
+     *
+     * <p>This price behavior is used with anchor tenants.
+     */
+    NONPREMIUM,
+    /**
+     * This indicates that the renewalPrice in {@link BillingEvent.Recurring} will be used for
+     * domain renewal.
+     *
+     * <p>The renewalPrice has a non-null value iff the price behavior is set to "SPECIFIED". This
+     * behavior is used with internal registrations.
+     */
+    SPECIFIED;
   }
 
   /** Entity id. */
@@ -555,12 +588,36 @@ public abstract class BillingEvent extends ImmutableObject
     })
     TimeOfYear recurrenceTimeOfYear;
 
+    /**
+     * The renewal price for domain renewal if and only if it's specified.
+     *
+     * <p>This price column remains null except when the renewal price behavior of the billing is
+     * SPECIFIED. This column is used for internal registrations.
+     */
+    @Nullable
+    @Type(type = JodaMoneyType.TYPE_NAME)
+    @Columns(
+        columns = {@Column(name = "renewalPriceAmount"), @Column(name = "renewalPriceCurrency")})
+    Money renewalPrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "renewalPriceBehavior", nullable = false)
+    RenewalPriceBehavior renewalPriceBehavior = RenewalPriceBehavior.DEFAULT;
+
     public DateTime getRecurrenceEndTime() {
       return recurrenceEndTime;
     }
 
     public TimeOfYear getRecurrenceTimeOfYear() {
       return recurrenceTimeOfYear;
+    }
+
+    public RenewalPriceBehavior getRenewalPriceBehavior() {
+      return renewalPriceBehavior;
+    }
+
+    public Optional<Money> getRenewalPrice() {
+      return Optional.ofNullable(renewalPrice);
     }
 
     @Override
@@ -591,11 +648,26 @@ public abstract class BillingEvent extends ImmutableObject
         return this;
       }
 
+      public Builder setRenewalPriceBehavior(RenewalPriceBehavior renewalPriceBehavior) {
+        getInstance().renewalPriceBehavior = renewalPriceBehavior;
+        return this;
+      }
+
+      public Builder setRenewalPrice(@Nullable Money renewalPrice) {
+        getInstance().renewalPrice = renewalPrice;
+        return this;
+      }
+
       @Override
       public Recurring build() {
         Recurring instance = getInstance();
         checkNotNull(instance.eventTime);
         checkNotNull(instance.reason);
+        checkArgument(
+            (instance.renewalPriceBehavior == RenewalPriceBehavior.SPECIFIED)
+                ^ (instance.renewalPrice == null),
+            "Renewal price can have a value if and only if the renewal price behavior is"
+                + " SPECIFIED");
         instance.recurrenceTimeOfYear = TimeOfYear.fromDateTime(instance.eventTime);
         instance.recurrenceEndTime =
             Optional.ofNullable(instance.recurrenceEndTime).orElse(END_OF_TIME);

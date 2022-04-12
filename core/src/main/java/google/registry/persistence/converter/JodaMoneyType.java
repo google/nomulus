@@ -21,6 +21,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
+import javax.annotation.Nullable;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.type.StandardBasicTypes;
@@ -116,20 +117,28 @@ public class JodaMoneyType implements CompositeUserType {
     return Objects.hashCode(x);
   }
 
+  @Nullable
   @Override
   public Object nullSafeGet(
       ResultSet rs, String[] names, SharedSessionContractImplementor session, Object owner)
       throws HibernateException, SQLException {
     BigDecimal amount = StandardBasicTypes.BIG_DECIMAL.nullSafeGet(rs, names[AMOUNT_ID], session);
-    CurrencyUnit currencyUnit =
-        CurrencyUnit.of(StandardBasicTypes.STRING.nullSafeGet(rs, names[CURRENCY_ID], session));
-    if (amount != null && currencyUnit != null) {
-      return Money.of(currencyUnit, amount.stripTrailingZeros());
-    }
-    if (amount == null && currencyUnit == null) {
+    String currencyUnitString =
+        StandardBasicTypes.STRING.nullSafeGet(rs, names[CURRENCY_ID], session);
+    // It is allowable for a Money object to be null, but only if both the currency unit and the
+    // amount are null
+    if (amount == null && currencyUnitString == null) {
       return null;
+    } else if (amount != null && currencyUnitString != null) {
+      // CurrencyUnit.of() throws an IllegalCurrencyException for unknown currency, which means the
+      // currency is valid if it returns a value
+      return Money.of(CurrencyUnit.of(currencyUnitString), amount.stripTrailingZeros());
+    } else {
+      throw new HibernateException(
+          String.format(
+              "Mismatching null state between currency '%s' and amount '%s'",
+              currencyUnitString, amount));
     }
-    throw new HibernateException("Mismatching null state between currency and amount.");
   }
 
   @Override
@@ -140,7 +149,7 @@ public class JodaMoneyType implements CompositeUserType {
     String currencyUnit = value == null ? null : ((Money) value).getCurrencyUnit().getCode();
 
     if ((amount == null && currencyUnit != null) || (amount != null && currencyUnit == null)) {
-      throw new HibernateException("Mismatching null state between currency and amount.");
+      throw new HibernateException("Mismatching null state between currency and amount");
     }
     StandardBasicTypes.BIG_DECIMAL.nullSafeSet(st, amount, index, session);
     StandardBasicTypes.STRING.nullSafeSet(st, currencyUnit, index + 1, session);
