@@ -15,6 +15,7 @@
 package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -430,7 +431,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     }
 
     ImmutableList<RegistrarInfo> results = action.getRegistrarsWithExpiringCertificates();
-    assertThat(results.size()).isEqualTo(numOfRegistrarsWithExpiringCertificates);
+    assertThat(results).hasSize(numOfRegistrarsWithExpiringCertificates);
   }
 
   @TestOfyAndSql

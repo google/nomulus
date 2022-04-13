@@ -282,7 +282,7 @@ class Spec11PipelineTest {
         ImmutableList.copyOf(
             ResourceUtils.readResourceUtf8(this.getClass(), "test_output.txt").split("\n"));
     ImmutableList<String> resultFileContents = resultFileContents();
-    assertThat(resultFileContents.size()).isEqualTo(expectedFileContents.size());
+    assertThat(resultFileContents).hasSize(expectedFileContents.size());
     assertThat(resultFileContents.get(0)).isEqualTo(expectedFileContents.get(0));
     assertThat(resultFileContents.subList(1, resultFileContents.size()))
         .comparingElementsUsing(

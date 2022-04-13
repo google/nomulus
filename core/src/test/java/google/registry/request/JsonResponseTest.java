@@ -53,7 +53,7 @@ class JsonResponseTest {
   void testSetHeader() {
     jsonResponse.setHeader("header", "value");
     Map<String, Object> headerMap = fakeResponse.getHeaders();
-    assertThat(headerMap.size()).isEqualTo(1);
+    assertThat(headerMap).hasSize(1);
     assertThat(headerMap.get("header")).isEqualTo("value");
   }
 }

@@ -158,7 +158,7 @@ public class CloudTasksHelper implements Serializable {
    */
   public void assertTasksEnqueued(String queueName, Collection<TaskMatcher> taskMatchers) {
     List<Task> tasks = getTestTasksFor(queueName);
-    assertThat(tasks.size()).isEqualTo(taskMatchers.size());
+    assertThat(tasks).hasSize(taskMatchers.size());
     for (final TaskMatcher taskMatcher : taskMatchers) {
       try {
         tasks.remove(tasks.stream().filter(taskMatcher).findFirst().get());

@@ -98,7 +98,7 @@ public class CreateSyntheticHistoryEntriesPipelineTest {
       Class<? extends HistoryEntry> historyClazz, T resource) {
     ImmutableList<? extends HistoryEntry> historyEntries =
         jpaTm().transact(() -> jpaTm().loadAllOf(historyClazz));
-    assertThat(historyEntries.size()).isEqualTo(1);
+    assertThat(historyEntries).hasSize(1);
     HistoryEntry historyEntry = historyEntries.get(0);
     assertThat(historyEntry.getType()).isEqualTo(HistoryEntry.Type.SYNTHETIC);
     assertThat(historyEntry.getRegistrarId()).isEqualTo("NewRegistrar");

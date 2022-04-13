@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTlds;
@@ -546,7 +547,7 @@ public final class DomainLockUtilsTest {
     assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
     ImmutableList<DomainHistory> historyEntries =
         getHistoryEntriesOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE, DomainHistory.class);
-    assertThat(historyEntries.size()).isEqualTo(2);
+    assertThat(historyEntries).hasSize(2);
     historyEntries.forEach(
         entry -> {
           assertThat(entry.getRequestedByRegistrar()).isEqualTo(!isAdmin);

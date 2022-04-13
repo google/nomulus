@@ -133,7 +133,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     runCommand("--prefix", "ooo", "--number", "100", "--length", "16");
     // The deterministic string generator makes it too much hassle to assert about each token, so
     // just assert total number.
-    assertThat(loadAllOf(AllocationToken.class).size()).isEqualTo(100);
+    assertThat(loadAllOf(AllocationToken.class)).hasSize(100);
   }
 
   @TestOfyAndSql
@@ -200,7 +200,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     Collection<String> sampleTokens = command.stringGenerator.createStrings(13, 100);
     runCommand("--tokens", Joiner.on(",").join(sampleTokens));
     assertInStdout(Iterables.toArray(sampleTokens, String.class));
-    assertThat(loadAllOf(AllocationToken.class).size()).isEqualTo(100);
+    assertThat(loadAllOf(AllocationToken.class)).hasSize(100);
   }
 
   @TestOfyAndSql

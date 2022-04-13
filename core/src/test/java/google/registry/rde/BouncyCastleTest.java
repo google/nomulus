@@ -170,7 +170,7 @@ public class BouncyCastleTest {
     try (ByteArrayInputStream input = new ByteArrayInputStream(signatureFileData)) {
       PGPObjectFactory pgpFact = new BcPGPObjectFactory(input);
       PGPSignatureList sigList = (PGPSignatureList) pgpFact.nextObject();
-      assertThat(sigList.size()).isEqualTo(1);
+      assertThat(sigList).hasSize(1);
       sig = sigList.get(0);
     }
 
@@ -212,8 +212,8 @@ public class BouncyCastleTest {
       PGPObjectFactory pgpFact = new BcPGPObjectFactory(input);
       PGPOnePassSignatureList onePassList = (PGPOnePassSignatureList) pgpFact.nextObject();
       PGPSignatureList sigList = (PGPSignatureList) pgpFact.nextObject();
-      assertThat(onePassList.size()).isEqualTo(1);
-      assertThat(sigList.size()).isEqualTo(1);
+      assertThat(onePassList).hasSize(1);
+      assertThat(sigList).hasSize(1);
       onePass = onePassList.get(0);
       sig = sigList.get(0);
     }
@@ -258,7 +258,7 @@ public class BouncyCastleTest {
     try (ByteArrayInputStream input = new ByteArrayInputStream(encryptedData)) {
       PGPObjectFactory pgpFact = new BcPGPObjectFactory(input);
       PGPEncryptedDataList encDataList = (PGPEncryptedDataList) pgpFact.nextObject();
-      assertThat(encDataList.size()).isEqualTo(1);
+      assertThat(encDataList).hasSize(1);
       PGPPublicKeyEncryptedData encData = (PGPPublicKeyEncryptedData) encDataList.get(0);
       assertThat(encData.getKeyID()).isEqualTo(publicKey.getKeyID());
       assertThat(encData.getKeyID()).isEqualTo(privateKey.getKeyID());
@@ -302,7 +302,7 @@ public class BouncyCastleTest {
     try (ByteArrayInputStream input = new ByteArrayInputStream(encryptedData)) {
       PGPObjectFactory pgpFact = new BcPGPObjectFactory(input);
       PGPEncryptedDataList encDataList = (PGPEncryptedDataList) pgpFact.nextObject();
-      assertThat(encDataList.size()).isEqualTo(1);
+      assertThat(encDataList).hasSize(1);
       PGPPublicKeyEncryptedData encData = (PGPPublicKeyEncryptedData) encDataList.get(0);
       // Bob loads the private key to which the message is addressed.
       PGPPrivateKey privateKey =
@@ -350,7 +350,7 @@ public class BouncyCastleTest {
     try (ByteArrayInputStream input = new ByteArrayInputStream(encryptedData)) {
       PGPObjectFactory pgpFact = new BcPGPObjectFactory(input);
       PGPEncryptedDataList encDataList = (PGPEncryptedDataList) pgpFact.nextObject();
-      assertThat(encDataList.size()).isEqualTo(1);
+      assertThat(encDataList).hasSize(1);
       PGPPublicKeyEncryptedData encData = (PGPPublicKeyEncryptedData) encDataList.get(0);
       // Bob loads the private key to which the message is addressed.
       PGPPrivateKey privateKey =

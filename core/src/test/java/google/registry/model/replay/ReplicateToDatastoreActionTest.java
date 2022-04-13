@@ -302,13 +302,13 @@ public class ReplicateToDatastoreActionTest {
     // records.
     action.run();
     Truth8.assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(bar.key()))).isPresent();
-    assertThat(ofyTm().loadAllOf(ReplayGap.class).size()).isEqualTo(30);
+    assertThat(ofyTm().loadAllOf(ReplayGap.class)).hasSize(30);
 
     // Verify that we can clean up this many gap records after expiration.
     fakeClock.advanceBy(Duration.millis(ReplicateToDatastoreAction.MAX_GAP_RETENTION_MILLIS + 1));
     resetAction();
     action.run();
-    assertThat(ofyTm().loadAllOf(ReplayGap.class).size()).isEqualTo(0);
+    assertThat(ofyTm().loadAllOf(ReplayGap.class)).isEmpty();
   }
 
   @Test

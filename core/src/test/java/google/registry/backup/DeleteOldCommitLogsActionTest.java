@@ -92,7 +92,7 @@ public class DeleteOldCommitLogsActionTest
     contact = auditedOfy().load().type(ContactResource.class).first().now();
 
     // The following value might change if {@link CommitLogRevisionsTranslatorFactory} changes.
-    assertThat(contact.getRevisions().size()).isEqualTo(6);
+    assertThat(contact.getRevisions()).hasSize(6);
 
     // Before deleting the unneeded manifests - we have 11 of them (one for the first
     // creation, and 10 more for the mutateContacts)
