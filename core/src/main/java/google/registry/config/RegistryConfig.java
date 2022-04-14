@@ -1438,8 +1438,8 @@ public final class RegistryConfig {
   }
 
   /** Returns the amount of time a singleton should be cached, before expiring. */
-  public static Duration getSingletonCacheRefreshDuration() {
-    return Duration.standardSeconds(CONFIG_SETTINGS.get().caching.singletonCacheRefreshSeconds);
+  public static java.time.Duration getSingletonCacheRefreshDuration() {
+    return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.singletonCacheRefreshSeconds);
   }
 
   /**

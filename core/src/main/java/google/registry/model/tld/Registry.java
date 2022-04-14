@@ -264,8 +264,7 @@ public class Registry extends ImmutableObject
   /** A cache that loads the {@link Registry} for a given tld. */
   private static final LoadingCache<String, Optional<Registry>> CACHE =
       CacheBuilder.newBuilder()
-          .expireAfterWrite(
-              java.time.Duration.ofMillis(getSingletonCacheRefreshDuration().getMillis()))
+          .expireAfterWrite(getSingletonCacheRefreshDuration())
           .build(
               new CacheLoader<String, Optional<Registry>>() {
                 @Override

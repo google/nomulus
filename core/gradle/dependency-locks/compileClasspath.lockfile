@@ -13,6 +13,7 @@ com.fasterxml.jackson.core:jackson-databind:2.13.0
 com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.0
 com.fasterxml.jackson:jackson-bom:2.13.0
 com.fasterxml:classmate:1.5.1
+com.github.ben-manes.caffeine:caffeine:3.0.6
 com.github.docker-java:docker-java-api:3.2.7
 com.github.docker-java:docker-java-transport-zerodep:3.2.7
 com.github.docker-java:docker-java-transport:3.2.7
