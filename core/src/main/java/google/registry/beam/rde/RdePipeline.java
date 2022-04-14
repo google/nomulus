@@ -15,6 +15,7 @@
 package google.registry.beam.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.beam.rde.RdePipeline.TupleTags.DOMAIN_FRAGMENTS;
 import static google.registry.beam.rde.RdePipeline.TupleTags.EXTERNAL_HOST_FRAGMENTS;
@@ -340,8 +341,8 @@ public class RdePipeline implements Serializable {
         .apply(
             String.format("Load most recent %s", historyClass.getSimpleName()),
             RegistryJpaIO.read(
-                ("SELECT %repoIdField%, id FROM %entity% WHERE (%repoIdField%, modificationTime)"
-                     + " IN (SELECT %repoIdField%, MAX(modificationTime) FROM %entity% WHERE"
+                ("SELECT %repoIdField%, id FROM %entity% WHERE (%repoIdField%, modificationTime) IN"
+                     + " (SELECT %repoIdField%, MAX(modificationTime) FROM %entity% WHERE"
                      + " modificationTime <= :watermark GROUP BY %repoIdField%) AND"
                      + " %resourceField%.deletionTime > :watermark AND"
                      + " COALESCE(%resourceField%.creationClientId, '') NOT LIKE 'prober-%' AND"
@@ -375,17 +376,15 @@ public class RdePipeline implements Serializable {
     // require manual intervention.
     if (ids.size() != 1) {
       ImmutableSet<Long> dedupedIds = ImmutableSet.copyOf(ids);
-      if (dedupedIds.size() != 1) {
-        throw new IllegalStateException(
-            String.format(
-                "Multiple unique revision IDs detected for %s repo ID %s: %s",
-                EPP_RESOURCE_FIELD_NAME.get(historyEntryClazz), repoId, ids));
-      } else {
-        logger.atSevere().log(
-            String.format(
-                "Duplicate revision IDs detected for repo %s ID %s: %s",
-                EPP_RESOURCE_FIELD_NAME.get(historyEntryClazz), repoId, ids));
-      }
+      checkState(
+          dedupedIds.size() == 1,
+          String.format(
+              "Multiple unique revision IDs detected for %s repo ID %s: %s",
+              EPP_RESOURCE_FIELD_NAME.get(historyEntryClazz), repoId, ids));
+      logger.atSevere().log(
+          String.format(
+              "Duplicate revision IDs detected for %s repo ID %s: %s",
+              EPP_RESOURCE_FIELD_NAME.get(historyEntryClazz), repoId, ids));
     }
     return loadResourceByHistoryEntryId(historyEntryClazz, repoId, ids.get(0));
   }
@@ -729,6 +728,7 @@ public class RdePipeline implements Serializable {
    * CoGbkResult}s are used.
    */
   protected abstract static class TupleTags {
+
     protected static final TupleTag<KV<PendingDeposit, DepositFragment>> DOMAIN_FRAGMENTS =
         new TupleTag<KV<PendingDeposit, DepositFragment>>() {};
 
@@ -762,10 +762,12 @@ public class RdePipeline implements Serializable {
         UtilsModule.class
       })
   interface RdePipelineComponent {
+
     RdePipeline rdePipeline();
 
     @Component.Builder
     interface Builder {
+
       @BindsInstance
       Builder options(RdePipelineOptions options);
 
