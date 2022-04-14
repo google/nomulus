@@ -15,7 +15,6 @@
 package google.registry.beam.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.beam.rde.RdePipeline.TupleTags.DOMAIN_FRAGMENTS;
 import static google.registry.beam.rde.RdePipeline.TupleTags.EXTERNAL_HOST_FRAGMENTS;
@@ -375,13 +374,17 @@ public class RdePipeline implements Serializable {
     // definitively only give us one revision ID per repo ID. In this case we have to abort and
     // require manual intervention.
     if (ids.size() != 1) {
-      ImmutableList<Long> dedupedIds = ids.stream().distinct().collect(toImmutableList());
+      ImmutableSet<Long> dedupedIds = ImmutableSet.copyOf(ids);
       if (dedupedIds.size() != 1) {
-        throw new RuntimeException(
-            String.format("Multiple unique revision IDs detected for repo ID %s: %s", repoId, ids));
+        throw new IllegalStateException(
+            String.format(
+                "Multiple unique revision IDs detected for %s repo ID %s: %s",
+                EPP_RESOURCE_FIELD_NAME.get(historyEntryClazz), repoId, ids));
       } else {
         logger.atSevere().log(
-            String.format("Duplicate revision IDs detected for repo ID %s: %s", repoId, ids));
+            String.format(
+                "Duplicate revision IDs detected for repo %s ID %s: %s",
+                EPP_RESOURCE_FIELD_NAME.get(historyEntryClazz), repoId, ids));
       }
     }
     return loadResourceByHistoryEntryId(historyEntryClazz, repoId, ids.get(0));
