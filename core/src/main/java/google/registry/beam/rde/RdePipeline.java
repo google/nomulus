@@ -378,13 +378,13 @@ public class RdePipeline implements Serializable {
       ImmutableSet<Long> dedupedIds = ImmutableSet.copyOf(ids);
       checkState(
           dedupedIds.size() == 1,
-          String.format(
-              "Multiple unique revision IDs detected for %s repo ID %s: %s",
-              EPP_RESOURCE_FIELD_NAME.get(historyEntryClazz), repoId, ids));
+          "Multiple unique revision IDs detected for %s repo ID %s: %s",
+          EPP_RESOURCE_FIELD_NAME.get(historyEntryClazz),
+          repoId,
+          ids);
       logger.atSevere().log(
-          String.format(
-              "Duplicate revision IDs detected for %s repo ID %s: %s",
-              EPP_RESOURCE_FIELD_NAME.get(historyEntryClazz), repoId, ids));
+          "Duplicate revision IDs detected for %s repo ID %s: %s",
+          EPP_RESOURCE_FIELD_NAME.get(historyEntryClazz), repoId, ids);
     }
     return loadResourceByHistoryEntryId(historyEntryClazz, repoId, ids.get(0));
   }
