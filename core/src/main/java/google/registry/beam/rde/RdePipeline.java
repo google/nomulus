@@ -341,8 +341,8 @@ public class RdePipeline implements Serializable {
         .apply(
             String.format("Load most recent %s", historyClass.getSimpleName()),
             RegistryJpaIO.read(
-                ("SELECT %repoIdField%, id FROM %entity% WHERE (%repoIdField%, modificationTime) IN"
-                     + " (SELECT %repoIdField%, MAX(modificationTime) FROM %entity% WHERE"
+                ("SELECT %repoIdField%, id FROM %entity% WHERE (%repoIdField%, modificationTime)"
+                     + " IN (SELECT %repoIdField%, MAX(modificationTime) FROM %entity% WHERE"
                      + " modificationTime <= :watermark GROUP BY %repoIdField%) AND"
                      + " %resourceField%.deletionTime > :watermark AND"
                      + " COALESCE(%resourceField%.creationClientId, '') NOT LIKE 'prober-%' AND"
