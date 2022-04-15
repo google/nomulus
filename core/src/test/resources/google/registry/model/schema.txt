@@ -350,6 +350,7 @@ class google.registry.model.domain.token.AllocationToken {
   double discountFraction;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
+  google.registry.model.billing.BillingEvent$RenewalPriceBehavior renewalPriceBehavior;
   google.registry.model.common.TimedTransitionProperty<google.registry.model.domain.token.AllocationToken$TokenStatus, google.registry.model.domain.token.AllocationToken$TokenStatusTransition> tokenStatusTransitions;
   google.registry.model.domain.token.AllocationToken$TokenType tokenType;
   google.registry.persistence.DomainHistoryVKey redemptionHistoryEntry;

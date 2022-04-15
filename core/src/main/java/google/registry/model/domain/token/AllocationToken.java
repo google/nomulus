@@ -43,6 +43,7 @@ import google.registry.model.BackupGroupRoot;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimeMapper;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
@@ -151,6 +152,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
   @Enumerated(EnumType.STRING)
   TokenType tokenType;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "renewalPriceBehavior", nullable = false)
+  RenewalPriceBehavior renewalPriceBehavior = RenewalPriceBehavior.DEFAULT;
+
   // TODO: Remove onLoad once all allocation tokens are migrated to have a discountYears of 1.
   @OnLoad
   void onLoad() {
@@ -238,6 +243,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
 
   public TimedTransitionProperty<TokenStatus, TokenStatusTransition> getTokenStatusTransitions() {
     return tokenStatusTransitions;
+  }
+
+  public RenewalPriceBehavior getRenewalPriceBehavior() {
+    return renewalPriceBehavior;
   }
 
   public VKey<AllocationToken> createVKey() {
@@ -360,6 +369,11 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
               "tokenStatusTransitions",
               NOT_STARTED,
               "tokenStatusTransitions must start with NOT_STARTED");
+      return this;
+    }
+
+    public Builder setRenewalPriceBehavior(RenewalPriceBehavior renewalPriceBehavior) {
+      getInstance().renewalPriceBehavior = renewalPriceBehavior;
       return this;
     }
   }

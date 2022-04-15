@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
@@ -158,6 +159,52 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(tokenBeforePersisting.getCreationTime()).isEmpty();
     AllocationToken tokenAfterPersisting = persistResource(tokenBeforePersisting);
     assertThat(tokenAfterPersisting.getCreationTime()).hasValue(fakeClock.nowUtc());
+  }
+
+  @TestOfyAndSql
+  void testgetRenewalBehavior_returnsDefaultRenewBehavior() {
+    assertThat(
+            persistResource(
+                    new AllocationToken.Builder()
+                        .setToken("abc123")
+                        .setTokenType(SINGLE_USE)
+                        .build())
+                .getRenewalPriceBehavior())
+        .isEqualTo(RenewalPriceBehavior.DEFAULT);
+  }
+
+  @TestOfyAndSql
+  void testsetRenewalBehavior_assertsRenewalBehaviorIsNotDefault() {
+    assertThat(
+            persistResource(
+                    new AllocationToken.Builder()
+                        .setToken("abc123")
+                        .setTokenType(SINGLE_USE)
+                        .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                        .build())
+                .getRenewalPriceBehavior())
+        .isEqualTo(RenewalPriceBehavior.SPECIFIED);
+  }
+
+  @TestOfyAndSql
+  void testsetRenewalBehavior_assertRenewalBehaviorIsModified() {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
+                .build());
+    AllocationToken loadedToken = loadByEntity(token);
+    assertThat(token).isEqualTo(loadedToken);
+    AllocationToken modifiedToken =
+        persistResource(
+            loadedToken
+                .asBuilder()
+                .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .build());
+    assertThat(loadByEntity(token).getRenewalPriceBehavior())
+        .isEqualTo(RenewalPriceBehavior.SPECIFIED);
   }
 
   @TestOfyAndSql
