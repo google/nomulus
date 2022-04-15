@@ -316,6 +316,12 @@
     <url-pattern>/_dr/task/resaveAllEppResources</url-pattern>
   </servlet-mapping>
 
+  <!--  Dataflow pipeline to re-save all EPP resources. -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/resaveAllEppResourcesPipeline</url-pattern>
+  </servlet-mapping>
+
   <!--  Reread all Registrar RDAP Base Urls from the ICANN endpoint. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>

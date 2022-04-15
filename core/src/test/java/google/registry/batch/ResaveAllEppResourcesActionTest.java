@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistContactWithPendingTransfer;
 import static org.joda.time.DateTimeZone.UTC;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.FakeResponse;
@@ -29,6 +30,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ResaveAllEppResourcesAction}. */
+// No longer needed in SQL. Subject to future removal.
+@Deprecated
+@DeleteAfterMigration
 class ResaveAllEppResourcesActionTest extends MapreduceTestCase<ResaveAllEppResourcesAction> {
 
   @BeforeEach
