@@ -16,6 +16,7 @@ package google.registry.model.tld;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.getMostRecentUnlockedRegistryLockByRepoId;
@@ -67,7 +68,7 @@ public final class RegistryLockDaoTest extends EntityTestCase {
             () -> {
               RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
-              assertThat(fromDatabase.getLockCompletionTime().get()).isEqualTo(fakeClock.nowUtc());
+              assertThat(fromDatabase.getLockCompletionTime()).hasValue(fakeClock.nowUtc());
               assertThat(fromDatabase.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
             });
   }
@@ -87,7 +88,7 @@ public final class RegistryLockDaoTest extends EntityTestCase {
     assertThat(fromDatabase.getUnlockRequestTime()).isEqualTo(Optional.of(fakeClock.nowUtc()));
     assertThat(fromDatabase.getUnlockCompletionTime()).isEqualTo(Optional.of(fakeClock.nowUtc()));
     assertThat(fromDatabase.isLocked()).isFalse();
-    assertThat(fromDatabase.getRelockDuration().get()).isEqualTo(Duration.standardHours(6));
+    assertThat(fromDatabase.getRelockDuration()).hasValue(Duration.standardHours(6));
   }
 
   @Test

@@ -261,7 +261,7 @@ public class PremiumListDaoTest {
     assertThat(PremiumListDao.premiumListCache.getIfPresent("testname")).isNull();
     PremiumListDao.save(testList);
     PremiumList pl = PremiumListDao.getLatestRevision("testname").get();
-    assertThat(PremiumListDao.premiumListCache.getIfPresent("testname").get()).isEqualTo(pl);
+    assertThat(PremiumListDao.premiumListCache.getIfPresent("testname")).hasValue(pl);
     TransactionManagerUtil.transactIfJpaTm(
         () -> PremiumListDao.save("testname", USD, ImmutableList.of("test,USD 1")));
     assertThat(PremiumListDao.premiumListCache.getIfPresent("testname")).isNull();

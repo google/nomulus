@@ -15,9 +15,9 @@
 package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 
 import google.registry.model.EntityTestCase;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TmchCrl}. */
@@ -29,7 +29,7 @@ public class TmchCrlTest extends EntityTestCase {
 
   @Test
   void testSuccess() {
-    assertThat(TmchCrl.get()).isEqualTo(Optional.empty());
+    assertThat(TmchCrl.get()).isEmpty();
     TmchCrl.set("lolcat", "https://lol.cat");
     assertThat(TmchCrl.get().get().getCrl()).isEqualTo("lolcat");
   }

@@ -261,8 +261,8 @@ public final class RegistryTest extends EntityTestCase {
     Registry registry = Registry.get("tld").asBuilder().setPremiumList(pl2).build();
     Optional<String> pl = registry.getPremiumListName();
     assertThat(pl).hasValue("tld2");
-    PremiumList stored = PremiumListDao.getLatestRevision(pl.get()).get();
-    assertThat(stored.getName()).isEqualTo("tld2");
+    assertThat(PremiumListDao.getLatestRevision("tld2")).isPresent();
+    assertThat(PremiumListDao.getLatestRevision("tld2").get().getName()).isEqualTo("tld2");
   }
 
   @TestOfyAndSql

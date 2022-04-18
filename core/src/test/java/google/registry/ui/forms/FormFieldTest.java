@@ -51,7 +51,7 @@ class FormFieldTest {
 
   @Test
   void testConvert_emptyString_returnsEmpty() {
-    assertThat(FormField.named("lol").build().convert("").get()).isEmpty();
+    assertThat(FormField.named("lol").build().convert("")).hasValue("");
   }
 
   @Test
@@ -249,7 +249,8 @@ class FormFieldTest {
 
   @Test
   void testAsList_empty_returnsEmpty() {
-    assertThat(FormField.named("lol").asList().build().convert(ImmutableList.of()).get()).isEmpty();
+    assertThat(FormField.named("lol").asList().build().convert(ImmutableList.of()))
+        .hasValue(ImmutableList.of());
   }
 
   @Test
@@ -277,16 +278,16 @@ class FormFieldTest {
   void testAsEnum() {
     FormField<String, ICanHazEnum> omgField =
         FormField.named("omg").asEnum(ICanHazEnum.class).build();
-    assertThat(omgField.convert("LOL").get()).isEqualTo(ICanHazEnum.LOL);
-    assertThat(omgField.convert("CAT").get()).isEqualTo(ICanHazEnum.CAT);
+    assertThat(omgField.convert("LOL")).hasValue(ICanHazEnum.LOL);
+    assertThat(omgField.convert("CAT")).hasValue(ICanHazEnum.CAT);
   }
 
   @Test
   void testAsEnum_lowercase_works() {
     FormField<String, ICanHazEnum> omgField =
         FormField.named("omg").asEnum(ICanHazEnum.class).build();
-    assertThat(omgField.convert("lol").get()).isEqualTo(ICanHazEnum.LOL);
-    assertThat(omgField.convert("cat").get()).isEqualTo(ICanHazEnum.CAT);
+    assertThat(omgField.convert("lol")).hasValue(ICanHazEnum.LOL);
+    assertThat(omgField.convert("cat")).hasValue(ICanHazEnum.CAT);
   }
 
   @Test
