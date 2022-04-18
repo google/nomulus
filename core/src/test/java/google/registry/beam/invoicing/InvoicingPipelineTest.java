@@ -24,10 +24,8 @@ import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.joda.money.CurrencyUnit.CAD;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -59,7 +57,6 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.Optional;
-import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.PAssert;
@@ -297,37 +294,6 @@ class InvoicingPipelineTest {
     billingEvents = billingEvents.apply(new ChangeDomainRepo());
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
     pipeline.run().waitUntilFinish();
-  }
-
-  @Test
-  void testFailure_readFromCloudSqlMissingPAK() throws Exception {
-    Registrar registrar = persistNewRegistrar("TheRegistrar");
-    registrar =
-        registrar
-            .asBuilder()
-            .setBillingAccountMap(ImmutableMap.of(USD, "789"))
-            .setPoNumber(Optional.of("22446688"))
-            .build();
-    persistResource(registrar);
-    Registry test =
-        newRegistry("test", "_TEST", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
-            .asBuilder()
-            .setInvoicingEnabled(true)
-            .build();
-    persistResource(test);
-    DomainBase domain = persistActiveDomain("mycanadiandomain.test");
-
-    persistOneTimeBillingEvent(1, domain, registrar, Reason.RENEW, 3, Money.of(CAD, 20.5));
-    PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
-    billingEvents = billingEvents.apply(new ChangeDomainRepo());
-    PAssert.that(billingEvents).empty();
-    PipelineExecutionException thrown =
-        assertThrows(PipelineExecutionException.class, () -> pipeline.run().waitUntilFinish());
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "Registrar TheRegistrar does not have a product account key for the currency unit:"
-                + " CAD");
   }
 
   @Test
