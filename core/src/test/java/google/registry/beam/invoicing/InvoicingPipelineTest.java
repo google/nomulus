@@ -24,6 +24,7 @@ import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.money.CurrencyUnit.CAD;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 
@@ -290,6 +291,32 @@ class InvoicingPipelineTest {
   @Test
   void testSuccess_readFromCloudSql() throws Exception {
     setupCloudSql();
+    PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
+    billingEvents = billingEvents.apply(new ChangeDomainRepo());
+    PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
+    pipeline.run().waitUntilFinish();
+  }
+
+  @Test
+  void testSuccess_readFromCloudSqlMissingPAK() throws Exception {
+    setupCloudSql();
+    Registrar registrar = persistNewRegistrar("ARegistrar");
+    registrar =
+        registrar
+            .asBuilder()
+            .setBillingAccountMap(ImmutableMap.of(USD, "789"))
+            .setPoNumber(Optional.of("22446688"))
+            .build();
+    persistResource(registrar);
+    Registry test =
+        newRegistry("test", "_TEST", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
+            .asBuilder()
+            .setInvoicingEnabled(true)
+            .build();
+    persistResource(test);
+    DomainBase domain = persistActiveDomain("mycanadiandomain.test");
+
+    persistOneTimeBillingEvent(25, domain, registrar, Reason.RENEW, 3, Money.of(CAD, 20.5));
     PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
     billingEvents = billingEvents.apply(new ChangeDomainRepo());
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);

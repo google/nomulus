@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.beam.BeamUtils.getQueryFromFile;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 
+import com.google.common.flogger.FluentLogger;
 import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey;
@@ -50,6 +51,7 @@ import org.apache.beam.sdk.transforms.Count;
 import org.apache.beam.sdk.transforms.Filter;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.PTransform;
+import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.TypeDescriptor;
@@ -73,6 +75,8 @@ public class InvoicingPipeline implements Serializable {
 
   private static final Pattern SQL_COMMENT_REGEX =
       Pattern.compile("^\\s*--.*\\n", Pattern.MULTILINE);
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final InvoicingPipelineOptions options;
 
@@ -116,7 +120,18 @@ public class InvoicingPipeline implements Serializable {
         RegistryJpaIO.read(
             makeCloudSqlQuery(options.getYearMonth()), false, InvoicingPipeline::parseRow);
 
-    return pipeline.apply("Read BillingEvents from Cloud SQL", read);
+    PCollection<BillingEvent> billingEventsWithNulls =
+        pipeline.apply("Read BillingEvents from Cloud SQL", read);
+
+    // Remove null billing events
+    return billingEventsWithNulls.apply(
+        Filter.by(
+            new SerializableFunction<BillingEvent, Boolean>() {
+              @Override
+              public Boolean apply(BillingEvent input) {
+                return input != null;
+              }
+            }));
   }
 
   private static BillingEvent parseRow(Object[] row) {
@@ -124,13 +139,20 @@ public class InvoicingPipeline implements Serializable {
         (google.registry.model.billing.BillingEvent.OneTime) row[0];
     Registrar registrar = (Registrar) row[1];
     CurrencyUnit currency = oneTime.getCost().getCurrencyUnit();
+    if (!registrar.getBillingAccountMap().containsKey(currency)) {
+      logger.atSevere().log(
+          String.format(
+              "Registrar %s does not have a product account key for the currency unit: %s",
+              registrar.getRegistrarId(), currency));
+      return null;
+    }
 
     return BillingEvent.create(
         oneTime.getId(),
         DateTimeUtils.toZonedDateTime(oneTime.getBillingTime(), ZoneId.of("UTC")),
         DateTimeUtils.toZonedDateTime(oneTime.getEventTime(), ZoneId.of("UTC")),
         registrar.getRegistrarId(),
-        registrar.getBillingAccountMap().getOrDefault(currency, ""),
+        registrar.getBillingAccountMap().get(currency),
         registrar.getPoNumber().orElse(""),
         DomainNameUtils.getTldFromDomainName(oneTime.getTargetId()),
         oneTime.getReason().toString(),
