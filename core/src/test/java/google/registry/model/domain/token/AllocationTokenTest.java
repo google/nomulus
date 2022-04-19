@@ -197,12 +197,8 @@ public class AllocationTokenTest extends EntityTestCase {
                 .build());
     AllocationToken loadedToken = loadByEntity(token);
     assertThat(token).isEqualTo(loadedToken);
-    AllocationToken modifiedToken =
-        persistResource(
-            loadedToken
-                .asBuilder()
-                .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
-                .build());
+    persistResource(
+        loadedToken.asBuilder().setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED).build());
     assertThat(loadByEntity(token).getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.SPECIFIED);
   }
