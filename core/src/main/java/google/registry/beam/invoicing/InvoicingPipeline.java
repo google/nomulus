@@ -36,6 +36,7 @@ import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import org.apache.beam.sdk.Pipeline;
@@ -51,7 +52,6 @@ import org.apache.beam.sdk.transforms.Count;
 import org.apache.beam.sdk.transforms.Filter;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.PTransform;
-import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.TypeDescriptor;
@@ -118,51 +118,44 @@ public class InvoicingPipeline implements Serializable {
       InvoicingPipelineOptions options, Pipeline pipeline) {
     Read<Object[], BillingEvent> read =
         RegistryJpaIO.read(
-            makeCloudSqlQuery(options.getYearMonth()), false, InvoicingPipeline::parseRow);
+            makeCloudSqlQuery(options.getYearMonth()), false, row -> parseRow(row).orElse(null));
 
     PCollection<BillingEvent> billingEventsWithNulls =
         pipeline.apply("Read BillingEvents from Cloud SQL", read);
 
     // Remove null billing events
-    return billingEventsWithNulls.apply(
-        Filter.by(
-            new SerializableFunction<BillingEvent, Boolean>() {
-              @Override
-              public Boolean apply(BillingEvent input) {
-                return input != null;
-              }
-            }));
+    return billingEventsWithNulls.apply(Filter.by(Objects::nonNull));
   }
 
-  private static BillingEvent parseRow(Object[] row) {
+  private static Optional<BillingEvent> parseRow(Object[] row) {
     google.registry.model.billing.BillingEvent.OneTime oneTime =
         (google.registry.model.billing.BillingEvent.OneTime) row[0];
     Registrar registrar = (Registrar) row[1];
     CurrencyUnit currency = oneTime.getCost().getCurrencyUnit();
     if (!registrar.getBillingAccountMap().containsKey(currency)) {
       logger.atSevere().log(
-          String.format(
-              "Registrar %s does not have a product account key for the currency unit: %s",
-              registrar.getRegistrarId(), currency));
-      return null;
+          "Registrar %s does not have a product account key for the currency unit: %s",
+          registrar.getRegistrarId(), currency);
+      return Optional.empty();
     }
 
-    return BillingEvent.create(
-        oneTime.getId(),
-        DateTimeUtils.toZonedDateTime(oneTime.getBillingTime(), ZoneId.of("UTC")),
-        DateTimeUtils.toZonedDateTime(oneTime.getEventTime(), ZoneId.of("UTC")),
-        registrar.getRegistrarId(),
-        registrar.getBillingAccountMap().get(currency),
-        registrar.getPoNumber().orElse(""),
-        DomainNameUtils.getTldFromDomainName(oneTime.getTargetId()),
-        oneTime.getReason().toString(),
-        oneTime.getTargetId(),
-        oneTime.getDomainRepoId(),
-        Optional.ofNullable(oneTime.getPeriodYears()).orElse(0),
-        oneTime.getCost().getCurrencyUnit().toString(),
-        oneTime.getCost().getAmount().doubleValue(),
-        String.join(
-            " ", oneTime.getFlags().stream().map(Flag::toString).collect(toImmutableSet())));
+    return Optional.of(
+        BillingEvent.create(
+            oneTime.getId(),
+            DateTimeUtils.toZonedDateTime(oneTime.getBillingTime(), ZoneId.of("UTC")),
+            DateTimeUtils.toZonedDateTime(oneTime.getEventTime(), ZoneId.of("UTC")),
+            registrar.getRegistrarId(),
+            registrar.getBillingAccountMap().get(currency),
+            registrar.getPoNumber().orElse(""),
+            DomainNameUtils.getTldFromDomainName(oneTime.getTargetId()),
+            oneTime.getReason().toString(),
+            oneTime.getTargetId(),
+            oneTime.getDomainRepoId(),
+            Optional.ofNullable(oneTime.getPeriodYears()).orElse(0),
+            oneTime.getCost().getCurrencyUnit().toString(),
+            oneTime.getCost().getAmount().doubleValue(),
+            String.join(
+                " ", oneTime.getFlags().stream().map(Flag::toString).collect(toImmutableSet()))));
   }
 
   /** Transform that converts a {@code BillingEvent} into an invoice CSV row. */

@@ -22,8 +22,10 @@ import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static java.util.logging.Level.SEVERE;
 import static org.joda.money.CurrencyUnit.CAD;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
@@ -32,6 +34,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.testing.TestLogHandler;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.model.billing.BillingEvent.Cancellation;
 import google.registry.model.billing.BillingEvent.Flag;
@@ -58,6 +61,7 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.logging.Logger;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.PAssert;
@@ -250,9 +254,14 @@ class InvoicingPipelineTest {
 
   private File billingBucketUrl;
   private PCollection<BillingEvent> billingEvents;
+  private final TestLogHandler logHandler = new TestLogHandler();
+
+  private final Logger loggerToIntercept =
+      Logger.getLogger(InvoicingPipeline.class.getCanonicalName());
 
   @BeforeEach
   void beforeEach() throws Exception {
+    loggerToIntercept.addHandler(logHandler);
     billingBucketUrl = Files.createDirectory(tmpDir.resolve(BILLING_BUCKET_URL)).toFile();
     options.setBillingBucketUrl(billingBucketUrl.getAbsolutePath());
     options.setYearMonth(YEAR_MONTH);
@@ -321,6 +330,11 @@ class InvoicingPipelineTest {
     billingEvents = billingEvents.apply(new ChangeDomainRepo());
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
     pipeline.run().waitUntilFinish();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            SEVERE,
+            "Registrar ARegistrar does not have a product account key for the currency unit: CAD");
   }
 
   @Test
