@@ -762,6 +762,7 @@ public class DatabaseHelper {
             .setType(type)
             .setState(State.ACTIVE)
             .setIanaIdentifier(ianaIdentifier)
+            .setBillingAccountMap(ImmutableMap.of(USD, "abc123"))
             .setLocalizedAddress(
                 new RegistrarAddress.Builder()
                     .setStreet(ImmutableList.of("123 Fake St"))

@@ -142,10 +142,16 @@ public class Registry extends ImmutableObject
 
   /** The type of TLD, which determines things like backups and escrow policy. */
   public enum TldType {
-    /** A real, official TLD. */
+    /**
+     * A real, official TLD (but not necessarily only on production).
+     *
+     * <p>Note that, to avoid unnecessary costly DB writes, {@link
+     * google.registry.model.reporting.DomainTransactionRecord}s are only written out for REAL TLDs
+     * (these transaction records are only used for ICANN reporting purposes).
+     */
     REAL,
 
-    /** A test TLD, for the prober. */
+    /** A test TLD, for the prober, OT&amp;E, and other testing purposes. */
     TEST
   }
 
@@ -232,7 +238,7 @@ public class Registry extends ImmutableObject
   }
 
   /** Returns the registry entities for the given TLD strings, throwing if any don't exist. */
-  static ImmutableSet<Registry> getAll(Set<String> tlds) {
+  public static ImmutableSet<Registry> get(Set<String> tlds) {
     try {
       ImmutableMap<String, Optional<Registry>> registries = CACHE.getAll(tlds);
       ImmutableSet<String> missingRegistries =
@@ -1000,7 +1006,7 @@ public class Registry extends ImmutableObject
       instance.renewBillingCostTransitions.checkValidity();
       instance.eapFeeSchedule.checkValidity();
       // All costs must be in the expected currency.
-      // TODO(b/21854155): When we move PremiumList into Datastore, verify its currency too.
+      checkArgumentNotNull(instance.getCurrency(), "Currency must be set");
       checkArgument(
           instance.getStandardCreateCost().getCurrencyUnit().equals(instance.currency),
           "Create cost must be in the registry's currency");

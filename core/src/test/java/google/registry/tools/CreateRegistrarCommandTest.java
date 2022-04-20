@@ -21,8 +21,11 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3_HASH;
 import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -43,8 +46,10 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestOfyAndSql;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -604,11 +609,11 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getBillingAccountMap())
-        .containsExactly(CurrencyUnit.USD, "abc123", CurrencyUnit.JPY, "789xyz");
+        .containsExactly(CurrencyUnit.USD, "abc123", JPY, "789xyz");
   }
 
   @TestOfyAndSql
-  void testFailure_billingAccountMap_doesNotContainEntryForTldAllowed() {
+  void testFailure_billingAccountMap_doesNotContainEntryForAllowedTld() {
     createTlds("foo");
 
     IllegalArgumentException thrown =
@@ -632,12 +637,26 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                     "--cc US",
                     "--force",
                     "clientz"));
-    assertThat(thrown).hasMessageThat().contains("USD");
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("their currency is missing from the billing account map: [foo]");
   }
 
   @TestOfyAndSql
   void testSuccess_billingAccountMap_onlyAppliesToRealRegistrar() throws Exception {
-    createTlds("foo");
+    persistResource(
+        newRegistry("foo", "FOO")
+            .asBuilder()
+            .setCurrency(JPY)
+            .setCreateBillingCost(Money.of(JPY, new BigDecimal(1300)))
+            .setRestoreBillingCost(Money.of(JPY, new BigDecimal(1700)))
+            .setServerStatusChangeBillingCost(Money.of(JPY, new BigDecimal(1900)))
+            .setRegistryLockOrUnlockBillingCost(Money.of(JPY, new BigDecimal(2700)))
+            .setRenewBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(JPY, new BigDecimal(1100))))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(JPY)))
+            .setPremiumList(null)
+            .build());
 
     runCommandForced(
         "--name=blobio",
@@ -656,7 +675,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
     Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
-    assertThat(registrar.get().getBillingAccountMap()).containsExactly(CurrencyUnit.JPY, "789xyz");
+    assertThat(registrar.get().getBillingAccountMap()).containsExactly(JPY, "789xyz");
   }
 
   @TestOfyAndSql

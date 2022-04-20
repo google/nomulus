@@ -190,7 +190,7 @@ public final class RegistryTest extends EntityTestCase {
   @TestOfyAndSql
   void testGetAll() {
     createTld("foo");
-    assertThat(Registry.getAll(ImmutableSet.of("foo", "tld")))
+    assertThat(Registry.get(ImmutableSet.of("foo", "tld")))
         .containsExactlyElementsIn(
             tm().transact(
                     () ->

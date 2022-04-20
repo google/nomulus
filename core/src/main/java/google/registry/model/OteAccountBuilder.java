@@ -38,6 +38,7 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Registry.TldType;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.persistence.VKey;
@@ -110,6 +111,17 @@ public final class OteAccountBuilder {
           Money.of(CurrencyUnit.USD, 100),
           DateTime.parse("2030-03-01T00:00:00Z"),
           Money.of(CurrencyUnit.USD, 0));
+
+  /**
+   * The default billing account map applied to all OT&amp;E registrars.
+   *
+   * <p>This contains dummy values for USD and JPY so that OT&amp;E registrars can be granted access
+   * to all existing TLDs in sandbox. Note that OT&amp;E is only on sandbox and thus these dummy
+   * values will never be used in production (the only environment where real invoicing takes
+   * place).
+   */
+  public static final ImmutableMap<CurrencyUnit, String> DEFAULT_BILLING_ACCOUNT_MAP =
+      ImmutableMap.of(CurrencyUnit.USD, "123", CurrencyUnit.JPY, "456");
 
   private final ImmutableMap<String, String> registrarIdToTld;
   private final Registry sunriseTld;
@@ -305,6 +317,7 @@ public final class OteAccountBuilder {
             .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, initialTldState))
             .setDnsWriters(ImmutableSet.of("VoidDnsWriter"))
             .setPremiumList(premiumList.get())
+            .setTldType(TldType.TEST)
             .setRoidSuffix(
                 String.format(
                     "%S%X",
@@ -334,6 +347,7 @@ public final class OteAccountBuilder {
         .setPhoneNumber("+1.2125550100")
         .setIcannReferralEmail("nightmare@registrar.test")
         .setState(Registrar.State.ACTIVE)
+        .setBillingAccountMap(DEFAULT_BILLING_ACCOUNT_MAP)
         .build();
   }
 

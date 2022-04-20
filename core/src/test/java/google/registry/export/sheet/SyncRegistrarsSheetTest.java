@@ -336,7 +336,11 @@ public class SyncRegistrarsSheetTest {
 
   @TestOfyAndSql
   void testRun_missingValues_stillWorks() throws Exception {
-    persistNewRegistrar("SomeRegistrar", "Some Registrar", Registrar.Type.REAL, 8L);
+    persistResource(
+        persistNewRegistrar("SomeRegistrar", "Some Registrar", Registrar.Type.REAL, 8L)
+            .asBuilder()
+            .setBillingAccountMap(ImmutableMap.of())
+            .build());
 
     newSyncRegistrarsSheet().run("foobar");
 

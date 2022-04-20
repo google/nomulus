@@ -81,6 +81,7 @@ import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.registrar.Registrar.BillingAccountEntry.CurrencyMapper;
 import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.model.tld.Registry;
+import google.registry.model.tld.Registry.TldType;
 import google.registry.persistence.VKey;
 import google.registry.util.CidrAddressBlock;
 import java.security.cert.CertificateParsingException;
@@ -798,13 +799,9 @@ public class Registrar extends ImmutableObject
     }
 
     public Builder setBillingAccountMap(@Nullable Map<CurrencyUnit, String> billingAccountMap) {
-      if (billingAccountMap == null) {
-        getInstance().billingAccountMap = null;
-      } else {
-        getInstance().billingAccountMap =
-            billingAccountMap.entrySet().stream()
-                .collect(toImmutableMap(Map.Entry::getKey, BillingAccountEntry::new));
-      }
+      getInstance().billingAccountMap =
+          nullToEmptyImmutableCopy(billingAccountMap).entrySet().stream()
+              .collect(toImmutableMap(Map.Entry::getKey, BillingAccountEntry::new));
       return this;
     }
 
@@ -1015,6 +1012,20 @@ public class Registrar extends ImmutableObject
           String.format(
               "Supplied IANA ID is not valid for %s registrar type: %s",
               getInstance().type, getInstance().ianaIdentifier));
+
+      // In order to grant access to real TLDs, the registrar must have a corresponding billing
+      // account ID for that TLD's billing currency.
+      ImmutableSet<String> nonBillableTlds =
+          Registry.get(getInstance().getAllowedTlds()).stream()
+              .filter(r -> r.getTldType() == TldType.REAL)
+              .filter(r -> !getInstance().getBillingAccountMap().containsKey(r.getCurrency()))
+              .map(Registry::getTldStr)
+              .collect(toImmutableSet());
+      checkArgument(
+          nonBillableTlds.isEmpty(),
+          "Cannot set these allowed, real TLDs because their currency is missing "
+              + "from the billing account map: %s",
+          nonBillableTlds);
       return cloneEmptyToNull(super.build());
     }
   }

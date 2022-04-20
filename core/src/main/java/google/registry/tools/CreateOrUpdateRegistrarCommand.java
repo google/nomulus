@@ -24,14 +24,11 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.tld.Registry;
 import google.registry.tools.params.KeyValueMapParameter.CurrencyUnitToStringMap;
 import google.registry.tools.params.OptionalLongParameter;
 import google.registry.tools.params.OptionalPhoneNumberParameter;
@@ -46,7 +43,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import org.joda.money.CurrencyUnit;
@@ -433,22 +429,6 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
         // Require a phone passcode.
         checkArgument(
             newRegistrar.getPhonePasscode() != null, "--passcode is required for REAL registrars.");
-        // Check if registrar has billing account IDs for the currency of the TLDs that it is
-        // allowed to register.
-        ImmutableSet<CurrencyUnit> tldCurrencies =
-            newRegistrar
-                .getAllowedTlds()
-                .stream()
-                .map(tld -> Registry.get(tld).getCurrency())
-                .collect(toImmutableSet());
-        Set<CurrencyUnit> currenciesWithoutBillingAccountId =
-            newRegistrar.getBillingAccountMap() == null
-                ? tldCurrencies
-                : Sets.difference(tldCurrencies, newRegistrar.getBillingAccountMap().keySet());
-        checkArgument(
-            currenciesWithoutBillingAccountId.isEmpty(),
-            "Need billing account map entries for currencies: %s",
-            Joiner.on(' ').join(currenciesWithoutBillingAccountId));
       }
 
       stageEntityChange(oldRegistrar, newRegistrar);
