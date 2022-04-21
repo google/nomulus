@@ -108,7 +108,7 @@ def get_nomulus_root() -> str:
         The absolute path to the Nomulus root directory.
     """
     for folder in pathlib.Path(__file__).parents:
-        if folder.name != 'nomulus':
+        if not folder.joinpath('rollback_tool').exists():
             continue
         if not folder.joinpath('settings.gradle').exists():
             continue
