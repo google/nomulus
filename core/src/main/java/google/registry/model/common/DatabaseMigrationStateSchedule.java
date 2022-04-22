@@ -18,14 +18,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryEnvironment;
+import google.registry.model.CacheUtils;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.replay.SqlOnlyEntity;
@@ -135,18 +134,8 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements
           TimedTransitionProperty<MigrationState, MigrationStateTransition>>
       // Each instance should cache the migration schedule for five minutes before reloading
       CACHE =
-          CacheBuilder.newBuilder()
-              .expireAfterWrite(Duration.ofMinutes(5))
-              .build(
-                  new CacheLoader<
-                      Class<DatabaseMigrationStateSchedule>,
-                      TimedTransitionProperty<MigrationState, MigrationStateTransition>>() {
-                    @Override
-                    public TimedTransitionProperty<MigrationState, MigrationStateTransition> load(
-                        Class<DatabaseMigrationStateSchedule> unused) {
-                      return DatabaseMigrationStateSchedule.getUncached();
-                    }
-                  });
+          CacheUtils.newCacheBuilder(Duration.ofMinutes(5))
+              .build(singletonClazz -> DatabaseMigrationStateSchedule.getUncached());
 
   // Restrictions on the state transitions, e.g. no going from DATASTORE_ONLY to SQL_ONLY
   private static final ImmutableMultimap<MigrationState, MigrationState> VALID_STATE_TRANSITIONS =
@@ -235,7 +224,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements
 
   /** Loads the currently-set migration schedule from the cache, or the default if none exists. */
   public static TimedTransitionProperty<MigrationState, MigrationStateTransition> get() {
-    return CACHE.getUnchecked(DatabaseMigrationStateSchedule.class);
+    return CACHE.get(DatabaseMigrationStateSchedule.class);
   }
 
   /** Returns the database migration status at the given time. */
