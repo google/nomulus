@@ -30,11 +30,14 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.money.CurrencyUnit.JPY;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
@@ -42,13 +45,17 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.tld.Registries;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.Registry.TldType;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.SerializeUtils;
+import java.math.BigDecimal;
 import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link Registrar}. */
@@ -60,7 +67,20 @@ class RegistrarTest extends EntityTestCase {
 
   @BeforeEach
   void setUp() {
-    createTld("xn--q9jyb4c");
+    createTld("tld");
+    persistResource(
+        newRegistry("xn--q9jyb4c", "MINNA")
+            .asBuilder()
+            .setCurrency(JPY)
+            .setCreateBillingCost(Money.of(JPY, new BigDecimal(1300)))
+            .setRestoreBillingCost(Money.of(JPY, new BigDecimal(1700)))
+            .setServerStatusChangeBillingCost(Money.of(JPY, new BigDecimal(1900)))
+            .setRegistryLockOrUnlockBillingCost(Money.of(JPY, new BigDecimal(2700)))
+            .setRenewBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(JPY, new BigDecimal(1100))))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(JPY)))
+            .setPremiumList(null)
+            .build());
     // Set up a new persisted registrar entity.
     registrar =
         cloneAndSetAutoTimestamps(
@@ -251,8 +271,10 @@ class RegistrarTest extends EntityTestCase {
   }
 
   @TestOfyAndSql
-  void testSuccess_clearingBillingAccountMap() {
-    registrar = registrar.asBuilder().setBillingAccountMap(null).build();
+  void testSuccess_clearingBillingAccountMapAndAllowedTlds() {
+    registrar =
+        registrar.asBuilder().setAllowedTlds(ImmutableSet.of()).setBillingAccountMap(null).build();
+    assertThat(registrar.getAllowedTlds()).isEmpty();
     assertThat(registrar.getBillingAccountMap()).isEmpty();
   }
 
@@ -676,5 +698,49 @@ class RegistrarTest extends EntityTestCase {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Registrar.loadByRegistrarIdCached(""));
     assertThat(thrown).hasMessageThat().contains("registrarId must be specified");
+  }
+
+  @TestOfyAndSql
+  void testFailure_missingCurrenciesFromBillingMap() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                registrar
+                    .asBuilder()
+                    .setBillingAccountMap(null)
+                    .setAllowedTlds(ImmutableSet.of("tld", "xn--q9jyb4c"))
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("their currency is missing from the billing account map: [tld, xn--q9jyb4c]");
+  }
+
+  @TestOfyAndSql
+  void testFailure_missingCurrencyFromBillingMap() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                registrar
+                    .asBuilder()
+                    .setBillingAccountMap(ImmutableMap.of(USD, "abc123"))
+                    .setAllowedTlds(ImmutableSet.of("tld", "xn--q9jyb4c"))
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("their currency is missing from the billing account map: [xn--q9jyb4c]");
+  }
+
+  @TestOfyAndSql
+  void testSuccess_nonRealTldDoesntNeedEntryInBillingMap() {
+    persistResource(Registry.get("xn--q9jyb4c").asBuilder().setTldType(TldType.TEST).build());
+    // xn--q9jyb4c bills in JPY and we don't have a JPY entry in this billing account map, but it
+    // should succeed without throwing an error because xn--q9jyb4c is set to be a TEST TLD.
+    registrar
+        .asBuilder()
+        .setBillingAccountMap(ImmutableMap.of(USD, "abc123"))
+        .setAllowedTlds(ImmutableSet.of("tld", "xn--q9jyb4c"))
+        .build();
   }
 }

@@ -21,8 +21,10 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3_HASH;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -38,8 +40,10 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
+import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -359,6 +363,8 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testSuccess_billingAccountMap() throws Exception {
+    persistResource(
+        loadRegistrar("NewRegistrar").asBuilder().setBillingAccountMap(ImmutableMap.of()).build());
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap()).isEmpty();
     runCommand("--billing_account_map=USD=abc123,JPY=789xyz", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap())
@@ -366,8 +372,14 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   }
 
   @Test
-  void testFailure_billingAccountMap_doesNotContainEntryForTldAllowed() {
+  void testFailure_billingAccountMap_doesNotContainEntryForAllowedTld() {
     createTlds("foo");
+    persistResource(
+        loadRegistrar("NewRegistrar")
+            .asBuilder()
+            .setAllowedTlds(ImmutableSet.of())
+            .setBillingAccountMap(ImmutableMap.of())
+            .build());
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap()).isEmpty();
     IllegalArgumentException thrown =
         assertThrows(
@@ -379,12 +391,28 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
                     "--force",
                     "--registrar_type=REAL",
                     "NewRegistrar"));
-    assertThat(thrown).hasMessageThat().contains("USD");
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("their currency is missing from the billing account map: [foo]");
   }
 
   @Test
   void testSuccess_billingAccountMap_onlyAppliesToRealRegistrar() throws Exception {
-    createTlds("foo");
+    persistResource(
+        newRegistry("foo", "FOO")
+            .asBuilder()
+            .setCurrency(JPY)
+            .setCreateBillingCost(Money.of(JPY, new BigDecimal(1300)))
+            .setRestoreBillingCost(Money.of(JPY, new BigDecimal(1700)))
+            .setServerStatusChangeBillingCost(Money.of(JPY, new BigDecimal(1900)))
+            .setRegistryLockOrUnlockBillingCost(Money.of(JPY, new BigDecimal(2700)))
+            .setRenewBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(JPY, new BigDecimal(1100))))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(JPY)))
+            .setPremiumList(null)
+            .build());
+    persistResource(
+        loadRegistrar("NewRegistrar").asBuilder().setBillingAccountMap(ImmutableMap.of()).build());
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap()).isEmpty();
     runCommand("--billing_account_map=JPY=789xyz", "--allowed_tlds=foo", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap())

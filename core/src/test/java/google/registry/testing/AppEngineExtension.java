@@ -66,6 +66,7 @@ import java.util.Set;
 import java.util.logging.LogManager;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import org.joda.money.CurrencyUnit;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -289,6 +290,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
                 .build())
         .setPhoneNumber("+1.3334445555")
         .setPhonePasscode("12345")
+        .setBillingAccountMap(ImmutableMap.of(CurrencyUnit.USD, "abc123"))
         .setContactsRequireSyncing(true);
   }
 

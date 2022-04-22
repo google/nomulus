@@ -72,7 +72,7 @@ public final class Registries {
                                 .stream()
                                 .map(Key::getName)
                                 .collect(toImmutableSet());
-                        return Registry.getAll(tlds).stream()
+                        return Registry.get(tlds).stream()
                             .map(e -> Maps.immutableEntry(e.getTldStr(), e.getTldType()))
                             .collect(entriesToImmutableMap());
                       } else {
@@ -105,7 +105,7 @@ public final class Registries {
 
   /** Returns the Registry entities themselves of the given type loaded fresh from Datastore. */
   public static ImmutableSet<Registry> getTldEntitiesOfType(TldType type) {
-    return Registry.getAll(filterValues(cache.get(), equalTo(type)).keySet());
+    return Registry.get(filterValues(cache.get(), equalTo(type)).keySet());
   }
 
   /** Pass-through check that the specified TLD exists, otherwise throw an IAE. */
