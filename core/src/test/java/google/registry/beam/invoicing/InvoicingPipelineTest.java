@@ -22,17 +22,19 @@ import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static java.util.logging.Level.SEVERE;
 import static org.joda.money.CurrencyUnit.CAD;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.testing.TestLogHandler;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.model.billing.BillingEvent.Cancellation;
 import google.registry.model.billing.BillingEvent.Flag;
@@ -59,7 +61,7 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.Optional;
-import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
+import java.util.logging.Logger;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.PAssert;
@@ -252,9 +254,14 @@ class InvoicingPipelineTest {
 
   private File billingBucketUrl;
   private PCollection<BillingEvent> billingEvents;
+  private final TestLogHandler logHandler = new TestLogHandler();
+
+  private final Logger loggerToIntercept =
+      Logger.getLogger(InvoicingPipeline.class.getCanonicalName());
 
   @BeforeEach
   void beforeEach() throws Exception {
+    loggerToIntercept.addHandler(logHandler);
     billingBucketUrl = Files.createDirectory(tmpDir.resolve(BILLING_BUCKET_URL)).toFile();
     options.setBillingBucketUrl(billingBucketUrl.getAbsolutePath());
     options.setYearMonth(YEAR_MONTH);
@@ -300,8 +307,9 @@ class InvoicingPipelineTest {
   }
 
   @Test
-  void testFailure_readFromCloudSqlMissingPAK() throws Exception {
-    Registrar registrar = persistNewRegistrar("TheRegistrar");
+  void testSuccess_readFromCloudSqlMissingPAK() throws Exception {
+    setupCloudSql();
+    Registrar registrar = persistNewRegistrar("ARegistrar");
     registrar =
         registrar
             .asBuilder()
@@ -317,17 +325,16 @@ class InvoicingPipelineTest {
     persistResource(test);
     DomainBase domain = persistActiveDomain("mycanadiandomain.test");
 
-    persistOneTimeBillingEvent(1, domain, registrar, Reason.RENEW, 3, Money.of(CAD, 20.5));
+    persistOneTimeBillingEvent(25, domain, registrar, Reason.RENEW, 3, Money.of(CAD, 20.5));
     PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
     billingEvents = billingEvents.apply(new ChangeDomainRepo());
-    PAssert.that(billingEvents).empty();
-    PipelineExecutionException thrown =
-        assertThrows(PipelineExecutionException.class, () -> pipeline.run().waitUntilFinish());
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "Registrar TheRegistrar does not have a product account key for the currency unit:"
-                + " CAD");
+    PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
+    pipeline.run().waitUntilFinish();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            SEVERE,
+            "Registrar ARegistrar does not have a product account key for the currency unit: CAD");
   }
 
   @Test
