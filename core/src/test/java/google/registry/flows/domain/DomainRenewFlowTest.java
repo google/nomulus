@@ -122,6 +122,11 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
   @BeforeEach
   void initDomainTest() {
     createTld("tld");
+    persistResource(
+        loadRegistrar("TheRegistrar")
+            .asBuilder()
+            .setBillingAccountMap(ImmutableMap.of(USD, "123", EUR, "567"))
+            .build());
     setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "5"));
   }
 

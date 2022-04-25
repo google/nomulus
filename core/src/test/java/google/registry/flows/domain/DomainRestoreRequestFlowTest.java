@@ -106,6 +106,11 @@ class DomainRestoreRequestFlowTest
   @BeforeEach
   void initDomainTest() {
     createTld("tld");
+    persistResource(
+        loadRegistrar("TheRegistrar")
+            .asBuilder()
+            .setBillingAccountMap(ImmutableMap.of(USD, "123", EUR, "567"))
+            .build());
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
   }
 

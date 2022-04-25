@@ -180,6 +180,7 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.MalformedTcnIdException}
  * @error {@link DomainFlowUtils.MaxSigLifeNotSupportedException}
  * @error {@link DomainFlowUtils.MissingAdminContactException}
+ * @error {@link DomainFlowUtils.MissingBillingAccountMapException}
  * @error {@link DomainFlowUtils.MissingClaimsNoticeException}
  * @error {@link DomainFlowUtils.MissingContactTypeException}
  * @error {@link DomainFlowUtils.MissingRegistrantException}
