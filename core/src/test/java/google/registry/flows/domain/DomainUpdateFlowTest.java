@@ -148,6 +148,11 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     createTld("tld");
     // Note that "domain_update.xml" tests adding and removing the same contact type.
     setEppInput("domain_update.xml");
+    persistResource(
+        loadRegistrar("TheRegistrar")
+            .asBuilder()
+            .setBillingAccountMap(ImmutableMap.of(USD, "123"))
+            .build());
   }
 
   private void persistReferencedEntities() {

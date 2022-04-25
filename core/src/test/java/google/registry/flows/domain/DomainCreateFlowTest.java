@@ -203,6 +203,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @BeforeEach
   void initCreateTest() {
     createTld("tld");
+    persistResource(
+        loadRegistrar("TheRegistrar")
+            .asBuilder()
+            .setBillingAccountMap(ImmutableMap.of(USD, "123"))
+            .build());
     allocationToken =
         persistResource(
             new AllocationToken.Builder()
