@@ -156,6 +156,7 @@ class EppLifecycleHostTest extends EppTestCase {
   @TestOfyAndSql
   void testSuccess_multipartTldsWithSharedSuffixes() throws Exception {
     createTlds("bar.foo.tld", "foo.tld", "tld");
+
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
 
     assertThatCommand("contact_create_sh8013.xml")
