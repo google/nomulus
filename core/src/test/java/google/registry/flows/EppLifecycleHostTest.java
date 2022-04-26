@@ -21,11 +21,8 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PE
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppMetricSubject.assertThat;
 import static google.registry.testing.HostResourceSubject.assertAboutHosts;
-import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.domain.DomainBase;
@@ -109,11 +106,6 @@ class EppLifecycleHostTest extends EppTestCase {
   @TestOfyAndSql
   void testRenamingHostToExistingHost_fails() throws Exception {
     createTld("example");
-    persistResource(
-        loadRegistrar("NewRegistrar")
-            .asBuilder()
-            .setBillingAccountMap(ImmutableMap.of(USD, "123"))
-            .build());
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     // Create the fakesite domain.
     assertThatCommand("contact_create_sh8013.xml")
@@ -164,11 +156,6 @@ class EppLifecycleHostTest extends EppTestCase {
   @TestOfyAndSql
   void testSuccess_multipartTldsWithSharedSuffixes() throws Exception {
     createTlds("bar.foo.tld", "foo.tld", "tld");
-    persistResource(
-        loadRegistrar("NewRegistrar")
-            .asBuilder()
-            .setBillingAccountMap(ImmutableMap.of(USD, "123"))
-            .build());
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
 
     assertThatCommand("contact_create_sh8013.xml")

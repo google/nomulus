@@ -1509,7 +1509,7 @@ public class DomainFlowUtils {
   /** Registrar is missing the billing account map for this currency type. */
   public static class MissingBillingAccountMapException extends AuthorizationErrorException {
     public MissingBillingAccountMapException(CurrencyUnit currency) {
-      super("Registrar does not have a billing account set up for the currency type " + currency);
+      super("Registrar is not yet onboarded for TLDs that bill in " + currency);
     }
   }
 
