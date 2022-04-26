@@ -14,9 +14,9 @@
 
 package google.registry.testing;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.flogger.FluentLogger;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -29,7 +29,7 @@ public final class SystemInfo {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final LoadingCache<String, Boolean> hasCommandCache =
-      CacheBuilder.newBuilder()
+      Caffeine.newBuilder()
           .build(
               new CacheLoader<String, Boolean>() {
                 @Override

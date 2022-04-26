@@ -16,15 +16,14 @@ package google.registry.model.server;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.primitives.Longs;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.Unindex;
+import google.registry.model.CacheUtils;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.CrossTldSingleton;
@@ -32,7 +31,6 @@ import google.registry.model.replay.NonReplicatedEntity;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import javax.persistence.Column;
 import javax.persistence.PostLoad;
 import javax.persistence.Transient;
@@ -52,14 +50,7 @@ public class ServerSecret extends CrossTldSingleton implements NonReplicatedEnti
    * Supplier that can be reset for testing purposes.
    */
   private static final LoadingCache<Class<ServerSecret>, ServerSecret> CACHE =
-      CacheBuilder.newBuilder()
-          .build(
-              new CacheLoader<Class<ServerSecret>, ServerSecret>() {
-                @Override
-                public ServerSecret load(Class<ServerSecret> unused) {
-                  return retrieveAndSaveSecret();
-                }
-              });
+      CacheUtils.newCacheBuilder().build(singletonClazz -> retrieveAndSaveSecret());
 
   private static ServerSecret retrieveAndSaveSecret() {
     if (tm().isOfy()) {
@@ -84,11 +75,7 @@ public class ServerSecret extends CrossTldSingleton implements NonReplicatedEnti
 
   /** Returns the global ServerSecret instance, creating it if one isn't already in Datastore. */
   public static ServerSecret get() {
-    try {
-      return CACHE.get(ServerSecret.class);
-    } catch (ExecutionException e) {
-      throw new RuntimeException(e);
-    }
+    return CACHE.get(ServerSecret.class);
   }
 
   /** Most significant 8 bytes of the UUID value (stored separately for legacy purposes). */

@@ -51,6 +51,7 @@ artifacts {
 dependencies {
   def deps = rootProject.dependencyMap
 
+  compile deps['com.github.ben-manes.caffeine:caffeine']
   compile deps['com.google.code.findbugs:jsr305']
   compile deps['com.google.guava:guava']
   compile deps['javax.inject:javax.inject']
