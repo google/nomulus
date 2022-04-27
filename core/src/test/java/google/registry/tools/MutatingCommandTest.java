@@ -33,6 +33,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import java.util.Arrays;
+import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,7 @@ public class MutatingCommandTest {
   void beforeEach() {
     registrar1 = persistNewRegistrar("Registrar1", "Registrar1", Registrar.Type.REAL, 1L);
     registrar2 = persistNewRegistrar("Registrar2", "Registrar2", Registrar.Type.REAL, 2L);
-    newRegistrar1 = registrar1.asBuilder().setBillingIdentifier(42L).build();
+    newRegistrar1 = registrar1.asBuilder().setPoNumber(Optional.of("23")).build();
     newRegistrar2 = registrar2.asBuilder().setBlockPremiumNames(true).build();
 
     createTld("tld");
@@ -94,18 +95,19 @@ public class MutatingCommandTest {
     };
     command.init();
     String changes = command.prompt();
-    assertThat(changes).isEqualTo(
-        "Update HostResource@2-ROID\n"
-            + "lastEppUpdateTime: null -> 2014-09-09T09:09:09.000Z\n"
-            + "\n"
-            + "Update HostResource@3-ROID\n"
-            + "currentSponsorClientId: TheRegistrar -> Registrar2\n"
-            + "\n"
-            + "Update Registrar@Registrar1\n"
-            + "billingIdentifier: null -> 42\n"
-            + "\n"
-            + "Update Registrar@Registrar2\n"
-            + "blockPremiumNames: false -> true\n");
+    assertThat(changes)
+        .isEqualTo(
+            "Update HostResource@2-ROID\n"
+                + "lastEppUpdateTime: null -> 2014-09-09T09:09:09.000Z\n"
+                + "\n"
+                + "Update HostResource@3-ROID\n"
+                + "currentSponsorClientId: TheRegistrar -> Registrar2\n"
+                + "\n"
+                + "Update Registrar@Registrar1\n"
+                + "poNumber: null -> 23\n"
+                + "\n"
+                + "Update Registrar@Registrar2\n"
+                + "blockPremiumNames: false -> true\n");
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 4 entities.\n");
     assertThat(loadByEntity(host1)).isEqualTo(newHost1);

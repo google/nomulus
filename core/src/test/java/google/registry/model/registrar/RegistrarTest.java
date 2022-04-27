@@ -121,7 +121,6 @@ class RegistrarTest extends EntityTestCase {
                 .setIcannReferralEmail("foo@example.com")
                 .setDriveFolderId("drive folder id")
                 .setIanaIdentifier(8L)
-                .setBillingIdentifier(5325L)
                 .setBillingAccountMap(
                     ImmutableMap.of(CurrencyUnit.USD, "abc123", CurrencyUnit.JPY, "789xyz"))
                 .setPhonePasscode("01234")
@@ -261,12 +260,11 @@ class RegistrarTest extends EntityTestCase {
   }
 
   @TestOfyAndSql
-  void testSuccess_clearingIanaAndBillingIds() {
+  void testSuccess_clearingIanaId() {
     registrar
         .asBuilder()
         .setType(Type.TEST)
         .setIanaIdentifier(null)
-        .setBillingIdentifier(null)
         .build();
   }
 

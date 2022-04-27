@@ -152,14 +152,6 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(
-      names = "--billing_id",
-      description = "Registrar Billing ID (i.e. Oracle #)",
-      converter = OptionalLongParameter.class,
-      validateWith = OptionalLongParameter.class)
-  private Optional<Long> billingId;
-
-  @Nullable
-  @Parameter(
       names = "--po_number",
       description = "Purchase Order number used for billing invoices",
       converter = OptionalStringParameter.class,
@@ -361,9 +353,6 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       }
       if (ianaId != null) {
         builder.setIanaIdentifier(ianaId.orElse(null));
-      }
-      if (billingId != null) {
-        builder.setBillingIdentifier(billingId.orElse(null));
       }
       Optional.ofNullable(poNumber).ifPresent(builder::setPoNumber);
       if (billingAccountMap != null) {
