@@ -37,13 +37,18 @@ public class ReplayTxnsCommand implements CommandWithRemoteApi {
   public void run() throws Exception {
     List<TransactionEntity> txns;
     do {
-      txns = replicaJpaTm().transact(() ->
-          replicaJpaTm().query(
-                  "SELECT txn FROM TransactionEntity txn where id >= :startTxn ORDER BY id",
-              TransactionEntity.class)
-              .setParameter("startTxn", startTxnId)
-              .setMaxResults(BATCH_SIZE)
-              .getResultList());
+      txns =
+          replicaJpaTm()
+              .transact(
+                  () ->
+                      replicaJpaTm()
+                          .query(
+                              "SELECT txn FROM TransactionEntity txn where id >= :startTxn ORDER"
+                                  + " BY id",
+                              TransactionEntity.class)
+                          .setParameter("startTxn", startTxnId)
+                          .setMaxResults(BATCH_SIZE)
+                          .getResultList());
       for (TransactionEntity txn : txns) {
         System.out.println("Replaying transaction " + txn.getId());
         Transaction.deserialize(txn.getContents());
