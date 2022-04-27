@@ -33,8 +33,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 
 /**
  * A SQL transaction that can be serialized and stored in its own table.
@@ -105,7 +107,8 @@ public class Transaction extends ImmutableObject implements Buildable {
   }
 
   public static Transaction deserialize(byte[] serializedTransaction) throws IOException {
-    ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(serializedTransaction));
+    ObjectInputStream in =
+        new LenientObjectInputStream(new ByteArrayInputStream(serializedTransaction));
 
     // Verify that the data is what we expect.
     int version = in.readInt();
@@ -302,6 +305,37 @@ public class Transaction extends ImmutableObject implements Buildable {
       } catch (ClassNotFoundException e) {
         throw new IllegalArgumentException(e);
       }
+    }
+  }
+
+  /**
+   * ObjectInputStream that ignores the UIDs of serialized objects.
+   *
+   * <p>We only really need to deserialize VKeys. However, VKeys have a class object associated with
+   * them, and if the class is changed and we haven't defined a serialVersionUID for it, we get an
+   * exception during deserialization.
+   *
+   * <p>It's safe for us to ignore this condition: we only care about attaching the correct local
+   * class object to the VKey. So this class effectively does so by replacing the class descriptor
+   * if it's version UID doesn't match that of the local class.
+   */
+  private static class LenientObjectInputStream extends ObjectInputStream {
+
+    public LenientObjectInputStream(InputStream in) throws IOException {
+      super(in);
+    }
+
+    @Override
+    protected ObjectStreamClass readClassDescriptor() throws IOException, ClassNotFoundException {
+      ObjectStreamClass persistedDescriptor = super.readClassDescriptor();
+      Class localClass = Class.forName(persistedDescriptor.getName());
+      ObjectStreamClass localDescriptor = ObjectStreamClass.lookup(localClass);
+      if (localDescriptor != null) {
+        if (persistedDescriptor.getSerialVersionUID() != localDescriptor.getSerialVersionUID()) {
+          return localDescriptor;
+        }
+      }
+      return persistedDescriptor;
     }
   }
 }
