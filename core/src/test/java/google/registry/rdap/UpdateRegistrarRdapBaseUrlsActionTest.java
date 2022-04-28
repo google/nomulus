@@ -232,17 +232,15 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
   @TestOfyAndSql
   void testNoTlds() {
     deleteTld("tld");
-    assertThat(assertThrows(IllegalArgumentException.class, action::run))
-        .hasMessageThat()
-        .isEqualTo("There must exist at least one REAL TLD.");
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
+    assertThat(thrown).hasMessageThat().isEqualTo("There must exist at least one REAL TLD.");
   }
 
   @TestOfyAndSql
   void testOnlyTestTlds() {
     persistResource(Registry.get("tld").asBuilder().setTldType(TldType.TEST).build());
-    assertThat(assertThrows(IllegalArgumentException.class, action::run))
-        .hasMessageThat()
-        .isEqualTo("There must exist at least one REAL TLD.");
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
+    assertThat(thrown).hasMessageThat().isEqualTo("There must exist at least one REAL TLD.");
   }
 
   @TestOfyAndSql
@@ -278,7 +276,8 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
     httpTransport.addNextResponse(badLoginResponse);
     httpTransport.addNextResponse(badLoginResponse);
 
-    assertThat(assertThrows(RuntimeException.class, action::run))
+    RuntimeException thrown = assertThrows(RuntimeException.class, action::run);
+    assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Error contacting MosAPI server. Tried TLDs [secondtld, tld]");
   }
@@ -316,9 +315,8 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
     httpTransport.addNextResponse(logoutResponse);
     httpTransport.addNextResponse(badLoginResponse);
 
-    assertThat(assertThrows(RuntimeException.class, action::run))
-        .hasCauseThat()
-        .isInstanceOf(JsonSyntaxException.class);
+    RuntimeException thrown = assertThrows(RuntimeException.class, action::run);
+    assertThat(thrown).hasCauseThat().isInstanceOf(JsonSyntaxException.class);
   }
 
   private static void addValidResponses(TestHttpTransport httpTransport) {

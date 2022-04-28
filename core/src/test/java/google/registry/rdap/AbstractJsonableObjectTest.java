@@ -73,8 +73,10 @@ final class AbstractJsonableObjectTest {
       @JsonableElement String myString = "A";
       @JsonableElement("myString") String anotherString = "B";
     };
-    assertThat(assertThrows(JsonableException.class, () -> jsonable.toJson()))
-        .hasMessageThat().contains("Encountered the same field name 'myString' multiple times");
+    JsonableException thrown = assertThrows(JsonableException.class, () -> jsonable.toJson());
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Encountered the same field name 'myString' multiple times");
   }
 
   @Test
@@ -96,8 +98,8 @@ final class AbstractJsonableObjectTest {
             return in;
           }
         };
-    assertThat(assertThrows(JsonableException.class, () -> jsonable.toJson()))
-        .hasMessageThat().contains("must have no arguments");
+    JsonableException thrown = assertThrows(JsonableException.class, () -> jsonable.toJson());
+    assertThat(thrown).hasMessageThat().contains("must have no arguments");
   }
 
   @Test
@@ -186,8 +188,10 @@ final class AbstractJsonableObjectTest {
       @JsonableElement("myList[]")
       Optional<Integer> myListMeaningOfLife = Optional.of(42);
     };
-    assertThat(assertThrows(JsonableException.class, () -> jsonable.toJson()))
-        .hasMessageThat().contains("Encountered the same field name 'myList' multiple times");
+    JsonableException thrown = assertThrows(JsonableException.class, () -> jsonable.toJson());
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Encountered the same field name 'myList' multiple times");
   }
 
   @RestrictJsonNames({"allowed", "allowedList[]"})
@@ -226,7 +230,8 @@ final class AbstractJsonableObjectTest {
       @JsonableElement
       JsonableWithNameRestrictions wrong = new JsonableWithNameRestrictions();
     };
-    assertThat(assertThrows(JsonableException.class, () -> jsonable.toJson()))
+    JsonableException thrown = assertThrows(JsonableException.class, () -> jsonable.toJson());
+    assertThat(thrown)
         .hasMessageThat()
         .contains("must be named one of ['allowed', 'allowedList[]'], but is named 'wrong'");
   }
@@ -237,9 +242,8 @@ final class AbstractJsonableObjectTest {
       @JsonableElement
       JsonableWithNoAllowedNames wrong = new JsonableWithNoAllowedNames();
     };
-    assertThat(assertThrows(JsonableException.class, () -> jsonable.toJson()))
-        .hasMessageThat()
-        .contains("is annotated with an empty RestrictJsonNames");
+    JsonableException thrown = assertThrows(JsonableException.class, () -> jsonable.toJson());
+    assertThat(thrown).hasMessageThat().contains("is annotated with an empty RestrictJsonNames");
   }
 
   @RestrictJsonNames({})

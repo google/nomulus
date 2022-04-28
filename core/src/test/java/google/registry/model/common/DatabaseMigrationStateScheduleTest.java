@@ -131,10 +131,11 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
             .put(startTime.plusHours(2), DATASTORE_PRIMARY_NO_ASYNC)
             .put(startTime.plusHours(3), DATASTORE_PRIMARY_READ_ONLY)
             .build();
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () -> jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(nowInvalidMap))))
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(nowInvalidMap)));
+    assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
             "Cannot transition from current state-as-of-now DATASTORE_ONLY "
@@ -143,14 +144,13 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
 
   @Test
   void testFailure_notInTransaction() {
-    assertThat(
-            assertThrows(
-                IllegalStateException.class,
-                () ->
-                    DatabaseMigrationStateSchedule.set(
-                        DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP.toValueMap())))
-        .hasMessageThat()
-        .isEqualTo("Not in a transaction");
+    IllegalStateException thrown =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                DatabaseMigrationStateSchedule.set(
+                    DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP.toValueMap()));
+    assertThat(thrown).hasMessageThat().isEqualTo("Not in a transaction");
   }
 
   @Test
@@ -188,10 +188,11 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
   private void runInvalidTransition(MigrationState from, MigrationState to) {
     ImmutableSortedMap<DateTime, MigrationState> transitions =
         createMapEndingWithTransition(from, to);
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () -> jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(transitions))))
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(transitions)));
+    assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
             String.format("validStateTransitions map cannot transition from %s to %s.", from, to));

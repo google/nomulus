@@ -139,14 +139,15 @@ public class SetDatabaseMigrationStateCommandTest
 
   @TestOfyAndSql
   void testFailure_invalidTransition() {
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    runCommandForced(
-                        String.format(
-                            "--migration_schedule=%s=DATASTORE_ONLY,%s=DATASTORE_PRIMARY_READ_ONLY",
-                            START_OF_TIME, START_OF_TIME.plusHours(1)))))
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    String.format(
+                        "--migration_schedule=%s=DATASTORE_ONLY,%s=DATASTORE_PRIMARY_READ_ONLY",
+                        START_OF_TIME, START_OF_TIME.plusHours(1))));
+    assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
             "validStateTransitions map cannot transition from DATASTORE_ONLY "
@@ -158,18 +159,16 @@ public class SetDatabaseMigrationStateCommandTest
     // The map we pass in is valid by itself, but we can't go from DATASTORE_ONLY now to
     // DATASTORE_PRIMARY_READ_ONLY now
     DateTime now = fakeClock.nowUtc();
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    runCommandForced(
-                        String.format(
-                            "--migration_schedule=%s=DATASTORE_ONLY,%s=DATASTORE_PRIMARY,"
-                                + "%s=DATASTORE_PRIMARY_NO_ASYNC,%s=DATASTORE_PRIMARY_READ_ONLY",
-                            START_OF_TIME,
-                            now.minusHours(3),
-                            now.minusHours(2),
-                            now.minusHours(1)))))
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    String.format(
+                        "--migration_schedule=%s=DATASTORE_ONLY,%s=DATASTORE_PRIMARY,"
+                            + "%s=DATASTORE_PRIMARY_NO_ASYNC,%s=DATASTORE_PRIMARY_READ_ONLY",
+                        START_OF_TIME, now.minusHours(3), now.minusHours(2), now.minusHours(1))));
+    assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
             "Cannot transition from current state-as-of-now DATASTORE_ONLY "

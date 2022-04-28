@@ -225,7 +225,9 @@ public final class OteAccountBuilderTest {
 
     OteAccountBuilder oteSetupHelper = OteAccountBuilder.forRegistrarId("myclientid");
 
-    assertThat(assertThrows(IllegalStateException.class, () -> oteSetupHelper.buildAndPersist()))
+    IllegalStateException thrown =
+        assertThrows(IllegalStateException.class, () -> oteSetupHelper.buildAndPersist());
+    assertThat(thrown)
         .hasMessageThat()
         .contains("Found existing object(s) conflicting with OT&E objects");
   }
@@ -236,7 +238,9 @@ public final class OteAccountBuilderTest {
 
     OteAccountBuilder oteSetupHelper = OteAccountBuilder.forRegistrarId("myclientid");
 
-    assertThat(assertThrows(IllegalStateException.class, () -> oteSetupHelper.buildAndPersist()))
+    IllegalStateException thrown =
+        assertThrows(IllegalStateException.class, () -> oteSetupHelper.buildAndPersist());
+    assertThat(thrown)
         .hasMessageThat()
         .contains("Found existing object(s) conflicting with OT&E objects");
   }

@@ -403,9 +403,9 @@ class AuthenticatedRegistrarAccessorTest {
     AuthenticatedRegistrarAccessor registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());
 
-    assertThat(assertThrows(RegistrarAccessDeniedException.class, registrarAccessor::guessClientId))
-        .hasMessageThat()
-        .isEqualTo("TestUserId isn't associated with any registrar");
+    RegistrarAccessDeniedException thrown =
+        assertThrows(RegistrarAccessDeniedException.class, registrarAccessor::guessClientId);
+    assertThat(thrown).hasMessageThat().isEqualTo("TestUserId isn't associated with any registrar");
   }
 
   @TestOfyAndSql

@@ -60,7 +60,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -317,12 +316,13 @@ public final class DomainLockUtilsTest {
     domainLockUtils.saveNewRegistryUnlockRequest(
         DOMAIN_NAME, "TheRegistrar", false, Optional.empty());
 
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    domainLockUtils.saveNewRegistryUnlockRequest(
-                        DOMAIN_NAME, "TheRegistrar", false, Optional.empty())))
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                domainLockUtils.saveNewRegistryUnlockRequest(
+                    DOMAIN_NAME, "TheRegistrar", false, Optional.empty()));
+    assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("A pending unlock action already exists for example.tld");
   }
@@ -332,37 +332,38 @@ public final class DomainLockUtilsTest {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true);
     domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true);
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    domainLockUtils.saveNewRegistryUnlockRequest(
-                        DOMAIN_NAME, "TheRegistrar", false, Optional.empty())))
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                domainLockUtils.saveNewRegistryUnlockRequest(
+                    DOMAIN_NAME, "TheRegistrar", false, Optional.empty()));
+    assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Non-admin user cannot unlock admin-locked domain example.tld");
   }
 
   @TestOfyAndSql
   void testFailure_createLock_unknownDomain() {
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    domainLockUtils.saveNewRegistryLockRequest(
-                        "asdf.tld", "TheRegistrar", POC_ID, false)))
-        .hasMessageThat()
-        .isEqualTo("Domain doesn't exist");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                domainLockUtils.saveNewRegistryLockRequest(
+                    "asdf.tld", "TheRegistrar", POC_ID, false));
+    assertThat(thrown).hasMessageThat().isEqualTo("Domain doesn't exist");
   }
 
   @TestOfyAndSql
   void testFailure_createLock_alreadyPendingLock() {
     domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    domainLockUtils.saveNewRegistryLockRequest(
-                        DOMAIN_NAME, "TheRegistrar", POC_ID, false)))
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                domainLockUtils.saveNewRegistryLockRequest(
+                    DOMAIN_NAME, "TheRegistrar", POC_ID, false));
+    assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("A pending or completed lock action already exists for example.tld");
   }
@@ -370,26 +371,24 @@ public final class DomainLockUtilsTest {
   @TestOfyAndSql
   void testFailure_createLock_alreadyLocked() {
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    domainLockUtils.saveNewRegistryLockRequest(
-                        DOMAIN_NAME, "TheRegistrar", POC_ID, false)))
-        .hasMessageThat()
-        .isEqualTo("Domain example.tld is already locked");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                domainLockUtils.saveNewRegistryLockRequest(
+                    DOMAIN_NAME, "TheRegistrar", POC_ID, false));
+    assertThat(thrown).hasMessageThat().isEqualTo("Domain example.tld is already locked");
   }
 
   @TestOfyAndSql
   void testFailure_createUnlock_alreadyUnlocked() {
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    domainLockUtils.saveNewRegistryUnlockRequest(
-                        DOMAIN_NAME, "TheRegistrar", false, Optional.empty())))
-        .hasMessageThat()
-        .isEqualTo("Domain example.tld is already unlocked");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                domainLockUtils.saveNewRegistryUnlockRequest(
+                    DOMAIN_NAME, "TheRegistrar", false, Optional.empty()));
+    assertThat(thrown).hasMessageThat().isEqualTo("Domain example.tld is already unlocked");
   }
 
   @TestOfyAndSql
@@ -398,12 +397,11 @@ public final class DomainLockUtilsTest {
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false);
     domain = loadByEntity(domain);
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () -> domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false)))
-        .hasMessageThat()
-        .isEqualTo("Domain example.tld is already locked");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false));
+    assertThat(thrown).hasMessageThat().isEqualTo("Domain example.tld is already locked");
     assertNoDomainChanges();
   }
 
@@ -412,12 +410,11 @@ public final class DomainLockUtilsTest {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     clock.advanceBy(standardDays(1));
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () -> domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true)))
-        .hasMessageThat()
-        .isEqualTo("The pending lock has expired; please try again");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true));
+    assertThat(thrown).hasMessageThat().isEqualTo("The pending lock has expired; please try again");
     assertNoDomainChanges();
   }
 
@@ -425,12 +422,11 @@ public final class DomainLockUtilsTest {
   void testFailure_applyLock_nonAdmin_applyAdminLock() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true);
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () -> domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false)))
-        .hasMessageThat()
-        .isEqualTo("Non-admin user cannot complete admin lock");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false));
+    assertThat(thrown).hasMessageThat().isEqualTo("Non-admin user cannot complete admin lock");
     assertNoDomainChanges();
   }
 
@@ -444,12 +440,11 @@ public final class DomainLockUtilsTest {
             DOMAIN_NAME, "TheRegistrar", false, Optional.empty());
     domainLockUtils.verifyAndApplyUnlock(unlock.getVerificationCode(), false);
 
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () -> domainLockUtils.verifyAndApplyUnlock(unlock.getVerificationCode(), false)))
-        .hasMessageThat()
-        .isEqualTo("Domain example.tld is already unlocked");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> domainLockUtils.verifyAndApplyUnlock(unlock.getVerificationCode(), false));
+    assertThat(thrown).hasMessageThat().isEqualTo("Domain example.tld is already unlocked");
     assertNoDomainChanges();
   }
 
@@ -461,12 +456,11 @@ public final class DomainLockUtilsTest {
     // reload to pick up modification times, etc
     lock = getRegistryLockByVerificationCode(verificationCode).get();
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () -> domainLockUtils.verifyAndApplyLock(verificationCode, false)))
-        .hasMessageThat()
-        .isEqualTo("Domain example.tld is already locked");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> domainLockUtils.verifyAndApplyLock(verificationCode, false));
+    assertThat(thrown).hasMessageThat().isEqualTo("Domain example.tld is already locked");
 
     // Failure during Datastore portion shouldn't affect the SQL object
     RegistryLock afterAction = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
@@ -517,10 +511,11 @@ public final class DomainLockUtilsTest {
                 .setRegistrarPocId("someone@example.com")
                 .setVerificationCode("hi")
                 .build());
-    assertThat(
-            Assert.assertThrows(
-                IllegalArgumentException.class,
-                () -> domainLockUtils.enqueueDomainRelock(lockWithoutDuration)))
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> domainLockUtils.enqueueDomainRelock(lockWithoutDuration));
+    assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
             String.format(

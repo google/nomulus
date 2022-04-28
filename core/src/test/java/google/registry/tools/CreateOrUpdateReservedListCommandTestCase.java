@@ -61,41 +61,38 @@ abstract class CreateOrUpdateReservedListCommandTestCase<
 
   @Test
   void testFailure_fileDoesntExist() {
-    assertThat(
-            assertThrows(
-                ParameterException.class,
-                () ->
-                    runCommandForced(
-                        "--name=xn--q9jyb4c_common-reserved",
-                        "--input=" + reservedTermsPath + "-nonexistent")))
-        .hasMessageThat()
-        .contains("-i not found");
+    ParameterException thrown =
+        assertThrows(
+            ParameterException.class,
+            () ->
+                runCommandForced(
+                    "--name=xn--q9jyb4c_common-reserved",
+                    "--input=" + reservedTermsPath + "-nonexistent"));
+    assertThat(thrown).hasMessageThat().contains("-i not found");
   }
 
   @Test
   void testFailure_fileDoesntParse() {
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    runCommandForced(
-                        "--name=xn--q9jyb4c_common-reserved",
-                        "--input=" + invalidReservedTermsPath)))
-        .hasMessageThat()
-        .contains("No enum constant");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--name=xn--q9jyb4c_common-reserved", "--input=" + invalidReservedTermsPath));
+    assertThat(thrown).hasMessageThat().contains("No enum constant");
   }
 
   @Test
   void testFailure_invalidLabel_includesFullDomainName() throws Exception {
     Files.asCharSink(new File(invalidReservedTermsPath), UTF_8)
         .write("example.tld,FULLY_BLOCKED\n\n");
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    runCommandForced(
-                        "--name=xn--q9jyb4c_common-reserved",
-                        "--input=" + invalidReservedTermsPath)))
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--name=xn--q9jyb4c_common-reserved", "--input=" + invalidReservedTermsPath));
+    assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Label example.tld must not be a multi-level domain name");
   }

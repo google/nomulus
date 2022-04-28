@@ -226,25 +226,22 @@ final class RegistryLockGetActionTest {
   @Test
   void testFailure_invalidMethod() {
     action.method = Method.POST;
-    assertThat(assertThrows(IllegalArgumentException.class, action::run))
-        .hasMessageThat()
-        .isEqualTo("Only GET requests allowed");
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
+    assertThat(thrown).hasMessageThat().isEqualTo("Only GET requests allowed");
   }
 
   @Test
   void testFailure_noAuthInfo() {
     action.authResult = AuthResult.NOT_AUTHENTICATED;
-    assertThat(assertThrows(IllegalArgumentException.class, action::run))
-        .hasMessageThat()
-        .isEqualTo("User auth info must be present");
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
+    assertThat(thrown).hasMessageThat().isEqualTo("User auth info must be present");
   }
 
   @Test
   void testFailure_noClientId() {
     action.paramClientId = Optional.empty();
-    assertThat(assertThrows(IllegalArgumentException.class, action::run))
-        .hasMessageThat()
-        .isEqualTo("clientId must be present");
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
+    assertThat(thrown).hasMessageThat().isEqualTo("clientId must be present");
   }
 
   @Test
