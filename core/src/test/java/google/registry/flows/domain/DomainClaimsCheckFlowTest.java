@@ -21,16 +21,20 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.domain.DomainClaimsCheckFlow.DomainClaimsCheckNotAllowedWithAllocationTokens;
 import google.registry.flows.domain.DomainFlowUtils.BadCommandForRegistryPhaseException;
 import google.registry.flows.domain.DomainFlowUtils.ClaimsPeriodEndedException;
+import google.registry.flows.domain.DomainFlowUtils.MissingBillingAccountMapException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
 import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
@@ -40,6 +44,7 @@ import google.registry.model.tld.Registry.TldState;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
+import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -130,6 +135,24 @@ public class DomainClaimsCheckFlowTest
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
     EppException thrown = assertThrows(NotAuthorizedForTldException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @TestOfyAndSql
+  void testFailure_missingBillingAccount() {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setCurrency(JPY)
+            .setCreateBillingCost(Money.ofMajor(JPY, 800))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+            .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
+            .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
+            .setRestoreBillingCost(Money.ofMajor(JPY, 800))
+            .build());
+    EppException thrown = assertThrows(MissingBillingAccountMapException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 

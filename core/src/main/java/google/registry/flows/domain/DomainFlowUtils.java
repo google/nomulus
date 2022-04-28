@@ -288,12 +288,18 @@ public class DomainFlowUtils {
 
   /** Check if the registrar running the flow has access to the TLD in question. */
   public static void checkAllowedAccessToTld(String registrarId, String tld) throws EppException {
-    Registrar registrar = Registrar.loadByRegistrarIdCached(registrarId).get();
-    CurrencyUnit currency = Registry.get(tld).getCurrency();
-    if (!registrar.getAllowedTlds().contains(tld)) {
+    if (!Registrar.loadByRegistrarIdCached(registrarId).get().getAllowedTlds().contains(tld)) {
       throw new DomainFlowUtils.NotAuthorizedForTldException(tld);
     }
-    if (!registrar.getBillingAccountMap().containsKey(currency)) {
+  }
+
+  /** Check if the registrar has the correct billing account map configured. */
+  public static void checkHasBillingAccount(String registrarId, String tld) throws EppException {
+    CurrencyUnit currency = Registry.get(tld).getCurrency();
+    if (!Registrar.loadByRegistrarIdCached(registrarId)
+        .get()
+        .getBillingAccountMap()
+        .containsKey(currency)) {
       throw new DomainFlowUtils.MissingBillingAccountMapException(currency);
     }
   }

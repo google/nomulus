@@ -35,6 +35,7 @@ import static google.registry.testing.TestDataHelper.updateSubstitutions;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.EUR;
+import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -55,6 +56,7 @@ import google.registry.flows.domain.DomainFlowUtils.CurrencyValueScaleException;
 import google.registry.flows.domain.DomainFlowUtils.ExceedsMaxRegistrationYearsException;
 import google.registry.flows.domain.DomainFlowUtils.FeesMismatchException;
 import google.registry.flows.domain.DomainFlowUtils.FeesRequiredForPremiumNameException;
+import google.registry.flows.domain.DomainFlowUtils.MissingBillingAccountMapException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
 import google.registry.flows.domain.DomainFlowUtils.RegistrarMustBeActiveForThisOperationException;
 import google.registry.flows.domain.DomainFlowUtils.UnsupportedFeeAttributeException;
@@ -761,6 +763,25 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
     setEppInput("domain_renew_fee_bad_scale.xml", FEE_12_MAP);
     persistDomain();
     EppException thrown = assertThrows(CurrencyValueScaleException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @TestOfyAndSql
+  void testFailure_missingBillingAccountMap() throws Exception {
+    persistDomain();
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setCurrency(JPY)
+            .setCreateBillingCost(Money.ofMajor(JPY, 800))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+            .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
+            .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
+            .setRestoreBillingCost(Money.ofMajor(JPY, 800))
+            .build());
+    EppException thrown = assertThrows(MissingBillingAccountMapException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 

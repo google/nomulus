@@ -22,6 +22,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
+import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccount;
 import static google.registry.flows.domain.DomainFlowUtils.newAutorenewBillingEvent;
 import static google.registry.flows.domain.DomainFlowUtils.newAutorenewPollMessage;
 import static google.registry.flows.domain.DomainFlowUtils.updateAutorenewRecurrenceEndTime;
@@ -106,6 +107,7 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.ExceedsMaxRegistrationYearsException}
  * @error {@link DomainFlowUtils.FeesMismatchException}
  * @error {@link DomainFlowUtils.FeesRequiredForPremiumNameException}
+ * @error {@link DomainFlowUtils.MissingBillingAccountMapException}
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
  * @error {@link DomainFlowUtils.RegistrarMustBeActiveForThisOperationException}
  * @error {@link DomainFlowUtils.UnsupportedFeeAttributeException}
@@ -263,6 +265,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
     if (!isSuperuser) {
       verifyResourceOwnership(registrarId, existingDomain);
       checkAllowedAccessToTld(registrarId, existingDomain.getTld());
+      checkHasBillingAccount(registrarId, existingDomain.getTld());
     }
     verifyUnitIsYears(command.getPeriod());
     // If the date they specify doesn't match the expiration, fail. (This is an idempotence check).

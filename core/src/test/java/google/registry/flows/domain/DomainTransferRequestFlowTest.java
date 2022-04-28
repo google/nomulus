@@ -44,6 +44,7 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.HostResourceSubject.assertAboutHosts;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -70,6 +71,7 @@ import google.registry.flows.domain.DomainFlowUtils.CurrencyUnitMismatchExceptio
 import google.registry.flows.domain.DomainFlowUtils.CurrencyValueScaleException;
 import google.registry.flows.domain.DomainFlowUtils.FeesMismatchException;
 import google.registry.flows.domain.DomainFlowUtils.FeesRequiredForPremiumNameException;
+import google.registry.flows.domain.DomainFlowUtils.MissingBillingAccountMapException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
 import google.registry.flows.domain.DomainFlowUtils.PremiumNameBlockedException;
 import google.registry.flows.domain.DomainFlowUtils.RegistrarMustBeActiveForThisOperationException;
@@ -1059,6 +1061,30 @@ class DomainTransferRequestFlowTest
     EppException thrown =
         assertThrows(
             NotAuthorizedForTldException.class,
+            () ->
+                doSuccessfulTest(
+                    "domain_transfer_request.xml", "domain_transfer_request_response.xml"));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @TestOfyAndSql
+  void testFailure_missingBillingAccount() {
+    setupDomain("example", "tld");
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setCurrency(JPY)
+            .setCreateBillingCost(Money.ofMajor(JPY, 800))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+            .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
+            .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
+            .setRestoreBillingCost(Money.ofMajor(JPY, 800))
+            .build());
+    EppException thrown =
+        assertThrows(
+            MissingBillingAccountMapException.class,
             () ->
                 doSuccessfulTest(
                     "domain_transfer_request.xml", "domain_transfer_request_response.xml"));

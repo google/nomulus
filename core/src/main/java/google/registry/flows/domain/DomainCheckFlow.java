@@ -20,6 +20,7 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
+import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccount;
 import static google.registry.flows.domain.DomainFlowUtils.getReservationTypes;
 import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
 import static google.registry.flows.domain.DomainFlowUtils.isAnchorTenant;
@@ -100,6 +101,7 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.InvalidIdnDomainLabelException}
  * @error {@link DomainFlowUtils.InvalidPunycodeException}
  * @error {@link DomainFlowUtils.LeadingDashException}
+ * @error {@link DomainFlowUtils.MissingBillingAccountMapException}
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
  * @error {@link DomainFlowUtils.RestoresAreAlwaysForOneYearException}
  * @error {@link DomainFlowUtils.TldDoesNotExistException}
@@ -153,6 +155,7 @@ public final class DomainCheckFlow implements Flow {
       boolean tldFirstTimeSeen = seenTlds.add(tld);
       if (tldFirstTimeSeen && !isSuperuser) {
         checkAllowedAccessToTld(registrarId, tld);
+        checkHasBillingAccount(registrarId, tld);
         verifyNotInPredelegation(Registry.get(tld), now);
       }
     }

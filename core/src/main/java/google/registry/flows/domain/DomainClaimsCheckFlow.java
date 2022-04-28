@@ -17,6 +17,7 @@ package google.registry.flows.domain;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
+import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccount;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainNameWithIdnTables;
 import static google.registry.flows.domain.DomainFlowUtils.verifyClaimsPeriodNotEnded;
@@ -60,6 +61,7 @@ import org.joda.time.DateTime;
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link DomainFlowUtils.BadCommandForRegistryPhaseException}
  * @error {@link DomainFlowUtils.ClaimsPeriodEndedException}
+ * @error {@link DomainFlowUtils.MissingBillingAccountMapException}
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
  * @error {@link DomainFlowUtils.TldDoesNotExistException}
  * @error {@link DomainClaimsCheckNotAllowedWithAllocationTokens}
@@ -99,6 +101,7 @@ public final class DomainClaimsCheckFlow implements Flow {
       if (seenTlds.add(tld)) {
         if (!isSuperuser) {
           checkAllowedAccessToTld(registrarId, tld);
+          checkHasBillingAccount(registrarId, tld);
           Registry registry = Registry.get(tld);
           DateTime now = clock.nowUtc();
           verifyNotInPredelegation(registry, now);

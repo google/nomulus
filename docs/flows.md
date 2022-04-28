@@ -269,6 +269,7 @@ information.
     *   Domain name must have exactly one part above the TLD.
     *   Domain name must not equal an existing multi-part TLD.
 *   2201
+    *   Registrar is missing the billing account map for this currency type.
     *   Registrar is not authorized to access this TLD.
 *   2306
     *   Too many resource checks requested in one check command.
@@ -304,6 +305,7 @@ An EPP flow that checks whether domain labels are trademarked.
 *   2004
     *   Domain name is under tld which doesn't exist.
 *   2201
+    *   Registrar is missing the billing account map for this currency type.
     *   Registrar is not authorized to access this TLD.
 *   2304
     *   The claims period for this TLD has ended.
@@ -502,6 +504,7 @@ comes in at the exact millisecond that the domain would have expired.
         server policy.
 *   2201
     *   The specified resource belongs to another client.
+    *   Registrar is missing the billing account map for this currency type.
     *   Registrar is not authorized to access this TLD.
     *   Registrar must be active in order to perform this operation.
 *   2303
@@ -562,6 +565,7 @@ regardless of what the original expiration time was.
     *   Specified extension is not implemented.
 *   2201
     *   The specified resource belongs to another client.
+    *   Registrar is missing the billing account map for this currency type.
     *   Registrar is not authorized to access this TLD.
     *   Registrar must be active in order to perform this operation.
 *   2303
@@ -737,6 +741,7 @@ new ones with the correct approval time).
         server policy.
 *   2201
     *   Authorization info is required to request a transfer.
+    *   Registrar is missing the billing account map for this currency type.
     *   Registrar is not authorized to access this TLD.
     *   Registrar must be active in order to perform this operation.
 *   2202

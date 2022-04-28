@@ -20,6 +20,7 @@ import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist;
 import static google.registry.flows.domain.DomainFlowUtils.COLLISION_MESSAGE;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
+import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccount;
 import static google.registry.flows.domain.DomainFlowUtils.cloneAndLinkReferences;
 import static google.registry.flows.domain.DomainFlowUtils.createFeeCreateResponse;
 import static google.registry.flows.domain.DomainFlowUtils.getReservationTypes;
@@ -266,6 +267,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
     // registering premium domains.
     if (!isSuperuser) {
       checkAllowedAccessToTld(registrarId, registry.getTldStr());
+      checkHasBillingAccount(registrarId, registry.getTldStr());
       boolean isValidReservedCreate = isValidReservedCreate(domainName, allocationToken);
       verifyIsGaOrIsSpecialCase(tldState, isAnchorTenant, isValidReservedCreate, hasSignedMarks);
       if (launchCreate.isPresent()) {
