@@ -20,6 +20,7 @@ import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
+import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccount;
 import static google.registry.flows.domain.DomainFlowUtils.newAutorenewBillingEvent;
 import static google.registry.flows.domain.DomainFlowUtils.newAutorenewPollMessage;
 import static google.registry.flows.domain.DomainFlowUtils.validateFeeChallenge;
@@ -104,6 +105,7 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.DomainReservedException}
  * @error {@link DomainFlowUtils.FeesMismatchException}
  * @error {@link DomainFlowUtils.FeesRequiredForPremiumNameException}
+ * @error {@link DomainFlowUtils.MissingBillingAccountMapException}
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
  * @error {@link DomainFlowUtils.PremiumNameBlockedException}
  * @error {@link DomainFlowUtils.RegistrarMustBeActiveForThisOperationException}
@@ -216,6 +218,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
       verifyNotReserved(InternetDomainName.from(targetId), false);
       verifyPremiumNameIsNotBlocked(targetId, now, registrarId);
       checkAllowedAccessToTld(registrarId, existingDomain.getTld());
+      checkHasBillingAccount(registrarId, existingDomain.getTld());
     }
     // No other changes can be specified on a restore request.
     if (!command.noChangesPresent()) {

@@ -22,6 +22,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyAuthInfoPresentForResourceTransfer;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
+import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccount;
 import static google.registry.flows.domain.DomainFlowUtils.updateAutorenewRecurrenceEndTime;
 import static google.registry.flows.domain.DomainFlowUtils.validateFeeChallenge;
 import static google.registry.flows.domain.DomainFlowUtils.verifyPremiumNameIsNotBlocked;
@@ -111,6 +112,7 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.CurrencyValueScaleException}
  * @error {@link DomainFlowUtils.FeesMismatchException}
  * @error {@link DomainFlowUtils.FeesRequiredForPremiumNameException}
+ * @error {@link DomainFlowUtils.MissingBillingAccountMapException}
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
  * @error {@link DomainFlowUtils.PremiumNameBlockedException}
  * @error {@link DomainFlowUtils.RegistrarMustBeActiveForThisOperationException}
@@ -273,6 +275,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     verifyTransferPeriod(period, superuserExtension);
     if (!isSuperuser) {
       checkAllowedAccessToTld(gainingClientId, existingDomain.getTld());
+      checkHasBillingAccount(gainingClientId, existingDomain.getTld());
       verifyPremiumNameIsNotBlocked(targetId, now, gainingClientId);
     }
   }

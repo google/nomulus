@@ -293,6 +293,17 @@ public class DomainFlowUtils {
     }
   }
 
+  /** Check if the registrar has the correct billing account map configured. */
+  public static void checkHasBillingAccount(String registrarId, String tld) throws EppException {
+    CurrencyUnit currency = Registry.get(tld).getCurrency();
+    if (!Registrar.loadByRegistrarIdCached(registrarId)
+        .get()
+        .getBillingAccountMap()
+        .containsKey(currency)) {
+      throw new DomainFlowUtils.MissingBillingAccountMapException(currency);
+    }
+  }
+
   /** Check that the DS data that will be set on a domain is valid. */
   static void validateDsData(Set<DelegationSignerData> dsData) throws EppException {
     if (dsData != null) {
@@ -1498,6 +1509,13 @@ public class DomainFlowUtils {
   public static class NotAuthorizedForTldException extends AuthorizationErrorException {
     public NotAuthorizedForTldException(String tld) {
       super("Registrar is not authorized to access the TLD " + tld);
+    }
+  }
+
+  /** Registrar is missing the billing account map for this currency type. */
+  public static class MissingBillingAccountMapException extends AuthorizationErrorException {
+    public MissingBillingAccountMapException(CurrencyUnit currency) {
+      super("Registrar is not fully onboarded for TLDs that bill in " + currency);
     }
   }
 
