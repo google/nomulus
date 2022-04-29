@@ -70,6 +70,12 @@
       "moduleLicense": "BSD 3-clause New License"
     },
     {
+      "moduleLicense": "BSD-3-Clause"
+    },
+    {
+      "moduleLicense": "BSD-3-Clause;link=\"https://raw.githubusercontent.com/dnsjava/dnsjava/master/LICENSE\""
+    },
+    {
       "moduleLicense": "3-Clause BSD License"
     },
     {
@@ -110,6 +116,9 @@
     },
     {
       "moduleLicense": "The PostgreSQL License"
+    },
+    {
+      "moduleLicense": "CC0"
     },
     {
       "moduleLicense": "CC0 1.0 Universal License"
@@ -264,6 +273,13 @@
       // longer parses correctly, even though it's still Apache 2.0.
       "moduleLicense": null,
       "moduleName": "com.fasterxml.jackson:jackson-bom"
+    },
+    {
+      // "Apache License, Version 2.0". The plugin is able to parse up to
+      // 2.0.33.Final but not this verson.
+      "moduleLicense": null,
+      "moduleVersion": "2.0.46.Final",
+      "moduleName": "io.netty:netty-tcnative-classes"
     },
     {
       // Actually Eclipse Public License v2.0

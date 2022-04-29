@@ -94,7 +94,7 @@ class SchemaTest {
 
     // flyway.migrate() returns the number of newly pushed scripts. This is a variable
     // number as our schema evolves.
-    assertThat(flyway.migrate()).isGreaterThan(0);
+    assertThat(flyway.migrate().migrations).isNotEmpty();
     flyway.validate();
 
     ExecResult execResult =
