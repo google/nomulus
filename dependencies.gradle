@@ -73,7 +73,7 @@ ext {
       // upgraded to org.ogce.xpp3
       'xpp3:xpp3:1.1.4c',
 
-      // Dependencies groups with inconsistent version resolutions start here
+      // Dependency groups with inconsistent version resolutions start here
       'io.netty:netty-buffer:4.1.59.Final',
       'io.netty:netty-codec-http:4.1.59.Final',
       'io.netty:netty-codec:4.1.59.Final',
