@@ -183,6 +183,16 @@
   </cron>
 
   <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/deleteProberData&runInEmpty]]></url>
+    <description>
+      This job clears out data from probers and runs once a week.
+    </description>
+    <schedule>every monday 14:00</schedule>
+    <timezone>UTC</timezone>
+    <target>backend</target>
+  </cron>
+
+  <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/exportReservedTerms&forEachRealTld]]></url>
     <description>
       Reserved terms export to Google Drive job for creating once-daily exports.
