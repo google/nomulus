@@ -53,7 +53,7 @@ shift 4
 
 maven_gcs_prefix="gcs://domain-registry-maven-repository"
 nom_build_dir="$(dirname $0)/.."
-${nom_build_dir}/nom_build clean :core:"${uberjar_task}" \
+${nom_build_dir}/nom_build :core:"${uberjar_task}" \
     --mavenUrl="${maven_gcs_prefix}"/maven \
     --pluginsUrl="${maven_gcs_prefix}"/plugins
 

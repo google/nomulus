@@ -23,16 +23,27 @@ steps:
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   # Set home for Gradle caches. Must be consistent with last step below
   # and ./build_nomulus_for_env.sh
-  env: [ 'GRADLE_USER_HOME=./cloudbuild-caches' ]
+  env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches' ]
   args: ['./gradlew',
          'test',
          '-PskipDockerIncompatibleTests=true',
          '-PmavenUrl=gcs://domain-registry-maven-repository/maven',
          '-PpluginsUrl=gcs://domain-registry-maven-repository/plugins'
         ]
-# Build the tool binary and image.
+# Build and package the deployment files for each environment, and the tool
+# binary and image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['release/build_nomulus_for_env.sh', 'tool', 'output']
+  # Set home for Gradle caches. Must be consistent with last step below
+  # and ./build_nomulus_for_env.sh
+  env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches' ]
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    for _env in tool alpha crash sandbox  production
+    do
+      release/build_nomulus_for_env.sh $${_env} output
+    done
 # Save TAG_NAME in ./output/tag_name, to be uploaded later. This file is purely
 # informational. It makes it easier to tell the tag of the current 'live' release.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
@@ -61,24 +72,12 @@ steps:
     sed -i s/'$${_IMAGE}'/nomulus-tool/g release/cloudbuild-tag.yaml
     sed -i s/':$${TAG_NAME}'/@$digest/g release/cloudbuild-tag.yaml
     sed -i s/'nomulus-tool:latest'/nomulus-tool@$digest/g release/cloudbuild-deploy-*.yaml
-# Build and package the deployment files for alpha.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['release/build_nomulus_for_env.sh', 'alpha', 'output']
-# Build and package the deployment files for crash.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['release/build_nomulus_for_env.sh', 'crash', 'output']
-# Build and package the deployment files for sandbox.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['release/build_nomulus_for_env.sh', 'sandbox', 'output']
-# Build and package the deployment files for production.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['release/build_nomulus_for_env.sh', 'production', 'output']
 # Build and stage Dataflow Flex templates.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
   # Set home for Gradle caches. Must be consistent with previous steps above
   # and ./build_nomulus_for_env.sh
-  env: [ 'GRADLE_USER_HOME=./cloudbuild-caches' ]
+  env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches' ]
   args:
   - -c
   - |
@@ -108,7 +107,7 @@ steps:
   entrypoint: /bin/bash
   # Set home for Gradle caches. Must be consistent with previous steps above
   # and ./build_nomulus_for_env.sh
-  env: [ 'GRADLE_USER_HOME=./cloudbuild-caches' ]
+  env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches' ]
   args:
   - -c
   - |
