@@ -16,9 +16,12 @@ package google.registry.whois;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InetAddresses;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
@@ -44,16 +47,29 @@ final class NameserverWhoisResponse extends WhoisResponseImpl {
 
   @Override
   public WhoisResponseResults getResponse(boolean preferUnicode, String disclaimer) {
+    // If we have subordinate hosts, load their registrar ids in a single transaction up-front.
+    ImmutableList<HostResource> subordinateHosts =
+        hosts.stream().filter(HostResource::isSubordinate).collect(toImmutableList());
+    ImmutableMap<HostResource, String> hostRegistrars =
+        subordinateHosts.isEmpty()
+            ? ImmutableMap.of()
+            : tm().transact(
+                    () ->
+                        subordinateHosts.stream()
+                            .collect(
+                                toImmutableMap(
+                                    k -> k,
+                                    host ->
+                                        tm().loadByKey(host.getSuperordinateDomain())
+                                            .cloneProjectedAtTime(getTimestamp())
+                                            .getCurrentSponsorRegistrarId())));
+
     BasicEmitter emitter = new BasicEmitter();
     for (int i = 0; i < hosts.size(); i++) {
       HostResource host = hosts.get(i);
       String registrarId =
           host.isSubordinate()
-              ? tm().transact(
-                      () ->
-                          tm().loadByKey(host.getSuperordinateDomain())
-                              .cloneProjectedAtTime(getTimestamp())
-                              .getCurrentSponsorRegistrarId())
+              ? hostRegistrars.get(host)
               : host.getPersistedCurrentSponsorRegistrarId();
       Optional<Registrar> registrar = Registrar.loadByRegistrarIdCached(registrarId);
       checkState(registrar.isPresent(), "Could not load registrar %s", registrarId);
