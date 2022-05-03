@@ -17,11 +17,11 @@ package google.registry.whois;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.common.net.InetAddresses;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
@@ -55,14 +55,12 @@ final class NameserverWhoisResponse extends WhoisResponseImpl {
             ? ImmutableMap.of()
             : tm().transact(
                     () ->
-                        subordinateHosts.stream()
-                            .collect(
-                                toImmutableMap(
-                                    k -> k,
-                                    host ->
-                                        tm().loadByKey(host.getSuperordinateDomain())
-                                            .cloneProjectedAtTime(getTimestamp())
-                                            .getCurrentSponsorRegistrarId())));
+                        Maps.toMap(
+                            subordinateHosts.iterator(),
+                            host ->
+                                tm().loadByKey(host.getSuperordinateDomain())
+                                    .cloneProjectedAtTime(getTimestamp())
+                                    .getCurrentSponsorRegistrarId()));
 
     BasicEmitter emitter = new BasicEmitter();
     for (int i = 0; i < hosts.size(); i++) {
