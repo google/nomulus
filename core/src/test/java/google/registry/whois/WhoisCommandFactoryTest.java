@@ -34,7 +34,7 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.TestCacheExtension;
 import google.registry.testing.TestOfyAndSql;
 import java.net.InetAddress;
-import org.joda.time.Duration;
+import java.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -50,7 +50,7 @@ class WhoisCommandFactoryTest {
 
   @RegisterExtension
   final TestCacheExtension testCacheExtension =
-      new TestCacheExtension.Builder().withEppResourceCache(Duration.millis(1000000000)).build();
+      new TestCacheExtension.Builder().withEppResourceCache(Duration.ofSeconds(1000000)).build();
 
   WhoisCommandFactory noncachedFactory = WhoisCommandFactory.createNonCached();
   WhoisCommandFactory cachedFactory = WhoisCommandFactory.createCached();

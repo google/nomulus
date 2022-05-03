@@ -27,10 +27,9 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -45,10 +44,10 @@ import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.util.NonFinalForTesting;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
@@ -57,7 +56,6 @@ import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /** An EPP entity object (i.e. a domain, contact, or host). */
 @MappedSuperclass
@@ -396,7 +394,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
         @Override
         public Map<VKey<? extends EppResource>, EppResource> loadAll(
-            Iterable<? extends VKey<? extends EppResource>> keys) {
+            Set<? extends VKey<? extends EppResource>> keys) {
           return replicaTm().doTransactionless(() -> replicaTm().loadByKeys(keys));
         }
       };
@@ -416,8 +414,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
   private static LoadingCache<VKey<? extends EppResource>, EppResource> createEppResourcesCache(
       Duration expiry) {
-    return CacheBuilder.newBuilder()
-        .expireAfterWrite(java.time.Duration.ofMillis(expiry.getMillis()))
+    return CacheUtils.newCacheBuilder(expiry)
         .maximumSize(getEppResourceMaxCachedEntries())
         .build(CACHE_LOADER);
   }
@@ -439,11 +436,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
       return tm().loadByKeys(keys);
     }
-    try {
-      return cacheEppResources.getAll(keys);
-    } catch (ExecutionException e) {
-      throw new RuntimeException("Error loading cached EppResources", e.getCause());
-    }
+    return ImmutableMap.copyOf(cacheEppResources.getAll(keys));
   }
 
   /**
@@ -456,13 +449,9 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
       return tm().loadByKey(key);
     }
-    try {
-      // Safe to cast because loading a Key<T> returns an entity of type T.
-      @SuppressWarnings("unchecked")
-      T resource = (T) cacheEppResources.get(key);
-      return resource;
-    } catch (ExecutionException e) {
-      throw new RuntimeException("Error loading cached EppResources", e.getCause());
-    }
+    // Safe to cast because loading a Key<T> returns an entity of type T.
+    @SuppressWarnings("unchecked")
+    T resource = (T) cacheEppResources.get(key);
+    return resource;
   }
 }

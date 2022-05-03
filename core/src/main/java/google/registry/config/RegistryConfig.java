@@ -1448,13 +1448,13 @@ public final class RegistryConfig {
    * @see google.registry.model.tld.label.ReservedList
    * @see google.registry.model.tld.label.PremiumList
    */
-  public static Duration getDomainLabelListCacheDuration() {
-    return Duration.standardSeconds(CONFIG_SETTINGS.get().caching.domainLabelCachingSeconds);
+  public static java.time.Duration getDomainLabelListCacheDuration() {
+    return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.domainLabelCachingSeconds);
   }
 
   /** Returns the amount of time a singleton should be cached in persist mode, before expiring. */
-  public static Duration getSingletonCachePersistDuration() {
-    return Duration.standardSeconds(CONFIG_SETTINGS.get().caching.singletonCachePersistSeconds);
+  public static java.time.Duration getSingletonCachePersistDuration() {
+    return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.singletonCachePersistSeconds);
   }
 
   /**
@@ -1476,8 +1476,8 @@ public final class RegistryConfig {
   /**
    * Returns the amount of time an EPP resource or key should be cached in memory before expiring.
    */
-  public static Duration getEppResourceCachingDuration() {
-    return Duration.standardSeconds(CONFIG_SETTINGS.get().caching.eppResourceCachingSeconds);
+  public static java.time.Duration getEppResourceCachingDuration() {
+    return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.eppResourceCachingSeconds);
   }
 
   /** Returns the maximum number of EPP resources and keys to keep in in-memory cache. */

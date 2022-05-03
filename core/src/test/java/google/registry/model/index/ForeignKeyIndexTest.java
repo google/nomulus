@@ -38,7 +38,7 @@ import google.registry.testing.TestCacheExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
-import org.joda.time.Duration;
+import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -48,7 +48,7 @@ class ForeignKeyIndexTest extends EntityTestCase {
 
   @RegisterExtension
   public final TestCacheExtension testCacheExtension =
-      new TestCacheExtension.Builder().withForeignIndexKeyCache(Duration.standardDays(1)).build();
+      new TestCacheExtension.Builder().withForeignIndexKeyCache(Duration.ofDays(1)).build();
 
   @BeforeEach
   void setUp() {

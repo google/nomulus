@@ -26,23 +26,22 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 import static google.registry.util.TypeUtils.instantiate;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimaps;
-import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.config.RegistryConfig;
 import google.registry.model.BackupGroupRoot;
+import google.registry.model.CacheUtils;
 import google.registry.model.EppResource;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.ReportedOn;
@@ -54,14 +53,14 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.util.NonFinalForTesting;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
+import java.util.Set;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Class to map a foreign key to the active instance of {@link EppResource} whose unique id matches
@@ -273,14 +272,14 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
 
         @Override
         public Map<VKey<ForeignKeyIndex<?>>, Optional<ForeignKeyIndex<?>>> loadAll(
-            Iterable<? extends VKey<ForeignKeyIndex<?>>> keys) {
-          if (!keys.iterator().hasNext()) {
+            Set<? extends VKey<ForeignKeyIndex<?>>> keys) {
+          if (keys.isEmpty()) {
             return ImmutableMap.of();
           }
           Class<? extends EppResource> resourceClass =
               RESOURCE_CLASS_TO_FKI_CLASS.inverse().get(keys.iterator().next().getKind());
           ImmutableSet<String> foreignKeys =
-              Streams.stream(keys).map(v -> v.getSqlKey().toString()).collect(toImmutableSet());
+              keys.stream().map(v -> v.getSqlKey().toString()).collect(toImmutableSet());
           ImmutableSet<VKey<ForeignKeyIndex<?>>> typedKeys = ImmutableSet.copyOf(keys);
           ImmutableMap<String, ? extends ForeignKeyIndex<? extends EppResource>> existingFkis =
               loadIndexesFromStore(resourceClass, foreignKeys, false, true);
@@ -312,8 +311,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
 
   private static LoadingCache<VKey<ForeignKeyIndex<?>>, Optional<ForeignKeyIndex<?>>>
       createForeignKeyIndexesCache(Duration expiry) {
-    return CacheBuilder.newBuilder()
-        .expireAfterWrite(java.time.Duration.ofMillis(expiry.getMillis()))
+    return CacheUtils.newCacheBuilder(expiry)
         .maximumSize(getEppResourceMaxCachedEntries())
         .build(CACHE_LOADER);
   }
@@ -346,21 +344,17 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
         foreignKeys.stream()
             .map(fk -> (VKey<ForeignKeyIndex<?>>) VKey.create(fkiClass, fk))
             .collect(toImmutableList());
-    try {
-      // This cast is safe because when we loaded ForeignKeyIndexes above we used type clazz, which
-      // is scoped to E.
-      @SuppressWarnings("unchecked")
-      ImmutableMap<String, ForeignKeyIndex<E>> fkisFromCache =
-          cacheForeignKeyIndexes.getAll(fkiVKeys).entrySet().stream()
-              .filter(entry -> entry.getValue().isPresent())
-              .filter(entry -> now.isBefore(entry.getValue().get().getDeletionTime()))
-              .collect(
-                  toImmutableMap(
-                      entry -> entry.getKey().getSqlKey().toString(),
-                      entry -> (ForeignKeyIndex<E>) entry.getValue().get()));
-      return fkisFromCache;
-    } catch (ExecutionException e) {
-      throw new RuntimeException("Error loading cached ForeignKeyIndexes", e.getCause());
-    }
+    // This cast is safe because when we loaded ForeignKeyIndexes above we used type clazz, which
+    // is scoped to E.
+    @SuppressWarnings("unchecked")
+    ImmutableMap<String, ForeignKeyIndex<E>> fkisFromCache =
+        cacheForeignKeyIndexes.getAll(fkiVKeys).entrySet().stream()
+            .filter(entry -> entry.getValue().isPresent())
+            .filter(entry -> now.isBefore(entry.getValue().get().getDeletionTime()))
+            .collect(
+                toImmutableMap(
+                    entry -> entry.getKey().getSqlKey().toString(),
+                    entry -> (ForeignKeyIndex<E>) entry.getValue().get()));
+    return fkisFromCache;
   }
 }

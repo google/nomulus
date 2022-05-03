@@ -22,7 +22,6 @@ import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.joda.time.Duration.standardDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Stopwatch;
@@ -34,6 +33,7 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestCacheExtension;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -61,9 +61,7 @@ public class PremiumListDaoTest {
   // Set long persist times on caches so they can be tested (cache times default to 0 in tests).
   @RegisterExtension
   public final TestCacheExtension testCacheExtension =
-      new TestCacheExtension.Builder()
-          .withPremiumListsCache(standardDays(1))
-          .build();
+      new TestCacheExtension.Builder().withPremiumListsCache(Duration.ofDays(1)).build();
 
   private static final ImmutableMap<String, BigDecimal> TEST_PRICES =
       ImmutableMap.of(

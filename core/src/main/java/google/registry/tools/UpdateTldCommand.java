@@ -38,7 +38,7 @@ import org.joda.time.DateTimeZone;
 
 /** Command to update a TLD. */
 @Parameters(separators = " =", commandDescription = "Update existing TLD(s)")
-class UpdateTldCommand extends CreateOrUpdateTldCommand {
+public class UpdateTldCommand extends CreateOrUpdateTldCommand {
   @Nullable
   @Parameter(
       names = "--add_reserved_lists",
