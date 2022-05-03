@@ -49,9 +49,11 @@ final class NameserverWhoisResponse extends WhoisResponseImpl {
       HostResource host = hosts.get(i);
       String registrarId =
           host.isSubordinate()
-              ? tm().loadByKey(host.getSuperordinateDomain())
-                  .cloneProjectedAtTime(getTimestamp())
-                  .getCurrentSponsorRegistrarId()
+              ? tm().transact(
+                      () ->
+                          tm().loadByKey(host.getSuperordinateDomain())
+                              .cloneProjectedAtTime(getTimestamp())
+                              .getCurrentSponsorRegistrarId())
               : host.getPersistedCurrentSponsorRegistrarId();
       Optional<Registrar> registrar = Registrar.loadByRegistrarIdCached(registrarId);
       checkState(registrar.isPresent(), "Could not load registrar %s", registrarId);
