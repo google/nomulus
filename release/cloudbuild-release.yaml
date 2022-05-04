@@ -128,6 +128,8 @@ steps:
       --format='get(digest)' --filter='tags = ${TAG_NAME}')
     sed -i s/builder:latest/builder@$builder_digest/g \
       release/cloudbuild-schema-deploy.yaml
+    sed -i s/nomulus-tool:latest/nomulus-tool@$builder_digest/g \
+      release/cloudbuild-schema-deploy.yaml
     sed -i s/schema_deployer:latest/schema_deployer@$schema_deployer_digest/g \
       release/cloudbuild-schema-deploy.yaml
     sed -i s/'$${TAG_NAME}'/${TAG_NAME}/g release/cloudbuild-schema-deploy.yaml
