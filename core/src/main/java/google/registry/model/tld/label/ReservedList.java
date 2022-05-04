@@ -26,14 +26,13 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static org.joda.time.DateTimeZone.UTC;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Splitter;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import google.registry.model.Buildable;
+import google.registry.model.CacheUtils;
 import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.DomainLabelMetrics.MetricsReservedListMatch;
@@ -41,7 +40,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Id;
@@ -224,7 +222,7 @@ public final class ReservedList
    *     ReservedList from the cache or database.
    */
   public static Optional<ReservedList> get(String listName) {
-    return getFromCache(listName, cache);
+    return cache.get(listName);
   }
 
   /**
@@ -270,33 +268,18 @@ public final class ReservedList
     return entries;
   }
 
+  /** Loads and returns the reserved lists with the given names, skipping those that don't exist. */
   private static ImmutableSet<ReservedList> loadReservedLists(
       ImmutableSet<String> reservedListNames) {
-    return reservedListNames.stream()
-        .map(
-            (listName) -> {
-              try {
-                return cache.get(listName);
-              } catch (ExecutionException e) {
-                throw new UncheckedExecutionException(
-                    String.format("Could not load the reserved list '%s' from the cache", listName),
-                    e);
-              }
-            })
+    return cache.getAll(reservedListNames).values().stream()
+        .filter(Optional::isPresent)
+        .map(Optional::get)
         .collect(toImmutableSet());
   }
 
-  private static LoadingCache<String, ReservedList> cache =
-      CacheBuilder.newBuilder()
-          .expireAfterWrite(
-              java.time.Duration.ofMillis(getDomainLabelListCacheDuration().getMillis()))
-          .build(
-              new CacheLoader<String, ReservedList>() {
-                @Override
-                public ReservedList load(String listName) {
-                  return ReservedListDao.getLatestRevision(listName).orElse(null);
-                }
-              });
+  private static final LoadingCache<String, Optional<ReservedList>> cache =
+      CacheUtils.newCacheBuilder(getDomainLabelListCacheDuration())
+          .build(ReservedListDao::getLatestRevision);
 
   /**
    * Gets the {@link ReservationType} of a label in a single ReservedList, or returns an absent
@@ -337,6 +320,7 @@ public final class ReservedList
    * A builder for constructing {@link ReservedList} objects, since they are immutable.
    */
   public static class Builder extends BaseDomainLabelList.Builder<ReservedList, Builder> {
+
     public Builder() {}
 
     private Builder(ReservedList instance) {

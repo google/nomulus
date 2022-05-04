@@ -66,8 +66,8 @@ import google.registry.whois.WhoisMetrics.WhoisMetric;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.time.Duration;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -87,8 +87,8 @@ public class WhoisActionTest {
   @RegisterExtension
   public final TestCacheExtension testCacheExtension =
       new TestCacheExtension.Builder()
-          .withEppResourceCache(Duration.standardDays(1))
-          .withForeignIndexKeyCache(Duration.standardDays(1))
+          .withEppResourceCache(Duration.ofDays(1))
+          .withForeignIndexKeyCache(Duration.ofDays(1))
           .build();
 
   private final FakeResponse response = new FakeResponse();

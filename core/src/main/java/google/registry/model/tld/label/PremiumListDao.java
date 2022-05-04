@@ -22,23 +22,20 @@ import static google.registry.config.RegistryConfig.getStaticPremiumListMaxCache
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.CacheUtils;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.util.NonFinalForTesting;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.Duration;
 
 /**
  * Data access object class for accessing {@link PremiumList} objects from Cloud SQL.
@@ -71,15 +68,8 @@ public class PremiumListDao {
   @VisibleForTesting
   public static LoadingCache<String, Optional<PremiumList>> createPremiumListCache(
       Duration cachePersistDuration) {
-    return CacheBuilder.newBuilder()
-        .expireAfterWrite(java.time.Duration.ofMillis(cachePersistDuration.getMillis()))
-        .build(
-            new CacheLoader<String, Optional<PremiumList>>() {
-              @Override
-              public Optional<PremiumList> load(final String name) {
-                return jpaTm().doTransactionless(() -> getLatestRevisionUncached(name));
-              }
-            });
+    return CacheUtils.newCacheBuilder(cachePersistDuration)
+        .build(PremiumListDao::getLatestRevisionUncached);
   }
 
   /**
@@ -104,16 +94,9 @@ public class PremiumListDao {
   @VisibleForTesting
   static LoadingCache<RevisionIdAndLabel, Optional<BigDecimal>> createPremiumEntryCache(
       Duration cachePersistDuration) {
-    return CacheBuilder.newBuilder()
-        .expireAfterWrite(java.time.Duration.ofMillis(cachePersistDuration.getMillis()))
+    return CacheUtils.newCacheBuilder(cachePersistDuration)
         .maximumSize(getStaticPremiumListMaxCachedEntries())
-        .build(
-            new CacheLoader<RevisionIdAndLabel, Optional<BigDecimal>>() {
-              @Override
-              public Optional<BigDecimal> load(RevisionIdAndLabel revisionIdAndLabel) {
-                return getPriceForLabelUncached(revisionIdAndLabel);
-              }
-            });
+        .build(PremiumListDao::getPriceForLabelUncached);
   }
 
   /**
@@ -123,7 +106,7 @@ public class PremiumListDao {
    * prices, use {@link #getPremiumPrice}.
    */
   public static Optional<PremiumList> getLatestRevision(String premiumListName) {
-    return premiumListCache.getUnchecked(premiumListName);
+    return premiumListCache.get(premiumListName);
   }
 
   /**
@@ -142,15 +125,7 @@ public class PremiumListDao {
     }
     RevisionIdAndLabel revisionIdAndLabel =
         RevisionIdAndLabel.create(loadedList.getRevisionId(), label);
-    try {
-      return premiumEntryCache.get(revisionIdAndLabel).map(loadedList::convertAmountToMoney);
-    } catch (InvalidCacheLoadException | ExecutionException e) {
-      throw new RuntimeException(
-          String.format(
-              "Could not load premium entry %s for list %s",
-              revisionIdAndLabel, loadedList.getName()),
-          e);
-    }
+    return premiumEntryCache.get(revisionIdAndLabel).map(loadedList::convertAmountToMoney);
   }
 
   public static PremiumList save(String name, CurrencyUnit currencyUnit, List<String> inputData) {

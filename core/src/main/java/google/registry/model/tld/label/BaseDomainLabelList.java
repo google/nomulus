@@ -20,22 +20,17 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.tld.Registries.getTlds;
 
-import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multiset;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.tld.Registry;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
@@ -148,16 +143,6 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
   }
 
   protected abstract boolean refersToList(Registry registry, String name);
-
-  protected static <R> Optional<R> getFromCache(String listName, LoadingCache<String, R> cache) {
-    try {
-      return Optional.of(cache.get(listName));
-    } catch (InvalidCacheLoadException e) {
-      return Optional.empty();
-    } catch (ExecutionException e) {
-      throw new UncheckedExecutionException("Could not retrieve list named " + listName, e);
-    }
-  }
 
   /** Base builder for derived classes of {@link BaseDomainLabelList}. */
   public abstract static class Builder<T extends BaseDomainLabelList<?, ?>, B extends Builder<T, ?>>

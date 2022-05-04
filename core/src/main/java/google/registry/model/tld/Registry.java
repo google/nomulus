@@ -29,11 +29,10 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.money.CurrencyUnit.USD;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -50,9 +49,11 @@ import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
+import google.registry.model.CacheUtils;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
@@ -69,7 +70,6 @@ import google.registry.util.Idn;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
@@ -112,6 +112,7 @@ public class Registry extends ImmutableObject
 
   /** Sets the Datastore specific field, tldStr, when the entity is loaded from Cloud SQL */
   @PostLoad
+  @DeleteAfterMigration
   void postLoad() {
     tldStr = tldStrId;
   }
@@ -230,7 +231,7 @@ public class Registry extends ImmutableObject
 
   /** Returns the registry for a given TLD, throwing if none exists. */
   public static Registry get(String tld) {
-    Registry registry = CACHE.getUnchecked(tld).orElse(null);
+    Registry registry = CACHE.get(tld).orElse(null);
     if (registry == null) {
       throw new RegistryNotFoundException(tld);
     }
@@ -239,20 +240,16 @@ public class Registry extends ImmutableObject
 
   /** Returns the registry entities for the given TLD strings, throwing if any don't exist. */
   public static ImmutableSet<Registry> get(Set<String> tlds) {
-    try {
-      ImmutableMap<String, Optional<Registry>> registries = CACHE.getAll(tlds);
-      ImmutableSet<String> missingRegistries =
-          registries.entrySet().stream()
-              .filter(e -> !e.getValue().isPresent())
-              .map(Map.Entry::getKey)
-              .collect(toImmutableSet());
-      if (missingRegistries.isEmpty()) {
-        return registries.values().stream().map(Optional::get).collect(toImmutableSet());
-      } else {
-        throw new RegistryNotFoundException(missingRegistries);
-      }
-    } catch (ExecutionException e) {
-      throw new RuntimeException("Unexpected error retrieving TLDs " + tlds, e);
+    Map<String, Optional<Registry>> registries = CACHE.getAll(tlds);
+    ImmutableSet<String> missingRegistries =
+        registries.entrySet().stream()
+            .filter(e -> !e.getValue().isPresent())
+            .map(Map.Entry::getKey)
+            .collect(toImmutableSet());
+    if (missingRegistries.isEmpty()) {
+      return registries.values().stream().map(Optional::get).collect(toImmutableSet());
+    } else {
+      throw new RegistryNotFoundException(missingRegistries);
     }
   }
 
@@ -269,8 +266,7 @@ public class Registry extends ImmutableObject
 
   /** A cache that loads the {@link Registry} for a given tld. */
   private static final LoadingCache<String, Optional<Registry>> CACHE =
-      CacheBuilder.newBuilder()
-          .expireAfterWrite(getSingletonCacheRefreshDuration())
+      CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
               new CacheLoader<String, Optional<Registry>>() {
                 @Override
@@ -281,7 +277,7 @@ public class Registry extends ImmutableObject
                 }
 
                 @Override
-                public Map<String, Optional<Registry>> loadAll(Iterable<? extends String> tlds) {
+                public Map<String, Optional<Registry>> loadAll(Set<? extends String> tlds) {
                   ImmutableMap<String, VKey<Registry>> keysMap =
                       toMap(ImmutableSet.copyOf(tlds), Registry::createVKey);
                   Map<VKey<? extends Registry>, Registry> entities =
