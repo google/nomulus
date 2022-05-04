@@ -18,12 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.google.common.base.Splitter;
-import com.google.common.base.Verify;
-import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -81,10 +80,13 @@ class ByteCodeVersionTest {
   @MethodSource("provideJarNames")
   void verifyBytecode_isJava8(String jarName, String jarPath) throws IOException {
     ZipFile jarFile = new ZipFile(jarPath);
-    jarFile.stream().forEach(entry -> verifyOneZipEntry(jarPath, jarFile, entry));
+    for (Enumeration<? extends ZipEntry> entries = jarFile.entries(); entries.hasMoreElements(); ) {
+      verifyOneZipEntry(jarPath, jarFile, entries.nextElement());
+    }
   }
 
-  private void verifyOneZipEntry(String jarPath, ZipFile jarFile, ZipEntry entry) {
+  private void verifyOneZipEntry(String jarPath, ZipFile jarFile, ZipEntry entry)
+      throws IOException {
     /**
      * A few jars (jaxb-api and bcprov-jdk15on) include Java 9+ module classes under
      * META-INF/versions. They don't affect Java 8.
@@ -102,15 +104,12 @@ class ByteCodeVersionTest {
     }
     try (InputStream inputStream = jarFile.getInputStream(entry)) {
       byte[] header = inputStream.readNBytes(HEADER_LENGTH);
-      Verify.verify(
-          header != null && header.length == HEADER_LENGTH, "Malformed java class in jar.");
-      if (header[MAJOR_VERSION_OFFSET] <= JAVA8_MAJOR_VERSION) {
-        return;
-      }
-      throw new VerifyException(
-          String.format("Incompatible with Java 8: Class %s in %s.", entry.getName(), jarPath));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+      assertWithMessage("Malformed java class %s in %s.", entry.getName(), jarPath)
+          .that(header != null && header.length == HEADER_LENGTH)
+          .isTrue();
+      assertWithMessage("Incompatible with Java 8: Class %s in %s.", entry.getName(), jarPath)
+          .that(header[MAJOR_VERSION_OFFSET])
+          .isAtMost(JAVA8_MAJOR_VERSION);
     }
   }
 }
