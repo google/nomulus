@@ -394,7 +394,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
         @Override
         public Map<VKey<? extends EppResource>, EppResource> loadAll(
-            Set<? extends VKey<? extends EppResource>> keys) {
+            Iterable<? extends VKey<? extends EppResource>> keys) {
           return replicaTm().doTransactionless(() -> replicaTm().loadByKeys(keys));
         }
       };

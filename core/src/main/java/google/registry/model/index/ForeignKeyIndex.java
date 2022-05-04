@@ -35,6 +35,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimaps;
+import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -58,7 +59,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
@@ -272,14 +272,14 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
 
         @Override
         public Map<VKey<ForeignKeyIndex<?>>, Optional<ForeignKeyIndex<?>>> loadAll(
-            Set<? extends VKey<ForeignKeyIndex<?>>> keys) {
-          if (keys.isEmpty()) {
+            Iterable<? extends VKey<ForeignKeyIndex<?>>> keys) {
+          if (!keys.iterator().hasNext()) {
             return ImmutableMap.of();
           }
           Class<? extends EppResource> resourceClass =
               RESOURCE_CLASS_TO_FKI_CLASS.inverse().get(keys.iterator().next().getKind());
           ImmutableSet<String> foreignKeys =
-              keys.stream().map(v -> v.getSqlKey().toString()).collect(toImmutableSet());
+              Streams.stream(keys).map(v -> v.getSqlKey().toString()).collect(toImmutableSet());
           ImmutableSet<VKey<ForeignKeyIndex<?>>> typedKeys = ImmutableSet.copyOf(keys);
           ImmutableMap<String, ? extends ForeignKeyIndex<? extends EppResource>> existingFkis =
               loadIndexesFromStore(resourceClass, foreignKeys, false, true);
