@@ -21,9 +21,9 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Verify;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -73,7 +73,7 @@ class ByteCodeVersionTest {
   @SuppressWarnings("unused")
   private static Stream<Arguments> provideJarNames() {
     return jarsPaths.stream()
-        .filter(pathStr -> !Objects.equals(pathStr, "/usr/lib/jvm/lib/tools.jar"))
+        .filter(pathStr -> new File(pathStr).exists())
         .map(pathStr -> Arguments.of(pathStr.substring(pathStr.lastIndexOf('/') + 1), pathStr));
   }
 
