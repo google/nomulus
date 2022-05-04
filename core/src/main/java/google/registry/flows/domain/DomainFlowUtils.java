@@ -124,6 +124,7 @@ import google.registry.model.reporting.DomainTransactionRecord.TransactionReport
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Registry.TldType;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tmch.ClaimsListDao;
@@ -295,12 +296,16 @@ public class DomainFlowUtils {
 
   /** Check if the registrar has the correct billing account map configured. */
   public static void checkHasBillingAccount(String registrarId, String tld) throws EppException {
-    CurrencyUnit currency = Registry.get(tld).getCurrency();
+    Registry registry = Registry.get(tld);
+    // Don't enforce the billing account check on test (i.e. prober/OT&E) TLDs.
+    if (registry.getTldType() == TldType.TEST) {
+      return;
+    }
     if (!Registrar.loadByRegistrarIdCached(registrarId)
         .get()
         .getBillingAccountMap()
-        .containsKey(currency)) {
-      throw new DomainFlowUtils.MissingBillingAccountMapException(currency);
+        .containsKey(registry.getCurrency())) {
+      throw new DomainFlowUtils.MissingBillingAccountMapException(registry.getCurrency());
     }
   }
 

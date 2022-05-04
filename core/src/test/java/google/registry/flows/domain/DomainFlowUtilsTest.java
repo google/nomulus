@@ -15,11 +15,16 @@
 package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccount;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.money.CurrencyUnit.CHF;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.EppException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.domain.DomainFlowUtils.BadDomainNameCharacterException;
@@ -29,12 +34,15 @@ import google.registry.flows.domain.DomainFlowUtils.DomainLabelTooLongException;
 import google.registry.flows.domain.DomainFlowUtils.EmptyDomainNamePartException;
 import google.registry.flows.domain.DomainFlowUtils.InvalidPunycodeException;
 import google.registry.flows.domain.DomainFlowUtils.LeadingDashException;
+import google.registry.flows.domain.DomainFlowUtils.MissingBillingAccountMapException;
 import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.tld.Registry.TldType;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
+import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 
 @DualDatabaseTest
@@ -152,5 +160,40 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
         .hasMessageThat()
         .isEqualTo("Non-IDN domain names cannot contain dashes in the third or fourth position");
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @TestOfyAndSql
+  void testCheckHasBillingAccount_ignoresTestTlds() throws EppException {
+    persistFoobarTld(TldType.TEST);
+    checkHasBillingAccount("TheRegistrar", "foobar");
+  }
+
+  @TestOfyAndSql
+  void testCheckHasBillingAccount_failsOnRealTld() throws EppException {
+    persistFoobarTld(TldType.REAL);
+    MissingBillingAccountMapException thrown =
+        assertThrows(
+            MissingBillingAccountMapException.class,
+            () -> checkHasBillingAccount("TheRegistrar", "foobar"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Registrar is not fully onboarded for TLDs that bill in CHF");
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  private void persistFoobarTld(TldType tldType) {
+    persistResource(
+        newRegistry("foobar", "FOOBAR")
+            .asBuilder()
+            .setTldType(tldType)
+            .setCurrency(CHF)
+            .setCreateBillingCost(Money.ofMajor(CHF, 800))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(CHF, 800)))
+            .setRenewBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(CHF, 800)))
+            .setRegistryLockOrUnlockBillingCost(Money.ofMajor(CHF, 800))
+            .setServerStatusChangeBillingCost(Money.ofMajor(CHF, 800))
+            .setRestoreBillingCost(Money.ofMajor(CHF, 800))
+            .build());
   }
 }
