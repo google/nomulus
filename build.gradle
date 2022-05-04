@@ -292,13 +292,17 @@ subprojects {
 
   afterEvaluate {
     if (rootProject.enableDependencyLocking.toBoolean()
-        && project.name != 'integration') {
+        && project.name != 'integration'
+        && project.name != 'java8compatibility') {
       // The ':integration' project runs server/schema integration tests using
       // dynamically specified jars with no transitive dependency. Therefore
       // dependency-locking does not make sense. Furthermore, during
       // evaluation it resolves the 'testRuntime' configuration, making it
       // immutable. Locking activation would trigger an invalid operation
       // exception.
+      //
+      // The ':java8compatibility' project is test-only. Its source does not go
+      // into production.
       //
       // For all other projects, due to problem with the gradle-license-report
       // plugin, the dependencyLicenseReport configuration must opt out of
