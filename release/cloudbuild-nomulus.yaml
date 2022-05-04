@@ -72,6 +72,7 @@ steps:
     sed -i s/'$${_IMAGE}'/nomulus-tool/g release/cloudbuild-tag.yaml
     sed -i s/':$${TAG_NAME}'/@$digest/g release/cloudbuild-tag.yaml
     sed -i s/'nomulus-tool:latest'/nomulus-tool@$digest/g release/cloudbuild-deploy-*.yaml
+    sed -i s/'nomulus-tool:latest'/nomulus-tool@$digest/g release/cloudbuild-schema-deploy-*.yaml
 # Build and stage Dataflow Flex templates.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
