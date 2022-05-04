@@ -29,19 +29,11 @@ environment="$1"
 dest="$2"
 gcs_prefix="gcs://domain-registry-maven-repository"
 
-# Let Gradle put its caches (dependency cache and build cache) in the source
-# tree. This allows sharing of the caches between steps in a Cloud Build
-# task. (See ./cloudbuild-nomulus.yaml, which calls this script in several
-# steps). If left at their default location, the caches will be lost after
-# each step.
-# Note: must be consistent with value in ./cloudbuild-nomulus.yaml
-export GRADLE_USER_HOME="./cloudbuild-caches"
-
 if [ "${environment}" == tool ]
 then
   mkdir -p "${dest}"
 
-  ./gradlew clean :core:buildToolImage \
+  ./gradlew :core:buildToolImage \
     -PmavenUrl="${gcs_prefix}"/maven \
     -PpluginsUrl="${gcs_prefix}"/plugins
 
@@ -50,7 +42,7 @@ else
   dest="${dest}/$1"
   mkdir -p "${dest}"
 
-  ./gradlew clean stage -Penvironment="${environment}" \
+  ./gradlew stage -Penvironment="${environment}" \
     -PmavenUrl="${gcs_prefix}"/maven \
     -PpluginsUrl="${gcs_prefix}"/plugins
 
