@@ -5,7 +5,7 @@ com.beust:jcommander:1.60
 com.fasterxml.jackson.core:jackson-annotations:2.13.2
 com.fasterxml.jackson.core:jackson-core:2.13.2
 com.fasterxml.jackson:jackson-bom:2.13.2
-com.github.ben-manes.caffeine:caffeine:3.1.0
+com.github.ben-manes.caffeine:caffeine:2.9.3
 com.github.docker-java:docker-java-api:3.2.13
 com.github.docker-java:docker-java-transport-zerodep:3.2.13
 com.github.docker-java:docker-java-transport:3.2.13
@@ -36,7 +36,7 @@ com.google.cloud:google-cloud-tasks:2.1.11
 com.google.code.findbugs:jsr305:3.0.2
 com.google.code.gson:gson:2.9.0
 com.google.dagger:dagger:2.41
-com.google.errorprone:error_prone_annotations:2.13.1
+com.google.errorprone:error_prone_annotations:2.13.0
 com.google.flogger:flogger-system-backend:0.7.4
 com.google.flogger:flogger:0.7.4
 com.google.guava:failureaccess:1.0.1

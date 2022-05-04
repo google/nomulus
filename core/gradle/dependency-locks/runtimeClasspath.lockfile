@@ -13,7 +13,7 @@ com.fasterxml.jackson.core:jackson-databind:2.13.2
 com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.2
 com.fasterxml.jackson:jackson-bom:2.13.2
 com.fasterxml:classmate:1.5.1
-com.github.ben-manes.caffeine:caffeine:3.1.0
+com.github.ben-manes.caffeine:caffeine:2.9.3
 com.github.docker-java:docker-java-api:3.2.13
 com.github.docker-java:docker-java-transport-zerodep:3.2.13
 com.github.docker-java:docker-java-transport:3.2.13
@@ -158,7 +158,7 @@ com.jcraft:jsch:0.1.55
 com.sun.istack:istack-commons-runtime:3.0.7
 com.sun.xml.fastinfoset:FastInfoset:1.2.15
 com.thoughtworks.paranamer:paranamer:2.7
-com.zaxxer:HikariCP:5.0.1
+com.zaxxer:HikariCP:3.4.5
 commons-codec:commons-codec:1.15
 commons-logging:commons-logging:1.2
 dnsjava:dnsjava:3.5.0
