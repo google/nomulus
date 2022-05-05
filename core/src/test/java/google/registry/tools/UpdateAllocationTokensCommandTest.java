@@ -15,6 +15,9 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.CANCELLED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
@@ -26,6 +29,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.domain.token.AllocationToken;
@@ -34,6 +38,7 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 
+/** Unit tests for {@link UpdateAllocationTokensCommand}. */
 @DualDatabaseTest
 class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocationTokensCommand> {
 
@@ -95,6 +100,96 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
     runCommandForced("--prefix", "token", "--discount_years", "4");
     assertThat(reloadResource(token).getDiscountYears()).isEqualTo(4);
+  }
+
+  @TestOfyAndSql
+  void testUpdateRenewalPriceBehavior_setToSpecified() throws Exception {
+    AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
+    runCommandForced("--prefix", "token", "--renewal_price_behavior", "SPECIFIED");
+    assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(SPECIFIED);
+  }
+
+  @TestOfyAndSql
+  void testUpdateRenewalPriceBehavior_setToDefault() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo().setRenewalPriceBehavior(SPECIFIED).setDiscountFraction(0.5).build());
+    runCommandForced("--prefix", "token", "--renewal_price_behavior", "default");
+    assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(DEFAULT);
+  }
+
+  @TestOfyAndSql
+  void testUpdateRenewalPriceBehavior_setToNonPremium() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo().setRenewalPriceBehavior(SPECIFIED).setDiscountFraction(0.5).build());
+    runCommandForced("--prefix", "token", "--renewal_price_behavior", "NONpremium");
+    assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(NONPREMIUM);
+  }
+
+  @TestOfyAndSql
+  void testUpdateRenewalPriceBehavior_setFromDefaultToDefault() throws Exception {
+    AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
+    runCommandForced("--prefix", "token", "--renewal_price_behavior", "defauLT");
+    assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(DEFAULT);
+  }
+
+  @TestOfyAndSql
+  void testUpdateRenewalPriceBehavior_setFromSpecifiedToSpecified() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo().setRenewalPriceBehavior(SPECIFIED).setDiscountFraction(0.5).build());
+    runCommandForced("--prefix", "token", "--renewal_price_behavior", "SPecified");
+    assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(SPECIFIED);
+  }
+
+  @TestOfyAndSql
+  void testUpdateRenewalPriceBehavior_setFromNonPremiumToDefault() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo()
+                .setRenewalPriceBehavior(NONPREMIUM)
+                .setDiscountFraction(0.5)
+                .build());
+    runCommandForced("--prefix", "token", "--renewal_price_behavior", "defauLT");
+    assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(DEFAULT);
+  }
+
+  @TestOfyAndSql
+  void testUpdateRenewalPriceBehavior_setToMixedCaseDefault() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo().setRenewalPriceBehavior(SPECIFIED).setDiscountFraction(0.5).build());
+    runCommandForced("--prefix", "token", "--renewal_price_behavior", "deFauLt");
+    assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(DEFAULT);
+  }
+
+  @TestOfyAndSql
+  void testUpdateRenewalPriceBehavior_setToInvalidBehavior_throwsException() {
+    ParameterException thrown =
+        assertThrows(
+            ParameterException.class,
+            () -> runCommandForced("--prefix", "token", "--renewal_price_behavior", "premium"));
+    persistResource(builderWithPromo().setDiscountFraction(0.5).build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Invalid value for --renewal_price_behavior parameter. Allowed values:[DEFAULT,"
+                + " NONPREMIUM, SPECIFIED]");
+  }
+
+  @TestOfyAndSql
+  void testUpdateRenewalPriceBehavior_setToEmptyString_throwsException() {
+    ParameterException thrown =
+        assertThrows(
+            ParameterException.class,
+            () -> runCommandForced("--prefix", "token", "--renewal_price_behavior", ""));
+    persistResource(builderWithPromo().setDiscountFraction(0.5).build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Invalid value for --renewal_price_behavior parameter. Allowed values:[DEFAULT,"
+                + " NONPREMIUM, SPECIFIED]");
   }
 
   @TestOfyAndSql

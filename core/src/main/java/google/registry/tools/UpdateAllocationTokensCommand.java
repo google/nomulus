@@ -23,10 +23,12 @@ import static google.registry.persistence.transaction.TransactionManagerUtil.tra
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.beust.jcommander.internal.Nullable;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.tools.params.TransitionListParameter.TokenStatusTransitions;
@@ -88,6 +90,17 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
               + "form <time>=<status>[,<time>=<status>]* where each status represents the status.")
   private ImmutableSortedMap<DateTime, TokenStatus> tokenStatusTransitions;
 
+  @Parameter(
+      names = {"--renewal_price_behavior"},
+      description =
+          "The type of renewal price behavior, either DEFAULT (default), NONPREMIUM, or SPECIFIED."
+              + " This indicates how a domain should be charged for renewal. By default, a domain"
+              + " will be renewed at the renewal price from the pricing engine. If the renewal"
+              + " price behavior is set to SPECIFIED, it means that the renewal cost will be the"
+              + " same as the domain's calculated create price.")
+  @Nullable
+  private RenewalPriceBehavior renewalPriceBehavior;
+
   private static final int BATCH_SIZE = 20;
   private static final Joiner JOINER = Joiner.on(", ");
 
@@ -142,6 +155,8 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     Optional.ofNullable(discountPremiums).ifPresent(builder::setDiscountPremiums);
     Optional.ofNullable(discountYears).ifPresent(builder::setDiscountYears);
     Optional.ofNullable(tokenStatusTransitions).ifPresent(builder::setTokenStatusTransitions);
+    Optional.ofNullable(renewalPriceBehavior)
+        .ifPresent(behavior -> builder.setRenewalPriceBehavior(renewalPriceBehavior));
     return builder.build();
   }
 

@@ -162,7 +162,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @TestOfyAndSql
-  void testgetRenewalBehavior_returnsDefaultRenewBehavior() {
+  void testGetRenewalBehavior_returnsDefaultRenewBehavior() {
     assertThat(
             persistResource(
                     new AllocationToken.Builder()
@@ -174,7 +174,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @TestOfyAndSql
-  void testsetRenewalBehavior_assertsRenewalBehaviorIsNotDefault() {
+  void testSetRenewalBehavior_assertsRenewalBehaviorIsNotDefault() {
     assertThat(
             persistResource(
                     new AllocationToken.Builder()
@@ -187,7 +187,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @TestOfyAndSql
-  void testsetRenewalBehavior_assertRenewalBehaviorIsModified() {
+  void testSetRenewalBehavior_assertRenewalBehaviorIsModified() {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()

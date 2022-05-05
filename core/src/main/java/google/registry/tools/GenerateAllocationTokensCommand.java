@@ -17,6 +17,7 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -37,6 +38,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.google.common.io.Files;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
@@ -142,6 +144,16 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
   private ImmutableSortedMap<DateTime, TokenStatus> tokenStatusTransitions;
 
   @Parameter(
+      names = {"--renewal_price_behavior"},
+      description =
+          "The type of renewal price behavior, either DEFAULT (default), NONPREMIUM, or SPECIFIED."
+              + " This indicates how a domain should be charged for renewal. By default, a domain"
+              + " will be renewed at the renewal price from the pricing engine. If the renewal"
+              + " price behavior is set to SPECIFIED, it means that the renewal cost will be the"
+              + " same as the domain's calculated create price.")
+  private RenewalPriceBehavior renewalPriceBehavior = DEFAULT;
+
+  @Parameter(
       names = {"--dry_run"},
       description = "Do not actually persist the tokens; defaults to false")
   boolean dryRun;
@@ -184,6 +196,7 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
                     AllocationToken.Builder token =
                         new AllocationToken.Builder()
                             .setToken(t)
+                            .setRenewalPriceBehavior(renewalPriceBehavior)
                             .setTokenType(tokenType == null ? SINGLE_USE : tokenType)
                             .setAllowedRegistrarIds(
                                 ImmutableSet.copyOf(nullToEmpty(allowedClientIds)))
