@@ -277,7 +277,7 @@ public class Registry extends ImmutableObject
                 }
 
                 @Override
-                public Map<String, Optional<Registry>> loadAll(Set<? extends String> tlds) {
+                public Map<String, Optional<Registry>> loadAll(Iterable<? extends String> tlds) {
                   ImmutableMap<String, VKey<Registry>> keysMap =
                       toMap(ImmutableSet.copyOf(tlds), Registry::createVKey);
                   Map<VKey<? extends Registry>, Registry> entities =
