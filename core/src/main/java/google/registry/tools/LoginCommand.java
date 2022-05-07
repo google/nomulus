@@ -51,21 +51,14 @@ final class LoginCommand implements Command {
               forwardingServerReceiver,
               url -> {
                 int remote_port = forwardingServerReceiver.getRemotePort();
-                System.out.println(
-                    "Please first run the following command in a separate terminal on"
-                        + " your local host:\n\n"
-                        + "  ssh -L "
-                        + port
-                        + ":localhost:"
-                        + remote_port
-                        + ' '
-                        + remote_host
-                        + '\n');
-                System.out.println(
+                System.out.printf(
+                    "Please first run the following command in a separate terminal on your local "
+                        + "host:\n\n  ssh -L %s:localhost:%s %s\n\n",
+                    port, remote_port, remote_host);
+                System.out.printf(
                     "Please then open the following URL in your local browser and follow the"
-                        + " instructions:\n\n  "
-                        + url
-                        + '\n');
+                        + " instructions:\n\n  %s\n\n",
+                    url);
               });
     } else {
       app = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver());
