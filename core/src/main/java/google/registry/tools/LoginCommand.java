@@ -19,7 +19,7 @@ import com.beust.jcommander.Parameters;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.extensions.java6.auth.oauth2.GooglePromptReceiver;
+import java.net.InetAddress;
 import javax.inject.Inject;
 
 /** Authorizes the nomulus tool for OAuth 2.0 access to remote resources. */
@@ -30,24 +30,35 @@ final class LoginCommand implements Command {
   @Inject @AuthModule.ClientScopeQualifier String clientScopeQualifier;
 
   @Parameter(
-      names = "--remote",
+      names = "--port",
       description =
-          "Whether the command is run on a remote host where access to a browser is not available. "
-              + "If set to true, a URL will be given and a code is expected to be entered after "
-              + "the user completes authorization by visiting that URL.")
-  private boolean remote = false;
+          "A free port on the local host. When set, it is assumed that the nomulus tool runs on a"
+              + " remote host whose browser is not accessible locally. i. e. if you SSH to a"
+              + " machine and run `nomulus` there, the ssh client is on the local host and nomulus"
+              + " runs on a remote host. You will need to forward the local port specified here to"
+              + " a remote port that nomulus randomly picks. Follow the instruction when prompted.")
+  private int port = 0;
 
   @Override
   public void run() throws Exception {
     AuthorizationCodeInstalledApp app;
-    if (remote) {
+    if (port != 0) {
+      String remote_host = InetAddress.getLocalHost().getHostName();
+      ForwardingServerReceiver forwardingServerReceiver = new ForwardingServerReceiver(port);
       app =
           new AuthorizationCodeInstalledApp(
               flow,
-              new GooglePromptReceiver(),
+              forwardingServerReceiver,
               url -> {
-                System.out.println("Please open the following address in your browser:");
-                System.out.println("  " + url);
+                int remote_port = forwardingServerReceiver.getRemotePort();
+                System.out.printf(
+                    "Please first run the following command in a separate terminal on your local "
+                        + "host:\n\n  ssh -L %s:localhost:%s %s\n\n",
+                    port, remote_port, remote_host);
+                System.out.printf(
+                    "Please then open the following URL in your local browser and follow the"
+                        + " instructions:\n\n  %s\n\n",
+                    url);
               });
     } else {
       app = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver());
