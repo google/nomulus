@@ -32,45 +32,12 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_dr/task/resaveAllEppResources?fast=true]]></url>
+    <url><![CDATA[/_dr/task/resaveAllEppResourcesPipeline?fast=true]]></url>
     <description>
       This job resaves all our resources, projected in time to "now".
       It is needed for "deleteOldCommitLogs" to work correctly.
     </description>
     <schedule>1st monday of month 09:00</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/task/deleteOldCommitLogs]]></url>
-    <description>
-      This job deletes unreferenced commit logs from Datastore that are older than thirty days.
-      Since references are only updated on save, if we want to delete "unneeded" commit logs, we
-      also need "resaveAllEppResources" to run periodically.
-    </description>
-    <schedule>3rd monday of month 09:00</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/task/deleteContactsAndHosts]]></url>
-    <description>
-      This job runs a mapreduce that processes batch asynchronous deletions of
-      contact and host resources by mapping over all EppResources and checking
-      for any references to the contacts/hosts in pending deletion.
-    </description>
-    <schedule>every 5 minutes synchronized</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/task/refreshDnsOnHostRename]]></url>
-    <description>
-      This job runs a mapreduce that asynchronously handles DNS refreshes for
-      host renames by mapping over all domains and creating DNS refresh tasks
-      for any domains that reference a renamed host.
-    </description>
-    <schedule>every 5 minutes synchronized</schedule>
     <target>backend</target>
   </cron>
 
@@ -99,42 +66,6 @@
       This job runs an action that deletes all data in Cloud SQL.
     </description>
     <schedule>every saturday 03:07</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/task/wipeOutDatastore]]></url>
-    <description>
-      This job runs an action that deletes all data in Cloud Datastore.
-    </description>
-    <schedule>every saturday 03:07</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/cron/fanout?queue=replay-commit-logs-to-sql&endpoint=/_dr/task/replayCommitLogsToSql&runInEmpty]]></url>
-    <description>
-      Replays recent commit logs from Datastore to the SQL secondary backend.
-    </description>
-    <schedule>every 3 minutes</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/cron/replicateToDatastore]]></url>
-    <description>
-      Replays recent transactions from SQL to the Datastore secondary backend.
-    </description>
-    <schedule>every 3 minutes</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/cron/commitLogCheckpoint]]></url>
-    <description>
-      This job checkpoints the commit log buckets and exports the diff since last checkpoint to GCS.
-    </description>
-    <schedule>every 3 minutes synchronized</schedule>
     <target>backend</target>
   </cron>
 </cronentries>

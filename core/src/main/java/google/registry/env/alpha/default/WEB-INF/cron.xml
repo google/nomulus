@@ -80,54 +80,12 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_dr/task/resaveAllEppResources?fast=true]]></url>
+    <url><![CDATA[/_dr/task/resaveAllEppResourcesPipeline?fast=true]]></url>
     <description>
       This job resaves all our resources, projected in time to "now".
       It is needed for "deleteOldCommitLogs" to work correctly.
     </description>
     <schedule>1st monday of month 09:00</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/task/deleteOldCommitLogs]]></url>
-    <description>
-      This job deletes unreferenced commit logs from Datastore that are older than thirty days.
-      Since references are only updated on save, if we want to delete "unneeded" commit logs, we
-      also need "resaveAllEppResources" to run periodically.
-    </description>
-    <schedule>3rd monday of month 09:00</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/cron/commitLogCheckpoint]]></url>
-    <description>
-      This job checkpoints the commit log buckets and exports the diff since last checkpoint to GCS.
-    </description>
-    <schedule>every 3 minutes synchronized</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/task/deleteContactsAndHosts]]></url>
-    <description>
-      This job runs a mapreduce that processes batch asynchronous deletions of
-      contact and host resources by mapping over all EppResources and checking
-      for any references to the contacts/hosts in pending deletion.
-    </description>
-    <schedule>every 5 minutes synchronized</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/task/refreshDnsOnHostRename]]></url>
-    <description>
-      This job runs a mapreduce that asynchronously handles DNS refreshes for
-      host renames by mapping over all domains and creating DNS refresh tasks
-      for any domains that reference a renamed host.
-    </description>
-    <schedule>every 5 minutes synchronized</schedule>
     <target>backend</target>
   </cron>
 
@@ -153,23 +111,6 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_dr/cron/fanout?queue=export-snapshot&endpoint=/_dr/task/backupDatastore&runInEmpty]]></url>
-    <description>
-      This job fires off a Datastore managed-export job that generates snapshot files in GCS.
-      It also enqueues a new task to wait on the completion of that job and then load the resulting
-      snapshot into bigquery.
-    </description>
-    <!--
-      Keep google.registry.export.CheckBackupAction.MAXIMUM_BACKUP_RUNNING_TIME less than
-      this interval. -->
-    <schedule>every day 06:00</schedule>
-    <target>backend</target>
-  </cron>
-
-  <!--
-    Removed for the duration of load testing
-    TODO(b/71607184): Restore after loadtesting is done
-  <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/deleteProberData&runInEmpty]]></url>
     <description>
       This job clears out data from probers and runs once a week.
@@ -178,7 +119,6 @@
     <timezone>UTC</timezone>
     <target>backend</target>
   </cron>
-  -->
 
   <!-- TODO: Add borgmon job to check that these files are created and updated successfully. -->
   <cron>
@@ -196,24 +136,6 @@
       Premium terms export to Google Drive job for creating once-daily exports.
     </description>
     <schedule>every day 05:00</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/cron/fanout?queue=replay-commit-logs-to-sql&endpoint=/_dr/task/replayCommitLogsToSql&runInEmpty]]></url>
-    <description>
-      Replays recent commit logs from Datastore to the SQL secondary backend.
-    </description>
-    <schedule>every 3 minutes</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_dr/cron/replicateToDatastore]]></url>
-    <description>
-      Replays recent transactions from SQL to the Datastore secondary backend.
-    </description>
-    <schedule>every 3 minutes</schedule>
     <target>backend</target>
   </cron>
 

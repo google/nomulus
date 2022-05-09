@@ -49,6 +49,7 @@ import google.registry.batch.AsyncTaskMetrics.OperationResult;
 import google.registry.dns.DnsQueue;
 import google.registry.mapreduce.MapreduceRunner;
 import google.registry.mapreduce.inputs.NullInput;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.server.Lock;
@@ -79,6 +80,8 @@ import org.joda.time.Duration;
     service = Action.Service.BACKEND,
     path = "/_dr/task/refreshDnsOnHostRename",
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+@DeleteAfterMigration
+@Deprecated
 public class RefreshDnsOnHostRenameAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
