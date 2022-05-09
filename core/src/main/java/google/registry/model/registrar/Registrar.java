@@ -76,6 +76,7 @@ import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
@@ -390,7 +391,7 @@ public class Registrar extends ImmutableObject
 
   /** Identifier of registrar used in external billing system (e.g. Oracle). */
   // TODO(sarahbot@): Drop this column from the table in a flyway script in a follow up PR.
-  @Nullable @Deprecated @Ignore Long billingIdentifier;
+  @DeleteAfterMigration @Nullable @Deprecated @Ignore Long billingIdentifier;
 
   /** Purchase Order number used for invoices in external billing system, if applicable. */
   @Nullable String poNumber;
