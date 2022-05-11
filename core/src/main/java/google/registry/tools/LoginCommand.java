@@ -43,18 +43,18 @@ final class LoginCommand implements Command {
   public void run() throws Exception {
     AuthorizationCodeInstalledApp app;
     if (port != 0) {
-      String remote_host = InetAddress.getLocalHost().getHostName();
+      String remoteHost = InetAddress.getLocalHost().getHostName();
       ForwardingServerReceiver forwardingServerReceiver = new ForwardingServerReceiver(port);
       app =
           new AuthorizationCodeInstalledApp(
               flow,
               forwardingServerReceiver,
               url -> {
-                int remote_port = forwardingServerReceiver.getRemotePort();
+                int remotePort = forwardingServerReceiver.getRemotePort();
                 System.out.printf(
                     "Please first run the following command in a separate terminal on your local "
                         + "host:\n\n  ssh -L %s:localhost:%s %s\n\n",
-                    port, remote_port, remote_host);
+                    port, remotePort, remoteHost);
                 System.out.printf(
                     "Please then open the following URL in your local browser and follow the"
                         + " instructions:\n\n  %s\n\n",

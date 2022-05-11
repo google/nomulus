@@ -42,17 +42,17 @@ import java.io.IOException;
  */
 final class ForwardingServerReceiver implements VerificationCodeReceiver {
 
-  private final int forwarding_port;
+  private final int forwardingPort;
   private final LocalServerReceiver localServerReceiver = new LocalServerReceiver();
 
-  ForwardingServerReceiver(int forwarding_port) {
-    this.forwarding_port = forwarding_port;
+  ForwardingServerReceiver(int forwardingPort) {
+    this.forwardingPort = forwardingPort;
   }
 
   @Override
   public String getRedirectUri() throws IOException {
-    String redirect_uri = localServerReceiver.getRedirectUri();
-    return redirect_uri.replace("localhost:" + getRemotePort(), "localhost:" + forwarding_port);
+    String redirectUri = localServerReceiver.getRedirectUri();
+    return redirectUri.replace("localhost:" + getRemotePort(), "localhost:" + forwardingPort);
   }
 
   @Override
