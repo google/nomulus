@@ -26,10 +26,10 @@ import java.io.IOException;
  * the SSH client resides).
  *
  * <p>When performing the login flow, an HTTP server will be listening on the remote port and have a
- * redirectUri of <code>http://localhost:remote_port</code>, which is only accessible from the
- * remote host. By changing the redirectUri to <code>http://localhost:forwardingPort</code>, it
- * becomes accessible from the local host, if <code>local_host:forwardingPort</code> is forwarded to
- * <code>remote_host:remote_port</code>.
+ * redirect_uri of <code>http://localhost:remote_port</code>, which is only accessible from the
+ * remote host. By changing the redirect_uri to <code>http://localhost:forwarding_port</code>, it
+ * becomes accessible from the local host, if <code>local_host:forwarding_port</code> is forwarded
+ * to <code>remote_host:remote_port</code>.
  *
  * <p>Note that port forwarding is <b>required</b>. We cannot use the remote host's IP or reverse
  * DNS address in the redirect URI, even if they are directly accessible from the local host,
@@ -37,8 +37,8 @@ import java.io.IOException;
  * Google OAuth server is the loopback address with a port.
  *
  * @see <href
- *     a=https://developers.google.com/identity/protocols/oauth2/native-app#request-parameter-redirectUri>
- *     redirectUri values </href>
+ *     a=https://developers.google.com/identity/protocols/oauth2/native-app#request-parameter-redirect_uri>
+ *     redirect_uri values </href>
  */
 final class ForwardingServerReceiver implements VerificationCodeReceiver {
 
