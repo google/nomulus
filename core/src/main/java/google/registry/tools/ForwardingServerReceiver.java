@@ -26,10 +26,10 @@ import java.io.IOException;
  * the SSH client resides).
  *
  * <p>When performing the login flow, an HTTP server will be listening on the remote port and have a
- * redirect_uri of <code>http://localhost:remote_port</code>, which is only accessible from the
- * remote host. By changing the redirect_uri to <code>http://localhost:forwarding_port</code>, it
- * becomes accessible from the local host, if <code>local_host:forwarding_port</code> is forwarded
- * to <code>remote_host:remote_port</code>.
+ * redirectUri of <code>http://localhost:remote_port</code>, which is only accessible from the
+ * remote host. By changing the redirectUri to <code>http://localhost:forwardingPort</code>, it
+ * becomes accessible from the local host, if <code>local_host:forwardingPort</code> is forwarded to
+ * <code>remote_host:remote_port</code>.
  *
  * <p>Note that port forwarding is <b>required</b>. We cannot use the remote host's IP or reverse
  * DNS address in the redirect URI, even if they are directly accessible from the local host,
@@ -37,22 +37,22 @@ import java.io.IOException;
  * Google OAuth server is the loopback address with a port.
  *
  * @see <href
- *     a=https://developers.google.com/identity/protocols/oauth2/native-app#request-parameter-redirect_uri>
- *     redirect_uri values </href>
+ *     a=https://developers.google.com/identity/protocols/oauth2/native-app#request-parameter-redirectUri>
+ *     redirectUri values </href>
  */
 final class ForwardingServerReceiver implements VerificationCodeReceiver {
 
-  private final int forwarding_port;
+  private final int forwardingPort;
   private final LocalServerReceiver localServerReceiver = new LocalServerReceiver();
 
-  ForwardingServerReceiver(int forwarding_port) {
-    this.forwarding_port = forwarding_port;
+  ForwardingServerReceiver(int forwardingPort) {
+    this.forwardingPort = forwardingPort;
   }
 
   @Override
   public String getRedirectUri() throws IOException {
-    String redirect_uri = localServerReceiver.getRedirectUri();
-    return redirect_uri.replace("localhost:" + getRemotePort(), "localhost:" + forwarding_port);
+    String redirectUri = localServerReceiver.getRedirectUri();
+    return redirectUri.replace("localhost:" + getRemotePort(), "localhost:" + forwardingPort);
   }
 
   @Override
