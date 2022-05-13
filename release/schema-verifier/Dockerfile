@@ -38,7 +38,7 @@ RUN apt-get update -y \
     && apt-get update -y \
     && apt install postgresql-client-11 -y
 
-# Install unzip.
+# Use unzip to extract files from jars.
 RUN apt-get install zip -y
 
 # Get netstat, used for checking Cloud SQL proxy readiness.
