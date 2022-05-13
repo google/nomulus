@@ -21,6 +21,9 @@ import static google.registry.flows.FlowTestCase.UserPrivileges.SUPERUSER;
 import static google.registry.model.billing.BillingEvent.Flag.ANCHOR_TENANT;
 import static google.registry.model.billing.BillingEvent.Flag.RESERVED;
 import static google.registry.model.billing.BillingEvent.Flag.SUNRISE;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -83,6 +86,7 @@ import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.domain.DomainCreateFlow.AnchorTenantCreatePeriodException;
 import google.registry.flows.domain.DomainCreateFlow.MustHaveSignedMarksInCurrentPhaseException;
 import google.registry.flows.domain.DomainCreateFlow.NoGeneralRegistrationsInCurrentPhaseException;
+import google.registry.flows.domain.DomainCreateFlow.RenewalPriceInfo;
 import google.registry.flows.domain.DomainCreateFlow.SignedMarksOnlyDuringSunriseException;
 import google.registry.flows.domain.DomainFlowTmchUtils.FoundMarkExpiredException;
 import google.registry.flows.domain.DomainFlowTmchUtils.FoundMarkNotYetValidException;
@@ -149,9 +153,12 @@ import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
+import google.registry.model.domain.fee.BaseFee.FeeType;
+import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
@@ -177,6 +184,7 @@ import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -258,13 +266,20 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     DomainBase domain = reloadResourceByForeignKey();
 
     boolean isAnchorTenant = expectedBillingFlags.contains(ANCHOR_TENANT);
-    // Calculate the total creation cost.
-    Money creationCost =
-        isAnchorTenant
-            ? Money.of(USD, 0)
-            : isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc())
-                ? Money.of(USD, 200)
-                : Money.of(USD, 26);
+    // Set up the creation cost.
+    FeesAndCredits feesAndCredits =
+        new FeesAndCredits.Builder()
+            .setCurrency(USD)
+            .addFeeOrCredit(
+                Fee.create(
+                    isAnchorTenant
+                        ? BigDecimal.valueOf(0)
+                        : isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc())
+                            ? BigDecimal.valueOf(200)
+                            : BigDecimal.valueOf(26),
+                    FeeType.CREATE,
+                    isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc())))
+            .build();
     Money eapFee =
         Money.of(
             Registry.get(domainTld).getCurrency(),
@@ -284,13 +299,16 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .hasType(HistoryEntry.Type.DOMAIN_CREATE)
         .and()
         .hasPeriodYears(2);
+    RenewalPriceInfo renewalPriceInfo =
+        DomainCreateFlow.getRenewalPriceInfo(
+            isAnchorTenant, Optional.ofNullable(allocationToken), feesAndCredits);
     // There should be one bill for the create and one for the recurring autorenew event.
     BillingEvent.OneTime createBillingEvent =
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.CREATE)
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setCost(creationCost)
+            .setCost(feesAndCredits.getCreateCost())
             .setPeriodYears(2)
             .setEventTime(clock.nowUtc())
             .setBillingTime(billingTime)
@@ -308,6 +326,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setEventTime(domain.getRegistrationExpirationTime())
             .setRecurrenceEndTime(END_OF_TIME)
             .setParent(historyEntry)
+            .setRenewalPriceBehavior(renewalPriceInfo.renewalPriceBehavior())
+            .setRenewalPrice(renewalPriceInfo.renewalPrice())
             .build();
 
     ImmutableSet.Builder<BillingEvent> expectedBillingEvents =
@@ -1157,6 +1177,28 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken);
     assertNoLordn();
     assertAllocationTokenWasRedeemed("abcDEF23456");
+  }
+
+  @TestOfyAndSql
+  void testSuccess_internalRegistrationWithSpecifiedRenewalPrice() throws Exception {
+    allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("resdom.tld")
+                .setRenewalPriceBehavior(SPECIFIED)
+                .build());
+    // Despite the domain being FULLY_BLOCKED, the non-superuser create succeeds the domain is also
+    // RESERVED_FOR_SPECIFIC_USE and the correct allocation token is passed.
+    setEppInput(
+        "domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "resdom.tld", "YEARS", "2"));
+    persistContactsAndHosts();
+    runFlowAssertResponse(
+        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "resdom.tld")));
+    assertSuccessfulCreate("tld", ImmutableSet.of(RESERVED), allocationToken);
+    assertNoLordn();
+    assertAllocationTokenWasRedeemed("abc123");
   }
 
   @TestOfyAndSql
@@ -2593,5 +2635,128 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
     DatabaseHelper.removeDatabaseMigrationSchedule();
+  }
+
+  @TestOfyAndSql
+  void testGetRenewalPriceInfo_isAnchorTenantWithoutToken_returnsNonPremiumAndNullPrice() {
+    assertThat(
+            DomainCreateFlow.getRenewalPriceInfo(
+                true,
+                Optional.empty(),
+                new FeesAndCredits.Builder()
+                    .setCurrency(USD)
+                    .addFeeOrCredit(Fee.create(BigDecimal.valueOf(0), FeeType.CREATE, false))
+                    .build()))
+        .isEqualTo(RenewalPriceInfo.create(NONPREMIUM, null));
+  }
+
+  @TestOfyAndSql
+  void testGetRenewalPriceInfo_isAnchorTenantWithDefaultToken_returnsNonPremiumAndNullPrice() {
+    assertThat(
+            DomainCreateFlow.getRenewalPriceInfo(
+                true,
+                Optional.of(allocationToken),
+                new FeesAndCredits.Builder()
+                    .setCurrency(USD)
+                    .addFeeOrCredit(Fee.create(BigDecimal.valueOf(0), FeeType.CREATE, false))
+                    .build()))
+        .isEqualTo(RenewalPriceInfo.create(NONPREMIUM, null));
+  }
+
+  @TestOfyAndSql
+  void testGetRenewalPriceInfo_isNotAnchorTenantWithDefaultToken_returnsDefaultAndNullPrice() {
+    assertThat(
+            DomainCreateFlow.getRenewalPriceInfo(
+                false,
+                Optional.of(allocationToken),
+                new FeesAndCredits.Builder()
+                    .setCurrency(USD)
+                    .addFeeOrCredit(Fee.create(BigDecimal.valueOf(100), FeeType.CREATE, false))
+                    .build()))
+        .isEqualTo(RenewalPriceInfo.create(DEFAULT, null));
+  }
+
+  @TestOfyAndSql
+  void testGetRenewalPriceInfo_isNotAnchorTenantWithoutToken_returnsDefaultAndNullPrice() {
+    assertThat(
+            DomainCreateFlow.getRenewalPriceInfo(
+                false,
+                Optional.empty(),
+                new FeesAndCredits.Builder()
+                    .setCurrency(USD)
+                    .addFeeOrCredit(Fee.create(BigDecimal.valueOf(100), FeeType.CREATE, false))
+                    .build()))
+        .isEqualTo(RenewalPriceInfo.create(DEFAULT, null));
+  }
+
+  @TestOfyAndSql
+  void
+      testGetRenewalPriceInfo_isNotAnchorTenantWithSpecifiedInToken_returnsSpecifiedAndCreatePrice() {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setRenewalPriceBehavior(SPECIFIED)
+                .build());
+    assertThat(
+            DomainCreateFlow.getRenewalPriceInfo(
+                false,
+                Optional.of(token),
+                new FeesAndCredits.Builder()
+                    .setCurrency(USD)
+                    .addFeeOrCredit(Fee.create(BigDecimal.valueOf(100), FeeType.CREATE, false))
+                    .build()))
+        .isEqualTo(RenewalPriceInfo.create(SPECIFIED, Money.of(USD, 100)));
+  }
+
+  @TestOfyAndSql
+  void testGetRenewalPriceInfo_isAnchorTenantWithSpecifiedStateInToken_throwsError() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                DomainCreateFlow.getRenewalPriceInfo(
+                    true,
+                    Optional.of(
+                        persistResource(
+                            new AllocationToken.Builder()
+                                .setToken("abc123")
+                                .setTokenType(SINGLE_USE)
+                                .setRenewalPriceBehavior(SPECIFIED)
+                                .build())),
+                    new FeesAndCredits.Builder()
+                        .setCurrency(USD)
+                        .addFeeOrCredit(Fee.create(BigDecimal.valueOf(0), FeeType.CREATE, true))
+                        .build()));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Renewal price behavior cannot be SPECIFIED for anchor tenant");
+  }
+
+  @TestOfyAndSql
+  void testGetRenewalPriceInfo_withInvalidRenewalPriceBehavior_throwsError() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                DomainCreateFlow.getRenewalPriceInfo(
+                    true,
+                    Optional.of(
+                        persistResource(
+                            new AllocationToken.Builder()
+                                .setToken("abc123")
+                                .setTokenType(SINGLE_USE)
+                                .setRenewalPriceBehavior(RenewalPriceBehavior.valueOf("INVALID"))
+                                .build())),
+                    new FeesAndCredits.Builder()
+                        .setCurrency(USD)
+                        .addFeeOrCredit(Fee.create(BigDecimal.valueOf(0), FeeType.CREATE, true))
+                        .build()));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "No enum constant"
+                + " google.registry.model.billing.BillingEvent.RenewalPriceBehavior.INVALID");
   }
 }

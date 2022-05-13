@@ -14,6 +14,7 @@
 
 package google.registry.flows.domain;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
@@ -54,6 +55,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
@@ -80,6 +82,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.DomainCommand.Create;
@@ -115,7 +118,9 @@ import google.registry.model.tld.Registry.TldType;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.tmch.LordnTaskUtils;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -327,7 +332,10 @@ public final class DomainCreateFlow implements TransactionalFlow {
             now);
     // Create a new autorenew billing event and poll message starting at the expiration time.
     BillingEvent.Recurring autorenewBillingEvent =
-        createAutorenewBillingEvent(domainHistoryKey, registrationExpirationTime);
+        createAutorenewBillingEvent(
+            domainHistoryKey,
+            registrationExpirationTime,
+            getRenewalPriceInfo(isAnchorTenant, allocationToken, feesAndCredits));
     PollMessage.Autorenew autorenewPollMessage =
         createAutorenewPollMessage(domainHistoryKey, registrationExpirationTime);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
@@ -546,7 +554,9 @@ public final class DomainCreateFlow implements TransactionalFlow {
   }
 
   private Recurring createAutorenewBillingEvent(
-      Key<DomainHistory> domainHistoryKey, DateTime registrationExpirationTime) {
+      Key<DomainHistory> domainHistoryKey,
+      DateTime registrationExpirationTime,
+      RenewalPriceInfo renewalpriceInfo) {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -555,6 +565,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
         .setEventTime(registrationExpirationTime)
         .setRecurrenceEndTime(END_OF_TIME)
         .setParent(domainHistoryKey)
+        .setRenewalPriceBehavior(renewalpriceInfo.renewalPriceBehavior())
+        .setRenewalPrice(renewalpriceInfo.renewalPrice())
         .build();
   }
 
@@ -609,6 +621,48 @@ public final class DomainCreateFlow implements TransactionalFlow {
     if (hasClaimsNotice || hasSignedMarks) {
       LordnTaskUtils.enqueueDomainBaseTask(newDomain);
     }
+  }
+
+  /**
+   * Determines the {@link RenewalPriceBehavior} and the renewal price that needs be stored in the
+   * {@link Recurring} billing events.
+   *
+   * <p>By default, the renewal price is calculated during the process of renewal. Renewal price
+   * should be the createCost if and only if the renewal price behavior in the {@link
+   * AllocationToken} is 'SPECIFIED'.
+   */
+  static RenewalPriceInfo getRenewalPriceInfo(
+      boolean isAnchorTenant,
+      Optional<AllocationToken> allocationToken,
+      FeesAndCredits feesAndCredits) {
+    if (isAnchorTenant) {
+      if (allocationToken.isPresent()) {
+        checkArgument(
+            allocationToken.get().getRenewalPriceBehavior() != RenewalPriceBehavior.SPECIFIED,
+            "Renewal price behavior cannot be SPECIFIED for anchor tenant");
+      }
+      return RenewalPriceInfo.create(RenewalPriceBehavior.NONPREMIUM, null);
+    } else if (allocationToken.isPresent()
+        && allocationToken.get().getRenewalPriceBehavior() == RenewalPriceBehavior.SPECIFIED) {
+      return RenewalPriceInfo.create(
+          RenewalPriceBehavior.SPECIFIED, feesAndCredits.getCreateCost());
+    } else {
+      return RenewalPriceInfo.create(RenewalPriceBehavior.DEFAULT, null);
+    }
+  }
+
+  /** A class to store renewal info used in {@link Recurring} billing events. */
+  @AutoValue
+  public abstract static class RenewalPriceInfo {
+    static DomainCreateFlow.RenewalPriceInfo create(
+        RenewalPriceBehavior renewalPriceBehavior, @Nullable Money renewalPrice) {
+      return new AutoValue_DomainCreateFlow_RenewalPriceInfo(renewalPriceBehavior, renewalPrice);
+    }
+
+    public abstract RenewalPriceBehavior renewalPriceBehavior();
+
+    @Nullable
+    public abstract Money renewalPrice();
   }
 
   private static ImmutableList<FeeTransformResponseExtension> createResponseExtensions(
