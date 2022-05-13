@@ -15,6 +15,11 @@
 package google.registry.dns;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.dns.DnsModule.PARAM_DOMAINS;
+import static google.registry.dns.DnsModule.PARAM_HOSTS;
+import static google.registry.dns.DnsModule.PARAM_LOCK_INDEX;
+import static google.registry.dns.DnsModule.PARAM_NUM_PUBLISH_LOCKS;
+import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHost;
@@ -28,6 +33,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.dns.DnsMetrics.ActionStatus;
 import google.registry.dns.DnsMetrics.CommitStatus;
@@ -36,12 +42,14 @@ import google.registry.dns.writer.DnsWriter;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
+import google.registry.request.Action.Service;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.InjectExtension;
+import google.registry.util.CloudTasksUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +69,7 @@ public class PublishDnsUpdatesActionTest {
   private final DnsWriter dnsWriter = mock(DnsWriter.class);
   private final DnsMetrics dnsMetrics = mock(DnsMetrics.class);
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
+  private final CloudTasksUtils cloudTasksUtils = mock(CloudTasksUtils.class);
   private PublishDnsUpdatesAction action;
 
   @BeforeEach
@@ -81,29 +90,52 @@ public class PublishDnsUpdatesActionTest {
   }
 
   private PublishDnsUpdatesAction createAction(String tld) {
-    PublishDnsUpdatesAction action = new PublishDnsUpdatesAction();
+    PublishDnsUpdatesAction action =
+        new PublishDnsUpdatesAction(
+            0,
+            1,
+            1,
+            ImmutableSet.of(),
+            ImmutableSet.of(),
+            tld,
+            lockHandler,
+            clock,
+            cloudTasksUtils);
     action.timeout = Duration.standardSeconds(10);
-    action.tld = tld;
-    action.hosts = ImmutableSet.of();
-    action.domains = ImmutableSet.of();
     action.itemsCreateTime = clock.nowUtc().minusHours(2);
     action.enqueuedTime = clock.nowUtc().minusHours(1);
     action.dnsWriter = "correctWriter";
     action.dnsWriterProxy = new DnsWriterProxy(ImmutableMap.of("correctWriter", dnsWriter));
     action.dnsMetrics = dnsMetrics;
     action.dnsQueue = dnsQueue;
-    action.lockIndex = 1;
-    action.numPublishLocks = 1;
-    action.lockHandler = lockHandler;
-    action.clock = clock;
+    return action;
+  }
+
+  private PublishDnsUpdatesAction createAction(PublishDnsUpdatesAction action) {
+    action.timeout = Duration.standardSeconds(10);
+    action.itemsCreateTime = clock.nowUtc().minusHours(2);
+    action.enqueuedTime = clock.nowUtc().minusHours(1);
+    action.dnsWriter = "correctWriter";
+    action.dnsWriterProxy = new DnsWriterProxy(ImmutableMap.of("correctWriter", dnsWriter));
+    action.dnsMetrics = dnsMetrics;
+    action.dnsQueue = dnsQueue;
     return action;
   }
 
   @Test
   void testHost_published() {
-    action = createAction("xn--q9jyb4c");
-    action.hosts = ImmutableSet.of("ns1.example.xn--q9jyb4c");
-
+    action =
+        createAction(
+            new PublishDnsUpdatesAction(
+                0,
+                1,
+                1,
+                ImmutableSet.of(),
+                ImmutableSet.of("ns1.example.xn--q9jyb4c"),
+                "xn--q9jyb4c",
+                lockHandler,
+                clock,
+                cloudTasksUtils));
     action.run();
 
     verify(dnsWriter).publishHost("ns1.example.xn--q9jyb4c");
@@ -129,9 +161,18 @@ public class PublishDnsUpdatesActionTest {
 
   @Test
   void testDomain_published() {
-    action = createAction("xn--q9jyb4c");
-    action.domains = ImmutableSet.of("example.xn--q9jyb4c");
-
+    action =
+        createAction(
+            new PublishDnsUpdatesAction(
+                0,
+                1,
+                1,
+                ImmutableSet.of("example.xn--q9jyb4c"),
+                ImmutableSet.of(),
+                "xn--q9jyb4c",
+                lockHandler,
+                clock,
+                cloudTasksUtils));
     action.run();
 
     verify(dnsWriter).publishDomain("example.xn--q9jyb4c");
@@ -158,13 +199,20 @@ public class PublishDnsUpdatesActionTest {
   @Test
   void testAction_acquiresCorrectLock() {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setNumDnsPublishLocks(4).build());
-    action = createAction("xn--q9jyb4c");
-    action.lockIndex = 2;
-    action.numPublishLocks = 4;
-    action.domains = ImmutableSet.of("example.xn--q9jyb4c");
     LockHandler mockLockHandler = mock(LockHandler.class);
     when(mockLockHandler.executeWithLocks(any(), any(), any(), any())).thenReturn(true);
-    action.lockHandler = mockLockHandler;
+    action =
+        createAction(
+            new PublishDnsUpdatesAction(
+                0,
+                2,
+                4,
+                ImmutableSet.of("example.xn--q9jyb4c"),
+                ImmutableSet.of(),
+                "xn--q9jyb4c",
+                mockLockHandler,
+                clock,
+                cloudTasksUtils));
 
     action.run();
 
@@ -175,11 +223,21 @@ public class PublishDnsUpdatesActionTest {
 
   @Test
   void testPublish_commitFails() {
-    action = createAction("xn--q9jyb4c");
-    action.domains = ImmutableSet.of("example.xn--q9jyb4c", "example2.xn--q9jyb4c");
-    action.hosts =
-        ImmutableSet.of(
-            "ns1.example.xn--q9jyb4c", "ns2.example.xn--q9jyb4c", "ns1.example2.xn--q9jyb4c");
+    action =
+        createAction(
+            new PublishDnsUpdatesAction(
+                0,
+                1,
+                1,
+                ImmutableSet.of("example.xn--q9jyb4c", "example2.xn--q9jyb4c"),
+                ImmutableSet.of(
+                    "ns1.example.xn--q9jyb4c",
+                    "ns2.example.xn--q9jyb4c",
+                    "ns1.example2.xn--q9jyb4c"),
+                "xn--q9jyb4c",
+                lockHandler,
+                clock,
+                cloudTasksUtils));
     doThrow(new RuntimeException()).when(dnsWriter).commit();
 
     assertThrows(RuntimeException.class, action::run);
@@ -200,15 +258,51 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     verifyNoMoreInteractions(dnsQueue);
+
+    ImmutableMultimap.Builder<String, String> mapBuilder = ImmutableMultimap.builder();
+
+    verify(cloudTasksUtils)
+        .createPostTask(
+            PublishDnsUpdatesAction.PATH,
+            Service.BACKEND.toString(),
+            mapBuilder
+                .putAll(
+                    PublishDnsUpdatesAction.PREVIOUS_ATTEMPTS_PARAM,
+                    "1",
+                    PARAM_LOCK_INDEX,
+                    "1",
+                    PARAM_NUM_PUBLISH_LOCKS,
+                    "1",
+                    PARAM_DOMAINS,
+                    String.valueOf(ImmutableSet.of("example.xn--q9jyb4c", "example2.xn--q9jyb4c")),
+                    PARAM_HOSTS,
+                    String.valueOf(
+                        ImmutableSet.of(
+                            "ns1.example.xn--q9jyb4c",
+                            "ns2.example.xn--q9jyb4c",
+                            "ns1.example2.xn--q9jyb4c")),
+                    PARAM_TLD,
+                    "xn--q9jyb4c")
+                .build());
   }
 
   @Test
   void testHostAndDomain_published() {
-    action = createAction("xn--q9jyb4c");
-    action.domains = ImmutableSet.of("example.xn--q9jyb4c", "example2.xn--q9jyb4c");
-    action.hosts =
-        ImmutableSet.of(
-            "ns1.example.xn--q9jyb4c", "ns2.example.xn--q9jyb4c", "ns1.example2.xn--q9jyb4c");
+    action =
+        createAction(
+            new PublishDnsUpdatesAction(
+                0,
+                1,
+                1,
+                ImmutableSet.of("example.xn--q9jyb4c", "example2.xn--q9jyb4c"),
+                ImmutableSet.of(
+                    "ns1.example.xn--q9jyb4c",
+                    "ns2.example.xn--q9jyb4c",
+                    "ns1.example2.xn--q9jyb4c"),
+                "xn--q9jyb4c",
+                lockHandler,
+                clock,
+                cloudTasksUtils));
 
     action.run();
 
@@ -239,9 +333,18 @@ public class PublishDnsUpdatesActionTest {
 
   @Test
   void testWrongTld_notPublished() {
-    action = createAction("xn--q9jyb4c");
-    action.domains = ImmutableSet.of("example.com", "example2.com");
-    action.hosts = ImmutableSet.of("ns1.example.com", "ns2.example.com", "ns1.example2.com");
+    action =
+        createAction(
+            new PublishDnsUpdatesAction(
+                0,
+                1,
+                1,
+                ImmutableSet.of("example.com", "example2.com"),
+                ImmutableSet.of("ns1.example.com", "ns2.example.com", "ns1.example2.com"),
+                "xn--q9jyb4c",
+                lockHandler,
+                clock,
+                cloudTasksUtils));
 
     action.run();
 
@@ -267,10 +370,18 @@ public class PublishDnsUpdatesActionTest {
 
   @Test
   void testLockIsntAvailable() {
-    action = createAction("xn--q9jyb4c");
-    action.domains = ImmutableSet.of("example.com", "example2.com");
-    action.hosts = ImmutableSet.of("ns1.example.com", "ns2.example.com", "ns1.example2.com");
-    action.lockHandler = new FakeLockHandler(false);
+    action =
+        createAction(
+            new PublishDnsUpdatesAction(
+                0,
+                1,
+                1,
+                ImmutableSet.of("example.com", "example2.com"),
+                ImmutableSet.of("ns1.example.com", "ns2.example.com", "ns1.example2.com"),
+                "xn--q9jyb4c",
+                new FakeLockHandler(false),
+                clock,
+                cloudTasksUtils));
 
     ServiceUnavailableException thrown =
         assertThrows(ServiceUnavailableException.class, action::run);
@@ -292,11 +403,18 @@ public class PublishDnsUpdatesActionTest {
   @Test
   void testParam_invalidLockIndex() {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setNumDnsPublishLocks(4).build());
-    action = createAction("xn--q9jyb4c");
-    action.domains = ImmutableSet.of("example.com");
-    action.hosts = ImmutableSet.of("ns1.example.com");
-    action.lockIndex = 5;
-    action.numPublishLocks = 4;
+    action =
+        createAction(
+            new PublishDnsUpdatesAction(
+                0,
+                5,
+                4,
+                ImmutableSet.of("example.com"),
+                ImmutableSet.of("ns1.example.com"),
+                "xn--q9jyb4c",
+                lockHandler,
+                clock,
+                cloudTasksUtils));
 
     action.run();
 
@@ -318,11 +436,18 @@ public class PublishDnsUpdatesActionTest {
   @Test
   void testRegistryParam_mismatchedMaxLocks() {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setNumDnsPublishLocks(4).build());
-    action = createAction("xn--q9jyb4c");
-    action.domains = ImmutableSet.of("example.com");
-    action.hosts = ImmutableSet.of("ns1.example.com");
-    action.lockIndex = 3;
-    action.numPublishLocks = 5;
+    action =
+        createAction(
+            new PublishDnsUpdatesAction(
+                0,
+                3,
+                5,
+                ImmutableSet.of("example.com"),
+                ImmutableSet.of("ns1.example.com"),
+                "xn--q9jyb4c",
+                lockHandler,
+                clock,
+                cloudTasksUtils));
 
     action.run();
 
@@ -343,9 +468,18 @@ public class PublishDnsUpdatesActionTest {
 
   @Test
   void testWrongDnsWriter() {
-    action = createAction("xn--q9jyb4c");
-    action.domains = ImmutableSet.of("example.com", "example2.com");
-    action.hosts = ImmutableSet.of("ns1.example.com", "ns2.example.com", "ns1.example2.com");
+    action =
+        createAction(
+            new PublishDnsUpdatesAction(
+                0,
+                1,
+                1,
+                ImmutableSet.of("example.com", "example2.com"),
+                ImmutableSet.of("ns1.example.com", "ns2.example.com", "ns1.example2.com"),
+                "xn--q9jyb4c",
+                lockHandler,
+                clock,
+                cloudTasksUtils));
     action.dnsWriter = "wrongWriter";
 
     action.run();

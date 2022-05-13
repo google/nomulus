@@ -14,6 +14,8 @@
 
 package google.registry.dns;
 
+import static google.registry.batch.RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM;
+import static google.registry.dns.DnsConstants.DNS_PUBLISH_PUSH_QUEUE_NAME;
 import static google.registry.dns.DnsModule.PARAM_DNS_WRITER;
 import static google.registry.dns.DnsModule.PARAM_DOMAINS;
 import static google.registry.dns.DnsModule.PARAM_HOSTS;
@@ -25,6 +27,7 @@ import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig.Config;
@@ -34,11 +37,13 @@ import google.registry.dns.DnsMetrics.PublishStatus;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.model.tld.Registry;
 import google.registry.request.Action;
+import google.registry.request.Action.Service;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
+import google.registry.util.CloudTasksUtils;
 import google.registry.util.DomainNameUtils;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -57,6 +62,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   public static final String PATH = "/_dr/task/publishDnsUpdates";
   public static final String LOCK_NAME = "DNS updates";
+  public static final String PREVIOUS_ATTEMPTS_PARAM = "previousAttempts";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -83,14 +89,37 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   @Parameter(PARAM_REFRESH_REQUEST_CREATED)
   DateTime itemsCreateTime;
 
-  @Inject @Parameter(PARAM_LOCK_INDEX) int lockIndex;
-  @Inject @Parameter(PARAM_NUM_PUBLISH_LOCKS) int numPublishLocks;
-  @Inject @Parameter(PARAM_DOMAINS) Set<String> domains;
-  @Inject @Parameter(PARAM_HOSTS) Set<String> hosts;
-  @Inject @Parameter(PARAM_TLD) String tld;
-  @Inject LockHandler lockHandler;
-  @Inject Clock clock;
-  @Inject PublishDnsUpdatesAction() {}
+  private final int previousAttempts;
+  private final int lockIndex;
+  private final int numPublishLocks;
+  private final Set<String> domains;
+  private final Set<String> hosts;
+  private final String tld;
+  private final LockHandler lockHandler;
+  private final Clock clock;
+  private CloudTasksUtils cloudTasksUtils;
+
+  @Inject
+  PublishDnsUpdatesAction(
+      @Parameter(PREVIOUS_ATTEMPTS_PARAM) int previousAttempts,
+      @Parameter(PARAM_LOCK_INDEX) int lockIndex,
+      @Parameter(PARAM_NUM_PUBLISH_LOCKS) int numPublishLocks,
+      @Parameter(PARAM_DOMAINS) Set<String> domains,
+      @Parameter(PARAM_HOSTS) Set<String> hosts,
+      @Parameter(PARAM_TLD) String tld,
+      LockHandler lockHandler,
+      Clock clock,
+      CloudTasksUtils cloudTasksUtils) {
+    this.previousAttempts = previousAttempts;
+    this.lockIndex = lockIndex;
+    this.numPublishLocks = numPublishLocks;
+    this.domains = domains;
+    this.hosts = hosts;
+    this.tld = tld;
+    this.lockHandler = lockHandler;
+    this.clock = clock;
+    this.cloudTasksUtils = cloudTasksUtils;
+  }
 
   private void recordActionResult(ActionStatus status) {
     DateTime now = clock.nowUtc();
@@ -227,6 +256,9 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       commitStatus = CommitStatus.SUCCESS;
       actionStatus = ActionStatus.SUCCESS;
     } finally {
+      if (commitStatus.equals(CommitStatus.FAILURE)) {
+        handleFailure();
+      }
       recordActionResult(actionStatus);
       Duration duration = new Duration(timeAtStart, clock.nowUtc());
       dnsMetrics.recordCommit(
@@ -243,5 +275,30 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
           hostsPublished,
           hostsRejected);
     }
+  }
+
+  private void handleFailure() {
+    logger.atSevere().log("Batch commit failed");
+    ImmutableMultimap.Builder<String, String> mapBuilder = ImmutableMultimap.builder();
+    cloudTasksUtils.enqueue(
+        DNS_PUBLISH_PUSH_QUEUE_NAME,
+        cloudTasksUtils.createPostTask(
+            PATH,
+            Service.BACKEND.toString(),
+            mapBuilder
+                .putAll(
+                    PublishDnsUpdatesAction.PREVIOUS_ATTEMPTS_PARAM,
+                    String.valueOf(previousAttempts + 1),
+                    PARAM_LOCK_INDEX,
+                    String.valueOf(lockIndex),
+                    PARAM_NUM_PUBLISH_LOCKS,
+                    String.valueOf(numPublishLocks),
+                    PARAM_DOMAINS,
+                    String.valueOf(domains),
+                    PARAM_HOSTS,
+                    String.valueOf(hosts),
+                    PARAM_TLD,
+                    tld)
+                .build()));
   }
 }
