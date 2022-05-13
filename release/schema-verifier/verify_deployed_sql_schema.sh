@@ -85,7 +85,7 @@ then
   result=0
 else
   echo "Golden and actual schemas do not match. Diff is:"
-  echo "${effective_diff}"
+  echo "${raw_diff}"
   result=1
 fi
 
