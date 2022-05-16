@@ -25,10 +25,6 @@
 # - /schema/schema.jar: the jar with the golden schema.
 
 set -e
-if [ ! -f /secrets/schema_deployer_credential.dec ]; then
-  echo "Missing /secrets/schema_deployer_credential.dec"
-  exit 1
-fi
 read -r cloud_sql_instance db_user db_password \
   <<<$(cat /secrets/schema_deployer_credential.dec | awk '{print $1, $2, $3}')
 
