@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.AddRemoveSameValueException;
@@ -43,21 +42,11 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactUpdateFlow}. */
-@DualDatabaseTest
 class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, ContactResource> {
 
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   ContactUpdateFlowTest() {
     setEppInput("contact_update.xml");
@@ -80,39 +69,42 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     assertLastHistoryContainsResource(contact);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     dryRunFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess() throws Exception {
     doSuccessfulTest();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_updatingInternationalizedPostalInfoDeletesLocalized() throws Exception {
     ContactResource contact =
         persistResource(
-            newContactResource(getUniqueIdFromCommand()).asBuilder()
-                .setLocalizedPostalInfo(new PostalInfo.Builder()
-                    .setType(Type.LOCALIZED)
-                    .setAddress(new ContactAddress.Builder()
-                        .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
-                        .setCity("New York")
-                        .setState("NY")
-                        .setZip("10011")
-                        .setCountryCode("US")
+            newContactResource(getUniqueIdFromCommand())
+                .asBuilder()
+                .setLocalizedPostalInfo(
+                    new PostalInfo.Builder()
+                        .setType(Type.LOCALIZED)
+                        .setAddress(
+                            new ContactAddress.Builder()
+                                .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
+                                .setCity("New York")
+                                .setState("NY")
+                                .setZip("10011")
+                                .setCountryCode("US")
+                                .build())
                         .build())
-                    .build())
                 .build());
     clock.advanceOneMilli();
     // The test xml updates the internationalized postal info and should therefore implicitly delete
@@ -136,22 +128,25 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
             .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_updatingLocalizedPostalInfoDeletesInternationalized() throws Exception {
     setEppInput("contact_update_localized.xml");
     ContactResource contact =
         persistResource(
-            newContactResource(getUniqueIdFromCommand()).asBuilder()
-                .setInternationalizedPostalInfo(new PostalInfo.Builder()
-                    .setType(Type.INTERNATIONALIZED)
-                    .setAddress(new ContactAddress.Builder()
-                        .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
-                        .setCity("New York")
-                        .setState("NY")
-                        .setZip("10011")
-                        .setCountryCode("US")
+            newContactResource(getUniqueIdFromCommand())
+                .asBuilder()
+                .setInternationalizedPostalInfo(
+                    new PostalInfo.Builder()
+                        .setType(Type.INTERNATIONALIZED)
+                        .setAddress(
+                            new ContactAddress.Builder()
+                                .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
+                                .setCity("New York")
+                                .setState("NY")
+                                .setZip("10011")
+                                .setCountryCode("US")
+                                .build())
                         .build())
-                    .build())
                 .build());
     clock.advanceOneMilli();
     // The test xml updates the localized postal info and should therefore implicitly delete
@@ -175,23 +170,26 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
             .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_partialPostalInfoUpdate() throws Exception {
     setEppInput("contact_update_partial_postalinfo.xml");
     persistResource(
-        newContactResource(getUniqueIdFromCommand()).asBuilder()
-            .setLocalizedPostalInfo(new PostalInfo.Builder()
-                .setType(Type.LOCALIZED)
-                .setName("A. Person")
-                .setOrg("Company Inc.")
-                .setAddress(new ContactAddress.Builder()
-                    .setStreet(ImmutableList.of("123 4th st", "5th Floor"))
-                    .setCity("City")
-                    .setState("AB")
-                    .setZip("12345")
-                    .setCountryCode("US")
+        newContactResource(getUniqueIdFromCommand())
+            .asBuilder()
+            .setLocalizedPostalInfo(
+                new PostalInfo.Builder()
+                    .setType(Type.LOCALIZED)
+                    .setName("A. Person")
+                    .setOrg("Company Inc.")
+                    .setAddress(
+                        new ContactAddress.Builder()
+                            .setStreet(ImmutableList.of("123 4th st", "5th Floor"))
+                            .setCity("City")
+                            .setState("AB")
+                            .setZip("12345")
+                            .setCountryCode("US")
+                            .build())
                     .build())
-                .build())
             .build());
     clock.advanceOneMilli();
     // The test xml updates the address of the postal info and should leave the name untouched.
@@ -211,36 +209,41 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
             .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_updateOnePostalInfo_touchOtherPostalInfoPreservesIt() throws Exception {
     setEppInput("contact_update_partial_postalinfo_preserve_int.xml");
     persistResource(
-        newContactResource(getUniqueIdFromCommand()).asBuilder()
-        .setLocalizedPostalInfo(new PostalInfo.Builder()
-            .setType(Type.LOCALIZED)
-            .setName("A. Person")
-            .setOrg("Company Inc.")
-            .setAddress(new ContactAddress.Builder()
-                .setStreet(ImmutableList.of("123 4th st", "5th Floor"))
-                .setCity("City")
-                .setState("AB")
-                .setZip("12345")
-                .setCountryCode("US")
-                .build())
-            .build())
-        .setInternationalizedPostalInfo(new PostalInfo.Builder()
-            .setType(Type.INTERNATIONALIZED)
-            .setName("B. Person")
-            .setOrg("Company Co.")
-            .setAddress(new ContactAddress.Builder()
-                .setStreet(ImmutableList.of("100 200th Dr.", "6th Floor"))
-                .setCity("Town")
-                .setState("CD")
-                .setZip("67890")
-                .setCountryCode("US")
-                .build())
-            .build())
-        .build());
+        newContactResource(getUniqueIdFromCommand())
+            .asBuilder()
+            .setLocalizedPostalInfo(
+                new PostalInfo.Builder()
+                    .setType(Type.LOCALIZED)
+                    .setName("A. Person")
+                    .setOrg("Company Inc.")
+                    .setAddress(
+                        new ContactAddress.Builder()
+                            .setStreet(ImmutableList.of("123 4th st", "5th Floor"))
+                            .setCity("City")
+                            .setState("AB")
+                            .setZip("12345")
+                            .setCountryCode("US")
+                            .build())
+                    .build())
+            .setInternationalizedPostalInfo(
+                new PostalInfo.Builder()
+                    .setType(Type.INTERNATIONALIZED)
+                    .setName("B. Person")
+                    .setOrg("Company Co.")
+                    .setAddress(
+                        new ContactAddress.Builder()
+                            .setStreet(ImmutableList.of("100 200th Dr.", "6th Floor"))
+                            .setCity("Town")
+                            .setState("CD")
+                            .setZip("67890")
+                            .setCountryCode("US")
+                            .build())
+                    .build())
+            .build());
     clock.advanceOneMilli();
     // The test xml updates the address of the localized postal info. It also sets the name of the
     // internationalized postal info to the same value it previously had, which causes it to be
@@ -277,7 +280,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
@@ -285,7 +288,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_existedButWasDeleted() throws Exception {
     persistDeletedContact(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     ResourceDoesNotExistException thrown =
@@ -294,7 +297,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_statusValueNotClientSettable() throws Exception {
     setEppInput("contact_update_prohibited_status.xml");
     persistActiveContact(getUniqueIdFromCommand());
@@ -302,7 +305,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserStatusValueNotClientSettable() throws Exception {
     setEppInput("contact_update_prohibited_status.xml");
     persistActiveContact(getUniqueIdFromCommand());
@@ -311,7 +314,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_unauthorizedClient() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
@@ -319,7 +322,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserUnauthorizedClient() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
@@ -328,7 +331,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_clientUpdateProhibited_removed() throws Exception {
     setEppInput("contact_update_remove_client_update_prohibited.xml");
     persistResource(
@@ -342,7 +345,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
         .doesNotHaveStatusValue(StatusValue.CLIENT_UPDATE_PROHIBITED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserClientUpdateProhibited_notRemoved() throws Exception {
     setEppInput("contact_update_prohibited_status.xml");
     persistResource(
@@ -360,7 +363,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
         .hasStatusValue(StatusValue.SERVER_DELETE_PROHIBITED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientUpdateProhibited_notRemoved() throws Exception {
     persistResource(
         newContactResource(getUniqueIdFromCommand())
@@ -372,7 +375,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_serverUpdateProhibited() throws Exception {
     persistResource(
         newContactResource(getUniqueIdFromCommand())
@@ -385,7 +388,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_pendingDeleteProhibited() throws Exception {
     persistResource(
         newContactResource(getUniqueIdFromCommand())
@@ -398,13 +401,13 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_nonAsciiInLocAddress() throws Exception {
     setEppInput("contact_update_hebrew_loc.xml");
     doSuccessfulTest();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonAsciiInIntAddress() throws Exception {
     setEppInput("contact_update_hebrew_int.xml");
     persistActiveContact(getUniqueIdFromCommand());
@@ -413,7 +416,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_declineDisclosure() throws Exception {
     setEppInput("contact_update_decline_disclosure.xml");
     persistActiveContact(getUniqueIdFromCommand());
@@ -422,7 +425,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_addRemoveSameValue() throws Exception {
     setEppInput("contact_update_add_remove_same.xml");
     persistActiveContact(getUniqueIdFromCommand());
@@ -430,20 +433,11 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-update");
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() throws Exception {
-    persistActiveContact(getUniqueIdFromCommand());
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

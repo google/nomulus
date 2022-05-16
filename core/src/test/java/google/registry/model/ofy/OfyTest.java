@@ -66,7 +66,7 @@ public class OfyTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
+      AppEngineExtension.builder().withCloudSql().withClock(fakeClock).build();
 
   /** An entity to use in save and delete tests. */
   private HistoryEntry someObject;

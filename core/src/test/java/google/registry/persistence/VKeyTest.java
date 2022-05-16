@@ -46,8 +46,7 @@ class VKeyTest {
   @RegisterExtension
   final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withOfyTestEntities(TestObject.class)
+          .withCloudSql()
           .withTaskQueue(
               Joiner.on('\n')
                   .join(

@@ -34,8 +34,7 @@ class GenrulePremiumListTest {
   private static final String LISTS_DIRECTORY = "google/registry/config/files/premium/";
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void testParse_allPremiumLists() throws Exception {

@@ -38,20 +38,18 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.whois.WhoisResponse.WhoisResponseResults;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainWhoisResponse}. */
-@DualDatabaseTest
 class DomainWhoisResponseTest {
 
   @RegisterExtension
-  final AppEngineExtension gae = AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension gae = AppEngineExtension.builder().withCloudSql().build();
 
   private HostResource hostResource1;
   private HostResource hostResource2;
@@ -279,7 +277,7 @@ class DomainWhoisResponseTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void getPlainTextOutputTest() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(domainBase, false, "Please contact registrar", clock.nowUtc());
@@ -290,7 +288,7 @@ class DomainWhoisResponseTest {
         .isEqualTo(WhoisResponseResults.create(loadFile("whois_domain.txt"), 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void getPlainTextOutputTest_registrarAbuseInfoMissing() {
     persistResource(abuseContact.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build());
     DomainWhoisResponse domainWhoisResponse =
@@ -302,7 +300,7 @@ class DomainWhoisResponseTest {
                 loadFile("whois_domain_registrar_abuse_info_missing.txt"), 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void getPlainTextOutputTest_fullOutput() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(domainBase, true, "Please contact registrar", clock.nowUtc());
@@ -313,7 +311,7 @@ class DomainWhoisResponseTest {
         .isEqualTo(WhoisResponseResults.create(loadFile("whois_domain_full_output.txt"), 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void addImplicitOkStatusTest() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(

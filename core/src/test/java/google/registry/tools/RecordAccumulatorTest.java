@@ -33,8 +33,7 @@ public class RecordAccumulatorTest {
   @TempDir public File tmpDir;
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void testReadDirectory() throws IOException {

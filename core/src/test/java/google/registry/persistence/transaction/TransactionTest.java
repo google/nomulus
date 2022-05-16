@@ -53,9 +53,8 @@ class TransactionTest {
   @RegisterExtension
   final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withClock(fakeClock)
-          .withOfyTestEntities(TestEntity.class)
           .withJpaUnitTestEntities(TestEntity.class)
           .build();
 

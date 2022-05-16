@@ -53,7 +53,7 @@ public class PublishDnsUpdatesActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
   private final FakeClock clock = new FakeClock(DateTime.parse("1971-01-01TZ"));

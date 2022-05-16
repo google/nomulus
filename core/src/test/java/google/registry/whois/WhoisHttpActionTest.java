@@ -41,11 +41,9 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.whois.WhoisMetrics.WhoisMetric;
 import java.io.IOException;
 import java.io.Reader;
@@ -53,6 +51,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
@@ -61,12 +60,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  * <p>This class should be limited to testing the HTTP interface, as the bulk of the WHOIS testing
  * can be found in {@link WhoisActionTest}.
  */
-@DualDatabaseTest
 class WhoisHttpActionTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension final InjectExtension inject = new InjectExtension();
 
@@ -94,7 +91,7 @@ class WhoisHttpActionTest {
     inject.setStaticField(Ofy.class, "clock", clock);
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_emptyQuery_returns400BadRequestWithPlainTextOutput() {
     newWhoisHttpAction("").run();
     assertThat(response.getStatus()).isEqualTo(400);
@@ -102,7 +99,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_no_command.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_badUrlEncoding_returns400BadRequestWithPlainTextOutput() {
     newWhoisHttpAction("nic.%u307F%u3093%u306A").run();
     assertThat(response.getStatus()).isEqualTo(400);
@@ -110,7 +107,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_malformed_path.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_domainNotFound_returns404StatusAndPlainTextResponse() {
     newWhoisHttpAction("/domain/cat.lol").run();
     assertThat(response.getStatus()).isEqualTo(404);
@@ -120,7 +117,7 @@ class WhoisHttpActionTest {
 
   // todo (b/27378695): reenable or delete this test
   @Disabled
-  @TestOfyAndSql
+  @Test
   void testRun_domainInTestTld_isConsideredNotFound() {
     persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
     Registrar registrar = persistResource(makeRegistrar(
@@ -140,7 +137,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_domain_not_found.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_domainQueryIdn_works() {
     Registrar registrar = persistResource(makeRegistrar(
         "evilregistrar", "Yes Virginia", Registrar.State.ACTIVE));
@@ -158,7 +155,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_idn_utf8.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_wickedLineFeedForgeryInDatastore_crlfSubstitutedWithSpace() {
     ContactResource trl = makeContactResource("5372808-TRL", "Eric Schmidt", "bog@cat.みんな");
     trl =
@@ -181,7 +178,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).contains("Galactic  Empire");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_domainOnly_works() {
     persistResource(makeDomainBase(
         "cat.みんな",
@@ -196,14 +193,14 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).contains("Domain Name: cat.みんな\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_hostnameOnly_works() {
     persistResource(makeHostResource("ns1.cat.みんな", "1.2.3.4"));
     newWhoisHttpAction("ns1.cat.みんな").run();
     assertThat(response.getPayload()).contains("Server Name: ns1.cat.みんな\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_domainQueryPunycode_works() {
     Registrar registrar = persistResource(makeRegistrar(
         "evilregistrar", "Yes Virginia", Registrar.State.ACTIVE));
@@ -220,7 +217,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_idn_utf8.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_nameserverQuery_works() {
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setUrl("http://my.fake.url").build());
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
@@ -230,14 +227,14 @@ class WhoisHttpActionTest {
 
   // todo (b/27378695): reenable or delete this test
   @Disabled
-  @TestOfyAndSql
+  @Test
   void testRun_nameserverQueryInTestTld_notFound() {
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
     newWhoisHttpAction("/nameserver/ns1.cat.lol").run();
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_nameserver.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_lastUpdateTimestamp_isPresentInResponse() {
     clock.setTo(DateTime.parse("2020-07-12T23:52:43Z"));
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
@@ -246,7 +243,7 @@ class WhoisHttpActionTest {
         .contains(">>> Last update of WHOIS database: 2020-07-12T23:52:43Z <<<");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_nameserverQueryIdn_works() {
     persistResource(makeHostResource("ns1.cat.みんな", "1.2.3.4"));
     newWhoisHttpAction("/nameserver/ns1.cat.みんな").run();
@@ -254,7 +251,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).contains("1.2.3.4");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_nameserverQueryPunycode_works() {
     persistResource(makeHostResource("ns1.cat.みんな", "1.2.3.4"));
     newWhoisHttpAction("/nameserver/ns1.cat.xn--q9jyb4c").run();
@@ -262,7 +259,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).contains("1.2.3.4");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_trailingSlashInPath_getsIgnored() {
     persistResource(makeHostResource("ns1.cat.みんな", "1.2.3.4"));
     newWhoisHttpAction("/nameserver/ns1.cat.xn--q9jyb4c/").run();
@@ -270,7 +267,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).contains("1.2.3.4");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_uppercaseDomain_ignoresCasing() {
     persistResource(makeDomainBase(
         "cat.lol",
@@ -284,7 +281,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).contains("Domain Name: cat.lol\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_hairyPath_getsDecoded() {
     persistResource(makeDomainBase(
         "cat.lol",
@@ -299,7 +296,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).contains("Domain Name: cat.lol\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_registrarLookup_works() {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", Registrar.State.ACTIVE));
@@ -310,7 +307,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_registrarLookupInPendingState_returnsNotFound() {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", Registrar.State.PENDING));
@@ -320,7 +317,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar_not_found.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_registrarLookupWithTestType_returnsNotFound() {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", Registrar.State.ACTIVE)
@@ -331,7 +328,7 @@ class WhoisHttpActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar_not_found.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_metricsLoggedForSuccessfulCommand() {
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
     WhoisHttpAction action = newWhoisHttpAction("/nameserver/ns1.cat.lol");
@@ -346,7 +343,7 @@ class WhoisHttpActionTest {
     verify(action.whoisMetrics).recordWhoisMetric(eq(expected));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_metricsLoggedForUnsuccessfulCommand() {
     WhoisHttpAction action = newWhoisHttpAction("nic.%u307F%u3093%u306A");
     action.whoisMetrics = mock(WhoisMetrics.class);
@@ -356,7 +353,7 @@ class WhoisHttpActionTest {
     verify(action.whoisMetrics).recordWhoisMetric(eq(expected));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_metricsLoggedForInternalServerError() throws Exception {
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
     WhoisHttpAction action = newWhoisHttpAction("ns1.cat.lol");

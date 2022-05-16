@@ -17,10 +17,7 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertSimpleResources;
-import static google.registry.testing.DualDatabaseTestInvocationContextProvider.injectTmForDualDatabaseTest;
-import static google.registry.testing.DualDatabaseTestInvocationContextProvider.restoreTmAfterDualDatabaseTest;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -28,7 +25,6 @@ import static java.nio.file.Files.walk;
 import static java.util.Comparator.reverseOrder;
 import static org.json.XML.toJSONObject;
 
-import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
@@ -42,10 +38,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyFilter;
-import google.registry.model.IdService;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
@@ -129,7 +122,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
 
   private JpaUnitTestExtension jpaUnitTestExtension;
 
-  private boolean withDatastore;
   private boolean withoutCannedData;
   private boolean withCloudSql;
   private boolean enableJpaEntityCoverageCheck;
@@ -143,8 +135,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   private String taskQueueXml;
   private UserInfo userInfo;
 
-  // Test Objectify entity classes to be used with this AppEngineExtension instance.
-  private ImmutableList<Class<?>> ofyTestEntities;
   private ImmutableList<Class<?>> jpaTestEntities;
 
   public Optional<JpaIntegrationTestExtension> getJpaIntegrationTestExtension() {
@@ -155,20 +145,11 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   public static class Builder {
 
     private AppEngineExtension extension = new AppEngineExtension();
-    private ImmutableList.Builder<Class<?>> ofyTestEntities = new ImmutableList.Builder<>();
     private ImmutableList.Builder<Class<?>> jpaTestEntities = new ImmutableList.Builder<>();
-
-    /** Turn on the Datastore service and the Cloud SQL service. */
-    public Builder withDatastoreAndCloudSql() {
-      extension.withDatastore = true;
-      extension.withCloudSql = true;
-      return this;
-    }
 
     /** Turns on Cloud SQL only, for use by test data generators. */
     public Builder withCloudSql() {
       extension.withCloudSql = true;
-      extension.withDatastore = false;
       return this;
     }
 
@@ -222,24 +203,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       return this;
     }
 
-    /**
-     * Declares test-only entities to be registered with {@code ObjectifyService}.
-     *
-     * <p>Note that {@code ObjectifyService} silently replaces the current registration for a given
-     * kind when a different class is registered for this kind. Since {@code ObjectifyService} does
-     * not support de-registration, each test entity class must be of a unique kind across the
-     * entire code base. Although this requirement can be worked around by using different {@code
-     * ObjectifyService} instances for each test (class), the setup overhead would rise
-     * significantly.
-     *
-     * @see AppEngineExtension#register(Class)
-     */
-    @SafeVarargs
-    public final Builder withOfyTestEntities(Class<?>... entities) {
-      ofyTestEntities.add(entities);
-      return this;
-    }
-
     public Builder withJpaUnitTestEntities(Class<?>... entities) {
       jpaTestEntities.add(entities);
       extension.withJpaUnitTest = true;
@@ -256,7 +219,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       checkState(
           !extension.withJpaUnitTest || !extension.enableJpaEntityCoverageCheck,
           "withJpaUnitTestEntities cannot be set when enableJpaEntityCoverageCheck");
-      extension.ofyTestEntities = this.ofyTestEntities.build();
       extension.jpaTestEntities = this.jpaTestEntities.build();
       return extension;
     }
@@ -389,13 +351,8 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
         jpaIntegrationTestExtension.beforeEach(context);
       }
     }
-    if (isWithDatastoreAndCloudSql()) {
-      injectTmForDualDatabaseTest(context);
-    }
-    if (withDatastore || withCloudSql) {
-      if (!withoutCannedData && (tm().isOfy() || (withCloudSql && !withJpaUnitTest))) {
-        loadInitialData();
-      }
+    if (withCloudSql && !withoutCannedData && !withJpaUnitTest) {
+      loadInitialData();
     }
   }
 
@@ -413,17 +370,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     Set<LocalServiceTestConfig> configs = new HashSet<>();
     if (withUrlFetch) {
       configs.add(new LocalURLFetchServiceTestConfig());
-    }
-    if (withDatastore) {
-      configs.add(
-          new LocalDatastoreServiceTestConfig()
-              // We need to set this to allow cross entity group transactions.
-              .setApplyAllHighRepJobPolicy()
-              // This causes unit tests to write a file containing any indexes the test required. We
-              // can use that file below to make sure we have the right indexes in our prod code.
-              .setNoIndexAutoGen(false));
-      // This forces App Engine to write the generated indexes to a usable location.
-      System.setProperty("appengine.generated.dir", tmpDir.getAbsolutePath());
     }
     if (withLocalModules) {
       configs.add(
@@ -462,55 +408,23 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     }
 
     helper.setUp();
-
-    if (withDatastore) {
-      ObjectifyService.initOfy();
-      // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
-      IdService.resetSelfAllocatedId();
-      this.ofyTestEntities.forEach(AppEngineExtension::register);
-    }
   }
 
   /** Called after each test method. */
   @Override
   public void afterEach(ExtensionContext context) throws Exception {
     checkArgumentNotNull(context, "The ExtensionContext must not be null");
-    try {
-      // If there is a replay extension, we'll want to call its replay() method.
-      //
-      // We have to provide this hook here for ReplayExtension instead of relying on
-      // ReplayExtension's afterEach() method because of ordering and the conflation of environment
-      // initialization and basic entity initialization.
-      //
-      // ReplayExtension's beforeEach() has to be called before this so that the entities that we
-      // initialize (e.g. "TheRegistrar") also get replayed.  But that means that ReplayExtension's
-      // afterEach() won't be called until after ours.  Since we tear down the datastore and SQL
-      // database in our own afterEach(), ReplayExtension's afterEach() would fail if we let the
-      // replay happen there.
-      ReplayExtension replayer =
-          (ReplayExtension)
-              context.getStore(ExtensionContext.Namespace.GLOBAL).get(ReplayExtension.class);
-      if (replayer != null) {
-        replayer.replay();
-      }
-    } finally {
-      try {
-        if (withCloudSql) {
-          if (enableJpaEntityCoverageCheck) {
-            jpaIntegrationWithCoverageExtension.afterEach(context);
-          } else if (withJpaUnitTest) {
-            jpaUnitTestExtension.afterEach(context);
-          } else {
-            jpaIntegrationTestExtension.afterEach(context);
-          }
-        }
-        tearDown();
-      } finally {
-        if (isWithDatastoreAndCloudSql()) {
-          restoreTmAfterDualDatabaseTest(context);
-        }
+
+    if (withCloudSql) {
+      if (enableJpaEntityCoverageCheck) {
+        jpaIntegrationWithCoverageExtension.afterEach(context);
+      } else if (withJpaUnitTest) {
+        jpaUnitTestExtension.afterEach(context);
+      } else {
+        jpaIntegrationTestExtension.afterEach(context);
       }
     }
+    tearDown();
   }
 
   /**
@@ -552,24 +466,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       // Clean up environment setting left behind by AppEngine test instance.
       ApiProxy.setEnvironmentForCurrentThread(null);
     }
-  }
-
-  /**
-   * Registers test-only Objectify entities and checks for re-registrations for the same kind by
-   * different classes.
-   */
-  private static void register(Class<?> entityClass) {
-    String kind = Key.getKind(entityClass);
-    Optional.ofNullable(com.googlecode.objectify.ObjectifyService.factory().getMetadata(kind))
-        .ifPresent(
-            meta ->
-                checkState(
-                    meta.getEntityClass() == entityClass,
-                    "Cannot register %s. The Kind %s is already registered with %s.",
-                    entityClass.getName(),
-                    kind,
-                    meta.getEntityClass().getName()));
-    com.googlecode.objectify.ObjectifyService.register(entityClass);
   }
 
   /** Install {@code testing/logging.properties} so logging is less noisy. */
@@ -644,9 +540,5 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
             makeRegistrar2(),
             makeRegistrarContact2(),
             makeRegistrarContact3()));
-  }
-
-  boolean isWithDatastoreAndCloudSql() {
-    return withDatastore && withCloudSql;
   }
 }

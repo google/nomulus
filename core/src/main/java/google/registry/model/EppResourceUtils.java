@@ -38,8 +38,6 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.ofy.CommitLogManifest;
-import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.model.tld.Registry;
@@ -49,7 +47,6 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -278,11 +275,7 @@ public final class EppResourceUtils {
    * consideration that under certain circumstances, a resource might be restored to a revision on
    * the previous day, even if there were revisions made earlier on the same date as {@code
    * timestamp}; however, a resource will never be restored to a revision occurring after {@code
-   * timestamp}. This behavior is due to the way {@link
-   * google.registry.model.translators.CommitLogRevisionsTranslatorFactory
-   * CommitLogRevisionsTranslatorFactory} manages the {@link EppResource#revisions} field. Please
-   * note however that the creation and deletion times of a resource are granular to the
-   * millisecond.
+   * timestamp}.
    *
    * <p>Example: a resource in Datastore has three revisions A, B, and C
    *
@@ -345,38 +338,9 @@ public final class EppResourceUtils {
   private static <T extends EppResource> T loadMostRecentRevisionAtTime(
       final T resource, final DateTime timestamp) {
     if (tm().isOfy()) {
-      return loadMostRecentRevisionAtTimeDatastore(resource, timestamp);
-    } else {
-      return loadMostRecentRevisionAtTimeSql(resource, timestamp);
+      throw new IllegalStateException("TM should not be ofy");
     }
-  }
-
-  /**
-   * Returns the most recent Datastore revision of a given EppResource before or at the provided
-   * timestamp using the EppResource revisions map, falling back to using the resource as-is if
-   * there are no revisions.
-   *
-   * @see #loadAtPointInTimeAsync(EppResource, DateTime)
-   */
-  private static <T extends EppResource> T loadMostRecentRevisionAtTimeDatastore(
-      final T resource, final DateTime timestamp) {
-    final Key<T> resourceKey = Key.create(resource);
-    final Key<CommitLogManifest> revision =
-        findMostRecentDatastoreRevisionAtTime(resource, timestamp);
-    if (revision == null) {
-      logger.atSevere().log("No revision found for %s, falling back to resource.", resourceKey);
-      return resource;
-    }
-    final CommitLogMutation mutation =
-        auditedOfy().load().key(CommitLogMutation.createKey(revision, resourceKey)).now();
-    if (mutation != null) {
-      return auditedOfy().load().fromEntity(mutation.getEntity());
-    }
-    logger.atSevere().log(
-        "Couldn't load mutation for revision at %s for %s, falling back to resource."
-            + " Revision: %s",
-        timestamp, resourceKey, revision);
-    return resource;
+    return loadMostRecentRevisionAtTimeSql(resource, timestamp);
   }
 
   /**
@@ -403,30 +367,6 @@ public final class EppResourceUtils {
       return resource;
     }
     return resourceAtPointInTime;
-  }
-
-  @Nullable
-  private static <T extends EppResource>
-      Key<CommitLogManifest> findMostRecentDatastoreRevisionAtTime(
-          final T resource, final DateTime timestamp) {
-    final Key<T> resourceKey = Key.create(resource);
-    Entry<?, Key<CommitLogManifest>> revision = resource.getRevisions().floorEntry(timestamp);
-    if (revision != null) {
-      logger.atInfo().log(
-          "Found revision history at %s for %s: %s", timestamp, resourceKey, revision);
-      return revision.getValue();
-    }
-    // Fall back to the earliest revision if we don't have one before the requested timestamp.
-    revision = resource.getRevisions().firstEntry();
-    if (revision != null) {
-      logger.atSevere().log(
-          "Found no revision history at %s for %s, using earliest revision: %s",
-          timestamp, resourceKey, revision);
-      return revision.getValue();
-    }
-    // Ultimate fallback: There are no revisions whatsoever, so return null.
-    logger.atSevere().log("Found no revision history at all for %s", resourceKey);
-    return null;
   }
 
   /**

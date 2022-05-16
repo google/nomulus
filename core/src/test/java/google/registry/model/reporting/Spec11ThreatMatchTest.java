@@ -31,16 +31,13 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestSqlOnly;
 import org.joda.time.LocalDate;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Spec11ThreatMatch}. */
-@DualDatabaseTest
 public final class Spec11ThreatMatchTest extends EntityTestCase {
 
   private static final String REGISTRAR_ID = "registrar";
@@ -104,7 +101,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
             .build();
   }
 
-  @TestSqlOnly
+  @Test
   void testPersistence() {
     createTld("tld");
     saveRegistrar(REGISTRAR_ID);
@@ -112,7 +109,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
     assertAboutImmutableObjects().that(loadByEntity(threat)).isEqualExceptFields(threat, "id");
   }
 
-  @TestSqlOnly
+  @Test
   @Disabled("We can't rely on foreign keys until we've migrated to SQL")
   void testThreatForeignKeyConstraints() {
     // Persist the threat without the associated registrar.
@@ -124,7 +121,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
     assertThrowForeignKeyViolation(() -> insertInDb(registrantContact, host, threat));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_threatsWithInvalidFields() {
     assertThrows(
         IllegalArgumentException.class, () -> threat.asBuilder().setRegistrarId(null).build());

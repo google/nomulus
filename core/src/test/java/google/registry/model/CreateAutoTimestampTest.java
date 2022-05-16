@@ -24,20 +24,17 @@ import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CreateAutoTimestamp}. */
-@DualDatabaseTest
 public class CreateAutoTimestampTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withOfyTestEntities(CreateAutoTimestampTestObject.class)
+          .withCloudSql()
           .withJpaUnitTestEntities(CreateAutoTimestampTestObject.class)
           .build();
 
@@ -54,7 +51,7 @@ public class CreateAutoTimestampTest {
     return loadByEntity(new CreateAutoTimestampTestObject());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSaveSetsTime() {
     DateTime transactionTime =
         tm().transact(
@@ -68,7 +65,7 @@ public class CreateAutoTimestampTest {
     assertThat(reload().createTime.timestamp).isEqualTo(transactionTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testResavingRespectsOriginalTime() {
     final DateTime oldCreateTime = DateTime.now(UTC).minusDays(1);
     tm().transact(

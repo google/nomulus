@@ -17,7 +17,6 @@ package google.registry.module.tools;
 import dagger.Module;
 import dagger.Subcomponent;
 import google.registry.backup.BackupModule;
-import google.registry.backup.RestoreCommitLogsAction;
 import google.registry.dns.DnsModule;
 import google.registry.flows.EppToolAction;
 import google.registry.flows.EppToolAction.EppToolModule;
@@ -73,7 +72,6 @@ interface ToolsRequestComponent {
   LoadTestAction loadTestAction();
   RefreshDnsForAllDomainsAction refreshDnsForAllDomainsAction();
   ResaveAllHistoryEntriesAction resaveAllHistoryEntriesAction();
-  RestoreCommitLogsAction restoreCommitLogsAction();
   VerifyOteAction verifyOteAction();
 
   @Subcomponent.Builder

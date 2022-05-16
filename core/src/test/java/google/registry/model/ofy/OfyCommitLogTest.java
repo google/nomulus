@@ -43,11 +43,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class OfyCommitLogTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withOfyTestEntities(TestVirtualObject.class, Root.class, Child.class)
-          .build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 

@@ -25,7 +25,6 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -41,23 +40,13 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactTransferRejectFlow}. */
-@DualDatabaseTest
 class ContactTransferRejectFlowTest
     extends ContactTransferFlowTestCase<ContactTransferRejectFlow, ContactResource> {
 
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   @BeforeEach
   void setUp() {
@@ -135,31 +124,31 @@ class ContactTransferRejectFlowTest
     runFlow();
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun() throws Exception {
     setEppInput("contact_transfer_reject.xml");
     dryRunFlowAssertResponse(loadFile("contact_transfer_reject_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess() throws Exception {
     doSuccessfulTest("contact_transfer_reject.xml", "contact_transfer_reject_response.xml");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_domainAuthInfo() throws Exception {
-    doSuccessfulTest("contact_transfer_reject_with_authinfo.xml",
-        "contact_transfer_reject_response.xml");
+    doSuccessfulTest(
+        "contact_transfer_reject_with_authinfo.xml", "contact_transfer_reject_response.xml");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badPassword() {
     // Change the contact's password so it does not match the password in the file.
     contact =
@@ -175,7 +164,7 @@ class ContactTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_neverBeenTransferred() {
     changeTransferStatus(null);
     EppException thrown =
@@ -184,7 +173,7 @@ class ContactTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientApproved() {
     changeTransferStatus(TransferStatus.CLIENT_APPROVED);
     EppException thrown =
@@ -193,7 +182,7 @@ class ContactTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientRejected() {
     changeTransferStatus(TransferStatus.CLIENT_REJECTED);
     EppException thrown =
@@ -202,7 +191,7 @@ class ContactTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientCancelled() {
     changeTransferStatus(TransferStatus.CLIENT_CANCELLED);
     EppException thrown =
@@ -211,7 +200,7 @@ class ContactTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_serverApproved() {
     changeTransferStatus(TransferStatus.SERVER_APPROVED);
     EppException thrown =
@@ -220,7 +209,7 @@ class ContactTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_serverCancelled() {
     changeTransferStatus(TransferStatus.SERVER_CANCELLED);
     EppException thrown =
@@ -229,7 +218,7 @@ class ContactTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_gainingClient() {
     setRegistrarIdForFlow("NewRegistrar");
     EppException thrown =
@@ -238,7 +227,7 @@ class ContactTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_unrelatedClient() {
     setRegistrarIdForFlow("ClientZ");
     EppException thrown =
@@ -247,7 +236,7 @@ class ContactTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_deletedContact() throws Exception {
     contact =
         persistResource(contact.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
@@ -259,7 +248,7 @@ class ContactTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonexistentContact() throws Exception {
     persistResource(contact.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     ResourceDoesNotExistException thrown =
@@ -270,17 +259,9 @@ class ContactTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-transfer-reject");
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() {
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

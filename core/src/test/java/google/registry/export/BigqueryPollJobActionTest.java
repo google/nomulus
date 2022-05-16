@@ -52,7 +52,7 @@ public class BigqueryPollJobActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private static final String PROJECT_ID = "project_id";
   private static final String JOB_ID = "job_id";

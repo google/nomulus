@@ -48,11 +48,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ImmutableObjectTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withOfyTestEntities(ValueObject.class)
-          .build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   /** Simple subclass of ImmutableObject. */
   public static class SimpleObject extends ImmutableObject {

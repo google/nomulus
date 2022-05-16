@@ -27,19 +27,15 @@ import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-@DualDatabaseTest
 public class QueryComposerTest {
 
   private final FakeClock fakeClock = new FakeClock();
@@ -52,8 +48,7 @@ public class QueryComposerTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withClock(fakeClock)
-          .withDatastoreAndCloudSql()
-          .withOfyTestEntities(TestEntity.class)
+          .withCloudSql()
           .withJpaUnitTestEntities(TestEntity.class)
           .build();
 
@@ -69,7 +64,7 @@ public class QueryComposerTest {
             });
   }
 
-  @TestOfyAndSql
+  @Test
   public void testFirstQueries() {
     assertThat(
             transactIfJpaTm(
@@ -109,7 +104,7 @@ public class QueryComposerTest {
         .isEqualTo(alpha);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testCount() {
     assertThat(
             transactIfJpaTm(
@@ -120,7 +115,7 @@ public class QueryComposerTest {
         .isEqualTo(2L);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testGetSingleResult() {
     assertThat(
             transactIfJpaTm(
@@ -132,7 +127,7 @@ public class QueryComposerTest {
         .isEqualTo(alpha);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testGetSingleResult_noResults() {
     assertThrows(
         NoResultException.class,
@@ -144,7 +139,7 @@ public class QueryComposerTest {
                         .getSingleResult()));
   }
 
-  @TestOfyAndSql
+  @Test
   public void testGetSingleResult_nonUniqueResult() {
     assertThrows(
         NonUniqueResultException.class,
@@ -156,7 +151,7 @@ public class QueryComposerTest {
                         .getSingleResult()));
   }
 
-  @TestOfyAndSql
+  @Test
   public void testStreamQueries() {
     assertThat(
             transactIfJpaTm(
@@ -209,7 +204,7 @@ public class QueryComposerTest {
         .containsExactly(alpha, bravo);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testListQueries() {
     assertThat(
             transactIfJpaTm(
@@ -220,7 +215,7 @@ public class QueryComposerTest {
         .containsExactly(bravo, charlie);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testNonPrimaryKey() {
     assertThat(
             transactIfJpaTm(
@@ -233,7 +228,7 @@ public class QueryComposerTest {
         .isEqualTo(bravo);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testOrderBy() {
     assertThat(
             transactIfJpaTm(
@@ -248,7 +243,7 @@ public class QueryComposerTest {
         .containsExactly(bravo, alpha);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testEmptyQueries() {
     assertThat(
             transactIfJpaTm(
@@ -268,22 +263,7 @@ public class QueryComposerTest {
         .isEmpty();
   }
 
-  @TestOfyOnly
-  void testMultipleInequalities_failsDatastore() {
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("val", Comparator.GT, 1)
-                        .where("name", Comparator.LT, "b")
-                        .list()))
-        .hasMessageThat()
-        .isEqualTo(
-            "Datastore cannot handle inequality queries on multiple fields, we found 2 fields.");
-  }
-
-  @TestSqlOnly
+  @Test
   void testMultipleInequalities_succeedsSql() {
     assertThat(
             transactIfJpaTm(
@@ -295,7 +275,7 @@ public class QueryComposerTest {
         .containsExactly(alpha);
   }
 
-  @TestSqlOnly
+  @Test
   public void testLikeQueries() {
     assertThat(
             transactIfJpaTm(
@@ -337,21 +317,6 @@ public class QueryComposerTest {
                         .stream()
                         .collect(toImmutableList())))
         .isEmpty();
-  }
-
-  @TestOfyOnly
-  public void testLikeQueries_failsOnOfy() {
-    UnsupportedOperationException thrown =
-        assertThrows(
-            UnsupportedOperationException.class,
-            () ->
-                tm()
-                    .createQueryComposer(TestEntity.class)
-                    .where("name", Comparator.LIKE, "%")
-                    .stream());
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("The LIKE operation is not supported on Datastore.");
   }
 
   private static <T> T assertDetachedIfJpa(T entity) {

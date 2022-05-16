@@ -38,8 +38,7 @@ abstract class TmchActionTestCase {
   static final String MARKSDB_URL = "http://127.0.0.1/love";
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();

@@ -36,11 +36,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class DatastoreTransactionManagerTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withOfyTestEntities(InCrossTldTestEntity.class)
-          .build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void test_loadAllOf_usesAncestorQuery() {

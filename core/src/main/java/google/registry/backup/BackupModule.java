@@ -16,14 +16,6 @@ package google.registry.backup;
 
 import static com.google.appengine.api.ThreadManager.currentRequestThreadFactory;
 import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
-import static google.registry.backup.ExportCommitLogDiffAction.LOWER_CHECKPOINT_TIME_PARAM;
-import static google.registry.backup.ExportCommitLogDiffAction.UPPER_CHECKPOINT_TIME_PARAM;
-import static google.registry.backup.RestoreCommitLogsAction.BUCKET_OVERRIDE_PARAM;
-import static google.registry.backup.RestoreCommitLogsAction.FROM_TIME_PARAM;
-import static google.registry.backup.RestoreCommitLogsAction.TO_TIME_PARAM;
-import static google.registry.backup.SyncDatastoreToSqlSnapshotAction.SQL_SNAPSHOT_ID_PARAM;
-import static google.registry.request.RequestParameters.extractOptionalParameter;
-import static google.registry.request.RequestParameters.extractRequiredDatetimeParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
@@ -35,12 +27,10 @@ import google.registry.cron.CommitLogFanoutAction;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import java.lang.annotation.Documented;
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Qualifier;
 import javax.servlet.http.HttpServletRequest;
-import org.joda.time.DateTime;
 
 /**
  * Dagger module for backup package.
@@ -67,42 +57,6 @@ public final class BackupModule {
       throw new BadRequestException("Bad bucket id");
     }
     return bucket;
-  }
-
-  @Provides
-  @Parameter(LOWER_CHECKPOINT_TIME_PARAM)
-  static DateTime provideLowerCheckpointKey(HttpServletRequest req) {
-    return extractRequiredDatetimeParameter(req, LOWER_CHECKPOINT_TIME_PARAM);
-  }
-
-  @Provides
-  @Parameter(UPPER_CHECKPOINT_TIME_PARAM)
-  static DateTime provideUpperCheckpointKey(HttpServletRequest req) {
-    return extractRequiredDatetimeParameter(req, UPPER_CHECKPOINT_TIME_PARAM);
-  }
-
-  @Provides
-  @Parameter(BUCKET_OVERRIDE_PARAM)
-  static Optional<String> provideBucketOverride(HttpServletRequest req) {
-    return extractOptionalParameter(req, BUCKET_OVERRIDE_PARAM);
-  }
-
-  @Provides
-  @Parameter(FROM_TIME_PARAM)
-  static DateTime provideFromTime(HttpServletRequest req) {
-    return extractRequiredDatetimeParameter(req, FROM_TIME_PARAM);
-  }
-
-  @Provides
-  @Parameter(TO_TIME_PARAM)
-  static DateTime provideToTime(HttpServletRequest req) {
-    return extractRequiredDatetimeParameter(req, TO_TIME_PARAM);
-  }
-
-  @Provides
-  @Parameter(SQL_SNAPSHOT_ID_PARAM)
-  static String provideSqlSnapshotId(HttpServletRequest req) {
-    return extractRequiredParameter(req, SQL_SNAPSHOT_ID_PARAM);
   }
 
   @Provides

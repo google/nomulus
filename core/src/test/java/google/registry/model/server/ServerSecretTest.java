@@ -19,15 +19,11 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
 import google.registry.model.EntityTestCase;
-import google.registry.model.ofy.RequestCapturingAsyncDatastoreService;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ServerSecret}. */
-@DualDatabaseTest
 public class ServerSecretTest extends EntityTestCase {
 
   ServerSecretTest() {
@@ -39,14 +35,14 @@ public class ServerSecretTest extends EntityTestCase {
     ServerSecret.resetCache();
   }
 
-  @TestOfyAndSql
+  @Test
   void testGet_bootstrapping_savesSecretToDatastore() {
     ServerSecret secret = ServerSecret.get();
     assertThat(secret).isNotNull();
     assertThat(loadByEntity(new ServerSecret())).isEqualTo(secret);
   }
 
-  @TestOfyAndSql
+  @Test
   void testGet_existingSecret_returned() {
     ServerSecret secret = ServerSecret.create(new UUID(123, 456));
     persistResource(secret);
@@ -54,17 +50,7 @@ public class ServerSecretTest extends EntityTestCase {
     assertThat(loadByEntity(new ServerSecret())).isEqualTo(secret);
   }
 
-  @TestOfyOnly // relies on request-capturing datastore
-  void testGet_cachedSecret() {
-    int numInitialReads = RequestCapturingAsyncDatastoreService.getReads().size();
-    ServerSecret secret = ServerSecret.get();
-    int numReads = RequestCapturingAsyncDatastoreService.getReads().size();
-    assertThat(numReads).isGreaterThan(numInitialReads);
-    assertThat(ServerSecret.get()).isEqualTo(secret);
-    assertThat(RequestCapturingAsyncDatastoreService.getReads()).hasSize(numReads);
-  }
-
-  @TestOfyAndSql
+  @Test
   void testAsBytes() {
     byte[] bytes = ServerSecret.create(new UUID(123, 0x456)).asBytes();
     assertThat(bytes).isEqualTo(new byte[] {0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 0, 0, 0x4, 0x56});

@@ -79,11 +79,7 @@ public abstract class RegistrarSettingsActionTestCase {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(clock)
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 

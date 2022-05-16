@@ -19,24 +19,21 @@ import static google.registry.testing.DatabaseHelper.createTld;
 
 import google.registry.model.OteStats.StatType;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-@DualDatabaseTest
 public final class OteStatsTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @BeforeEach
   void beforeEach() {
     createTld("tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_allPass() throws Exception {
     OteStatsTestHelper.setupCompleteOte("blobio");
     OteStats stats = OteStats.getFromRegistrar("blobio");
@@ -44,7 +41,7 @@ public final class OteStatsTest {
     assertThat(stats.getSize()).isEqualTo(30);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_incomplete() throws Exception {
     OteStatsTestHelper.setupIncompleteOte("blobio");
     OteStats stats = OteStats.getFromRegistrar("blobio");
@@ -55,7 +52,7 @@ public final class OteStatsTest {
     assertThat(stats.getSize()).isEqualTo(34);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_toString() throws Exception {
     OteStatsTestHelper.setupCompleteOte("blobio");
     OteStats stats = OteStats.getFromRegistrar("blobio");
@@ -96,7 +93,7 @@ public final class OteStatsTest {
     assertThat(stats.toString()).isEqualTo(expected);
   }
 
-  @TestOfyAndSql
+  @Test
   void testIncomplete_toString() throws Exception {
     OteStatsTestHelper.setupIncompleteOte("blobio");
     OteStats stats = OteStats.getFromRegistrar("blobio");

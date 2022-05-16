@@ -49,19 +49,15 @@ import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdapDomainSearchAction}. */
-@DualDatabaseTest
 class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSearchAction> {
 
   RdapDomainSearchActionTest() {
@@ -383,13 +379,6 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .load("rdap_domains_two.json");
   }
 
-  private JsonObject generateExpectedJsonForTwoDomainsCatStarReplyOfy() {
-    return jsonFileBuilder()
-        .addDomain("cat.lol", "C-LOL")
-        .addDomain("cat2.lol", "17-LOL")
-        .load("rdap_domains_two.json");
-  }
-
   private JsonObject generateExpectedJsonForTwoDomainsCatStarReplySql() {
     return jsonFileBuilder()
         .addDomain("cat2.lol", "17-LOL")
@@ -646,7 +635,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     }
   }
 
-  @TestOfyAndSql
+  @Test
   void testInvalidPath_rejected() {
     action.requestPath = actionPath + "/path";
     action.run();
@@ -654,7 +643,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.NONE, Optional.empty(), 400);
   }
 
-  @TestOfyAndSql
+  @Test
   void testInvalidRequest_rejected() {
     assertThat(generateActualJson(RequestType.NONE, null))
         .isEqualTo(
@@ -664,7 +653,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.NONE, Optional.empty(), 400);
   }
 
-  @TestOfyAndSql
+  @Test
   void testInvalidWildcard_rejected() {
     assertThat(generateActualJson(RequestType.NAME, "exam*ple"))
         .isEqualTo(
@@ -676,7 +665,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME, Optional.empty(), 422);
   }
 
-  @TestOfyAndSql
+  @Test
   void testMultipleWildcards_rejected() {
     assertThat(generateActualJson(RequestType.NAME, "*.*"))
         .isEqualTo(
@@ -688,7 +677,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME, Optional.empty(), 422);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNoCharactersToMatch_rejected() {
     rememberWildcardType("*");
     assertThat(generateActualJson(RequestType.NAME, "*"))
@@ -701,7 +690,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME, Optional.empty(), 422);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFewerThanTwoCharactersToMatch_rejected() {
     rememberWildcardType("a*");
     assertThat(generateActualJson(RequestType.NAME, "a*"))
@@ -714,21 +703,21 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME, Optional.empty(), 422);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_found() {
     login("evilregistrar");
     runSuccessfulTestWithCatLol(RequestType.NAME, "cat.lol", "rdap_domain.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_foundWithUpperCase() {
     login("evilregistrar");
     runSuccessfulTestWithCatLol(RequestType.NAME, "CaT.lOl", "rdap_domain.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_found_sameRegistrarRequested() {
     login("evilregistrar");
     action.registrarParam = Optional.of("evilregistrar");
@@ -736,21 +725,21 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_notFound_differentRegistrarRequested() {
     action.registrarParam = Optional.of("otherregistrar");
     runNotFoundTest(RequestType.NAME, "cat.lol", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_found_asAdministrator() {
     loginAsAdmin();
     runSuccessfulTestWithCatLol(RequestType.NAME, "cat.lol", "rdap_domain.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_found_loggedInAsOtherRegistrar() {
     login("otherregistrar");
     runSuccessfulTestWithCatLol(
@@ -763,19 +752,19 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
    * accord. If it does, the test will pass.
    */
   @Disabled
-  @TestOfyAndSql
+  @Test
   void testDomainMatchWithTrailingDot_notFound() {
     runNotFoundTest(RequestType.NAME, "cat.lol.", "No domains found");
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_cat2_lol_found() {
     login("evilregistrar");
     runSuccessfulTestWithCat2Lol(RequestType.NAME, "cat2.lol", "rdap_domain_cat2.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_cat_example_found() {
     login("evilregistrar");
     runSuccessfulTest(
@@ -790,7 +779,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_cat_idn_unicode_found() {
     runSuccessfulTest(
         RequestType.NAME,
@@ -806,7 +795,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_cat_idn_punycode_found() {
     runSuccessfulTest(
         RequestType.NAME,
@@ -820,7 +809,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_cat_1_test_found() {
     runSuccessfulTest(
         RequestType.NAME,
@@ -834,7 +823,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_castar_1_test_found() {
     runSuccessfulTest(
         RequestType.NAME,
@@ -848,22 +837,13 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_castar_test_notFound() {
     runNotFoundTest(RequestType.NAME, "ca*.test", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
 
-  @TestOfyOnly
-  void testDomainMatch_catstar_lol_found_ofy() {
-    rememberWildcardType("cat*.lol");
-    assertThat(generateActualJson(RequestType.NAME, "cat*.lol"))
-        .isEqualTo(generateExpectedJsonForTwoDomainsCatStarReplyOfy());
-    assertThat(response.getStatus()).isEqualTo(200);
-    verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(2L));
-  }
-
-  @TestSqlOnly
+  @Test
   void testDomainMatch_catstar_lol_found_sql() {
     rememberWildcardType("cat*.lol");
     assertThat(generateActualJson(RequestType.NAME, "cat*.lol"))
@@ -872,16 +852,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(2L));
   }
 
-  @TestOfyOnly
-  void testDomainMatch_cstar_lol_found_ofy() {
-    rememberWildcardType("c*.lol");
-    assertThat(generateActualJson(RequestType.NAME, "c*.lol"))
-        .isEqualTo(generateExpectedJsonForTwoDomainsCatStarReplyOfy());
-    assertThat(response.getStatus()).isEqualTo(200);
-    verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(2L));
-  }
-
-  @TestSqlOnly
+  @Test
   void testDomainMatch_cstar_lol_found_sql() {
     rememberWildcardType("c*.lol");
     assertThat(generateActualJson(RequestType.NAME, "c*.lol"))
@@ -890,22 +861,13 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(2L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_qstar_lol_notFound() {
     runNotFoundTest(RequestType.NAME, "q*.lol", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
 
-  @TestOfyOnly
-  void testDomainMatch_star_lol_found_ofy() {
-    rememberWildcardType("*.lol");
-    assertThat(generateActualJson(RequestType.NAME, "*.lol"))
-        .isEqualTo(generateExpectedJsonForTwoDomainsCatStarReplyOfy());
-    assertThat(response.getStatus()).isEqualTo(200);
-    verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(2L));
-  }
-
-  @TestSqlOnly
+  @Test
   void testDomainMatch_star_lol_found_sql() {
     rememberWildcardType("*.lol");
     assertThat(generateActualJson(RequestType.NAME, "*.lol"))
@@ -914,17 +876,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(2L));
   }
 
-  @TestOfyOnly
-  void testDomainMatch_star_lol_found_sameRegistrarRequested_ofy() {
-    action.registrarParam = Optional.of("evilregistrar");
-    rememberWildcardType("*.lol");
-    assertThat(generateActualJson(RequestType.NAME, "*.lol"))
-        .isEqualTo(generateExpectedJsonForTwoDomainsCatStarReplyOfy());
-    assertThat(response.getStatus()).isEqualTo(200);
-    verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(2L));
-  }
-
-  @TestSqlOnly
+  @Test
   void testDomainMatch_star_lol_found_sameRegistrarRequested_sql() {
     action.registrarParam = Optional.of("evilregistrar");
     rememberWildcardType("*.lol");
@@ -934,7 +886,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(2L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_star_lol_notFound_differentRegistrarRequested() {
     action.registrarParam = Optional.of("otherregistrar");
     rememberWildcardType("*.lol");
@@ -942,22 +894,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
 
-  @TestOfyOnly
-  void testDomainMatch_cat_star_found_ofy() {
-    rememberWildcardType("cat.*");
-    assertThat(generateActualJson(RequestType.NAME, "cat.*"))
-        .isEqualTo(
-            jsonFileBuilder()
-                .addDomain("cat.1.test", "39-1_TEST")
-                .addDomain("cat.example", "21-EXAMPLE")
-                .addDomain("cat.lol", "C-LOL")
-                .addDomain("cat.みんな", "2D-Q9JYB4C")
-                .load("rdap_domains_four_with_one_unicode.json"));
-    assertThat(response.getStatus()).isEqualTo(200);
-    verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(4L));
-  }
-
-  @TestSqlOnly
+  @Test
   void testDomainMatch_cat_star_found_sql() {
     rememberWildcardType("cat.*");
     assertThat(generateActualJson(RequestType.NAME, "cat.*"))
@@ -972,7 +909,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(4L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_cat_star_foundOne_sameRegistrarRequested() {
     login("evilregistrar");
     action.registrarParam = Optional.of("evilregistrar");
@@ -980,37 +917,21 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_cat_star_notFound_differentRegistrarRequested() {
     action.registrarParam = Optional.of("otherregistrar");
     runNotFoundTest(RequestType.NAME, "cat.*", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_cat_lstar_found() {
     login("evilregistrar");
     runSuccessfulTestWithCatLol(RequestType.NAME, "cat.l*", "rdap_domain.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyOnly
-  void testDomainMatch_catstar_found_ofy() {
-    rememberWildcardType("cat*");
-    assertThat(generateActualJson(RequestType.NAME, "cat*"))
-        .isEqualTo(
-            jsonFileBuilder()
-                .addDomain("cat.1.test", "39-1_TEST")
-                .addDomain("cat.example", "21-EXAMPLE")
-                .addDomain("cat.lol", "C-LOL")
-                .addDomain("cat.みんな", "2D-Q9JYB4C")
-                .setNextQuery("name=cat*&cursor=Y2F0LnhuLS1xOWp5YjRj")
-                .load("rdap_domains_four_with_one_unicode_truncated.json"));
-    assertThat(response.getStatus()).isEqualTo(200);
-    verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
-  }
-
-  @TestSqlOnly
+  @Test
   void testDomainMatch_catstar_found_sql() {
     rememberWildcardType("cat*");
     assertThat(generateActualJson(RequestType.NAME, "cat*"))
@@ -1026,7 +947,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatchWithWildcardAndEmptySuffix_fails() {
     // Unfortunately, we can't be sure which error is going to be returned. The version of
     // IDN.toASCII used in Eclipse drops a trailing dot, if any. But the version linked in by
@@ -1036,20 +957,20 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     assertThat(response.getStatus()).isIn(Range.closed(400, 499));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_dog_notFound() {
     runNotFoundTest(RequestType.NAME, "dog*", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatchDeletedDomain_notFound() {
     persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
     runNotFoundTest(RequestType.NAME, "cat.lol", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatchDeletedDomain_notFound_deletedNotRequested() {
     login("evilregistrar");
     persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
@@ -1057,7 +978,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatchDeletedDomain_found_loggedInAsSameRegistrar() {
     login("evilregistrar");
     action.includeDeletedParam = Optional.of(true);
@@ -1066,7 +987,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatchDeletedDomain_notFound_loggedInAsOtherRegistrar() {
     login("otherregistrar");
     action.includeDeletedParam = Optional.of(true);
@@ -1075,7 +996,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatchDeletedDomain_found_loggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
@@ -1084,14 +1005,14 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatchDeletedDomainWithWildcard_notFound() {
     persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
     runNotFoundTest(RequestType.NAME, "cat.lo*", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatchDeletedDomainsWithWildcardAndTld_notFound() {
     persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
     persistDomainAsDeleted(domainCatLol2, clock.nowUtc().minusDays(1));
@@ -1101,14 +1022,14 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   // TODO(b/27378695): reenable or delete this test
   @Disabled
-  @TestOfyAndSql
+  @Test
   void testDomainMatchDomainInTestTld_notFound() {
     persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
     runNotFoundTest(RequestType.NAME, "cat.lol", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_manyDeletedDomains_fullResultSet() {
     // There are enough domains to fill a full result set; deleted domains are ignored.
     createManyDomainsAndHosts(4, 4, 2);
@@ -1119,7 +1040,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(16L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_manyDeletedDomains_partialResultSetDueToInsufficientDomains() {
     // There are not enough domains to fill a full result set.
     createManyDomainsAndHosts(3, 20, 2);
@@ -1130,7 +1051,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(60L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_manyDeletedDomains_partialResultSetDueToFetchingLimit() {
     // This is not exactly desired behavior, but expected: There are enough domains to fill a full
     // result set, but there are so many deleted domains that we run out of patience before we work
@@ -1152,7 +1073,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         IncompletenessWarningType.MIGHT_BE_INCOMPLETE);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_nontruncatedResultsSet() {
     createManyDomainsAndHosts(4, 1, 2);
     runSuccessfulTestWithFourDomains(
@@ -1166,7 +1087,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(4L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_truncatedResultsSet() {
     createManyDomainsAndHosts(5, 1, 2);
     runSuccessfulTestWithFourDomains(
@@ -1181,23 +1102,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
   }
 
-  @TestOfyOnly
-  void testDomainMatch_tldSearchOrderedProperly_ofy() {
-    createManyDomainsAndHosts(4, 1, 2);
-    rememberWildcardType("*.lol");
-    assertThat(generateActualJson(RequestType.NAME, "*.lol"))
-        .isEqualTo(
-            jsonFileBuilder()
-                .addDomain("cat.lol", "C-LOL")
-                .addDomain("cat2.lol", "17-LOL")
-                .addDomain("domain1.lol", "4B-LOL")
-                .addDomain("domain2.lol", "4A-LOL")
-                .setNextQuery("name=*.lol&cursor=ZG9tYWluMi5sb2w%3D")
-                .load("rdap_domains_four_truncated.json"));
-    verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
-  }
-
-  @TestSqlOnly
+  @Test
   void testDomainMatch_tldSearchOrderedProperly_sql() {
     createManyDomainsAndHosts(4, 1, 2);
     rememberWildcardType("*.lol");
@@ -1213,7 +1118,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainMatch_reallyTruncatedResultsSet() {
     // Don't use 10 or more domains for this test, because domain10.lol will come before
     // domain2.lol, and you'll get the wrong domains in the result set.
@@ -1230,24 +1135,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
   }
 
-  @TestOfyOnly
-  void testDomainMatch_truncatedResultsAfterMultipleChunks_ofy() {
-    createManyDomainsAndHosts(5, 6, 2);
-    rememberWildcardType("domain*.lol");
-    assertThat(generateActualJson(RequestType.NAME, "domain*.lol"))
-        .isEqualTo(
-            jsonFileBuilder()
-                .addDomain("domain12.lol", "5A-LOL")
-                .addDomain("domain18.lol", "54-LOL")
-                .addDomain("domain24.lol", "4E-LOL")
-                .addDomain("domain30.lol", "48-LOL")
-                .setNextQuery("name=domain*.lol&cursor=ZG9tYWluMzAubG9s")
-                .load("rdap_domains_four_truncated.json"));
-    assertThat(response.getStatus()).isEqualTo(200);
-    verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(27L), IncompletenessWarningType.TRUNCATED);
-  }
-
-  @TestSqlOnly
+  @Test
   void testDomainMatch_truncatedResultsAfterMultipleChunks_sql() {
     createManyDomainsAndHosts(5, 6, 2);
     rememberWildcardType("domain*.lol");
@@ -1264,27 +1152,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(27L), IncompletenessWarningType.TRUNCATED);
   }
 
-  @TestOfyOnly
-  void testDomainMatch_cursorNavigationWithInitialString_ofy() throws Exception {
-    createManyDomainsAndHosts(11, 1, 2);
-    checkCursorNavigation(
-        RequestType.NAME,
-        "domain*.lol",
-        ImmutableList.of(
-            "domain1.lol",
-            "domain10.lol",
-            "domain11.lol",
-            "domain2.lol",
-            "domain3.lol",
-            "domain4.lol",
-            "domain5.lol",
-            "domain6.lol",
-            "domain7.lol",
-            "domain8.lol",
-            "domain9.lol"));
-  }
-
-  @TestSqlOnly
+  @Test
   void testDomainMatch_cursorNavigationWithInitialString_sql() throws Exception {
     createManyDomainsAndHosts(11, 1, 2);
     checkCursorNavigation(
@@ -1304,29 +1172,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             "domain9.lol"));
   }
 
-  @TestOfyOnly
-  void testDomainMatch_cursorNavigationWithTldSuffix_ofy() throws Exception {
-    createManyDomainsAndHosts(11, 1, 2);
-    checkCursorNavigation(
-        RequestType.NAME,
-        "*.lol",
-        ImmutableList.of(
-            "cat.lol",
-            "cat2.lol",
-            "domain1.lol",
-            "domain10.lol",
-            "domain11.lol",
-            "domain2.lol",
-            "domain3.lol",
-            "domain4.lol",
-            "domain5.lol",
-            "domain6.lol",
-            "domain7.lol",
-            "domain8.lol",
-            "domain9.lol"));
-  }
-
-  @TestSqlOnly
+  @Test
   void testDomainMatch_cursorNavigationWithTldSuffix_sql() throws Exception {
     createManyDomainsAndHosts(11, 1, 2);
     checkCursorNavigation(
@@ -1348,7 +1194,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             "domain9.lol"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_foundMultiple() {
     rememberWildcardType("ns1.cat.lol");
     assertThat(generateActualJson(RequestType.NS_LDH_NAME, "ns1.cat.lol"))
@@ -1357,7 +1203,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 2, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_foundMultiple_sameRegistrarRequested() {
     action.registrarParam = Optional.of("TheRegistrar");
     rememberWildcardType("ns1.cat.lol");
@@ -1367,21 +1213,21 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 2, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_notFound_differentRegistrarRequested() {
     action.registrarParam = Optional.of("otherregistrar");
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns1.cat.lol", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchWithWildcard_found() {
     login("evilregistrar");
     runSuccessfulTestWithCatLol(RequestType.NS_LDH_NAME, "ns2.cat.l*", "rdap_domain.json");
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchWithWildcard_found_sameRegistrarRequested() {
     login("evilregistrar");
     action.registrarParam = Optional.of("TheRegistrar");
@@ -1389,20 +1235,20 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchWithWildcard_notFound_differentRegistrarRequested() {
     action.registrarParam = Optional.of("otherregistrar");
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns2.cat.l*", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchWithWildcardAndDomainSuffix_notFound() {
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns5*.cat.lol", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchWithNoPrefixAndDomainSuffix_found() {
     rememberWildcardType("*.cat.lol");
     assertThat(generateActualJson(RequestType.NS_LDH_NAME, "*.cat.lol"))
@@ -1411,7 +1257,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 2, 2);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchWithOneCharacterPrefixAndDomainSuffix_found() {
     rememberWildcardType("n*.cat.lol");
     assertThat(generateActualJson(RequestType.NS_LDH_NAME, "n*.cat.lol"))
@@ -1420,7 +1266,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 2, 2);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchWithOneCharacterPrefixAndDomainSuffix_found_sameRegistrarRequested() {
     action.registrarParam = Optional.of("TheRegistrar");
     rememberWildcardType("n*.cat.lol");
@@ -1430,14 +1276,14 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 2, 2);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchWithPrefixAndDomainSuffix_notFound_differentRegistrarRequested() {
     action.registrarParam = Optional.of("otherregistrar");
     runNotFoundTest(RequestType.NS_LDH_NAME, "n*.cat.lol", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchWithTwoCharacterPrefixAndDomainSuffix_found() {
     rememberWildcardType("ns*.cat.lol");
     assertThat(generateActualJson(RequestType.NS_LDH_NAME, "ns*.cat.lol"))
@@ -1446,7 +1292,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 2, 2);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchWithWildcardAndEmptySuffix_unprocessable() {
     rememberWildcardTypeInvalid();
     generateActualJson(RequestType.NS_LDH_NAME, "ns*.");
@@ -1454,7 +1300,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), 422);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchWithWildcardAndInvalidSuffix_unprocessable() {
     rememberWildcardType("ns*.google.com");
     generateActualJson(RequestType.NS_LDH_NAME, "ns*.google.com");
@@ -1462,21 +1308,21 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), 422);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_ns2_cat_lol_found() {
     login("evilregistrar");
     runSuccessfulTestWithCatLol(RequestType.NS_LDH_NAME, "ns2.cat.lol", "rdap_domain.json");
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_ns2_dog_lol_found() {
     login("evilregistrar");
     runSuccessfulTestWithCat2Lol(RequestType.NS_LDH_NAME, "ns2.dog.lol", "rdap_domain_cat2.json");
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_ns1_cat_idn_unicode_badRequest() {
     // nsLdhName must use punycode.
     metricWildcardType = WildcardType.INVALID;
@@ -1486,7 +1332,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), 422);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_ns1_cat_idn_punycode_found() {
     runSuccessfulTest(
         RequestType.NS_LDH_NAME,
@@ -1500,7 +1346,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_ns1_cat_1_test_found() {
     runSuccessfulTest(
         RequestType.NS_LDH_NAME,
@@ -1514,7 +1360,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_nsstar_cat_1_test_found() {
     runSuccessfulTest(
         RequestType.NS_LDH_NAME,
@@ -1528,7 +1374,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_nsstar_test_unprocessable() {
     rememberWildcardType("ns*.1.test");
     generateActualJson(RequestType.NS_LDH_NAME, "ns*.1.test");
@@ -1536,7 +1382,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), 422);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchMissing_notFound() {
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns1.missing.com", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
@@ -1544,13 +1390,13 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   // TODO(b/27378695): reenable or delete this test
   @Disabled
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchDomainsInTestTld_notFound() {
     persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns2.cat.lol", "No matching nameservers found");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchDeletedDomain_notFound() {
     action.includeDeletedParam = Optional.of(true);
     deleteCatLol();
@@ -1558,7 +1404,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(0L), Optional.of(1L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchDeletedDomain_found_loggedInAsSameRegistrar() {
     login("evilregistrar");
     action.includeDeletedParam = Optional.of(true);
@@ -1567,7 +1413,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchDeletedDomain_notFound_loggedInAsOtherRegistrar() {
     login("otherregistrar");
     action.includeDeletedParam = Optional.of(true);
@@ -1576,7 +1422,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(0L), Optional.of(1L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchDeletedDomain_found_loggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
@@ -1585,7 +1431,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchOneDeletedDomain_foundTheOther() {
     login("evilregistrar");
     persistDomainAsDeleted(domainCatExample, clock.nowUtc().minusDays(1));
@@ -1593,7 +1439,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchTwoDeletedDomains_notFound() {
     persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
     persistDomainAsDeleted(domainCatExample, clock.nowUtc().minusDays(1));
@@ -1601,28 +1447,28 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(0L), Optional.of(1L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchDeletedNameserver_notFound() {
     persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns1.cat.lol", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchDeletedNameserverWithWildcard_notFound() {
     persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns1.cat.l*", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchDeletedNameserverWithWildcardAndSuffix_notFound() {
     persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns1*.cat.lol", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchManyNameserversForTheSameDomains() {
     // 40 nameservers for each of 3 domains; we should get back all three undeleted domains, because
     // each one references the nameserver.
@@ -1634,7 +1480,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(3L), Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchManyNameserversForTheSameDomainsWithWildcard() {
     // Same as above, except with a wildcard (that still only finds one nameserver).
     createManyDomainsAndHosts(3, 1, 40);
@@ -1645,7 +1491,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(3L), Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatchManyNameserversForTheSameDomainsWithSuffix() {
     // Same as above, except that we find all 39 nameservers because of the wildcard. But we
     // should still only return 3 domains, because we merge duplicate domains together in a set.
@@ -1659,7 +1505,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(3L), Optional.of(39L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_nontruncatedResultsSet() {
     createManyDomainsAndHosts(4, 1, 2);
     runSuccessfulTestWithFourDomains(
@@ -1673,7 +1519,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(4L), Optional.of(1L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_truncatedResultsSet() {
     createManyDomainsAndHosts(5, 1, 2);
     runSuccessfulTestWithFourDomains(
@@ -1692,7 +1538,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         IncompletenessWarningType.TRUNCATED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_reallyTruncatedResultsSet() {
     createManyDomainsAndHosts(9, 1, 2);
     runSuccessfulTestWithFourDomains(
@@ -1711,7 +1557,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         IncompletenessWarningType.TRUNCATED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_duplicatesNotTruncated() {
     // 36 nameservers for each of 4 domains; these should translate into two fetches, which should
     // not trigger the truncation warning because all the domains will be duplicates.
@@ -1729,7 +1575,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(4L), Optional.of(36L));
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_incompleteResultsSet() {
     createManyDomainsAndHosts(2, 1, 41);
     rememberWildcardType("ns*.domain1.lol");
@@ -1747,7 +1593,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         IncompletenessWarningType.MIGHT_BE_INCOMPLETE);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverMatch_cursorNavigation() throws Exception {
     createManyDomainsAndHosts(8, 1, 2);
     checkCursorNavigation(
@@ -1764,7 +1610,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             "domain8.lol"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchV4Address_invalidAddress() {
     rememberWildcardType("1.2.3.4.5.6.7.8.9");
     generateActualJson(RequestType.NS_IP, "1.2.3.4.5.6.7.8.9");
@@ -1772,7 +1618,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS, Optional.empty(), 400);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchV4Address_foundMultiple() {
     rememberWildcardType("1.2.3.4");
     assertThat(generateActualJson(RequestType.NS_IP, "1.2.3.4"))
@@ -1781,7 +1627,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 2, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchV4Address_foundMultiple_sameRegistrarRequested() {
     action.registrarParam = Optional.of("TheRegistrar");
     rememberWildcardType("1.2.3.4");
@@ -1791,14 +1637,14 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 2, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchV4Address_notFound_differentRegistrarRequested() {
     action.registrarParam = Optional.of("otherregistrar");
     runNotFoundTest(RequestType.NS_IP, "1.2.3.4", "No domains found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS, Optional.empty(), Optional.of(0L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchV6Address_foundOne() {
     runSuccessfulTestWithCatLol(
         RequestType.NS_IP,
@@ -1807,7 +1653,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchLocalhost_notFound() {
     runNotFoundTest(RequestType.NS_IP, "127.0.0.1", "No domains found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS, Optional.empty(), Optional.of(0L), 404);
@@ -1815,7 +1661,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   // TODO(b/27378695): reenable or delete this test
   @Disabled
-  @TestOfyAndSql
+  @Test
   void testAddressMatchDomainsInTestTld_notFound() {
     persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
     persistResource(Registry.get("example").asBuilder().setTldType(Registry.TldType.TEST).build());
@@ -1823,7 +1669,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchDeletedDomain_notFound() {
     action.includeDeletedParam = Optional.of(true);
     deleteCatLol();
@@ -1831,7 +1677,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS, Optional.of(0L), Optional.of(1L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchDeletedDomain_found_loggedInAsSameRegistrar() {
     login("evilregistrar");
     action.includeDeletedParam = Optional.of(true);
@@ -1841,7 +1687,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchDeletedDomain_notFound_loggedInAsOtherRegistrar() {
     login("otherregistrar");
     action.includeDeletedParam = Optional.of(true);
@@ -1850,7 +1696,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS, Optional.of(0L), Optional.of(1L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchDeletedDomain_found_loggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
@@ -1860,7 +1706,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchOneDeletedDomain_foundTheOther() {
     login("evilregistrar");
     persistDomainAsDeleted(domainCatExample, clock.nowUtc().minusDays(1));
@@ -1881,7 +1727,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 1, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchTwoDeletedDomains_notFound() {
     persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
     persistDomainAsDeleted(domainCatExample, clock.nowUtc().minusDays(1));
@@ -1889,14 +1735,14 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS, Optional.of(0L), Optional.of(1L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatchDeletedNameserver_notFound() {
     persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     runNotFoundTest(RequestType.NS_IP, "1.2.3.4", "No domains found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS, Optional.empty(), Optional.of(0L), 404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatch_nontruncatedResultsSet() {
     createManyDomainsAndHosts(4, 1, 2);
     runSuccessfulTestWithFourDomains(
@@ -1910,7 +1756,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 4, 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatch_truncatedResultsSet() {
     createManyDomainsAndHosts(5, 1, 2);
     runSuccessfulTestWithFourDomains(
@@ -1929,7 +1775,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         IncompletenessWarningType.TRUNCATED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatch_reallyTruncatedResultsSet() {
     createManyDomainsAndHosts(9, 1, 2);
     runSuccessfulTestWithFourDomains(
@@ -1948,7 +1794,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         IncompletenessWarningType.TRUNCATED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testAddressMatch_cursorNavigation() throws Exception {
     createManyDomainsAndHosts(7, 1, 2);
     checkCursorNavigation(

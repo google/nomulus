@@ -37,11 +37,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class VKeyTranslatorFactoryTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withOfyTestEntities(TestObject.class)
-          .build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   VKeyTranslatorFactoryTest() {}
 

@@ -69,8 +69,7 @@ class AppEngineExtensionTest {
    * <p>Not registered as extension since this instance's afterEach() method is also under test. All
    * methods should call {@link AppEngineExtension#afterEach appEngine.afterEach} explicitly.
    */
-  private final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  private final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private JpaTransactionManager originalJpa;
 
@@ -123,11 +122,7 @@ class AppEngineExtensionTest {
 
   @Test
   void testRegisterOfyEntities_duplicateEntitiesWithSameName_fails() throws Exception {
-    AppEngineExtension appEngineExtension =
-        AppEngineExtension.builder()
-            .withDatastoreAndCloudSql()
-            .withOfyTestEntities(google.registry.testing.TestObject.class, TestObject.class)
-            .build();
+    AppEngineExtension appEngineExtension = AppEngineExtension.builder().withCloudSql().build();
     // Thrown before JPA is set up, therefore no need to call afterEach.
     IllegalStateException thrown =
         assertThrows(

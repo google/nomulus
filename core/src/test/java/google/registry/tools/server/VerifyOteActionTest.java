@@ -29,8 +29,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class VerifyOteActionTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final VerifyOteAction action = new VerifyOteAction();
 

@@ -42,9 +42,7 @@ import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -52,12 +50,12 @@ import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 
 /** Unit tests for {@link CreateRegistrarCommand}. */
-@DualDatabaseTest
 class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand> {
 
   @Mock private AppEngineConnection connection;
@@ -78,7 +76,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
             fakeClock);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess() throws Exception {
     DateTime before = fakeClock.nowUtc();
     runCommandForced(
@@ -125,7 +123,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
             eq(new byte[0]));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_quotedPassword() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -146,7 +144,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().verifyPassword("some_password")).isTrue();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_registrarTypeFlag() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -166,7 +164,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getType()).isEqualTo(Registrar.Type.TEST);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_registrarStateFlag() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -188,7 +186,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getState()).isEqualTo(Registrar.State.SUSPENDED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_allowedTldsInNonProductionEnvironment() throws Exception {
     createTlds("xn--q9jyb4c", "foobar");
 
@@ -215,7 +213,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getAllowedTlds()).containsExactly("xn--q9jyb4c", "foobar");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_allowedTldsInPDT() throws Exception {
     createTlds("xn--q9jyb4c", "foobar");
 
@@ -242,7 +240,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getAllowedTlds()).containsExactly("xn--q9jyb4c", "foobar");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_groupCreationCanBeDisabled() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -261,7 +259,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     verifyNoInteractions(connection);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_groupCreationFails() throws Exception {
     when(connection.sendPostRequest(
             ArgumentMatchers.anyString(),
@@ -288,7 +286,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertInStdout("BAD ROBOT NO COOKIE");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_groupCreationDoesntOccurOnAlphaEnv() throws Exception {
     runCommandInEnvironment(
         RegistryToolEnvironment.ALPHA,
@@ -308,7 +306,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     verifyNoInteractions(connection);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_ipAllowListFlag() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -332,7 +330,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         .inOrder();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_ipAllowListFlagNull() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -354,7 +352,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getIpAddressAllowList()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_clientCertFileFlag() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     runCommandForced(
@@ -377,7 +375,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getClientCertificateHash()).hasValue(SAMPLE_CERT3_HASH);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFail_clientCertFileFlagWithViolation() {
     fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
     InsecureCertificateException thrown =
@@ -407,7 +405,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFail_clientCertFileFlagWithMultipleViolations() {
     fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
     InsecureCertificateException thrown =
@@ -437,7 +435,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_failoverClientCertFileFlag() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     runCommandForced(
@@ -464,7 +462,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.getFailoverClientCertificateHash()).hasValue(SAMPLE_CERT3_HASH);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFail_failoverClientCertFileFlagWithViolations() {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     InsecureCertificateException thrown =
@@ -494,7 +492,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFail_failoverClientCertFileFlagWithMultipleViolations() {
     fakeClock.setTo(DateTime.parse("2055-11-01T00:00:00Z"));
     InsecureCertificateException thrown =
@@ -524,7 +522,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_ianaId() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -545,7 +543,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getIanaIdentifier()).isEqualTo(12345);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_billingId() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -567,7 +565,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getBillingIdentifier()).isEqualTo(12345);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_poNumber() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -589,7 +587,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getPoNumber()).hasValue("AA55G");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_billingAccountMap() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -612,7 +610,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         .containsExactly(CurrencyUnit.USD, "abc123", JPY, "789xyz");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_billingAccountMap_doesNotContainEntryForAllowedTld() {
     createTlds("foo");
 
@@ -642,7 +640,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         .contains("their currency is missing from the billing account map: [foo]");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_billingAccountMap_onlyAppliesToRealRegistrar() throws Exception {
     persistResource(
         newRegistry("foo", "FOO")
@@ -678,7 +676,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getBillingAccountMap()).containsExactly(JPY, "789xyz");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_streetAddress() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -710,7 +708,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.getLocalizedAddress().getCountryCode()).isEqualTo("US");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_email() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -732,7 +730,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getEmailAddress()).isEqualTo("foo@foo.foo");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_fallBackToIcannReferralEmail() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -753,7 +751,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getEmailAddress()).isEqualTo("foo@bar.test");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_url() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -775,7 +773,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getUrl()).isEqualTo("http://foo.foo");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_phone() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -797,7 +795,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getPhoneNumber()).isEqualTo("+1.2125556342");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_optionalParamsAsNull() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -828,7 +826,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.getDriveFolderId()).isNull();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_optionalParamsAsEmptyString() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -859,7 +857,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.getDriveFolderId()).isNull();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_blockPremiumNames() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -881,7 +879,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getBlockPremiumNames()).isTrue();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_noBlockPremiumNames() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -903,7 +901,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getBlockPremiumNames()).isFalse();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_registryLockAllowed() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -925,7 +923,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().isRegistryLockAllowed()).isTrue();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_registryLockDisallowed() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -947,7 +945,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().isRegistryLockAllowed()).isFalse();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badPhoneNumber() {
     ParameterException thrown =
         assertThrows(
@@ -970,7 +968,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(thrown).hasMessageThat().contains("phone");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badPhoneNumber2() {
     ParameterException thrown =
         assertThrows(
@@ -993,7 +991,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(thrown).hasMessageThat().contains("phone");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_fax() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -1015,7 +1013,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.get().getFaxNumber()).isEqualTo("+1.2125556342");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingRegistrarType() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -1035,7 +1033,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(thrown).hasMessageThat().contains("Registrar type cannot be null");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidRegistrarType() {
     assertThrows(
         ParameterException.class,
@@ -1053,7 +1051,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidRegistrarState() {
     assertThrows(
         ParameterException.class,
@@ -1074,7 +1072,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_allowedTldDoesNotExist() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1095,7 +1093,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_allowedTldsInRealWithoutAbuseContact() {
     createTlds("xn--q9jyb4c", "foobar");
     IllegalArgumentException thrown =
@@ -1121,7 +1119,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(thrown).hasMessageThat().startsWith("Cannot add allowed TLDs");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidIpAllowListFlag() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1142,7 +1140,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_ipAllowListFlagWithNull() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1163,7 +1161,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingName() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -1184,7 +1182,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(thrown).hasMessageThat().contains("--name is a required field");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingPassword() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -1205,7 +1203,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(thrown).hasMessageThat().contains("--password is a required field");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_emptyPassword() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -1227,7 +1225,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(thrown).hasMessageThat().contains("--password is a required field");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientIdTooShort() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1247,7 +1245,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "ab"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientIdTooLong() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1267,7 +1265,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientabcdefghijk"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingClientId() {
     assertThrows(
         ParameterException.class,
@@ -1287,7 +1285,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "--force"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingStreetLines() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1306,7 +1304,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingCity() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1327,7 +1325,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingState() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1348,7 +1346,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingZip() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1369,7 +1367,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingCc() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1390,7 +1388,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidCc() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1412,7 +1410,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_tooManyStreetLines() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1435,7 +1433,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_tooFewStreetLines() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1455,7 +1453,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingIanaIdForRealRegistrar() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1474,7 +1472,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_negativeIanaId() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1494,7 +1492,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonIntegerIanaId() {
     assertThrows(
         ParameterException.class,
@@ -1514,7 +1512,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_negativeBillingId() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1535,7 +1533,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonIntegerBillingId() {
     assertThrows(
         ParameterException.class,
@@ -1556,7 +1554,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingPhonePasscode() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1575,7 +1573,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingIcannReferralEmail() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -1596,7 +1594,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(thrown).hasMessageThat().contains("--icann_referral_email");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_passcodeTooShort() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1616,7 +1614,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_passcodeTooLong() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1636,7 +1634,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidPasscode() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1656,7 +1654,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_twoClientsSpecified() {
     assertThrows(
         IllegalArgumentException.class,
@@ -1677,7 +1675,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_unknownFlag() {
     assertThrows(
         ParameterException.class,
@@ -1698,7 +1696,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_alreadyExists() {
     persistNewRegistrar("existing", "Existing Registrar", Registrar.Type.REAL, 1L);
     IllegalStateException thrown =
@@ -1721,7 +1719,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(thrown).hasMessageThat().contains("Registrar existing already exists");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_registrarNameSimilarToExisting() {
     // Note that "tHeRe GiStRaR" normalizes identically to "The Registrar", which is created by
     // AppEngineExtension.
@@ -1749,7 +1747,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 + "identically to existing registrar name The Registrar");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientIdNormalizesToExisting() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -1775,7 +1773,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 + "normalizes identically to existing registrar TheRegistrar");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientIdIsInvalidFormat() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -1800,7 +1798,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
             "Client identifier (.L33T) can only contain lowercase letters, numbers, and hyphens");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_phone() {
     assertThrows(
         ParameterException.class,
@@ -1821,7 +1819,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_fax() {
     assertThrows(
         ParameterException.class,
@@ -1842,7 +1840,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "clientz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badEmail() {
     IllegalArgumentException thrown =
         assertThrows(

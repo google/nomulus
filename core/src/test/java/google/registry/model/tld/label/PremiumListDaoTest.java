@@ -53,7 +53,7 @@ public class PremiumListDaoTest {
   @RegisterExtension
   final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .enableJpaEntityCoverageCheck(true)
           .withClock(fakeClock)
           .build();

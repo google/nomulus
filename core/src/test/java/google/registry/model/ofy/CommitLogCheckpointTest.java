@@ -29,8 +29,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class CommitLogCheckpointTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private static final DateTime T1 = START_OF_TIME;
   private static final DateTime T2 = START_OF_TIME.plusMillis(1);

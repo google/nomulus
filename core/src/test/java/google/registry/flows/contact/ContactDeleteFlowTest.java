@@ -35,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -53,38 +52,27 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactDeleteFlow}. */
-@DualDatabaseTest
 class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, ContactResource> {
 
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   @BeforeEach
   void initFlowTest() {
     setEppInput("contact_delete.xml");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     if (tm().isOfy()) {
@@ -94,7 +82,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     }
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
@@ -108,7 +96,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     }
   }
 
-  @TestSqlOnly
+  @Test
   void testSuccess_pendingTransfer_sql() throws Exception {
     DateTime transferRequestTime = clock.nowUtc().minusDays(3);
     TransferData oldTransferData =
@@ -150,7 +138,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     assertThat(panData.getActionResult()).isFalse();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_clTridNotSpecified() throws Exception {
     setEppInput("contact_delete_no_cltrid.xml");
     persistActiveContact(getUniqueIdFromCommand());
@@ -165,7 +153,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     }
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
@@ -173,7 +161,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_existedButWasDeleted() throws Exception {
     persistDeletedContact(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     ResourceDoesNotExistException thrown =
@@ -182,19 +170,19 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_existedButWasClientDeleteProhibited() throws Exception {
     doFailingStatusTest(
         StatusValue.CLIENT_DELETE_PROHIBITED, ResourceStatusProhibitsOperationException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_existedButWasServerDeleteProhibited() throws Exception {
     doFailingStatusTest(
         StatusValue.SERVER_DELETE_PROHIBITED, ResourceStatusProhibitsOperationException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_existedButWasPendingDelete() throws Exception {
     doFailingStatusTest(
         StatusValue.PENDING_DELETE, ResourceStatusProhibitsOperationException.class);
@@ -212,7 +200,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_unauthorizedClient() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
@@ -220,7 +208,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserUnauthorizedClient() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
@@ -238,7 +226,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     }
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_failfastWhenLinkedToDomain() throws Exception {
     createTld("tld");
     persistResource(newDomainBase("example.tld", persistActiveContact(getUniqueIdFromCommand())));
@@ -246,30 +234,12 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-delete");
-  }
-
-  @TestOfyOnly
-  void testModification_duringNoAsyncPhase() throws Exception {
-    persistActiveContact(getUniqueIdFromCommand());
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryNoAsync(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() throws Exception {
-    persistActiveContact(getUniqueIdFromCommand());
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
   private void assertOfyDeleteSuccess(String registrarId, String clientTrid, boolean isSuperuser)

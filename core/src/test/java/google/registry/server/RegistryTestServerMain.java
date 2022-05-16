@@ -137,7 +137,7 @@ public final class RegistryTestServerMain {
     System.out.printf("%sLoading SQL fixtures and AppEngineExtension...%s\n", BLUE, RESET);
     AppEngineExtension appEngine =
         AppEngineExtension.builder()
-            .withDatastoreAndCloudSql()
+            .withCloudSql()
             .withUrlFetch()
             .withTaskQueue()
             .withLocalModules()

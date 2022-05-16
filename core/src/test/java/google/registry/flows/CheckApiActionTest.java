@@ -55,8 +55,7 @@ class CheckApiActionTest {
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Mock private CheckApiMetrics checkApiMetrics;
   @Captor private ArgumentCaptor<CheckApiMetric> metricCaptor;

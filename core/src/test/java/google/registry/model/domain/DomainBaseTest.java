@@ -208,19 +208,6 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  void testIndexing() throws Exception {
-    verifyDatastoreIndexing(
-        domain,
-        "allContacts.contact",
-        "fullyQualifiedDomainName",
-        "nsHosts",
-        "currentSponsorClientId",
-        "deletionTime",
-        "tld",
-        "autorenewEndTime");
-  }
-
-  @Test
   void testEmptyStringsBecomeNull() {
     assertThat(
             newDomainBase("example.com")

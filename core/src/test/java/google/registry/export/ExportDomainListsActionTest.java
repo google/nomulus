@@ -38,21 +38,18 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.storage.drive.DriveConnection;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link ExportDomainListsAction}. */
-@DualDatabaseTest
 class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAction> {
 
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
@@ -99,16 +96,7 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
     assertThat(new String(bytesExportedToDrive.getValue(), UTF_8)).isEqualTo(domains);
   }
 
-  @TestOfyOnly
-  void test_writesLinkToMapreduceConsoleToResponse() throws Exception {
-    runAction();
-    assertThat(response.getPayload())
-        .startsWith(
-            "Mapreduce console: https://backend-dot-projectid.appspot.com"
-                + "/_ah/pipeline/status.html?root=");
-  }
-
-  @TestOfyAndSql
+  @Test
   void test_outputsOnlyActiveDomains() throws Exception {
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
@@ -122,7 +110,7 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
     verifyNoMoreInteractions(driveConnection);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_outputsOnlyDomainsOnRealTlds() throws Exception {
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
@@ -141,7 +129,7 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
     verifyNoMoreInteractions(driveConnection);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_outputsDomainsFromDifferentTldsToMultipleFiles() throws Exception {
     createTld("tldtwo");
     persistResource(Registry.get("tldtwo").asBuilder().setDriveFolderId("hooray").build());

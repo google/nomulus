@@ -17,7 +17,6 @@ package google.registry.model.billing;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.ofyTmOrDoNothing;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -46,18 +45,14 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import google.registry.util.DateTimeUtils;
 import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link BillingEvent}. */
-@DualDatabaseTest
 public class BillingEventTest extends EntityTestCase {
   private final DateTime now = DateTime.now(UTC);
 
@@ -189,7 +184,7 @@ public class BillingEventTest extends EntityTestCase {
     return builder.setRegistrarId("TheRegistrar").setTargetId("foo.tld").build();
   }
 
-  @TestOfyAndSql
+  @Test
   void testPersistence() {
     assertThat(loadByEntity(oneTime)).isEqualTo(oneTime);
     assertThat(loadByEntity(oneTimeSynthetic)).isEqualTo(oneTimeSynthetic);
@@ -200,7 +195,7 @@ public class BillingEventTest extends EntityTestCase {
     ofyTmOrDoNothing(() -> assertThat(tm().loadByEntity(modification)).isEqualTo(modification));
   }
 
-  @TestSqlOnly
+  @Test
   void testSerializable() {
     BillingEvent persisted = loadByEntity(oneTime);
     assertThat(serializeDeserialize(persisted)).isEqualTo(persisted);
@@ -214,68 +209,13 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
-  @TestOfyOnly
-  void testParenting() {
-    // Note that these are all tested separately because BillingEvent is an abstract base class that
-    // lacks the @Entity annotation, and thus we cannot call .type(BillingEvent.class)
-    assertThat(auditedOfy().load().type(BillingEvent.OneTime.class).ancestor(domain).list())
-        .containsExactly(oneTime, oneTimeSynthetic);
-    assertThat(auditedOfy().load().type(BillingEvent.Recurring.class).ancestor(domain).list())
-        .containsExactly(recurring);
-    assertThat(auditedOfy().load().type(BillingEvent.Cancellation.class).ancestor(domain).list())
-        .containsExactly(cancellationOneTime, cancellationRecurring);
-    assertThat(auditedOfy().load().type(BillingEvent.Modification.class).ancestor(domain).list())
-        .containsExactly(modification);
-    assertThat(auditedOfy().load().type(BillingEvent.OneTime.class).ancestor(domainHistory).list())
-        .containsExactly(oneTime, oneTimeSynthetic);
-    assertThat(
-            auditedOfy().load().type(BillingEvent.Recurring.class).ancestor(domainHistory).list())
-        .containsExactly(recurring);
-    assertThat(
-            auditedOfy()
-                .load()
-                .type(BillingEvent.Cancellation.class)
-                .ancestor(domainHistory2)
-                .list())
-        .containsExactly(cancellationOneTime, cancellationRecurring);
-    assertThat(
-            auditedOfy()
-                .load()
-                .type(BillingEvent.Modification.class)
-                .ancestor(domainHistory2)
-                .list())
-        .containsExactly(modification);
-  }
-
-  @TestOfyAndSql
+  @Test
   void testCancellationMatching() {
     VKey<?> recurringKey = loadByEntity(oneTimeSynthetic).getCancellationMatchingBillingEvent();
     assertThat(loadByKey(recurringKey)).isEqualTo(recurring);
   }
 
-  @TestOfyOnly
-  void testIndexing() throws Exception {
-    verifyDatastoreIndexing(
-        oneTime,
-        "clientId",
-        "eventTime",
-        "billingTime",
-        "syntheticCreationTime",
-        "allocationToken");
-    verifyDatastoreIndexing(
-        oneTimeSynthetic,
-        "clientId",
-        "eventTime",
-        "billingTime",
-        "syntheticCreationTime",
-        "allocationToken");
-    verifyDatastoreIndexing(
-        recurring, "clientId", "eventTime", "recurrenceEndTime", "recurrenceTimeOfYear.timeString");
-    verifyDatastoreIndexing(cancellationOneTime, "clientId", "eventTime", "billingTime");
-    verifyDatastoreIndexing(modification, "clientId", "eventTime");
-  }
-
-  @TestOfyAndSql
+  @Test
   void testFailure_syntheticFlagWithoutCreationTime() {
     IllegalStateException thrown =
         assertThrows(
@@ -291,7 +231,7 @@ public class BillingEventTest extends EntityTestCase {
         .contains("Synthetic creation time must be set if and only if the SYNTHETIC flag is set.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_syntheticCreationTimeWithoutFlag() {
     IllegalStateException thrown =
         assertThrows(
@@ -302,7 +242,7 @@ public class BillingEventTest extends EntityTestCase {
         .contains("Synthetic creation time must be set if and only if the SYNTHETIC flag is set");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_syntheticFlagWithoutCancellationMatchingKey() {
     IllegalStateException thrown =
         assertThrows(
@@ -320,7 +260,7 @@ public class BillingEventTest extends EntityTestCase {
                 + "if and only if the SYNTHETIC flag is set");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_cancellationMatchingKeyWithoutFlag() {
     IllegalStateException thrown =
         assertThrows(
@@ -337,7 +277,7 @@ public class BillingEventTest extends EntityTestCase {
                 + "if and only if the SYNTHETIC flag is set");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_cancellation_forGracePeriod_withOneTime() {
     BillingEvent.Cancellation newCancellation =
         BillingEvent.Cancellation.forGracePeriod(
@@ -350,7 +290,7 @@ public class BillingEventTest extends EntityTestCase {
         .isEqualTo(cancellationOneTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_cancellation_forGracePeriod_withRecurring() {
     BillingEvent.Cancellation newCancellation =
         BillingEvent.Cancellation.forGracePeriod(
@@ -368,7 +308,7 @@ public class BillingEventTest extends EntityTestCase {
         .isEqualTo(cancellationRecurring);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_cancellation_forGracePeriodWithoutBillingEvent() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -386,7 +326,7 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("grace period without billing event");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_cancellationWithNoBillingEvent() {
     IllegalStateException thrown =
         assertThrows(
@@ -400,7 +340,7 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("exactly one billing event");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_cancellationWithBothBillingEvents() {
     IllegalStateException thrown =
         assertThrows(
@@ -414,13 +354,13 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("exactly one billing event");
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeadCodeThatDeletedScrapCommandsReference() {
     assertThat(recurring.getParentKey()).isEqualTo(Key.create(domainHistory));
     new BillingEvent.OneTime.Builder().setParent(Key.create(domainHistory));
   }
 
-  @TestOfyAndSql
+  @Test
   void testReasonRequiringPeriodYears_missingPeriodYears_throwsException() {
     IllegalStateException thrown =
         assertThrows(
@@ -441,7 +381,7 @@ public class BillingEventTest extends EntityTestCase {
         .contains("Period years must be set if and only if reason is");
   }
 
-  @TestOfyAndSql
+  @Test
   void testReasonNotRequiringPeriodYears_havingPeriodYears_throwsException() {
     IllegalStateException thrown =
         assertThrows(
@@ -463,7 +403,7 @@ public class BillingEventTest extends EntityTestCase {
         .contains("Period years must be set if and only if reason is");
   }
 
-  @TestOfyAndSql
+  @Test
   void testReasonRequiringPeriodYears_missingPeriodYears_isAllowedOnOldData() {
     // This won't throw even though periodYears is missing on a RESTORE because the event time
     // is before 2019.
@@ -478,13 +418,13 @@ public class BillingEventTest extends EntityTestCase {
         .build();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_defaultRenewalPriceBehavior_assertsIsDefault() {
     assertThat(recurring.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
     assertThat(recurring.getRenewalPrice()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_getRenewalPriceBehavior_returnsRightBehavior() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -500,7 +440,7 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(recurringEvent.getRenewalPrice()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_setRenewalPriceBehaviorThenBuild_defaultToSpecified() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -527,7 +467,7 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(loadByEntity(recurringEvent).getRenewalPrice()).hasValue(Money.of(USD, 100));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_setRenewalPriceBehaviorThenBuild_defaultToNonPremium() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -550,7 +490,7 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(loadByEntity(recurringEvent).getRenewalPrice()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_setRenewalPriceBehaviorThenBuild_nonPremiumToSpecified() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -577,7 +517,7 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(loadByEntity(recurringEvent).getRenewalPrice()).hasValue(Money.of(USD, 100));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_setRenewalPriceBehaviorThenBuild_nonPremiumToDefault() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -600,7 +540,7 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(loadByEntity(recurringEvent).getRenewalPrice()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_setRenewalPriceBehaviorThenBuild_specifiedToDefault() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -628,7 +568,7 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(loadByEntity(recurringEvent).getRenewalPrice()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_setRenewalPriceBehaviorThenBuild_specifiedToNonPremium() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -656,7 +596,7 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(loadByEntity(recurringEvent).getRenewalPrice()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_setRenewalPriceBehaviorThenBuild_defaultToSpecified_needRenewalPrice() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -687,7 +627,7 @@ public class BillingEventTest extends EntityTestCase {
                 + "renewal price behavior is SPECIFIED");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_setRenewalPriceBehaviorThenBuild_defaultToPremium_noNeedToAddRenewalPrice() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -719,7 +659,7 @@ public class BillingEventTest extends EntityTestCase {
                 + "renewal price behavior is SPECIFIED");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_setRenewalPriceBehaviorThenBuild_nonPremiumToDefault_noNeedToAddRenewalPrice() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -751,7 +691,7 @@ public class BillingEventTest extends EntityTestCase {
                 + "renewal price behavior is SPECIFIED");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_setRenewalPriceBehaviorThenBuild_nonPremiumToSpecified_needRenewalPrice() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -782,7 +722,7 @@ public class BillingEventTest extends EntityTestCase {
                 + "renewal price behavior is SPECIFIED");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_setRenewalPriceBehaviorThenBuild_specifiedToNonPremium_removeRenewalPrice() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -814,7 +754,7 @@ public class BillingEventTest extends EntityTestCase {
                 + "renewal price behavior is SPECIFIED");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_setRenewalPriceBehaviorThenBuild_specifiedToDefault_removeRenewalPrice() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -846,7 +786,7 @@ public class BillingEventTest extends EntityTestCase {
                 + "renewal price behavior is SPECIFIED");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_buildWithDefaultRenewalBehavior() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -863,7 +803,7 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(recurringEvent.getRenewalPrice()).hasValue(Money.of(USD, 100));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_buildWithNonPremiumRenewalBehavior() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -879,7 +819,7 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(loadByEntity(recurringEvent).getRenewalPrice()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_buildWithSpecifiedRenewalBehavior() {
     BillingEvent.Recurring recurringEvent =
         persistResource(
@@ -896,7 +836,7 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(recurringEvent.getRenewalPrice()).hasValue(Money.of(USD, 100));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_buildWithSpecifiedRenewalBehavior_requiresNonNullRenewalPrice() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -917,7 +857,7 @@ public class BillingEventTest extends EntityTestCase {
                 + "renewal price behavior is SPECIFIED");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_buildWithNonPremiumRenewalBehavior_requiresNullRenewalPrice() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -939,7 +879,7 @@ public class BillingEventTest extends EntityTestCase {
                 + "renewal price behavior is SPECIFIED");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_buildWithDefaultRenewalBehavior_requiresNullRenewalPrice() {
     IllegalArgumentException thrown =
         assertThrows(

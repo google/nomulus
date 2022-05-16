@@ -42,7 +42,7 @@ class EppLifecycleToolsTest extends EppTestCase {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   @BeforeEach
   void beforeEach() {

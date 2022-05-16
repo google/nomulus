@@ -48,11 +48,6 @@ class EppResourceIndexTest extends EntityTestCase {
   }
 
   @Test
-  void testIndexing() throws Exception {
-    verifyDatastoreIndexing(Iterables.getOnlyElement(getEppResourceIndexObjects()), "kind");
-  }
-
-  @Test
   void testIdempotentOnUpdate() {
     contact = persistResource(contact.asBuilder().setEmailAddress("abc@def.fake").build());
     EppResourceIndex loadedIndex = Iterables.getOnlyElement(getEppResourceIndexObjects());

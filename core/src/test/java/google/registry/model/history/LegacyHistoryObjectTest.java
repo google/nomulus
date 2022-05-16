@@ -42,18 +42,16 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestSqlOnly;
+import org.junit.jupiter.api.Test;
 
 /** Tests to check {@link HistoryEntry} + its subclasses' transitions to/from Datastore/SQL. */
-@DualDatabaseTest
 public class LegacyHistoryObjectTest extends EntityTestCase {
 
   public LegacyHistoryObjectTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
-  @TestSqlOnly
+  @Test
   void testFullConversion_contact() {
     // Create+save an old contact HistoryEntry, reload it, and verify it's a proper ContactHistory
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
@@ -90,7 +88,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
         .isEqualTo(legacyHistoryFromSql.getParentVKey().getSqlKey());
   }
 
-  @TestSqlOnly
+  @Test
   void testFullConversion_domain() {
     createTld("foobar");
     // Create+save an old domain HistoryEntry, reload it, and verify it's a proper DomainHistory
@@ -139,7 +137,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
             });
   }
 
-  @TestSqlOnly
+  @Test
   void testFullConversion_host() {
     // Create+save an old host HistoryEntry, reload it, and verify it's a proper HostHistory
     HostResource host = newHostResourceWithRoid("hs1.example.com", "host1");

@@ -40,7 +40,7 @@ class DomainBaseLiteTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
+      AppEngineExtension.builder().withCloudSql().withClock(fakeClock).build();
 
   private final TestSetupHelper setupHelper = new TestSetupHelper(fakeClock);
 

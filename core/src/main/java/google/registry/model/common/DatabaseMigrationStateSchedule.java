@@ -58,8 +58,8 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements
   }
 
   /**
-   * The current phase of the migration plus information about which database to use and whether or
-   * not the phase is read-only.
+   * The current phase of the migration plus information about which database to use and whether the
+   * phase is read-only.
    */
   public enum MigrationState {
     /** Datastore is the only DB being used. */

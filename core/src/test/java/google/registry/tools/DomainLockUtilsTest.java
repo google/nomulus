@@ -49,10 +49,8 @@ import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.SqlHelper;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.UserInfo;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.Optional;
@@ -61,12 +59,12 @@ import java.util.stream.Collectors;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link google.registry.tools.DomainLockUtils}. */
-@DualDatabaseTest
 public final class DomainLockUtilsTest {
 
   private static final String DOMAIN_NAME = "example.tld";
@@ -79,7 +77,7 @@ public final class DomainLockUtilsTest {
   @RegisterExtension
   public final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withClock(clock)
           .withTaskQueue()
           .withUserService(UserInfo.create(POC_ID, "12345"))
@@ -100,7 +98,7 @@ public final class DomainLockUtilsTest {
             cloudTasksHelper.getTestCloudTasksUtils());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_createLock() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
@@ -108,7 +106,7 @@ public final class DomainLockUtilsTest {
     assertThat(lock.getLockCompletionTime().isPresent()).isFalse();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_createUnlock() {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     RegistryLock lock =
@@ -117,7 +115,7 @@ public final class DomainLockUtilsTest {
     assertThat(lock.getUnlockCompletionTime().isPresent()).isFalse();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_createUnlock_adminUnlockingAdmin() {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", null, true);
     RegistryLock lock =
@@ -126,7 +124,7 @@ public final class DomainLockUtilsTest {
     assertThat(lock.getUnlockCompletionTime().isPresent()).isFalse();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_createLock_previousLockExpired() {
     domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     clock.advanceBy(standardDays(1));
@@ -136,7 +134,7 @@ public final class DomainLockUtilsTest {
     verifyProperlyLockedDomain(false);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_createUnlock_previousUnlockRequestExpired() {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     domainLockUtils.saveNewRegistryUnlockRequest(
@@ -149,7 +147,7 @@ public final class DomainLockUtilsTest {
     assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_applyLockDomain() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
@@ -157,7 +155,7 @@ public final class DomainLockUtilsTest {
     verifyProperlyLockedDomain(false);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_applyUnlockDomain() {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     RegistryLock unlock =
@@ -167,7 +165,7 @@ public final class DomainLockUtilsTest {
     verifyProperlyUnlockedDomain(false);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_applyAdminLock_onlyHistoryEntry() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true);
@@ -175,7 +173,7 @@ public final class DomainLockUtilsTest {
     verifyProperlyLockedDomain(true);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_applyAdminUnlock_onlyHistoryEntry() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true);
@@ -187,20 +185,20 @@ public final class DomainLockUtilsTest {
     verifyProperlyUnlockedDomain(true);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_administrativelyLock_nonAdmin() {
     domainLockUtils.administrativelyApplyLock(
         DOMAIN_NAME, "TheRegistrar", "Marla.Singer@crr.com", false);
     verifyProperlyLockedDomain(false);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_administrativelyLock_admin() {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", null, true);
     verifyProperlyLockedDomain(true);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_administrativelyUnlock_nonAdmin() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
@@ -210,7 +208,7 @@ public final class DomainLockUtilsTest {
     verifyProperlyUnlockedDomain(false);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_administrativelyUnlock_admin() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true);
@@ -220,7 +218,7 @@ public final class DomainLockUtilsTest {
     verifyProperlyUnlockedDomain(true);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_regularLock_relockSet() {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     RegistryLock oldLock =
@@ -234,7 +232,7 @@ public final class DomainLockUtilsTest {
         .isEqualTo(newLock.getRevisionId());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_administrativelyLock_relockSet() {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     RegistryLock oldLock =
@@ -247,7 +245,7 @@ public final class DomainLockUtilsTest {
         .isEqualTo(newLock.getRevisionId());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_createUnlock_relockDuration() {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     RegistryLock lock =
@@ -256,7 +254,7 @@ public final class DomainLockUtilsTest {
     assertThat(lock.getRelockDuration()).isEqualTo(Optional.of(standardDays(1)));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_unlock_relockSubmitted() {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     RegistryLock lock =
@@ -276,7 +274,7 @@ public final class DomainLockUtilsTest {
             .scheduleTime(clock.nowUtc().plus(lock.getRelockDuration().get())));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_adminCanLockLockedDomain_withNoSavedLock() {
     // in the case of inconsistencies / errors, admins should have the ability to override
     // whatever statuses exist on the domain
@@ -287,7 +285,7 @@ public final class DomainLockUtilsTest {
     assertThat(resultLock.getLockCompletionTime()).isEqualTo(Optional.of(clock.nowUtc()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_adminCanLockUnlockedDomain_withSavedLock() {
     // in the case of inconsistencies / errors, admins should have the ability to override
     // what the RegistryLock table says
@@ -308,7 +306,7 @@ public final class DomainLockUtilsTest {
     assertThat(resultLock.getLockCompletionTime()).isEqualTo(Optional.of(clock.nowUtc()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_createUnlock_alreadyPendingUnlock() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
@@ -327,7 +325,7 @@ public final class DomainLockUtilsTest {
         .isEqualTo("A pending unlock action already exists for example.tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_createUnlock_nonAdminUnlockingAdmin() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true);
@@ -343,7 +341,7 @@ public final class DomainLockUtilsTest {
         .isEqualTo("Non-admin user cannot unlock admin-locked domain example.tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_createLock_unknownDomain() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -354,7 +352,7 @@ public final class DomainLockUtilsTest {
     assertThat(thrown).hasMessageThat().isEqualTo("Domain doesn't exist");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_createLock_alreadyPendingLock() {
     domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     IllegalArgumentException thrown =
@@ -368,7 +366,7 @@ public final class DomainLockUtilsTest {
         .isEqualTo("A pending or completed lock action already exists for example.tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_createLock_alreadyLocked() {
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     IllegalArgumentException thrown =
@@ -380,7 +378,7 @@ public final class DomainLockUtilsTest {
     assertThat(thrown).hasMessageThat().isEqualTo("Domain example.tld is already locked");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_createUnlock_alreadyUnlocked() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -391,7 +389,7 @@ public final class DomainLockUtilsTest {
     assertThat(thrown).hasMessageThat().isEqualTo("Domain example.tld is already unlocked");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_applyLock_alreadyApplied() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
@@ -405,7 +403,7 @@ public final class DomainLockUtilsTest {
     assertNoDomainChanges();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_applyLock_expired() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
@@ -418,7 +416,7 @@ public final class DomainLockUtilsTest {
     assertNoDomainChanges();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_applyLock_nonAdmin_applyAdminLock() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true);
@@ -430,7 +428,7 @@ public final class DomainLockUtilsTest {
     assertNoDomainChanges();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_applyUnlock_alreadyUnlocked() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
@@ -448,7 +446,7 @@ public final class DomainLockUtilsTest {
     assertNoDomainChanges();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_applyLock_alreadyLocked() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
@@ -468,7 +466,7 @@ public final class DomainLockUtilsTest {
     assertNoDomainChanges();
   }
 
-  @TestOfyAndSql
+  @Test
   void testEnqueueRelock() {
     RegistryLock lock =
         saveRegistryLock(
@@ -499,7 +497,7 @@ public final class DomainLockUtilsTest {
   }
 
   @MockitoSettings(strictness = Strictness.LENIENT)
-  @TestOfyAndSql
+  @Test
   void testFailure_enqueueRelock_noDuration() {
     RegistryLock lockWithoutDuration =
         saveRegistryLock(

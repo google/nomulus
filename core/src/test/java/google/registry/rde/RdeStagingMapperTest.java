@@ -54,8 +54,7 @@ class RdeStagingMapperTest {
       ArgumentCaptor.forClass(DepositFragment.class);
 
   @RegisterExtension
-  AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  AppEngineExtension appEngineExtension = AppEngineExtension.builder().withCloudSql().build();
 
   private RdeStagingMapper rdeStagingMapper;
 

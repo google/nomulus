@@ -24,15 +24,13 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ListCursorsCommand}. */
-@DualDatabaseTest
 public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> {
 
   private static final String HEADER_ONE =
@@ -49,13 +47,13 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
     inject.setStaticField(Ofy.class, "clock", fakeClock);
   }
 
-  @TestOfyAndSql
+  @Test
   void testListCursors_noTlds_printsNothing() throws Exception {
     runCommand("--type=BRDA");
     assertThat(getStdoutAsString()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testListCursors_twoTldsOneAbsent_printsAbsentAndTimestampSorted() throws Exception {
     createTlds("foo", "bar");
     persistResource(
@@ -70,19 +68,19 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
         .inOrder();
   }
 
-  @TestOfyAndSql
+  @Test
   void testListCursors_badCursor_throwsIae() {
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> runCommand("--type=love"));
     assertThat(thrown).hasMessageThat().contains("Invalid value for --type parameter.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testListCursors_lowercaseCursor_isAllowed() throws Exception {
     runCommand("--type=brda");
   }
 
-  @TestOfyAndSql
+  @Test
   void testListCursors_filterEscrowEnabled_doesWhatItSays() throws Exception {
     createTlds("foo", "bar");
     persistResource(Registry.get("bar").asBuilder().setEscrowEnabled(true).build());

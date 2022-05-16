@@ -28,8 +28,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EntityWritePrioritiesTest {
 
   @RegisterExtension
-  AppEngineExtension appEngine =
-      new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
+  AppEngineExtension appEngine = new AppEngineExtension.Builder().withCloudSql().build();
 
   @Test
   void testGetPriority() {

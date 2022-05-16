@@ -127,10 +127,8 @@ public final class RegistryTool {
           .put("update_server_locks", UpdateServerLocksCommand.class)
           .put("update_tld", UpdateTldCommand.class)
           .put("upload_claims_list", UploadClaimsListCommand.class)
-          .put("validate_datastore", ValidateDatastoreCommand.class)
           .put("validate_escrow_deposit", ValidateEscrowDepositCommand.class)
           .put("validate_login_credentials", ValidateLoginCredentialsCommand.class)
-          .put("validate_sql", ValidateSqlCommand.class)
           .put("verify_ote", VerifyOteCommand.class)
           .put("whois_query", WhoisQueryCommand.class)
           .build();

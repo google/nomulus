@@ -41,11 +41,9 @@ import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DeterministicStringGenerator;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.SystemPropertyExtension;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
@@ -55,6 +53,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.joda.money.CurrencyUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
@@ -62,12 +61,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-@DualDatabaseTest
 final class ConsoleRegistrarCreatorActionTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngineExtension = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension
   @Order(value = Integer.MAX_VALUE)
@@ -127,7 +124,7 @@ final class ConsoleRegistrarCreatorActionTest {
     action.analyticsConfig = ImmutableMap.of("googleAnalyticsId", "sampleId");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNoUser_redirect() {
     when(request.getRequestURI()).thenReturn("/test");
     action.authResult = AuthResult.NOT_AUTHENTICATED;
@@ -136,14 +133,14 @@ final class ConsoleRegistrarCreatorActionTest {
     assertThat(response.getHeaders().get(LOCATION)).isEqualTo("/_ah/login?continue=%2Ftest");
   }
 
-  @TestOfyAndSql
+  @Test
   void testGet_authorized() {
     action.run();
     assertThat(response.getPayload()).contains("<h1>Create Registrar</h1>");
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
   }
 
-  @TestOfyAndSql
+  @Test
   void testGet_authorized_onProduction() {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     action.run();
@@ -151,7 +148,7 @@ final class ConsoleRegistrarCreatorActionTest {
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
   }
 
-  @TestOfyAndSql
+  @Test
   void testGet_unauthorized() {
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());
@@ -160,7 +157,7 @@ final class ConsoleRegistrarCreatorActionTest {
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
   }
 
-  @TestOfyAndSql
+  @Test
   void testPost_authorized_minimalAddress() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
@@ -227,7 +224,7 @@ final class ConsoleRegistrarCreatorActionTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testPost_authorized_allAddress() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
@@ -264,7 +261,7 @@ final class ConsoleRegistrarCreatorActionTest {
         .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testPost_authorized_multipleBillingLines() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
@@ -304,7 +301,7 @@ final class ConsoleRegistrarCreatorActionTest {
             "billing-account-eur");
   }
 
-  @TestOfyAndSql
+  @Test
   void testPost_authorized_repeatingCurrency_fails() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
@@ -332,7 +329,7 @@ final class ConsoleRegistrarCreatorActionTest {
                 + " JPY=billing-account-2 and JPY=billing-account-1");
   }
 
-  @TestOfyAndSql
+  @Test
   void testPost_authorized_badCurrency_fails() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
@@ -359,7 +356,7 @@ final class ConsoleRegistrarCreatorActionTest {
         .contains("Failed: Error parsing billing accounts - Unknown currency &#39;XYZ&#39;");
   }
 
-  @TestOfyAndSql
+  @Test
   void testPost_authorized_badBillingLine_fails() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
@@ -388,7 +385,7 @@ final class ConsoleRegistrarCreatorActionTest {
                 + " The format should be [currency]=[account ID]");
   }
 
-  @TestOfyAndSql
+  @Test
   void testPost_authorized_setPassword() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
@@ -417,7 +414,7 @@ final class ConsoleRegistrarCreatorActionTest {
     assertThat(registrar.getPhonePasscode()).isEqualTo("10203");
   }
 
-  @TestOfyAndSql
+  @Test
   void testPost_badEmailFails() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
@@ -438,7 +435,7 @@ final class ConsoleRegistrarCreatorActionTest {
         .contains("Failed: Provided email lolcat is not a valid email address");
   }
 
-  @TestOfyAndSql
+  @Test
   void testPost_unauthorized() {
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());

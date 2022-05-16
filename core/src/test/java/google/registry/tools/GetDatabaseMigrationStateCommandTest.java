@@ -22,13 +22,11 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /** Tests for {@link GetDatabaseMigrationStateCommand}. */
-@DualDatabaseTest
 public class GetDatabaseMigrationStateCommandTest
     extends CommandTestCase<GetDatabaseMigrationStateCommand> {
 
@@ -37,14 +35,14 @@ public class GetDatabaseMigrationStateCommandTest
     DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
-  @TestOfyAndSql
+  @Test
   void testInitial_returnsDatastoreOnly() throws Exception {
     runCommand();
     assertStdoutIs(
         String.format("Current migration schedule: %s\n", DEFAULT_TRANSITION_MAP.toValueMap()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFullSchedule() throws Exception {
     DateTime now = fakeClock.nowUtc();
     ImmutableSortedMap<DateTime, MigrationState> transitions =

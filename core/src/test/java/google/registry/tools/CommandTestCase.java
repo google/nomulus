@@ -68,11 +68,7 @@ public abstract class CommandTestCase<C extends Command> {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(fakeClock)
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withClock(fakeClock).withTaskQueue().build();
 
   @RegisterExtension
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();

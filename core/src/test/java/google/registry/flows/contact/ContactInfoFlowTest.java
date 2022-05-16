@@ -40,20 +40,12 @@ import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactInfoFlow}. */
-@DualDatabaseTest
 class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactResource> {
 
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   ContactInfoFlowTest() {
     setEppInput("contact_info.xml");
@@ -107,14 +99,14 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     return contact;
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess() throws Exception {
     persistContactResource(true);
     // Check that the persisted contact info was returned.
@@ -127,7 +119,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertNoBillingEvents();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_linked() throws Exception {
     createTld("foobar");
     persistResource(newDomainBase("example.foobar", persistContactResource(true)));
@@ -141,7 +133,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertNoBillingEvents();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_owningRegistrarWithoutAuthInfo_seesAuthInfo() throws Exception {
     setEppInput("contact_info_no_authinfo.xml");
     persistContactResource(true);
@@ -155,7 +147,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertNoBillingEvents();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_otherRegistrar_notAuthorized() throws Exception {
     setRegistrarIdForFlow("NewRegistrar");
     persistContactResource(true);
@@ -165,7 +157,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_otherRegistrarWithoutAuthInfoAsSuperuser_doesNotSeeAuthInfo() throws Exception {
     setRegistrarIdForFlow("NewRegistrar");
     setEppInput("contact_info_no_authinfo.xml");
@@ -182,7 +174,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertNoBillingEvents();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_otherRegistrarWithAuthInfoAsSuperuser_seesAuthInfo() throws Exception {
     setRegistrarIdForFlow("NewRegistrar");
     persistContactResource(true);
@@ -198,7 +190,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertNoBillingEvents();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
@@ -206,7 +198,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_existedButWasDeleted() throws Exception {
     persistContactResource(false);
     ResourceDoesNotExistException thrown =
@@ -215,7 +207,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     persistContactResource(true);
     runFlow();

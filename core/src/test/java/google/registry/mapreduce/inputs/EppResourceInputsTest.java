@@ -53,8 +53,7 @@ class EppResourceInputsTest {
   private static final double EPSILON = 0.0001;
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @SuppressWarnings("unchecked")
   private <T> T serializeAndDeserialize(T obj) throws Exception {

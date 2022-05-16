@@ -38,7 +38,7 @@ public class SyncRegistrarsSheetActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private final FakeResponse response = new FakeResponse();
   private final SyncRegistrarsSheet syncRegistrarsSheet = mock(SyncRegistrarsSheet.class);

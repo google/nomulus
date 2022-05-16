@@ -41,7 +41,7 @@ public class EntityImportsTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      new AppEngineExtension.Builder().withDatastoreAndCloudSql().withoutCannedData().build();
+      new AppEngineExtension.Builder().withCloudSql().withoutCannedData().build();
 
   private DatastoreService datastoreService;
 

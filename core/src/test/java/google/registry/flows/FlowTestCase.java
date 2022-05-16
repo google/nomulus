@@ -100,11 +100,7 @@ public abstract class FlowTestCase<F extends Flow> {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withClock(clock)
-          .withDatastoreAndCloudSql()
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withClock(clock).withCloudSql().withTaskQueue().build();
 
   @BeforeEach
   public void beforeEachFlowTestCase() {

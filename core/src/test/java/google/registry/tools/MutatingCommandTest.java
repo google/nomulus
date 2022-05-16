@@ -42,8 +42,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class MutatingCommandTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private Registrar registrar1;
   private Registrar registrar2;

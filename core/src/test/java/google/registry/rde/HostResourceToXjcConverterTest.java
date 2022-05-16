@@ -46,8 +46,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class HostResourceToXjcConverterTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @BeforeEach
   void beforeEach() {

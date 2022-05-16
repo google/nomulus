@@ -84,11 +84,7 @@ public abstract class MapreduceTestCase<T> {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withLocalModules()
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
 
   private AppEngineServiceUtils appEngineServiceUtils;
 

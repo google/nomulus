@@ -29,8 +29,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class ExportUtilsTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void test_exportReservedTerms() {

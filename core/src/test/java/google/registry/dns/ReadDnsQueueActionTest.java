@@ -72,7 +72,7 @@ public class ReadDnsQueueActionTest {
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withTaskQueue(
               Joiner.on('\n')
                   .join(

@@ -26,13 +26,11 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /** Tests for {@link SetDatabaseMigrationStateCommand}. */
-@DualDatabaseTest
 public class SetDatabaseMigrationStateCommandTest
     extends CommandTestCase<SetDatabaseMigrationStateCommand> {
 
@@ -41,7 +39,7 @@ public class SetDatabaseMigrationStateCommandTest
     DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_setsBasicSchedule() throws Exception {
     assertThat(DatabaseMigrationStateSchedule.get()).isEqualTo(DEFAULT_TRANSITION_MAP);
     assertThat(jpaTm().transact(() -> jpaTm().loadSingleton(DatabaseMigrationStateSchedule.class)))
@@ -60,7 +58,7 @@ public class SetDatabaseMigrationStateCommandTest
     assertThat(DatabaseMigrationStateSchedule.get()).isEqualTo(DEFAULT_TRANSITION_MAP);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_fullSchedule() throws Exception {
     DateTime now = fakeClock.nowUtc();
     DateTime datastorePrimary = now.plusHours(1);
@@ -96,7 +94,7 @@ public class SetDatabaseMigrationStateCommandTest
                 MigrationState.SQL_ONLY));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_warnsOnChangeSoon() throws Exception {
     DateTime now = fakeClock.nowUtc();
     runCommandForced(
@@ -113,7 +111,7 @@ public class SetDatabaseMigrationStateCommandTest
     assertInStdout("MAY BE DANGEROUS");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_goesBackward() throws Exception {
     DateTime now = fakeClock.nowUtc();
     runCommandForced(
@@ -137,7 +135,7 @@ public class SetDatabaseMigrationStateCommandTest
                 MigrationState.DATASTORE_PRIMARY));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidTransition() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -154,7 +152,7 @@ public class SetDatabaseMigrationStateCommandTest
                 + "to DATASTORE_PRIMARY_READ_ONLY.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidTransitionFromOldToNew() {
     // The map we pass in is valid by itself, but we can't go from DATASTORE_ONLY now to
     // DATASTORE_PRIMARY_READ_ONLY now
@@ -175,7 +173,7 @@ public class SetDatabaseMigrationStateCommandTest
                 + "to new state-as-of-now DATASTORE_PRIMARY_READ_ONLY");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidParams() {
     assertThrows(ParameterException.class, this::runCommandForced);
     assertThrows(ParameterException.class, () -> runCommandForced("--migration_schedule=FOOBAR"));

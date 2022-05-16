@@ -224,24 +224,11 @@ public final class RegistryConfig {
 
     /**
      * Returns the Google Cloud Storage bucket for storing zone files.
-     *
-     * @see google.registry.backup.ExportCommitLogDiffAction
      */
     @Provides
     @Config("zoneFilesBucket")
     public static String provideZoneFilesBucket(@Config("projectId") String projectId) {
       return projectId + "-zonefiles";
-    }
-
-    /**
-     * Returns the Google Cloud Storage bucket for storing commit logs.
-     *
-     * @see google.registry.backup.ExportCommitLogDiffAction
-     */
-    @Provides
-    @Config("commitLogGcsBucket")
-    public static String provideCommitLogGcsBucket(@Config("projectId") String projectId) {
-      return projectId + "-commits";
     }
 
     /** @see RegistryConfig#getCommitLogDatastoreRetention() */
@@ -260,18 +247,6 @@ public final class RegistryConfig {
     @Config("domainListsGcsBucket")
     public static String provideDomainListsGcsBucket(@Config("projectId") String projectId) {
       return projectId + "-domain-lists";
-    }
-
-    /**
-     * Batch size for the number of transactions' worth of commit log data to process at once when
-     * exporting a commit log diff.
-     *
-     * @see google.registry.backup.ExportCommitLogDiffAction
-     */
-    @Provides
-    @Config("commitLogDiffExportBatchSize")
-    public static int provideCommitLogDiffExportBatchSize() {
-      return 100;
     }
 
     /**
@@ -1389,9 +1364,6 @@ public final class RegistryConfig {
    *
    * <p>The only reason you'll want to retain this commit logs in Datastore is for performing
    * point-in-time restoration queries for subsystems like RDE.
-   *
-   * @see google.registry.backup.DeleteOldCommitLogsAction
-   * @see google.registry.model.translators.CommitLogRevisionsTranslatorFactory
    */
   public static Duration getCommitLogDatastoreRetention() {
     return Duration.standardDays(30);

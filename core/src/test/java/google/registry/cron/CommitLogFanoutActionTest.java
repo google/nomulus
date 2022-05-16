@@ -38,7 +38,7 @@ class CommitLogFanoutActionTest {
   @RegisterExtension
   final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withTaskQueue(
               Joiner.on('\n')
                   .join(

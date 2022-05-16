@@ -45,8 +45,7 @@ final class CommitLogManifestInputTest {
   private static final DateTime DATE_TIME_NEW2 = DateTime.parse("2017-12-19T12:00Z");
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void testInputOlderThan_allFound() throws Exception {

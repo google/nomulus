@@ -54,13 +54,11 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestCacheExtension;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.util.Retrier;
 import google.registry.whois.WhoisMetrics.WhoisMetric;
 import java.io.IOException;
@@ -70,17 +68,17 @@ import java.time.Duration;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link WhoisAction}. */
-@DualDatabaseTest
 public class WhoisActionTest {
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2009-06-29T20:13:00Z"));
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(clock).build();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
@@ -114,7 +112,7 @@ public class WhoisActionTest {
     inject.setStaticField(Ofy.class, "clock", clock);
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_badRequest_stillSends200() {
     newWhoisAction("\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
@@ -132,7 +130,7 @@ public class WhoisActionTest {
         registrar);
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_domainQuery_works() {
     Registrar registrar =
         persistResource(makeRegistrar("evilregistrar", "Yes Virginia", ACTIVE));
@@ -143,7 +141,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_domain.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_domainQuery_usesCache() {
     Registrar registrar =
         persistResource(makeRegistrar("evilregistrar", "Yes Virginia", ACTIVE));
@@ -171,7 +169,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_domain.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_domainAfterTransfer_hasUpdatedEppTimeAndClientId() {
     Registrar registrar = persistResource(makeRegistrar("TheRegistrar", "Yes Virginia", ACTIVE));
     persistResource(
@@ -196,7 +194,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_transferred_domain.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_idnDomain_works() {
     Registrar registrar = persistResource(makeRegistrar(
         "evilregistrar", "Yes Virginia", ACTIVE));
@@ -214,7 +212,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_idn_punycode.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_punycodeDomain_works() {
     Registrar registrar = persistResource(makeRegistrar(
         "evilregistrar", "Yes Virginia", ACTIVE));
@@ -232,14 +230,14 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_idn_punycode.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_domainNotFound_returns200OkAndPlainTextResponse() {
     newWhoisAction("domain cat.lol\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_domain_not_found.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_domainNotFound_usesCache() {
     // Populate the cache with the nonexistence of this domain.
     assertThat(loadByForeignKeyCached(DomainBase.class, "cat.lol", clock.nowUtc())).isEmpty();
@@ -252,7 +250,7 @@ public class WhoisActionTest {
 
   // todo (b/27378695): reenable or delete this test
   @Disabled
-  @TestOfyAndSql
+  @Test
   void testRun_domainInTestTld_isConsideredNotFound() {
     persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
     Registrar registrar = persistResource(makeRegistrar(
@@ -271,7 +269,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_domain_not_found.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_domainFlaggedAsDeletedInDatastore_isConsideredNotFound() {
     Registrar registrar;
     persistResource(makeDomainBase("cat.lol",
@@ -296,7 +294,7 @@ public class WhoisActionTest {
    * Create a deleted domain and an active domain with the same label, and make sure only the active
    * one is returned.
    */
-  @TestOfyAndSql
+  @Test
   void testRun_domainDeletedThenRecreated_isFound() {
     Registrar registrar;
     DomainBase domain1 = persistResource(makeDomainBase("cat.lol",
@@ -332,7 +330,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).contains("ns1.google.lol");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_nameserverQuery_works() {
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setUrl("http://my.fake.url").build());
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
@@ -341,7 +339,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_nameserver.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_ipv6_displaysInCollapsedReadableFormat() {
     persistResource(makeHostResource("ns1.cat.lol", "bad:f00d:cafe::15:beef"));
     newWhoisAction("nameserver ns1.cat.lol\r\n").run();
@@ -352,7 +350,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).doesNotContain("bad:f00d:cafe:0:0:0:15:beef");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_idnNameserver_works() {
     persistResource(makeHostResource("ns1.cat.みんな", "1.2.3.4"));
     newWhoisAction("nameserver ns1.cat.みんな\r\n").run();
@@ -361,7 +359,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).contains("1.2.3.4");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_nameserver_usesCache() {
     persistResource(makeHostResource("ns1.cat.xn--q9jyb4c", "1.2.3.4"));
     // Populate the cache.
@@ -378,7 +376,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).contains("1.2.3.4");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_punycodeNameserver_works() {
     persistResource(makeHostResource("ns1.cat.みんな", "1.2.3.4"));
     newWhoisAction("nameserver ns1.cat.xn--q9jyb4c\r\n").run();
@@ -387,7 +385,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).contains("1.2.3.4");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_nameserverNotFound_returns200AndText() {
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
     newWhoisAction("nameserver ns1.cat.lulz\r\n").run();
@@ -395,7 +393,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_nameserver_not_found.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_nameserverFlaggedAsDeletedInDatastore_doesntGetLeaked() {
     persistResource(
         makeHostResource("ns1.cat.lol", "1.2.3.4").asBuilder()
@@ -405,7 +403,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_nameserver_not_found.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_ipNameserverLookup_works() {
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
     newWhoisAction("nameserver 1.2.3.4").run();
@@ -413,7 +411,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).contains("ns1.cat.lol");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_ipMapsToMultipleNameservers_theyAllGetReturned() {
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
     persistResource(makeHostResource("ns2.cat.lol", "1.2.3.4"));
@@ -423,7 +421,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).contains("ns2.cat.lol");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_ipMapsToMultipleNameserverInDifferentTlds_showsThemAll() {
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
     persistResource(
@@ -434,14 +432,14 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).contains("ns1.cat.xn--q9jyb4c");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_ipNameserverEntityDoesNotExist_returns200NotFound() {
     newWhoisAction("nameserver feed:a:bee::acab\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_ip_not_found.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_ipMapsToNameserverUnderNonAuthoritativeTld_notFound() {
     assertThat(getTlds()).doesNotContain("com");
     persistResource(makeHostResource("ns1.google.com", "1.2.3.4"));
@@ -450,7 +448,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_ip_not_found.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_nameserverUnderNonAuthoritativeTld_notFound() {
     assertThat(getTlds()).doesNotContain("com");
     persistResource(makeHostResource("ns1.google.com", "1.2.3.4"));
@@ -461,7 +459,7 @@ public class WhoisActionTest {
 
   // todo (b/27378695): reenable or delete this test
   @Disabled
-  @TestOfyAndSql
+  @Test
   void testRun_nameserverInTestTld_notFound() {
     persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
@@ -470,7 +468,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_nameserver_not_found.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_registrarLookup_works() {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", ACTIVE));
@@ -481,7 +479,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_pdtRegistrarLookup_works() {
     Registrar registrar =
         persistResource(
@@ -497,7 +495,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_registrarLookupInPendingState_returnsNotFound() {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", Registrar.State.PENDING));
@@ -507,7 +505,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar_not_found.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_registrarLookupWithTestType_returnsNotFound() {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", ACTIVE)
@@ -521,7 +519,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar_not_found.txt"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_multilevelDomain_isNotConsideredAHostname() {
     Registrar registrar =
         persistResource(makeRegistrar("example", "Example Registrar", ACTIVE));
@@ -539,7 +537,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).contains("Domain Name: cat.1.test\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_hostnameWithMultilevelTld_isStillConsideredHostname() {
     persistResource(makeHostResource("ns1.cat.1.test", "1.2.3.4"));
     newWhoisAction("nameserver ns1.cat.1.test\r\n").run();
@@ -548,7 +546,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).contains("1.2.3.4");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_metricsLoggedForSuccessfulCommand() {
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
     persistResource(makeHostResource("ns2.cat.lol", "1.2.3.4"));
@@ -564,7 +562,7 @@ public class WhoisActionTest {
     verify(action.whoisMetrics).recordWhoisMetric(eq(expected));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_metricsLoggedForUnsuccessfulCommand() {
     WhoisAction action = newWhoisAction("domain cat.lol\r\n");
     action.whoisMetrics = mock(WhoisMetrics.class);
@@ -578,7 +576,7 @@ public class WhoisActionTest {
     verify(action.whoisMetrics).recordWhoisMetric(eq(expected));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_metricsLoggedForInternalServerError() throws Exception {
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
     WhoisAction action = newWhoisAction("ns1.cat.lol");
@@ -597,7 +595,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo("Internal Server Error");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_retryOnTransientFailure() throws Exception {
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setUrl("http://my.fake.url").build());
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));

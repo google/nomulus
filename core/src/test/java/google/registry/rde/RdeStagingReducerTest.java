@@ -60,7 +60,7 @@ class RdeStagingReducerTest {
 
   @RegisterExtension
   AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private static final String GCS_BUCKET = "test-rde-bucket";
   private static final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());

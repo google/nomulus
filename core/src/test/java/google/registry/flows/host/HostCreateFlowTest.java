@@ -36,7 +36,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.FlowUtils.IpAddressVersionMismatchException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
@@ -56,22 +55,12 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostCreateFlow}. */
-@DualDatabaseTest
 class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResource> {
 
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   private void setEppHostCreateInput(String hostName, String hostAddrs) {
     setEppInput(
@@ -118,26 +107,26 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     doSuccessfulTest();
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun() throws Exception {
     dryRunFlowAssertResponse(loadFile("host_create_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_externalNeverExisted() throws Exception {
     doSuccessfulTest();
     assertAboutHosts().that(reloadResourceByForeignKey()).hasSuperordinateDomain(null);
     assertNoDnsTasksEnqueued();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_internalNeverExisted() throws Exception {
     doSuccessfulInternalTest("tld");
     HostResource host = reloadResourceByForeignKey();
@@ -148,7 +137,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     assertDnsTasksEnqueued("ns1.example.tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_multipartTLDsAndInvalidHost() {
     createTlds("bar.tld", "tld");
 
@@ -157,7 +146,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_externalExistedButWasDeleted() throws Exception {
     persistDeletedHost(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     doSuccessfulTest();
@@ -165,7 +154,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     assertNoDnsTasksEnqueued();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_internalExistedButWasDeleted() throws Exception {
     persistDeletedHost(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     doSuccessfulInternalTest("tld");
@@ -177,7 +166,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     assertDnsTasksEnqueued("ns1.example.tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_subordinateNeedsIps() {
     setEppHostCreateInput("ns1.example.tld", null);
     createTld("tld");
@@ -186,7 +175,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_externalMustNotHaveIps() {
     setEppHostCreateInputWithIps("ns1.example.external");
     createTld("tld");
@@ -195,7 +184,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_superordinateMissing() {
     setEppHostCreateInput("ns1.example.tld", null);
     createTld("tld");
@@ -204,7 +193,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     assertThat(thrown).hasMessageThat().contains("(example.tld)");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_superordinateInPendingDelete() {
     setEppHostCreateInputWithIps("ns1.example.tld");
     createTld("tld");
@@ -222,7 +211,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
         .contains("Superordinate domain for this hostname is in pending delete");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_alreadyExists() throws Exception {
     setEppHostCreateInput("ns1.example.tld", null);
     persistActiveHost(getUniqueIdFromCommand());
@@ -234,7 +223,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
             String.format("Object with given ID (%s) already exists", getUniqueIdFromCommand()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_resourceContention() throws Exception {
     setEppHostCreateInput("ns1.example.tld", null);
     String targetId = getUniqueIdFromCommand();
@@ -251,14 +240,14 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonLowerCaseHostname() {
     setEppHostCreateInput("ns1.EXAMPLE.tld", null);
     EppException thrown = assertThrows(HostNameNotLowerCaseException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonPunyCodedHostname() {
     setEppHostCreateInput("ns1.çauçalito.みんな", null);
     HostNameNotPunyCodedException thrown =
@@ -266,21 +255,21 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     assertThat(thrown).hasMessageThat().contains("expected ns1.xn--aualito-txac.xn--q9jyb4c");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonCanonicalHostname() {
     setEppHostCreateInput("ns1.example.tld.", null);
     EppException thrown = assertThrows(HostNameNotNormalizedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_longHostName() {
     setEppHostCreateInputWithIps("a" + Strings.repeat(".labelpart", 25) + ".tld");
     EppException thrown = assertThrows(HostNameTooLongException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_ip4AddressWithIp6Declaration() {
     setEppHostCreateInput(
         "ns1.example.tld",
@@ -297,37 +286,37 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badCharacter() {
     doFailingHostNameTest("foo bar", InvalidHostNameException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_tooShallowPublicSuffix() {
     doFailingHostNameTest("example.tld", HostNameTooShallowException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_tooShallowCcTld() {
     doFailingHostNameTest("foo.co.uk", HostNameTooShallowException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_barePublicSuffix() {
     doFailingHostNameTest("com", HostNameTooShallowException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_bareCcTld() {
     doFailingHostNameTest("co.uk", HostNameTooShallowException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_tooShallowNewTld() {
     doFailingHostNameTest("example.lol", HostNameTooShallowException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_ccTldInBailiwick() {
     createTld("co.uk");
     setEppHostCreateInputWithIps("foo.co.uk");
@@ -335,17 +324,9 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-host-create");
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() {
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

@@ -36,7 +36,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class RegistrarWhoisResponseTest {
 
   @RegisterExtension
-  final AppEngineExtension gae = AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension gae = AppEngineExtension.builder().withCloudSql().build();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2009-05-29T20:15:00Z"));
 

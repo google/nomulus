@@ -28,15 +28,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import google.registry.model.EntityTestCase;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.tld.Registry;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestSqlOnly;
 import google.registry.util.SerializeUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Cursor}. */
-@DualDatabaseTest
 public class CursorTest extends EntityTestCase {
 
   public CursorTest() {
@@ -48,7 +45,7 @@ public class CursorTest extends EntityTestCase {
     fakeClock.setTo(DateTime.parse("2010-10-17TZ"));
   }
 
-  @TestSqlOnly
+  @Test
   void testSerializable() {
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
     tm().transact(() -> tm().put(Cursor.createGlobal(RECURRING_BILLING, time)));
@@ -57,7 +54,7 @@ public class CursorTest extends EntityTestCase {
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_persistScopedCursor() {
     createTld("tld");
     this.fakeClock.advanceOneMilli();
@@ -72,7 +69,7 @@ public class CursorTest extends EntityTestCase {
         });
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_persistGlobalCursor() {
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
     Cursor cursor = Cursor.createGlobal(RECURRING_BILLING, time);
@@ -81,15 +78,7 @@ public class CursorTest extends EntityTestCase {
         .isEqualTo(time);
   }
 
-  @TestOfyAndSql
-  void testIndexing() throws Exception {
-    final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
-    tm().transact(() -> tm().put(Cursor.createGlobal(RECURRING_BILLING, time)));
-    Cursor cursor = tm().transact(() -> tm().loadByKey(Cursor.createGlobalVKey(RECURRING_BILLING)));
-    verifyDatastoreIndexing(cursor);
-  }
-
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidScopeOnCreate() {
     createTld("tld");
     this.fakeClock.advanceOneMilli();
@@ -105,7 +94,7 @@ public class CursorTest extends EntityTestCase {
         .contains("Class required for cursor does not match scope class");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidScopeOnKeyCreate() {
     createTld("tld");
     IllegalArgumentException thrown =
@@ -117,14 +106,14 @@ public class CursorTest extends EntityTestCase {
         .contains("Class required for cursor does not match scope class");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_createGlobalKeyForScopedCursorType() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Cursor.createGlobalKey(RDE_UPLOAD));
     assertThat(thrown).hasMessageThat().contains("Cursor type is not a global cursor");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidScopeOnGlobalKeyCreate() {
     createTld("tld");
     IllegalArgumentException thrown =
@@ -136,7 +125,7 @@ public class CursorTest extends EntityTestCase {
         .contains("Class required for cursor does not match scope class");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nullScope() {
     NullPointerException thrown =
         assertThrows(
@@ -145,7 +134,7 @@ public class CursorTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("Cursor scope cannot be null");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nullCursorType() {
     createTld("tld");
     NullPointerException thrown =
@@ -155,7 +144,7 @@ public class CursorTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("Cursor type cannot be null");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nullTime() {
     createTld("tld");
     NullPointerException thrown =

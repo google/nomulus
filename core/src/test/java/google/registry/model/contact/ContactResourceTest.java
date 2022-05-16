@@ -44,15 +44,11 @@ import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactResource}. */
-@DualDatabaseTest
 public class ContactResourceTest extends EntityTestCase {
 
   private ContactResource originalContact;
@@ -131,14 +127,14 @@ public class ContactResourceTest extends EntityTestCase {
     contactResource = persistResource(cloneAndSetAutoTimestamps(originalContact));
   }
 
-  @TestOfyAndSql
+  @Test
   void testContactBaseToContactResource() {
     assertAboutImmutableObjects()
         .that(new ContactResource.Builder().copyFrom(contactResource).build())
         .isEqualExceptFields(contactResource, "updateTimestamp", "revisions");
   }
 
-  @TestSqlOnly
+  @Test
   void testCloudSqlPersistence_failWhenViolateForeignKeyConstraint() {
     assertThrowForeignKeyViolation(
         () ->
@@ -150,7 +146,7 @@ public class ContactResourceTest extends EntityTestCase {
                     .build()));
   }
 
-  @TestSqlOnly
+  @Test
   void testCloudSqlPersistence_succeed() {
     ContactResource persisted = loadByEntity(originalContact);
     ContactResource fixed =
@@ -167,7 +163,7 @@ public class ContactResourceTest extends EntityTestCase {
     assertAboutImmutableObjects().that(persisted).isEqualExceptFields(fixed, "updateTimestamp");
   }
 
-  @TestOfyAndSql
+  @Test
   void testPersistence() {
     assertThat(
             loadByForeignKey(
@@ -175,7 +171,7 @@ public class ContactResourceTest extends EntityTestCase {
         .hasValue(contactResource);
   }
 
-  @TestSqlOnly
+  @Test
   void testSerializable() {
     ContactResource persisted =
         loadByForeignKey(ContactResource.class, contactResource.getForeignKey(), fakeClock.nowUtc())
@@ -183,13 +179,7 @@ public class ContactResourceTest extends EntityTestCase {
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
-  @TestOfyOnly
-  void testIndexing() throws Exception {
-    verifyDatastoreIndexing(
-        contactResource, "deletionTime", "currentSponsorClientId", "searchName");
-  }
-
-  @TestOfyAndSql
+  @Test
   void testEmptyStringsBecomeNull() {
     assertThat(new ContactResource.Builder().setContactId(null).build().getContactId()).isNull();
     assertThat(new ContactResource.Builder().setContactId("").build().getContactId()).isNull();
@@ -221,7 +211,7 @@ public class ContactResourceTest extends EntityTestCase {
         .isNotNull();
   }
 
-  @TestOfyAndSql
+  @Test
   void testEmptyTransferDataBecomesNull() {
     ContactResource withNull = new ContactResource.Builder().setTransferData(null).build();
     ContactResource withEmpty =
@@ -230,7 +220,7 @@ public class ContactResourceTest extends EntityTestCase {
     assertThat(withEmpty.transferData).isNull();
   }
 
-  @TestOfyAndSql
+  @Test
   void testImplicitStatusValues() {
     // OK is implicit if there's no other statuses.
     assertAboutContacts()
@@ -252,7 +242,7 @@ public class ContactResourceTest extends EntityTestCase {
         .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
   }
 
-  @TestOfyAndSql
+  @Test
   void testExpiredTransfer() {
     ContactResource afterTransfer =
         contactResource
@@ -273,7 +263,7 @@ public class ContactResourceTest extends EntityTestCase {
     assertThat(afterTransfer.getLastTransferTime()).isEqualTo(fakeClock.nowUtc().plusDays(1));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetCreationTime_cantBeCalledTwice() {
     IllegalStateException thrown =
         assertThrows(
@@ -282,13 +272,13 @@ public class ContactResourceTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("creationTime can only be set once");
   }
 
-  @TestOfyAndSql
+  @Test
   void testToHydratedString_notCircular() {
     // If there are circular references, this will overflow the stack.
     contactResource.toHydratedString();
   }
 
-  @TestOfyAndSql
+  @Test
   void testBeforeDatastoreSaveOnReplay_indexes() {
     ImmutableList<ForeignKeyContactIndex> foreignKeyIndexes =
         ofyTm().loadAllOf(ForeignKeyContactIndex.class);
