@@ -154,8 +154,6 @@ steps:
     for environment in alpha crash sandbox production; do
       sed s/'$${_ENV}'/${environment}/g release/cloudbuild-schema-deploy.yaml \
         > release/cloudbuild-schema-deploy-${environment}.yaml
-    done
-    for environment in alpha crash sandbox production; do
       sed s/'$${_ENV}'/${environment}/g release/cloudbuild-schema-verify.yaml \
         > release/cloudbuild-schema-verify-${environment}.yaml
     done

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2019 The Nomulus Authors. All Rights Reserved.
+# Copyright 2022 The Nomulus Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,9 +29,8 @@ if [ ! -f /secrets/schema_deployer_credential.dec ]; then
   echo "Missing /secrets/schema_deployer_credential.dec"
   exit 1
 fi
-cloud_sql_instance=$(cut -d' ' -f1 /secrets/schema_deployer_credential.dec)
-db_user=$(cut -d' ' -f2 /secrets/schema_deployer_credential.dec)
-db_password=$(cut -d' ' -f3 /secrets/schema_deployer_credential.dec)
+read -r cloud_sql_instance db_user db_password \
+  <<<$(cat /secrets/schema_deployer_credential.dec | awk '{print $1, $2, $3}')
 
 # Unpack the golden schema from schema.jar
 unzip -p /schema/schema.jar sql/schema/nomulus.golden.sql \
@@ -52,6 +51,7 @@ echo "$(date): Connecting to ${cloud_sql_instance}."
 #     of the postgres-socket-factory jar.
 # - Create a self-contained Java application that connects using socket factory
 #   * Drawback: Seems an overkill
+trap "pkill cloud_sql_proxy" EXIT
 cloud_sql_proxy -instances="${cloud_sql_instance}"=tcp:5432 \
   --credential_file=/secrets/cloud_sql_credential.json &
 
@@ -74,21 +74,23 @@ PGPASSWORD=${db_password} pg_dump -h localhost -U "${db_user}" \
     postgres
 
 raw_diff=$(diff /schema/nomulus.golden.sql /schema/nomulus.actual.sql)
+# Clean up the raw_diff:
+# - Remove diff locations (e.g. "5,6c5,6): grep "^[<>]"
+# - Remove leading bracket for easier grepping later: sed -e "s/^[<>]\s//g"
+# - Remove comments and blank lines: grep -v -E "^--|^$"
+# - Remove patterns in allowed_diffs.txt, which are custom Cloud SQL configs we
+#   cannot emulate in the golden schema.
 effective_diff=$(echo "${raw_diff}" \
                    | grep "^[<>]" | sed -e "s/^[<>]\s//g" \
-                   | grep -v "^--" | grep -v "^$"  \
+                   | grep -v -E "^--|^$"  \
                    | grep -v -f /allowed_diffs.txt )
 
 if [[ ${effective_diff} == "" ]]
 then
   echo "Golden and actual schemas match."
-  result=0
+  exit 0
 else
   echo "Golden and actual schemas do not match. Diff is:"
   echo "${raw_diff}"
-  result=1
+  exit 1
 fi
-
-# Stop Cloud SQL Proxy
-pkill cloud_sql_proxy
-exit ${result}
