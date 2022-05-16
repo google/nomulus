@@ -26,10 +26,13 @@ import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_CREATED;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.util.CollectionUtils.nullToEmpty;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
+import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.DnsMetrics.ActionStatus;
 import google.registry.dns.DnsMetrics.CommitStatus;
@@ -40,6 +43,7 @@ import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.Parameter;
+import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
@@ -98,6 +102,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   private final LockHandler lockHandler;
   private final Clock clock;
   private CloudTasksUtils cloudTasksUtils;
+  private final Response response;
 
   @Inject
   PublishDnsUpdatesAction(
@@ -109,7 +114,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       @Parameter(PARAM_TLD) String tld,
       LockHandler lockHandler,
       Clock clock,
-      CloudTasksUtils cloudTasksUtils) {
+      CloudTasksUtils cloudTasksUtils,
+      Response response) {
     this.previousAttempts = previousAttempts;
     this.lockIndex = lockIndex;
     this.numPublishLocks = numPublishLocks;
@@ -119,6 +125,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     this.lockHandler = lockHandler;
     this.clock = clock;
     this.cloudTasksUtils = cloudTasksUtils;
+    this.response = response;
   }
 
   private void recordActionResult(ActionStatus status) {
@@ -145,6 +152,16 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   /** Runs the task. */
   @Override
   public void run() {
+    /* We wish to manually control our retry behavior, in order to limit the number of retries
+     * and/or notify registrars / support only after a certain number of retries, or only
+     * with a certain type of failure. AppEngine will automatically retry on any non-2xx status
+     * code, so return SC_NO_CONTENT (204) by default to avoid this auto-retry.
+     *
+     * See https://cloud.google.com/appengine/docs/standard/java/taskqueue/push/retrying-tasks
+     * for more details on retry behavior. */
+    response.setStatus(SC_NO_CONTENT);
+    response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
+
     if (!validLockParams()) {
       recordActionResult(ActionStatus.BAD_LOCK_INDEX);
       requeueBatch();
@@ -167,6 +184,16 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   /** Runs the task, with the lock. */
   @Override
   public Void call() {
+    /* We wish to manually control our retry behavior, in order to limit the number of retries
+     * and/or notify registrars / support only after a certain number of retries, or only
+     * with a certain type of failure. AppEngine will automatically retry on any non-2xx status
+     * code, so return SC_NO_CONTENT (204) by default to avoid this auto-retry.
+     *
+     * See https://cloud.google.com/appengine/docs/standard/java/taskqueue/push/retrying-tasks
+     * for more details on retry behavior. */
+    response.setStatus(SC_NO_CONTENT);
+    response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
+
     processBatch();
     return null;
   }
@@ -255,9 +282,10 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       // No error was thrown
       commitStatus = CommitStatus.SUCCESS;
       actionStatus = ActionStatus.SUCCESS;
+      response.setStatus(SC_OK);
     } finally {
       if (commitStatus.equals(CommitStatus.FAILURE)) {
-        handleFailure();
+        handleCommitFailure();
       }
       recordActionResult(actionStatus);
       Duration duration = new Duration(timeAtStart, clock.nowUtc());
@@ -277,8 +305,9 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     }
   }
 
-  private void handleFailure() {
+  private void handleCommitFailure() {
     logger.atSevere().log("Batch commit failed");
+    response.setPayload(String.format("Batch commit failed on retry number %d", previousAttempts));
     ImmutableMultimap.Builder<String, String> mapBuilder = ImmutableMultimap.builder();
     cloudTasksUtils.enqueue(
         DNS_PUBLISH_PUSH_QUEUE_NAME,

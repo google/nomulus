@@ -24,6 +24,8 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -48,6 +50,7 @@ import google.registry.request.lock.LockHandler;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
+import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
 import google.registry.util.CloudTasksUtils;
 import org.joda.time.DateTime;
@@ -65,6 +68,7 @@ public class PublishDnsUpdatesActionTest {
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
   private final FakeClock clock = new FakeClock(DateTime.parse("1971-01-01TZ"));
+  private final FakeResponse response = new FakeResponse();
   private final FakeLockHandler lockHandler = new FakeLockHandler(true);
   private final DnsWriter dnsWriter = mock(DnsWriter.class);
   private final DnsMetrics dnsMetrics = mock(DnsMetrics.class);
@@ -100,7 +104,8 @@ public class PublishDnsUpdatesActionTest {
             tld,
             lockHandler,
             clock,
-            cloudTasksUtils);
+            cloudTasksUtils,
+            response);
     action.timeout = Duration.standardSeconds(10);
     action.itemsCreateTime = clock.nowUtc().minusHours(2);
     action.enqueuedTime = clock.nowUtc().minusHours(1);
@@ -135,7 +140,8 @@ public class PublishDnsUpdatesActionTest {
                 "xn--q9jyb4c",
                 lockHandler,
                 clock,
-                cloudTasksUtils));
+                cloudTasksUtils,
+                response));
     action.run();
 
     verify(dnsWriter).publishHost("ns1.example.xn--q9jyb4c");
@@ -157,6 +163,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     verifyNoMoreInteractions(dnsQueue);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -172,7 +179,8 @@ public class PublishDnsUpdatesActionTest {
                 "xn--q9jyb4c",
                 lockHandler,
                 clock,
-                cloudTasksUtils));
+                cloudTasksUtils,
+                response));
     action.run();
 
     verify(dnsWriter).publishDomain("example.xn--q9jyb4c");
@@ -194,6 +202,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     verifyNoMoreInteractions(dnsQueue);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -212,7 +221,8 @@ public class PublishDnsUpdatesActionTest {
                 "xn--q9jyb4c",
                 mockLockHandler,
                 clock,
-                cloudTasksUtils));
+                cloudTasksUtils,
+                response));
 
     action.run();
 
@@ -237,7 +247,8 @@ public class PublishDnsUpdatesActionTest {
                 "xn--q9jyb4c",
                 lockHandler,
                 clock,
-                cloudTasksUtils));
+                cloudTasksUtils,
+                response));
     doThrow(new RuntimeException()).when(dnsWriter).commit();
 
     assertThrows(RuntimeException.class, action::run);
@@ -284,6 +295,7 @@ public class PublishDnsUpdatesActionTest {
                     PARAM_TLD,
                     "xn--q9jyb4c")
                 .build());
+    assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
   }
 
   @Test
@@ -302,7 +314,8 @@ public class PublishDnsUpdatesActionTest {
                 "xn--q9jyb4c",
                 lockHandler,
                 clock,
-                cloudTasksUtils));
+                cloudTasksUtils,
+                response));
 
     action.run();
 
@@ -329,6 +342,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     verifyNoMoreInteractions(dnsQueue);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -344,7 +358,8 @@ public class PublishDnsUpdatesActionTest {
                 "xn--q9jyb4c",
                 lockHandler,
                 clock,
-                cloudTasksUtils));
+                cloudTasksUtils,
+                response));
 
     action.run();
 
@@ -366,6 +381,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     verifyNoMoreInteractions(dnsQueue);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -381,7 +397,8 @@ public class PublishDnsUpdatesActionTest {
                 "xn--q9jyb4c",
                 new FakeLockHandler(false),
                 clock,
-                cloudTasksUtils));
+                cloudTasksUtils,
+                response));
 
     ServiceUnavailableException thrown =
         assertThrows(ServiceUnavailableException.class, action::run);
@@ -398,6 +415,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     verifyNoMoreInteractions(dnsQueue);
+    assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
   }
 
   @Test
@@ -414,7 +432,8 @@ public class PublishDnsUpdatesActionTest {
                 "xn--q9jyb4c",
                 lockHandler,
                 clock,
-                cloudTasksUtils));
+                cloudTasksUtils,
+                response));
 
     action.run();
 
@@ -431,6 +450,7 @@ public class PublishDnsUpdatesActionTest {
     verify(dnsQueue).addDomainRefreshTask("example.com");
     verify(dnsQueue).addHostRefreshTask("ns1.example.com");
     verifyNoMoreInteractions(dnsQueue);
+    assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
   }
 
   @Test
@@ -447,7 +467,8 @@ public class PublishDnsUpdatesActionTest {
                 "xn--q9jyb4c",
                 lockHandler,
                 clock,
-                cloudTasksUtils));
+                cloudTasksUtils,
+                response));
 
     action.run();
 
@@ -479,7 +500,8 @@ public class PublishDnsUpdatesActionTest {
                 "xn--q9jyb4c",
                 lockHandler,
                 clock,
-                cloudTasksUtils));
+                cloudTasksUtils,
+                response));
     action.dnsWriter = "wrongWriter";
 
     action.run();
@@ -500,5 +522,6 @@ public class PublishDnsUpdatesActionTest {
     verify(dnsQueue).addHostRefreshTask("ns2.example.com");
     verify(dnsQueue).addHostRefreshTask("ns1.example2.com");
     verifyNoMoreInteractions(dnsQueue);
+    assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
   }
 }
