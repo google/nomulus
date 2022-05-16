@@ -113,7 +113,20 @@ steps:
     docker push gcr.io/${PROJECT_ID}/schema_deployer:latest
     docker push gcr.io/${PROJECT_ID}/schema_deployer:${TAG_NAME}
   dir: 'release/schema-deployer/'
-# Do text replacement in the schema-deploy config, hardcoding image digests.
+# Build the schema_verifier image and upload it to GCR.
+- name: 'gcr.io/cloud-builders/docker'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    docker build -t gcr.io/${PROJECT_ID}/schema_verifier:${TAG_NAME} .
+    docker tag gcr.io/${PROJECT_ID}/schema_verifier:${TAG_NAME} \
+      gcr.io/${PROJECT_ID}/schema_verifier:latest
+    docker push gcr.io/${PROJECT_ID}/schema_verifier:latest
+    docker push gcr.io/${PROJECT_ID}/schema_verifier:${TAG_NAME}
+  dir: 'release/schema-verifier/'
+# Do text replacement in the schema-deploy and schema-verify configs.
 - name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: /bin/bash
   args:
@@ -126,14 +139,23 @@ steps:
     schema_deployer_digest=$( \
       gcloud container images list-tags gcr.io/${PROJECT_ID}/schema_deployer \
       --format='get(digest)' --filter='tags = ${TAG_NAME}')
+    schema_verifier_digest=$( \
+      gcloud container images list-tags gcr.io/${PROJECT_ID}/schema_verifier \
+      --format='get(digest)' --filter='tags = ${TAG_NAME}')
     sed -i s/builder:latest/builder@$builder_digest/g \
       release/cloudbuild-schema-deploy.yaml
+    sed -i s/builder:latest/builder@$builder_digest/g \
+      release/cloudbuild-schema-verify.yaml
     sed -i s/schema_deployer:latest/schema_deployer@$schema_deployer_digest/g \
       release/cloudbuild-schema-deploy.yaml
+    sed -i s/schema_verifier:latest/schema_verifier@$schema_verifier_digest/g \
+      release/cloudbuild-schema-verify.yaml
     sed -i s/'$${TAG_NAME}'/${TAG_NAME}/g release/cloudbuild-schema-deploy.yaml
     for environment in alpha crash sandbox production; do
       sed s/'$${_ENV}'/${environment}/g release/cloudbuild-schema-deploy.yaml \
         > release/cloudbuild-schema-deploy-${environment}.yaml
+      sed s/'$${_ENV}'/${environment}/g release/cloudbuild-schema-verify.yaml \
+        > release/cloudbuild-schema-verify-${environment}.yaml
     done
 # Upload the gradle binary to GCS if it does not exist and point URL in gradle wrapper to it.
 - name: 'gcr.io/cloud-builders/gsutil'
