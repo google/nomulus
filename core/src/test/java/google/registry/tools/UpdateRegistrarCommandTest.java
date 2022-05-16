@@ -25,6 +25,7 @@ import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -42,7 +43,6 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
 import java.math.BigDecimal;
 import java.util.Optional;
-import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -368,7 +368,18 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap()).isEmpty();
     runCommand("--billing_account_map=USD=abc123,JPY=789xyz", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap())
-        .containsExactly(CurrencyUnit.USD, "abc123", CurrencyUnit.JPY, "789xyz");
+        .containsExactly(USD, "abc123", JPY, "789xyz");
+  }
+
+  @Test
+  void testSuccess_billingAccountMap_nullify() throws Exception {
+    persistResource(
+        loadRegistrar("NewRegistrar")
+            .asBuilder()
+            .setBillingAccountMap(ImmutableMap.of(USD, "abc123", JPY, "789xyz"))
+            .build());
+    runCommand("--billing_account_map=\"\"", "--force", "NewRegistrar");
+    assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap()).isEmpty();
   }
 
   @Test
@@ -415,8 +426,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
         loadRegistrar("NewRegistrar").asBuilder().setBillingAccountMap(ImmutableMap.of()).build());
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap()).isEmpty();
     runCommand("--billing_account_map=JPY=789xyz", "--allowed_tlds=foo", "--force", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap())
-        .containsExactly(CurrencyUnit.JPY, "789xyz");
+    assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap()).containsExactly(JPY, "789xyz");
   }
 
   @Test
@@ -425,12 +435,11 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setBillingAccountMap(
-                ImmutableMap.of(CurrencyUnit.USD, "abc123", CurrencyUnit.JPY, "789xyz"))
+            .setBillingAccountMap(ImmutableMap.of(USD, "abc123", JPY, "789xyz"))
             .build());
     runCommand("--billing_account_map=JPY=123xyz", "--allowed_tlds=foo", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap())
-        .containsExactly(CurrencyUnit.JPY, "123xyz", CurrencyUnit.USD, "abc123");
+        .containsExactly(JPY, "123xyz", USD, "abc123");
   }
 
   @Test
