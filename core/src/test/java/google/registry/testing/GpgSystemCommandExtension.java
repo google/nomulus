@@ -21,6 +21,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteSource;
 import com.google.common.io.CharStreams;
 import java.io.File;
@@ -43,6 +44,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  */
 public final class GpgSystemCommandExtension implements BeforeEachCallback, AfterEachCallback {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final File DEV_NULL = new File("/dev/null");
   private static final String TEMP_FILE_PREFIX = "gpgtest";
 
@@ -122,9 +124,29 @@ public final class GpgSystemCommandExtension implements BeforeEachCallback, Afte
         .isEqualTo(0);
   }
 
+  static void deleteTree(File dir) {
+    for (File file : dir.listFiles()) {
+      if (file.isDirectory()) {
+        deleteTree(file);
+      } else {
+        file.delete();
+      }
+    }
+    dir.delete();
+  }
+
   @Override
   public void afterEach(ExtensionContext context) {
-    // TODO(weiminyu): we should delete the cwd tree.
+    // Kill the gpg-agent.
+    try {
+      exec("gpgconf", "--homedir", conf.getPath(), "--kill", "gpg-agent");
+    } catch (IOException e) {
+      logger.atInfo().log("Unable to kill gpg-agent: %s", e);
+    }
+
+    // Clean up the temporary directory.
+    deleteTree(cwd);
+
     cwd = DEV_NULL;
     conf = DEV_NULL;
   }
