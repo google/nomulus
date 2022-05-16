@@ -122,9 +122,25 @@ public final class GpgSystemCommandExtension implements BeforeEachCallback, Afte
         .isEqualTo(0);
   }
 
+  static void deleteTree(File dir) {
+    for (File file : dir.listFiles()) {
+      if (file.isDirectory()) {
+        deleteTree(file);
+      } else {
+        file.delete();
+      }
+    }
+    dir.delete();
+  }
+
   @Override
-  public void afterEach(ExtensionContext context) {
-    // TODO(weiminyu): we should delete the cwd tree.
+  public void afterEach(ExtensionContext context) throws IOException {
+    // Kill the gpg-agent.
+    exec("gpgconf", "--homedir", conf.getPath(), "--kill", "gpg-agent");
+
+    // Clean up the temporary directory.
+    deleteTree(cwd);
+
     cwd = DEV_NULL;
     conf = DEV_NULL;
   }
