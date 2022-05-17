@@ -48,6 +48,7 @@ import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
+import google.registry.model.AppEngineEnvironment;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
 import google.registry.model.CreateAutoTimestamp;
@@ -119,6 +120,8 @@ public class Registry extends ImmutableObject
 
   /** The suffix that identifies roids as belonging to this specific tld, e.g. -HOW for .how. */
   String roidSuffix;
+
+  private static final AppEngineEnvironment environment = new AppEngineEnvironment();
 
   /** Default values for all the relevant TLD parameters. */
   public static final TldState DEFAULT_TLD_STATE = TldState.PREDELEGATION;
@@ -288,7 +291,15 @@ public class Registry extends ImmutableObject
               });
 
   public static VKey<Registry> createVKey(String tld) {
-    return VKey.create(Registry.class, tld, Key.create(getCrossTldKey(), Registry.class, tld));
+    VKey<Registry> vkey;
+    if (!AppEngineEnvironment.isInAppEngineEnvironment()) {
+      environment.setEnvironmentForCurrentThread();
+    }
+    vkey = VKey.create(Registry.class, tld, Key.create(getCrossTldKey(), Registry.class, tld));
+    if (!AppEngineEnvironment.isInAppEngineEnvironment()) {
+      environment.unsetEnvironmentForCurrentThread();
+    }
+    return vkey;
   }
 
   public static VKey<Registry> createVKey(Key<Registry> key) {
