@@ -387,9 +387,6 @@ public class Registrar extends ImmutableObject
    */
   @Index @Nullable Long ianaIdentifier;
 
-  /** Identifier of registrar used in external billing system (e.g. Oracle). */
-  @Nullable Long billingIdentifier;
-
   /** Purchase Order number used for invoices in external billing system, if applicable. */
   @Nullable String poNumber;
 
@@ -494,11 +491,6 @@ public class Registrar extends ImmutableObject
   @Nullable
   public Long getIanaIdentifier() {
     return ianaIdentifier;
-  }
-
-  @Nullable
-  public Long getBillingIdentifier() {
-    return billingIdentifier;
   }
 
   public Optional<String> getPoNumber() {
@@ -688,7 +680,6 @@ public class Registrar extends ImmutableObject
     return new JsonMapBuilder()
         .put("clientIdentifier", clientIdentifier)
         .put("ianaIdentifier", ianaIdentifier)
-        .put("billingIdentifier", billingIdentifier)
         .putString("creationTime", creationTime.getTimestamp())
         .putString("lastUpdateTime", lastUpdateTime.getTimestamp())
         .putString("lastCertificateUpdateTime", lastCertificateUpdateTime)
@@ -782,14 +773,6 @@ public class Registrar extends ImmutableObject
       checkArgument(
           ianaIdentifier == null || ianaIdentifier > 0, "IANA ID must be a positive number");
       getInstance().ianaIdentifier = ianaIdentifier;
-      return this;
-    }
-
-    public Builder setBillingIdentifier(@Nullable Long billingIdentifier) {
-      checkArgument(
-          billingIdentifier == null || billingIdentifier > 0,
-          "Billing ID must be a positive number");
-      getInstance().billingIdentifier = billingIdentifier;
       return this;
     }
 

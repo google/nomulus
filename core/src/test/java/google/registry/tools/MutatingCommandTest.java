@@ -58,7 +58,6 @@ public class MutatingCommandTest {
   void beforeEach() {
     registrar1 = persistNewRegistrar("Registrar1", "Registrar1", Registrar.Type.REAL, 1L);
     registrar2 = persistNewRegistrar("Registrar2", "Registrar2", Registrar.Type.REAL, 2L);
-    newRegistrar1 = registrar1.asBuilder().setBillingIdentifier(42L).build();
     newRegistrar2 = registrar2.asBuilder().setBlockPremiumNames(true).build();
 
     createTld("tld");
@@ -100,9 +99,6 @@ public class MutatingCommandTest {
             + "\n"
             + "Update HostResource@3-ROID\n"
             + "currentSponsorClientId: TheRegistrar -> Registrar2\n"
-            + "\n"
-            + "Update Registrar@Registrar1\n"
-            + "billingIdentifier: null -> 42\n"
             + "\n"
             + "Update Registrar@Registrar2\n"
             + "blockPremiumNames: false -> true\n");
