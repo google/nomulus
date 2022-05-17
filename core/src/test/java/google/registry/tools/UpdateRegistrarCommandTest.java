@@ -488,7 +488,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
             .setContactsRequireSyncing(true)
             .build());
     // Make some unrelated change where we don't specify the flags for the booleans.
-    runCommandForced("--zip=10011", "NewRegistrar");
+    runCommandForced("--password=foo_bar_baz", "NewRegistrar");
     // Make sure that the boolean fields didn't get reset back to false.
     Registrar reloadedRegistrar = loadRegistrar("NewRegistrar");
     assertThat(reloadedRegistrar.getBlockPremiumNames()).isTrue();
