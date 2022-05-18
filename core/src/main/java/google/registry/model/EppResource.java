@@ -37,6 +37,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.config.RegistryConfig;
+import google.registry.model.CacheUtils.MasqueradedCacheLoader;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
@@ -385,7 +386,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   }
 
   static final CacheLoader<VKey<? extends EppResource>, EppResource> CACHE_LOADER =
-      new CacheLoader<VKey<? extends EppResource>, EppResource>() {
+      new MasqueradedCacheLoader<VKey<? extends EppResource>, EppResource>() {
 
         @Override
         public EppResource load(VKey<? extends EppResource> key) {

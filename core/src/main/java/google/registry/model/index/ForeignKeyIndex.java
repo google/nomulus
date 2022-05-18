@@ -43,6 +43,7 @@ import com.googlecode.objectify.annotation.Index;
 import google.registry.config.RegistryConfig;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.CacheUtils;
+import google.registry.model.CacheUtils.MasqueradedCacheLoader;
 import google.registry.model.EppResource;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.ReportedOn;
@@ -256,7 +257,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   }
 
   static final CacheLoader<VKey<ForeignKeyIndex<?>>, Optional<ForeignKeyIndex<?>>> CACHE_LOADER =
-      new CacheLoader<VKey<ForeignKeyIndex<?>>, Optional<ForeignKeyIndex<?>>>() {
+      new MasqueradedCacheLoader<VKey<ForeignKeyIndex<?>>, Optional<ForeignKeyIndex<?>>>() {
 
         @Override
         public Optional<ForeignKeyIndex<?>> load(VKey<ForeignKeyIndex<?>> key) {

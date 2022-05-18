@@ -117,7 +117,7 @@ public class AppEngineEnvironment {
             });
   }
 
-  /** Returns true if the current thread is in an App Engine Environment.*/
+  /** Returns true if the current thread is in an App Engine Environment. */
   public static boolean isInAppEngineEnvironment() {
     return ApiProxy.getCurrentEnvironment() != null;
   }

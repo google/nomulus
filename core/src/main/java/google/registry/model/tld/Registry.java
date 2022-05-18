@@ -29,7 +29,6 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.money.CurrencyUnit.USD;
 
-import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
@@ -48,9 +47,9 @@ import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
-import google.registry.model.AppEngineEnvironment;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
+import google.registry.model.CacheUtils.MasqueradedCacheLoader;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
@@ -121,7 +120,6 @@ public class Registry extends ImmutableObject
   /** The suffix that identifies roids as belonging to this specific tld, e.g. -HOW for .how. */
   String roidSuffix;
 
-  private static final AppEngineEnvironment environment = new AppEngineEnvironment();
 
   /** Default values for all the relevant TLD parameters. */
   public static final TldState DEFAULT_TLD_STATE = TldState.PREDELEGATION;
@@ -271,7 +269,7 @@ public class Registry extends ImmutableObject
   private static final LoadingCache<String, Optional<Registry>> CACHE =
       CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
-              new CacheLoader<String, Optional<Registry>>() {
+              new MasqueradedCacheLoader<String, Optional<Registry>>() {
                 @Override
                 public Optional<Registry> load(final String tld) {
                   // Enter a transaction-less context briefly; we don't want to enroll every TLD in
@@ -291,15 +289,7 @@ public class Registry extends ImmutableObject
               });
 
   public static VKey<Registry> createVKey(String tld) {
-    VKey<Registry> vkey;
-    if (!AppEngineEnvironment.isInAppEngineEnvironment()) {
-      environment.setEnvironmentForCurrentThread();
-    }
-    vkey = VKey.create(Registry.class, tld, Key.create(getCrossTldKey(), Registry.class, tld));
-    if (!AppEngineEnvironment.isInAppEngineEnvironment()) {
-      environment.unsetEnvironmentForCurrentThread();
-    }
-    return vkey;
+    return VKey.create(Registry.class, tld, Key.create(getCrossTldKey(), Registry.class, tld));
   }
 
   public static VKey<Registry> createVKey(Key<Registry> key) {
