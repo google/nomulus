@@ -211,7 +211,7 @@ public class HistoryEntryDao {
         jpaTm().criteriaQuery(criteriaQuery).getResultList());
   }
 
-  private static Class<? extends HistoryEntry> getHistoryClassFromParent(
+  public static Class<? extends HistoryEntry> getHistoryClassFromParent(
       Class<? extends EppResource> parent) {
     if (!RESOURCE_TYPES_TO_HISTORY_TYPES.containsKey(parent)) {
       throw new IllegalArgumentException(
@@ -220,7 +220,7 @@ public class HistoryEntryDao {
     return RESOURCE_TYPES_TO_HISTORY_TYPES.get(parent);
   }
 
-  private static String getRepoIdFieldNameFromHistoryClass(
+  public static String getRepoIdFieldNameFromHistoryClass(
       Class<? extends HistoryEntry> historyClass) {
     if (!REPO_ID_FIELD_NAMES.containsKey(historyClass)) {
       throw new IllegalArgumentException(
