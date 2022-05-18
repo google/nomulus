@@ -83,7 +83,7 @@ public class CacheUtils {
    * action runs in to be an GAE thread.
    */
   @DeleteAfterMigration
-  public abstract static class MasqueradedCacheLoader<K, V> implements CacheLoader<K, V> {
+  public abstract static class AppEngineEnvironmentCacheLoader<K, V> implements CacheLoader<K, V> {
 
     private static final AppEngineEnvironment environment = new AppEngineEnvironment();
 
