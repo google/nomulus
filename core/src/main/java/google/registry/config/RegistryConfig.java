@@ -1351,6 +1351,12 @@ public final class RegistryConfig {
     public static int provideWipeOutQueryBatchSize(RegistryConfigSettings config) {
       return config.contactHistory.wipeOutQueryBatchSize;
     }
+
+    @Provides
+    @Config("jdbcBatchSize")
+    public static int provideHibernateJdbcBatchSize(RegistryConfigSettings config) {
+      return config.hibernate.jdbcBatchSize;
+    }
   }
 
   /** Returns the App Engine project ID, which is based off the environment name. */
@@ -1555,7 +1561,7 @@ public final class RegistryConfig {
    * https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html,
    * recommend between 10 and 50.
    */
-  public static String getHibernateJdbcBatchSize() {
+  public static int getHibernateJdbcBatchSize() {
     return CONFIG_SETTINGS.get().hibernate.jdbcBatchSize;
   }
 

@@ -120,7 +120,7 @@ public class RegistryConfigSettings {
     public String hikariMinimumIdle;
     public String hikariMaximumPoolSize;
     public String hikariIdleTimeout;
-    public String jdbcBatchSize;
+    public int jdbcBatchSize;
     public String jdbcFetchSize;
   }
 

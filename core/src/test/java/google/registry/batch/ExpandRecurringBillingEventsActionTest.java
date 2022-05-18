@@ -90,6 +90,7 @@ public class ExpandRecurringBillingEventsActionTest
     action.mrRunner = makeDefaultRunner();
     action.clock = clock;
     action.cursorTimeParam = Optional.empty();
+    action.batchSize = 2;
     createTld("tld");
     domain =
         persistResource(
@@ -279,11 +280,12 @@ public class ExpandRecurringBillingEventsActionTest
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder().setParent(persistedEntry).build();
-    // Persist an otherwise identical billing event that differs only in billing time.
+    // Persist an otherwise identical billing event that differs only in billing time (and ID).
     BillingEvent.OneTime persisted =
         persistResource(
             expected
                 .asBuilder()
+                .setId(15891L)
                 .setBillingTime(DateTime.parse("1999-02-19T00:00:00Z"))
                 .setEventTime(DateTime.parse("1999-01-05T00:00:00Z"))
                 .build());
@@ -639,43 +641,95 @@ public class ExpandRecurringBillingEventsActionTest
   @TestOfyAndSql
   void testSuccess_expandMultipleEvents() throws Exception {
     persistResource(recurring);
+    DomainBase domain2 =
+        persistResource(
+            newDomainBase("example2.tld")
+                .asBuilder()
+                .setCreationTimeForTest(DateTime.parse("1999-04-05T00:00:00Z"))
+                .build());
+    DomainHistory historyEntry2 =
+        persistResource(
+            new DomainHistory.Builder()
+                .setRegistrarId(domain2.getCreationRegistrarId())
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setModificationTime(DateTime.parse("1999-04-05T00:00:00Z"))
+                .setDomain(domain2)
+                .build());
     BillingEvent.Recurring recurring2 =
         persistResource(
-            recurring
+            new BillingEvent.Recurring.Builder()
+                .setParent(historyEntry2)
+                .setRegistrarId(domain2.getCreationRegistrarId())
+                .setEventTime(DateTime.parse("2000-04-05T00:00:00Z"))
+                .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                .setReason(Reason.RENEW)
+                .setRecurrenceEndTime(END_OF_TIME)
+                .setTargetId(domain2.getDomainName())
+                .build());
+    DomainBase domain3 =
+        persistResource(
+            newDomainBase("example3.tld")
                 .asBuilder()
-                .setEventTime(recurring.getEventTime().plusMonths(3))
-                .setId(3L)
+                .setCreationTimeForTest(DateTime.parse("1999-06-05T00:00:00Z"))
+                .build());
+    DomainHistory historyEntry3 =
+        persistResource(
+            new DomainHistory.Builder()
+                .setRegistrarId(domain3.getCreationRegistrarId())
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setModificationTime(DateTime.parse("1999-06-05T00:00:00Z"))
+                .setDomain(domain3)
+                .build());
+    BillingEvent.Recurring recurring3 =
+        persistResource(
+            new BillingEvent.Recurring.Builder()
+                .setParent(historyEntry3)
+                .setRegistrarId(domain3.getCreationRegistrarId())
+                .setEventTime(DateTime.parse("2000-06-05T00:00:00Z"))
+                .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                .setReason(Reason.RENEW)
+                .setRecurrenceEndTime(END_OF_TIME)
+                .setTargetId(domain3.getDomainName())
                 .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runAction();
-    List<DomainHistory> persistedEntries =
-        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
-    assertThat(persistedEntries).hasSize(2);
+
+    DomainHistory persistedHistory1 =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
-        domain,
-        persistedEntries.get(0),
-        "TheRegistrar",
-        DateTime.parse("2000-02-19T00:00:00Z"),
-        true);
+        domain, persistedHistory1, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected =
         defaultOneTimeBuilder()
-            .setParent(persistedEntries.get(0))
+            .setParent(persistedHistory1)
             .setCancellationMatchingBillingEvent(recurring.createVKey())
             .build();
+    DomainHistory persistedHistory2 =
+        getOnlyHistoryEntryOfType(domain2, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
-        domain,
-        persistedEntries.get(1),
-        "TheRegistrar",
-        DateTime.parse("2000-05-20T00:00:00Z"),
-        true);
+        domain2, persistedHistory2, "TheRegistrar", DateTime.parse("2000-05-20T00:00:00Z"), true);
     BillingEvent.OneTime expected2 =
         defaultOneTimeBuilder()
             .setBillingTime(DateTime.parse("2000-05-20T00:00:00Z"))
             .setEventTime(DateTime.parse("2000-04-05T00:00:00Z"))
-            .setParent(persistedEntries.get(1))
+            .setParent(persistedHistory2)
+            .setTargetId(domain2.getDomainName())
             .setCancellationMatchingBillingEvent(recurring2.createVKey())
             .build();
-    assertBillingEventsForResource(domain, expected, expected2, recurring, recurring2);
+    DomainHistory persistedHistory3 =
+        getOnlyHistoryEntryOfType(domain3, DOMAIN_AUTORENEW, DomainHistory.class);
+    assertHistoryEntryMatches(
+        domain3, persistedHistory3, "TheRegistrar", DateTime.parse("2000-07-20T00:00:00Z"), true);
+    BillingEvent.OneTime expected3 =
+        defaultOneTimeBuilder()
+            .setBillingTime(DateTime.parse("2000-07-20T00:00:00Z"))
+            .setEventTime(DateTime.parse("2000-06-05T00:00:00Z"))
+            .setTargetId(domain3.getDomainName())
+            .setParent(persistedHistory3)
+            .setCancellationMatchingBillingEvent(recurring3.createVKey())
+            .build();
+    assertBillingEventsForResource(domain, expected, recurring);
+    assertBillingEventsForResource(domain2, expected2, recurring2);
+    assertBillingEventsForResource(domain3, expected3, recurring3);
     assertCursorAt(currentTestTime);
   }
 
