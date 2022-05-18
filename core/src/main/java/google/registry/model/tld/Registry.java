@@ -120,7 +120,6 @@ public class Registry extends ImmutableObject
   /** The suffix that identifies roids as belonging to this specific tld, e.g. -HOW for .how. */
   String roidSuffix;
 
-
   /** Default values for all the relevant TLD parameters. */
   public static final TldState DEFAULT_TLD_STATE = TldState.PREDELEGATION;
 
