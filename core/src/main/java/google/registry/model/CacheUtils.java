@@ -90,11 +90,13 @@ public class CacheUtils {
     @Override
     public @Nullable V reload(@NonNull K key, @NonNull V oldValue) throws Exception {
       V value;
+      boolean isMasqueraded = false;
       if (!AppEngineEnvironment.isInAppEngineEnvironment()) {
         environment.setEnvironmentForCurrentThread();
+        isMasqueraded = true;
       }
       value = load(key);
-      if (!AppEngineEnvironment.isInAppEngineEnvironment()) {
+      if (isMasqueraded) {
         environment.unsetEnvironmentForCurrentThread();
       }
       return value;
