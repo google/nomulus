@@ -62,15 +62,6 @@ public class CacheUtils {
    * cost of the load will never be incurred during the read.
    */
   public static Caffeine<Object, Object> newCacheBuilder(Duration expireAfterWrite) {
-    Duration refreshAfterWrite = expireAfterWrite.dividedBy(2);
-    Caffeine<Object, Object> caffeine = Caffeine.newBuilder().expireAfterWrite(expireAfterWrite);
-    // In tests, the cache duration is usually set to 0, which means the cache load synchronously
-    // blocks every time it is called anyway because of the expireAfterWrite() above. Thus, setting
-    // the refreshAfterWrite won't do anything, plus it's not legal to call it with a zero value
-    // anyway (Caffeine allows expireAfterWrite to be zero but not refreshAfterWrite).
-    if (!refreshAfterWrite.isZero()) {
-      caffeine = caffeine.refreshAfterWrite(refreshAfterWrite);
-    }
-    return caffeine;
+    return Caffeine.newBuilder().expireAfterWrite(expireAfterWrite);
   }
 }
