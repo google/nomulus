@@ -120,7 +120,6 @@ class SyncRegistrarsSheet {
                   builder.put("registrarName", convert(registrar.getRegistrarName()));
                   builder.put("state", convert(registrar.getState()));
                   builder.put("ianaIdentifier", convert(registrar.getIanaIdentifier()));
-                  builder.put("billingIdentifier", convert(registrar.getBillingIdentifier()));
                   builder.put("billingAccountMap", convert(registrar.getBillingAccountMap()));
                   builder.put("primaryContacts", convertContacts(contacts, byType(ADMIN)));
                   builder.put("techContacts", convertContacts(contacts, byType(TECH)));

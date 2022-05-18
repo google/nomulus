@@ -348,13 +348,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   }
 
   @Test
-  void testSuccess_billingId() throws Exception {
-    assertThat(loadRegistrar("NewRegistrar").getBillingIdentifier()).isNull();
-    runCommand("--billing_id=12345", "--force", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").getBillingIdentifier()).isEqualTo(12345);
-  }
-
-  @Test
   void testSuccess_poNumber() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").getPoNumber()).isEmpty();
     runCommand("--po_number=52345", "--force", "NewRegistrar");
@@ -504,7 +497,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
             .setContactsRequireSyncing(true)
             .build());
     // Make some unrelated change where we don't specify the flags for the booleans.
-    runCommandForced("--billing_id=12345", "NewRegistrar");
+    runCommandForced("NewRegistrar");
     // Make sure that the boolean fields didn't get reset back to false.
     Registrar reloadedRegistrar = loadRegistrar("NewRegistrar");
     assertThat(reloadedRegistrar.getBlockPremiumNames()).isTrue();
@@ -529,7 +522,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
                 .asBuilder()
                 .setType(Type.PDT) // for non-null IANA ID
                 .setIanaIdentifier(9995L)
-                .setBillingIdentifier(1L)
                 .setPhoneNumber("+1.2125555555")
                 .setFaxNumber("+1.2125555556")
                 .setUrl("http://www.example.tld")
@@ -537,7 +529,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
                 .build());
 
     assertThat(registrar.getIanaIdentifier()).isNotNull();
-    assertThat(registrar.getBillingIdentifier()).isNotNull();
     assertThat(registrar.getPhoneNumber()).isNotNull();
     assertThat(registrar.getFaxNumber()).isNotNull();
     assertThat(registrar.getUrl()).isNotNull();
@@ -546,7 +537,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     runCommand(
         "--registrar_type=TEST", // necessary for null IANA ID
         "--iana_id=null",
-        "--billing_id=null",
         "--phone=null",
         "--fax=null",
         "--url=null",
@@ -556,7 +546,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
     registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getIanaIdentifier()).isNull();
-    assertThat(registrar.getBillingIdentifier()).isNull();
     assertThat(registrar.getPhoneNumber()).isNull();
     assertThat(registrar.getFaxNumber()).isNull();
     assertThat(registrar.getUrl()).isNull();
@@ -572,7 +561,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
                 .asBuilder()
                 .setType(Type.PDT) // for non-null IANA ID
                 .setIanaIdentifier(9995L)
-                .setBillingIdentifier(1L)
                 .setPhoneNumber("+1.2125555555")
                 .setFaxNumber("+1.2125555556")
                 .setUrl("http://www.example.tld")
@@ -580,7 +568,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
                 .build());
 
     assertThat(registrar.getIanaIdentifier()).isNotNull();
-    assertThat(registrar.getBillingIdentifier()).isNotNull();
     assertThat(registrar.getPhoneNumber()).isNotNull();
     assertThat(registrar.getFaxNumber()).isNotNull();
     assertThat(registrar.getUrl()).isNotNull();
@@ -589,7 +576,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     runCommand(
         "--registrar_type=TEST", // necessary for null IANA ID
         "--iana_id=",
-        "--billing_id=",
         "--phone=",
         "--fax=",
         "--url=",
@@ -599,7 +585,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
     registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getIanaIdentifier()).isNull();
-    assertThat(registrar.getBillingIdentifier()).isNull();
     assertThat(registrar.getPhoneNumber()).isNull();
     assertThat(registrar.getFaxNumber()).isNull();
     assertThat(registrar.getUrl()).isNull();
@@ -661,20 +646,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   void testFailure_nonIntegerIanaId() {
     assertThrows(
         ParameterException.class, () -> runCommand("--iana_id=ABC123", "--force", "NewRegistrar"));
-  }
-
-  @Test
-  void testFailure_negativeBillingId() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> runCommand("--billing_id=-1", "--force", "NewRegistrar"));
-  }
-
-  @Test
-  void testFailure_nonIntegerBillingId() {
-    assertThrows(
-        ParameterException.class,
-        () -> runCommand("--billing_id=ABC123", "--force", "NewRegistrar"));
   }
 
   @Test

@@ -62,6 +62,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Mapify;
@@ -75,6 +76,7 @@ import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
@@ -123,24 +125,24 @@ public class Registrar extends ImmutableObject
 
   /** Represents the type of a registrar entity. */
   public enum Type {
-    /** A real-world, third-party registrar. Should have non-null IANA and billing IDs. */
+    /** A real-world, third-party registrar. Should have non-null IANA and billing account IDs. */
     REAL(Objects::nonNull),
 
     /**
      * A registrar account used by a real third-party registrar undergoing operational testing and
-     * evaluation. Should only be created in sandbox, and should have null IANA/billing IDs.
+     * evaluation. Should only be created in sandbox, and should have null IANA/billing account IDs.
      */
     OTE(Objects::isNull),
 
     /**
-     * A registrar used for predelegation testing. Should have a null billing ID. The IANA ID should
-     * be either 9995 or 9996, which are reserved for predelegation testing.
+     * A registrar used for predelegation testing. Should have a null billing account ID. The IANA
+     * ID should be either 9995 or 9996, which are reserved for predelegation testing.
      */
     PDT(n -> ImmutableSet.of(9995L, 9996L).contains(n)),
 
     /**
      * A registrar used for external monitoring by ICANN. Should have IANA ID 9997 and a null
-     * billing ID.
+     * billing account ID.
      */
     EXTERNAL_MONITORING(isEqual(9997L)),
 
@@ -148,13 +150,13 @@ public class Registrar extends ImmutableObject
      * A registrar used for when the registry acts as a registrar. Must have either IANA ID 9998
      * (for billable transactions) or 9999 (for non-billable transactions).
      */
-    // TODO(b/13786188): determine what billing ID for this should be, if any.
+    // TODO(b/13786188): determine what billing account ID for this should be, if any.
     INTERNAL(n -> ImmutableSet.of(9998L, 9999L).contains(n)),
 
-    /** A registrar used for internal monitoring. Should have null IANA/billing IDs. */
+    /** A registrar used for internal monitoring. Should have null IANA/billing account IDs. */
     MONITORING(Objects::isNull),
 
-    /** A registrar used for internal testing. Should have null IANA/billing IDs. */
+    /** A registrar used for internal testing. Should have null IANA/billing account IDs. */
     TEST(Objects::isNull);
 
     /**
@@ -388,7 +390,8 @@ public class Registrar extends ImmutableObject
   @Index @Nullable Long ianaIdentifier;
 
   /** Identifier of registrar used in external billing system (e.g. Oracle). */
-  @Nullable Long billingIdentifier;
+  // TODO(sarahbot@): Drop this column from the table in a flyway script in a follow up PR.
+  @DeleteAfterMigration @Nullable @Deprecated @Ignore Long billingIdentifier;
 
   /** Purchase Order number used for invoices in external billing system, if applicable. */
   @Nullable String poNumber;
@@ -494,11 +497,6 @@ public class Registrar extends ImmutableObject
   @Nullable
   public Long getIanaIdentifier() {
     return ianaIdentifier;
-  }
-
-  @Nullable
-  public Long getBillingIdentifier() {
-    return billingIdentifier;
   }
 
   public Optional<String> getPoNumber() {
@@ -688,7 +686,6 @@ public class Registrar extends ImmutableObject
     return new JsonMapBuilder()
         .put("clientIdentifier", clientIdentifier)
         .put("ianaIdentifier", ianaIdentifier)
-        .put("billingIdentifier", billingIdentifier)
         .putString("creationTime", creationTime.getTimestamp())
         .putString("lastUpdateTime", lastUpdateTime.getTimestamp())
         .putString("lastCertificateUpdateTime", lastCertificateUpdateTime)
@@ -782,14 +779,6 @@ public class Registrar extends ImmutableObject
       checkArgument(
           ianaIdentifier == null || ianaIdentifier > 0, "IANA ID must be a positive number");
       getInstance().ianaIdentifier = ianaIdentifier;
-      return this;
-    }
-
-    public Builder setBillingIdentifier(@Nullable Long billingIdentifier) {
-      checkArgument(
-          billingIdentifier == null || billingIdentifier > 0,
-          "Billing ID must be a positive number");
-      getInstance().billingIdentifier = billingIdentifier;
       return this;
     }
 
