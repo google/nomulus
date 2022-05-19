@@ -763,7 +763,6 @@ CREATE TABLE public."Registrar" (
     registrar_id text NOT NULL,
     allowed_tlds text[],
     billing_account_map public.hstore,
-    billing_identifier bigint,
     block_premium_names boolean NOT NULL,
     client_certificate text,
     client_certificate_hash text,

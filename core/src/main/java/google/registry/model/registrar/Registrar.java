@@ -62,7 +62,6 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Mapify;
@@ -76,7 +75,6 @@ import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.UpdateAutoTimestamp;
-import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
@@ -388,10 +386,6 @@ public class Registrar extends ImmutableObject
    *     IDs</a>
    */
   @Index @Nullable Long ianaIdentifier;
-
-  /** Identifier of registrar used in external billing system (e.g. Oracle). */
-  // TODO(sarahbot@): Drop this column from the table in a flyway script in a follow up PR.
-  @DeleteAfterMigration @Nullable @Deprecated @Ignore Long billingIdentifier;
 
   /** Purchase Order number used for invoices in external billing system, if applicable. */
   @Nullable String poNumber;
