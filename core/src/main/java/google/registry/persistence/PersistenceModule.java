@@ -107,7 +107,7 @@ public abstract class PersistenceModule {
     properties.put(HIKARI_MAXIMUM_POOL_SIZE, getHibernateHikariMaximumPoolSize());
     properties.put(HIKARI_IDLE_TIMEOUT, getHibernateHikariIdleTimeout());
     properties.put(Environment.DIALECT, NomulusPostgreSQLDialect.class.getName());
-    properties.put(JDBC_BATCH_SIZE, getHibernateJdbcBatchSize());
+    properties.put(JDBC_BATCH_SIZE, Integer.toString(getHibernateJdbcBatchSize()));
     properties.put(JDBC_FETCH_SIZE, getHibernateJdbcFetchSize());
     return properties.build();
   }
