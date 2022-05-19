@@ -45,6 +45,7 @@ import google.registry.testing.TestOfyAndSql;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 
+/** Unit tests for {@link DomainFlowUtils}. */
 @DualDatabaseTest
 class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase> {
 
