@@ -688,7 +688,7 @@ public final class RegistryConfig {
     @Provides
     @Config("defaultShouldPublishInvoices")
     public static boolean provideDefaultShouldPublishInvoices() {
-      return true;
+      return false;
     }
 
     /**
