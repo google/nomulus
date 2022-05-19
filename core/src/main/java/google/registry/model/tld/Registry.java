@@ -29,7 +29,6 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.money.CurrencyUnit.USD;
 
-import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
@@ -50,6 +49,7 @@ import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
+import google.registry.model.CacheUtils.AppEngineEnvironmentCacheLoader;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
@@ -268,7 +268,7 @@ public class Registry extends ImmutableObject
   private static final LoadingCache<String, Optional<Registry>> CACHE =
       CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
-              new CacheLoader<String, Optional<Registry>>() {
+              new AppEngineEnvironmentCacheLoader<String, Optional<Registry>>() {
                 @Override
                 public Optional<Registry> load(final String tld) {
                   // Enter a transaction-less context briefly; we don't want to enroll every TLD in
