@@ -20,11 +20,14 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static google.registry.model.EppResourceUtils.isLinked;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.rdap.RdapIcannStandardInformation.CONTACT_REDACTED_VALUE;
 import static google.registry.util.CollectionUtils.union;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -81,6 +84,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.persistence.Entity;
 import org.joda.time.DateTime;
 
 /**
@@ -149,6 +153,19 @@ public class RdapJsonFormatter {
      */
     INTERNAL
   }
+
+  /**
+   * JPQL query template for finding the latest history entry per event type for an EPP entity.
+   *
+   * <p>User should replace '%entityName%', '%repoIdField%', and '%repoIdValue%' with valid values.
+   * A DomainHistory query may look like below: {@code select e from DomainHistory e where
+   * domainRepoId = '17-Q9JYB4C' and modificationTime in (select max(modificationTime) from
+   * DomainHistory where domainRepoId = '17-Q9JYB4C' and type is not null group by type)}
+   */
+  private static final String GET_LAST_HISTORY_BY_TYPE_JPQL_TEMPLATE =
+      "select e from %entityName% e where %repoIdField% = '%repoIdValue%' and modificationTime in "
+          + " (select max(modificationTime) from %entityName% where "
+          + " %repoIdField% = '%repoIdValue%' and type is not null group by type)";
 
   /** Map of EPP status values to the RDAP equivalents. */
   private static final ImmutableMap<StatusValue, RdapStatus> STATUS_TO_RDAP_STATUS_MAP =
@@ -855,17 +872,8 @@ public class RdapJsonFormatter {
     return rolesBuilder.build();
   }
 
-  /**
-   * Creates the list of optional events to list in domain, nameserver, or contact replies.
-   *
-   * <p>Only has entries for optional events that won't be shown in "SUMMARY" versions of these
-   * objects. These are either stated as optional in the RDAP Response Profile 15feb19, or not
-   * mentioned at all but thought to be useful anyway.
-   *
-   * <p>Any required event should be added elsewhere, preferably without using HistoryEntries (so
-   * that we don't need to load HistoryEntries for "summary" responses).
-   */
-  private ImmutableList<Event> makeOptionalEvents(EppResource resource) {
+  @VisibleForTesting
+  ImmutableMap<EventAction, HistoryEntry> getLastHistoryEntryByType(EppResource resource) {
     HashMap<EventAction, HistoryEntry> lastEntryOfType = Maps.newHashMap();
     // Events (such as transfer, but also create) can appear multiple times. We only want the last
     // time they appeared.
@@ -878,8 +886,26 @@ public class RdapJsonFormatter {
     // 2.3.2.3 An event of *eventAction* type *transfer*, with the last date and time that the
     // domain was transferred. The event of *eventAction* type *transfer* MUST be omitted if the
     // domain name has not been transferred since it was created.
-    Iterable<? extends HistoryEntry> historyEntries =
-        HistoryEntryDao.loadHistoryObjectsForResource(resource.createVKey());
+    Iterable<? extends HistoryEntry> historyEntries;
+    if (tm().isOfy()) {
+      historyEntries = HistoryEntryDao.loadHistoryObjectsForResource(resource.createVKey());
+    } else {
+      VKey<? extends EppResource> resourceVkey = resource.createVKey();
+      Class<? extends HistoryEntry> historyClass =
+          HistoryEntryDao.getHistoryClassFromParent(resourceVkey.getKind());
+      String entityName = historyClass.getAnnotation(Entity.class).name();
+      if (Strings.isNullOrEmpty(entityName)) {
+        entityName = historyClass.getSimpleName();
+      }
+      String repoIdFieldName = HistoryEntryDao.getRepoIdFieldNameFromHistoryClass(historyClass);
+      String jpql =
+          GET_LAST_HISTORY_BY_TYPE_JPQL_TEMPLATE
+              .replace("%entityName%", entityName)
+              .replace("%repoIdField%", repoIdFieldName)
+              .replace("%repoIdValue%", resourceVkey.getSqlKey().toString());
+      historyEntries =
+          jpaTm().transact(() -> jpaTm().getEntityManager().createQuery(jpql).getResultList());
+    }
     for (HistoryEntry historyEntry : historyEntries) {
       EventAction rdapEventAction =
           HISTORY_ENTRY_TYPE_TO_RDAP_EVENT_ACTION_MAP.get(historyEntry.getType());
@@ -889,6 +915,21 @@ public class RdapJsonFormatter {
       }
       lastEntryOfType.put(rdapEventAction, historyEntry);
     }
+    return ImmutableMap.copyOf(lastEntryOfType);
+  }
+
+  /**
+   * Creates the list of optional events to list in domain, nameserver, or contact replies.
+   *
+   * <p>Only has entries for optional events that won't be shown in "SUMMARY" versions of these
+   * objects. These are either stated as optional in the RDAP Response Profile 15feb19, or not
+   * mentioned at all but thought to be useful anyway.
+   *
+   * <p>Any required event should be added elsewhere, preferably without using HistoryEntries (so
+   * that we don't need to load HistoryEntries for "summary" responses).
+   */
+  private ImmutableList<Event> makeOptionalEvents(EppResource resource) {
+    ImmutableMap<EventAction, HistoryEntry> lastEntryOfType = getLastHistoryEntryByType(resource);
     ImmutableList.Builder<Event> eventsBuilder = new ImmutableList.Builder<>();
     DateTime creationTime = resource.getCreationTime();
     DateTime lastChangeTime =
