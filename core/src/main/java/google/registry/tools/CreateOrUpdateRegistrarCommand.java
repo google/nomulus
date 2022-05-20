@@ -152,14 +152,6 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(
-      names = "--billing_id",
-      description = "Registrar Billing ID (i.e. Oracle #)",
-      converter = OptionalLongParameter.class,
-      validateWith = OptionalLongParameter.class)
-  private Optional<Long> billingId;
-
-  @Nullable
-  @Parameter(
       names = "--po_number",
       description = "Purchase Order number used for billing invoices",
       converter = OptionalStringParameter.class,
@@ -173,7 +165,8 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
           "Registrar Billing Account key-value pairs (formatted as key=value[,key=value...]), "
               + "where key is a currency unit (USD, JPY, etc) and value is the registrar's billing "
               + "account id for that currency. During update, only the pairs that need updating "
-              + "need to be provided.",
+              + "need to be provided, except when an empty string is provided, in which case the"
+              + "entire map is nullified.",
       converter = CurrencyUnitToStringMap.class,
       validateWith = CurrencyUnitToStringMap.class)
   private Map<CurrencyUnit, String> billingAccountMap;
@@ -362,13 +355,12 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       if (ianaId != null) {
         builder.setIanaIdentifier(ianaId.orElse(null));
       }
-      if (billingId != null) {
-        builder.setBillingIdentifier(billingId.orElse(null));
-      }
       Optional.ofNullable(poNumber).ifPresent(builder::setPoNumber);
       if (billingAccountMap != null) {
         LinkedHashMap<CurrencyUnit, String> newBillingAccountMap = new LinkedHashMap<>();
-        if (oldRegistrar != null && oldRegistrar.getBillingAccountMap() != null) {
+        if (oldRegistrar != null
+            && oldRegistrar.getBillingAccountMap() != null
+            && !billingAccountMap.isEmpty()) {
           newBillingAccountMap.putAll(oldRegistrar.getBillingAccountMap());
         }
         newBillingAccountMap.putAll(billingAccountMap);

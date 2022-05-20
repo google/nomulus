@@ -72,7 +72,8 @@ steps:
     sed -i s/'$${_IMAGE}'/nomulus-tool/g release/cloudbuild-tag.yaml
     sed -i s/':$${TAG_NAME}'/@$digest/g release/cloudbuild-tag.yaml
     sed -i s/'nomulus-tool:latest'/nomulus-tool@$digest/g release/cloudbuild-deploy-*.yaml
-    sed -i s/'nomulus-tool:latest'/nomulus-tool@$digest/g release/cloudbuild-schema-deploy-*.yaml
+    # schema-deploy and schema-verify scripts
+    sed -i s/'nomulus-tool:latest'/nomulus-tool@$digest/g release/cloudbuild-schema-*.yaml
 # Build and stage Dataflow Flex templates.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
@@ -143,6 +144,7 @@ artifacts:
     - 'release/cloudbuild-deploy-*.yaml'
     - 'release/cloudbuild-delete-*.yaml'
     - 'release/cloudbuild-schema-deploy-*.yaml'
+    - 'release/cloudbuild-schema-verify-*.yaml'
 
 timeout: 7200s
 options:

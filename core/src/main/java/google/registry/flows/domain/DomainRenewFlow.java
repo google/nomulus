@@ -155,7 +155,8 @@ public final class DomainRenewFlow implements TransactionalFlow {
     Optional<FeeRenewCommandExtension> feeRenew =
         eppInput.getSingleExtension(FeeRenewCommandExtension.class);
     FeesAndCredits feesAndCredits =
-        pricingLogic.getRenewPrice(Registry.get(existingDomain.getTld()), targetId, now, years);
+        pricingLogic.getRenewPrice(
+            Registry.get(existingDomain.getTld()), targetId, now, years, null);
     validateFeeChallenge(targetId, now, feeRenew, feesAndCredits);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder()

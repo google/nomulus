@@ -568,7 +568,6 @@ class google.registry.model.registrar.Registrar {
   google.registry.model.registrar.Registrar$Type type;
   google.registry.model.registrar.RegistrarAddress internationalizedAddress;
   google.registry.model.registrar.RegistrarAddress localizedAddress;
-  java.lang.Long billingIdentifier;
   java.lang.Long ianaIdentifier;
   java.lang.String clientCertificate;
   java.lang.String clientCertificateHash;

@@ -33,7 +33,7 @@ import org.joda.time.DateTime;
  */
 public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
-  protected DomainPricingCustomLogic(
+  public DomainPricingCustomLogic(
       EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
     super(eppInput, sessionMetadata, flowMetadata);
   }

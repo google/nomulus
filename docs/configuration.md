@@ -52,6 +52,13 @@ you will need to make any modifications beyond simple changes to
 likely you'll need to add cronjobs, URL paths, Datastore indexes, and task
 queues, and thus edit those associated XML files.
 
+The existing codebase is configured for running a full-scale registry with
+multiple TLDs.  In order to deploy to App Engine, you will either need to
+[increase your
+quota](https://cloud.google.com/compute/quotas#requesting_additional_quota) to
+allow for at least 100 running instances or reduce `max-instances` in the
+backend `appengine-web.xml` files to 25 or less.
+
 ## Global configuration
 
 Global configuration is managed through YAML files that are built with and

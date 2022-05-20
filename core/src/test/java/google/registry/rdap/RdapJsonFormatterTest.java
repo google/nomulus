@@ -15,6 +15,7 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.rdap.RdapDataStructures.EventAction.TRANSFER;
 import static google.registry.rdap.RdapTestHelper.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -28,7 +29,9 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import google.registry.model.contact.ContactResource;
@@ -49,6 +52,7 @@ import google.registry.rdap.RdapObjectClasses.TopLevelReplyObject;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestSqlOnly;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -477,6 +481,17 @@ class RdapJsonFormatterTest {
   void testDomain_summary() {
     assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.SUMMARY).toJson())
         .isEqualTo(loadJson("rdapjson_domain_summary.json"));
+  }
+
+  @TestSqlOnly
+  void testGetLastHistoryEntryByType() {
+    // Expected data are from "rdapjson_domain_summary.json"
+    assertThat(
+            Maps.transformValues(
+                rdapJsonFormatter.getLastHistoryEntryByType(domainBaseFull),
+                HistoryEntry::getModificationTime))
+        .containsExactlyEntriesIn(
+            ImmutableMap.of(TRANSFER, DateTime.parse("1999-12-01T00:00:00.000Z")));
   }
 
   @Test

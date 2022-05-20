@@ -1,0 +1,83 @@
+# Verifies that the actual Cloud SQL schema in the environment specified by the
+# '_ENV' variable is the same as the golden schema in the current release for
+# that environment.
+#
+# To run the build locally, install cloud-build-local first.
+# Then run:
+# cloud-build-local --config=cloudbuild-schema-verify.yaml --dryrun=false \
+# --substitutions=_ENV=[ENV] ..
+#
+# To manually trigger a build on GCB, run:
+# gcloud builds submit --config=cloudbuild-schema-verify.yaml \
+# --substitutions=_ENV=[ENV] ..
+#
+# To trigger a build automatically, follow the instructions below and add a trigger:
+# https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+#
+# Note that the release process hardens the tags and variables in this file:
+# - The 'latest' tag on docker images will be replaced by their image digests.
+# - The ${_ENV} pattern will be replaced by the actual environment name.
+# Please refer to ./cloudbuild-release.yaml for more details.
+
+# Note 2: to work around issue in Spinnaker's 'Deployment Manifest' stage,
+# variable references must avoid the ${var} format. Valid formats include
+# $var or ${"${var}"}. This file use the former. Since _ENV is expanded in the
+# copies sent to Spinnaker, we preserve the brackets around them for safe
+# pattern matching during release.
+# See https://github.com/spinnaker/spinnaker/issues/3028 for more information.
+steps:
+# Download and decrypt the nomulus tool credential, which has the privilege to
+# start Cloud SQL proxy to all environments. This credential is also used to
+# authenticate the nomulus tool when fetching the schema deployer credential in
+# the next step.
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  volumes:
+  - name: 'secrets'
+    path: '/secrets'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    gcloud secrets versions access latest \
+      --secret nomulus-tool-cloudbuild-credential \
+      > /secrets/cloud_sql_credential.json
+# Fetch the Cloud SQL credential for schema_deployer
+- name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
+  volumes:
+  - name: 'secrets'
+    path: '/secrets'
+  args:
+  - -e
+  - ${_ENV}
+  - --credential
+  - /secrets/cloud_sql_credential.json
+  - get_sql_credential
+  - --user
+  - schema_deployer
+  - --output
+  - /secrets/schema_deployer_credential.dec
+# Download the jar with the expected schema.
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  volumes:
+  - name: 'schema'
+    path: '/schema'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    deployed_schema_tag=$(gsutil cat \
+        gs://$PROJECT_ID-deployed-tags/sql.${_ENV}.tag)
+    gsutil cp gs://$PROJECT_ID-deploy/${deployed_schema_tag}/schema.jar \
+      /schema
+# Verify the schema
+- name: 'gcr.io/$PROJECT_ID/schema_verifier:latest'
+  volumes:
+  - name: 'secrets'
+    path: '/secrets'
+  - name: 'schema'
+    path: '/schema'
+timeout: 3600s
+options:
+  machineType: 'E2_HIGHCPU_32'

@@ -201,7 +201,6 @@ public class SyncRegistrarsSheetTest {
     assertThat(row).containsEntry("registrarName", "AAA Registrar Inc.");
     assertThat(row).containsEntry("state", "SUSPENDED");
     assertThat(row).containsEntry("ianaIdentifier", "8");
-    assertThat(row).containsEntry("billingIdentifier", "");
     assertThat(row)
         .containsEntry(
             "primaryContacts",
@@ -297,7 +296,6 @@ public class SyncRegistrarsSheetTest {
     assertThat(row).containsEntry("registrarName", "Another Registrar LLC");
     assertThat(row).containsEntry("state", "ACTIVE");
     assertThat(row).containsEntry("ianaIdentifier", "1");
-    assertThat(row).containsEntry("billingIdentifier", "");
     assertThat(row).containsEntry("primaryContacts", "");
     assertThat(row).containsEntry("techContacts", "");
     assertThat(row).containsEntry("marketingContacts", "");
@@ -347,7 +345,6 @@ public class SyncRegistrarsSheetTest {
     assertThat(row).containsEntry("registrarName", "Some Registrar");
     assertThat(row).containsEntry("state", "ACTIVE");
     assertThat(row).containsEntry("ianaIdentifier", "8");
-    assertThat(row).containsEntry("billingIdentifier", "");
     assertThat(row).containsEntry("primaryContacts", "");
     assertThat(row).containsEntry("techContacts", "");
     assertThat(row).containsEntry("marketingContacts", "");

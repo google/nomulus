@@ -147,8 +147,8 @@ public final class RegistryTestServerMain {
                     : UserInfo.create(loginEmail, loginUserId))
             .build();
     appEngine.setUp();
-    AppEngineExtension.loadInitialData();
     new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);
+    AppEngineExtension.loadInitialData();
     System.out.printf("%sLoading Datastore fixtures...%s\n", BLUE, RESET);
     for (Fixture fixture : fixtures) {
       fixture.load();

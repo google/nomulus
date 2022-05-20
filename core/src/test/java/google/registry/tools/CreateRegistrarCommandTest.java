@@ -544,28 +544,6 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   }
 
   @Test
-  void testSuccess_billingId() throws Exception {
-    runCommandForced(
-        "--name=blobio",
-        "--password=some_password",
-        "--registrar_type=REAL",
-        "--iana_id=8",
-        "--billing_id=12345",
-        "--passcode=01234",
-        "--icann_referral_email=foo@bar.test",
-        "--street=\"123 Fake St\"",
-        "--city Fakington",
-        "--state MA",
-        "--zip 00351",
-        "--cc US",
-        "clientz");
-
-    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
-    assertThat(registrar).isPresent();
-    assertThat(registrar.get().getBillingIdentifier()).isEqualTo(12345);
-  }
-
-  @Test
   void testSuccess_poNumber() throws Exception {
     runCommandForced(
         "--name=blobio",
@@ -803,7 +781,6 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--registrar_type=TEST",
         "--icann_referral_email=foo@bar.test",
         "--iana_id=null",
-        "--billing_id=null",
         "--phone=null",
         "--fax=null",
         "--url=null",
@@ -819,7 +796,6 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrarOptional).isPresent();
     Registrar registrar = registrarOptional.get();
     assertThat(registrar.getIanaIdentifier()).isNull();
-    assertThat(registrar.getBillingIdentifier()).isNull();
     assertThat(registrar.getPhoneNumber()).isNull();
     assertThat(registrar.getFaxNumber()).isNull();
     assertThat(registrar.getUrl()).isNull();
@@ -833,7 +809,6 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--password=some_password",
         "--registrar_type=TEST",
         "--iana_id=",
-        "--billing_id=",
         "--phone=",
         "--fax=",
         "--url=",
@@ -850,7 +825,6 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrarOptional).isPresent();
     Registrar registrar = registrarOptional.get();
     assertThat(registrar.getIanaIdentifier()).isNull();
-    assertThat(registrar.getBillingIdentifier()).isNull();
     assertThat(registrar.getPhoneNumber()).isNull();
     assertThat(registrar.getFaxNumber()).isNull();
     assertThat(registrar.getUrl()).isNull();
@@ -1502,48 +1476,6 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "--password=some_password",
                 "--registrar_type=REAL",
                 "--iana_id=ABC12345",
-                "--passcode=01234",
-                "--icann_referral_email=foo@bar.test",
-                "--street=\"123 Fake St\"",
-                "--city Fakington",
-                "--state MA",
-                "--zip 00351",
-                "--cc US",
-                "clientz"));
-  }
-
-  @Test
-  void testFailure_negativeBillingId() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            runCommandForced(
-                "--name=blobio",
-                "--password=some_password",
-                "--registrar_type=REAL",
-                "--iana_id=8",
-                "--billing_id=-1",
-                "--passcode=01234",
-                "--icann_referral_email=foo@bar.test",
-                "--street=\"123 Fake St\"",
-                "--city Fakington",
-                "--state MA",
-                "--zip 00351",
-                "--cc US",
-                "clientz"));
-  }
-
-  @Test
-  void testFailure_nonIntegerBillingId() {
-    assertThrows(
-        ParameterException.class,
-        () ->
-            runCommandForced(
-                "--name=blobio",
-                "--password=some_password",
-                "--registrar_type=REAL",
-                "--iana_id=8",
-                "--billing_id=ABC12345",
                 "--passcode=01234",
                 "--icann_referral_email=foo@bar.test",
                 "--street=\"123 Fake St\"",
