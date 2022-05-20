@@ -390,8 +390,7 @@ public class Registrar extends ImmutableObject
   @Index @Nullable Long ianaIdentifier;
 
   /** Identifier of registrar used in external billing system (e.g. Oracle). */
-  // TODO(sarahbot@): Drop this column from the table in a flyway script in a follow up PR.
-  @DeleteAfterMigration @Nullable @Deprecated @Ignore Long billingIdentifier;
+  @Transient @DeleteAfterMigration @Nullable @Deprecated @Ignore Long billingIdentifier;
 
   /** Purchase Order number used for invoices in external billing system, if applicable. */
   @Nullable String poNumber;
