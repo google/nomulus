@@ -67,6 +67,7 @@ import google.registry.util.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -155,10 +156,12 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                                     + "WHERE eventTime <= :executeTime "
                                     + "AND eventTime < recurrenceEndTime "
                                     + "AND id > :maxProcessedRecurrenceId "
+                                    + "AND recurrenceEndTime > :cursorTime "
                                     + "ORDER BY id ASC",
                                 Recurring.class)
                             .setParameter("executeTime", executeTime)
                             .setParameter("maxProcessedRecurrenceId", prevMaxProcessedRecurrenceId)
+                            .setParameter("cursorTime", cursorTime)
                             .setMaxResults(batchSize)
                             .getResultList();
                     for (Recurring recurring : recurrings) {
@@ -191,15 +194,27 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                   });
       totalBillingEventsSaved += sqlBatchResults.batchBillingEventsSaved();
       maxProcessedRecurrenceId = sqlBatchResults.maxProcessedRecurrenceId();
-      logger.atInfo().log(
-          "Saved %d billing events in batch with max recurrence id %d.",
-          sqlBatchResults.batchBillingEventsSaved(), maxProcessedRecurrenceId);
+      if (sqlBatchResults.batchBillingEventsSaved() > 0) {
+        logger.atInfo().log(
+            "Saved %d billing events in batch (%d total) with max recurrence id %d.",
+            sqlBatchResults.batchBillingEventsSaved(),
+            totalBillingEventsSaved,
+            maxProcessedRecurrenceId);
+      } else {
+        // If we're churning through a lot of no-op recurrences that don't need expanding (yet?),
+        // then only log one no-op every so often as a good balance between letting the user track
+        // that the action is still running while also not spamming the logs incessantly.
+        logger.atInfo().atMostEvery(3, TimeUnit.MINUTES).log(
+            "Processed up to max recurrence id %d (no billing events saved recently).",
+            maxProcessedRecurrenceId);
+      }
     } while (sqlBatchResults.shouldContinue());
 
     if (!isDryRun) {
-      logger.atInfo().log("Saved OneTime billing events.", totalBillingEventsSaved);
+      logger.atInfo().log("Saved %d total OneTime billing events.", totalBillingEventsSaved);
     } else {
-      logger.atInfo().log("Generated OneTime billing events (dry run).", totalBillingEventsSaved);
+      logger.atInfo().log(
+          "Generated %d total OneTime billing events (dry run).", totalBillingEventsSaved);
     }
     logger.atInfo().log(
         "Recurring event expansion %s complete for billing event range [%s, %s).",
