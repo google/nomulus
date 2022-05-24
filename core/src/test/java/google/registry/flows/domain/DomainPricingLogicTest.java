@@ -117,7 +117,7 @@ public class DomainPricingLogicTest {
             new BillingEvent.Recurring.Builder()
                 .setParent(historyEntry)
                 .setRegistrarId(domain.getCreationRegistrarId())
-                .setEventTime((DateTime.parse("1999-01-05T00:00:00Z")))
+                .setEventTime(DateTime.parse("1999-01-05T00:00:00Z"))
                 .setFlags(ImmutableSet.of(AUTO_RENEW))
                 .setId(2L)
                 .setReason(Reason.RENEW)
