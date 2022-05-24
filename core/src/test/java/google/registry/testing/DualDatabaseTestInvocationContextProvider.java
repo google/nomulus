@@ -1,3 +1,4 @@
+
 // Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,15 +65,13 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
   @Override
   public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(
       ExtensionContext context) {
-    TestTemplateInvocationContext ofyContext =
-        createInvocationContext(context.getDisplayName() + " with Datastore", DatabaseType.OFY);
     TestTemplateInvocationContext sqlContext =
         createInvocationContext(context.getDisplayName() + " with PostgreSQL", DatabaseType.JPA);
     Method testMethod = context.getTestMethod().orElseThrow(IllegalStateException::new);
     if (testMethod.isAnnotationPresent(TestOfyAndSql.class)) {
-      return Stream.of(ofyContext, sqlContext);
+      return Stream.of(sqlContext);
     } else if (testMethod.isAnnotationPresent(TestOfyOnly.class)) {
-      return Stream.of(ofyContext);
+      throw new RuntimeException("Ofy-only test invoked.");
     } else if (testMethod.isAnnotationPresent(TestSqlOnly.class)) {
       return Stream.of(sqlContext);
     } else {

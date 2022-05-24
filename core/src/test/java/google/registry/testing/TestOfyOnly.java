@@ -19,10 +19,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import org.junit.jupiter.api.TestTemplate;
 
 /** Annotation to indicate a test method will be executed only with Datastore. */
 @Target({METHOD})
 @Retention(RUNTIME)
-@TestTemplate
 public @interface TestOfyOnly {}
