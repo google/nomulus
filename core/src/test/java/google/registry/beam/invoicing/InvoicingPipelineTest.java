@@ -298,6 +298,33 @@ class InvoicingPipelineTest {
   }
 
   @Test
+  void testSuccess_aprilFix() throws Exception {
+    setupCloudSql();
+    options.setYearMonth("2022-04");
+    PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
+    billingEvents = billingEvents.apply(new ChangeDomainRepo());
+    PAssert.that(billingEvents)
+        .containsInAnyOrder(
+            ImmutableList.of(
+                BillingEvent.create(
+                    14,
+                    ZonedDateTime.of(2022, 04, 25, 0, 0, 0, 0, ZoneId.of("UTC")),
+                    ZonedDateTime.of(2022, 04, 25, 0, 0, 0, 0, ZoneId.of("UTC")),
+                    "theRegistrar",
+                    "234",
+                    "",
+                    "test",
+                    "RENEW",
+                    "mydomain.test",
+                    "REPO-ID",
+                    1,
+                    "USD",
+                    20.5,
+                    "AUTO_RENEW")));
+    pipeline.run().waitUntilFinish();
+  }
+
+  @Test
   void testSuccess_readFromCloudSql() throws Exception {
     setupCloudSql();
     PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
@@ -382,10 +409,11 @@ class InvoicingPipelineTest {
                 + "LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent ="
                 + " cr.refRecurring.billingId\n"
                 + "WHERE r.billingAccountMap IS NOT NULL\n"
+                + "AND b.flags IS NOT NULL\n"
                 + "AND r.type = 'REAL'\n"
                 + "AND t.invoicingEnabled IS TRUE\n"
-                + "AND b.billingTime BETWEEN CAST('2017-10-01' AS timestamp) AND CAST('2017-11-01'"
-                + " AS timestamp)\n"
+                + "AND b.billingTime BETWEEN CAST('2022-04-19 03:00:00' AS timestamp) AND"
+                + " CAST('2017-11-01' AS timestamp)\n"
                 + "AND c.id IS NULL\n"
                 + "AND cr.id IS NULL\n");
   }
@@ -569,6 +597,17 @@ class InvoicingPipelineTest {
             .setParent(domainHistoryRecurring)
             .build();
     persistResource(cancellationRecurring);
+
+    persistOneTimeBillingEvent(
+        14,
+        domain1,
+        registrar1,
+        Reason.RENEW,
+        1,
+        Money.of(USD, 20.5),
+        DateTime.parse("2022-04-25T00:00:00.0Z"),
+        DateTime.parse("2022-04-25T00:00:00.0Z"),
+        Flag.AUTO_RENEW);
   }
 
   private DomainHistory persistDomainHistory(DomainBase domainBase, Registrar registrar) {

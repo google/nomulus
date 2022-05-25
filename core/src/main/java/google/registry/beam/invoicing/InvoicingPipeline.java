@@ -96,7 +96,6 @@ public class InvoicingPipeline implements Serializable {
         options.getDatabase().equals("DATASTORE")
             ? readFromBigQuery(options, pipeline)
             : readFromCloudSql(options, pipeline);
-
     saveInvoiceCsv(billingEvents, options);
 
     saveDetailedCsv(billingEvents, options);
@@ -189,10 +188,11 @@ public class InvoicingPipeline implements Serializable {
             TextIO.write()
                 .to(
                     String.format(
-                        "%s/%s/%s/%s-%s",
+                        "%s/%s/%s-%s/%s-%s",
                         options.getBillingBucketUrl(),
                         BillingModule.INVOICES_DIRECTORY,
                         options.getYearMonth(),
+                        "Missing-Auto-Renews",
                         options.getInvoiceFilePrefix(),
                         options.getYearMonth()))
                 .withHeader(InvoiceGroupingKey.invoiceHeader())
@@ -247,9 +247,8 @@ public class InvoicingPipeline implements Serializable {
   static String makeCloudSqlQuery(String yearMonth) {
     YearMonth endMonth = YearMonth.parse(yearMonth).plusMonths(1);
     String queryWithComments =
-        SqlTemplate.create(
-                getQueryFromFile(InvoicingPipeline.class, "cloud_sql_billing_events.sql"))
-            .put("FIRST_TIMESTAMP_OF_MONTH", yearMonth.concat("-01"))
+        SqlTemplate.create(getQueryFromFile(InvoicingPipeline.class, "april_fix.sql"))
+            // .put("FIRST_TIMESTAMP_OF_MONTH", yearMonth.concat("-01"))
             .put(
                 "LAST_TIMESTAMP_OF_MONTH",
                 String.format("%d-%d-01", endMonth.getYear(), endMonth.getMonthValue()))
