@@ -73,10 +73,10 @@ public class DualDatabaseTestInvocationContextProviderTest {
 
   @AfterAll
   static void assertEachTransactionManagerIsUsed() {
-    assertThat(testBothDbsOfyCounter).isEqualTo(1);
+    assertThat(testBothDbsOfyCounter).isEqualTo(0);
     assertThat(testBothDbsSqlCounter).isEqualTo(1);
 
-    assertThat(testOfyOnlyOfyCounter).isEqualTo(1);
+    assertThat(testOfyOnlyOfyCounter).isEqualTo(0);
     assertThat(testOfyOnlySqlCounter).isEqualTo(0);
 
     assertThat(testSqlOnlyOfyCounter).isEqualTo(0);
