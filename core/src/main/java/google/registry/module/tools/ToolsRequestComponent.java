@@ -48,14 +48,14 @@ import google.registry.tools.server.VerifyOteAction;
 @RequestScope
 @Subcomponent(
     modules = {
-        BackupModule.class,
-        DnsModule.class,
-        EppToolModule.class,
-        LoadTestModule.class,
-        MapreduceModule.class,
-        RequestModule.class,
-        ToolsServerModule.class,
-        WhiteboxModule.class,
+      BackupModule.class,
+      DnsModule.class,
+      EppToolModule.class,
+      LoadTestModule.class,
+      MapreduceModule.class,
+      RequestModule.class,
+      ToolsServerModule.class,
+      WhiteboxModule.class,
     })
 interface ToolsRequestComponent {
   CreateGroupsAction createGroupsAction();

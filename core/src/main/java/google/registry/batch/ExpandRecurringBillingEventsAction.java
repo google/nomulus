@@ -44,6 +44,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.flows.domain.DomainPricingLogic;
 import google.registry.mapreduce.MapreduceRunner;
 import google.registry.mapreduce.inputs.NullInput;
 import google.registry.model.ImmutableObject;
@@ -97,6 +98,8 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
 
   @Inject @Parameter(PARAM_DRY_RUN) boolean isDryRun;
   @Inject @Parameter(PARAM_CURSOR_TIME) Optional<DateTime> cursorTimeParam;
+
+  @Inject DomainPricingLogic domainPricingLogic;
   @Inject Response response;
   @Inject ExpandRecurringBillingEventsAction() {}
 

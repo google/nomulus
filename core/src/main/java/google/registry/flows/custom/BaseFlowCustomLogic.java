@@ -17,6 +17,8 @@ package google.registry.flows.custom;
 import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.model.eppinput.EppInput;
+import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * An abstract base class for all flow custom logic that stores the flow's {@link EppInput} and
@@ -24,26 +26,38 @@ import google.registry.model.eppinput.EppInput;
  */
 public abstract class BaseFlowCustomLogic {
 
-  private final EppInput eppInput;
-  private final SessionMetadata sessionMetadata;
-  private final FlowMetadata flowMetadata;
+  @Nullable private final EppInput eppInput;
+  @Nullable private final SessionMetadata sessionMetadata;
+  @Nullable private final FlowMetadata flowMetadata;
 
+  /**
+   * Constructs a BaseFlowCustomLogic for the specified EPP flow state.
+   *
+   * <p>Note that it is possible for the EPP flow state to be absent, which happens when the custom
+   * logic is running outside the context of an EPP flow (e.g. {@link DomainPricingCustomLogic} in
+   * backend actions).
+   */
   protected BaseFlowCustomLogic(
-      EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+      @Nullable EppInput eppInput,
+      @Nullable SessionMetadata sessionMetadata,
+      @Nullable FlowMetadata flowMetadata) {
     this.eppInput = eppInput;
     this.sessionMetadata = sessionMetadata;
     this.flowMetadata = flowMetadata;
   }
 
-  protected EppInput getEppInput() {
-    return eppInput;
+  /** Returns the {@link EppInput}, which may be empty outside a flow context. */
+  protected Optional<EppInput> getEppInput() {
+    return Optional.ofNullable(eppInput);
   }
 
-  protected SessionMetadata getSessionMetadata() {
-    return sessionMetadata;
+  /** Returns the {@link SessionMetadata}, which may be empty outside a flow context. */
+  protected Optional<SessionMetadata> getSessionMetadata() {
+    return Optional.ofNullable(sessionMetadata);
   }
 
-  protected FlowMetadata getFlowMetadata() {
-    return flowMetadata;
+  /** Returns the {@link FlowMetadata}, which may be empty outside a flow context. */
+  protected Optional<FlowMetadata> getFlowMetadata() {
+    return Optional.ofNullable(flowMetadata);
   }
 }

@@ -24,6 +24,7 @@ import google.registry.flows.domain.FeesAndCredits;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.tld.Registry;
+import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
 /**
@@ -34,7 +35,9 @@ import org.joda.time.DateTime;
 public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
   public DomainPricingCustomLogic(
-      EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+      @Nullable EppInput eppInput,
+      @Nullable SessionMetadata sessionMetadata,
+      @Nullable FlowMetadata flowMetadata) {
     super(eppInput, sessionMetadata, flowMetadata);
   }
 

@@ -23,7 +23,6 @@ import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
-import google.registry.flows.FlowScope;
 import google.registry.flows.custom.DomainPricingCustomLogic;
 import google.registry.flows.custom.DomainPricingCustomLogic.CreatePriceParameters;
 import google.registry.flows.custom.DomainPricingCustomLogic.RenewPriceParameters;
@@ -50,7 +49,6 @@ import org.joda.time.DateTime;
  * providing a {@link DomainPricingCustomLogic} implementation that operates on cross-TLD or per-TLD
  * logic.
  */
-@FlowScope
 public final class DomainPricingLogic {
 
   @Inject DomainPricingCustomLogic customLogic;

@@ -18,6 +18,7 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.model.eppinput.EppInput;
+import java.util.Optional;
 
 /**
  * A no-op base custom logic factory.
@@ -63,7 +64,10 @@ public class CustomLogicFactory {
   }
 
   public DomainPricingCustomLogic forDomainPricing(
-      EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
-    return new DomainPricingCustomLogic(eppInput, sessionMetadata, flowMetadata);
+      Optional<EppInput> eppInput,
+      Optional<SessionMetadata> sessionMetadata,
+      Optional<FlowMetadata> flowMetadata) {
+    return new DomainPricingCustomLogic(
+        eppInput.orElse(null), sessionMetadata.orElse(null), flowMetadata.orElse(null));
   }
 }
