@@ -768,7 +768,7 @@ createUberJar(
 // alpha use the pipelines staged on alpha deployment project.
 //
 // User should install gcloud and login to GCP before invoking this tasks.
-if (environment == 'alpha') {
+if (true) {
   def pipelines = [
       initSql            :
           [
