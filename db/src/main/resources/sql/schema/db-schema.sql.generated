@@ -572,7 +572,6 @@
        registrar_id text not null,
         allowed_tlds text[],
         billing_account_map hstore,
-        billing_identifier int8,
         block_premium_names boolean not null,
         client_certificate text,
         client_certificate_hash text,
