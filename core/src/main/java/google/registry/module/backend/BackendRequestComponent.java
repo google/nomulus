@@ -61,6 +61,7 @@ import google.registry.export.UploadDatastoreBackupAction;
 import google.registry.export.sheet.SheetModule;
 import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.flows.FlowComponent;
+import google.registry.flows.custom.CustomLogicModule;
 import google.registry.mapreduce.MapreduceModule;
 import google.registry.model.replay.ReplicateToDatastoreAction;
 import google.registry.monitoring.whitebox.WhiteboxModule;
@@ -103,6 +104,7 @@ import google.registry.tools.javascrap.CreateSyntheticHistoryEntriesAction;
       BillingModule.class,
       CloudDnsWriterModule.class,
       CronModule.class,
+      CustomLogicModule.class,
       DnsCountQueryCoordinatorModule.class,
       DnsModule.class,
       DnsUpdateConfigModule.class,

@@ -14,15 +14,17 @@
 
 package google.registry.flows.custom;
 
+import dagger.BindsOptionalOf;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.model.eppinput.EppInput;
+import java.util.Optional;
 
 /** Dagger module to provide instances of custom logic classes for EPP flows. */
 @Module
-public class CustomLogicModule {
+public abstract class CustomLogicModule {
 
   @Provides
   static DomainCreateFlowCustomLogic provideDomainCreateFlowCustomLogic(
@@ -81,9 +83,20 @@ public class CustomLogicModule {
   @Provides
   static DomainPricingCustomLogic provideDomainPricingCustomLogic(
       CustomLogicFactory factory,
-      EppInput eppInput,
-      SessionMetadata sessionMetadata,
-      FlowMetadata flowMetadata) {
+      Optional<EppInput> eppInput,
+      Optional<SessionMetadata> sessionMetadata,
+      Optional<FlowMetadata> flowMetadata) {
+    // Note that, for DomainPricingCustomLogic, the EPP flow state won't be present outside the
+    // context of an EPP flow.
     return factory.forDomainPricing(eppInput, sessionMetadata, flowMetadata);
   }
+
+  @BindsOptionalOf
+  abstract EppInput optionalEppInput();
+
+  @BindsOptionalOf
+  abstract SessionMetadata optionalSessionMetadata();
+
+  @BindsOptionalOf
+  abstract FlowMetadata optionalFlowMetadata();
 }

@@ -17,6 +17,7 @@ package google.registry.flows.custom;
 import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.model.eppinput.EppInput;
+import java.util.Optional;
 
 /** A custom logic factory for testing. */
 public class TestCustomLogicFactory extends CustomLogicFactory {
@@ -29,7 +30,10 @@ public class TestCustomLogicFactory extends CustomLogicFactory {
 
   @Override
   public DomainPricingCustomLogic forDomainPricing(
-      EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
-    return new TestDomainPricingCustomLogic(eppInput, sessionMetadata, flowMetadata);
+      Optional<EppInput> eppInput,
+      Optional<SessionMetadata> sessionMetadata,
+      Optional<FlowMetadata> flowMetadata) {
+    return new TestDomainPricingCustomLogic(
+        eppInput.orElse(null), sessionMetadata.orElse(null), flowMetadata.orElse(null));
   }
 }
