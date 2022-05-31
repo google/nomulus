@@ -120,6 +120,72 @@ update the Java to no longer contain the old column, wait for a deployment, and
 then remove the old column. A rename operation requires the most complicated
 series of steps to complete, as it is effectively an add followed by a remove.
 
+### Summary of Schema Tests
+
+#### The Golden Schema Test
+
+The ":db:test" task runs a task that verifies that the database schema as
+specified by the entire set of Flyway scripts is valid and matches
+'nomulus.golden.sql'.
+
+As mentioned in the previous section, you may run
+`./nom_build :nom:generate_golden_file` to update the golden schema.
+
+#### The Forbidden Flyway Script Change Detection Test
+
+Once a Flyway DDL script is deployed to Sandbox or Production, it must not be
+changed. During each schema deployment, Flyway checks all past scripts against
+its record, and aborts if any of them do not match.
+
+This test is not part of the local Gradle build. It is part of the presubmit
+tests for the FOSS repo.
+
+To test locally, run `./integration/run_schema_check -p domain-registry-dev`
+from the root directory of the Nomulus repo.
+
+#### The Server-Schema Compatibility Test
+
+This test ensures that the Nomulus server code in the current branch is
+compatible with the deployed schemas in Sandbox and Production; and that the
+schema change to be submitted is compatible with the Nomulus servers currently
+deployed to Sandbox and Production. Note that this test fetches schemas packaged
+in the appropriate release artifacts, not from the live database.
+
+This test is not part of the local Gradle build. It is part of the presubmit
+tests for the FOSS repo.
+
+To test locally, run the following commands from the root directory of the
+Nomulus repo:
+
+```shell
+$ git fetch --tags
+# Following command tests local Java code against released schemas
+$ ./integration/run_compatibility_tests -p domain-registry-dev \
+    -s nomulus
+# Following command tests deployed code against local schema
+$ ./integration/run_compatibility_tests -p domain-registry-dev \
+    -s sql
+```
+
+#### The Out-Of-Band Schema Change Test
+
+This test verifies that the actual schema from the live database in Sandbox or
+Production matches the golden schema. It detects changes made by, e.g.,
+operators during troubleshooting.
+
+This test is part of the Spinnaker deployment pipelines for Sandbox and
+Production. It is the first step in the pipeline, and halts the pipeline if the
+test fails. This is advantageous to testing in the last step of the pipeline,
+where failures sometimes escaped notice.
+
+To run this locally, run the following commands from the root directory of the
+Nomulus repo:
+
+```shell
+$ (cd release; gcloud builds submit --config=cloudbuild-schema-verify.yaml \
+  --substitutions=_ENV=[sandbox|production] ..)
+```
+
 ### Schema push
 
 Currently Cloud SQL schema is released with the Nomulus server, and shares the
