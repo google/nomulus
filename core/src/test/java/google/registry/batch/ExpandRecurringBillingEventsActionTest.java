@@ -616,7 +616,11 @@ public class ExpandRecurringBillingEventsActionTest {
   void testSuccess_expandSingleEvent_billingTimeNotOnLeapYear() throws Exception {
     recurring =
         persistResource(
-            recurring.asBuilder().setEventTime(DateTime.parse("2001-01-15T00:00:00Z")).build());
+            recurring
+                .asBuilder()
+                .setEventTime(DateTime.parse("2001-01-15T00:00:00Z"))
+                .setRecurrenceLastExpansion(DateTime.parse("2000-01-15T00:00:00Z"))
+                .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     clock.setTo(DateTime.parse("2001-12-01T00:00:00Z"));
     runAction();
