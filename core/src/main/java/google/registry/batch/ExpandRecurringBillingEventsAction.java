@@ -63,6 +63,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeComparator;
 
 /**
  * An action that expands {@link Recurring} billing events into synthetic {@link OneTime} events.
@@ -133,11 +134,13 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                                     + "AND eventTime < recurrenceEndTime "
                                     + "AND id > :maxProcessedRecurrenceId "
                                     + "AND recurrenceEndTime > :cursorTime "
+                                    + "AND recurrenceLastExpansion < :cursorTime1Yr "
                                     + "ORDER BY id ASC",
                                 Recurring.class)
                             .setParameter("executeTime", executeTime)
                             .setParameter("maxProcessedRecurrenceId", prevMaxProcessedRecurrenceId)
                             .setParameter("cursorTime", cursorTime)
+                            .setParameter("cursorTime1Yr", cursorTime.minusYears(1))
                             .setMaxResults(batchSize)
                             .getResultList();
                     for (Recurring recurring : recurrings) {
@@ -315,10 +318,19 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
     Set<DomainHistory> historyEntries = historyEntriesBuilder.build();
     Set<OneTime> syntheticOneTimes = syntheticOneTimesBuilder.build();
     if (!isDryRun) {
+      DateTime newRecurrenceLastExpansion =
+          billingTimes.stream()
+              .max(DateTimeComparator.getInstance())
+              .orElse(recurring.getRecurrenceLastExpansion());
       ImmutableSet<ImmutableObject> entitiesToSave =
           new ImmutableSet.Builder<ImmutableObject>()
               .addAll(historyEntries)
               .addAll(syntheticOneTimes)
+              .add(
+                  recurring
+                      .asBuilder()
+                      .setRecurrenceLastExpansion(newRecurrenceLastExpansion)
+                      .build())
               .build();
       tm().putAll(entitiesToSave);
     }

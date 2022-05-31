@@ -553,6 +553,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "eventTime"),
         @javax.persistence.Index(columnList = "domainRepoId"),
         @javax.persistence.Index(columnList = "recurrenceEndTime"),
+        @javax.persistence.Index(columnList = "recurrenceLastExpansion"),
         @javax.persistence.Index(columnList = "recurrence_time_of_year")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_recurrence_id"))
@@ -565,6 +566,17 @@ public abstract class BillingEvent extends ImmutableObject
      */
     @Index
     DateTime recurrenceEndTime;
+
+    /**
+     * The most recent datetime when this recurrence was checked for expansion/was expanded.
+     *
+     * <p>We only bother checking recurrences for potential expansion if this is at least one year
+     * in the past. If it's more recent than that, it means that the recurrence was already expanded
+     * too recently to need to be checked again (as domains autorenew each year).
+     */
+    @Index
+    @Column(name = "recurrenceLastExpansion", nullable = false)
+    DateTime recurrenceLastExpansion;
 
     /**
      * The eventTime recurs every year on this [month, day, time] between {@link #eventTime} and
@@ -604,6 +616,10 @@ public abstract class BillingEvent extends ImmutableObject
 
     public DateTime getRecurrenceEndTime() {
       return recurrenceEndTime;
+    }
+
+    public DateTime getRecurrenceLastExpansion() {
+      return recurrenceLastExpansion;
     }
 
     public TimeOfYear getRecurrenceTimeOfYear() {
@@ -646,6 +662,11 @@ public abstract class BillingEvent extends ImmutableObject
         return this;
       }
 
+      public Builder setRecurrenceLastExpansion(DateTime recurrenceLastExpansion) {
+        getInstance().recurrenceLastExpansion = recurrenceLastExpansion;
+        return this;
+      }
+
       public Builder setRenewalPriceBehavior(RenewalPriceBehavior renewalPriceBehavior) {
         getInstance().renewalPriceBehavior = renewalPriceBehavior;
         return this;
@@ -661,6 +682,10 @@ public abstract class BillingEvent extends ImmutableObject
         Recurring instance = getInstance();
         checkNotNull(instance.eventTime);
         checkNotNull(instance.reason);
+        // Don't require recurrenceLastExpansion to be individually set on every new Recurrence.
+        // The correct default value if not otherwise set is the event time of the recurrence.
+        instance.recurrenceLastExpansion =
+            Optional.ofNullable(instance.recurrenceLastExpansion).orElse(instance.eventTime);
         checkArgument(
             (instance.renewalPriceBehavior == RenewalPriceBehavior.SPECIFIED)
                 ^ (instance.renewalPrice == null),

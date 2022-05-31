@@ -59,6 +59,7 @@ import org.junit.jupiter.api.BeforeEach;
 /** Unit tests for {@link BillingEvent}. */
 @DualDatabaseTest
 public class BillingEventTest extends EntityTestCase {
+
   private final DateTime now = DateTime.now(UTC);
 
   BillingEventTest() {
