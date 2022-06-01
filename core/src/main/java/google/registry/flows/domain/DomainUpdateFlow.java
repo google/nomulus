@@ -66,6 +66,7 @@ import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTl
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainCommand.Update.AddRemove;
@@ -243,6 +244,13 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     validateRegistrantIsntBeingRemoved(change);
     Optional<SecDnsUpdateExtension> secDnsUpdate =
         eppInput.getSingleExtension(SecDnsUpdateExtension.class);
+
+    // We have to verify no duplicate contacts _before_ constructing the domain because it is
+    // illegal to construct a domain with duplicate contacts.
+    Sets.SetView<DesignatedContact> newContacts =
+        Sets.union(Sets.difference(domain.getContacts(), remove.getContacts()), add.getContacts());
+    validateNoDuplicateContacts(newContacts);
+
     DomainBase.Builder domainBuilder =
         domain
             .asBuilder()
@@ -263,8 +271,8 @@ public final class DomainUpdateFlow implements TransactionalFlow {
             .removeStatusValues(remove.getStatusValues())
             .addNameservers(add.getNameservers().stream().collect(toImmutableSet()))
             .removeNameservers(remove.getNameservers().stream().collect(toImmutableSet()))
-            .addContacts(add.getContacts())
             .removeContacts(remove.getContacts())
+            .addContacts(add.getContacts())
             .setRegistrant(firstNonNull(change.getRegistrant(), domain.getRegistrant()))
             .setAuthInfo(firstNonNull(change.getAuthInfo(), domain.getAuthInfo()));
     Optional<DomainUpdateSuperuserExtension> superuserExt =
@@ -286,7 +294,6 @@ public final class DomainUpdateFlow implements TransactionalFlow {
   }
 
   private void validateNewState(DomainBase newDomain) throws EppException {
-    validateNoDuplicateContacts(newDomain.getContacts());
     validateRequiredContactsPresent(newDomain.getRegistrant(), newDomain.getContacts());
     validateDsData(newDomain.getDsData());
     validateNameserversCountForTld(

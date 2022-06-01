@@ -418,7 +418,7 @@ public class DomainFlowUtils {
     }
   }
 
-  static void validateNoDuplicateContacts(Set<DesignatedContact> contacts)
+  public static void validateNoDuplicateContacts(Set<DesignatedContact> contacts)
       throws ParameterValuePolicyErrorException {
     ImmutableMultimap<Type, VKey<ContactResource>> contactsByType =
         contacts.stream()

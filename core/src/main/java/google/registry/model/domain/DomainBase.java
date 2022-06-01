@@ -150,9 +150,7 @@ public class DomainBase extends DomainContent implements ForeignKeyedEppResource
 
   /** Post-load method to eager load the collections. */
   @PostLoad
-  @Override
   protected void postLoad() {
-    super.postLoad();
     // TODO(b/188044616): Determine why Eager loading doesn't work here.
     Hibernate.initialize(dsData);
     Hibernate.initialize(gracePeriods);

@@ -24,8 +24,6 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.persistence.BillingVKey.BillingEventVKey;
-import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.persistence.VKey;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
@@ -78,8 +76,8 @@ public class GracePeriod extends GracePeriodBase {
     instance.domainRepoId = checkArgumentNotNull(domainRepoId);
     instance.expirationTime = checkArgumentNotNull(expirationTime);
     instance.clientId = checkArgumentNotNull(registrarId);
-    instance.billingEventOneTime = BillingEventVKey.create(billingEventOneTime);
-    instance.billingEventRecurring = BillingRecurrenceVKey.create(billingEventRecurring);
+    instance.billingEventOneTime = billingEventOneTime;
+    instance.billingEventRecurring = billingEventRecurring;
     return instance;
   }
 
@@ -126,8 +124,8 @@ public class GracePeriod extends GracePeriodBase {
         history.domainRepoId,
         history.expirationTime,
         history.clientId,
-        history.billingEventOneTime == null ? null : history.billingEventOneTime.createVKey(),
-        history.billingEventRecurring == null ? null : history.billingEventRecurring.createVKey(),
+        history.billingEventOneTime,
+        history.billingEventRecurring,
         history.gracePeriodId);
   }
 

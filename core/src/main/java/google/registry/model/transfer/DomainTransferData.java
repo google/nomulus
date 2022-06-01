@@ -17,9 +17,7 @@ package google.registry.model.transfer;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.AlsoLoad;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
@@ -28,7 +26,6 @@ import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.Unindex;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
 import google.registry.model.poll.PollMessage;
@@ -85,10 +82,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @Column(name = "transfer_billing_cancellation_id")
   public VKey<BillingEvent.Cancellation> billingCancellationId;
 
-  @Ignore
-  @Column(name = "transfer_billing_cancellation_history_id")
-  Long billingCancellationHistoryId;
-
   /**
    * The regular one-time billing event that will be charged for a server-approved transfer.
    *
@@ -98,10 +91,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @IgnoreSave(IfNull.class)
   @Column(name = "transfer_billing_event_id")
   VKey<BillingEvent.OneTime> serverApproveBillingEvent;
-
-  @Ignore
-  @Column(name = "transfer_billing_event_history_id")
-  Long serverApproveBillingEventHistoryId;
 
   /**
    * The autorenew billing event that should be associated with this resource after the transfer.
@@ -113,10 +102,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @Column(name = "transfer_billing_recurrence_id")
   VKey<BillingEvent.Recurring> serverApproveAutorenewEvent;
 
-  @Ignore
-  @Column(name = "transfer_billing_recurrence_history_id")
-  Long serverApproveAutorenewEventHistoryId;
-
   /**
    * The autorenew poll message that should be associated with this resource after the transfer.
    *
@@ -127,43 +112,9 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @Column(name = "transfer_autorenew_poll_message_id")
   VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage;
 
-  @Ignore
-  @Column(name = "transfer_autorenew_poll_message_history_id")
-  Long serverApproveAutorenewPollMessageHistoryId;
-
   @Override
   public Builder copyConstantFieldsToBuilder() {
     return super.copyConstantFieldsToBuilder().setTransferPeriod(this.transferPeriod);
-  }
-
-  /**
-   * Restores the set of ofy keys after loading from SQL using the specified {@code rootKey}.
-   *
-   * <p>This is for use by DomainBase/DomainHistory PostLoad methods ONLY.
-   */
-  public void restoreOfyKeys(Key<DomainBase> rootKey) {
-    serverApproveBillingEvent =
-        DomainBase.restoreOfyFrom(
-            rootKey, serverApproveBillingEvent, serverApproveBillingEventHistoryId);
-    serverApproveAutorenewEvent =
-        DomainBase.restoreOfyFrom(
-            rootKey, serverApproveAutorenewEvent, serverApproveAutorenewEventHistoryId);
-    serverApproveAutorenewPollMessage =
-        DomainBase.restoreOfyFrom(
-            rootKey, serverApproveAutorenewPollMessage, serverApproveAutorenewPollMessageHistoryId);
-    billingCancellationId =
-        DomainBase.restoreOfyFrom(rootKey, billingCancellationId, billingCancellationHistoryId);
-
-    // Reconstruct server approve entities.  We currently have to call postLoad() a _second_ time
-    // if any of the billing objects have been reconstituted, as they are part of that set.
-    // TODO(b/183010623): Normalize the approaches to VKey reconstitution for the TransferData
-    // hierarchy (the logic currently lives either in PostLoad or here, depending on the key).
-    if (billingCancellationId != null
-        || serverApproveBillingEvent != null
-        || serverApproveAutorenewEvent != null) {
-      serverApproveEntities = null;
-      postLoad();
-    }
   }
 
   /**
@@ -174,30 +125,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   public void convertVKeys() {
     serverApproveAutorenewPollMessage =
         PollMessage.Autorenew.convertVKey(serverApproveAutorenewPollMessage);
-  }
-
-  @SuppressWarnings("unused") // For Hibernate.
-  private void loadServerApproveBillingEventHistoryId(
-      @AlsoLoad("serverApproveBillingEvent") VKey<BillingEvent.OneTime> val) {
-    serverApproveBillingEventHistoryId = DomainBase.getHistoryId(val);
-  }
-
-  @SuppressWarnings("unused") // For Hibernate.
-  private void loadServerApproveAutorenewEventHistoryId(
-      @AlsoLoad("serverApproveAutorenewEvent") VKey<BillingEvent.Recurring> val) {
-    serverApproveAutorenewEventHistoryId = DomainBase.getHistoryId(val);
-  }
-
-  @SuppressWarnings("unused") // For Hibernate.
-  private void loadServerApproveAutorenewPollMessageHistoryId(
-      @AlsoLoad("serverApproveAutorenewPollMessage") VKey<PollMessage.Autorenew> val) {
-    serverApproveAutorenewPollMessageHistoryId = DomainBase.getHistoryId(val);
-  }
-
-  @SuppressWarnings("unused") // For Hibernate.
-  private void billingCancellationHistoryId(
-      @AlsoLoad("billingCancellationHistoryId") VKey<BillingEvent.Cancellation> val) {
-    billingCancellationHistoryId = DomainBase.getHistoryId(val);
   }
 
   public Period getTransferPeriod() {
@@ -214,32 +141,14 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     return serverApproveBillingEvent;
   }
 
-  @VisibleForTesting
-  @Nullable
-  public Long getServerApproveBillingEventHistoryId() {
-    return serverApproveBillingEventHistoryId;
-  }
-
   @Nullable
   public VKey<BillingEvent.Recurring> getServerApproveAutorenewEvent() {
     return serverApproveAutorenewEvent;
   }
 
-  @VisibleForTesting
-  @Nullable
-  public Long getServerApproveAutorenewEventHistoryId() {
-    return serverApproveAutorenewEventHistoryId;
-  }
-
   @Nullable
   public VKey<PollMessage.Autorenew> getServerApproveAutorenewPollMessage() {
     return serverApproveAutorenewPollMessage;
-  }
-
-  @VisibleForTesting
-  @Nullable
-  public Long getServerApproveAutorenewPollMessageHistoryId() {
-    return serverApproveAutorenewPollMessageHistoryId;
   }
 
   @OnLoad
@@ -291,7 +200,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
       DomainTransferData domainTransferData) {
     if (isNullOrEmpty(serverApproveEntities)) {
       domainTransferData.billingCancellationId = null;
-      domainTransferData.billingCancellationHistoryId = null;
     } else {
       domainTransferData.billingCancellationId =
           (VKey<BillingEvent.Cancellation>)
@@ -299,10 +207,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
                   .filter(k -> k.getKind().equals(BillingEvent.Cancellation.class))
                   .findFirst()
                   .orElse(null);
-      domainTransferData.billingCancellationHistoryId =
-          domainTransferData.billingCancellationId != null
-              ? DomainBase.getHistoryId(domainTransferData.billingCancellationId)
-              : null;
     }
   }
 
@@ -335,24 +239,18 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     public Builder setServerApproveBillingEvent(
         VKey<BillingEvent.OneTime> serverApproveBillingEvent) {
       getInstance().serverApproveBillingEvent = serverApproveBillingEvent;
-      getInstance().serverApproveBillingEventHistoryId =
-          DomainBase.getHistoryId(serverApproveBillingEvent);
       return this;
     }
 
     public Builder setServerApproveAutorenewEvent(
         VKey<BillingEvent.Recurring> serverApproveAutorenewEvent) {
       getInstance().serverApproveAutorenewEvent = serverApproveAutorenewEvent;
-      getInstance().serverApproveAutorenewEventHistoryId =
-          DomainBase.getHistoryId(serverApproveAutorenewEvent);
       return this;
     }
 
     public Builder setServerApproveAutorenewPollMessage(
         VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage) {
       getInstance().serverApproveAutorenewPollMessage = serverApproveAutorenewPollMessage;
-      getInstance().serverApproveAutorenewPollMessageHistoryId =
-          DomainBase.getHistoryId(serverApproveAutorenewPollMessage);
       return this;
     }
   }
