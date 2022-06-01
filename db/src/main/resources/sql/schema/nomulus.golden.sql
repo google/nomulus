@@ -120,7 +120,8 @@ CREATE TABLE public."BillingRecurrence" (
     recurrence_time_of_year text,
     renewal_price_behavior text DEFAULT 'DEFAULT'::text NOT NULL,
     renewal_price_currency text,
-    renewal_price_amount numeric(19,2)
+    renewal_price_amount numeric(19,2),
+    recurrence_last_expansion timestamp with time zone DEFAULT '2021-06-01 00:00:00+00'::timestamp with time zone NOT NULL
 );
 
 
@@ -1877,6 +1878,13 @@ CREATE INDEX idxoqttafcywwdn41um6kwlt0n8b ON public."BillingRecurrence" USING bt
 --
 
 CREATE INDEX idxovmntef6l45tw2bsfl56tcugx ON public."Host" USING btree (deletion_time);
+
+
+--
+-- Name: idxp0pxi708hlu4n40qhbtihge8x; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxp0pxi708hlu4n40qhbtihge8x ON public."BillingRecurrence" USING btree (recurrence_last_expansion);
 
 
 --
