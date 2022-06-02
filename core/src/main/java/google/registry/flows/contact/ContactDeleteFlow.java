@@ -23,7 +23,6 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
 import static google.registry.model.ResourceTransferUtils.handlePendingTransferOnDelete;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
-import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.transfer.TransferStatus.SERVER_CANCELLED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.assertAsyncActionsAreAllowed;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -39,13 +38,11 @@ import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse;
-import google.registry.model.eppoutput.Result.Code;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import java.util.Optional;
@@ -97,41 +94,26 @@ public final class ContactDeleteFlow implements TransactionalFlow {
     extensionManager.validate();
     assertAsyncActionsAreAllowed();
     DateTime now = tm().getTransactionTime();
-    checkLinkedDomains(targetId, now, ContactResource.class, DomainBase::getReferencedContacts);
+    checkLinkedDomains(targetId, now, ContactResource.class);
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     verifyNoDisallowedStatuses(existingContact, DISALLOWED_STATUSES);
     verifyOptionalAuthInfo(authInfo, existingContact);
     if (!isSuperuser) {
       verifyResourceOwnership(registrarId, existingContact);
     }
-    Type historyEntryType;
-    Code resultCode;
-    ContactResource newContact;
-    if (tm().isOfy()) {
-      asyncTaskEnqueuer.enqueueAsyncDelete(
-          existingContact, tm().getTransactionTime(), registrarId, trid, isSuperuser);
-      newContact = existingContact.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build();
-      historyEntryType = Type.CONTACT_PENDING_DELETE;
-      resultCode = SUCCESS_WITH_ACTION_PENDING;
-    } else {
-      // Handle pending transfers on contact deletion.
-      newContact =
-          existingContact.getStatusValues().contains(StatusValue.PENDING_TRANSFER)
-              ? denyPendingTransfer(existingContact, SERVER_CANCELLED, now, registrarId)
-              : existingContact;
-      // Wipe out PII on contact deletion.
-      newContact =
-          newContact.asBuilder().wipeOut().setStatusValues(null).setDeletionTime(now).build();
-      historyEntryType = Type.CONTACT_DELETE;
-      resultCode = SUCCESS;
-    }
+    // Handle pending transfers on contact deletion.
+    ContactResource newContact =
+        existingContact.getStatusValues().contains(StatusValue.PENDING_TRANSFER)
+            ? denyPendingTransfer(existingContact, SERVER_CANCELLED, now, registrarId)
+            : existingContact;
+    // Wipe out PII on contact deletion.
+    newContact =
+        newContact.asBuilder().wipeOut().setStatusValues(null).setDeletionTime(now).build();
     ContactHistory contactHistory =
-        historyBuilder.setType(historyEntryType).setContact(newContact).build();
-    if (!tm().isOfy()) {
-      handlePendingTransferOnDelete(existingContact, newContact, now, contactHistory);
-    }
+        historyBuilder.setType(Type.CONTACT_DELETE).setContact(newContact).build();
+    handlePendingTransferOnDelete(existingContact, newContact, now, contactHistory);
     tm().insert(contactHistory);
     tm().update(newContact);
-    return responseBuilder.setResultFromCode(resultCode).build();
+    return responseBuilder.setResultFromCode(SUCCESS).build();
   }
 }

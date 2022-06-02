@@ -334,15 +334,6 @@
     <url-pattern>/_dr/task/resaveEntity</url-pattern>
   </servlet-mapping>
 
-  <!--
-    Deletes contacts and hosts enqueued for asynchronous deletion if they are
-    not referenced by any domain.
-  -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/deleteContactsAndHosts</url-pattern>
-  </servlet-mapping>
-
   <!-- Enqueues DNS update tasks following a host rename. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
@@ -420,12 +411,6 @@ have been in the database for a certain period of time. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
     <url-pattern>/_dr/task/wipeOutDatastore</url-pattern>
-  </servlet-mapping>
-
-  <!-- Action to create synthetic history entries during async replication to SQL -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/createSyntheticHistoryEntries</url-pattern>
   </servlet-mapping>
 
   <!-- Action to sync Datastore to a snapshot of the primary SQL database. -->

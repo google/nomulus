@@ -15,7 +15,6 @@
 package google.registry.flows.contact;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.newContactResource;
@@ -63,9 +62,6 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     ContactResource contact = reloadResourceByForeignKey();
     assertAboutContacts().that(contact).hasOnlyOneHistoryEntryWhich().hasNoXml();
     assertNoBillingEvents();
-    if (tm().isOfy()) {
-      assertEppResourceIndexEntityFor(contact);
-    }
     assertLastHistoryContainsResource(contact);
   }
 

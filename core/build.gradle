@@ -37,7 +37,6 @@ def jsDir = "${project.projectDir}/src/main/javascript"
 // TODO(weiminyu): identify cause and fix offending tests.
 def outcastTestPatterns = [
     // Problem seems to lie with AppEngine TaskQueue for test.
-    "google/registry/batch/DeleteContactsAndHostsActionTest.*",
     "google/registry/batch/RefreshDnsOnHostRenameActionTest.*",
     "google/registry/flows/CheckApiActionTest.*",
     "google/registry/flows/EppLifecycleHostTest.*",
@@ -713,10 +712,6 @@ createToolTask(
 
 createToolTask(
     'jpaDemoPipeline', 'google.registry.beam.common.JpaDemoPipeline')
-
-createToolTask(
-    'createSyntheticHistoryEntries',
-    'google.registry.tools.javascrap.CreateSyntheticHistoryEntriesPipeline')
 
 // Caller must provide projectId, GCP region, runner, and the kinds to delete
 // (comma-separated kind names or '*' for all). E.g.:

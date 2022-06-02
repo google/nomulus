@@ -24,11 +24,14 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
+import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.server.Fixture;
 import google.registry.server.Route;
 import google.registry.server.TestServer;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
+import google.registry.testing.FakeClock;
 import google.registry.testing.UserInfo;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -40,6 +43,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
 import javax.servlet.Filter;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -202,7 +207,15 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
       }
     }
 
-    void runInner() throws InterruptedException {
+    void runInner() throws Exception {
+      // Clear the SQL database and set it as primary (we have to do this out of band because the
+      // AppEngineExtension can't natively do it for us yet due to remaining ofy dependencies)
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);
+      DatabaseHelper.setMigrationScheduleToSqlPrimary(
+          new FakeClock(DateTime.now(DateTimeZone.UTC)));
+      // sleep a few millis to make sure we get to SQL-primary mode
+      Thread.sleep(4);
+      AppEngineExtension.loadInitialData();
       for (Fixture fixture : fixtures) {
         fixture.load();
       }

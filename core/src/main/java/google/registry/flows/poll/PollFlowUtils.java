@@ -47,13 +47,12 @@ public final class PollFlowUtils {
    * <p>The only case where we do so is if an autorenew poll message is acked, but its next event is
    * already ready to be delivered.
    */
-  public static boolean ackPollMessage(PollMessage pollMessage) {
+  public static void ackPollMessage(PollMessage pollMessage) {
     checkArgument(
         isBeforeOrAt(pollMessage.getEventTime(), tm().getTransactionTime()),
         "Cannot ACK poll message with ID %s because its event time is in the future: %s",
         pollMessage.getId(),
         pollMessage.getEventTime());
-    boolean includeAckedMessageInCount = false;
     if (pollMessage instanceof PollMessage.OneTime) {
       // One-time poll messages are deleted once acked.
       tm().delete(pollMessage.createVKey());
@@ -68,14 +67,12 @@ public final class PollFlowUtils {
       // autorenew poll message has no more events to deliver and should be deleted.
       if (nextEventTime.isBefore(autorenewPollMessage.getAutorenewEndTime())) {
         tm().put(autorenewPollMessage.asBuilder().setEventTime(nextEventTime).build());
-        includeAckedMessageInCount = isBeforeOrAt(nextEventTime, tm().getTransactionTime());
       } else {
         tm().delete(autorenewPollMessage.createVKey());
       }
     } else {
       throw new IllegalArgumentException("Unknown poll message type: " + pollMessage.getClass());
     }
-    return includeAckedMessageInCount;
   }
 
   /**

@@ -26,7 +26,6 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.model.domain.DomainBase.MAX_REGISTRATION_YEARS;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.tld.Registries.findTldForName;
 import static google.registry.model.tld.Registries.getTlds;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
@@ -1159,24 +1158,14 @@ public class DomainFlowUtils {
 
   private static List<? extends HistoryEntry> findRecentHistoryEntries(
       DomainBase domainBase, DateTime now, Duration maxSearchPeriod) {
-    if (tm().isOfy()) {
-      return auditedOfy()
-          .load()
-          .type(HistoryEntry.class)
-          .ancestor(domainBase)
-          .filter("modificationTime >=", now.minus(maxSearchPeriod))
-          .order("modificationTime")
-          .list();
-    } else {
-      return jpaTm()
-          .query(
-              "FROM DomainHistory WHERE modificationTime >= :beginning AND domainRepoId = "
-                  + ":repoId ORDER BY modificationTime ASC",
-              DomainHistory.class)
-          .setParameter("beginning", now.minus(maxSearchPeriod))
-          .setParameter("repoId", domainBase.getRepoId())
-          .getResultList();
-    }
+    return jpaTm()
+        .query(
+            "FROM DomainHistory WHERE modificationTime >= :beginning AND domainRepoId = "
+                + ":repoId ORDER BY modificationTime ASC",
+            DomainHistory.class)
+        .setParameter("beginning", now.minus(maxSearchPeriod))
+        .setParameter("repoId", domainBase.getRepoId())
+        .getResultList();
   }
 
   /** Resource linked to this domain does not exist. */
