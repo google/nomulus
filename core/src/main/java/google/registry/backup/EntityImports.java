@@ -21,7 +21,6 @@ import com.google.storage.onestore.v3.OnestoreEntity.Path;
 import com.google.storage.onestore.v3.OnestoreEntity.Property.Meaning;
 import com.google.storage.onestore.v3.OnestoreEntity.PropertyValue.ReferenceValue;
 import google.registry.model.annotations.DeleteAfterMigration;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /** Utilities for handling imported Datastore entities. */
@@ -68,9 +67,7 @@ public class EntityImports {
     if (path.elementSize() == 0) {
       return false;
     }
-    return Objects.equals(
-        path.getElement(path.elementSize() - 1).getType(StandardCharsets.UTF_8),
-        "CommitLogMutation");
+    return Objects.equals(path.getElement(path.elementSize() - 1).getType(), "CommitLogMutation");
   }
 
   private static void fixMutationEntityProtoBytes(EntityProto entityProto, String appId) {
