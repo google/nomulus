@@ -171,7 +171,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     Optional<FeesAndCredits> feesAndCredits =
         (period.getValue() == 0)
             ? Optional.empty()
-            : Optional.of(pricingLogic.getTransferPrice(registry, targetId, now));
+            : Optional.of(pricingLogic.getTransferPrice(registry, targetId, now, null));
     if (feesAndCredits.isPresent()) {
       validateFeeChallenge(targetId, now, feeTransfer, feesAndCredits.get());
     }

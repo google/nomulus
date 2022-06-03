@@ -195,9 +195,14 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new transfer price for the pricer. */
-  FeesAndCredits getTransferPrice(Registry registry, String domainName, DateTime dateTime)
+  FeesAndCredits getTransferPrice(
+      Registry registry,
+      String domainName,
+      DateTime dateTime,
+      @Nullable Recurring recurringBillingEvent)
       throws EppException {
-    DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
+    FeesAndCredits renewPrice =
+        getRenewPrice(registry, domainName, dateTime, 1, recurringBillingEvent);
     return customLogic.customizeTransferPrice(
         TransferPriceParameters.newBuilder()
             .setFeesAndCredits(
@@ -205,9 +210,9 @@ public final class DomainPricingLogic {
                     .setCurrency(registry.getCurrency())
                     .addFeeOrCredit(
                         Fee.create(
-                            domainPrices.getRenewCost().getAmount(),
+                            renewPrice.getRenewCost().getAmount(),
                             FeeType.RENEW,
-                            domainPrices.isPremium()))
+                            renewPrice.hasAnyPremiumFees()))
                     .build())
             .setRegistry(registry)
             .setDomainName(InternetDomainName.from(domainName))
