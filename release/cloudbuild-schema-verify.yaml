@@ -69,7 +69,7 @@ steps:
     set -e
     deployed_schema_tag=$(gsutil cat \
         gs://$PROJECT_ID-deployed-tags/sql.${_ENV}.tag)
-    gsutil cp gs://$PROJECT_ID-deploy/${deployed_schema_tag}/schema.jar \
+    gsutil cp gs://$PROJECT_ID-deploy/$deployed_schema_tag/schema.jar \
       /schema
 # Verify the schema
 - name: 'gcr.io/$PROJECT_ID/schema_verifier:latest'
