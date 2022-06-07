@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.index.EppResourceIndex;
 
 /**
@@ -30,6 +31,7 @@ import google.registry.model.index.EppResourceIndex;
  * <p>The inputs provided by this class are not deletion-aware and do not project the resources
  * forward in time. That is the responsibility of mappers that use these inputs.
  */
+@DeleteAfterMigration
 public final class EppResourceInputs {
 
   private EppResourceInputs() {}

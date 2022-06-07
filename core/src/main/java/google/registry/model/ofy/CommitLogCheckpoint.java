@@ -28,7 +28,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.model.replay.DatastoreOnlyEntity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -47,7 +46,7 @@ import org.joda.time.DateTime;
 @Entity
 @NotBackedUp(reason = Reason.COMMIT_LOGS)
 @DeleteAfterMigration
-public class CommitLogCheckpoint extends ImmutableObject implements DatastoreOnlyEntity {
+public class CommitLogCheckpoint extends ImmutableObject {
 
   /** Shared singleton parent entity for commit log checkpoints. */
   @Parent

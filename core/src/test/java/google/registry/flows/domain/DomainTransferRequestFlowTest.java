@@ -60,7 +60,6 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import google.registry.batch.ResaveEntityAction;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
@@ -108,10 +107,8 @@ import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -1566,16 +1563,5 @@ class DomainTransferRequestFlowTest
         .containsExactly(
             DomainTransactionRecord.create(
                 "tld", clock.nowUtc().plusDays(5), TRANSFER_SUCCESSFUL, 1));
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() {
-    setupDomain("example", "tld");
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown =
-        assertThrows(
-            ReadOnlyModeEppException.class, () -> doFailingTest("domain_transfer_request.xml"));
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

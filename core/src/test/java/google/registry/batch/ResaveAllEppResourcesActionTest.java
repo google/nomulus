@@ -24,16 +24,23 @@ import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ResaveAllEppResourcesAction}. */
 // No longer needed in SQL. Subject to future removal.
 @Deprecated
 @DeleteAfterMigration
 class ResaveAllEppResourcesActionTest extends MapreduceTestCase<ResaveAllEppResourcesAction> {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @BeforeEach
   void beforeEach() {

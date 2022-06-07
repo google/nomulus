@@ -23,7 +23,6 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.model.ofy.Ofy;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
@@ -59,7 +58,6 @@ public class UpdateAutoTimestampTest {
   /** Timestamped class. */
   @Entity(name = "UatTestEntity")
   @javax.persistence.Entity
-  @EntityForTesting
   public static class UpdateAutoTimestampTestObject extends CrossTldSingleton {
     @Ignore @javax.persistence.Id long id = SINGLETON_ID;
     UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create(null);

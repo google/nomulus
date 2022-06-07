@@ -21,7 +21,6 @@ import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.host.HostResource;
-import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import java.util.Set;
@@ -74,8 +73,7 @@ import org.joda.time.DateTime;
 @WithStringVKey
 @ExternalMessagingName("domain")
 @Access(AccessType.FIELD)
-public class DomainBase extends DomainContent
-    implements DatastoreAndSqlEntity, ForeignKeyedEppResource {
+public class DomainBase extends DomainContent implements ForeignKeyedEppResource {
 
   @Override
   @javax.persistence.Id

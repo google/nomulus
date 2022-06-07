@@ -26,7 +26,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
@@ -82,7 +81,6 @@ class DomainHistoryVKeyTest {
             VKey.create(HistoryEntry.class, new DomainHistoryId("domainRepoId", 10L), ofyKey));
   }
 
-  @EntityForTesting
   @Entity
   @javax.persistence.Entity(name = "TestEntity")
   private static class TestEntity extends ImmutableObject {

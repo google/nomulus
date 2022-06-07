@@ -34,7 +34,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.model.replay.DatastoreOnlyEntity;
 import google.registry.util.NonFinalForTesting;
 import java.util.Random;
 import java.util.function.Supplier;
@@ -53,7 +52,7 @@ import org.joda.time.DateTime;
 @Entity
 @NotBackedUp(reason = Reason.COMMIT_LOGS)
 @DeleteAfterMigration
-public class CommitLogBucket extends ImmutableObject implements Buildable, DatastoreOnlyEntity {
+public class CommitLogBucket extends ImmutableObject implements Buildable {
 
   /**
    * Ranges from 1 to {@link RegistryConfig#getCommitLogBucketCount()}, inclusive; starts at 1 since

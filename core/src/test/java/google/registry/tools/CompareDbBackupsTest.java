@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.Resources;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.tools.EntityWrapper.Property;
 import java.io.ByteArrayOutputStream;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
+@DeleteAfterMigration
 public class CompareDbBackupsTest {
 
   private static final int BASE_ID = 1001;

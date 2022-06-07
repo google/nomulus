@@ -21,6 +21,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.beust.jcommander.Parameters;
 import com.googlecode.objectify.Key;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.tld.Registry;
@@ -32,6 +33,7 @@ import google.registry.model.tld.Registry;
  * {@link RegistrarContact}.
  */
 @Parameters(commandDescription = "Re-save all environment entities.")
+@DeleteAfterMigration
 final class ResaveEnvironmentEntitiesCommand implements CommandWithRemoteApi {
 
   private static final int BATCH_SIZE = 10;

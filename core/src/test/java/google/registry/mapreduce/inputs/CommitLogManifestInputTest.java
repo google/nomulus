@@ -24,12 +24,14 @@ import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.TmOverrideExtension;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -43,6 +45,10 @@ final class CommitLogManifestInputTest {
 
   private static final DateTime DATE_TIME_NEW = DateTime.parse("2016-12-19T12:01Z");
   private static final DateTime DATE_TIME_NEW2 = DateTime.parse("2017-12-19T12:00Z");
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   final AppEngineExtension appEngine =

@@ -14,9 +14,9 @@
 
 package google.registry.testing;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.persistence.transaction.TransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -35,35 +35,17 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * <p>This extension is incompatible with {@link DualDatabaseTest}. Use either that or this, but not
  * both.
  */
+@DeleteAfterMigration
 public final class TmOverrideExtension implements BeforeEachCallback, AfterEachCallback {
-
-  private static enum TmOverride {
-    OFY,
-    JPA;
-  }
-
-  private final TmOverride tmOverride;
-
-  private TmOverrideExtension(TmOverride tmOverride) {
-    this.tmOverride = tmOverride;
-  }
 
   /** Use the {@link google.registry.model.ofy.DatastoreTransactionManager} for all tests. */
   public static TmOverrideExtension withOfy() {
-    return new TmOverrideExtension(TmOverride.OFY);
-  }
-
-  /**
-   * Use the {@link google.registry.persistence.transaction.JpaTransactionManager} for all tests.
-   */
-  public static TmOverrideExtension withJpa() {
-    return new TmOverrideExtension(TmOverride.JPA);
+    return new TmOverrideExtension();
   }
 
   @Override
   public void beforeEach(ExtensionContext context) {
-    TransactionManagerFactory.setTmOverrideForTest(
-        tmOverride == TmOverride.OFY ? ofyTm() : jpaTm());
+    TransactionManagerFactory.setTmOverrideForTest(ofyTm());
   }
 
   @Override

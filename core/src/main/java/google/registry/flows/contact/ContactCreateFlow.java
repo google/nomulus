@@ -50,7 +50,6 @@ import org.joda.time.DateTime;
 /**
  * An EPP flow that creates a new contact.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link ResourceAlreadyExistsForThisClientException}
  * @error {@link ResourceCreateContentionException}

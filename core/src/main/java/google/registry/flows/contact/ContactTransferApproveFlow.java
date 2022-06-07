@@ -54,7 +54,6 @@ import org.joda.time.DateTime;
  * transfer is automatically approved. Within that window, this flow allows the losing client to
  * explicitly approve the transfer request, which then becomes effective immediately.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}

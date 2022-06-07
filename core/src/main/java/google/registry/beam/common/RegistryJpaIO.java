@@ -23,8 +23,6 @@ import com.google.common.collect.Streams;
 import google.registry.beam.common.RegistryQuery.CriteriaQuerySupplier;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestamp.DisableAutoUpdateResource;
-import google.registry.model.common.DatabaseMigrationStateSchedule;
-import google.registry.model.replay.SqlEntity;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import java.io.Serializable;
@@ -235,10 +233,6 @@ public final class RegistryJpaIO {
 
       @ProcessElement
       public void processElement(OutputReceiver<T> outputReceiver) {
-        // Preload the migration schedule into cache, otherwise the cache loading query may happen
-        // before the setDatabaseSnapshot call in the transaction below, causing it to fail.
-        DatabaseMigrationStateSchedule.get();
-
         jpaTm()
             .transactNoRetry(
                 () -> {
@@ -433,11 +427,23 @@ public final class RegistryJpaIO {
       }
     }
 
+    /** Returns this entity's primary key field(s) in a string. */
     private String toEntityKeyString(Object entity) {
-      if (entity instanceof SqlEntity) {
-        return ((SqlEntity) entity).getPrimaryKeyString();
+      try {
+        return jpaTm()
+            .transact(
+                () ->
+                    String.format(
+                        "%s_%s",
+                        entity.getClass().getSimpleName(),
+                        jpaTm()
+                            .getEntityManager()
+                            .getEntityManagerFactory()
+                            .getPersistenceUnitUtil()
+                            .getIdentifier(entity)));
+      } catch (IllegalArgumentException e) {
+        return "Non-SqlEntity: " + entity;
       }
-      return "Non-SqlEntity: " + String.valueOf(entity);
     }
   }
 }

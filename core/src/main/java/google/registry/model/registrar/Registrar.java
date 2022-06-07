@@ -79,7 +79,6 @@ import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.registrar.Registrar.BillingAccountEntry.CurrencyMapper;
-import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.persistence.VKey;
@@ -119,7 +118,7 @@ import org.joda.time.DateTime;
     })
 @InCrossTld
 public class Registrar extends ImmutableObject
-    implements Buildable, DatastoreAndSqlEntity, Jsonifiable, UnsafeSerializable {
+    implements Buildable, Jsonifiable, UnsafeSerializable {
 
   /** Represents the type of a registrar entity. */
   public enum Type {

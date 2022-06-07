@@ -19,7 +19,6 @@ import static google.registry.model.IdService.allocateId;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
-import google.registry.model.replay.SqlOnlyEntity;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -28,8 +27,7 @@ import javax.persistence.Id;
 
 /** Entity class to represent a historic {@link DelegationSignerData}. */
 @Entity
-public class DomainDsDataHistory extends DomainDsDataBase
-    implements SqlOnlyEntity, UnsafeSerializable {
+public class DomainDsDataHistory extends DomainDsDataBase implements UnsafeSerializable {
 
   @Id Long dsDataHistoryRevisionId;
 

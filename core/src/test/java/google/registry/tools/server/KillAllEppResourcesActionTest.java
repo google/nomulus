@@ -52,14 +52,21 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.util.stream.Stream;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link KillAllEppResourcesAction}. */
 class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResourcesAction> {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   private static final ImmutableSet<String> AFFECTED_KINDS =
       Stream.of(

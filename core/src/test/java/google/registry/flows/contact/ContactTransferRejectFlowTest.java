@@ -25,7 +25,6 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -41,10 +40,8 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link ContactTransferRejectFlow}. */
@@ -267,13 +264,5 @@ class ContactTransferRejectFlowTest
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-transfer-reject");
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() {
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

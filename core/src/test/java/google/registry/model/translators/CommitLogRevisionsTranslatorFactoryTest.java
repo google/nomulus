@@ -27,13 +27,14 @@ import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.Ofy;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TmOverrideExtension;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -43,10 +44,13 @@ public class CommitLogRevisionsTranslatorFactoryTest {
   private static final DateTime START_TIME = DateTime.parse("2000-01-01TZ");
 
   @Entity(name = "ClrtfTestEntity")
-  @EntityForTesting
   public static class TestObject extends CrossTldSingleton {
     ImmutableSortedMap<DateTime, Key<CommitLogManifest>> revisions = ImmutableSortedMap.of();
   }
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =

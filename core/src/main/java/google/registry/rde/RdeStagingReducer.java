@@ -30,6 +30,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.KeyModule;
 import google.registry.keyring.api.PgpHelper;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.Cursor;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeNamingUtils;
@@ -59,6 +60,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /** Reducer for {@link RdeStagingAction}. */
+@DeleteAfterMigration
 public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFragment, Void> {
 
   private static final long serialVersionUID = 60326234579091203L;

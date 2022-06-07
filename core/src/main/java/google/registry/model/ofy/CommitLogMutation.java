@@ -30,13 +30,12 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.model.replay.DatastoreOnlyEntity;
 
 /** Representation of a saved entity in a {@link CommitLogManifest} (not deletes). */
 @Entity
 @NotBackedUp(reason = Reason.COMMIT_LOGS)
 @DeleteAfterMigration
-public class CommitLogMutation extends ImmutableObject implements DatastoreOnlyEntity {
+public class CommitLogMutation extends ImmutableObject {
 
   /** The manifest this belongs to. */
   @Parent

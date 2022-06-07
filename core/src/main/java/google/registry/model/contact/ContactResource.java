@@ -19,7 +19,6 @@ import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import javax.persistence.Access;
@@ -46,8 +45,7 @@ import org.joda.time.DateTime;
 @ExternalMessagingName("contact")
 @WithStringVKey
 @Access(AccessType.FIELD)
-public class ContactResource extends ContactBase
-    implements DatastoreAndSqlEntity, ForeignKeyedEppResource {
+public class ContactResource extends ContactBase implements ForeignKeyedEppResource {
 
   @Override
   public VKey<ContactResource> createVKey() {

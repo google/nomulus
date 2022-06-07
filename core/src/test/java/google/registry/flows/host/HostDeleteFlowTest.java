@@ -34,7 +34,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -51,10 +50,8 @@ import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -308,24 +305,6 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     clock.advanceOneMilli();
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-host-delete");
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() {
-    persistActiveHost("ns1.example.tld");
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
-  }
-
-  @TestOfyOnly
-  void testModification_duringNoAsyncPhase() {
-    persistActiveHost("ns1.example.tld");
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryNoAsync(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
   private void assertSqlDeleteSuccess(boolean isSubordinate) throws Exception {

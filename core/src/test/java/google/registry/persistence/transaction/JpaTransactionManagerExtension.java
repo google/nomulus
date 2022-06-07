@@ -27,7 +27,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
 import com.google.common.io.Resources;
-import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.persistence.HibernateSchemaExporter;
 import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.PersistenceModule;
@@ -168,7 +167,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
     if (!includeNomulusSchema) {
       File tempSqlFile = File.createTempFile("tempSqlFile", ".sql");
       tempSqlFile.deleteOnExit();
-      exporter.export(getTestEntities(), tempSqlFile);
+      exporter.export(extraEntityClasses, tempSqlFile);
       executeSql(new String(Files.readAllBytes(tempSqlFile.toPath()), StandardCharsets.UTF_8));
     }
     assertReasonableNumDbConnections();
@@ -238,14 +237,16 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
       ResultSet rs =
           statement.executeQuery(
               "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';");
-      ImmutableList.Builder<String> tableNames = new ImmutableList.Builder<>();
+      ImmutableList.Builder<String> tableNamesBuilder = new ImmutableList.Builder<>();
       while (rs.next()) {
-        tableNames.add('"' + rs.getString(1) + '"');
+        tableNamesBuilder.add('"' + rs.getString(1) + '"');
       }
-      String sql =
-          String.format(
-              "TRUNCATE %s RESTART IDENTITY CASCADE", Joiner.on(',').join(tableNames.build()));
-      executeSql(sql);
+      ImmutableList<String> tableNames = tableNamesBuilder.build();
+      if (!tableNames.isEmpty()) {
+        String sql =
+            String.format("TRUNCATE %s RESTART IDENTITY CASCADE", Joiner.on(',').join(tableNames));
+        executeSql(sql);
+      }
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -344,17 +345,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
       descriptor.getManagedClassNames().addAll(nonEntityClasses);
     }
 
-    getTestEntities().stream().map(Class::getName).forEach(descriptor::addClasses);
+    extraEntityClasses.stream().map(Class::getName).forEach(descriptor::addClasses);
     return Bootstrap.getEntityManagerFactoryBuilder(descriptor, properties).build();
-  }
-
-  private ImmutableList<Class<?>> getTestEntities() {
-    // We have to add the DatabaseMigrationStateSchedule and TransactionEntity classes to extra
-    // entities, as they are required by the transaction manager factory and transaction replication
-    // mechanism, respectively.
-    return Stream.concat(
-            extraEntityClasses.stream(),
-            Stream.of(DatabaseMigrationStateSchedule.class, TransactionEntity.class))
-        .collect(toImmutableList());
   }
 }

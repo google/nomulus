@@ -29,12 +29,19 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ResaveAllHistoryEntriesAction}. */
 class ResaveAllHistoryEntriesActionTest extends MapreduceTestCase<ResaveAllHistoryEntriesAction> {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   private static final DatastoreService datastoreService =
       DatastoreServiceFactory.getDatastoreService();

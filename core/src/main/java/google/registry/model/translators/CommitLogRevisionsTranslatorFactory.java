@@ -25,7 +25,6 @@ import com.google.common.collect.Ordering;
 import com.googlecode.objectify.Key;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.ofy.CommitLogManifest;
-import google.registry.persistence.transaction.Transaction;
 import org.joda.time.DateTime;
 
 /**
@@ -69,12 +68,6 @@ public final class CommitLogRevisionsTranslatorFactory
   @Override
   ImmutableSortedMap<DateTime, Key<CommitLogManifest>> transformBeforeSave(
       ImmutableSortedMap<DateTime, Key<CommitLogManifest>> revisions) {
-
-    // Don't do anything if we're just doing object serialization.
-    if (Transaction.inSerializationMode()) {
-      return revisions;
-    }
-
     DateTime now = ofyTm().getTransactionTime();
     DateTime threshold = now.minus(getCommitLogDatastoreRetention());
     DateTime preThresholdTime = firstNonNull(revisions.floorKey(threshold), START_OF_TIME);

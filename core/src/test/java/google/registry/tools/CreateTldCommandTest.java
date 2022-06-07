@@ -55,9 +55,9 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
 
   @Test
   void testSuccess() throws Exception {
-    DateTime before = DateTime.now(UTC);
+    DateTime before = fakeClock.nowUtc();
     runCommandForced("xn--q9jyb4c", "--roid_suffix=Q9JYB4C", "--dns_writers=FooDnsWriter");
-    DateTime after = DateTime.now(UTC);
+    DateTime after = fakeClock.nowUtc();
 
     Registry registry = Registry.get("xn--q9jyb4c");
     assertThat(registry).isNotNull();

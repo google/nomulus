@@ -25,7 +25,6 @@ import com.google.common.hash.BloomFilter;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import java.io.Serializable;
@@ -53,8 +52,7 @@ import org.joda.money.Money;
 @ReportedOn
 @javax.persistence.Entity
 @Table(indexes = {@Index(columnList = "name", name = "premiumlist_name_idx")})
-public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEntry>
-    implements SqlOnlyEntity {
+public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEntry> {
 
   @Column(nullable = false)
   CurrencyUnit currency;
@@ -120,7 +118,7 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
    */
   @javax.persistence.Entity(name = "PremiumEntry")
   public static class PremiumEntry extends DomainLabelEntry<BigDecimal, PremiumList.PremiumEntry>
-      implements Buildable, SqlOnlyEntity, Serializable {
+      implements Buildable, Serializable {
 
     @ImmutableObject.Insignificant @javax.persistence.Id Long revisionId;
 

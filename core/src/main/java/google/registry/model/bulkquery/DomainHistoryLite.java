@@ -20,7 +20,6 @@ import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
-import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import javax.annotation.Nullable;
@@ -48,7 +47,7 @@ import javax.persistence.PostLoad;
 @Entity(name = "DomainHistory")
 @Access(AccessType.FIELD)
 @IdClass(DomainHistoryId.class)
-public class DomainHistoryLite extends HistoryEntry implements SqlOnlyEntity {
+public class DomainHistoryLite extends HistoryEntry {
 
   // Store DomainContent instead of DomainBase so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects

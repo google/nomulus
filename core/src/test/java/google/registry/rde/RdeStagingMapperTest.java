@@ -27,10 +27,12 @@ import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.xml.ValidationMode;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -52,6 +54,10 @@ class RdeStagingMapperTest {
 
   private ArgumentCaptor<DepositFragment> depositFragmentCaptor =
       ArgumentCaptor.forClass(DepositFragment.class);
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   AppEngineExtension appEngineExtension =

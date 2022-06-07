@@ -29,8 +29,10 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TmOverrideExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -38,6 +40,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class CommitLogCheckpointActionTest {
 
   private static final String QUEUE_NAME = "export-commits";
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =

@@ -59,7 +59,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.FlowUtils.NotLoggedInException;
@@ -106,10 +105,8 @@ import google.registry.model.poll.PendingActionNotificationResponse.DomainPendin
 import google.registry.model.poll.PollMessage;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -1744,15 +1741,5 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     clock.advanceOneMilli();
     runFlowAsSuperuser();
     assertAboutDomains().that(reloadResourceByForeignKey()).hasNoAutorenewEndTime();
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() throws Exception {
-    persistReferencedEntities();
-    persistDomain();
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

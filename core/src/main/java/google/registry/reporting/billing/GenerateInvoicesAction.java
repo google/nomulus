@@ -15,8 +15,6 @@
 package google.registry.reporting.billing;
 
 import static google.registry.beam.BeamUtils.createJobName;
-import static google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase.CLOUD_SQL;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -31,13 +29,11 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
-import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.persistence.PersistenceModule;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
-import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -77,7 +73,6 @@ public class GenerateInvoicesAction implements Runnable {
   private final Clock clock;
   private final Response response;
   private final Dataflow dataflow;
-  private final PrimaryDatabase database;
   private final CloudTasksUtils cloudTasksUtils;
 
   @Inject
@@ -88,7 +83,6 @@ public class GenerateInvoicesAction implements Runnable {
       @Config("billingBucketUrl") String billingBucketUrl,
       @Config("invoiceFilePrefix") String invoiceFilePrefix,
       @Parameter(BillingModule.PARAM_SHOULD_PUBLISH) boolean shouldPublish,
-      @Parameter(RequestParameters.PARAM_DATABASE) PrimaryDatabase database,
       YearMonth yearMonth,
       BillingEmailUtils emailUtils,
       CloudTasksUtils cloudTasksUtils,
@@ -98,15 +92,9 @@ public class GenerateInvoicesAction implements Runnable {
     this.projectId = projectId;
     this.jobRegion = jobRegion;
     this.stagingBucketUrl = stagingBucketUrl;
-    // When generating the invoices using Cloud SQL before database cutover, save the reports in a
-    // separate bucket so that it does not overwrite the Datastore invoices.
-    if (tm().isOfy() && database.equals(CLOUD_SQL)) {
-      billingBucketUrl = billingBucketUrl.concat("-sql");
-    }
     this.billingBucketUrl = billingBucketUrl;
     this.invoiceFilePrefix = invoiceFilePrefix;
     this.shouldPublish = shouldPublish;
-    this.database = database;
     this.yearMonth = yearMonth;
     this.emailUtils = emailUtils;
     this.cloudTasksUtils = cloudTasksUtils;
@@ -129,7 +117,6 @@ public class GenerateInvoicesAction implements Runnable {
                   new ImmutableMap.Builder<String, String>()
                       .put("yearMonth", yearMonth.toString("yyyy-MM"))
                       .put("invoiceFilePrefix", invoiceFilePrefix)
-                      .put("database", database.name())
                       .put("billingBucketUrl", billingBucketUrl)
                       .put("registryEnvironment", RegistryEnvironment.get().name())
                       .put(

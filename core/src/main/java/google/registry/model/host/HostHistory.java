@@ -20,8 +20,6 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.host.HostHistory.HostHistoryId;
-import google.registry.model.replay.DatastoreEntity;
-import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import java.io.Serializable;
@@ -59,7 +57,7 @@ import javax.persistence.PostLoad;
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(HostHistoryId.class)
-public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerializable {
+public class HostHistory extends HistoryEntry implements UnsafeSerializable {
 
   // Store HostBase instead of HostResource so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
@@ -126,12 +124,6 @@ public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerial
       // Builder can do things like comparisons that compute the hash code.
       hostBase.setRepoId(parent.getName());
     }
-  }
-
-  // In Datastore, save as a HistoryEntry object regardless of this object's type
-  @Override
-  public Optional<DatastoreEntity> toDatastoreEntity() {
-    return Optional.of(asHistoryEntry());
   }
 
   /** Class to represent the composite primary key of {@link HostHistory} entity. */

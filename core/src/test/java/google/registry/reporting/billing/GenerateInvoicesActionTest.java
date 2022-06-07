@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.net.MediaType;
 import google.registry.beam.BeamActionTestBase;
-import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.reporting.ReportingModule;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
@@ -62,7 +61,6 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
             "billing_bucket",
             "REG-INV",
             true,
-            PrimaryDatabase.DATASTORE,
             new YearMonth(2017, 10),
             emailUtils,
             cloudTasksUtils,
@@ -97,7 +95,6 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
             "billing_bucket",
             "REG-INV",
             false,
-            PrimaryDatabase.DATASTORE,
             new YearMonth(2017, 10),
             emailUtils,
             cloudTasksUtils,
@@ -122,7 +119,6 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
             "billing_bucket",
             "REG-INV",
             false,
-            PrimaryDatabase.DATASTORE,
             new YearMonth(2017, 10),
             emailUtils,
             cloudTasksUtils,

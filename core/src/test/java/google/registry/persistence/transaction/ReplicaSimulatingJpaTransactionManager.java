@@ -341,16 +341,6 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
   }
 
   @Override
-  public void putIgnoringReadOnlyWithoutBackup(Object entity) {
-    delegate.putIgnoringReadOnlyWithoutBackup(entity);
-  }
-
-  @Override
-  public void deleteIgnoringReadOnlyWithoutBackup(VKey<?> key) {
-    delegate.deleteIgnoringReadOnlyWithoutBackup(key);
-  }
-
-  @Override
   public <T> void assertDelete(VKey<T> key) {
     delegate.assertDelete(key);
   }

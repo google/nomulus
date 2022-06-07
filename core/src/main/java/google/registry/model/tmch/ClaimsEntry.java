@@ -15,7 +15,6 @@
 package google.registry.model.tmch;
 
 import google.registry.model.ImmutableObject;
-import google.registry.model.replay.SqlOnlyEntity;
 import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,7 +29,7 @@ import javax.persistence.Id;
  * work.
  */
 @Entity(name = "ClaimsEntry")
-class ClaimsEntry extends ImmutableObject implements SqlOnlyEntity, Serializable {
+class ClaimsEntry extends ImmutableObject implements Serializable {
   @Id private Long revisionId;
   @Id private String domainLabel;
 

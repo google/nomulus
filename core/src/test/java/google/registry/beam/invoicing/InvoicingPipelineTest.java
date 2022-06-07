@@ -51,7 +51,6 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestDataHelper;
-import google.registry.testing.TmOverrideExtension;
 import google.registry.util.ResourceUtils;
 import java.io.File;
 import java.nio.file.Files;
@@ -94,10 +93,6 @@ class InvoicingPipelineTest {
   @RegisterExtension
   final JpaIntegrationTestExtension database =
       new JpaTestExtensions.Builder().withClock(new FakeClock()).buildIntegrationTestExtension();
-
-  @RegisterExtension
-  @Order(Order.DEFAULT + 1)
-  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
 
   @TempDir Path tmpDir;
 
@@ -282,7 +277,6 @@ class InvoicingPipelineTest {
   @Test
   void testSuccess_fullSqlPipeline() throws Exception {
     setupCloudSql();
-    options.setDatabase("CLOUD_SQL");
     InvoicingPipeline invoicingPipeline = new InvoicingPipeline(options);
     invoicingPipeline.setupPipeline(pipeline);
     pipeline.run(options).waitUntilFinish();

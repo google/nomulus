@@ -26,16 +26,22 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DeleteOldCommitLogsAction}. */
 public class DeleteOldCommitLogsActionTest
     extends MapreduceTestCase<DeleteOldCommitLogsAction> {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
   private final FakeResponse response = new FakeResponse();

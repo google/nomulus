@@ -23,7 +23,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
-import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.model.tld.label.ReservedList.ReservedListEntry;
 import java.util.Map;
 import java.util.Optional;
@@ -52,7 +51,7 @@ import org.joda.time.DateTime;
  */
 @Entity(name = "ClaimsList")
 @Table
-public class ClaimsList extends ImmutableObject implements SqlOnlyEntity {
+public class ClaimsList extends ImmutableObject {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -27,7 +27,6 @@ import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.ImmutableObject;
 import google.registry.model.rde.RdeRevision.RdeRevisionId;
-import google.registry.model.replay.NonReplicatedEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.LocalDateConverter;
 import java.io.Serializable;
@@ -51,7 +50,7 @@ import org.joda.time.LocalDate;
 @Entity
 @javax.persistence.Entity
 @IdClass(RdeRevisionId.class)
-public final class RdeRevision extends BackupGroupRoot implements NonReplicatedEntity {
+public final class RdeRevision extends BackupGroupRoot {
 
   /** String triplet of tld, date, and mode, e.g. {@code soy_2015-09-01_full}. */
   @Id @Transient String id;

@@ -88,8 +88,6 @@ steps:
       beam_pipeline_common \
       ${TAG_NAME} \
       ${PROJECT_ID} \
-      google.registry.beam.initsql.InitSqlPipeline \
-      google/registry/beam/init_sql_pipeline_metadata.json \
       google.registry.beam.datastore.BulkDeleteDatastorePipeline \
       google/registry/beam/bulk_delete_datastore_pipeline_metadata.json \
       google.registry.beam.spec11.Spec11Pipeline \

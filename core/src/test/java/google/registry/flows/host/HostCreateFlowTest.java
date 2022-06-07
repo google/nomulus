@@ -35,7 +35,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.FlowUtils.IpAddressVersionMismatchException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
@@ -55,10 +54,8 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import org.joda.time.DateTime;
 
 /** Unit tests for {@link HostCreateFlow}. */
@@ -328,13 +325,5 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-host-create");
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() {
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }
