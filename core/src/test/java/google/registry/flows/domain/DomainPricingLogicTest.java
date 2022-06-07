@@ -15,7 +15,6 @@
 package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.billing.BillingEvent.Flag.AUTO_RENEW;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;

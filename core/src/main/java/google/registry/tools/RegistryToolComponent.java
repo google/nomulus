@@ -175,13 +175,9 @@ interface RegistryToolComponent {
 
   void inject(UpdateTldCommand command);
 
-  void inject(ValidateDatastoreCommand command);
-
   void inject(ValidateEscrowDepositCommand command);
 
   void inject(ValidateLoginCredentialsCommand command);
-
-  void inject(ValidateSqlCommand command);
 
   void inject(WhoisQueryCommand command);
 

@@ -21,7 +21,6 @@ import static google.registry.backup.ExportCommitLogDiffAction.UPPER_CHECKPOINT_
 import static google.registry.backup.RestoreCommitLogsAction.BUCKET_OVERRIDE_PARAM;
 import static google.registry.backup.RestoreCommitLogsAction.FROM_TIME_PARAM;
 import static google.registry.backup.RestoreCommitLogsAction.TO_TIME_PARAM;
-import static google.registry.backup.SyncDatastoreToSqlSnapshotAction.SQL_SNAPSHOT_ID_PARAM;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredDatetimeParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
@@ -97,12 +96,6 @@ public final class BackupModule {
   @Parameter(TO_TIME_PARAM)
   static DateTime provideToTime(HttpServletRequest req) {
     return extractRequiredDatetimeParameter(req, TO_TIME_PARAM);
-  }
-
-  @Provides
-  @Parameter(SQL_SNAPSHOT_ID_PARAM)
-  static String provideSqlSnapshotId(HttpServletRequest req) {
-    return extractRequiredParameter(req, SQL_SNAPSHOT_ID_PARAM);
   }
 
   @Provides

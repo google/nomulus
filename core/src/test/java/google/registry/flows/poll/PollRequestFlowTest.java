@@ -41,7 +41,6 @@ import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
 import google.registry.testing.SetClockExtension;
 import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,10 +54,6 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   @Order(value = Order.DEFAULT - 3)
   @RegisterExtension
   final SetClockExtension setClockExtension = new SetClockExtension(clock, "2011-01-02T01:01:01Z");
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   private DomainBase domain;
   private ContactResource contact;

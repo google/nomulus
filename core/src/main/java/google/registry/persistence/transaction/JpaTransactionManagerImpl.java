@@ -106,11 +106,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private static final ThreadLocal<TransactionInfo> transactionInfo =
       ThreadLocal.withInitial(TransactionInfo::new);
 
-  // If this value is present, use it to determine whether or not to replay SQL transactions to
-  // Datastore, rather than using the schedule stored in Datastore.
-  private static final ThreadLocal<Optional<Boolean>> replaySqlToDatastoreOverrideForTest =
-      ThreadLocal.withInitial(Optional::empty);
-
   public JpaTransactionManagerImpl(EntityManagerFactory emf, Clock clock) {
     this.emf = emf;
     this.clock = clock;
@@ -825,16 +820,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     return entity;
   }
 
-  /** Sets the override to always/never replay SQL transactions to Datastore. */
-  public static void setReplaySqlToDatastoreOverrideForTest(boolean replaySqlToDs) {
-    replaySqlToDatastoreOverrideForTest.set(Optional.of(replaySqlToDs));
-  }
-
-  /** Removes the replay-SQL-to-Datastore override; the migration schedule will then be used. */
-  public static void removeReplaySqlToDsOverrideForTest() {
-    replaySqlToDatastoreOverrideForTest.set(Optional.empty());
-  }
-
   /** Returns true if the entity class should be replicated from SQL to datastore. */
   private static boolean shouldReplicate(Class<?> entityClass) {
     return !NonReplicatedEntity.class.isAssignableFrom(entityClass)
@@ -860,14 +845,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       checkArgumentNotNull(clock);
       inTransaction = true;
       transactionTime = clock.nowUtc();
-      if (withBackup
-          && replaySqlToDatastoreOverrideForTest
-              .get()
-              .orElseGet(
-                  () ->
-                      DatabaseMigrationStateSchedule.getValueAtTime(transactionTime)
-                          .getReplayDirection()
-                          .equals(ReplayDirection.SQL_TO_DATASTORE))) {
+      Supplier<Boolean> sqlToDsReplaySupplier =
+          () ->
+              DatabaseMigrationStateSchedule.getValueAtTime(transactionTime)
+                  .getReplayDirection()
+                  .equals(ReplayDirection.SQL_TO_DATASTORE);
+      if (withBackup && sqlToDsReplaySupplier.get()) {
         contentsBuilder = new Transaction.Builder();
       }
     }

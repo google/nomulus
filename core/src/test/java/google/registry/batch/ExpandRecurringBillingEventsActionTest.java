@@ -55,7 +55,6 @@ import google.registry.model.tld.Registry;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.mapreduce.MapreduceTestCase;
@@ -65,8 +64,6 @@ import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ExpandRecurringBillingEventsAction}. */
 @DualDatabaseTest
@@ -75,10 +72,6 @@ public class ExpandRecurringBillingEventsActionTest
 
   private DateTime currentTestTime = DateTime.parse("1999-01-05T00:00:00Z");
   private final FakeClock clock = new FakeClock(currentTestTime);
-
-  @Order(Order.DEFAULT - 2)
-  @RegisterExtension
-  public final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   private DomainBase domain;
   private DomainHistory historyEntry;

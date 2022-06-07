@@ -14,8 +14,6 @@
 
 package google.registry.model.contact;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
@@ -134,14 +132,6 @@ public class ContactHistory extends HistoryEntry implements SqlEntity, UnsafeSer
   @Override
   public Optional<DatastoreEntity> toDatastoreEntity() {
     return Optional.of(asHistoryEntry());
-  }
-
-  // Used to fill out the contactBase field during asynchronous replay
-  @Override
-  public void beforeSqlSaveOnReplay() {
-    if (contactBase == null) {
-      contactBase = jpaTm().getEntityManager().find(ContactResource.class, getContactRepoId());
-    }
   }
 
   /** Class to represent the composite primary key of {@link ContactHistory} entity. */

@@ -57,20 +57,13 @@ import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostCreateFlow}. */
 @DualDatabaseTest
 class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResource> {
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   private void setEppHostCreateInput(String hostName, String hostAddrs) {
     setEppInput(

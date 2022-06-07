@@ -75,7 +75,6 @@ import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
 import google.registry.testing.SetClockExtension;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.money.CurrencyUnit;
@@ -93,10 +92,6 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Order(value = Order.DEFAULT - 3)
   @RegisterExtension
   final SetClockExtension setClockExtension = new SetClockExtension(clock, "2009-01-01T10:00:00Z");
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   DomainCheckFlowTest() {
     setEppInput("domain_check_one_tld.xml");

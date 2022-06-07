@@ -14,8 +14,6 @@
 
 package google.registry.model.domain;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
@@ -26,7 +24,6 @@ import google.registry.model.host.HostResource;
 import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
-import google.registry.util.DomainNameUtils;
 import java.util.Set;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -171,20 +168,6 @@ public class DomainBase extends DomainContent
   @Override
   public DomainBase cloneProjectedAtTime(final DateTime now) {
     return cloneDomainProjectedAtTime(this, now);
-  }
-
-  @Override
-  public void beforeSqlSaveOnReplay() {
-    fullyQualifiedDomainName = DomainNameUtils.canonicalizeHostname(fullyQualifiedDomainName);
-    dsData =
-        dsData.stream()
-            .filter(datum -> datum.getDigest() != null && datum.getDigest().length > 0)
-            .collect(toImmutableSet());
-  }
-
-  @Override
-  public void beforeDatastoreSaveOnReplay() {
-    saveIndexesToDatastore();
   }
 
   public static VKey<DomainBase> createVKey(Key<DomainBase> key) {

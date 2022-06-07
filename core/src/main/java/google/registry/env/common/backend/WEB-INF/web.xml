@@ -157,12 +157,6 @@
     <url-pattern>/_dr/cron/readDnsQueue</url-pattern>
   </servlet-mapping>
 
-  <!-- Replicates SQL transactions to Datastore during the Registry 3.0 migration. -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/cron/replicateToDatastore</url-pattern>
-  </servlet-mapping>
-
   <!-- Publishes DNS updates. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
@@ -241,12 +235,6 @@
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
     <url-pattern>/_dr/task/killCommitLogs</url-pattern>
-  </servlet-mapping>
-
-  <!-- Replays Datastore commit logs to SQL. -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/replayCommitLogsToSql</url-pattern>
   </servlet-mapping>
 
   <!-- MapReduce servlet. -->
@@ -411,12 +399,6 @@ have been in the database for a certain period of time. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
     <url-pattern>/_dr/task/wipeOutDatastore</url-pattern>
-  </servlet-mapping>
-
-  <!-- Action to sync Datastore to a snapshot of the primary SQL database. -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/syncDatastoreToSqlSnapshot</url-pattern>
   </servlet-mapping>
 
   <!-- Security config -->

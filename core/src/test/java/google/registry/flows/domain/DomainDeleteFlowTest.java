@@ -104,7 +104,6 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import java.util.Map;
@@ -112,16 +111,10 @@ import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainDeleteFlow}. */
 @DualDatabaseTest
 class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, DomainBase> {
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   private DomainBase domain;
   private DomainHistory earlierHistoryEntry;
@@ -855,7 +848,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setEventTime(now)
             .setMsg(
                 "Domain example.tld was deleted by registry administrator with final deletion"
-                    + " effective: 2000-07-11T22:00:00.013Z")
+                    + " effective: 2000-07-11T22:00:00.012Z")
             .setResponseData(
                 ImmutableList.of(
                     DomainPendingActionNotificationResponse.create(
@@ -864,7 +857,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")
             .setParent(deleteHistoryEntry)
-            .setEventTime(DateTime.parse("2000-07-11T22:00:00.013Z"))
+            .setEventTime(DateTime.parse("2000-07-11T22:00:00.012Z"))
             .setMsg("Deleted by registry administrator.")
             .setResponseData(
                 ImmutableList.of(
@@ -872,7 +865,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                         "example.tld",
                         true,
                         deleteHistoryEntry.getTrid(),
-                        DateTime.parse("2000-07-11T22:00:00.013Z"))))
+                        DateTime.parse("2000-07-11T22:00:00.012Z"))))
             .build());
   }
 

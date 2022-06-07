@@ -33,7 +33,6 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.poll.PollMessage;
 import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
 import google.registry.testing.SetClockExtension;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
@@ -48,10 +47,6 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   @Order(value = Order.DEFAULT - 3)
   @RegisterExtension
   final SetClockExtension setClockExtension = new SetClockExtension(clock, "2011-01-02T01:01:01Z");
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   /** This is the message id being sent in the ACK request. */
   private static final long MESSAGE_ID = 3;

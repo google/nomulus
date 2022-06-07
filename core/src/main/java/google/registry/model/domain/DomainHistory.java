@@ -15,7 +15,6 @@
 package google.registry.model.domain;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableSet;
@@ -33,7 +32,6 @@ import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.util.DomainNameUtils;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Optional;
@@ -301,17 +299,6 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   @Override
   public Optional<DatastoreEntity> toDatastoreEntity() {
     return Optional.of(asHistoryEntry());
-  }
-
-  // Used to fill out the domainContent field during asynchronous replay
-  @Override
-  public void beforeSqlSaveOnReplay() {
-    if (domainContent == null) {
-      domainContent = jpaTm().getEntityManager().find(DomainBase.class, getDomainRepoId());
-      domainContent.fullyQualifiedDomainName =
-          DomainNameUtils.canonicalizeHostname(domainContent.fullyQualifiedDomainName);
-      fillAuxiliaryFieldsFromDomain(this);
-    }
   }
 
   private static void fillAuxiliaryFieldsFromDomain(DomainHistory domainHistory) {

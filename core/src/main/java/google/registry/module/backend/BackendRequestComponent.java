@@ -20,8 +20,6 @@ import google.registry.backup.BackupModule;
 import google.registry.backup.CommitLogCheckpointAction;
 import google.registry.backup.DeleteOldCommitLogsAction;
 import google.registry.backup.ExportCommitLogDiffAction;
-import google.registry.backup.ReplayCommitLogsToSqlAction;
-import google.registry.backup.SyncDatastoreToSqlSnapshotAction;
 import google.registry.batch.BatchModule;
 import google.registry.batch.DeleteExpiredDomainsAction;
 import google.registry.batch.DeleteLoadTestDataAction;
@@ -62,7 +60,6 @@ import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.flows.FlowComponent;
 import google.registry.flows.custom.CustomLogicModule;
 import google.registry.mapreduce.MapreduceModule;
-import google.registry.model.replay.ReplicateToDatastoreAction;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.rdap.UpdateRegistrarRdapBaseUrlsAction;
 import google.registry.rde.BrdaCopyAction;
@@ -187,10 +184,6 @@ interface BackendRequestComponent {
 
   RelockDomainAction relockDomainAction();
 
-  ReplayCommitLogsToSqlAction replayCommitLogsToSqlAction();
-
-  ReplicateToDatastoreAction replicateToDatastoreAction();
-
   ResaveAllEppResourcesAction resaveAllEppResourcesAction();
 
   ResaveAllEppResourcesPipelineAction resaveAllEppResourcesPipelineAction();
@@ -198,8 +191,6 @@ interface BackendRequestComponent {
   ResaveEntityAction resaveEntityAction();
 
   SendExpiringCertificateNotificationEmailAction sendExpiringCertificateNotificationEmailAction();
-
-  SyncDatastoreToSqlSnapshotAction syncDatastoreToSqlSnapshotAction();
 
   SyncGroupMembersAction syncGroupMembersAction();
 

@@ -35,20 +35,13 @@ import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.model.contact.ContactResource;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ContactCreateFlow}. */
 @DualDatabaseTest
 class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, ContactResource> {
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   ContactCreateFlowTest() {
     setEppInput("contact_create.xml");

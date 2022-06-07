@@ -22,7 +22,6 @@ import google.registry.model.annotations.ReportedOn;
 import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
-import google.registry.util.DomainNameUtils;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 
@@ -69,16 +68,6 @@ public class HostResource extends HostBase
   @Override
   public VKey<HostResource> createVKey() {
     return VKey.create(HostResource.class, getRepoId(), Key.create(this));
-  }
-
-  @Override
-  public void beforeSqlSaveOnReplay() {
-    fullyQualifiedHostName = DomainNameUtils.canonicalizeHostname(fullyQualifiedHostName);
-  }
-
-  @Override
-  public void beforeDatastoreSaveOnReplay() {
-    saveIndexesToDatastore();
   }
 
   @Override
