@@ -149,7 +149,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             domain
                 .asBuilder()
                 .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
-                .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+                .setAutorenewPollMessage(
+                    autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
                 .build());
 
     assertTransactionalFlow(true);
@@ -215,7 +216,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                             "TheRegistrar",
                             autorenewBillingEvent.createVKey())))
                 .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
-                .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+                .setAutorenewPollMessage(
+                    autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
                 .build());
     assertTransactionalFlow(true);
   }
@@ -281,7 +283,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .setRegistrarId(registrarId)
         .setEventTime(A_MONTH_FROM_NOW)
         .setAutorenewEndTime(END_OF_TIME)
-        .setParent(earlierHistoryEntry);
+        .setHistoryEntry(earlierHistoryEntry);
   }
 
   @TestOfyAndSql
@@ -481,8 +483,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     DateTime deletionTime = domain.getDeletionTime();
     assertThat(getPollMessages("TheRegistrar", deletionTime.minusMinutes(1))).isEmpty();
     assertThat(getPollMessages("TheRegistrar", deletionTime)).hasSize(1);
-    assertThat(domain.getDeletePollMessage().getOfyKey())
-        .isEqualTo(getOnlyPollMessage("TheRegistrar").createVKey().getOfyKey());
+    assertThat(domain.getDeletePollMessage())
+        .isEqualTo(getOnlyPollMessage("TheRegistrar").createVKey());
     PollMessage.OneTime deletePollMessage = loadByKey(domain.getDeletePollMessage());
     assertThat(deletePollMessage.getMsg()).isEqualTo(expectedMessage);
   }
@@ -841,7 +843,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertPollMessages(
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")
-            .setParent(deleteHistoryEntry)
+            .setHistoryEntry(deleteHistoryEntry)
             .setEventTime(now)
             .setMsg(
                 "Domain example.tld was deleted by registry administrator with final deletion"
@@ -853,7 +855,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .build(),
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")
-            .setParent(deleteHistoryEntry)
+            .setHistoryEntry(deleteHistoryEntry)
             .setEventTime(DateTime.parse("2000-07-11T22:00:00.012Z"))
             .setMsg("Deleted by registry administrator.")
             .setResponseData(

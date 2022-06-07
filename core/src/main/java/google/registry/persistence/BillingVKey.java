@@ -87,7 +87,7 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
 
     /** Creates a {@link BillingEventVKey} instance from the given {@link VKey} instance. */
     public static BillingEventVKey create(@Nullable VKey<BillingEvent.OneTime> vKey) {
-      return vKey == null ? null : create(vKey.getOfyKey());
+      return vKey == null ? null : new BillingEventVKey(null, 0, (Long) vKey.getSqlKey());
     }
   }
 
@@ -129,7 +129,7 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
 
     /** Creates a {@link BillingRecurrenceVKey} instance from the given {@link VKey} instance. */
     public static BillingRecurrenceVKey create(@Nullable VKey<BillingEvent.Recurring> vKey) {
-      return vKey == null ? null : create(vKey.getOfyKey());
+      return vKey == null ? null : new BillingRecurrenceVKey(null, 0, (Long) vKey.getSqlKey());
     }
   }
 }

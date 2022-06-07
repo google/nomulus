@@ -148,7 +148,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
         getPollMessages(domain),
         ImmutableSet.of(
             new PollMessage.OneTime.Builder()
-                .setParent(synthetic)
+                .setHistoryEntry(synthetic)
                 .setRegistrarId("TheRegistrar")
                 .setMsg(
                     "Domain foo.tld was unrenewed by 2 years; "
@@ -156,7 +156,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
                 .setEventTime(unrenewTime)
                 .build(),
             new PollMessage.Autorenew.Builder()
-                .setParent(synthetic)
+                .setHistoryEntry(synthetic)
                 .setTargetId("foo.tld")
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(newExpirationTime)

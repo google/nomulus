@@ -128,7 +128,7 @@ public final class ResourceTransferUtils {
                           createTransferResponse(newResource, newResource.getTransferData()),
                           createPendingTransferNotificationResponse(
                               resource, oldTransferData.getTransferRequestTrid(), false, now)))
-                  .setParent(historyEntry)
+                  .setHistoryEntry(historyEntry)
                   .build());
     }
   }

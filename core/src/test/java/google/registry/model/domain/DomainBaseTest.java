@@ -211,7 +211,7 @@ public class DomainBaseTest extends EntityTestCase {
                             .build())
                     .setDeletePollMessage(onetimePollKey)
                     .setAutorenewBillingEvent(recurringBillKey)
-                    .setAutorenewPollMessage(autorenewPollKey)
+                    .setAutorenewPollMessage(autorenewPollKey, historyEntryKey.getId())
                     .setSmdId("smdid")
                     .addGracePeriod(
                         GracePeriod.create(

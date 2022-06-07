@@ -357,7 +357,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
             .setIdnTableName(validateDomainNameWithIdnTables(domainName))
             .setRegistrationExpirationTime(registrationExpirationTime)
             .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
-            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+            .setAutorenewPollMessage(
+                autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
             .setLaunchNotice(hasClaimsNotice ? launchCreate.get().getNotice() : null)
             .setSmdId(signedMarkId)
             .setDsData(secDnsCreate.map(SecDnsCreateExtension::getDsData).orElse(null))
@@ -576,7 +577,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
         .setRegistrarId(registrarId)
         .setEventTime(registrationExpirationTime)
         .setMsg("Domain was auto-renewed.")
-        .setParentKey(domainHistoryKey)
+        .setDomainRepoId(domainHistoryKey.getParent().getName())
+        .setDomainHistoryRevisionId(domainHistoryKey.getId())
         .build();
   }
 
@@ -608,7 +610,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
             ImmutableList.of(
                 DomainPendingActionNotificationResponse.create(
                     fullyQualifiedDomainName, true, historyEntry.getTrid(), now)))
-        .setParent(historyEntry)
+        .setHistoryEntry(historyEntry)
         .build();
   }
 

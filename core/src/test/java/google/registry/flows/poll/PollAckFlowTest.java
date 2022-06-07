@@ -70,7 +70,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
             .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
   }
 
@@ -83,7 +83,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
             .setAutorenewEndTime(endTime)
             .setMsg("Domain was auto-renewed.")
             .setTargetId("example.com")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
   }
 
@@ -102,7 +102,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
             .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
-            .setParent(createHistoryEntryForEppResource(contact))
+            .setHistoryEntry(createHistoryEntryForEppResource(contact))
             .build());
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("poll_ack_response_empty.xml"));
@@ -117,7 +117,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
             .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
-            .setParent(createHistoryEntryForEppResource(contact))
+            .setHistoryEntry(createHistoryEntryForEppResource(contact))
             .build());
     assertTransactionalFlow(true);
     assertThrows(MessageDoesNotExistException.class, this::runFlow);
@@ -205,7 +205,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
             .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
-            .setParent(createHistoryEntryForEppResource(contact))
+            .setHistoryEntry(createHistoryEntryForEppResource(contact))
             .build());
     assertTransactionalFlow(true);
     assertThrows(InvalidMessageIdException.class, this::runFlow);
@@ -240,7 +240,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
             .setRegistrarId("TheRegistrar")
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     assertTransactionalFlow(true);
     assertThrows(NotAuthorizedToAckMessageException.class, this::runFlow);
@@ -254,7 +254,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
             .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().plusDays(1))
             .setMsg("Some poll message.")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     assertTransactionalFlow(true);
     Exception e = assertThrows(MessageDoesNotExistException.class, this::runFlow);

@@ -63,7 +63,6 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.CommandUseErrorException;
@@ -418,7 +417,7 @@ public class DomainFlowUtils {
     }
   }
 
-  public static void validateNoDuplicateContacts(Set<DesignatedContact> contacts)
+  static void validateNoDuplicateContacts(Set<DesignatedContact> contacts)
       throws ParameterValuePolicyErrorException {
     ImmutableMultimap<Type, VKey<ContactResource>> contactsByType =
         contacts.stream()
@@ -569,6 +568,7 @@ public class DomainFlowUtils {
   public static PollMessage.Autorenew.Builder newAutorenewPollMessage(DomainBase domain) {
     return new PollMessage.Autorenew.Builder()
         .setTargetId(domain.getDomainName())
+        .setDomainRepoId(domain.getRepoId())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(domain.getRegistrationExpirationTime())
         .setMsg("Domain was auto-renewed.");
@@ -592,14 +592,13 @@ public class DomainFlowUtils {
     // where all autorenew poll messages had already been delivered (this would cause the poll
     // message to be deleted), and then subsequently the transfer was canceled, rejected, or deleted
     // (which would cause the poll message to be recreated here).
-    Key<PollMessage.Autorenew> existingAutorenewKey = domain.getAutorenewPollMessage().getOfyKey();
     PollMessage.Autorenew updatedAutorenewPollMessage =
         autorenewPollMessage.isPresent()
             ? autorenewPollMessage.get().asBuilder().setAutorenewEndTime(newEndTime).build()
             : newAutorenewPollMessage(domain)
-                .setId(existingAutorenewKey.getId())
+                .setId((Long) domain.getAutorenewPollMessage().getSqlKey())
                 .setAutorenewEndTime(newEndTime)
-                .setParentKey(existingAutorenewKey.getParent())
+                .setDomainHistoryRevisionId(domain.getAutorenewPollMessageHistoryId())
                 .build();
 
     // If the resultant autorenew poll message would have no poll messages to deliver, then just

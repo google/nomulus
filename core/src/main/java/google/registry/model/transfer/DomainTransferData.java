@@ -112,6 +112,14 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @Column(name = "transfer_autorenew_poll_message_id")
   VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage;
 
+  /**
+   * Autorenew history, which we need to preserve because it's often used in contexts where we don't
+   * haven't loaded the autorenew object.
+   */
+  @Ignore
+  @Column(name = "transfer_autorenew_poll_message_history_id")
+  Long serverApproveAutorenewPollMessageHistoryId;
+
   @Override
   public Builder copyConstantFieldsToBuilder() {
     return super.copyConstantFieldsToBuilder().setTransferPeriod(this.transferPeriod);
@@ -149,6 +157,11 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @Nullable
   public VKey<PollMessage.Autorenew> getServerApproveAutorenewPollMessage() {
     return serverApproveAutorenewPollMessage;
+  }
+
+  @Nullable
+  public Long getServerApproveAutorenewPollMessageHistoryId() {
+    return serverApproveAutorenewPollMessageHistoryId;
   }
 
   @OnLoad

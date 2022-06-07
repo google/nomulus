@@ -83,7 +83,7 @@ public class PollMessageExternalKeyConverterTest {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
     assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("1-2-FOOBAR-4-5-2007");
     assertVKeysEqual(parsePollMessageExternalId("1-2-FOOBAR-4-5-2007"), pollMessage.createVKey());
@@ -100,7 +100,7 @@ public class PollMessageExternalKeyConverterTest {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
     assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("2-5-ROID-6-7-2007");
     assertVKeysEqual(parsePollMessageExternalId("2-5-ROID-6-7-2007"), pollMessage.createVKey());
@@ -117,7 +117,7 @@ public class PollMessageExternalKeyConverterTest {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
     assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("3-5-ROID-6-7-2007");
     assertVKeysEqual(parsePollMessageExternalId("3-5-ROID-6-7-2007"), pollMessage.createVKey());

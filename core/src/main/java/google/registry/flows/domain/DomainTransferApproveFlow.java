@@ -176,7 +176,8 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setEventTime(newExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
-            .setParentKey(domainHistoryKey)
+            .setDomainRepoId(domainHistoryKey.getParent().getName())
+            .setDomainHistoryRevisionId(domainHistoryKey.getId())
             .build();
     // Construct the post-transfer domain.
     DomainBase partiallyApprovedDomain =
@@ -194,7 +195,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .build())
             .setRegistrationExpirationTime(newExpirationTime)
             .setAutorenewBillingEvent(autorenewEvent.createVKey())
-            .setAutorenewPollMessage(gainingClientAutorenewPollMessage.createVKey())
+            .setAutorenewPollMessage(
+                gainingClientAutorenewPollMessage.createVKey(),
+                gainingClientAutorenewPollMessage.getHistoryRevisionId())
             // Remove all the old grace periods and add a new one for the transfer.
             .setGracePeriods(
                 billingEvent

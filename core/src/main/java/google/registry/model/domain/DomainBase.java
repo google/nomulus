@@ -188,7 +188,9 @@ public class DomainBase extends DomainContent implements ForeignKeyedEppResource
     public Builder copyFrom(DomainContent domainContent) {
       this.getInstance().copyUpdateTimestamp(domainContent);
       return this.setAuthInfo(domainContent.getAuthInfo())
-          .setAutorenewPollMessage(domainContent.getAutorenewPollMessage())
+          .setAutorenewPollMessage(
+              domainContent.getAutorenewPollMessage(),
+              domainContent.getAutorenewPollMessageHistoryId())
           .setAutorenewBillingEvent(domainContent.getAutorenewBillingEvent())
           .setAutorenewEndTime(domainContent.getAutorenewEndTime())
           .setContacts(domainContent.getContacts())

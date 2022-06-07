@@ -333,9 +333,10 @@ public class DomainBaseToXjcConverterTest {
                             .setEventTime(END_OF_TIME)
                             .setAutorenewEndTime(END_OF_TIME)
                             .setMsg("Domain was auto-renewed.")
-                            .setParent(domainHistory)
+                            .setHistoryEntry(domainHistory)
                             .build())
-                    .createVKey())
+                    .createVKey(),
+                domainHistory.getId())
             .setTransferData(
                 new DomainTransferData.Builder()
                     .setGainingRegistrarId("NewRegistrar")
@@ -362,7 +363,7 @@ public class DomainBaseToXjcConverterTest {
                                     .setEventTime(END_OF_TIME)
                                     .setAutorenewEndTime(END_OF_TIME)
                                     .setMsg("Domain was auto-renewed.")
-                                    .setParent(domainHistory)
+                                    .setHistoryEntry(domainHistory)
                                     .build())
                             .createVKey())
                     .setServerApproveEntities(ImmutableSet.of(billingEvent.createVKey()))

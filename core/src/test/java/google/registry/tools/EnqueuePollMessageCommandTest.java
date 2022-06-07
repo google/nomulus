@@ -75,7 +75,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "TheRegistrar",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain is bad")
             .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
@@ -107,7 +107,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "TheRegistrar",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
@@ -115,7 +115,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "NewRegistrar",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("NewRegistrar")
             .setEventTime(fakeClock.nowUtc())
@@ -123,7 +123,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "foobaz",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("foobaz")
             .setEventTime(fakeClock.nowUtc())
@@ -152,7 +152,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "TheRegistrar",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
@@ -160,7 +160,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "NewRegistrar",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("NewRegistrar")
             .setEventTime(fakeClock.nowUtc())
@@ -168,7 +168,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "foobaz",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("foobaz")
             .setEventTime(fakeClock.nowUtc())

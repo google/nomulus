@@ -367,7 +367,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
 
     return Optional.ofNullable(
         new PollMessage.OneTime.Builder()
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .setEventTime(now)
             .setRegistrarId(existingDomain.getCurrentSponsorRegistrarId())
             .setMsg(msg)

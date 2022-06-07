@@ -173,7 +173,8 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
         newAutorenewPollMessage(existingDomain)
             .setEventTime(newExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)
-            .setParentKey(domainHistoryKey)
+            .setDomainRepoId(domainHistoryKey.getParent().getName())
+            .setDomainHistoryRevisionId(domainHistoryKey.getId())
             .build();
     DomainBase newDomain =
         performRestore(
@@ -245,7 +246,8 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
         .setGracePeriods(null)
         .setDeletePollMessage(null)
         .setAutorenewBillingEvent(autorenewEvent.createVKey())
-        .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+        .setAutorenewPollMessage(
+            autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
         // Clear the autorenew end time so if it had expired but is now explicitly being restored,
         // it won't immediately be deleted again.
         .setAutorenewEndTime(Optional.empty())

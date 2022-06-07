@@ -422,14 +422,14 @@ public class DomainBaseSqlTest {
             .setId(300L)
             .setRegistrarId("registrar1")
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build();
     PollMessage.OneTime deletePollMessage =
         new PollMessage.OneTime.Builder()
             .setId(400L)
             .setRegistrarId("registrar1")
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build();
     BillingEvent.OneTime oneTimeBillingEvent =
         new BillingEvent.OneTime.Builder()
@@ -469,7 +469,8 @@ public class DomainBaseSqlTest {
         domain
             .asBuilder()
             .setAutorenewBillingEvent(billEvent.createVKey())
-            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+            .setAutorenewPollMessage(
+                autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
             .setDeletePollMessage(deletePollMessage.createVKey())
             .setTransferData(transferData)
             .setGracePeriods(gracePeriods)
@@ -548,14 +549,14 @@ public class DomainBaseSqlTest {
             .setId(300L)
             .setRegistrarId("registrar1")
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build();
     PollMessage.OneTime deletePollMessage =
         new PollMessage.OneTime.Builder()
             .setId(400L)
             .setRegistrarId("registrar1")
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build();
     BillingEvent.OneTime oneTimeBillingEvent =
         new BillingEvent.OneTime.Builder()
@@ -601,7 +602,8 @@ public class DomainBaseSqlTest {
             .setAutorenewBillingEvent(
                 createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId()))
             .setAutorenewPollMessage(
-                createLegacyVKey(PollMessage.Autorenew.class, autorenewPollMessage.getId()))
+                createLegacyVKey(PollMessage.Autorenew.class, autorenewPollMessage.getId()),
+                autorenewPollMessage.getHistoryRevisionId())
             .setDeletePollMessage(
                 createLegacyVKey(PollMessage.OneTime.class, deletePollMessage.getId()))
             .setTransferData(transferData)

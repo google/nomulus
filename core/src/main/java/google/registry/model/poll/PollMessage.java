@@ -14,10 +14,8 @@
 
 package google.registry.model.poll;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.util.CollectionUtils.forceEmptyToNull;
-import static google.registry.util.CollectionUtils.isNullOrEmpty;
-import static google.registry.util.CollectionUtils.nullToEmpty;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -28,18 +26,19 @@ import com.googlecode.objectify.annotation.EntitySubclass;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.annotation.OnLoad;
-import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainRenewData;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
+import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PendingActionNotificationResponse.ContactPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
@@ -51,7 +50,7 @@ import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithLongVKey;
-import java.util.List;
+import google.registry.util.NullSafeCollectionBuilder;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
@@ -63,7 +62,6 @@ import javax.persistence.Embedded;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.PostLoad;
-import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -100,13 +98,49 @@ import org.joda.time.DateTime;
 public abstract class PollMessage extends ImmutableObject
     implements Buildable, TransferServerApproveEntity, UnsafeSerializable {
 
+  /** Indicates the type of entity the poll message is for. */
+  public enum Type {
+    DOMAIN(1L, DomainBase.class),
+    CONTACT(2L, ContactResource.class),
+    HOST(3L, HostResource.class);
+
+    private final long id;
+    private final Class<?> clazz;
+
+    Type(long id, Class<?> clazz) {
+      this.id = id;
+      this.clazz = clazz;
+    }
+
+    public long getId() {
+      return id;
+    }
+
+    /** Returns the class of the underlying resource for the poll message type. */
+    public Class<?> getResourceClass() {
+      return clazz;
+    }
+
+    /**
+     * Returns the type specified by the identifer, {@code Optional.empty()} if the id is out of
+     * range.
+     */
+    public static Optional<Type> fromId(long id) {
+      for (Type val : values()) {
+        if (val.id == id) {
+          return Optional.of(val);
+        }
+      }
+
+      return Optional.empty();
+    }
+  }
+
   /** Entity id. */
   @Id
   @javax.persistence.Id
   @Column(name = "poll_message_id")
   Long id;
-
-  @Parent @DoNotHydrate @Transient Key<? extends HistoryEntry> parent;
 
   /** The registrar that this poll message will be delivered to. */
   @Index
@@ -134,10 +168,6 @@ public abstract class PollMessage extends ImmutableObject
 
   @Ignore Long hostHistoryRevisionId;
 
-  public Key<? extends HistoryEntry> getParentKey() {
-    return parent;
-  }
-
   public Long getId() {
     return id;
   }
@@ -154,35 +184,70 @@ public abstract class PollMessage extends ImmutableObject
     return msg;
   }
 
+  /**
+   * Returns the domain repo id.
+   *
+   * <p>This may only be used on a Domain poll event.
+   */
+  public String getDomainRepoId() {
+    checkArgument(getType() == Type.DOMAIN);
+    return domainRepoId;
+  }
+
+  /**
+   * Returns the contact repo id.
+   *
+   * <p>This may only be used on a ContactResource poll event.
+   */
+  public String getContactRepoId() {
+    checkArgument(getType() == Type.CONTACT);
+    return contactRepoId;
+  }
+
+  /**
+   * Returns the host repo id.
+   *
+   * <p>This may only be used on a HostResource poll event.
+   */
+  public String getHostRepoId() {
+    checkArgument(getType() == Type.DOMAIN);
+    return hostRepoId;
+  }
+
+  /**
+   * Gets the name of the underlying resource that the PollMessage is for, regardless of the type of
+   * the resource.
+   */
+  public String getResourceName() {
+    return domainRepoId != null
+        ? domainRepoId
+        : (contactRepoId != null ? contactRepoId : hostRepoId);
+  }
+
+  public Long getDomainHistoryRevisionId() {
+    return domainHistoryRevisionId;
+  }
+
+  public Long getContactHistoryRevisionId() {
+    return contactHistoryRevisionId;
+  }
+
+  public Long getHostHistoryRevisionId() {
+    return hostHistoryRevisionId;
+  }
+
+  /** Gets the underlying history revision id, regardless of the type of the resource. */
+  public Long getHistoryRevisionId() {
+    return domainHistoryRevisionId != null
+        ? domainHistoryRevisionId
+        : (contactHistoryRevisionId != null ? contactHistoryRevisionId : hostHistoryRevisionId);
+  }
+
+  public Type getType() {
+    return domainRepoId != null ? Type.DOMAIN : (contactRepoId != null ? Type.CONTACT : Type.HOST);
+  }
+
   public abstract ImmutableList<ResponseData> getResponseData();
-
-  @PostLoad
-  void postLoad() {
-    if (domainRepoId != null) {
-      parent =
-          Key.create(
-              Key.create(DomainBase.class, domainRepoId),
-              HistoryEntry.class,
-              domainHistoryRevisionId);
-    } else if (contactRepoId != null) {
-      parent =
-          Key.create(
-              Key.create(ContactResource.class, contactRepoId),
-              HistoryEntry.class,
-              contactHistoryRevisionId);
-    } else if (hostHistoryRevisionId != null) {
-      parent =
-          Key.create(
-              Key.create(HostResource.class, hostRepoId),
-              HistoryEntry.class,
-              hostHistoryRevisionId);
-    }
-  }
-
-  @OnLoad
-  void onLoad() {
-    setSqlForeignKeys(this);
-  }
 
   @Override
   public abstract VKey<? extends PollMessage> createVKey();
@@ -234,14 +299,69 @@ public abstract class PollMessage extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setParent(HistoryEntry parent) {
-      getInstance().parent = Key.create(parent);
+    public B setDomainRepoId(String revisionId) {
+      getInstance().domainRepoId = revisionId;
       return thisCastToDerived();
     }
 
-    public B setParentKey(Key<? extends HistoryEntry> parentKey) {
-      getInstance().parent = parentKey;
+    public B setContactRepoId(String revisionId) {
+      getInstance().contactRepoId = revisionId;
       return thisCastToDerived();
+    }
+
+    public B setHostRepoId(String revisionId) {
+      getInstance().hostRepoId = revisionId;
+      return thisCastToDerived();
+    }
+
+    public B setDomainHistoryRevisionId(Long revisionId) {
+      getInstance().domainHistoryRevisionId = revisionId;
+      return thisCastToDerived();
+    }
+
+    public B setContactHistoryRevisionId(Long revisionId) {
+      getInstance().contactHistoryRevisionId = revisionId;
+      return thisCastToDerived();
+    }
+
+    public B setHostHistoryRevisionId(Long revisionId) {
+      getInstance().hostHistoryRevisionId = revisionId;
+      return thisCastToDerived();
+    }
+
+    public B setHistoryEntry(HistoryEntry history) {
+      // Set the appropriate field based on the history entry type.
+      if (history instanceof DomainHistory) {
+        setDomainRepoId(((DomainHistory) history).getDomainRepoId());
+        return setDomainHistoryRevisionId(history.getId());
+      } else if (history instanceof ContactHistory) {
+        setContactRepoId(((ContactHistory) history).getContactRepoId());
+        return setContactHistoryRevisionId(history.getId());
+      } else if (history instanceof HostHistory) {
+        setHostRepoId(((HostHistory) history).getHostRepoId());
+        return setHostHistoryRevisionId(history.getId());
+      }
+      return thisCastToDerived();
+    }
+
+    /**
+     * Given an array containing pairs of objects, verifies that both members of exactly one of the
+     * pairs is non-null.
+     */
+    private boolean exactlyOnePairNonNull(Object... pairs) {
+      int count = 0;
+      for (int i = 0; i < pairs.length; i += 2) {
+        // Add the number of non-null elements of each pair, after which the count should either be
+        // zero (a non-null pair hasn't been found yet) or two (exactly one non-null pair has been
+        // found).
+        count += (pairs[i] != null ? 1 : 0) + (pairs[i + 1] != null ? 1 : 0);
+        if (count != 0 && count != 2) {
+          return false;
+        }
+      }
+
+      // Verify that we've found a non-null pair.
+      return count == 2;
     }
 
     @Override
@@ -249,28 +369,18 @@ public abstract class PollMessage extends ImmutableObject
       T instance = getInstance();
       checkArgumentNotNull(instance.clientId, "clientId must be specified");
       checkArgumentNotNull(instance.eventTime, "eventTime must be specified");
-      checkArgumentNotNull(instance.parent, "parent must be specified");
-      checkArgumentNotNull(instance.parent.getParent(), "parent.getParent() must be specified");
-      setSqlForeignKeys(instance);
+      checkState(
+          exactlyOnePairNonNull(
+              instance.domainRepoId,
+              instance.domainHistoryRevisionId,
+              instance.contactRepoId,
+              instance.contactHistoryRevisionId,
+              instance.hostRepoId,
+              instance.hostHistoryRevisionId),
+          "the repo id and history revision id must be defined for exactly one of domain, "
+              + "contact or host: "
+              + instance);
       return super.build();
-    }
-  }
-
-  private static void setSqlForeignKeys(PollMessage pollMessage) {
-    String grandparentKind = pollMessage.parent.getParent().getKind();
-    String repoId = pollMessage.parent.getParent().getName();
-    long historyRevisionId = pollMessage.parent.getId();
-    if (Key.getKind(DomainBase.class).equals(grandparentKind)) {
-      pollMessage.domainRepoId = repoId;
-      pollMessage.domainHistoryRevisionId = historyRevisionId;
-    } else if (Key.getKind(ContactResource.class).equals(grandparentKind)) {
-      pollMessage.contactRepoId = repoId;
-      pollMessage.contactHistoryRevisionId = historyRevisionId;
-    } else if (Key.getKind(HostResource.class).equals(grandparentKind)) {
-      pollMessage.hostRepoId = repoId;
-      pollMessage.hostHistoryRevisionId = historyRevisionId;
-    } else {
-      throw new IllegalArgumentException("Unknown grandparent kind: " + grandparentKind);
     }
   }
 
@@ -284,20 +394,6 @@ public abstract class PollMessage extends ImmutableObject
   @DiscriminatorValue("ONE_TIME")
   @WithLongVKey(compositeKey = true)
   public static class OneTime extends PollMessage {
-
-    // Response data. Objectify cannot persist a base class type, so we must have a separate field
-    // to hold every possible derived type of ResponseData that we might store.
-    @Transient
-    List<ContactPendingActionNotificationResponse> contactPendingActionNotificationResponses;
-
-    @Transient List<ContactTransferResponse> contactTransferResponses;
-
-    @Transient @ImmutableObject.DoNotCompare
-    List<DomainPendingActionNotificationResponse> domainPendingActionNotificationResponses;
-
-    @Transient @ImmutableObject.DoNotCompare List<DomainTransferResponse> domainTransferResponses;
-
-    @Transient List<HostPendingActionNotificationResponse> hostPendingActionNotificationResponses;
 
     @Ignore
     @Embedded
@@ -379,78 +475,38 @@ public abstract class PollMessage extends ImmutableObject
 
     @Override
     public ImmutableList<ResponseData> getResponseData() {
-      return new ImmutableList.Builder<ResponseData>()
-          .addAll(nullToEmpty(contactPendingActionNotificationResponses))
-          .addAll(nullToEmpty(contactTransferResponses))
-          .addAll(nullToEmpty(domainPendingActionNotificationResponses))
-          .addAll(nullToEmpty(domainTransferResponses))
-          .addAll(nullToEmpty(hostPendingActionNotificationResponses))
+      return NullSafeCollectionBuilder.create(new ImmutableList.Builder<ResponseData>())
+          .add(pendingActionNotificationResponse)
+          .add(transferResponse)
+          .getBuilder()
           .build();
     }
 
-    @Override
-    @OnLoad
-    void onLoad() {
-      super.onLoad();
-      // Take the Objectify-specific fields and map them to the SQL-specific fields, if applicable
-      if (!isNullOrEmpty(contactPendingActionNotificationResponses)) {
-        contactId = contactPendingActionNotificationResponses.get(0).getId().value;
-        pendingActionNotificationResponse = contactPendingActionNotificationResponses.get(0);
-      }
-      if (!isNullOrEmpty(hostPendingActionNotificationResponses)) {
-        hostId = hostPendingActionNotificationResponses.get(0).nameOrId.value;
-        pendingActionNotificationResponse = hostPendingActionNotificationResponses.get(0);
-      }
-      if (!isNullOrEmpty(contactTransferResponses)) {
-        contactId = contactTransferResponses.get(0).getContactId();
-        transferResponse = contactTransferResponses.get(0);
-      }
-      if (!isNullOrEmpty(domainPendingActionNotificationResponses)) {
-        pendingActionNotificationResponse = domainPendingActionNotificationResponses.get(0);
-        fullyQualifiedDomainName = pendingActionNotificationResponse.nameOrId.value;
-      }
-      if (!isNullOrEmpty(domainTransferResponses)) {
-        fullyQualifiedDomainName = domainTransferResponses.get(0).getFullyQualifiedDomainName();
-        transferResponse = domainTransferResponses.get(0);
-        extendedRegistrationExpirationTime =
-            domainTransferResponses.get(0).getExtendedRegistrationExpirationTime();
-      }
-    }
-
-    @Override
     @PostLoad
     void postLoad() {
-      super.postLoad();
-      // Take the SQL-specific fields and map them to the Objectify-specific fields, if applicable
       if (pendingActionNotificationResponse != null) {
+        // Promote the pending action notification response to its specialized type.
         if (contactId != null) {
-          ContactPendingActionNotificationResponse contactPendingResponse =
+          pendingActionNotificationResponse =
               ContactPendingActionNotificationResponse.create(
                   pendingActionNotificationResponse.nameOrId.value,
                   pendingActionNotificationResponse.getActionResult(),
                   pendingActionNotificationResponse.getTrid(),
                   pendingActionNotificationResponse.processedDate);
-          pendingActionNotificationResponse = contactPendingResponse;
-          contactPendingActionNotificationResponses = ImmutableList.of(contactPendingResponse);
         } else if (fullyQualifiedDomainName != null) {
-          DomainPendingActionNotificationResponse domainPendingResponse =
+          pendingActionNotificationResponse =
               DomainPendingActionNotificationResponse.create(
                   pendingActionNotificationResponse.nameOrId.value,
                   pendingActionNotificationResponse.getActionResult(),
                   pendingActionNotificationResponse.getTrid(),
                   pendingActionNotificationResponse.processedDate);
-          pendingActionNotificationResponse = domainPendingResponse;
-          domainPendingActionNotificationResponses = ImmutableList.of(domainPendingResponse);
         } else if (hostId != null) {
-          HostPendingActionNotificationResponse hostPendingActionNotificationResponse =
+          pendingActionNotificationResponse =
               HostPendingActionNotificationResponse.create(
                   pendingActionNotificationResponse.nameOrId.value,
                   pendingActionNotificationResponse.getActionResult(),
                   pendingActionNotificationResponse.getTrid(),
                   pendingActionNotificationResponse.processedDate);
-          pendingActionNotificationResponse = hostPendingActionNotificationResponse;
-          hostPendingActionNotificationResponses =
-              ImmutableList.of(hostPendingActionNotificationResponse);
         }
       }
       if (transferResponse != null) {
@@ -467,7 +523,6 @@ public abstract class PollMessage extends ImmutableObject
                   .setPendingTransferExpirationTime(
                       transferResponse.getPendingTransferExpirationTime())
                   .build();
-          contactTransferResponses = ImmutableList.of((ContactTransferResponse) transferResponse);
         } else if (fullyQualifiedDomainName != null) {
           transferResponse =
               new DomainTransferResponse.Builder()
@@ -480,7 +535,6 @@ public abstract class PollMessage extends ImmutableObject
                       transferResponse.getPendingTransferExpirationTime())
                   .setExtendedRegistrationExpirationTime(extendedRegistrationExpirationTime)
                   .build();
-          domainTransferResponses = ImmutableList.of((DomainTransferResponse) transferResponse);
         }
       }
     }
@@ -497,66 +551,52 @@ public abstract class PollMessage extends ImmutableObject
 
       public Builder setResponseData(ImmutableList<? extends ResponseData> responseData) {
         OneTime instance = getInstance();
-        instance.contactPendingActionNotificationResponses =
-            forceEmptyToNull(
-                responseData.stream()
-                    .filter(ContactPendingActionNotificationResponse.class::isInstance)
-                    .map(ContactPendingActionNotificationResponse.class::cast)
-                    .collect(toImmutableList()));
+        // Note: In its current form, the code will basically just ignore everything but the first
+        // PendingActionNotificationResponse and TransferResponse in responseData, and will override
+        // any identifier fields (e.g. contactId, fullyQualifiedDomainName) obtained from the
+        // PendingActionNotificationResponse if a TransferResponse is found with different values
+        // for those fields.  It is not clear what the constraints should be on this data or
+        // whether we should enforce them here, though historically we have not, so the current
+        // implementation doesn't.
 
-        instance.contactTransferResponses =
-            forceEmptyToNull(
-                responseData.stream()
-                    .filter(ContactTransferResponse.class::isInstance)
-                    .map(ContactTransferResponse.class::cast)
-                    .collect(toImmutableList()));
+        // Extract the first PendingActionNotificationResponse element from the list if there is
+        // one.
+        instance.pendingActionNotificationResponse =
+            responseData.stream()
+                .filter(PendingActionNotificationResponse.class::isInstance)
+                .map(PendingActionNotificationResponse.class::cast)
+                .findFirst()
+                .orElse(null);
 
-        instance.domainPendingActionNotificationResponses =
-            forceEmptyToNull(
-                responseData.stream()
-                    .filter(DomainPendingActionNotificationResponse.class::isInstance)
-                    .map(DomainPendingActionNotificationResponse.class::cast)
-                    .collect(toImmutableList()));
-        instance.domainTransferResponses =
-            forceEmptyToNull(
-                responseData.stream()
-                    .filter(DomainTransferResponse.class::isInstance)
-                    .map(DomainTransferResponse.class::cast)
-                    .collect(toImmutableList()));
-
-        instance.hostPendingActionNotificationResponses =
-            forceEmptyToNull(
-                responseData.stream()
-                    .filter(HostPendingActionNotificationResponse.class::isInstance)
-                    .map(HostPendingActionNotificationResponse.class::cast)
-                    .collect(toImmutableList()));
-
-        // Set the generic pending-action field as appropriate
-        if (instance.contactPendingActionNotificationResponses != null) {
-          instance.pendingActionNotificationResponse =
-              instance.contactPendingActionNotificationResponses.get(0);
-          instance.contactId =
-              instance.contactPendingActionNotificationResponses.get(0).nameOrId.value;
-        } else if (instance.domainPendingActionNotificationResponses != null) {
-          instance.pendingActionNotificationResponse =
-              instance.domainPendingActionNotificationResponses.get(0);
+        // Set identifier fields based on the type of the notification response.
+        if (instance.pendingActionNotificationResponse
+            instanceof ContactPendingActionNotificationResponse) {
+          instance.contactId = instance.pendingActionNotificationResponse.nameOrId.value;
+        } else if (instance.pendingActionNotificationResponse
+            instanceof DomainPendingActionNotificationResponse) {
           instance.fullyQualifiedDomainName =
-              instance.domainPendingActionNotificationResponses.get(0).nameOrId.value;
-        } else if (instance.hostPendingActionNotificationResponses != null) {
-          instance.pendingActionNotificationResponse =
-              instance.hostPendingActionNotificationResponses.get(0);
-          instance.hostId = instance.hostPendingActionNotificationResponses.get(0).nameOrId.value;
+              instance.pendingActionNotificationResponse.nameOrId.value;
+        } else if (instance.pendingActionNotificationResponse
+            instanceof HostPendingActionNotificationResponse) {
+          instance.hostId = instance.pendingActionNotificationResponse.nameOrId.value;
         }
-        // Set the generic transfer response field as appropriate
-        if (instance.contactTransferResponses != null) {
-          instance.contactId = getInstance().contactTransferResponses.get(0).getContactId();
-          instance.transferResponse = getInstance().contactTransferResponses.get(0);
-        } else if (instance.domainTransferResponses != null) {
-          instance.fullyQualifiedDomainName =
-              instance.domainTransferResponses.get(0).getFullyQualifiedDomainName();
-          instance.transferResponse = getInstance().domainTransferResponses.get(0);
+
+        // Extract the first TransferResponse from the list.
+        instance.transferResponse =
+            responseData.stream()
+                .filter(TransferResponse.class::isInstance)
+                .map(TransferResponse.class::cast)
+                .findFirst()
+                .orElse(null);
+
+        // Set the identifier according to the TransferResponse type.
+        if (instance.transferResponse instanceof ContactTransferResponse) {
+          instance.contactId = ((ContactTransferResponse) instance.transferResponse).getContactId();
+        } else if (instance.transferResponse instanceof DomainTransferResponse) {
+          DomainTransferResponse response = (DomainTransferResponse) instance.transferResponse;
+          instance.fullyQualifiedDomainName = response.getFullyQualifiedDomainName();
           instance.extendedRegistrationExpirationTime =
-              instance.domainTransferResponses.get(0).getExtendedRegistrationExpirationTime();
+              response.getExtendedRegistrationExpirationTime();
         }
         return this;
       }

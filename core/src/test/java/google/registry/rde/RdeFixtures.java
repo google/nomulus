@@ -174,9 +174,10 @@ final class RdeFixtures {
                             .setEventTime(END_OF_TIME)
                             .setAutorenewEndTime(END_OF_TIME)
                             .setMsg("Domain was auto-renewed.")
-                            .setParent(historyEntry)
+                            .setHistoryEntry(historyEntry)
                             .build())
-                    .createVKey())
+                    .createVKey(),
+                historyEntry.getId())
             .setTransferData(
                 new DomainTransferData.Builder()
                     .setGainingRegistrarId("gaining")
@@ -203,7 +204,7 @@ final class RdeFixtures {
                                     .setEventTime(END_OF_TIME)
                                     .setAutorenewEndTime(END_OF_TIME)
                                     .setMsg("Domain was auto-renewed.")
-                                    .setParent(historyEntry)
+                                    .setHistoryEntry(historyEntry)
                                     .build())
                             .createVKey())
                     .setServerApproveEntities(ImmutableSet.of(billingEvent.createVKey()))

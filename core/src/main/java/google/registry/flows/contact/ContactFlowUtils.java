@@ -84,7 +84,8 @@ public class ContactFlowUtils {
                     transferData.getTransferStatus().isApproved(),
                     transferData.getTransferRequestTrid(),
                     now)))
-        .setParentKey(contactHistoryKey)
+        .setContactRepoId(contactHistoryKey.getParent().getName())
+        .setContactHistoryRevisionId(contactHistoryKey.getId())
         .build();
   }
 
@@ -96,7 +97,8 @@ public class ContactFlowUtils {
         .setEventTime(transferData.getPendingTransferExpirationTime())
         .setMsg(transferData.getTransferStatus().getMessage())
         .setResponseData(ImmutableList.of(createTransferResponse(targetId, transferData)))
-        .setParentKey(contactHistoryKey)
+        .setContactRepoId(contactHistoryKey.getParent().getName())
+        .setContactHistoryRevisionId(contactHistoryKey.getId())
         .build();
   }
 

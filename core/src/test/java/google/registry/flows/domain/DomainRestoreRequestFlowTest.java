@@ -139,7 +139,7 @@ class DomainRestoreRequestFlowTest
                         new PollMessage.OneTime.Builder()
                             .setRegistrarId("TheRegistrar")
                             .setEventTime(clock.nowUtc().plusDays(5))
-                            .setParent(historyEntry)
+                            .setHistoryEntry(historyEntry)
                             .build())
                     .createVKey())
             .build());
@@ -202,7 +202,7 @@ class DomainRestoreRequestFlowTest
             .setEventTime(domain.getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
-            .setParent(historyEntryDomainRestore)
+            .setHistoryEntry(historyEntryDomainRestore)
             .build());
     // There should be a onetime for the restore and a new recurring billing event, but no renew
     // onetime.
@@ -271,7 +271,7 @@ class DomainRestoreRequestFlowTest
             .setEventTime(domain.getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
-            .setParent(historyEntryDomainRestore)
+            .setHistoryEntry(historyEntryDomainRestore)
             .build());
     // There should be a bill for the restore and an explicit renew, along with a new recurring
     // autorenew event.

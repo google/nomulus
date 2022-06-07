@@ -169,7 +169,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
                         .setEventTime(expirationTime)
                         .setAutorenewEndTime(END_OF_TIME)
                         .setMsg("Domain was auto-renewed.")
-                        .setParent(historyEntryDomainCreate)
+                        .setHistoryEntry(historyEntryDomainCreate)
                         .build();
                 DomainBase newDomain =
                     domain
@@ -177,7 +177,9 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
                         .setRegistrationExpirationTime(expirationTime)
                         .setStatusValues(ImmutableSet.copyOf(statusValues))
                         .setAutorenewBillingEvent(autorenewEvent.createVKey())
-                        .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+                        .setAutorenewPollMessage(
+                            autorenewPollMessage.createVKey(),
+                            autorenewPollMessage.getHistoryRevisionId())
                         .build();
                 persistResources(
                     ImmutableSet.of(
@@ -307,7 +309,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .setEventTime(domain.getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
-            .setParent(historyEntryDomainRenew)
+            .setHistoryEntry(historyEntryDomainRenew)
             .build());
     assertGracePeriods(
         domain.getGracePeriods(),
@@ -647,7 +649,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .setEventTime(expirationTime.minusYears(1))
             .setAutorenewEndTime(clock.nowUtc())
             .setMsg("Domain was auto-renewed.")
-            .setParent(
+            .setHistoryEntry(
                 getOnlyHistoryEntryOfType(
                     reloadResourceByForeignKey(), HistoryEntry.Type.DOMAIN_CREATE))
             .build(),
@@ -657,7 +659,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .setEventTime(reloadResourceByForeignKey().getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
-            .setParent(historyEntryDomainRenew)
+            .setHistoryEntry(historyEntryDomainRenew)
             .build());
   }
 

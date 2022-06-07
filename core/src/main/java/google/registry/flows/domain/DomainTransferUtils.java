@@ -180,7 +180,8 @@ public final class DomainTransferUtils {
                     transferData.getTransferStatus().isApproved(),
                     transferData.getTransferRequestTrid(),
                     now)))
-        .setParentKey(domainHistoryKey)
+        .setDomainRepoId(domainHistoryKey.getParent().getName())
+        .setDomainHistoryRevisionId(domainHistoryKey.getId())
         .build();
   }
 
@@ -197,7 +198,8 @@ public final class DomainTransferUtils {
         .setResponseData(
             ImmutableList.of(
                 createTransferResponse(targetId, transferData, extendedRegistrationExpirationTime)))
-        .setParentKey(domainHistoryKey)
+        .setDomainRepoId(domainHistoryKey.getParent().getName())
+        .setDomainHistoryRevisionId(domainHistoryKey.getId())
         .build();
   }
 
@@ -228,7 +230,8 @@ public final class DomainTransferUtils {
         .setEventTime(serverApproveNewExpirationTime)
         .setAutorenewEndTime(END_OF_TIME)
         .setMsg("Domain was auto-renewed.")
-        .setParentKey(domainHistoryKey)
+        .setDomainRepoId(domainHistoryKey.getParent().getName())
+        .setDomainHistoryRevisionId(domainHistoryKey.getId())
         .build();
   }
 
