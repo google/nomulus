@@ -17,8 +17,6 @@ package google.registry.flows;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
-import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.EppMetricSubject.assertThat;
@@ -26,7 +24,6 @@ import static google.registry.testing.HostResourceSubject.assertAboutHosts;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.eppoutput.Result;
 import google.registry.model.host.HostResource;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
@@ -82,24 +79,15 @@ class EppLifecycleHostTest extends EppTestCase {
         .hasCommandName("HostInfo")
         .and()
         .hasStatus(SUCCESS);
-    Result.Code deleteResultCode;
-    if (tm().isOfy()) {
-      assertThatCommand("host_delete.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"))
-          .atTime("2000-06-02T00:03:00Z")
-          .hasResponse("generic_success_action_pending_response.xml");
-      deleteResultCode = SUCCESS_WITH_ACTION_PENDING;
-    } else {
-      assertThatCommand("host_delete.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"))
-          .atTime("2000-06-02T00:03:00Z")
-          .hasResponse("generic_success_response.xml");
-      deleteResultCode = SUCCESS;
-    }
+    assertThatCommand("host_delete.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"))
+        .atTime("2000-06-02T00:03:00Z")
+        .hasResponse("generic_success_response.xml");
     assertThat(getRecordedEppMetric())
         .hasClientId("NewRegistrar")
         .and()
         .hasCommandName("HostDelete")
         .and()
-        .hasStatus(deleteResultCode);
+        .hasStatus(SUCCESS);
     assertThatLogoutSucceeds();
   }
 

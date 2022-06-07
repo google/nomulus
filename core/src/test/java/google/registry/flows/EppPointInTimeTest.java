@@ -148,19 +148,12 @@ class EppPointInTimeTest {
         .isEqualExceptFields(domainAfterCreate, "updateTimestamp");
 
     tm().clearSessionCache();
-    if (tm().isOfy()) {
-      // Both updates happened on the same day. Since the revisions field has day granularity in
-      // Datastore, the key to the first update should have been overwritten by the second, and its
-      // timestamp rolled forward. So we have to fall back to the last revision before midnight.
-      assertThat(loadAtPointInTime(latest, timeAtFirstUpdate)).isEqualTo(domainAfterCreate);
-    } else {
-      // In SQL, however, we are not limited by the day granularity, so when we request the object
-      // at timeAtFirstUpdate we should receive the object at that first update, even though the
-      // second update occurred one millisecond later.
-      assertAboutImmutableObjects()
-          .that(loadAtPointInTime(latest, timeAtFirstUpdate))
-          .isEqualExceptFields(domainAfterFirstUpdate, "updateTimestamp");
-    }
+    // In SQL, we are not limited by the day granularity, so when we request the object
+    // at timeAtFirstUpdate we should receive the object at that first update, even though the
+    // second update occurred one millisecond later.
+    assertAboutImmutableObjects()
+        .that(loadAtPointInTime(latest, timeAtFirstUpdate))
+        .isEqualExceptFields(domainAfterFirstUpdate, "updateTimestamp");
 
     tm().clearSessionCache();
     assertAboutImmutableObjects()

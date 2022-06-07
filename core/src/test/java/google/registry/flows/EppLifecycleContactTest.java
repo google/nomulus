@@ -16,13 +16,10 @@ package google.registry.flows;
 
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACK_MESSAGE;
-import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_NO_MESSAGES;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.EppMetricSubject.assertThat;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.eppoutput.Result;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
@@ -65,22 +62,14 @@ class EppLifecycleContactTest extends EppTestCase {
         .hasCommandName("ContactInfo")
         .and()
         .hasStatus(SUCCESS);
-    Result.Code deleteResultCode;
-    if (tm().isOfy()) {
-      assertThatCommand("contact_delete_sh8013.xml")
-          .hasResponse("contact_delete_response_sh8013_pending.xml");
-      deleteResultCode = SUCCESS_WITH_ACTION_PENDING;
-    } else {
-      assertThatCommand("contact_delete_sh8013.xml")
-          .hasResponse("contact_delete_response_sh8013.xml");
-      deleteResultCode = SUCCESS;
-    }
+    assertThatCommand("contact_delete_sh8013.xml")
+        .hasResponse("contact_delete_response_sh8013.xml");
     assertThat(getRecordedEppMetric())
         .hasClientId("NewRegistrar")
         .and()
         .hasCommandName("ContactDelete")
         .and()
-        .hasStatus(deleteResultCode);
+        .hasStatus(SUCCESS);
     assertThatLogoutSucceeds();
   }
 

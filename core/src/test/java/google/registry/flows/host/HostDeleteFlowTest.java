@@ -16,7 +16,6 @@ package google.registry.flows.host;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
@@ -47,7 +46,6 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.tld.Registry;
@@ -86,11 +84,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
   @TestOfyAndSql
   void testDryRun() throws Exception {
     persistActiveHost("ns1.example.tld");
-    if (tm().isOfy()) {
-      dryRunFlowAssertResponse(loadFile("host_delete_response_pending.xml"));
-    } else {
-      dryRunFlowAssertResponse(loadFile("host_delete_response.xml"));
-    }
+    dryRunFlowAssertResponse(loadFile("host_delete_response.xml"));
   }
 
   @TestOfyAndSql
@@ -98,13 +92,8 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     persistActiveHost("ns1.example.tld");
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
-    if (tm().isOfy()) {
-      runFlowAssertResponse(loadFile("host_delete_response_pending.xml"));
-      assertOfyDeleteSuccess();
-    } else {
-      runFlowAssertResponse(loadFile("host_delete_response.xml"));
-      assertSqlDeleteSuccess();
-    }
+    runFlowAssertResponse(loadFile("host_delete_response.xml"));
+    assertSqlDeleteSuccess();
   }
 
   @TestOfyAndSql
@@ -113,13 +102,8 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     persistActiveHost("ns1.example.tld");
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
-    if (tm().isOfy()) {
-      runFlowAssertResponse(loadFile("host_delete_response_no_cltrid_pending.xml"));
-      assertOfyDeleteSuccess("TheRegistrar", null, false);
-    } else {
-      runFlowAssertResponse(loadFile("host_delete_response_no_cltrid.xml"));
-      assertSqlDeleteSuccess();
-    }
+    runFlowAssertResponse(loadFile("host_delete_response_no_cltrid.xml"));
+    assertSqlDeleteSuccess();
   }
 
   @TestOfyAndSql
@@ -178,15 +162,9 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveHost("ns1.example.tld");
     clock.advanceOneMilli();
-    if (tm().isOfy()) {
-      runFlowAssertResponse(
-          CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("host_delete_response_pending.xml"));
-      assertOfyDeleteSuccess("NewRegistrar", "ABC-12345", true);
-    } else {
-      runFlowAssertResponse(
-          CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("host_delete_response.xml"));
-      assertSqlDeleteSuccess();
-    }
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("host_delete_response.xml"));
+    assertSqlDeleteSuccess();
   }
 
   @TestOfyAndSql
@@ -206,13 +184,8 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
             .setSuperordinateDomain(domain.createVKey())
             .build());
     clock.advanceOneMilli();
-    if (tm().isOfy()) {
-      runFlowAssertResponse(loadFile("host_delete_response_pending.xml"));
-      assertOfyDeleteSuccess();
-    } else {
-      runFlowAssertResponse(loadFile("host_delete_response.xml"));
-      assertSqlDeleteSuccess(true);
-    }
+    runFlowAssertResponse(loadFile("host_delete_response.xml"));
+    assertSqlDeleteSuccess(true);
   }
 
   @TestOfyAndSql
@@ -265,13 +238,8 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
             .setSuperordinateDomain(domain.createVKey())
             .build());
     clock.advanceOneMilli();
-    if (tm().isOfy()) {
-      runFlowAssertResponse(loadFile("host_delete_response_pending.xml"));
-      assertOfyDeleteSuccess("NewRegistrar", "ABC-12345", false);
-    } else {
-      runFlowAssertResponse(loadFile("host_delete_response.xml"));
-      assertSqlDeleteSuccess(true);
-    }
+    runFlowAssertResponse(loadFile("host_delete_response.xml"));
+    assertSqlDeleteSuccess(true);
   }
 
   @TestOfyAndSql
@@ -365,25 +333,6 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
     DatabaseHelper.removeDatabaseMigrationSchedule();
-  }
-
-  private void assertOfyDeleteSuccess(String registrarId, String clientTrid, boolean isSuperuser)
-      throws Exception {
-    HostResource deletedHost = reloadResourceByForeignKey();
-    assertAsyncDeletionTaskEnqueued(
-        deletedHost, registrarId, Trid.create(clientTrid, "server-trid"), isSuperuser);
-    assertAboutHosts()
-        .that(deletedHost)
-        .hasStatusValue(StatusValue.PENDING_DELETE)
-        .and()
-        .hasOnlyOneHistoryEntryWhich()
-        .hasType(Type.HOST_PENDING_DELETE);
-    assertNoBillingEvents();
-    assertNoDnsTasksEnqueued();
-  }
-
-  private void assertOfyDeleteSuccess() throws Exception {
-    assertOfyDeleteSuccess("TheRegistrar", "ABC-12345", false);
   }
 
   private void assertSqlDeleteSuccess(boolean isSubordinate) throws Exception {

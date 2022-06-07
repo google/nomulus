@@ -23,7 +23,6 @@ import google.registry.backup.ExportCommitLogDiffAction;
 import google.registry.backup.ReplayCommitLogsToSqlAction;
 import google.registry.backup.SyncDatastoreToSqlSnapshotAction;
 import google.registry.batch.BatchModule;
-import google.registry.batch.DeleteContactsAndHostsAction;
 import google.registry.batch.DeleteExpiredDomainsAction;
 import google.registry.batch.DeleteLoadTestDataAction;
 import google.registry.batch.DeleteProberDataAction;
@@ -93,7 +92,6 @@ import google.registry.tmch.TmchCrlAction;
 import google.registry.tmch.TmchDnlAction;
 import google.registry.tmch.TmchModule;
 import google.registry.tmch.TmchSmdrlAction;
-import google.registry.tools.javascrap.CreateSyntheticHistoryEntriesAction;
 
 /** Dagger component with per-request lifetime for "backend" App Engine module. */
 @RequestScope
@@ -136,10 +134,6 @@ interface BackendRequestComponent {
   CommitLogFanoutAction commitLogFanoutAction();
 
   CopyDetailReportsAction copyDetailReportAction();
-
-  CreateSyntheticHistoryEntriesAction createSyntheticHistoryEntriesAction();
-
-  DeleteContactsAndHostsAction deleteContactsAndHostsAction();
 
   DeleteExpiredDomainsAction deleteExpiredDomainsAction();
 

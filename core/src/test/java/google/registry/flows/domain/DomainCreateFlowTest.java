@@ -368,7 +368,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 GracePeriodStatus.ADD, domain.getRepoId(), billingTime, "TheRegistrar", null),
             createBillingEvent));
     assertDnsTasksEnqueued(getUniqueIdFromCommand());
-    assertEppResourceIndexEntityFor(domain);
 
     replayExtension.expectUpdateFor(domain);
 

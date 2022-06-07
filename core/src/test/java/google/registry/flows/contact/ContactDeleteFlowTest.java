@@ -17,7 +17,6 @@ package google.registry.flows.contact;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -87,11 +86,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
   @TestOfyAndSql
   void testDryRun() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
-    if (tm().isOfy()) {
-      dryRunFlowAssertResponse(loadFile("contact_delete_response_pending.xml"));
-    } else {
-      dryRunFlowAssertResponse(loadFile("contact_delete_response.xml"));
-    }
+    dryRunFlowAssertResponse(loadFile("contact_delete_response.xml"));
   }
 
   @TestOfyAndSql
@@ -99,13 +94,8 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
-    if (tm().isOfy()) {
-      runFlowAssertResponse(loadFile("contact_delete_response_pending.xml"));
-      assertOfyDeleteSuccess();
-    } else {
-      runFlowAssertResponse(loadFile("contact_delete_response.xml"));
-      assertSqlDeleteSuccess();
-    }
+    runFlowAssertResponse(loadFile("contact_delete_response.xml"));
+    assertSqlDeleteSuccess();
   }
 
   @TestSqlOnly
@@ -156,13 +146,8 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
-    if (tm().isOfy()) {
-      runFlowAssertResponse(loadFile("contact_delete_response_no_cltrid_pending.xml"));
-      assertOfyDeleteSuccess("TheRegistrar", null, false);
-    } else {
-      runFlowAssertResponse(loadFile("contact_delete_response_no_cltrid.xml"));
-      assertSqlDeleteSuccess();
-    }
+    runFlowAssertResponse(loadFile("contact_delete_response_no_cltrid.xml"));
+    assertSqlDeleteSuccess();
   }
 
   @TestOfyAndSql
@@ -225,17 +210,9 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
-    if (tm().isOfy()) {
-      runFlowAssertResponse(
-          CommitMode.LIVE,
-          UserPrivileges.SUPERUSER,
-          loadFile("contact_delete_response_pending.xml"));
-      assertOfyDeleteSuccess("NewRegistrar", "ABC-12345", true);
-    } else {
-      runFlowAssertResponse(
-          CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("contact_delete_response.xml"));
-      assertSqlDeleteSuccess();
-    }
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("contact_delete_response.xml"));
+    assertSqlDeleteSuccess();
   }
 
   @TestOfyAndSql
@@ -270,25 +247,6 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
     DatabaseHelper.removeDatabaseMigrationSchedule();
-  }
-
-  private void assertOfyDeleteSuccess(String registrarId, String clientTrid, boolean isSuperuser)
-      throws Exception {
-    ContactResource deletedContact = reloadResourceByForeignKey();
-    assertAsyncDeletionTaskEnqueued(
-        deletedContact, registrarId, Trid.create(clientTrid, "server-trid"), isSuperuser);
-    assertAboutContacts()
-        .that(deletedContact)
-        .hasStatusValue(StatusValue.PENDING_DELETE)
-        .and()
-        .hasOnlyOneHistoryEntryWhich()
-        .hasType(Type.CONTACT_PENDING_DELETE);
-    assertNoBillingEvents();
-    assertLastHistoryContainsResource(deletedContact);
-  }
-
-  private void assertOfyDeleteSuccess() throws Exception {
-    assertOfyDeleteSuccess("TheRegistrar", "ABC-12345", false);
   }
 
   private void assertSqlDeleteSuccess(HistoryEntry.Type... historyEntryTypes) throws Exception {

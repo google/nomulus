@@ -30,14 +30,16 @@ import google.registry.model.registrar.Registrar.Type;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link OteStatusAction} */
+@DualDatabaseTest
 public final class OteStatusActionTest {
 
   private static final String CLIENT_ID = "blobio-1";
@@ -57,7 +59,7 @@ public final class OteStatusActionTest {
     action.registrarAccessor = AuthenticatedRegistrarAccessor.createForTesting(authValues);
   }
 
-  @Test
+  @TestOfyAndSql
   @SuppressWarnings("unchecked")
   void testSuccess_finishedOte() throws Exception {
     OteStatsTestHelper.setupCompleteOte(BASE_CLIENT_ID);
@@ -72,7 +74,7 @@ public final class OteStatusActionTest {
     assertThat(getFailingResultDetails(results)).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   @SuppressWarnings("unchecked")
   void testSuccess_incomplete() throws Exception {
     OteStatsTestHelper.setupIncompleteOte(BASE_CLIENT_ID);
@@ -103,7 +105,7 @@ public final class OteStatusActionTest {
                 "completed", false));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_malformedInput() {
     assertThat(action.handleJsonRequest(null))
         .containsExactlyEntriesIn(errorResultWithMessage("Malformed JSON"));
@@ -111,14 +113,14 @@ public final class OteStatusActionTest {
         .containsExactlyEntriesIn(errorResultWithMessage("Missing key for OT&E client: clientId"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_registrarDoesntExist() {
     assertThat(action.handleJsonRequest(ImmutableMap.of("clientId", "nonexistent-3")))
         .containsExactlyEntriesIn(
             errorResultWithMessage("Registrar nonexistent-3 does not exist"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_notAuthorized() {
     persistNewRegistrar(CLIENT_ID, "blobio-1", Type.REAL, 1L);
     action.registrarAccessor =
@@ -128,7 +130,7 @@ public final class OteStatusActionTest {
             errorResultWithMessage("TestUserId doesn't have access to registrar blobio-1"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_malformedRegistrarName() {
     assertThat(action.handleJsonRequest(ImmutableMap.of("clientId", "badclient-id")))
         .containsExactlyEntriesIn(
@@ -136,7 +138,7 @@ public final class OteStatusActionTest {
                 "ID badclient-id is not one of the OT&E registrar IDs for base badclient"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonOteRegistrar() {
     persistNewRegistrar(CLIENT_ID, "SomeRegistrar", Type.REAL, 1L);
     assertThat(action.handleJsonRequest(ImmutableMap.of("clientId", CLIENT_ID)))

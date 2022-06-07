@@ -16,7 +16,6 @@ package google.registry.flows.host;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
@@ -105,9 +104,6 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.HOST_CREATE);
     assertNoBillingEvents();
-    if (tm().isOfy()) {
-      assertEppResourceIndexEntityFor(host);
-    }
     assertLastHistoryContainsResource(host);
   }
 

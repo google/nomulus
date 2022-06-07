@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_HOST_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
@@ -198,16 +197,6 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     HostResource renamedHost = doSuccessfulTest();
     assertThat(renamedHost.isSubordinate()).isTrue();
     assertDnsTasksEnqueued("ns1.example.tld", "ns2.example.tld");
-    // As we don't actually store ForeignKeyIndex<HostResource> entity in SQL database(it is
-    // reconstructed by reading the information from Host table), we can not reconstruct the entity
-    // for the old host name because of the rename so we just skip the check for SQL database.
-    if (tm().isOfy()) {
-      // The old ForeignKeyIndex is invalidated at the time we did the rename.
-      ForeignKeyIndex<HostResource> oldFkiBeforeRename =
-          ForeignKeyIndex.load(HostResource.class, oldHostName(), clock.nowUtc().minusMillis(1));
-      assertThat(oldFkiBeforeRename.getResourceKey()).isEqualTo(renamedHost.createVKey());
-      assertThat(oldFkiBeforeRename.getDeletionTime()).isEqualTo(clock.nowUtc());
-    }
     ForeignKeyIndex<HostResource> oldFkiAfterRename =
         ForeignKeyIndex.load(HostResource.class, oldHostName(), clock.nowUtc());
     assertThat(oldFkiAfterRename).isNull();

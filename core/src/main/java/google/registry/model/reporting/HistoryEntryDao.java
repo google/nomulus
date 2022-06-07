@@ -16,9 +16,7 @@ package google.registry.model.reporting;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -72,29 +70,16 @@ public class HistoryEntryDao {
   /** Loads all history objects in the times specified, including all types. */
   public static ImmutableList<HistoryEntry> loadAllHistoryObjects(
       DateTime afterTime, DateTime beforeTime) {
-    if (tm().isOfy()) {
-      return Streams.stream(
-              auditedOfy()
-                  .load()
-                  .type(HistoryEntry.class)
-                  .order("modificationTime")
-                  .filter("modificationTime >=", afterTime)
-                  .filter("modificationTime <=", beforeTime))
-          .map(HistoryEntry::toChildHistoryEntity)
-          .collect(toImmutableList());
-    } else {
-      return jpaTm()
-          .transact(
-              () ->
-                  new ImmutableList.Builder<HistoryEntry>()
-                      .addAll(
-                          loadAllHistoryObjectsFromSql(ContactHistory.class, afterTime, beforeTime))
-                      .addAll(
-                          loadAllHistoryObjectsFromSql(DomainHistory.class, afterTime, beforeTime))
-                      .addAll(
-                          loadAllHistoryObjectsFromSql(HostHistory.class, afterTime, beforeTime))
-                      .build());
-    }
+    return jpaTm()
+        .transact(
+            () ->
+                new ImmutableList.Builder<HistoryEntry>()
+                    .addAll(
+                        loadAllHistoryObjectsFromSql(ContactHistory.class, afterTime, beforeTime))
+                    .addAll(
+                        loadAllHistoryObjectsFromSql(DomainHistory.class, afterTime, beforeTime))
+                    .addAll(loadAllHistoryObjectsFromSql(HostHistory.class, afterTime, beforeTime))
+                    .build());
   }
 
   /** Loads all history objects corresponding to the given {@link EppResource}. */
@@ -115,21 +100,8 @@ public class HistoryEntryDao {
   /** Loads all history objects in the time period specified for the given {@link EppResource}. */
   public static ImmutableList<HistoryEntry> loadHistoryObjectsForResource(
       VKey<? extends EppResource> parentKey, DateTime afterTime, DateTime beforeTime) {
-    if (tm().isOfy()) {
-      return Streams.stream(
-              auditedOfy()
-                  .load()
-                  .type(HistoryEntry.class)
-                  .ancestor(parentKey.getOfyKey())
-                  .order("modificationTime")
-                  .filter("modificationTime >=", afterTime)
-                  .filter("modificationTime <=", beforeTime))
-          .map(HistoryEntry::toChildHistoryEntity)
-          .collect(toImmutableList());
-    } else {
-      return jpaTm()
-          .transact(() -> loadHistoryObjectsForResourceFromSql(parentKey, afterTime, beforeTime));
-    }
+    return jpaTm()
+        .transact(() -> loadHistoryObjectsForResourceFromSql(parentKey, afterTime, beforeTime));
   }
 
   /**
@@ -162,23 +134,15 @@ public class HistoryEntryDao {
   /** Loads all history objects from all time from the given registrars. */
   public static Iterable<HistoryEntry> loadHistoryObjectsByRegistrars(
       ImmutableCollection<String> registrarIds) {
-    if (tm().isOfy()) {
-      return auditedOfy()
-          .load()
-          .type(HistoryEntry.class)
-          .filter("clientId in", registrarIds)
-          .order("modificationTime");
-    } else {
-      return jpaTm()
-          .transact(
-              () ->
-                  Streams.concat(
-                          loadHistoryObjectFromSqlByRegistrars(ContactHistory.class, registrarIds),
-                          loadHistoryObjectFromSqlByRegistrars(DomainHistory.class, registrarIds),
-                          loadHistoryObjectFromSqlByRegistrars(HostHistory.class, registrarIds))
-                      .sorted(Comparator.comparing(HistoryEntry::getModificationTime))
-                      .collect(toImmutableList()));
-    }
+    return jpaTm()
+        .transact(
+            () ->
+                Streams.concat(
+                        loadHistoryObjectFromSqlByRegistrars(ContactHistory.class, registrarIds),
+                        loadHistoryObjectFromSqlByRegistrars(DomainHistory.class, registrarIds),
+                        loadHistoryObjectFromSqlByRegistrars(HostHistory.class, registrarIds))
+                    .sorted(Comparator.comparing(HistoryEntry::getModificationTime))
+                    .collect(toImmutableList()));
   }
 
   private static <T extends HistoryEntry> Stream<T> loadHistoryObjectFromSqlByRegistrars(

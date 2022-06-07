@@ -15,7 +15,6 @@
 package google.registry.flows;
 
 import static com.google.common.collect.Sets.intersection;
-import static google.registry.model.EppResourceUtils.getLinkedDomainKeys;
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
@@ -54,20 +53,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import org.joda.time.DateTime;
 
 /** Static utility functions for resource flows. */
 public final class ResourceFlowUtils {
 
   private ResourceFlowUtils() {}
-
-  /**
-   * In {@link #checkLinkedDomains(String, DateTime, Class, Function)}, check this (arbitrary)
-   * number of query results.
-   */
-  private static final int FAILFAST_CHECK_COUNT = 5;
 
   /** Check that the given registrarId corresponds to the owner of given resource. */
   public static void verifyResourceOwnership(String myRegistrarId, EppResource resource)
@@ -85,46 +76,18 @@ public final class ResourceFlowUtils {
    * consistent, so we only check a few domains to fail fast.
    */
   public static <R extends EppResource> void checkLinkedDomains(
-      final String targetId,
-      final DateTime now,
-      final Class<R> resourceClass,
-      final Function<DomainBase, ImmutableSet<?>> getPotentialReferences)
-      throws EppException {
+      final String targetId, final DateTime now, final Class<R> resourceClass) throws EppException {
     EppException failfastException =
-        tm().isOfy()
-            ? tm().doTransactionless(
-                    () -> {
-                      final ForeignKeyIndex<R> fki =
-                          ForeignKeyIndex.load(resourceClass, targetId, now);
-                      if (fki == null) {
-                        return new ResourceDoesNotExistException(resourceClass, targetId);
-                      }
-                      // Query for the first few linked domains, and if found, actually load them.
-                      // The query is eventually consistent and so might be very stale, but the
-                      // direct load will not be stale, just non-transactional. If we find at least
-                      // one  actual reference then we can reliably fail. If we don't find any,
-                      // we can't  trust the query and need to do the full mapreduce.
-                      Iterable<VKey<DomainBase>> keys =
-                          getLinkedDomainKeys(fki.getResourceKey(), now, FAILFAST_CHECK_COUNT);
-
-                      VKey<R> resourceVKey = fki.getResourceKey();
-                      Predicate<DomainBase> predicate =
-                          domain -> getPotentialReferences.apply(domain).contains(resourceVKey);
-                      return tm().loadByKeys(keys).values().stream().anyMatch(predicate)
-                          ? new ResourceToDeleteIsReferencedException()
-                          : null;
-                    })
-            : tm().transact(
-                    () -> {
-                      final ForeignKeyIndex<R> fki =
-                          ForeignKeyIndex.load(resourceClass, targetId, now);
-                      if (fki == null) {
-                        return new ResourceDoesNotExistException(resourceClass, targetId);
-                      }
-                      return isLinked(fki.getResourceKey(), now)
-                          ? new ResourceToDeleteIsReferencedException()
-                          : null;
-                    });
+        tm().transact(
+                () -> {
+                  final ForeignKeyIndex<R> fki = ForeignKeyIndex.load(resourceClass, targetId, now);
+                  if (fki == null) {
+                    return new ResourceDoesNotExistException(resourceClass, targetId);
+                  }
+                  return isLinked(fki.getResourceKey(), now)
+                      ? new ResourceToDeleteIsReferencedException()
+                      : null;
+                });
     if (failfastException != null) {
       throw failfastException;
     }

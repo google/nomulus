@@ -102,11 +102,6 @@ public final class DomainInfoFlow implements Flow {
     verifyOptionalAuthInfo(authInfo, domain);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setDomain(domain).build());
-    // In ofy, refetch all referenced resources.
-    if (tm().isOfy()) {
-      tm().loadByKeys(domain.getNameservers());
-      tm().loadByKeys(domain.getReferencedContacts());
-    }
     // Registrars can only see a few fields on unauthorized domains.
     // This is a policy decision that is left up to us by the rfcs.
     DomainInfoData.Builder infoBuilder =
