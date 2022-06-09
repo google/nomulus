@@ -16,6 +16,7 @@ dependencies {
   def deps = rootProject.dependencyMap
 
   compile deps['com.beust:jcommander']
+  compile deps['com.google.appengine:appengine-api-1.0-sdk']
   compile deps['com.google.code.findbugs:jsr305']
   compile deps['com.google.flogger:flogger']
   compile deps['com.google.guava:guava']
