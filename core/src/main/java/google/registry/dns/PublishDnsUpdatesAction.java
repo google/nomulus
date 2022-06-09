@@ -14,6 +14,7 @@
 
 package google.registry.dns;
 
+import static google.registry.dns.DnsConstants.DNS_PUBLISH_PUSH_QUEUE_NAME;
 import static google.registry.dns.DnsModule.PARAM_DNS_WRITER;
 import static google.registry.dns.DnsModule.PARAM_DOMAINS;
 import static google.registry.dns.DnsModule.PARAM_HOSTS;
@@ -25,6 +26,8 @@ import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 
+import com.google.appengine.api.taskqueue.Queue;
+import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig.Config;
@@ -34,15 +37,20 @@ import google.registry.dns.DnsMetrics.PublishStatus;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.model.tld.Registry;
 import google.registry.request.Action;
+import google.registry.request.Header;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import google.registry.util.DomainNameUtils;
+import google.registry.util.TaskQueueUtils;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
+import javax.inject.Named;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -57,6 +65,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   public static final String PATH = "/_dr/task/publishDnsUpdates";
   public static final String LOCK_NAME = "DNS updates";
+  public static final String RETRY_HEADER = "X-AppEngine-TaskRetryCount";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -64,6 +73,10 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   @Inject DnsWriterProxy dnsWriterProxy;
   @Inject DnsMetrics dnsMetrics;
   @Inject @Config("publishDnsUpdatesLockDuration") Duration timeout;
+
+  @Inject
+  @Header(RETRY_HEADER)
+  int retryCount;
 
   /**
    * The DNS writer to use for this batch.
@@ -88,8 +101,15 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   @Inject @Parameter(PARAM_DOMAINS) Set<String> domains;
   @Inject @Parameter(PARAM_HOSTS) Set<String> hosts;
   @Inject @Parameter(PARAM_TLD) String tld;
+
+  @Inject
+  @Named(DNS_PUBLISH_PUSH_QUEUE_NAME)
+  Queue dnsPublishPushQueue;
+
   @Inject LockHandler lockHandler;
   @Inject Clock clock;
+  @Inject TaskQueueUtils taskQueueUtils;
+
   @Inject PublishDnsUpdatesAction() {}
 
   private void recordActionResult(ActionStatus status) {
@@ -116,6 +136,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   /** Runs the task. */
   @Override
   public void run() {
+    try {
     if (!validLockParams()) {
       recordActionResult(ActionStatus.BAD_LOCK_INDEX);
       requeueBatch();
@@ -133,13 +154,97 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       recordActionResult(ActionStatus.LOCK_FAILURE);
       throw new ServiceUnavailableException("Lock failure");
     }
+    } catch (Throwable e) {
+      // Retry the batch 3 times
+      if (retryCount < 3) {
+        throw e;
+      }
+      // After 3 retries, split the batch
+      if (domains.size() > 1) {
+        // split batch and requeue
+        splitBatch();
+      }
+      // If the batch only contains 1 name, allow it 10 retries
+      else if (retryCount < 10) {
+        throw e;
+      }
+      // If we get here, we should terminate this task as it is likely a perpetually failing task.
+      // TODO(sarahbot): Send an email notifying partner the dns update failed
+    }
   }
 
   /** Runs the task, with the lock. */
   @Override
   public Void call() {
-    processBatch();
+    try {
+      processBatch();
+    } catch (Throwable e) {
+      // Retry the batch 3 times
+      if (retryCount < 3) {
+        throw e;
+      }
+      // After 3 retries, split the batch
+      if (domains.size() > 1) {
+        // split batch and requeue
+        splitBatch();
+      }
+      // If the batch only contains 1 name, allow it 10 retries
+      else if (retryCount < 10) {
+        throw e;
+      }
+      // If we get here, we should terminate this task as it is likely a perpetually failing task.
+      // TODO(sarahbot): Send an email notifying partner the dns update failed
+    }
     return null;
+  }
+
+  private void splitBatch() {
+    Set<String> set1Domain = new HashSet<>();
+    Set<String> set2Domain = new HashSet<>();
+    Set<String> set1Host = new HashSet<>();
+    Set<String> set2Host = new HashSet<>();
+
+    for (String domain : domains) {
+      if (set1Domain.size() < (domains.size() / 2)) {
+        set1Domain.add(domain);
+      } else {
+        set2Domain.add(domain);
+      }
+    }
+
+    for (String host : hosts) {
+      if (set1Host.size() < (hosts.size() / 2)) {
+        set1Host.add(host);
+      } else {
+        set2Host.add(host);
+      }
+    }
+
+    // Enqueue set 1
+    taskQueueUtils.enqueue(
+        dnsPublishPushQueue,
+        TaskOptions.Builder.withUrl(PATH)
+            .param(PARAM_TLD, tld)
+            .param(PARAM_DNS_WRITER, dnsWriter)
+            .param(PARAM_LOCK_INDEX, Integer.toString(lockIndex))
+            .param(PARAM_NUM_PUBLISH_LOCKS, Integer.toString(numPublishLocks))
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+            .param(PARAM_REFRESH_REQUEST_CREATED, itemsCreateTime.toString())
+            .param(PARAM_DOMAINS, set1Domain.stream().collect(Collectors.joining(",")))
+            .param(PARAM_HOSTS, set1Host.stream().collect(Collectors.joining(","))));
+
+    // Enqueue set 2
+    taskQueueUtils.enqueue(
+        dnsPublishPushQueue,
+        TaskOptions.Builder.withUrl(PATH)
+            .param(PARAM_TLD, tld)
+            .param(PARAM_DNS_WRITER, dnsWriter)
+            .param(PARAM_LOCK_INDEX, Integer.toString(lockIndex))
+            .param(PARAM_NUM_PUBLISH_LOCKS, Integer.toString(numPublishLocks))
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+            .param(PARAM_REFRESH_REQUEST_CREATED, itemsCreateTime.toString())
+            .param(PARAM_DOMAINS, set2Domain.stream().collect(Collectors.joining(",")))
+            .param(PARAM_HOSTS, set2Host.stream().collect(Collectors.joining(","))));
   }
 
   /** Adds all the domains and hosts in the batch back to the queue to be processed later. */

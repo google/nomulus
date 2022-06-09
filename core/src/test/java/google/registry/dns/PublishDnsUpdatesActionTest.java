@@ -15,6 +15,14 @@
 package google.registry.dns;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.dns.DnsModule.PARAM_DNS_WRITER;
+import static google.registry.dns.DnsModule.PARAM_DOMAINS;
+import static google.registry.dns.DnsModule.PARAM_HOSTS;
+import static google.registry.dns.DnsModule.PARAM_LOCK_INDEX;
+import static google.registry.dns.DnsModule.PARAM_NUM_PUBLISH_LOCKS;
+import static google.registry.dns.DnsModule.PARAM_PUBLISH_TASK_ENQUEUED;
+import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_CREATED;
+import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHost;
@@ -27,6 +35,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import com.google.appengine.api.taskqueue.Queue;
+import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.dns.DnsMetrics.ActionStatus;
@@ -42,6 +52,7 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.InjectExtension;
+import google.registry.util.TaskQueueUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +72,8 @@ public class PublishDnsUpdatesActionTest {
   private final DnsWriter dnsWriter = mock(DnsWriter.class);
   private final DnsMetrics dnsMetrics = mock(DnsMetrics.class);
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
+  private final TaskQueueUtils taskQueueUtils = mock(TaskQueueUtils.class);
+  private final Queue queue = mock(Queue.class);
   private PublishDnsUpdatesAction action;
 
   @BeforeEach
@@ -96,6 +109,9 @@ public class PublishDnsUpdatesActionTest {
     action.numPublishLocks = 1;
     action.lockHandler = lockHandler;
     action.clock = clock;
+    action.taskQueueUtils = taskQueueUtils;
+    action.retryCount = 1;
+    action.dnsPublishPushQueue = queue;
     return action;
   }
 
@@ -200,6 +216,42 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     verifyNoMoreInteractions(dnsQueue);
+  }
+
+  @Test
+  void testTaskFails_splitsBatch() {
+    action = createAction("com");
+    action.domains =
+        ImmutableSet.of("example1.com", "example2.com", "example3.com", "example4.com");
+    action.hosts = ImmutableSet.of("ns1.example.com");
+    action.retryCount = 3;
+    doThrow(new RuntimeException()).when(dnsWriter).commit();
+    action.run();
+
+    TaskOptions taskOptions1 =
+        TaskOptions.Builder.withUrl(PublishDnsUpdatesAction.PATH)
+            .param(PARAM_TLD, "com")
+            .param(PARAM_DNS_WRITER, "correctWriter")
+            .param(PARAM_LOCK_INDEX, "1")
+            .param(PARAM_NUM_PUBLISH_LOCKS, "1")
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+            .param(PARAM_REFRESH_REQUEST_CREATED, action.itemsCreateTime.toString())
+            .param(PARAM_DOMAINS, "example1.com,example2.com")
+            .param(PARAM_HOSTS, "");
+
+    TaskOptions taskOptions2 =
+        TaskOptions.Builder.withUrl(PublishDnsUpdatesAction.PATH)
+            .param(PARAM_TLD, "com")
+            .param(PARAM_DNS_WRITER, "correctWriter")
+            .param(PARAM_LOCK_INDEX, "1")
+            .param(PARAM_NUM_PUBLISH_LOCKS, "1")
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+            .param(PARAM_REFRESH_REQUEST_CREATED, action.itemsCreateTime.toString())
+            .param(PARAM_DOMAINS, "example3.com,example4.com")
+            .param(PARAM_HOSTS, "ns1.example.com");
+
+    verify(taskQueueUtils).enqueue(queue, taskOptions1);
+    verify(taskQueueUtils).enqueue(queue, taskOptions2);
   }
 
   @Test
