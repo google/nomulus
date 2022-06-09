@@ -910,7 +910,8 @@ public class DomainContent extends EppResource
     }
 
     public B setAutorenewPollMessage(
-        VKey<PollMessage.Autorenew> autorenewPollMessage, long autorenewPollMessageHistoryId) {
+        @Nullable VKey<PollMessage.Autorenew> autorenewPollMessage,
+        @Nullable Long autorenewPollMessageHistoryId) {
       getInstance().autorenewPollMessage = autorenewPollMessage;
       getInstance().autorenewPollMessageHistoryId = autorenewPollMessageHistoryId;
       return thisCastToDerived();
