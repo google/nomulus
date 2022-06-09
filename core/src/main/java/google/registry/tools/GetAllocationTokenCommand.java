@@ -49,11 +49,14 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
           tokens.stream()
               .map(t -> VKey.create(AllocationToken.class, t))
               .collect(toImmutableList());
-      tm().loadByKeysIfPresent(tokenKeys)
-          .forEach((k, v) -> builder.put(k.getSqlKey().toString(), v));
+      tm().transact(
+              () ->
+                  tm().loadByKeysIfPresent(tokenKeys)
+                      .forEach((k, v) -> builder.put(k.getSqlKey().toString(), v)));
     }
     ImmutableMap<String, AllocationToken> loadedTokens = builder.build();
-    ImmutableMap<VKey<DomainBase>, DomainBase> domains = loadRedeemedDomains(loadedTokens.values());
+    ImmutableMap<VKey<DomainBase>, DomainBase> domains =
+        tm().transact(() -> loadRedeemedDomains(loadedTokens.values()));
 
     for (String token : mainParameters) {
       if (loadedTokens.containsKey(token)) {
