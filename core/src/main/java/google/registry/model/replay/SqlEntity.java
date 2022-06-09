@@ -31,9 +31,6 @@ public interface SqlEntity {
 
   Optional<DatastoreEntity> toDatastoreEntity();
 
-  /** A method that will be called before the object is saved to SQL in asynchronous replay. */
-  default void beforeSqlSaveOnReplay() {}
-
   /** Returns this entity's primary key field(s) in a string. */
   default String getPrimaryKeyString() {
     return jpaTm()

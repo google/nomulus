@@ -68,7 +68,6 @@ import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
 import google.registry.testing.SetClockExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
@@ -85,10 +84,6 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
   @RegisterExtension
   final SetClockExtension setClockExtension =
       new SetClockExtension(clock, "2005-03-03T22:00:00.000Z");
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   /**
    * The domain_info_fee.xml default substitutions common to most tests.

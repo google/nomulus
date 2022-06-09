@@ -52,16 +52,6 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
     return true;
   }
 
-  /**
-   * Returns true if "context" is an objectify unit test.
-   *
-   * <p>Provided to allow ReplayExtension to make this determination.
-   */
-  static boolean inOfyContext(ExtensionContext context) {
-    return (DatabaseType) context.getStore(NAMESPACE).get(INJECTED_TM_SUPPLIER_KEY)
-        == DatabaseType.OFY;
-  }
-
   @Override
   public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(
       ExtensionContext context) {

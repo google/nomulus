@@ -20,7 +20,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.newContactResource;
 import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -115,36 +114,6 @@ public class ContactHistoryTest extends EntityTestCase {
     HistoryEntry historyEntryFromDb = tm().transact(() -> tm().loadByKey(historyEntryVKey));
 
     assertThat(hostHistoryFromDb).isEqualTo(historyEntryFromDb);
-  }
-
-  @TestSqlOnly
-  void testBeforeSqlSave_afterContactPersisted() {
-    ContactResource contactResource = newContactResource("contactId");
-    ContactHistory contactHistory =
-        new ContactHistory.Builder()
-            .setType(HistoryEntry.Type.HOST_CREATE)
-            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-            .setModificationTime(fakeClock.nowUtc())
-            .setRegistrarId("TheRegistrar")
-            .setTrid(Trid.create("ABC-123", "server-trid"))
-            .setBySuperuser(false)
-            .setReason("reason")
-            .setRequestedByRegistrar(true)
-            .setContactRepoId(contactResource.getRepoId())
-            .build();
-    jpaTm()
-        .transact(
-            () -> {
-              jpaTm().put(contactResource);
-              contactHistory.beforeSqlSaveOnReplay();
-              jpaTm().put(contactHistory);
-            });
-    jpaTm()
-        .transact(
-            () ->
-                assertAboutImmutableObjects()
-                    .that(jpaTm().loadByEntity(contactResource))
-                    .hasFieldsEqualTo(jpaTm().loadByEntity(contactHistory).getContactBase().get()));
   }
 
   @TestSqlOnly

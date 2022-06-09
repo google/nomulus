@@ -14,8 +14,6 @@
 
 package google.registry.model.host;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
@@ -26,7 +24,6 @@ import google.registry.model.replay.DatastoreEntity;
 import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.util.DomainNameUtils;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -135,16 +132,6 @@ public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerial
   @Override
   public Optional<DatastoreEntity> toDatastoreEntity() {
     return Optional.of(asHistoryEntry());
-  }
-
-  // Used to fill out the hostBase field during asynchronous replay
-  @Override
-  public void beforeSqlSaveOnReplay() {
-    if (hostBase == null) {
-      hostBase = jpaTm().getEntityManager().find(HostResource.class, getHostRepoId());
-      hostBase.fullyQualifiedHostName =
-          DomainNameUtils.canonicalizeHostname(hostBase.fullyQualifiedHostName);
-    }
   }
 
   /** Class to represent the composite primary key of {@link HostHistory} entity. */

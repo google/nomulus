@@ -790,11 +790,6 @@ if (environment == 'alpha') {
               mainClass: 'google.registry.beam.rde.RdePipeline',
               metaData : 'google/registry/beam/rde_pipeline_metadata.json'
           ],
-      validateDatabase  :
-          [
-              mainClass: 'google.registry.beam.comparedb.ValidateDatabasePipeline',
-              metaData: 'google/registry/beam/validate_database_pipeline_metadata.json'
-          ],
       resaveAllEppResources:
           [
               mainClass: 'google.registry.beam.resave.ResaveAllEppResourcesPipeline',

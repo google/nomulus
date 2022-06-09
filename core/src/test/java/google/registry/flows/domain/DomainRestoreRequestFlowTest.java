@@ -78,7 +78,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import java.util.Map;
@@ -86,17 +85,11 @@ import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainRestoreRequestFlow}. */
 @DualDatabaseTest
 class DomainRestoreRequestFlowTest
     extends ResourceFlowTestCase<DomainRestoreRequestFlow, DomainBase> {
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   private static final ImmutableMap<String, String> FEE_06_MAP =
       ImmutableMap.of("FEE_VERSION", "0.6", "FEE_NS", "fee", "CURRENCY", "USD");

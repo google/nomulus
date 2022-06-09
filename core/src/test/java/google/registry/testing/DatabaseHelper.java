@@ -131,11 +131,6 @@ import org.joda.time.Duration;
 /** Static utils for setting up test resources. */
 public class DatabaseHelper {
 
-  // The following two fields are injected by ReplayExtension.
-
-  // If this is true, all of the methods that save to the datastore do so with backup.
-  private static boolean alwaysSaveWithBackup;
-
   // If the clock is defined, it will always be advanced by one millsecond after a transaction.
   private static FakeClock clock;
 
@@ -148,10 +143,6 @@ public class DatabaseHelper {
                           readResourceUtf8(
                               DatabaseHelper.class, "default_premium_list_testdata.csv")),
                   String.class));
-
-  public static void setAlwaysSaveWithBackup(boolean enable) {
-    alwaysSaveWithBackup = enable;
-  }
 
   public static void setClock(FakeClock fakeClock) {
     clock = fakeClock;
@@ -1001,8 +992,7 @@ public class DatabaseHelper {
 
   private static <R extends ImmutableObject> void saveResource(R resource, boolean wantBackup) {
     if (tm().isOfy()) {
-      Consumer<ImmutableObject> saver =
-          wantBackup || alwaysSaveWithBackup ? tm()::put : tm()::putWithoutBackup;
+      Consumer<ImmutableObject> saver = wantBackup ? tm()::put : tm()::putWithoutBackup;
       saver.accept(resource);
       if (resource instanceof EppResource) {
         EppResource eppResource = (EppResource) resource;
@@ -1220,14 +1210,7 @@ public class DatabaseHelper {
    * entities.
    */
   public static <R> void insertSimpleResources(final Iterable<R> resources) {
-    tm().transact(
-            () -> {
-              if (alwaysSaveWithBackup) {
-                tm().insertAll(ImmutableList.copyOf(resources));
-              } else {
-                tm().insertAllWithoutBackup(ImmutableList.copyOf(resources));
-              }
-            });
+    tm().transact(() -> tm().insertAllWithoutBackup(ImmutableList.copyOf(resources)));
     maybeAdvanceClock();
     // Force the session to be cleared so that when we read it back, we read from Datastore
     // and not from the transaction's session cache.
@@ -1235,12 +1218,7 @@ public class DatabaseHelper {
   }
 
   public static void deleteResource(final Object resource) {
-    if (alwaysSaveWithBackup) {
-      tm().transact(() -> tm().delete(resource));
-      maybeAdvanceClock();
-    } else {
-      transactIfJpaTm(() -> tm().deleteWithoutBackup(resource));
-    }
+    transactIfJpaTm(() -> tm().deleteWithoutBackup(resource));
     // Force the session to be cleared so that when we read it back, we read from Datastore and
     // not from the transaction's session cache.
     tm().clearSessionCache();

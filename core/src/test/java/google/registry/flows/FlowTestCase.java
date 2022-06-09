@@ -91,8 +91,7 @@ public abstract class FlowTestCase<F extends Flow> {
   private EppMetric.Builder eppMetricBuilder;
 
   // Set the clock for transactional flows.  We have to order this before the AppEngineExtension
-  // which populates data (and may do so with clock-dependent commit logs if mixed with
-  // ReplayExtension).
+  // which populates data.
   @Order(value = Order.DEFAULT - 1)
   @RegisterExtension
   final InjectExtension inject =
@@ -108,6 +107,7 @@ public abstract class FlowTestCase<F extends Flow> {
 
   @BeforeEach
   public void beforeEachFlowTestCase() {
+    DatabaseHelper.setClock(clock);
     sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
     sessionMetadata.setRegistrarId("TheRegistrar");
     sessionMetadata.setServiceExtensionUris(ProtocolDefinition.getVisibleServiceExtensionUris());

@@ -3,7 +3,6 @@ PATH                                               CLASS                        
 /_dr/cron/commitLogFanout                          CommitLogFanoutAction                          GET      y  INTERNAL,API APP ADMIN
 /_dr/cron/fanout                                   TldFanoutAction                                GET      y  INTERNAL,API APP ADMIN
 /_dr/cron/readDnsQueue                             ReadDnsQueueAction                             GET      y  INTERNAL,API APP ADMIN
-/_dr/cron/replicateToDatastore                     ReplicateToDatastoreAction                     GET      y  INTERNAL,API APP ADMIN
 /_dr/dnsRefresh                                    RefreshDnsAction                               GET      y  INTERNAL,API APP ADMIN
 /_dr/task/backupDatastore                          BackupDatastoreAction                          POST     y  INTERNAL,API APP ADMIN
 /_dr/task/brdaCopy                                 BrdaCopyAction                                 POST     y  INTERNAL,API APP ADMIN
@@ -33,12 +32,10 @@ PATH                                               CLASS                        
 /_dr/task/rdeUpload                                RdeUploadAction                                POST     n  INTERNAL,API APP ADMIN
 /_dr/task/refreshDnsOnHostRename                   RefreshDnsOnHostRenameAction                   GET      n  INTERNAL,API APP ADMIN
 /_dr/task/relockDomain                             RelockDomainAction                             POST     y  INTERNAL,API APP ADMIN
-/_dr/task/replayCommitLogsToSql                    ReplayCommitLogsToSqlAction                    POST     y  INTERNAL,API APP ADMIN
 /_dr/task/resaveAllEppResources                    ResaveAllEppResourcesAction                    GET      n  INTERNAL,API APP ADMIN
 /_dr/task/resaveAllEppResourcesPipeline            ResaveAllEppResourcesPipelineAction            GET      n  INTERNAL,API APP ADMIN
 /_dr/task/resaveEntity                             ResaveEntityAction                             POST     n  INTERNAL,API APP ADMIN
 /_dr/task/sendExpiringCertificateNotificationEmail SendExpiringCertificateNotificationEmailAction GET      n  INTERNAL,API APP ADMIN
-/_dr/task/syncDatastoreToSqlSnapshot               SyncDatastoreToSqlSnapshotAction               POST     n  INTERNAL,API APP ADMIN
 /_dr/task/syncGroupMembers                         SyncGroupMembersAction                         POST     n  INTERNAL,API APP ADMIN
 /_dr/task/syncRegistrarsSheet                      SyncRegistrarsSheetAction                      POST     n  INTERNAL,API APP ADMIN
 /_dr/task/tmchCrl                                  TmchCrlAction                                  POST     y  INTERNAL,API APP ADMIN
