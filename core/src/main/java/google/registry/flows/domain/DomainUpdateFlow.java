@@ -205,11 +205,13 @@ public final class DomainUpdateFlow implements TransactionalFlow {
                     EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
                 .build());
     persistEntityChanges(entityChanges);
-    // We would like to reload the persisted entity and show what is actually persisted, but that
-    // is not possible due to automatic detachment in our transaction manager, which throws an
-    // error if an entity is reloaded after it is persisted within the same transaction, so we have
-    // to make do with trusting that the to-be-persisted entity is persisted as-is by the
-    // transaction manager.
+    // Ideally we would like to reload the persisted entity and show what is actually persisted, but
+    // reloading in the current session will only give back the cached version in Hibernate. It is
+    // impossible to see what is actually persisted in the DB because PSQL doesn't support
+    // READ_UNCOMMITTED. So even if we call flush here and query with another entitymanager at
+    // READ_UNCOMMITTED isolation level, PSQL won't show us the new data. Therefore, we have to make
+    // do with trusting that the to-be-persisted entity is persisted as-is by the transaction
+    // manager.
     if (isNsDelete) {
       logger.atInfo()
           .log("Nameservers to persist:\n%s", newDomain.getNameservers());
