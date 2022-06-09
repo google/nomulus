@@ -213,8 +213,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     // do with trusting that the to-be-persisted entity is persisted as-is by the transaction
     // manager.
     if (isNsDelete) {
-      logger.atInfo()
-          .log("Nameservers to persist:\n%s", newDomain.getNameservers());
+      logger.atInfo().log("Nameservers to persist:\n%s", newDomain.getNameservers());
     }
     return responseBuilder.build();
   }
@@ -253,13 +252,11 @@ public final class DomainUpdateFlow implements TransactionalFlow {
       throws EppException {
     AddRemove add = command.getInnerAdd();
     AddRemove remove = command.getInnerRemove();
-    if (RegistryEnvironment.get() != RegistryEnvironment.PRODUCTION &&
-        !remove.getNameservers().isEmpty()) {
+    if (RegistryEnvironment.get() != RegistryEnvironment.PRODUCTION
+        && !remove.getNameservers().isEmpty()) {
       isNsDelete = true;
-      logger.atInfo().log("Current nameservers:\n%s",
-          tm().loadByEntity(domain).getNsHosts());
-      logger.atInfo()
-          .log("Nameservers to remove:\n%s", remove.getNameservers());
+      logger.atInfo().log("Current nameservers:\n%s", tm().loadByEntity(domain).getNsHosts());
+      logger.atInfo().log("Nameservers to remove:\n%s", remove.getNameservers());
     }
     checkSameValuesNotAddedAndRemoved(add.getNameservers(), remove.getNameservers());
     checkSameValuesNotAddedAndRemoved(add.getContacts(), remove.getContacts());

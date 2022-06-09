@@ -92,10 +92,11 @@ public interface ResourceCommand {
    * @param <C> the change type
    */
   @XmlTransient
-  abstract class ResourceUpdate
-      <A extends AddRemove,
-       B extends EppResource.Builder<?, ?>,
-       C extends ResourceCreateOrChange<B>> extends AbstractSingleResourceCommand  {
+  abstract class ResourceUpdate<
+          A extends AddRemove,
+          B extends EppResource.Builder<?, ?>,
+          C extends ResourceCreateOrChange<B>>
+      extends AbstractSingleResourceCommand {
 
     /** Part of an update command that specifies set values to add or remove. */
     @XmlTransient
