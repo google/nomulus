@@ -24,6 +24,7 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.eppinput.ResourceCommand.ResourceUpdate.AddRemove;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.List;
 import java.util.Set;
@@ -91,10 +92,11 @@ public interface ResourceCommand {
    * @param <C> the change type
    */
   @XmlTransient
-  abstract class ResourceUpdate
-      <A extends ResourceUpdate.AddRemove,
-       B extends EppResource.Builder<?, ?>,
-       C extends ResourceCreateOrChange<B>> extends AbstractSingleResourceCommand  {
+  abstract class ResourceUpdate<
+          A extends AddRemove,
+          B extends EppResource.Builder<?, ?>,
+          C extends ResourceCreateOrChange<B>>
+      extends AbstractSingleResourceCommand {
 
     /** Part of an update command that specifies set values to add or remove. */
     @XmlTransient
@@ -113,7 +115,7 @@ public interface ResourceCommand {
 
     protected abstract A getNullableInnerRemove();
 
-    // Don't use MoreObjects.firstNonNull in these method because it will result in an unneeded
+    // Don't use MoreObjects.firstNonNull in these methods because it will result in an unneeded
     // reflective instantiation when the object isn't null.
 
     public C getInnerChange() {
