@@ -137,23 +137,24 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   @Override
   public void run() {
     try {
-    if (!validLockParams()) {
-      recordActionResult(ActionStatus.BAD_LOCK_INDEX);
-      requeueBatch();
-      return;
-    }
-    // If executeWithLocks fails to get the lock, it does not throw an exception, simply returns
-    // false. We need to make sure to take note of this error; otherwise, a failed lock might result
-    // in the update task being dequeued and dropped. A message will already have been logged
-    // to indicate the problem.
-    if (!lockHandler.executeWithLocks(
-        this,
-        tld,
-        timeout,
-        String.format("%s-lock %d of %d", LOCK_NAME, lockIndex, numPublishLocks))) {
-      recordActionResult(ActionStatus.LOCK_FAILURE);
-      throw new ServiceUnavailableException("Lock failure");
-    }
+      if (!validLockParams()) {
+        recordActionResult(ActionStatus.BAD_LOCK_INDEX);
+        requeueBatch();
+        return;
+      }
+      // If executeWithLocks fails to get the lock, it does not throw an exception, simply returns
+      // false. We need to make sure to take note of this error; otherwise, a failed lock might
+      // result
+      // in the update task being dequeued and dropped. A message will already have been logged
+      // to indicate the problem.
+      if (!lockHandler.executeWithLocks(
+          this,
+          tld,
+          timeout,
+          String.format("%s-lock %d of %d", LOCK_NAME, lockIndex, numPublishLocks))) {
+        recordActionResult(ActionStatus.LOCK_FAILURE);
+        throw new ServiceUnavailableException("Lock failure");
+      }
     } catch (Throwable e) {
       // Retry the batch 3 times
       if (retryCount < 3) {
@@ -198,6 +199,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     return null;
   }
 
+  /** Splits the domains and hosts in a batch into 2 batches and adds them to the queue. */
   private void splitBatch() {
     Set<String> set1Domain = new HashSet<>();
     Set<String> set2Domain = new HashSet<>();
