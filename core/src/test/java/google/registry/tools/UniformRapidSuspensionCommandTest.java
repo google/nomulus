@@ -30,12 +30,14 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestSqlOnly;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UniformRapidSuspensionCommand}. */
+@DualDatabaseTest
 class UniformRapidSuspensionCommandTest
     extends EppToolCommandTestCase<UniformRapidSuspensionCommand> {
 
@@ -72,7 +74,7 @@ class UniformRapidSuspensionCommandTest
         domainBase.asBuilder().setNameservers(hostRefs.build()).setDsData(dsData).build());
   }
 
-  @Test
+  @TestSqlOnly
   void testCommand_addsLocksReplacesHostsAndDsDataPrintsUndo() throws Exception {
     persistDomainWithHosts(defaultDomainBase, defaultDsData, ns1, ns2);
     runCommandForced(
@@ -93,7 +95,7 @@ class UniformRapidSuspensionCommandTest
     assertNotInStdout("--restore_client_hold");
   }
 
-  @Test
+  @TestSqlOnly
   void testCommand_respectsExistingHost() throws Exception {
     persistDomainWithHosts(defaultDomainBase, defaultDsData, urs2, ns1);
     runCommandForced(
@@ -111,7 +113,7 @@ class UniformRapidSuspensionCommandTest
     assertNotInStdout("--locks_to_preserve");
   }
 
-  @Test
+  @TestSqlOnly
   void testCommand_generatesUndoForUndelegatedDomain() throws Exception {
     persistActiveDomain("evil.tld");
     runCommandForced(
@@ -124,7 +126,7 @@ class UniformRapidSuspensionCommandTest
     assertNotInStdout("--locks_to_preserve");
   }
 
-  @Test
+  @TestSqlOnly
   void testCommand_generatesUndoWithLocksToPreserve() throws Exception {
     persistResource(
         newDomainBase("evil.tld").asBuilder()
@@ -137,7 +139,7 @@ class UniformRapidSuspensionCommandTest
     assertInStdout("--locks_to_preserve serverDeleteProhibited");
   }
 
-  @Test
+  @TestSqlOnly
   void testCommand_removeClientHold() throws Exception {
     persistResource(
         newDomainBase("evil.tld")
@@ -162,7 +164,7 @@ class UniformRapidSuspensionCommandTest
     assertInStdout("--restore_client_hold");
   }
 
-  @Test
+  @TestSqlOnly
   void testUndo_removesLocksReplacesHostsAndDsData() throws Exception {
     persistDomainWithHosts(defaultDomainBase, defaultDsData, urs1, urs2);
     runCommandForced(
@@ -178,7 +180,7 @@ class UniformRapidSuspensionCommandTest
     assertNotInStdout("--undo");  // Undo shouldn't print a new undo command.
   }
 
-  @Test
+  @TestSqlOnly
   void testUndo_respectsLocksToPreserveFlag() throws Exception {
     persistDomainWithHosts(defaultDomainBase, defaultDsData, urs1, urs2);
     runCommandForced(
@@ -195,7 +197,7 @@ class UniformRapidSuspensionCommandTest
     assertNotInStdout("--undo");  // Undo shouldn't print a new undo command.
   }
 
-  @Test
+  @TestSqlOnly
   void testUndo_restoresClientHolds() throws Exception {
     persistDomainWithHosts(defaultDomainBase, defaultDsData, urs1, urs2);
     runCommandForced(
@@ -212,7 +214,7 @@ class UniformRapidSuspensionCommandTest
     assertNotInStdout("--undo"); // Undo shouldn't print a new undo command.
   }
 
-  @Test
+  @TestSqlOnly
   void testAutorenews_setToFalseByDefault() throws Exception {
     persistResource(
         newDomainBase("evil.tld")
@@ -224,7 +226,7 @@ class UniformRapidSuspensionCommandTest
     assertInStdout("<superuser:autorenews>false</superuser:autorenews>");
   }
 
-  @Test
+  @TestSqlOnly
   void testAutorenews_setToTrueWhenUndo() throws Exception {
     persistResource(
         newDomainBase("evil.tld")
@@ -241,7 +243,7 @@ class UniformRapidSuspensionCommandTest
     assertInStdout("<superuser:autorenews>true</superuser:autorenews>");
   }
 
-  @Test
+  @TestSqlOnly
   void testRenewOneYearWithoutUndo_verifyReasonWithoutUndo() throws Exception {
     persistDomainWithHosts(
         newDomainBase("evil.tld")
@@ -278,7 +280,7 @@ class UniformRapidSuspensionCommandTest
         .verifySentAny();
   }
 
-  @Test
+  @TestSqlOnly
   void testRenewOneYearWithUndo_verifyReasonWithUndo() throws Exception {
     persistDomainWithHosts(
         newDomainBase("evil.tld")
@@ -316,7 +318,7 @@ class UniformRapidSuspensionCommandTest
         .verifySentAny();
   }
 
-  @Test
+  @TestSqlOnly
   void testRenewOneYear_verifyBothRenewAndUpdateFlowsAreTriggered() throws Exception {
     persistDomainWithHosts(
         newDomainBase("evil.tld")
@@ -361,7 +363,7 @@ class UniformRapidSuspensionCommandTest
     eppVerifier.verifyNoMoreSent();
   }
 
-  @Test
+  @TestSqlOnly
   void testFailure_locksToPreserveWithoutUndo() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
@@ -375,7 +377,7 @@ class UniformRapidSuspensionCommandTest
     assertThat(thrown).hasMessageThat().contains("--undo");
   }
 
-  @Test
+  @TestSqlOnly
   void testFailure_domainNameRequired() {
     persistActiveDomain("evil.tld");
     ParameterException thrown =
@@ -387,7 +389,7 @@ class UniformRapidSuspensionCommandTest
     assertThat(thrown).hasMessageThat().contains("--domain_name");
   }
 
-  @Test
+  @TestSqlOnly
   void testFailure_renewOneYearRequired() {
     persistActiveDomain("evil.tld");
     ParameterException thrown =
@@ -395,7 +397,7 @@ class UniformRapidSuspensionCommandTest
     assertThat(thrown).hasMessageThat().contains("--renew_one_year");
   }
 
-  @Test
+  @TestSqlOnly
   void testFailure_extraFieldInDsData() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
@@ -409,7 +411,7 @@ class UniformRapidSuspensionCommandTest
         .contains("dsRecord 1 1 1 abc 1 should have 4 parts, but has 5");
   }
 
-  @Test
+  @TestSqlOnly
   void testFailure_missingFieldInDsData() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
@@ -421,7 +423,7 @@ class UniformRapidSuspensionCommandTest
     assertThat(thrown).hasMessageThat().contains("dsRecord 1 1 1 should have 4 parts, but has 3");
   }
 
-  @Test
+  @TestSqlOnly
   void testFailure_malformedDsData() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
