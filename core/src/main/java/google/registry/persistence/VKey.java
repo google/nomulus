@@ -53,8 +53,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   Serializable sqlKey;
 
   // The objectify key for the referenced entity.
-  @Insignificant
-  Key<T> ofyKey;
+  @Insignificant Key<T> ofyKey;
 
   Class<? extends T> kind;
 
