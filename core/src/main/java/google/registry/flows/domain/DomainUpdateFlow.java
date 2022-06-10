@@ -50,7 +50,6 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
-import google.registry.config.RegistryEnvironment;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -150,7 +149,6 @@ public final class DomainUpdateFlow implements TransactionalFlow {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private boolean isNsDelete;
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
   @Inject EppInput eppInput;
@@ -205,16 +203,6 @@ public final class DomainUpdateFlow implements TransactionalFlow {
                     EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
                 .build());
     persistEntityChanges(entityChanges);
-    // Ideally we would like to reload the persisted entity and show what is actually persisted, but
-    // reloading in the current session will only give back the cached version in Hibernate. It is
-    // impossible to see what is actually persisted in the DB because PSQL doesn't support
-    // READ_UNCOMMITTED. So even if we call flush here and query with another entitymanager at
-    // READ_UNCOMMITTED isolation level, PSQL won't show us the new data. Therefore, we have to make
-    // do with trusting that the to-be-persisted entity is persisted as-is by the transaction
-    // manager.
-    if (isNsDelete) {
-      logger.atInfo().log("Nameservers to persist:\n%s", newDomain.getNameservers());
-    }
     return responseBuilder.build();
   }
 
@@ -252,12 +240,6 @@ public final class DomainUpdateFlow implements TransactionalFlow {
       throws EppException {
     AddRemove add = command.getInnerAdd();
     AddRemove remove = command.getInnerRemove();
-    if (RegistryEnvironment.get() != RegistryEnvironment.PRODUCTION
-        && !remove.getNameservers().isEmpty()) {
-      isNsDelete = true;
-      logger.atInfo().log("Current nameservers:\n%s", tm().loadByEntity(domain).getNsHosts());
-      logger.atInfo().log("Nameservers to remove:\n%s", remove.getNameservers());
-    }
     checkSameValuesNotAddedAndRemoved(add.getNameservers(), remove.getNameservers());
     checkSameValuesNotAddedAndRemoved(add.getContacts(), remove.getContacts());
     checkSameValuesNotAddedAndRemoved(add.getStatusValues(), remove.getStatusValues());
