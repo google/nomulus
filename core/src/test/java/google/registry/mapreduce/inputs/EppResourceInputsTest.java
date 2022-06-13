@@ -37,6 +37,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.TmOverrideExtension;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -44,6 +45,7 @@ import java.io.ObjectOutputStream;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -51,6 +53,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EppResourceInputsTest {
 
   private static final double EPSILON = 0.0001;
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   final AppEngineExtension appEngine =

@@ -31,12 +31,20 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.testing.TmOverrideExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit test for {@link RemoveRegistryOneKeyCommand}. */
 public class RemoveRegistryOneKeyCommandTest extends CommandTestCase<RemoveRegistryOneKeyCommand> {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
+
   DomainBase domain;
   HistoryEntry historyEntry;
 

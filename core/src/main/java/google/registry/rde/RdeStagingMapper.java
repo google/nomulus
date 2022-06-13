@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import google.registry.model.EppResource;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
@@ -37,6 +38,7 @@ import java.util.function.Supplier;
 import org.joda.time.DateTime;
 
 /** Mapper for {@link RdeStagingAction}. */
+@DeleteAfterMigration
 public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, DepositFragment> {
 
   private static final long serialVersionUID = -1518185703789372524L;

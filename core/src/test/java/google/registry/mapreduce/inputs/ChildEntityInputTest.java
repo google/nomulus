@@ -42,6 +42,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.TmOverrideExtension;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -52,6 +53,7 @@ import java.util.Set;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -59,6 +61,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class ChildEntityInputTest {
 
   private static final DateTime now = DateTime.now(DateTimeZone.UTC);
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   final AppEngineExtension appEngine =

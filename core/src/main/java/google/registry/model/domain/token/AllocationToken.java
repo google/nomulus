@@ -47,7 +47,6 @@ import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimeMapper;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
-import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.DomainHistoryVKey;
 import google.registry.persistence.VKey;
@@ -80,7 +79,7 @@ import org.joda.time.DateTime;
       @javax.persistence.Index(columnList = "tokenType"),
       @javax.persistence.Index(columnList = "redemption_domain_repo_id")
     })
-public class AllocationToken extends BackupGroupRoot implements Buildable, DatastoreAndSqlEntity {
+public class AllocationToken extends BackupGroupRoot implements Buildable {
 
   // Promotions should only move forward, and ENDED / CANCELLED are terminal states.
   private static final ImmutableMultimap<TokenStatus, TokenStatus> VALID_TOKEN_STATUS_TRANSITIONS =

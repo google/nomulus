@@ -30,7 +30,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TmOverrideExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -49,10 +48,6 @@ public class RegistrarDaoTest {
   @RegisterExtension
   JpaIntegrationWithCoverageExtension jpa =
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
-
-  @RegisterExtension
-  @Order(Order.DEFAULT + 1)
-  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
 
   private final VKey<Registrar> registrarKey = VKey.createSql(Registrar.class, "registrarId");
 

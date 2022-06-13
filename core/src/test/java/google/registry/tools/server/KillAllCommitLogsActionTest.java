@@ -39,12 +39,19 @@ import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link KillAllCommitLogsAction}. */
 class KillAllCommitLogsActionTest extends MapreduceTestCase<KillAllCommitLogsAction> {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   private static final ImmutableList<Class<? extends ImmutableObject>> AFFECTED_TYPES =
       ImmutableList.of(

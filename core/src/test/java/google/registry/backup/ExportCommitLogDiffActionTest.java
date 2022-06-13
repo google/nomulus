@@ -36,14 +36,20 @@ import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TestObject;
+import google.registry.testing.TmOverrideExtension;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ExportCommitLogDiffAction}. */
 public class ExportCommitLogDiffActionTest {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =

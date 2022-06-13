@@ -63,7 +63,6 @@ import org.joda.time.Duration;
  * by the losing registrar or rejected, and the gaining registrar can also cancel the transfer
  * request.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}

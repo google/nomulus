@@ -22,7 +22,6 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
-import google.registry.model.replay.NonReplicatedEntity;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.lang.reflect.Method;
@@ -169,7 +168,7 @@ class EntityCallbacksListenerTest {
   }
 
   @Entity(name = "TestEntity")
-  private static class TestEntity extends ParentEntity implements NonReplicatedEntity {
+  private static class TestEntity extends ParentEntity {
     @Id String name = "id";
     int nonTransientField = 0;
 

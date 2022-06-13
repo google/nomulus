@@ -75,7 +75,6 @@ import com.google.common.collect.Ordering;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.ExtensionManager.UndeclaredServiceExtensionException;
@@ -175,11 +174,9 @@ import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.VKey;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
@@ -843,15 +840,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     clock.advanceOneMilli();
     doSuccessfulTest();
-  }
-
-  @TestOfyOnly
-  void testSuccess_inNoAsyncPhase() throws Exception {
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryNoAsync(clock);
-    persistContactsAndHosts();
-    runFlowAssertResponse(
-        loadFile("domain_create_response_noasync.xml", ImmutableMap.of("DOMAIN", "example.tld")));
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
   @TestOfyAndSql
@@ -2609,15 +2597,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     runFlow();
     EppMetric eppMetric = getEppMetric();
     assertThat(eppMetric.getCommandName()).hasValue("DomainCreate");
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() {
-    persistContactsAndHosts();
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
   @TestOfyAndSql

@@ -67,7 +67,6 @@ import org.joda.time.DateTime;
  * timestamps such that they only would become active when the transfer period passed. In this flow,
  * those speculative objects are deleted.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}

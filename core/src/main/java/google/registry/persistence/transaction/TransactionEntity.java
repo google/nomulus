@@ -16,7 +16,7 @@ package google.registry.persistence.transaction;
 
 import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.ImmutableObject;
-import google.registry.model.replay.SqlOnlyEntity;
+import google.registry.model.annotations.DeleteAfterMigration;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -30,7 +30,8 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "Transaction")
-public class TransactionEntity extends ImmutableObject implements SqlOnlyEntity {
+@DeleteAfterMigration
+public class TransactionEntity extends ImmutableObject {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

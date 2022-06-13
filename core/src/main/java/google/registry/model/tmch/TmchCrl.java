@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.model.replay.SqlOnlyEntity;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 import javax.persistence.Column;
@@ -27,7 +26,7 @@ import org.joda.time.DateTime;
 /** Singleton for ICANN's TMCH CA certificate revocation list (CRL). */
 @javax.persistence.Entity
 @Immutable
-public final class TmchCrl extends CrossTldSingleton implements SqlOnlyEntity {
+public final class TmchCrl extends CrossTldSingleton {
 
   @Column(name = "certificateRevocations", nullable = false)
   String crl;

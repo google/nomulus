@@ -19,7 +19,6 @@ import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObject.cloneEmptyToNull;
-import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
@@ -29,7 +28,6 @@ import com.google.common.collect.Iterables;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
 import java.lang.reflect.Field;
@@ -51,6 +49,7 @@ public class ImmutableObjectTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
+          .withJpaUnitTestEntities(ValueObject.class)
           .withOfyTestEntities(ValueObject.class)
           .build();
 
@@ -279,10 +278,9 @@ public class ImmutableObjectTest {
 
   /** Simple subclass of ImmutableObject. */
   @Entity
-  @EntityForTesting
+  @javax.persistence.Entity
   public static class ValueObject extends ImmutableObject {
-    @Id
-    long id;
+    @Id @javax.persistence.Id long id;
 
     String value;
 
@@ -292,32 +290,6 @@ public class ImmutableObjectTest {
       instance.value = value;
       return instance;
     }
-  }
-
-  @Test
-  void testToHydratedString_skipsDoNotHydrate() {
-    RootObject root = new RootObject();
-    root.hydrateMe = Key.create(persistResource(ValueObject.create(1, "foo")));
-    root.skipMe = Key.create(persistResource(ValueObject.create(2, "bar")));
-    String hydratedString = root.toHydratedString();
-    assertThat(hydratedString).contains("foo");
-    assertThat(hydratedString).doesNotContain("bar");
-  }
-
-  @Test
-  void testToHydratedString_expandsMaps() {
-    RootObject root = new RootObject();
-    root.map = ImmutableMap.of("foo", Key.create(persistResource(ValueObject.create(1, "bar"))));
-    String hydratedString = root.toHydratedString();
-    assertThat(hydratedString).contains("foo");
-    assertThat(hydratedString).contains("bar");
-  }
-
-  @Test
-  void testToHydratedString_expandsCollections() {
-    RootObject root = new RootObject();
-    root.set = ImmutableSet.of(Key.create(persistResource(ValueObject.create(1, "foo"))));
-    assertThat(root.toHydratedString()).contains("foo");
   }
 
   @Test

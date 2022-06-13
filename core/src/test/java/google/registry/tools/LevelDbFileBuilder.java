@@ -20,6 +20,7 @@ import static google.registry.tools.LevelDbLogReader.HEADER_SIZE;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityTranslator;
 import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.tools.LevelDbLogReader.ChunkType;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 /** Utility class for building a leveldb logfile. */
+@DeleteAfterMigration
 public final class LevelDbFileBuilder {
 
   private final FileOutputStream out;

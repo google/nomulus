@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.deleteResource;
+import static google.registry.testing.DatabaseHelper.existsInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
@@ -181,10 +182,10 @@ public class MutatingCommandTest {
             + registrar2 + "\n");
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 4 entities.\n");
-    assertThat(loadByEntity(host1)).isNull();
-    assertThat(loadByEntity(host2)).isNull();
-    assertThat(loadByEntity(registrar1)).isNull();
-    assertThat(loadByEntity(registrar2)).isNull();
+    assertThat(existsInDb(host1)).isFalse();
+    assertThat(existsInDb(host2)).isFalse();
+    assertThat(existsInDb(registrar1)).isFalse();
+    assertThat(existsInDb(registrar2)).isFalse();
   }
 
   @Test
@@ -241,9 +242,9 @@ public class MutatingCommandTest {
             + "blockPremiumNames: false -> true\n");
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 4 entities.\n");
-    assertThat(loadByEntity(host1)).isNull();
+    assertThat(existsInDb(host1)).isFalse();
     assertThat(loadByEntity(host2)).isEqualTo(newHost2);
-    assertThat(loadByEntity(registrar1)).isNull();
+    assertThat(existsInDb(registrar1)).isFalse();
     assertThat(loadByEntity(registrar2)).isEqualTo(newRegistrar2);
   }
 
@@ -282,7 +283,7 @@ public class MutatingCommandTest {
 
     IllegalStateException thrown = assertThrows(IllegalStateException.class, command::execute);
     assertThat(thrown).hasMessageThat().contains("Entity changed since init() was called.");
-    assertThat(loadByEntity(host1)).isNull();
+    assertThat(existsInDb(host1)).isFalse();
     assertThat(loadByEntity(host2)).isEqualTo(newHost2);
     // These two shouldn't've changed.
     assertThat(loadByEntity(registrar1)).isEqualTo(registrar1);

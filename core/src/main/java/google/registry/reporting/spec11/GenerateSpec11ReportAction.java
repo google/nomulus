@@ -15,7 +15,6 @@
 package google.registry.reporting.spec11;
 
 import static google.registry.beam.BeamUtils.createJobName;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -31,12 +30,10 @@ import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
 import google.registry.keyring.api.KeyModule.Key;
-import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
-import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -73,7 +70,6 @@ public class GenerateSpec11ReportAction implements Runnable {
   private final Clock clock;
   private final Response response;
   private final Dataflow dataflow;
-  private final PrimaryDatabase database;
   private final boolean sendEmail;
   private final CloudTasksUtils cloudTasksUtils;
 
@@ -85,7 +81,6 @@ public class GenerateSpec11ReportAction implements Runnable {
       @Config("reportingBucketUrl") String reportingBucketUrl,
       @Key("safeBrowsingAPIKey") String apiKey,
       @Parameter(ReportingModule.PARAM_DATE) LocalDate date,
-      @Parameter(RequestParameters.PARAM_DATABASE) PrimaryDatabase database,
       @Parameter(ReportingModule.SEND_EMAIL) boolean sendEmail,
       Clock clock,
       Response response,
@@ -94,13 +89,9 @@ public class GenerateSpec11ReportAction implements Runnable {
     this.projectId = projectId;
     this.jobRegion = jobRegion;
     this.stagingBucketUrl = stagingBucketUrl;
-    if (tm().isOfy() && database.equals(PrimaryDatabase.CLOUD_SQL)) {
-      reportingBucketUrl = reportingBucketUrl.concat("-sql");
-    }
     this.reportingBucketUrl = reportingBucketUrl;
     this.apiKey = apiKey;
     this.date = date;
-    this.database = database;
     this.clock = clock;
     this.response = response;
     this.dataflow = dataflow;
@@ -121,8 +112,6 @@ public class GenerateSpec11ReportAction implements Runnable {
                   ImmutableMap.of(
                       "safeBrowsingApiKey",
                       apiKey,
-                      "database",
-                      database.name(),
                       ReportingModule.PARAM_DATE,
                       date.toString(),
                       "reportingBucketUrl",

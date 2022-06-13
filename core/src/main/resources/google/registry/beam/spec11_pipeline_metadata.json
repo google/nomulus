@@ -61,14 +61,6 @@
       "regexes": [
         "^gs:\\/\\/[^\\n\\r]+$"
       ]
-    },
-    {
-      "name": "database",
-      "label": "Database to read from.",
-      "helpText": "DATASTORE or CLOUD_SQL.",
-      "regexes": [
-        "^DATASTORE|CLOUD_SQL$"
-      ]
     }
   ]
 }

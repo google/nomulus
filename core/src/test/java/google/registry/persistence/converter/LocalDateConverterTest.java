@@ -19,7 +19,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.ImmutableObject;
-import google.registry.model.replay.EntityTest;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
@@ -63,7 +62,6 @@ public class LocalDateConverterTest {
 
   /** Override entity name to avoid the nested class reference. */
   @Entity(name = "LocalDateConverterTestEntity")
-  @EntityTest.EntityForTesting
   private static class LocalDateConverterTestEntity extends ImmutableObject {
 
     @Id String name = "id";

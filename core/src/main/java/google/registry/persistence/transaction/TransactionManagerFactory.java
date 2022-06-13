@@ -15,7 +15,6 @@
 package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_PRIMARY_NO_ASYNC;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.appengine.api.utils.SystemProperty;
@@ -23,15 +22,10 @@ import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import google.registry.config.RegistryEnvironment;
-import google.registry.model.annotations.DeleteAfterMigration;
-import google.registry.model.common.DatabaseMigrationStateSchedule;
-import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.DaggerPersistenceComponent;
 import google.registry.tools.RegistryToolEnvironment;
-import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
-import google.registry.util.SystemClock;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -44,9 +38,6 @@ public final class TransactionManagerFactory {
   /** Optional override to manually set the transaction manager per-test. */
   private static Optional<TransactionManager> tmForTest = Optional.empty();
 
-  /** The current clock (defined as a variable so we can override it in tests) */
-  private static Clock clock = new SystemClock();
-
   /** Supplier for jpaTm so that it is initialized only once, upon first usage. */
   @NonFinalForTesting
   private static Supplier<JpaTransactionManager> jpaTm =
@@ -55,8 +46,6 @@ public final class TransactionManagerFactory {
   @NonFinalForTesting
   private static Supplier<JpaTransactionManager> replicaJpaTm =
       Suppliers.memoize(TransactionManagerFactory::createReplicaJpaTransactionManager);
-
-  private static boolean onBeam = false;
 
   private TransactionManagerFactory() {}
 
@@ -102,17 +91,7 @@ public final class TransactionManagerFactory {
    * the migration schedule or the manually specified per-test transaction manager.
    */
   public static TransactionManager tm() {
-    if (tmForTest.isPresent()) {
-      return tmForTest.get();
-    }
-    if (onBeam) {
-      return jpaTm();
-    }
-    return DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc())
-            .getPrimaryDatabase()
-            .equals(PrimaryDatabase.DATASTORE)
-        ? ofyTm()
-        : jpaTm();
+    return tmForTest.orElseGet(TransactionManagerFactory::jpaTm);
   }
 
   /**
@@ -174,7 +153,6 @@ public final class TransactionManagerFactory {
   public static void setJpaTmOnBeamWorker(Supplier<JpaTransactionManager> jpaTmSupplier) {
     checkArgumentNotNull(jpaTmSupplier, "jpaTmSupplier");
     jpaTm = Suppliers.memoize(jpaTmSupplier::get);
-    onBeam = true;
   }
 
   /**
@@ -195,40 +173,5 @@ public final class TransactionManagerFactory {
   /** Resets the overridden transaction manager post-test. */
   public static void removeTmOverrideForTest() {
     tmForTest = Optional.empty();
-  }
-
-  public static void assertNotReadOnlyMode() {
-    if (DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc()).isReadOnly()) {
-      throw new ReadOnlyModeException();
-    }
-  }
-
-  /**
-   * Asserts that async actions (contact/host deletes and host renames) are allowed.
-   *
-   * <p>These are allowed at all times except during the {@link
-   * DatabaseMigrationStateSchedule.MigrationState#DATASTORE_PRIMARY_NO_ASYNC} stage. Note that
-   * {@link ReadOnlyModeException} may well be thrown during other read-only stages inside the
-   * transaction manager; this method specifically checks only async actions.
-   */
-  @DeleteAfterMigration
-  public static void assertAsyncActionsAreAllowed() {
-    if (DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc())
-        .equals(DATASTORE_PRIMARY_NO_ASYNC)) {
-      throw new ReadOnlyModeException();
-    }
-  }
-
-  /** Allows us to set the clock used by the factory in unit tests. */
-  @VisibleForTesting
-  public static void setClockForTesting(Clock clock) {
-    TransactionManagerFactory.clock = clock;
-  }
-
-  /** Registry is currently undergoing maintenance and is in read-only mode. */
-  public static class ReadOnlyModeException extends IllegalStateException {
-    public ReadOnlyModeException() {
-      super("Registry is currently undergoing maintenance and is in read-only mode");
-    }
   }
 }

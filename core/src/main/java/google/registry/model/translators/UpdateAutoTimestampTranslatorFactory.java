@@ -14,13 +14,10 @@
 
 package google.registry.model.translators;
 
-import static com.google.common.base.Preconditions.checkState;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.UpdateAutoTimestamp;
-import google.registry.persistence.transaction.Transaction;
 import java.util.Date;
 import org.joda.time.DateTime;
 
@@ -49,19 +46,6 @@ public class UpdateAutoTimestampTranslatorFactory
       /** Save a timestamp, setting it to the current time. */
       @Override
       public Date saveValue(UpdateAutoTimestamp pojoValue) {
-
-        // If we're in the course of Transaction serialization, we have to use the transaction time
-        // here and the JPA transaction manager which is what will ultimately be saved during the
-        // commit.
-        // Note that this branch doesn't respect "auto update disabled", as this state is
-        // specifically to address replay, so we add a runtime check for this.
-        if (Transaction.inSerializationMode()) {
-          checkState(
-              UpdateAutoTimestamp.autoUpdateEnabled(),
-              "Auto-update disabled during transaction serialization.");
-          return jpaTm().getTransactionTime().toDate();
-        }
-
         return UpdateAutoTimestamp.autoUpdateEnabled()
             ? ofyTm().getTransactionTime().toDate()
             : pojoValue.getTimestamp().toDate();

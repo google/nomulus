@@ -19,7 +19,6 @@ import static google.registry.xml.XmlTransformer.prettyPrint;
 
 import com.google.common.base.Strings;
 import com.google.common.flogger.FluentLogger;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.FlowModule.DryRun;
 import google.registry.flows.FlowModule.InputXml;
 import google.registry.flows.FlowModule.RegistrarId;
@@ -29,7 +28,6 @@ import google.registry.flows.session.LoginFlow;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.monitoring.whitebox.EppMetric;
-import google.registry.persistence.transaction.TransactionManagerFactory.ReadOnlyModeException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -99,8 +97,6 @@ public class FlowRunner {
       return e.output;
     } catch (EppRuntimeException e) {
       throw e.getCause();
-    } catch (ReadOnlyModeException e) {
-      throw new ReadOnlyModeEppException(e);
     }
   }
 

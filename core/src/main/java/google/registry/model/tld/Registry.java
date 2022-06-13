@@ -61,7 +61,6 @@ import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
-import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
@@ -90,8 +89,7 @@ import org.joda.time.Duration;
 @Entity
 @javax.persistence.Entity(name = "Tld")
 @InCrossTld
-public class Registry extends ImmutableObject
-    implements Buildable, DatastoreAndSqlEntity, UnsafeSerializable {
+public class Registry extends ImmutableObject implements Buildable, UnsafeSerializable {
 
   @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();
 

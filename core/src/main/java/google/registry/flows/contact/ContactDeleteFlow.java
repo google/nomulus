@@ -24,7 +24,6 @@ import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
 import static google.registry.model.ResourceTransferUtils.handlePendingTransferOnDelete;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.transfer.TransferStatus.SERVER_CANCELLED;
-import static google.registry.persistence.transaction.TransactionManagerFactory.assertAsyncActionsAreAllowed;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -58,7 +57,6 @@ import org.joda.time.DateTime;
  * references to the host before the deletion is allowed to proceed. A poll message will be written
  * with the success or failure message when the process is complete.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}
@@ -92,7 +90,6 @@ public final class ContactDeleteFlow implements TransactionalFlow {
     extensionManager.register(MetadataExtension.class);
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
-    assertAsyncActionsAreAllowed();
     DateTime now = tm().getTransactionTime();
     checkLinkedDomains(targetId, now, ContactResource.class);
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);

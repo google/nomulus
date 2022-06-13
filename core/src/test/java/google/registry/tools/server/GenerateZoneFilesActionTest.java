@@ -38,16 +38,23 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.net.InetAddress;
 import java.util.Map;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link GenerateZoneFilesAction}. */
 class GenerateZoneFilesActionTest extends MapreduceTestCase<GenerateZoneFilesAction> {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 

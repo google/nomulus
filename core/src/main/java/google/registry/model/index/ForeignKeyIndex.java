@@ -50,7 +50,6 @@ import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
-import google.registry.model.replay.DatastoreOnlyEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -74,20 +73,17 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   /** The {@link ForeignKeyIndex} type for {@link ContactResource} entities. */
   @ReportedOn
   @Entity
-  public static class ForeignKeyContactIndex extends ForeignKeyIndex<ContactResource>
-      implements DatastoreOnlyEntity {}
+  public static class ForeignKeyContactIndex extends ForeignKeyIndex<ContactResource> {}
 
   /** The {@link ForeignKeyIndex} type for {@link DomainBase} entities. */
   @ReportedOn
   @Entity
-  public static class ForeignKeyDomainIndex extends ForeignKeyIndex<DomainBase>
-      implements DatastoreOnlyEntity {}
+  public static class ForeignKeyDomainIndex extends ForeignKeyIndex<DomainBase> {}
 
   /** The {@link ForeignKeyIndex} type for {@link HostResource} entities. */
   @ReportedOn
   @Entity
-  public static class ForeignKeyHostIndex extends ForeignKeyIndex<HostResource>
-      implements DatastoreOnlyEntity {}
+  public static class ForeignKeyHostIndex extends ForeignKeyIndex<HostResource> {}
 
   private static final ImmutableBiMap<
           Class<? extends EppResource>, Class<? extends ForeignKeyIndex<?>>>

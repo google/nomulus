@@ -20,7 +20,6 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.ImmutableObject;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import javax.persistence.Entity;
@@ -77,7 +76,6 @@ public class CurrencyUnitConverterTest {
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
-  @EntityForTesting
   public static class TestEntity extends ImmutableObject {
 
     @Id String name = "id";

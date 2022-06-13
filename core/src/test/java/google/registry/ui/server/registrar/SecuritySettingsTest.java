@@ -16,6 +16,7 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2_HASH;
@@ -48,13 +49,19 @@ class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
             .asBuilder()
             .setClientCertificate(SAMPLE_CERT3, clock.nowUtc())
             .build();
-    Map<String, Object> response = action.handleJsonRequest(ImmutableMap.of(
-        "op", "update",
-        "id", CLIENT_ID,
-        "args", modified.toJsonMap()));
+    Map<String, Object> modifiedJsonMap = modified.toJsonMap();
+    Map<String, Object> response =
+        action.handleJsonRequest(
+            ImmutableMap.of(
+                "op", "update",
+                "id", CLIENT_ID,
+                "args", modifiedJsonMap));
+    modifiedJsonMap.put("lastUpdateTime", clock.nowUtc().toString());
     assertThat(response).containsEntry("status", "SUCCESS");
-    assertThat(response).containsEntry("results", ImmutableList.of(modified.toJsonMap()));
-    assertThat(loadRegistrar(CLIENT_ID)).isEqualTo(modified);
+    assertThat(response).containsEntry("results", ImmutableList.of(modifiedJsonMap));
+    assertAboutImmutableObjects()
+        .that(loadRegistrar(CLIENT_ID))
+        .isEqualExceptFields(modified, "lastUpdateTime");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
     verifyNotificationEmailsSent();
   }

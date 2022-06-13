@@ -34,13 +34,19 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestObject.TestVirtualObject;
+import google.registry.testing.TmOverrideExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests ensuring {@link Ofy} saves transactions to {@link CommitLogManifest}. */
 public class OfyCommitLogTest {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =

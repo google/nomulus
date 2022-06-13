@@ -95,7 +95,6 @@ import org.joda.time.Duration;
  * longer than 10 years unless it comes in at the exact millisecond that the domain would have
  * expired.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.FlowUtils.UnknownCurrencyEppException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}

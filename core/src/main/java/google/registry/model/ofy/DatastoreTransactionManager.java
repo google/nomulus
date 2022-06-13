@@ -38,8 +38,6 @@ import google.registry.model.annotations.InCrossTld;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.HostHistory;
-import google.registry.model.replay.DatastoreEntity;
-import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.QueryComposer;
@@ -357,28 +355,6 @@ public class DatastoreTransactionManager implements TransactionManager {
     return true;
   }
 
-  @Override
-  public void putIgnoringReadOnlyWithoutBackup(Object entity) {
-    syncIfTransactionless(
-        getOfy().saveIgnoringReadOnlyWithoutBackup().entities(toDatastoreEntity(entity)));
-  }
-
-  @Override
-  public void deleteIgnoringReadOnlyWithoutBackup(VKey<?> key) {
-    syncIfTransactionless(getOfy().deleteIgnoringReadOnlyWithoutBackup().key(key.getOfyKey()));
-  }
-
-  /** Performs the write ignoring read-only restrictions and also writes commit logs. */
-  public void putIgnoringReadOnlyWithBackup(Object entity) {
-    syncIfTransactionless(
-        getOfy().saveIgnoringReadOnlyWithBackup().entities(toDatastoreEntity(entity)));
-  }
-
-  /** Performs the delete ignoring read-only restrictions and also writes commit logs. */
-  public void deleteIgnoringReadOnlyWithBackup(VKey<?> key) {
-    syncIfTransactionless(getOfy().deleteIgnoringReadOnlyWithBackup().key(key.getOfyKey()));
-  }
-
   /**
    * Executes the given {@link Result} instance synchronously if not in a transaction.
    *
@@ -413,22 +389,14 @@ public class DatastoreTransactionManager implements TransactionManager {
     return toSqlEntity(getOfy().load().key(key.getOfyKey()).now());
   }
 
-  /**
-   * Converts a possible {@link SqlEntity} to a {@link DatastoreEntity}.
-   *
-   * <p>One example is that this would convert a {@link DomainHistory} to a {@link HistoryEntry}.
-   */
+  /** Converts a possible {@link HistoryEntry} child to a {@link HistoryEntry}. */
   private static Object toDatastoreEntity(@Nullable Object obj) {
-    if (obj instanceof SqlEntity) {
-      Optional<DatastoreEntity> possibleDatastoreEntity = ((SqlEntity) obj).toDatastoreEntity();
-      if (possibleDatastoreEntity.isPresent()) {
-        return possibleDatastoreEntity.get();
-      }
+    if (obj instanceof HistoryEntry) {
+      return ((HistoryEntry) obj).asHistoryEntry();
     }
     return obj;
   }
 
-  /** Converts many possible {@link SqlEntity} objects to {@link DatastoreEntity} objects. */
   private static ImmutableList<Object> toDatastoreEntities(ImmutableCollection<?> collection) {
     return collection.stream()
         .map(DatastoreTransactionManager::toDatastoreEntity)
@@ -436,21 +404,15 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   /**
-   * Converts an object to the corresponding {@link SqlEntity} if necessary and possible.
+   * Converts an object to the corresponding child {@link HistoryEntry} if necessary and possible.
    *
    * <p>This should be used when returning objects from Datastore to make sure they reflect the most
    * recent type of the object in question.
    */
   @SuppressWarnings("unchecked")
   public static <T> T toSqlEntity(@Nullable T obj) {
-    // NB: The Key of the object in question may not necessarily be the resulting class that we
-    // wish to have. For example, because all *History classes are @EntitySubclasses, their Keys
-    // will have type HistoryEntry -- even if you create them based off the *History class.
-    if (obj instanceof DatastoreEntity && !(obj instanceof SqlEntity)) {
-      Optional<SqlEntity> possibleSqlEntity = ((DatastoreEntity) obj).toSqlEntity();
-      if (possibleSqlEntity.isPresent()) {
-        return (T) possibleSqlEntity.get();
-      }
+    if (obj instanceof HistoryEntry) {
+      return (T) ((HistoryEntry) obj).toChildHistoryEntity();
     }
     return obj;
   }

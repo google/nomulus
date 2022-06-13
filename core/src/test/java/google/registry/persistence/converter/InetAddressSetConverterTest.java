@@ -21,7 +21,6 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.model.ImmutableObject;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import java.net.InetAddress;
@@ -73,7 +72,6 @@ public class InetAddressSetConverterTest {
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
-  @EntityForTesting
   private static class InetAddressSetTestEntity extends ImmutableObject {
 
     @Id String name = "id";

@@ -89,13 +89,18 @@ class NordnUploadActionTest {
 
   private static final String LOCATION_URL = "http://trololol";
 
+  private final FakeClock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12Z"));
+
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .withClock(clock)
+          .withTaskQueue()
+          .build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
-  
-  private final FakeClock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12Z"));
+
   private final LordnRequestInitializer lordnRequestInitializer =
       new LordnRequestInitializer(Optional.of("attack"));
   private final NordnUploadAction action = new NordnUploadAction();

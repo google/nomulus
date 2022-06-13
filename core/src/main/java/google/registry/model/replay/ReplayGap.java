@@ -35,7 +35,7 @@ import org.joda.time.DateTime;
 @DeleteAfterMigration
 @NotBackedUp(reason = TRANSIENT)
 @Entity
-public class ReplayGap extends ImmutableObject implements DatastoreOnlyEntity {
+public class ReplayGap extends ImmutableObject {
   @Id long transactionId;
 
   // We can't use a CreateAutoTimestamp here because this ends up getting persisted in an ofy

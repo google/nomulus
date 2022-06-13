@@ -87,7 +87,6 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
-import google.registry.testing.TmOverrideExtension;
 import java.io.IOException;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -165,10 +164,6 @@ public class RdePipelineTest {
   @RegisterExtension
   final JpaIntegrationTestExtension database =
       new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
-
-  @RegisterExtension
-  @Order(Order.DEFAULT + 1)
-  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
 
   @RegisterExtension
   final TestPipelineExtension pipeline =

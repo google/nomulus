@@ -25,13 +25,12 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.VirtualEntity;
-import google.registry.model.replay.DatastoreOnlyEntity;
 
 /** A virtual entity to represent buckets to which EppResourceIndex objects are randomly added. */
 @Entity
 @VirtualEntity
 @DeleteAfterMigration
-public class EppResourceIndexBucket extends ImmutableObject implements DatastoreOnlyEntity {
+public class EppResourceIndexBucket extends ImmutableObject {
 
   @SuppressWarnings("unused")
   @Id

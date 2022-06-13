@@ -25,10 +25,12 @@ import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import google.registry.model.contact.ContactResource;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.tools.EntityWrapper.Property;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
@@ -39,6 +41,10 @@ public class LevelDbFileBuilderTest {
   private static final int BASE_ID = 1001;
 
   @TempDir Path tmpDir;
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =

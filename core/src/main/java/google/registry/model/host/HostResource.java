@@ -19,7 +19,6 @@ import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import javax.persistence.Access;
@@ -55,8 +54,7 @@ import javax.persistence.AccessType;
 @ExternalMessagingName("host")
 @WithStringVKey
 @Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)
-public class HostResource extends HostBase
-    implements DatastoreAndSqlEntity, ForeignKeyedEppResource {
+public class HostResource extends HostBase implements ForeignKeyedEppResource {
 
   @Override
   @javax.persistence.Id

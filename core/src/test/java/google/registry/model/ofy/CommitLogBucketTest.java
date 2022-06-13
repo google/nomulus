@@ -27,12 +27,18 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.annotation.Cache;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TmOverrideExtension;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link CommitLogBucket}. */
 public class CommitLogBucketTest {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =

@@ -24,14 +24,13 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.model.replay.DatastoreOnlyEntity;
 import org.joda.time.DateTime;
 
 /** Singleton parent entity for all commit log checkpoints. */
 @Entity
 @NotBackedUp(reason = Reason.COMMIT_LOGS)
 @DeleteAfterMigration
-public class CommitLogCheckpointRoot extends ImmutableObject implements DatastoreOnlyEntity {
+public class CommitLogCheckpointRoot extends ImmutableObject {
 
   public static final long SINGLETON_ID = 1;  // There is always exactly one of these.
 

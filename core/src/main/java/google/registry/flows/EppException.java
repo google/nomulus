@@ -25,7 +25,6 @@ import google.registry.model.eppinput.EppInput.InnerCommand;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.model.eppoutput.Result;
 import google.registry.model.eppoutput.Result.Code;
-import google.registry.persistence.transaction.TransactionManagerFactory.ReadOnlyModeException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -260,14 +259,6 @@ public abstract class EppException extends Exception {
   public static class UnimplementedProtocolVersionException extends EppException {
     public UnimplementedProtocolVersionException() {
       super("Specified protocol version is not implemented");
-    }
-  }
-
-  /** Registry is currently undergoing maintenance and is in read-only mode. */
-  @EppResultCode(Code.COMMAND_FAILED)
-  public static class ReadOnlyModeEppException extends EppException {
-    ReadOnlyModeEppException(ReadOnlyModeException cause) {
-      super("Registry is currently undergoing maintenance and is in read-only mode", cause);
     }
   }
 }

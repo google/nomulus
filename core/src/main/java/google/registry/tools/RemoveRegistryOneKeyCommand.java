@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameters;
 import com.googlecode.objectify.Key;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.domain.DomainBase;
 import google.registry.persistence.VKey;
 import javax.annotation.Nullable;
@@ -23,6 +24,7 @@ import org.joda.time.DateTime;
 
 /** Command to remove the Registry 1.0 key in {@link DomainBase} entity. */
 @Parameters(separators = " =", commandDescription = "Remove .")
+@DeleteAfterMigration
 public class RemoveRegistryOneKeyCommand extends ReadEntityFromKeyPathCommand<DomainBase> {
 
   @Override

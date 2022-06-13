@@ -22,7 +22,6 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
@@ -43,7 +42,6 @@ public class CreateAutoTimestampTest {
 
   /** Timestamped class. */
   @Entity(name = "CatTestEntity")
-  @EntityForTesting
   @javax.persistence.Entity
   public static class CreateAutoTimestampTestObject extends CrossTldSingleton {
     @Ignore @javax.persistence.Id long id = SINGLETON_ID;

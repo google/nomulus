@@ -23,7 +23,6 @@ import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
-import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.util.DateTimeUtils;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -76,7 +75,7 @@ import org.joda.time.Duration;
       @Index(name = "idx_registry_lock_verification_code", columnList = "verificationCode"),
       @Index(name = "idx_registry_lock_registrar_id", columnList = "registrarId")
     })
-public final class RegistryLock extends ImmutableObject implements Buildable, SqlOnlyEntity {
+public final class RegistryLock extends ImmutableObject implements Buildable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

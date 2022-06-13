@@ -25,7 +25,7 @@ import org.joda.time.DateTime;
 
 @Entity
 @DeleteAfterMigration
-public class SqlReplayCheckpoint extends CrossTldSingleton implements SqlOnlyEntity {
+public class SqlReplayCheckpoint extends CrossTldSingleton {
 
   @Column(nullable = false)
   private DateTime lastReplayTime;
@@ -43,6 +43,6 @@ public class SqlReplayCheckpoint extends CrossTldSingleton implements SqlOnlyEnt
     SqlReplayCheckpoint checkpoint = new SqlReplayCheckpoint();
     checkpoint.lastReplayTime = lastReplayTime;
     // this will overwrite the existing object due to the constant revisionId
-    jpaTm().putIgnoringReadOnlyWithoutBackup(checkpoint);
+    jpaTm().put(checkpoint);
   }
 }

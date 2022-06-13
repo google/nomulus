@@ -28,11 +28,18 @@ import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.tld.Registry;
+import google.registry.testing.TmOverrideExtension;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ResaveEnvironmentEntitiesCommand}. */
 class ResaveEnvironmentEntitiesCommandTest
     extends CommandTestCase<ResaveEnvironmentEntitiesCommand> {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @Test
   void testSuccess_noop() throws Exception {

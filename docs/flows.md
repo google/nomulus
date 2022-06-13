@@ -31,8 +31,6 @@ An EPP flow that creates a new contact.
     *   Resource with this id already exists.
 *   2306
     *   Declining contact disclosure is disallowed by server policy.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## ContactDeleteFlow
 
@@ -59,8 +57,6 @@ or failure message when the process is complete.
     *   Resource status prohibits this operation.
 *   2305
     *   Resource to be deleted has active incoming references.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## ContactInfoFlow
 
@@ -107,8 +103,6 @@ transfer request, which then becomes effective immediately.
     *   The resource does not have a pending transfer.
 *   2303
     *   Resource with this id does not exist.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## ContactTransferCancelFlow
 
@@ -134,8 +128,6 @@ request.
     *   The resource does not have a pending transfer.
 *   2303
     *   Resource with this id does not exist.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## ContactTransferQueryFlow
 
@@ -186,8 +178,6 @@ that window, this flow allows the losing client to reject the transfer request.
     *   The resource does not have a pending transfer.
 *   2303
     *   Resource with this id does not exist.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## ContactTransferRequestFlow
 
@@ -216,8 +206,6 @@ or rejected, and the gaining registrar can also cancel the transfer request.
     *   Resource with this id does not exist.
 *   2304
     *   Resource status prohibits this operation.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## ContactUpdateFlow
 
@@ -244,8 +232,6 @@ An EPP flow that updates a contact.
 *   2306
     *   Cannot add and remove the same value.
     *   Declining contact disclosure is disallowed by server policy.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## DomainCheckFlow
 
@@ -410,8 +396,6 @@ An EPP flow that creates a new domain resource.
     *   Too many nameservers set on this domain.
     *   Domain labels cannot end with a dash.
     *   Only encoded signed marks are supported.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## DomainDeleteFlow
 
@@ -436,8 +420,6 @@ An EPP flow that deletes a domain.
     *   Resource status prohibits this operation.
 *   2305
     *   Domain to be deleted has subordinate hosts.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## DomainInfoFlow
 
@@ -514,8 +496,6 @@ comes in at the exact millisecond that the domain would have expired.
 *   2306
     *   Periods for domain registrations must be specified in years.
     *   The requested fees cannot be provided in the requested currency.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## DomainRestoreRequestFlow
 
@@ -577,8 +557,6 @@ regardless of what the original expiration time was.
     *   Domain is not eligible for restore.
 *   2306
     *   The requested fees cannot be provided in the requested currency.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## DomainTransferApproveFlow
 
@@ -610,8 +588,6 @@ replaced with new ones with the correct approval time.
     *   The resource does not have a pending transfer.
 *   2303
     *   Resource with this id does not exist.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## DomainTransferCancelFlow
 
@@ -642,8 +618,6 @@ transfer period passed. In this flow, those speculative objects are deleted.
     *   The resource does not have a pending transfer.
 *   2303
     *   Resource with this id does not exist.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## DomainTransferQueryFlow
 
@@ -699,8 +673,6 @@ transfer period passed. In this flow, those speculative objects are deleted.
     *   The resource does not have a pending transfer.
 *   2303
     *   Resource with this id does not exist.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## DomainTransferRequestFlow
 
@@ -762,8 +734,6 @@ new ones with the correct approval time).
         EPP extension.
     *   Periods for domain registrations must be specified in years.
     *   The requested fees cannot be provided in the requested currency.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## DomainUpdateFlow
 
@@ -822,8 +792,6 @@ statuses are updated at once.
     *   The secDNS:all element must have value 'true' if present.
     *   Too many DS records set on a domain.
     *   Too many nameservers set on this domain.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## HelloFlow
 
@@ -886,8 +854,6 @@ allows creating a host name, and if necessary enqueues tasks to update DNS.
     *   Superordinate domain for this hostname is in pending delete.
 *   2306
     *   Host names must be at least two levels below the registry suffix.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## HostDeleteFlow
 
@@ -918,8 +884,6 @@ or failure message when the process is complete.
     *   Resource status prohibits this operation.
 *   2305
     *   Resource to be deleted has active incoming references.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## HostInfoFlow
 
@@ -992,8 +956,6 @@ are enqueued to update DNS accordingly.
 *   2306
     *   Cannot add and remove the same value.
     *   Host names must be at least two levels below the registry suffix.
-*   2400
-    *   Registry is currently undergoing maintenance and is in read-only mode.
 
 ## LoginFlow
 

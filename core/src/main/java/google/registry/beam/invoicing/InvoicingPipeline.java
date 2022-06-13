@@ -41,11 +41,9 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
-import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.TextIO;
-import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.Contextful;
 import org.apache.beam.sdk.transforms.Count;
@@ -92,26 +90,9 @@ public class InvoicingPipeline implements Serializable {
 
   void setupPipeline(Pipeline pipeline) {
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
-    PCollection<BillingEvent> billingEvents =
-        options.getDatabase().equals("DATASTORE")
-            ? readFromBigQuery(options, pipeline)
-            : readFromCloudSql(options, pipeline);
-
+    PCollection<BillingEvent> billingEvents = readFromCloudSql(options, pipeline);
     saveInvoiceCsv(billingEvents, options);
-
     saveDetailedCsv(billingEvents, options);
-  }
-
-  static PCollection<BillingEvent> readFromBigQuery(
-      InvoicingPipelineOptions options, Pipeline pipeline) {
-    return pipeline.apply(
-        "Read BillingEvents from Bigquery",
-        BigQueryIO.read(BillingEvent::parseFromRecord)
-            .fromQuery(makeQuery(options.getYearMonth(), options.getProject()))
-            .withCoder(SerializableCoder.of(BillingEvent.class))
-            .usingStandardSql()
-            .withoutValidation()
-            .withTemplateCompatibility());
   }
 
   static PCollection<BillingEvent> readFromCloudSql(

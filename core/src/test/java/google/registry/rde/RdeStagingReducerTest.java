@@ -43,6 +43,7 @@ import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeLockHandler;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.xml.ValidationMode;
 import java.io.IOException;
 import java.util.Iterator;
@@ -52,11 +53,16 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdeStagingReducer}. */
 class RdeStagingReducerTest {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   AppEngineExtension appEngineExtension =

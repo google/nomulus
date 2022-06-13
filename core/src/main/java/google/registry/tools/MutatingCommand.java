@@ -32,7 +32,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
-import google.registry.model.replay.SqlEntity;
 import google.registry.persistence.VKey;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -90,12 +89,15 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
       ImmutableObject entity = MoreObjects.firstNonNull(oldEntity, newEntity);
 
       // This is one of the few cases where it is acceptable to create an asymmetric VKey (using
-      // createOfy()).  We can use this code on DatastoreOnlyEntity's where we can't construct an
+      // createOfy()).  We can use this code on datastore-only entities where we can't construct a
       // SQL key.
-      key =
-          entity instanceof SqlEntity
-              ? VKey.from(Key.create(entity))
-              : VKey.createOfy(entity.getClass(), Key.create(entity));
+      VKey<?> createdKey;
+      try {
+        createdKey = VKey.from(Key.create(entity));
+      } catch (RuntimeException e) {
+        createdKey = VKey.createOfy(entity.getClass(), Key.create(entity));
+      }
+      key = createdKey;
     }
 
     /**

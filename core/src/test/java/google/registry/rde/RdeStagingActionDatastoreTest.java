@@ -56,6 +56,7 @@ import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.xjc.XjcXmlTransformer;
@@ -84,11 +85,16 @@ import org.joda.time.DateTimeConstants;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdeStagingAction} in Datastore. */
 public class RdeStagingActionDatastoreTest extends MapreduceTestCase<RdeStagingAction> {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   private static final BlobId XML_FILE =
       BlobId.of("rde-bucket", "lol_2000-01-01_full_S1_R0.xml.ghostryde");

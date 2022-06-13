@@ -30,7 +30,6 @@ import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManager;
@@ -62,7 +61,7 @@ import org.joda.time.Duration;
 @javax.persistence.Entity
 @Table
 @IdClass(Lock.LockId.class)
-public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Serializable {
+public class Lock extends ImmutableObject implements Serializable {
 
   private static final long serialVersionUID = 756397280691684645L;
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -293,7 +292,7 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
               create(resourceName, scope, requestStatusChecker.getLogId(), now, leaseLength);
           // Locks are not parented under an EntityGroupRoot (so as to avoid write
           // contention) and don't need to be backed up.
-          transactionManager.putIgnoringReadOnlyWithoutBackup(newLock);
+          transactionManager.put(newLock);
 
           return AcquireResult.create(now, lock, newLock, lockState);
         };
@@ -325,7 +324,7 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
             // Use deleteIgnoringReadOnly() so that we don't create a commit log entry for deleting
             // the lock.
             logger.atInfo().log("Deleting lock: %s", lockId);
-            transactionManager.deleteIgnoringReadOnlyWithoutBackup(key);
+            transactionManager.delete(key);
 
             lockMetrics.recordRelease(
                 resourceName,

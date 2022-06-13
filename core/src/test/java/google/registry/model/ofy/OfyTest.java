@@ -45,17 +45,17 @@ import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.persistence.transaction.TransactionManagerFactory.ReadOnlyModeException;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.util.SystemClock;
 import java.util.ConcurrentModificationException;
 import java.util.function.Supplier;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -63,6 +63,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class OfyTest {
 
   private final FakeClock fakeClock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
@@ -178,7 +182,6 @@ public class OfyTest {
 
   /** Simple entity class with lifecycle callbacks. */
   @com.googlecode.objectify.annotation.Entity
-  @EntityForTesting
   public static class LifecycleObject extends ImmutableObject {
 
     @Parent Key<?> parent = getCrossTldKey();
@@ -436,13 +439,5 @@ public class OfyTest {
     assertThat(ran).isTrue();
     // Test the normal loading again to verify that we've restored the original session unchanged.
     assertThat(auditedOfy().load().entity(someObject).now()).isEqualTo(someObject.asHistoryEntry());
-  }
-
-  @Test
-  void testReadOnly_failsWrite() {
-    Ofy ofy = new Ofy(fakeClock);
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(fakeClock);
-    assertThrows(ReadOnlyModeException.class, () -> ofy.save().entity(someObject).now());
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }
