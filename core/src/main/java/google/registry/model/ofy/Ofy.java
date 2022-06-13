@@ -242,7 +242,7 @@ public class Ofy {
   }
 
   /** Pause the current transaction (if any) and complete this one before returning to it. */
-  <R> R transactNew(Supplier<R> work) {
+  public <R> R transactNew(Supplier<R> work) {
     // Wrap the Work in a CommitLoggedWork so that we can give transactions a frozen view of time
     // and maintain commit logs for them.
     return transactCommitLoggedWork(new CommitLoggedWork<>(work, getClock()));
