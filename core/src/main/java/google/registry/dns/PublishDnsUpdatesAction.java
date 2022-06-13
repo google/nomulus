@@ -144,9 +144,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       }
       // If executeWithLocks fails to get the lock, it does not throw an exception, simply returns
       // false. We need to make sure to take note of this error; otherwise, a failed lock might
-      // result
-      // in the update task being dequeued and dropped. A message will already have been logged
-      // to indicate the problem.
+      // result in the update task being dequeued and dropped. A message will already have been
+      // logged to indicate the problem.
       if (!lockHandler.executeWithLocks(
           this,
           tld,
@@ -161,7 +160,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
         throw e;
       }
       // After 3 retries, split the batch
-      if (domains.size() > 1) {
+      if (domains.size() > 1 || hosts.size() > 1) {
         // split batch and requeue
         splitBatch();
       }
@@ -185,12 +184,11 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
         throw e;
       }
       // After 3 retries, split the batch
-      if (domains.size() > 1) {
+      if (domains.size() > 1 || hosts.size() > 1) {
         // split batch and requeue
         splitBatch();
-      }
-      // If the batch only contains 1 name, allow it 10 retries
-      else if (retryCount < 10) {
+      } else if (retryCount < 10) {
+        // If the batch only contains 1 name, allow it 10 retries
         throw e;
       }
       // If we get here, we should terminate this task as it is likely a perpetually failing task.
@@ -199,7 +197,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     return null;
   }
 
-  /** Splits the domains and hosts in a batch into 2 batches and adds them to the queue. */
+  /** Splits the domains and hosts in a batch into smaller batches and adds them to the queue. */
   private void splitBatch() {
     Set<String> set1Domain = new HashSet<>();
     Set<String> set2Domain = new HashSet<>();
@@ -222,20 +220,11 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       }
     }
 
-    // Enqueue set 1
-    taskQueueUtils.enqueue(
-        dnsPublishPushQueue,
-        TaskOptions.Builder.withUrl(PATH)
-            .param(PARAM_TLD, tld)
-            .param(PARAM_DNS_WRITER, dnsWriter)
-            .param(PARAM_LOCK_INDEX, Integer.toString(lockIndex))
-            .param(PARAM_NUM_PUBLISH_LOCKS, Integer.toString(numPublishLocks))
-            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_CREATED, itemsCreateTime.toString())
-            .param(PARAM_DOMAINS, set1Domain.stream().collect(Collectors.joining(",")))
-            .param(PARAM_HOSTS, set1Host.stream().collect(Collectors.joining(","))));
+    enqueue(set1Domain, set1Host);
+    enqueue(set2Domain, set2Host);
+  }
 
-    // Enqueue set 2
+  private void enqueue(Set<String> domains, Set<String> hosts) {
     taskQueueUtils.enqueue(
         dnsPublishPushQueue,
         TaskOptions.Builder.withUrl(PATH)
@@ -245,8 +234,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
             .param(PARAM_NUM_PUBLISH_LOCKS, Integer.toString(numPublishLocks))
             .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
             .param(PARAM_REFRESH_REQUEST_CREATED, itemsCreateTime.toString())
-            .param(PARAM_DOMAINS, set2Domain.stream().collect(Collectors.joining(",")))
-            .param(PARAM_HOSTS, set2Host.stream().collect(Collectors.joining(","))));
+            .param(PARAM_DOMAINS, domains.stream().collect(Collectors.joining(",")))
+            .param(PARAM_HOSTS, hosts.stream().collect(Collectors.joining(","))));
   }
 
   /** Adds all the domains and hosts in the batch back to the queue to be processed later. */

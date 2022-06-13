@@ -110,7 +110,7 @@ public class PublishDnsUpdatesActionTest {
     action.lockHandler = lockHandler;
     action.clock = clock;
     action.taskQueueUtils = taskQueueUtils;
-    action.retryCount = 1;
+    action.retryCount = 0;
     action.dnsPublishPushQueue = queue;
     return action;
   }
@@ -220,38 +220,52 @@ public class PublishDnsUpdatesActionTest {
 
   @Test
   void testTaskFails_splitsBatch() {
-    action = createAction("com");
+    action = createAction("xn--q9jyb4c");
     action.domains =
-        ImmutableSet.of("example1.com", "example2.com", "example3.com", "example4.com");
-    action.hosts = ImmutableSet.of("ns1.example.com");
+        ImmutableSet.of(
+            "example1.xn--q9jyb4c",
+            "example2.xn--q9jyb4c",
+            "example3.xn--q9jyb4c",
+            "example4.xn--q9jyb4c");
+    action.hosts = ImmutableSet.of("ns1.example.xn--q9jyb4c");
     action.retryCount = 3;
     doThrow(new RuntimeException()).when(dnsWriter).commit();
     action.run();
 
     TaskOptions taskOptions1 =
         TaskOptions.Builder.withUrl(PublishDnsUpdatesAction.PATH)
-            .param(PARAM_TLD, "com")
+            .param(PARAM_TLD, "xn--q9jyb4c")
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
             .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
             .param(PARAM_REFRESH_REQUEST_CREATED, action.itemsCreateTime.toString())
-            .param(PARAM_DOMAINS, "example1.com,example2.com")
+            .param(PARAM_DOMAINS, "example2.xn--q9jyb4c,example1.xn--q9jyb4c")
             .param(PARAM_HOSTS, "");
 
     TaskOptions taskOptions2 =
         TaskOptions.Builder.withUrl(PublishDnsUpdatesAction.PATH)
-            .param(PARAM_TLD, "com")
+            .param(PARAM_TLD, "xn--q9jyb4c")
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
             .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
             .param(PARAM_REFRESH_REQUEST_CREATED, action.itemsCreateTime.toString())
-            .param(PARAM_DOMAINS, "example3.com,example4.com")
-            .param(PARAM_HOSTS, "ns1.example.com");
+            .param(PARAM_DOMAINS, "example3.xn--q9jyb4c,example4.xn--q9jyb4c")
+            .param(PARAM_HOSTS, "ns1.example.xn--q9jyb4c");
 
     verify(taskQueueUtils).enqueue(queue, taskOptions1);
     verify(taskQueueUtils).enqueue(queue, taskOptions2);
+  }
+
+  @Test
+  void testTaskFailsAfterTenRetries_DoesNotRetry() {
+    action = createAction("xn--q9jyb4c");
+    action.hosts = ImmutableSet.of("ns1.example.xn--q9jyb4c");
+    action.retryCount = 9;
+    doThrow(new RuntimeException()).when(dnsWriter).commit();
+    assertThrows(RuntimeException.class, action::run);
+    verifyNoMoreInteractions(taskQueueUtils);
   }
 
   @Test
