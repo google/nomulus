@@ -90,7 +90,6 @@
     <url><![CDATA[/_dr/task/resaveAllEppResourcesPipeline?fast=true]]></url>
     <description>
       This job resaves all our resources, projected in time to "now".
-      It is needed for "deleteOldCommitLogs" to work correctly.
     </description>
     <schedule>1st monday of month 09:00</schedule>
     <target>backend</target>
@@ -108,9 +107,9 @@
   <cron>
     <url><![CDATA[/_dr/task/expandRecurringBillingEvents]]></url>
     <description>
-      This job runs a mapreduce that creates synthetic OneTime billing events from Recurring billing
+      This job runs an action that creates synthetic OneTime billing events from Recurring billing
       events. Events are created for all instances of Recurring billing events that should exist
-      between the RECURRING_BILLING cursor's time and the execution time of the mapreduce.
+      between the RECURRING_BILLING cursor's time and the execution time of the action.
     </description>
     <schedule>every day 03:00</schedule>
     <target>backend</target>

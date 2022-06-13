@@ -29,7 +29,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
-import google.registry.mapreduce.MapreduceRunner;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.host.HostResource;
@@ -56,7 +55,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
- * MapReduce that requests generation of BIND zone files for a set of TLDs at a given time.
+ * Action that requests generation of BIND zone files for a set of TLDs at a given time.
  *
  * <p>Zone files for each requested TLD are written to GCS. TLDs without entries produce zone files
  * with only a header. The export time must be at least two minutes in the past and no more than 29
@@ -94,10 +93,13 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   /** Format for A and AAAA records. */
   private static final String A_FORMAT = "%s\t%d\tIN\t%s\t%s\n";
 
-  @Inject MapreduceRunner mrRunner;
   @Inject JsonActionRunner jsonActionRunner;
   @Inject @Config("zoneFilesBucket") String bucket;
-  @Inject @Config("commitLogDatastoreRetention") Duration datastoreRetention;
+
+  @Inject
+  @Config("databaseRetention")
+  Duration databaseRetention;
+
   @Inject @Config("dnsDefaultATtl") Duration dnsDefaultATtl;
   @SuppressWarnings("DurationVariableWithUnits") // false-positive Error Prone check
   @Inject @Config("dnsDefaultNsTtl") Duration dnsDefaultNsTtl;
@@ -124,10 +126,10 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     if (exportTime.isAfter(now.minusMinutes(2))) {
       throw new BadRequestException("Invalid export time: must be > 2 minutes ago");
     }
-    if (exportTime.isBefore(now.minus(datastoreRetention))) {
-      throw new BadRequestException(String.format(
-          "Invalid export time: must be < %d days ago",
-          datastoreRetention.getStandardDays()));
+    if (exportTime.isBefore(now.minus(databaseRetention))) {
+      throw new BadRequestException(
+          String.format(
+              "Invalid export time: must be < %d days ago", databaseRetention.getStandardDays()));
     }
     tlds.forEach(tld -> generateForTld(tld, exportTime));
     ImmutableList<String> filenames =

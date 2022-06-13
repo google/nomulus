@@ -45,8 +45,6 @@ abstract class GetEppResourceCommand implements CommandWithRemoteApi {
   /**
    * Prints a possibly-absent resource to stdout, using resourceType and uniqueId to construct a
    * nice error message if the resource was null (i.e. doesn't exist).
-   *
-   * <p>The websafe key is appended to the output for use in e.g. manual mapreduce calls.
    */
   void printResource(
       String resourceType, String uniqueId, Optional<? extends EppResource> resource) {

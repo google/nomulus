@@ -196,7 +196,6 @@ dependencies {
   compile deps['com.google.apis:google-api-services-storage']
   testCompile deps['com.google.appengine:appengine-api-stubs']
   compile deps['com.google.appengine.tools:appengine-gcs-client']
-  compile deps['com.google.appengine.tools:appengine-mapreduce']
   compile deps['com.google.appengine.tools:appengine-pipeline']
   compile deps['com.google.appengine:appengine-remote-api']
   compile deps['com.google.auth:google-auth-library-credentials']

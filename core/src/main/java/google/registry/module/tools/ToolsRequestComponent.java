@@ -16,23 +16,18 @@ package google.registry.module.tools;
 
 import dagger.Module;
 import dagger.Subcomponent;
-import google.registry.backup.BackupModule;
-import google.registry.backup.RestoreCommitLogsAction;
 import google.registry.dns.DnsModule;
 import google.registry.flows.EppToolAction;
 import google.registry.flows.EppToolAction.EppToolModule;
 import google.registry.flows.FlowComponent;
 import google.registry.loadtest.LoadTestAction;
 import google.registry.loadtest.LoadTestModule;
-import google.registry.mapreduce.MapreduceModule;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
 import google.registry.request.RequestScope;
 import google.registry.tools.server.CreateGroupsAction;
 import google.registry.tools.server.GenerateZoneFilesAction;
-import google.registry.tools.server.KillAllCommitLogsAction;
-import google.registry.tools.server.KillAllEppResourcesAction;
 import google.registry.tools.server.ListDomainsAction;
 import google.registry.tools.server.ListHostsAction;
 import google.registry.tools.server.ListPremiumListsAction;
@@ -40,7 +35,6 @@ import google.registry.tools.server.ListRegistrarsAction;
 import google.registry.tools.server.ListReservedListsAction;
 import google.registry.tools.server.ListTldsAction;
 import google.registry.tools.server.RefreshDnsForAllDomainsAction;
-import google.registry.tools.server.ResaveAllHistoryEntriesAction;
 import google.registry.tools.server.ToolsServerModule;
 import google.registry.tools.server.VerifyOteAction;
 
@@ -48,11 +42,9 @@ import google.registry.tools.server.VerifyOteAction;
 @RequestScope
 @Subcomponent(
     modules = {
-      BackupModule.class,
       DnsModule.class,
       EppToolModule.class,
       LoadTestModule.class,
-      MapreduceModule.class,
       RequestModule.class,
       ToolsServerModule.class,
       WhiteboxModule.class,
@@ -62,8 +54,6 @@ interface ToolsRequestComponent {
   EppToolAction eppToolAction();
   FlowComponent.Builder flowComponentBuilder();
   GenerateZoneFilesAction generateZoneFilesAction();
-  KillAllCommitLogsAction killAllCommitLogsAction();
-  KillAllEppResourcesAction killAllEppResourcesAction();
   ListDomainsAction listDomainsAction();
   ListHostsAction listHostsAction();
   ListPremiumListsAction listPremiumListsAction();
@@ -72,8 +62,6 @@ interface ToolsRequestComponent {
   ListTldsAction listTldsAction();
   LoadTestAction loadTestAction();
   RefreshDnsForAllDomainsAction refreshDnsForAllDomainsAction();
-  ResaveAllHistoryEntriesAction resaveAllHistoryEntriesAction();
-  RestoreCommitLogsAction restoreCommitLogsAction();
   VerifyOteAction verifyOteAction();
 
   @Subcomponent.Builder

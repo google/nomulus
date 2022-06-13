@@ -4,7 +4,7 @@
 com.sun.activation:jakarta.activation:1.2.2
 com.sun.activation:javax.activation:1.2.0
 com.sun.xml.bind:jaxb-impl:2.3.3
-com.sun.xml.bind:jaxb-osgi:4.0.0
+com.sun.xml.bind:jaxb-osgi:4.0.0-M4
 com.sun.xml.bind:jaxb-xjc:2.3.3
 jakarta.activation:jakarta.activation-api:2.1.0
 jakarta.xml.bind:jakarta.xml.bind-api:4.0.0

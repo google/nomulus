@@ -108,7 +108,6 @@ class google.registry.model.contact.ContactAuthInfo {
 }
 class google.registry.model.contact.ContactBase {
   @Id java.lang.String repoId;
-  com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.contact.ContactAuthInfo authInfo;
@@ -151,7 +150,6 @@ class google.registry.model.contact.ContactPhoneNumber {
 }
 class google.registry.model.contact.ContactResource {
   @Id java.lang.String repoId;
-  com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.contact.ContactAuthInfo authInfo;
@@ -209,7 +207,6 @@ class google.registry.model.domain.DomainAuthInfo {
 }
 class google.registry.model.domain.DomainBase {
   @Id java.lang.String repoId;
-  com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.domain.DomainAuthInfo authInfo;
@@ -239,7 +236,6 @@ class google.registry.model.domain.DomainBase {
 }
 class google.registry.model.domain.DomainContent {
   @Id java.lang.String repoId;
-  com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.domain.DomainAuthInfo authInfo;
@@ -405,7 +401,6 @@ class google.registry.model.eppcommon.Trid {
 }
 class google.registry.model.host.HostBase {
   @Id java.lang.String repoId;
-  com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.persistence.VKey<google.registry.model.domain.DomainBase> superordinateDomain;
@@ -438,7 +433,6 @@ class google.registry.model.host.HostHistory {
 }
 class google.registry.model.host.HostResource {
   @Id java.lang.String repoId;
-  com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.persistence.VKey<google.registry.model.domain.DomainBase> superordinateDomain;
@@ -480,29 +474,6 @@ class google.registry.model.index.ForeignKeyIndex$ForeignKeyHostIndex {
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
-}
-class google.registry.model.ofy.CommitLogBucket {
-  @Id long bucketNum;
-  org.joda.time.DateTime lastWrittenTime;
-}
-class google.registry.model.ofy.CommitLogCheckpoint {
-  @Id long checkpointTime;
-  @Parent com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogCheckpointRoot> parent;
-  java.util.List<org.joda.time.DateTime> bucketTimestamps;
-}
-class google.registry.model.ofy.CommitLogCheckpointRoot {
-  @Id long id;
-  org.joda.time.DateTime lastWrittenTime;
-}
-class google.registry.model.ofy.CommitLogManifest {
-  @Id long commitTime;
-  @Parent com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogBucket> parent;
-  java.util.Set<com.googlecode.objectify.Key<?>> deletions;
-}
-class google.registry.model.ofy.CommitLogMutation {
-  @Id java.lang.String entityKey;
-  @Parent com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest> parent;
-  byte[] entityProtoBytes;
 }
 class google.registry.model.poll.PendingActionNotificationResponse$ContactPendingActionNotificationResponse {
   google.registry.model.eppcommon.Trid trid;

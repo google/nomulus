@@ -80,7 +80,7 @@ public interface EppTestComponent {
           new DomainFlowTmchUtils(
               new TmchXmlSignature(new TmchCertificateAuthority(TmchCaMode.PILOT, clock)));
       instance.sleeper = new FakeSleeper(instance.clock);
-      instance.dnsQueue = DnsQueue.create();
+      instance.dnsQueue = DnsQueue.createForTesting(clock);
       instance.metricBuilder = EppMetric.builderForRequest(clock);
       instance.lockHandler = new FakeLockHandler(true);
       instance.cloudTasksHelper = cloudTasksHelper;

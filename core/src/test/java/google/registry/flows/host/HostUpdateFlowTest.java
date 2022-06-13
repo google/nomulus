@@ -206,7 +206,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
             .build());
     HostResource renamedHost = doSuccessfulTest();
     assertThat(renamedHost.isSubordinate()).isTrue();
-    // Task enqueued to change the NS record of the referencing domain via mapreduce.
+    // Task enqueued to change the NS record of the referencing domain.
     assertTasksEnqueued(
         QUEUE_ASYNC_HOST_RENAME,
         new TaskMatcher()

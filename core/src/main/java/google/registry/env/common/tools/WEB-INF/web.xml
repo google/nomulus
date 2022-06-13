@@ -66,40 +66,6 @@
     <url-pattern>/_dr/epptool</url-pattern>
   </servlet-mapping>
 
-  <!--  Mapreduce to re-save all HistoryEntries. -->
-  <servlet-mapping>
-    <servlet-name>tools-servlet</servlet-name>
-    <url-pattern>/_dr/task/resaveAllHistoryEntries</url-pattern>
-  </servlet-mapping>
-
-  <!-- Mapreduce to delete EppResources, children, and indices. -->
-  <servlet-mapping>
-    <servlet-name>tools-servlet</servlet-name>
-    <url-pattern>/_dr/task/killAllEppResources</url-pattern>
-  </servlet-mapping>
-
-  <!-- Mapreduce to delete all commit logs. -->
-  <servlet-mapping>
-    <servlet-name>tools-servlet</servlet-name>
-    <url-pattern>/_dr/task/killAllCommitLogs</url-pattern>
-  </servlet-mapping>
-
-  <!-- Restores commit logs. -->
-  <servlet-mapping>
-    <servlet-name>tools-servlet</servlet-name>
-    <url-pattern>/_dr/task/restoreCommitLogs</url-pattern>
-  </servlet-mapping>
-
-  <!-- This path serves up the App Engine results page for mapreduce runs. -->
-  <servlet>
-    <servlet-name>mapreduce</servlet-name>
-    <servlet-class>com.google.appengine.tools.mapreduce.MapReduceServlet</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>mapreduce</servlet-name>
-    <url-pattern>/_dr/mapreduce/*</url-pattern>
-  </servlet-mapping>
-
   <!-- Pipeline GUI servlets. -->
   <servlet>
     <servlet-name>pipeline</servlet-name>

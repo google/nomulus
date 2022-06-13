@@ -17,12 +17,10 @@ package google.registry.batch;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.domain.Period.Unit.YEARS;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_AUTORENEW;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
-import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getHistoryEntriesOfType;
@@ -52,27 +50,35 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ExpandRecurringBillingEventsAction}. */
 @DualDatabaseTest
-public class ExpandRecurringBillingEventsActionTest
-    extends MapreduceTestCase<ExpandRecurringBillingEventsAction> {
+public class ExpandRecurringBillingEventsActionTest {
+
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .withLocalModules()
+          .withTaskQueue()
+          .build();
 
   private DateTime currentTestTime = DateTime.parse("1999-01-05T00:00:00Z");
   private final FakeClock clock = new FakeClock(currentTestTime);
 
+  private ExpandRecurringBillingEventsAction action;
   private DomainBase domain;
   private DomainHistory historyEntry;
   private BillingEvent.Recurring recurring;
@@ -80,7 +86,6 @@ public class ExpandRecurringBillingEventsActionTest
   @BeforeEach
   void beforeEach() {
     action = new ExpandRecurringBillingEventsAction();
-    action.mrRunner = makeDefaultRunner();
     action.clock = clock;
     action.cursorTimeParam = Optional.empty();
     action.batchSize = 2;
@@ -121,12 +126,10 @@ public class ExpandRecurringBillingEventsActionTest
   private void runAction() throws Exception {
     action.response = new FakeResponse();
     action.run();
-    // Need to save the current test time before running the mapreduce, which increments the clock.
+    // Need to save the current test time before running the action, which increments the clock.
     // The execution time (e. g. transaction time) is captured when the action starts running so
     // the passage of time afterward does not affect the timestamp stored in the billing events.
     currentTestTime = clock.nowUtc();
-    executeTasksUntilEmpty("mapreduce", clock);
-    auditedOfy().clearSessionCache();
   }
 
   private void assertCursorAt(DateTime expectedCursorTime) {
@@ -423,7 +426,7 @@ public class ExpandRecurringBillingEventsActionTest
   @TestOfyAndSql
   void testSuccess_expandSingleEvent_withCursorPastExpected() throws Exception {
     persistResource(recurring);
-    // Simulate a quick second run of the mapreduce (this should be a no-op).
+    // Simulate a quick second run of the action (this should be a no-op).
     saveCursor(clock.nowUtc().minusSeconds(1));
     runAction();
     // No new history entries should be generated
@@ -801,24 +804,11 @@ public class ExpandRecurringBillingEventsActionTest
 
   @TestOfyAndSql
   void testFailure_cursorAtExecutionTime() {
-    // The clock advances one milli on runMapreduce.
+    // The clock advances one milli on run.
     action.cursorTimeParam = Optional.of(clock.nowUtc().plusMillis(1));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, this::runAction);
     assertThat(thrown)
         .hasMessageThat()
         .contains("Cursor time must be earlier than execution time.");
-  }
-
-  @TestOfyOnly
-  void testFailure_mapperException_doesNotMoveCursor() throws Exception {
-    saveCursor(START_OF_TIME); // Need a saved cursor to verify that it didn't move.
-    clock.advanceOneMilli();
-    // Set target to a TLD that doesn't exist.
-    recurring = persistResource(recurring.asBuilder().setTargetId("domain.junk").build());
-    runAction();
-    // No new history entries should be generated
-    assertThat(getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW)).isEmpty();
-    assertBillingEvents(recurring); // only the bogus one in Datastore
-    assertCursorAt(START_OF_TIME); // Cursor doesn't move on a failure.
   }
 }

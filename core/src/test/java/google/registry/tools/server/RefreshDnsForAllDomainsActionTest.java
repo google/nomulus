@@ -18,47 +18,53 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
-import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
 import static org.joda.time.Duration.standardMinutes;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.dns.DnsQueue;
 import google.registry.model.ofy.Ofy;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestSqlOnly;
-import google.registry.testing.mapreduce.MapreduceTestCase;
-import google.registry.tools.server.RefreshDnsForAllDomainsAction.RefreshDnsForAllDomainsActionMapper;
 import java.util.Random;
 import org.apache.http.HttpStatus;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
 /** Unit tests for {@link RefreshDnsForAllDomainsAction}. */
 @DualDatabaseTest
-public class RefreshDnsForAllDomainsActionTest
-    extends MapreduceTestCase<RefreshDnsForAllDomainsAction> {
+public class RefreshDnsForAllDomainsActionTest {
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T02:02:02Z"));
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
-  private DnsQueue origDnsQueue;
+  private RefreshDnsForAllDomainsAction action;
   private FakeResponse response = new FakeResponse();
+
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .withLocalModules()
+          .withTaskQueue()
+          .build();
 
   @Order(Order.DEFAULT - 1)
   @RegisterExtension
@@ -67,13 +73,10 @@ public class RefreshDnsForAllDomainsActionTest
 
   @BeforeEach
   void beforeEach() {
-    origDnsQueue = RefreshDnsForAllDomainsActionMapper.setDnsQueueForTest(dnsQueue);
-
     action = new RefreshDnsForAllDomainsAction();
     action.smearMinutes = 1;
     action.random = new Random();
     action.random.setSeed(123L);
-    action.mrRunner = makeDefaultRunner();
     action.response = new FakeResponse();
     action.clock = clock;
     action.dnsQueue = dnsQueue;
@@ -82,30 +85,21 @@ public class RefreshDnsForAllDomainsActionTest
     createTld("bar");
   }
 
-  @AfterEach
-  void afterEach() {
-    assertThat(RefreshDnsForAllDomainsActionMapper.setDnsQueueForTest(origDnsQueue))
-        .isEqualTo(dnsQueue);
-  }
-
-  private void runAction() throws Exception {
-    action.run();
-    executeTasksUntilEmpty("mapreduce");
-  }
-
   @TestSqlOnly
   void test_runAction_errorEnqueuingToDnsQueue() throws Exception {
     persistActiveDomain("foo.bar");
     persistActiveDomain("baz.bar");
     persistActiveDomain("low.bar");
     action.tlds = ImmutableSet.of("bar");
-    DnsQueue faultyQueue = spy(origDnsQueue);
     doThrow(new RuntimeException("Error enqueuing task."))
-        .when(faultyQueue)
+        .when(dnsQueue)
         .addDomainRefreshTask(eq("baz.bar"), any(Duration.class));
-    action.dnsQueue = faultyQueue;
-    runAction();
-    assertDnsTasksEnqueued("foo.bar", "low.bar");
+    action.run();
+    InOrder inOrder = inOrder(dnsQueue);
+    inOrder.verify(dnsQueue).addDomainRefreshTask("low.bar", Duration.ZERO);
+    inOrder.verify(dnsQueue).addDomainRefreshTask("baz.bar", Duration.ZERO);
+    inOrder.verify(dnsQueue).addDomainRefreshTask("foo.bar", Duration.ZERO);
+    verifyNoMoreInteractions(dnsQueue);
     assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_INTERNAL_SERVER_ERROR);
   }
 
@@ -114,7 +108,7 @@ public class RefreshDnsForAllDomainsActionTest
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
     action.tlds = ImmutableSet.of("bar");
-    runAction();
+    action.run();
     verify(dnsQueue).addDomainRefreshTask("foo.bar", Duration.ZERO);
     verify(dnsQueue).addDomainRefreshTask("low.bar", Duration.ZERO);
   }
@@ -125,7 +119,7 @@ public class RefreshDnsForAllDomainsActionTest
     persistActiveDomain("low.bar");
     action.tlds = ImmutableSet.of("bar");
     action.smearMinutes = 1000;
-    runAction();
+    action.run();
     ArgumentCaptor<Duration> captor = ArgumentCaptor.forClass(Duration.class);
     verify(dnsQueue).addDomainRefreshTask(eq("foo.bar"), captor.capture());
     verify(dnsQueue).addDomainRefreshTask(eq("low.bar"), captor.capture());
@@ -137,7 +131,7 @@ public class RefreshDnsForAllDomainsActionTest
     persistActiveDomain("foo.bar");
     persistDeletedDomain("deleted.bar", clock.nowUtc().minusYears(1));
     action.tlds = ImmutableSet.of("bar");
-    runAction();
+    action.run();
     verify(dnsQueue).addDomainRefreshTask("foo.bar", Duration.ZERO);
     verify(dnsQueue, never()).addDomainRefreshTask("deleted.bar", Duration.ZERO);
   }
@@ -149,7 +143,7 @@ public class RefreshDnsForAllDomainsActionTest
     persistActiveDomain("low.bar");
     persistActiveDomain("ignore.baz");
     action.tlds = ImmutableSet.of("bar");
-    runAction();
+    action.run();
     verify(dnsQueue).addDomainRefreshTask("foo.bar", Duration.ZERO);
     verify(dnsQueue).addDomainRefreshTask("low.bar", Duration.ZERO);
     verify(dnsQueue, never()).addDomainRefreshTask("ignore.baz", Duration.ZERO);

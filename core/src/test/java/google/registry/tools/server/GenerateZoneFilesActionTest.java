@@ -124,7 +124,7 @@ class GenerateZoneFilesActionTest {
     GenerateZoneFilesAction action = new GenerateZoneFilesAction();
     action.bucket = "zonefiles-bucket";
     action.gcsUtils = gcsUtils;
-    action.datastoreRetention = standardDays(29);
+    action.databaseRetention = standardDays(29);
     action.dnsDefaultATtl = Duration.standardSeconds(11);
     action.dnsDefaultNsTtl = Duration.standardSeconds(222);
     action.dnsDefaultDsTtl = Duration.standardSeconds(3333);

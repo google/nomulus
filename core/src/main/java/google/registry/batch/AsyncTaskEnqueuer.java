@@ -71,7 +71,7 @@ public final class AsyncTaskEnqueuer {
   public AsyncTaskEnqueuer(
       @Named(QUEUE_ASYNC_DELETE) Queue asyncDeletePullQueue,
       @Named(QUEUE_ASYNC_HOST_RENAME) Queue asyncDnsRefreshPullQueue,
-      @Config("asyncDeleteFlowMapreduceDelay") Duration asyncDeleteDelay,
+      @Config("asyncDeleteDelay") Duration asyncDeleteDelay,
       CloudTasksUtils cloudTasksUtils,
       Retrier retrier) {
     this.asyncDeletePullQueue = asyncDeletePullQueue;

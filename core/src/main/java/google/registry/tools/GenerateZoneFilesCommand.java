@@ -59,7 +59,6 @@ final class GenerateZoneFilesCommand implements CommandWithConnection, CommandWi
         "tlds", mainParameters,
         "exportTime", exportDate.toString());
     Map<String, Object> response = connection.sendJson(GenerateZoneFilesAction.PATH, params);
-    System.out.println(response.get("mapreduceConsoleLink"));
     System.out.println("Output files:");
     @SuppressWarnings("unchecked")
     List<String> filenames = (List<String>) response.get("filenames");

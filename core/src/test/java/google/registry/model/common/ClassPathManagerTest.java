@@ -31,11 +31,6 @@ import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
-import google.registry.model.ofy.CommitLogBucket;
-import google.registry.model.ofy.CommitLogCheckpoint;
-import google.registry.model.ofy.CommitLogCheckpointRoot;
-import google.registry.model.ofy.CommitLogManifest;
-import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
@@ -65,9 +60,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("ForeignKeyContactIndex"))
         .isEqualTo(ForeignKeyContactIndex.class);
     assertThat(ClassPathManager.getClass("Modification")).isEqualTo(Modification.class);
-    assertThat(ClassPathManager.getClass("CommitLogCheckpoint"))
-        .isEqualTo(CommitLogCheckpoint.class);
-    assertThat(ClassPathManager.getClass("CommitLogManifest")).isEqualTo(CommitLogManifest.class);
     assertThat(ClassPathManager.getClass("AllocationToken")).isEqualTo(AllocationToken.class);
     assertThat(ClassPathManager.getClass("OneTime")).isEqualTo(OneTime.class);
     assertThat(ClassPathManager.getClass("Cursor")).isEqualTo(Cursor.class);
@@ -79,10 +71,7 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("ContactResource")).isEqualTo(ContactResource.class);
     assertThat(ClassPathManager.getClass("Cancellation")).isEqualTo(Cancellation.class);
     assertThat(ClassPathManager.getClass("RegistrarContact")).isEqualTo(RegistrarContact.class);
-    assertThat(ClassPathManager.getClass("CommitLogBucket")).isEqualTo(CommitLogBucket.class);
     assertThat(ClassPathManager.getClass("LastSqlTransaction")).isEqualTo(LastSqlTransaction.class);
-    assertThat(ClassPathManager.getClass("CommitLogCheckpointRoot"))
-        .isEqualTo(CommitLogCheckpointRoot.class);
     assertThat(ClassPathManager.getClass("GaeUserIdConverter")).isEqualTo(GaeUserIdConverter.class);
     assertThat(ClassPathManager.getClass("EppResourceIndexBucket"))
         .isEqualTo(EppResourceIndexBucket.class);
@@ -90,7 +79,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("EntityGroupRoot")).isEqualTo(EntityGroupRoot.class);
     assertThat(ClassPathManager.getClass("Lock")).isEqualTo(Lock.class);
     assertThat(ClassPathManager.getClass("DomainBase")).isEqualTo(DomainBase.class);
-    assertThat(ClassPathManager.getClass("CommitLogMutation")).isEqualTo(CommitLogMutation.class);
     assertThat(ClassPathManager.getClass("HistoryEntry")).isEqualTo(HistoryEntry.class);
     assertThat(ClassPathManager.getClass("PollMessage")).isEqualTo(PollMessage.class);
     assertThat(ClassPathManager.getClass("ForeignKeyHostIndex"))
@@ -132,10 +120,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClassName(ForeignKeyContactIndex.class))
         .isEqualTo("ForeignKeyContactIndex");
     assertThat(ClassPathManager.getClassName(Modification.class)).isEqualTo("Modification");
-    assertThat(ClassPathManager.getClassName(CommitLogCheckpoint.class))
-        .isEqualTo("CommitLogCheckpoint");
-    assertThat(ClassPathManager.getClassName(CommitLogManifest.class))
-        .isEqualTo("CommitLogManifest");
     assertThat(ClassPathManager.getClassName(AllocationToken.class)).isEqualTo("AllocationToken");
     assertThat(ClassPathManager.getClassName(OneTime.class)).isEqualTo("OneTime");
     assertThat(ClassPathManager.getClassName(Cursor.class)).isEqualTo("Cursor");
@@ -147,11 +131,8 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClassName(ContactResource.class)).isEqualTo("ContactResource");
     assertThat(ClassPathManager.getClassName(Cancellation.class)).isEqualTo("Cancellation");
     assertThat(ClassPathManager.getClassName(RegistrarContact.class)).isEqualTo("RegistrarContact");
-    assertThat(ClassPathManager.getClassName(CommitLogBucket.class)).isEqualTo("CommitLogBucket");
     assertThat(ClassPathManager.getClassName(LastSqlTransaction.class))
         .isEqualTo("LastSqlTransaction");
-    assertThat(ClassPathManager.getClassName(CommitLogCheckpointRoot.class))
-        .isEqualTo("CommitLogCheckpointRoot");
     assertThat(ClassPathManager.getClassName(GaeUserIdConverter.class))
         .isEqualTo("GaeUserIdConverter");
     assertThat(ClassPathManager.getClassName(EppResourceIndexBucket.class))
@@ -160,8 +141,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClassName(EntityGroupRoot.class)).isEqualTo("EntityGroupRoot");
     assertThat(ClassPathManager.getClassName(Lock.class)).isEqualTo("Lock");
     assertThat(ClassPathManager.getClassName(DomainBase.class)).isEqualTo("DomainBase");
-    assertThat(ClassPathManager.getClassName(CommitLogMutation.class))
-        .isEqualTo("CommitLogMutation");
     assertThat(ClassPathManager.getClassName(HistoryEntry.class)).isEqualTo("HistoryEntry");
     assertThat(ClassPathManager.getClassName(PollMessage.class)).isEqualTo("PollMessage");
     assertThat(ClassPathManager.getClassName(ForeignKeyHostIndex.class))
