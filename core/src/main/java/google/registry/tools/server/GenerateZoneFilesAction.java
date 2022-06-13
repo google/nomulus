@@ -15,27 +15,21 @@
 package google.registry.tools.server;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.Iterators.filter;
 import static com.google.common.io.BaseEncoding.base16;
-import static google.registry.mapreduce.inputs.EppResourceInputs.createEntityInput;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
 
-import com.google.appengine.tools.mapreduce.Mapper;
-import com.google.appengine.tools.mapreduce.Reducer;
-import com.google.appengine.tools.mapreduce.ReducerInput;
 import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.mapreduce.MapreduceRunner;
-import google.registry.mapreduce.inputs.NullInput;
-import google.registry.model.EppResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.host.HostResource;
@@ -51,11 +45,13 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import javax.inject.Inject;
+import org.hibernate.CacheMode;
+import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
+import org.hibernate.query.Query;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -73,7 +69,12 @@ import org.joda.time.Duration;
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonAction {
 
+  private static final FluentLogger log = FluentLogger.forEnclosingClass();
+
   public static final String PATH = "/_dr/task/generateZoneFiles";
+
+  /** Number of domains to process in one batch. */
+  private static final int BATCH_SIZE = 1000;
 
   /** Format for the zone file name. */
   private static final String FILENAME_FORMAT = "%s-%s.zone";
@@ -128,20 +129,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
           "Invalid export time: must be < %d days ago",
           datastoreRetention.getStandardDays()));
     }
-    if (!exportTime.equals(exportTime.toDateTime(UTC).withTimeAtStartOfDay())) {
-      throw new BadRequestException("Invalid export time: must be midnight UTC");
-    }
-    String mapreduceConsoleLink =
-        mrRunner
-            .setJobName("Generate bind file stanzas")
-            .setModuleName("tools")
-            .setDefaultReduceShards(tlds.size())
-            .runMapreduce(
-                new GenerateBindFileMapper(
-                    tlds, exportTime, dnsDefaultATtl, dnsDefaultNsTtl, dnsDefaultDsTtl),
-                new GenerateBindFileReducer(bucket, exportTime, gcsUtils),
-                ImmutableList.of(new NullInput<>(), createEntityInput(DomainBase.class)))
-            .getLinkToMapreduceConsole();
+    tlds.forEach(tld -> generateForTld(tld, exportTime));
     ImmutableList<String> filenames =
         tlds.stream()
             .map(
@@ -150,115 +138,79 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
                         GCS_PATH_FORMAT, bucket, String.format(FILENAME_FORMAT, tld, exportTime)))
             .collect(toImmutableList());
     return ImmutableMap.of(
-        "mapreduceConsoleLink", mapreduceConsoleLink,
         "filenames", filenames);
   }
 
-  /** Mapper to find domains that were active at a given time. */
-  static class GenerateBindFileMapper extends Mapper<EppResource, String, String> {
-
-    private static final long serialVersionUID = 4647941823789859913L;
-
-    private final ImmutableSet<String> tlds;
-    private final DateTime exportTime;
-    private final Duration dnsDefaultATtl;
-    private final Duration dnsDefaultNsTtl;
-    private final Duration dnsDefaultDsTtl;
-
-    GenerateBindFileMapper(
-        ImmutableSet<String> tlds,
-        DateTime exportTime,
-        Duration dnsDefaultATtl,
-        Duration dnsDefaultNsTtl,
-        Duration dnsDefaultDsTtl) {
-      this.tlds = tlds;
-      this.exportTime = exportTime;
-      this.dnsDefaultATtl = dnsDefaultATtl;
-      this.dnsDefaultNsTtl = dnsDefaultNsTtl;
-      this.dnsDefaultDsTtl = dnsDefaultDsTtl;
-    }
-
-    @Override
-    public void map(EppResource resource) {
-      if (resource == null) {  // Force the reducer to always generate a bind header for each tld.
-        for (String tld : tlds) {
-          emit(tld, null);
-        }
-      } else {
-        mapDomain((DomainBase) resource);
-      }
-    }
-
-    // Originally, we mapped over domains and hosts separately, emitting the necessary information
-    // for each. But that doesn't work. All subordinate hosts in the specified TLD(s) would always
-    // be emitted in the final file, which is incorrect. Rather, to match the actual DNS glue
-    // records, we only want to emit host information for in-bailiwick hosts in the specified
-    // TLD(s), meaning those that act as nameservers for their respective superordinate domains.
-    private void mapDomain(DomainBase domain) {
-      // Domains never change their tld, so we can check if it's from the wrong tld right away.
-      if (tlds.contains(domain.getTld())) {
-        domain = loadAtPointInTime(domain, exportTime);
-        // A null means the domain was deleted (or not created) at this time.
-        if (domain != null && domain.shouldPublishToDns()) {
-          String stanza = domainStanza(domain, exportTime, dnsDefaultNsTtl, dnsDefaultDsTtl);
-          if (!stanza.isEmpty()) {
-            emit(domain.getTld(), stanza);
-            getContext().incrementCounter(domain.getTld() + " domains");
-          }
-          emitForSubordinateHosts(domain);
-        }
-      }
-    }
-
-    private void emitForSubordinateHosts(DomainBase domain) {
-      ImmutableSet<String> subordinateHosts = domain.getSubordinateHosts();
-      if (!subordinateHosts.isEmpty()) {
-        for (HostResource unprojectedHost : tm().loadByKeys(domain.getNameservers()).values()) {
-          HostResource host = loadAtPointInTime(unprojectedHost, exportTime);
-          // A null means the host was deleted (or not created) at this time.
-          if ((host != null) && subordinateHosts.contains(host.getHostName())) {
-            String stanza = hostStanza(host, dnsDefaultATtl, domain.getTld());
-            if (!stanza.isEmpty()) {
-              emit(domain.getTld(), stanza);
-              getContext().incrementCounter(domain.getTld() + " hosts");
-            }
-          }
-        }
-      }
+  private void generateForTld(String tld, DateTime exportTime) {
+    ImmutableList<String> stanzas = jpaTm().transact(() -> getStanzasForTld(tld, exportTime));
+    BlobId outputBlobId = BlobId.of(bucket, String.format(FILENAME_FORMAT, tld, exportTime));
+    try (OutputStream gcsOutput = gcsUtils.openOutputStream(outputBlobId);
+        Writer osWriter = new OutputStreamWriter(gcsOutput, UTF_8);
+        PrintWriter writer = new PrintWriter(osWriter)) {
+      writer.printf(HEADER_FORMAT, tld);
+      stanzas.forEach(writer::println);
+      writer.flush();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 
-  /** Reducer to write zone files to GCS. */
-  static class GenerateBindFileReducer extends Reducer<String, String, Void> {
-
-    private static final long serialVersionUID = -8489050680083119352L;
-
-    private final String bucket;
-    private final DateTime exportTime;
-    private final GcsUtils gcsUtils;
-
-    GenerateBindFileReducer(String bucket, DateTime exportTime, GcsUtils gcsUtils) {
-      this.bucket = bucket;
-      this.exportTime = exportTime;
-      this.gcsUtils = gcsUtils;
+  private ImmutableList<String> getStanzasForTld(String tld, DateTime exportTime) {
+    ImmutableList.Builder<String> result = new ImmutableList.Builder<>();
+    ScrollableResults scrollableResults =
+        jpaTm()
+            .query("FROM Domain WHERE tld = :tld AND deletionTime > :exportTime")
+            .setParameter("tld", tld)
+            .setParameter("exportTime", exportTime)
+            .unwrap(Query.class)
+            .setCacheMode(CacheMode.IGNORE)
+            .scroll(ScrollMode.FORWARD_ONLY);
+    for (int i = 1; scrollableResults.next(); i = (i + 1) % BATCH_SIZE) {
+      DomainBase domain = (DomainBase) scrollableResults.get(0);
+      populateStanzasForDomain(domain, exportTime, result);
+      if (i == 0) {
+        jpaTm().getEntityManager().flush();
+        jpaTm().getEntityManager().clear();
+      }
     }
+    return result.build();
+  }
 
-    @Override
-    public void reduce(String tld, ReducerInput<String> stanzas) {
-      String stanzaCounter = tld + " stanzas";
-      BlobId filename = BlobId.of(bucket, String.format(FILENAME_FORMAT, tld, exportTime));
-      try (OutputStream gcsOutput = gcsUtils.openOutputStream(filename);
-          Writer osWriter = new OutputStreamWriter(gcsOutput, UTF_8);
-          PrintWriter writer = new PrintWriter(osWriter)) {
-        writer.printf(HEADER_FORMAT, tld);
-        for (Iterator<String> stanzaIter = filter(stanzas, Objects::nonNull);
-            stanzaIter.hasNext(); ) {
-          writer.println(stanzaIter.next());
-          getContext().incrementCounter(stanzaCounter);
+  private void populateStanzasForDomain(
+      DomainBase domain, DateTime exportTime, ImmutableList.Builder<String> result) {
+    domain = loadAtPointInTime(domain, exportTime);
+    // A null means the domain was deleted (or not created) at this time.
+    if (domain == null || !domain.shouldPublishToDns()) {
+      return;
+    }
+    String stanza = domainStanza(domain, exportTime);
+    if (!stanza.isEmpty()) {
+      result.add(stanza);
+    }
+    populateStanzasForSubordinateHosts(domain, exportTime, result);
+  }
+
+  private void populateStanzasForSubordinateHosts(
+      DomainBase domain, DateTime exportTime, ImmutableList.Builder<String> result) {
+    ImmutableSet<String> subordinateHosts = domain.getSubordinateHosts();
+    if (!subordinateHosts.isEmpty()) {
+      for (HostResource unprojectedHost : tm().loadByKeys(domain.getNameservers()).values()) {
+        HostResource host = loadAtPointInTime(unprojectedHost, exportTime);
+        // A null means the host was deleted (or not created) at this time.
+        if (host != null && subordinateHosts.contains(host.getHostName())) {
+          String stanza = hostStanza(host, domain.getTld());
+          if (!stanza.isEmpty()) {
+            result.add(stanza);
+          }
+        } else if (host == null) {
+          log.atSevere().log(
+              "Domain %s contained nameserver %s that didn't exist at time %s",
+              domain.getRepoId(), unprojectedHost.getRepoId(), exportTime);
+        } else {
+          log.atSevere().log(
+              "Domain %s contained nameserver %s not in subordinate hosts at time %s",
+              domain.getRepoId(), unprojectedHost.getRepoId(), exportTime);
         }
-        writer.flush();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
       }
     }
   }
@@ -266,17 +218,16 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   /**
    * Generates DNS records for a domain (NS and DS).
    *
-   * For domain foo.tld, these look like this:
-   * {@code
+   * <p>For domain foo.tld, these look like this:
+   *
+   * <pre>
+   * {
    *   foo 180 IN NS ns.example.com.
    *   foo 86400 IN DS 1 2 3 000102
    * }
+   * </pre>
    */
-  private static String domainStanza(
-      DomainBase domain,
-      DateTime exportTime,
-      Duration dnsDefaultNsTtl,
-      Duration dnsDefaultDsTtl) {
+  private String domainStanza(DomainBase domain, DateTime exportTime) {
     StringBuilder result = new StringBuilder();
     String domainLabel = stripTld(domain.getDomainName(), domain.getTld());
     for (HostResource nameserver : tm().loadByKeys(domain.getNameservers()).values()) {
@@ -306,12 +257,15 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
    * Generates DNS records for a domain (A and AAAA).
    *
    * <p>These look like this:
-   * {@code
+   *
+   * <pre>
+   * {
    *   ns.foo.tld 3600 IN A 127.0.0.1
    *   ns.foo.tld 3600 IN AAAA 0:0:0:0:0:0:0:1
    * }
+   * </pre>
    */
-  private static String hostStanza(HostResource host, Duration dnsDefaultATtl, String tld) {
+  private String hostStanza(HostResource host, String tld) {
     StringBuilder result = new StringBuilder();
     for (InetAddress addr : host.getInetAddresses()) {
       // must be either IPv4 or IPv6
