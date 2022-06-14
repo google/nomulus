@@ -15,6 +15,8 @@
 package google.registry.dns;
 
 import dagger.Component;
+import google.registry.config.CloudTasksUtilsModule;
+import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.cron.CronModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
@@ -25,7 +27,9 @@ import javax.inject.Singleton;
 @Singleton
 @Component(
     modules = {
+      CloudTasksUtilsModule.class,
       ConfigModule.class,
+      CredentialModule.class,
       CronModule.class,
       DnsModule.class,
       RequestModule.class,

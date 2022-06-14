@@ -48,7 +48,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
@@ -101,6 +100,7 @@ import org.joda.time.DateTime;
  * superuser. As such, adding or removing these statuses incurs a billing event. There will be only
  * one charge per update, even if several such statuses are updated at once.
  *
+ * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.EppException.UnimplementedExtensionException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.AddRemoveSameValueException}
@@ -145,8 +145,6 @@ public final class DomainUpdateFlow implements TransactionalFlow {
    */
   private static final ImmutableSet<StatusValue> UPDATE_DISALLOWED_STATUSES =
       ImmutableSet.of(StatusValue.PENDING_DELETE, StatusValue.SERVER_UPDATE_PROHIBITED);
-
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;

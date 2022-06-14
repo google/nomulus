@@ -30,14 +30,13 @@ import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_CREATED;
 import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.util.DomainNameUtils.getSecondLevelDomain;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
-import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.TaskHandle;
-import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.auto.value.AutoValue;
+import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
@@ -50,20 +49,19 @@ import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.tld.Registries;
 import google.registry.model.tld.Registry;
 import google.registry.request.Action;
+import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
-import google.registry.util.TaskQueueUtils;
+import google.registry.util.CloudTasksUtils;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
-import javax.inject.Named;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -84,7 +82,6 @@ import org.joda.time.Duration;
 public final class ReadDnsQueueAction implements Runnable {
 
   private static final String PARAM_JITTER_SECONDS = "jitterSeconds";
-  private static final Random random = new Random();
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /**
@@ -101,15 +98,31 @@ public final class ReadDnsQueueAction implements Runnable {
    */
   private static final Duration LEASE_PADDING = Duration.standardMinutes(1);
 
-  @Inject @Config("dnsTldUpdateBatchSize") int tldUpdateBatchSize;
-  @Inject @Config("readDnsQueueActionRuntime") Duration requestedMaximumDuration;
-  @Inject @Named(DNS_PUBLISH_PUSH_QUEUE_NAME) Queue dnsPublishPushQueue;
-  @Inject @Parameter(PARAM_JITTER_SECONDS) Optional<Integer> jitterSeconds;
-  @Inject Clock clock;
-  @Inject DnsQueue dnsQueue;
-  @Inject HashFunction hashFunction;
-  @Inject TaskQueueUtils taskQueueUtils;
-  @Inject ReadDnsQueueAction() {}
+  private final int tldUpdateBatchSize;
+  private final Duration requestedMaximumDuration;
+  private final Optional<Integer> jitterSeconds;
+  private final Clock clock;
+  private final DnsQueue dnsQueue;
+  private final HashFunction hashFunction;
+  private final CloudTasksUtils cloudTasksUtils;
+
+  @Inject
+  ReadDnsQueueAction(
+      @Config("dnsTldUpdateBatchSize") int tldUpdateBatchSize,
+      @Config("readDnsQueueActionRuntime") Duration requestedMaximumDuration,
+      @Parameter(PARAM_JITTER_SECONDS) Optional<Integer> jitterSeconds,
+      Clock clock,
+      DnsQueue dnsQueue,
+      HashFunction hashFunction,
+      CloudTasksUtils cloudTasksUtils) {
+    this.tldUpdateBatchSize = tldUpdateBatchSize;
+    this.requestedMaximumDuration = requestedMaximumDuration;
+    this.jitterSeconds = jitterSeconds;
+    this.clock = clock;
+    this.dnsQueue = dnsQueue;
+    this.hashFunction = hashFunction;
+    this.cloudTasksUtils = cloudTasksUtils;
+  }
 
   /** Container for items we pull out of the DNS pull queue and process for fanout. */
   @AutoValue
@@ -322,17 +335,13 @@ public final class ReadDnsQueueAction implements Runnable {
       if (numPublishLocks <= 1) {
         enqueueUpdates(tld, 1, 1, tldRefreshItemsEntry.getValue());
       } else {
-        tldRefreshItemsEntry
-            .getValue()
-            .stream()
+        tldRefreshItemsEntry.getValue().stream()
             .collect(
                 toImmutableSetMultimap(
                     refreshItem -> getLockIndex(tld, numPublishLocks, refreshItem),
                     refreshItem -> refreshItem))
             .asMap()
-            .entrySet()
-            .forEach(
-                entry -> enqueueUpdates(tld, entry.getKey(), numPublishLocks, entry.getValue()));
+            .forEach((key, value) -> enqueueUpdates(tld, key, numPublishLocks, value));
       }
     }
   }
@@ -340,10 +349,10 @@ public final class ReadDnsQueueAction implements Runnable {
   /**
    * Returns the lock index for a given refreshItem.
    *
-   * <p>We hash the second level domain domain for all records, to group in-balliwick hosts (the
-   * only ones we refresh DNS for) with their superordinate domains. We use consistent hashing to
-   * determine the lock index because it gives us [0,N) bucketing properties out of the box, then
-   * add 1 to make indexes within [1,N].
+   * <p>We hash the second level domain for all records, to group in-bailiwick hosts (the only ones
+   * we refresh DNS for) with their superordinate domains. We use consistent hashing to determine
+   * the lock index because it gives us [0,N) bucketing properties out of the box, then add 1 to
+   * make indexes within [1,N].
    */
   private int getLockIndex(String tld, int numPublishLocks, RefreshItem refreshItem) {
     String domain = getSecondLevelDomain(refreshItem.name(), tld);
@@ -360,33 +369,32 @@ public final class ReadDnsQueueAction implements Runnable {
       DateTime earliestCreateTime =
           chunk.stream().map(RefreshItem::creationTime).min(Comparator.naturalOrder()).get();
       for (String dnsWriter : Registry.get(tld).getDnsWriters()) {
-        taskQueueUtils.enqueue(
-            dnsPublishPushQueue,
-            TaskOptions.Builder.withUrl(PublishDnsUpdatesAction.PATH)
-                .countdownMillis(
-                    jitterSeconds
-                        .map(seconds -> random.nextInt((int) SECONDS.toMillis(seconds)))
-                        .orElse(0))
-                .param(PARAM_TLD, tld)
-                .param(PARAM_DNS_WRITER, dnsWriter)
-                .param(PARAM_LOCK_INDEX, Integer.toString(lockIndex))
-                .param(PARAM_NUM_PUBLISH_LOCKS, Integer.toString(numPublishLocks))
-                .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-                .param(PARAM_REFRESH_REQUEST_CREATED, earliestCreateTime.toString())
-                .param(
-                    PARAM_DOMAINS,
-                    chunk
-                        .stream()
-                        .filter(item -> item.type() == TargetType.DOMAIN)
-                        .map(RefreshItem::name)
-                        .collect(Collectors.joining(",")))
-                .param(
-                    PARAM_HOSTS,
-                    chunk
-                        .stream()
-                        .filter(item -> item.type() == TargetType.HOST)
-                        .map(RefreshItem::name)
-                        .collect(Collectors.joining(","))));
+        Task task =
+            cloudTasksUtils.createPostTaskWithJitter(
+                PublishDnsUpdatesAction.PATH,
+                Service.BACKEND.toString(),
+                ImmutableMultimap.<String, String>builder()
+                    .put(PARAM_TLD, tld)
+                    .put(PARAM_DNS_WRITER, dnsWriter)
+                    .put(PARAM_LOCK_INDEX, Integer.toString(lockIndex))
+                    .put(PARAM_NUM_PUBLISH_LOCKS, Integer.toString(numPublishLocks))
+                    .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+                    .put(PARAM_REFRESH_REQUEST_CREATED, earliestCreateTime.toString())
+                    .put(
+                        PARAM_DOMAINS,
+                        chunk.stream()
+                            .filter(item -> item.type() == TargetType.DOMAIN)
+                            .map(RefreshItem::name)
+                            .collect(Collectors.joining(",")))
+                    .put(
+                        PARAM_HOSTS,
+                        chunk.stream()
+                            .filter(item -> item.type() == TargetType.HOST)
+                            .map(RefreshItem::name)
+                            .collect(Collectors.joining(",")))
+                    .build(),
+                jitterSeconds);
+        cloudTasksUtils.enqueue(DNS_PUBLISH_PUSH_QUEUE_NAME, task);
       }
     }
   }
