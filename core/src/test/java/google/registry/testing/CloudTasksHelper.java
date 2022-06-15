@@ -41,6 +41,8 @@ import com.google.common.net.MediaType;
 import com.google.common.truth.Truth8;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.util.Timestamps;
+import dagger.Module;
+import dagger.Provides;
 import google.registry.model.ImmutableObject;
 import google.registry.util.CloudTasksUtils;
 import google.registry.util.Retrier;
@@ -61,6 +63,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
+import javax.inject.Singleton;
 import org.joda.time.DateTime;
 
 /**
@@ -178,6 +181,28 @@ public class CloudTasksHelper implements Serializable {
                     .collect(joining("\n")))
             .fail();
       }
+    }
+  }
+
+  @Module
+  public static class CloudTasksHelperModule {
+
+    private final FakeClock clock;
+
+    public CloudTasksHelperModule(FakeClock clock) {
+      this.clock = clock;
+    }
+
+    @Singleton
+    @Provides
+    CloudTasksUtils provideCloudTasksUtils(CloudTasksHelper cloudTasksHelper) {
+      return cloudTasksHelper.getTestCloudTasksUtils();
+    }
+
+    @Singleton
+    @Provides
+    CloudTasksHelper provideCloudTasksHelper() {
+      return new CloudTasksHelper(clock);
     }
   }
 

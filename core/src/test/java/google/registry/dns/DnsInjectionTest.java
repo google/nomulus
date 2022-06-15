@@ -28,6 +28,7 @@ import google.registry.model.ofy.Ofy;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.RequestModule;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper.CloudTasksHelperModule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import java.io.PrintWriter;
@@ -59,9 +60,11 @@ public final class DnsInjectionTest {
   void beforeEach() throws Exception {
     inject.setStaticField(Ofy.class, "clock", clock);
     when(rsp.getWriter()).thenReturn(new PrintWriter(httpOutput));
-    component = DaggerDnsTestComponent.builder()
-        .requestModule(new RequestModule(req, rsp))
-        .build();
+    component =
+        DaggerDnsTestComponent.builder()
+            .requestModule(new RequestModule(req, rsp))
+            .cloudTasksHelperModule(new CloudTasksHelperModule(clock))
+            .build();
     dnsQueue = component.dnsQueue();
     createTld("lol");
   }

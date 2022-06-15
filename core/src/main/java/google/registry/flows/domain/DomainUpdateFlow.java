@@ -48,7 +48,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
@@ -145,8 +144,6 @@ public final class DomainUpdateFlow implements TransactionalFlow {
    */
   private static final ImmutableSet<StatusValue> UPDATE_DISALLOWED_STATUSES =
       ImmutableSet.of(StatusValue.PENDING_DELETE, StatusValue.SERVER_UPDATE_PROHIBITED);
-
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;

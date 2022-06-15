@@ -17,7 +17,6 @@ package google.registry.dns;
 import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Lists.transform;
-import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.dns.DnsConstants.DNS_PUBLISH_PUSH_QUEUE_NAME;
@@ -28,13 +27,11 @@ import static google.registry.dns.DnsConstants.DNS_TARGET_TYPE_PARAM;
 import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.getQueuedParams;
 
 import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskOptions;
-import com.google.appengine.api.taskqueue.TaskOptions.Method;
+import com.google.cloud.tasks.v2.HttpMethod;
+import com.google.cloud.tasks.v2.Task;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -46,10 +43,12 @@ import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
-import google.registry.util.Retrier;
-import google.registry.util.TaskQueueUtils;
+import google.registry.testing.TaskQueueHelper;
+import google.registry.testing.UriParameters;
+import java.nio.charset.StandardCharsets;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -67,7 +66,8 @@ public class ReadDnsQueueActionTest {
   private DnsQueue dnsQueue;
   // Because of a bug in the queue test environment - b/73372999 - we must set the fake date of the
   // test in the future. Set to year 3000 so it'll remain in the future for a very long time.
-  private FakeClock clock = new FakeClock(DateTime.parse("3000-01-01TZ"));
+  private final FakeClock clock = new FakeClock(DateTime.parse("3000-01-01TZ"));
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
@@ -78,10 +78,6 @@ public class ReadDnsQueueActionTest {
                   .join(
                       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
                       "<queue-entries>",
-                      "  <queue>",
-                      "    <name>dns-publish</name>",
-                      "    <rate>1/s</rate>",
-                      "  </queue>",
                       "  <queue>",
                       "    <name>dns-pull</name>",
                       "    <mode>pull</mode>",
@@ -116,24 +112,23 @@ public class ReadDnsQueueActionTest {
   }
 
   private void run() {
-    ReadDnsQueueAction action = new ReadDnsQueueAction();
-    action.tldUpdateBatchSize = TEST_TLD_UPDATE_BATCH_SIZE;
-    action.requestedMaximumDuration = Duration.standardSeconds(10);
-    action.clock = clock;
-    action.dnsQueue = dnsQueue;
-    action.dnsPublishPushQueue = QueueFactory.getQueue(DNS_PUBLISH_PUSH_QUEUE_NAME);
-    action.hashFunction = Hashing.murmur3_32();
-    action.taskQueueUtils = new TaskQueueUtils(new Retrier(null, 1));
-    action.jitterSeconds = Optional.empty();
+    ReadDnsQueueAction action =
+        new ReadDnsQueueAction(
+            TEST_TLD_UPDATE_BATCH_SIZE,
+            Duration.standardSeconds(10),
+            Optional.empty(),
+            clock,
+            dnsQueue,
+            Hashing.murmur3_32(),
+            cloudTasksHelper.getTestCloudTasksUtils());
     // Advance the time a little, to ensure that leaseTasks() returns all tasks.
     clock.advanceBy(Duration.standardHours(1));
-
     action.run();
   }
 
   private static TaskOptions createRefreshTask(String name, TargetType type) {
     TaskOptions options =
-        TaskOptions.Builder.withMethod(Method.PULL)
+        TaskOptions.Builder.withMethod(TaskOptions.Method.PULL)
             .param(DNS_TARGET_TYPE_PARAM, type.toString())
             .param(DNS_TARGET_NAME_PARAM, name)
             .param(DNS_TARGET_CREATE_TIME_PARAM, "3000-01-01TZ");
@@ -141,8 +136,8 @@ public class ReadDnsQueueActionTest {
     return options.param("tld", tld);
   }
 
-  private static TaskMatcher createDomainRefreshTaskMatcher(String name) {
-    return new TaskMatcher()
+  private static TaskQueueHelper.TaskMatcher createDomainRefreshTaskMatcher(String name) {
+    return new TaskQueueHelper.TaskMatcher()
         .param(DNS_TARGET_NAME_PARAM, name)
         .param(DNS_TARGET_TYPE_PARAM, TargetType.DOMAIN.toString());
   }
@@ -150,7 +145,7 @@ public class ReadDnsQueueActionTest {
   private void assertTldsEnqueuedInPushQueue(ImmutableMultimap<String, String> tldsToDnsWriters) {
     // By default, the publishDnsUpdates tasks will be enqueued one hour after the update items were
     // created in the pull queue. This is because of the clock.advanceBy in run()
-    assertTasksEnqueued(
+    cloudTasksHelper.assertTasksEnqueued(
         DNS_PUBLISH_PUSH_QUEUE_NAME,
         transform(
             tldsToDnsWriters.entries().asList(),
@@ -175,12 +170,12 @@ public class ReadDnsQueueActionTest {
 
     run();
 
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
-    assertTasksEnqueued(
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    cloudTasksHelper.assertTasksEnqueued(
         DNS_PUBLISH_PUSH_QUEUE_NAME,
-        new TaskMatcher().method("POST"),
-        new TaskMatcher().method("POST"),
-        new TaskMatcher().method("POST"));
+        new TaskMatcher().method(HttpMethod.POST),
+        new TaskMatcher().method(HttpMethod.POST),
+        new TaskMatcher().method(HttpMethod.POST));
   }
 
   @RetryingTest(4)
@@ -191,7 +186,7 @@ public class ReadDnsQueueActionTest {
 
     run();
 
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
     assertTldsEnqueuedInPushQueue(
         ImmutableMultimap.of("com", "comWriter", "net", "netWriter", "example", "exampleWriter"));
   }
@@ -208,17 +203,24 @@ public class ReadDnsQueueActionTest {
 
     run();
 
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
-    ImmutableList<ImmutableMultimap<String, String>> queuedParams =
-        getQueuedParams(DNS_PUBLISH_PUSH_QUEUE_NAME);
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    ImmutableList<Task> queuedTasks =
+        ImmutableList.copyOf(cloudTasksHelper.getTestTasksFor(DNS_PUBLISH_PUSH_QUEUE_NAME));
     // ReadDnsQueueAction batches items per TLD in batches of size 100.
     // So for 1500 items in the DNS queue, we expect 15 items in the push queue
-    assertThat(queuedParams).hasSize(15);
+    assertThat(queuedTasks).hasSize(15);
     // Check all the expected domains are indeed enqueued
     assertThat(
-            queuedParams.stream()
-                .map(params -> params.get("domains").stream().collect(onlyElement()))
-                .flatMap(values -> Splitter.on(',').splitToList(values).stream()))
+            queuedTasks.stream()
+                .flatMap(
+                    task ->
+                        UriParameters.parse(
+                            task.getAppEngineHttpRequest()
+                                .getBody()
+                                .toString(StandardCharsets.UTF_8))
+                            .get("domains")
+                            .stream())
+                .flatMap(values -> Splitter.on(',').splitToStream(values)))
         .containsExactlyElementsIn(domains);
   }
 
@@ -233,7 +235,7 @@ public class ReadDnsQueueActionTest {
 
     run();
 
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
     assertTldsEnqueuedInPushQueue(ImmutableMultimap.of("com", "comWriter", "com", "otherWriter"));
   }
 
@@ -248,18 +250,18 @@ public class ReadDnsQueueActionTest {
 
     run();
 
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
-    assertThat(getQueuedParams(DNS_PUBLISH_PUSH_QUEUE_NAME)).hasSize(1);
-    assertThat(getQueuedParams(DNS_PUBLISH_PUSH_QUEUE_NAME).get(0))
-        .containsExactly(
-            "enqueued", "3000-02-05T01:00:00.000Z",
-            "itemsCreated", "3000-02-03T00:00:00.000Z",
-            "tld", "com",
-            "dnsWriter", "comWriter",
-            "domains", "domain1.com,domain2.com,domain3.com",
-            "hosts", "",
-            "lockIndex", "1",
-            "numPublishLocks", "1");
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    cloudTasksHelper.assertTasksEnqueued(
+        DNS_PUBLISH_PUSH_QUEUE_NAME,
+        new TaskMatcher()
+            .param("enqueued", "3000-02-05T01:00:00.000Z")
+            .param("itemsCreated", "3000-02-03T00:00:00.000Z")
+            .param("tld", "com")
+            .param("dnsWriter", "comWriter")
+            .param("domains", "domain1.com,domain2.com,domain3.com")
+            .param("hosts", "")
+            .param("lockIndex", "1")
+            .param("numPublishLocks", "1"));
   }
 
   @RetryingTest(4)
@@ -271,7 +273,8 @@ public class ReadDnsQueueActionTest {
 
     run();
 
-    assertTasksEnqueued(DNS_PULL_QUEUE_NAME, createDomainRefreshTaskMatcher("domain.net"));
+    TaskQueueHelper.assertTasksEnqueued(
+        DNS_PULL_QUEUE_NAME, createDomainRefreshTaskMatcher("domain.net"));
     assertTldsEnqueuedInPushQueue(
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
@@ -283,7 +286,7 @@ public class ReadDnsQueueActionTest {
     QueueFactory.getQueue(DNS_PULL_QUEUE_NAME)
         .add(
             TaskOptions.Builder.withDefaults()
-                .method(Method.PULL)
+                .method(TaskOptions.Method.PULL)
                 .param(DNS_TARGET_TYPE_PARAM, TargetType.DOMAIN.toString())
                 .param(DNS_TARGET_NAME_PARAM, "domain.unknown")
                 .param(DNS_TARGET_CREATE_TIME_PARAM, "3000-01-01TZ")
@@ -291,7 +294,8 @@ public class ReadDnsQueueActionTest {
 
     run();
 
-    assertTasksEnqueued(DNS_PULL_QUEUE_NAME, createDomainRefreshTaskMatcher("domain.unknown"));
+    TaskQueueHelper.assertTasksEnqueued(
+        DNS_PULL_QUEUE_NAME, createDomainRefreshTaskMatcher("domain.unknown"));
     assertTldsEnqueuedInPushQueue(
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
@@ -304,7 +308,7 @@ public class ReadDnsQueueActionTest {
     QueueFactory.getQueue(DNS_PULL_QUEUE_NAME)
         .add(
             TaskOptions.Builder.withDefaults()
-                .method(Method.PULL)
+                .method(TaskOptions.Method.PULL)
                 .param(DNS_TARGET_TYPE_PARAM, TargetType.DOMAIN.toString())
                 .param(DNS_TARGET_NAME_PARAM, "domain.wrongtld")
                 .param(DNS_TARGET_CREATE_TIME_PARAM, "3000-01-01TZ")
@@ -312,7 +316,7 @@ public class ReadDnsQueueActionTest {
 
     run();
 
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
     assertTldsEnqueuedInPushQueue(
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter", "net", "netWriter"));
   }
@@ -324,14 +328,14 @@ public class ReadDnsQueueActionTest {
     QueueFactory.getQueue(DNS_PULL_QUEUE_NAME)
         .add(
             TaskOptions.Builder.withDefaults()
-                .method(Method.PULL)
+                .method(TaskOptions.Method.PULL)
                 .param(DNS_TARGET_TYPE_PARAM, TargetType.DOMAIN.toString())
                 .param(DNS_TARGET_NAME_PARAM, "domain.net"));
 
     run();
 
     // The corrupt task isn't in the pull queue, but also isn't in the push queue
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
     assertTldsEnqueuedInPushQueue(
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
@@ -343,14 +347,14 @@ public class ReadDnsQueueActionTest {
     QueueFactory.getQueue(DNS_PULL_QUEUE_NAME)
         .add(
             TaskOptions.Builder.withDefaults()
-                .method(Method.PULL)
+                .method(TaskOptions.Method.PULL)
                 .param(DNS_TARGET_TYPE_PARAM, TargetType.DOMAIN.toString())
                 .param(PARAM_TLD, "net"));
 
     run();
 
     // The corrupt task isn't in the pull queue, but also isn't in the push queue
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
     assertTldsEnqueuedInPushQueue(
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
@@ -362,14 +366,14 @@ public class ReadDnsQueueActionTest {
     QueueFactory.getQueue(DNS_PULL_QUEUE_NAME)
         .add(
             TaskOptions.Builder.withDefaults()
-                .method(Method.PULL)
+                .method(TaskOptions.Method.PULL)
                 .param(DNS_TARGET_NAME_PARAM, "domain.net")
                 .param(PARAM_TLD, "net"));
 
     run();
 
     // The corrupt task isn't in the pull queue, but also isn't in the push queue
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
     assertTldsEnqueuedInPushQueue(
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
@@ -381,7 +385,7 @@ public class ReadDnsQueueActionTest {
     QueueFactory.getQueue(DNS_PULL_QUEUE_NAME)
         .add(
             TaskOptions.Builder.withDefaults()
-                .method(Method.PULL)
+                .method(TaskOptions.Method.PULL)
                 .param(DNS_TARGET_TYPE_PARAM, "Wrong type")
                 .param(DNS_TARGET_NAME_PARAM, "domain.net")
                 .param(PARAM_TLD, "net"));
@@ -389,7 +393,7 @@ public class ReadDnsQueueActionTest {
     run();
 
     // The corrupt task isn't in the pull queue, but also isn't in the push queue
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
     assertTldsEnqueuedInPushQueue(
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
@@ -402,8 +406,8 @@ public class ReadDnsQueueActionTest {
 
     run();
 
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
-    assertTasksEnqueued(
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    cloudTasksHelper.assertTasksEnqueued(
         DNS_PUBLISH_PUSH_QUEUE_NAME,
         new TaskMatcher().url(PublishDnsUpdatesAction.PATH).param("domains", "domain.net"),
         new TaskMatcher().url(PublishDnsUpdatesAction.PATH).param("hosts", "ns1.domain.com"));
@@ -441,8 +445,8 @@ public class ReadDnsQueueActionTest {
 
     run();
 
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
-    assertTasksEnqueued(
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    cloudTasksHelper.assertTasksEnqueued(
         DNS_PUBLISH_PUSH_QUEUE_NAME,
         new TaskMatcher()
             .url(PublishDnsUpdatesAction.PATH)
@@ -497,9 +501,9 @@ public class ReadDnsQueueActionTest {
 
     run();
 
-    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
+    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
     // Expect two different groups; in-balliwick hosts are locked with their superordinate domains.
-    assertTasksEnqueued(
+    cloudTasksHelper.assertTasksEnqueued(
         DNS_PUBLISH_PUSH_QUEUE_NAME,
         new TaskMatcher()
             .url(PublishDnsUpdatesAction.PATH)

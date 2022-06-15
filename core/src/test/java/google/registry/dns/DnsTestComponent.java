@@ -19,12 +19,14 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.cron.CronModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.request.RequestModule;
+import google.registry.testing.CloudTasksHelper.CloudTasksHelperModule;
 import google.registry.util.UtilsModule;
 import javax.inject.Singleton;
 
 @Singleton
 @Component(
     modules = {
+      CloudTasksHelperModule.class,
       ConfigModule.class,
       CronModule.class,
       DnsModule.class,

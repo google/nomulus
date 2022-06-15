@@ -34,7 +34,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.persistence.transaction.JpaTransactionManager;
-import google.registry.util.TaskQueueUtils;
 import google.registry.util.YamlUtils;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -952,7 +951,7 @@ public final class RegistryConfig {
      * <p>Note that this uses {@code @Named} instead of {@code @Config} so that it can be used from
      * the low-level util package, which cannot have a dependency on the config package.
      *
-     * @see TaskQueueUtils
+     * @see google.registry.util.CloudTasksUtils
      */
     @Provides
     @Named("transientFailureRetries")
