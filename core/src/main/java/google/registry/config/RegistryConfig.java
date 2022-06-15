@@ -27,7 +27,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -42,7 +41,9 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Named;
@@ -1266,7 +1267,7 @@ public final class RegistryConfig {
                       e.getKey().equals("START_OF_TIME")
                           ? START_OF_TIME
                           : DateTime.parse(e.getKey()),
-                  e -> e.getValue()));
+                  Entry::getValue));
     }
 
     @Provides

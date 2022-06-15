@@ -267,7 +267,7 @@ public class RdeUploadActionTest {
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    persistResource(Cursor.create(RDE_STAGING, stagingCursor, Registry.get("tld")));
+    persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Registry.get("tld")));
     RdeUploadAction action = createAction(uploadUrl);
     action.lazyJsch = Lazies.of(createThrowingJSchSpy(action.lazyJsch.get(), 2));
     action.runWithLock(uploadCursor);
@@ -286,7 +286,7 @@ public class RdeUploadActionTest {
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    persistResource(Cursor.create(RDE_STAGING, stagingCursor, Registry.get("tld")));
+    persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Registry.get("tld")));
     RdeUploadAction action = createAction(uploadUrl);
     action.lazyJsch = Lazies.of(createThrowingJSchSpy(action.lazyJsch.get(), 3));
     RuntimeException thrown =
@@ -300,7 +300,7 @@ public class RdeUploadActionTest {
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    persistResource(Cursor.create(RDE_STAGING, stagingCursor, Registry.get("tld")));
+    persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Registry.get("tld")));
     gcsUtils.delete(GHOSTRYDE_FILE_WITH_PREFIX);
     gcsUtils.delete(LENGTH_FILE_WITH_PREFIX);
     gcsUtils.delete(REPORT_FILE_WITH_PREFIX);
@@ -320,7 +320,7 @@ public class RdeUploadActionTest {
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    persistResource(Cursor.create(RDE_STAGING, stagingCursor, Registry.get("tld")));
+    persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Registry.get("tld")));
     gcsUtils.delete(GHOSTRYDE_FILE_WITH_PREFIX);
     gcsUtils.delete(LENGTH_FILE_WITH_PREFIX);
     gcsUtils.delete(REPORT_FILE_WITH_PREFIX);
@@ -345,7 +345,7 @@ public class RdeUploadActionTest {
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    persistResource(Cursor.create(RDE_STAGING, stagingCursor, Registry.get("tld")));
+    persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Registry.get("tld")));
     RdeUploadAction action = createAction(uploadUrl);
     action.prefix = Optional.of(JOB_PREFIX + "-job-name/");
     gcsUtils.delete(GHOSTRYDE_FILE);
@@ -374,7 +374,7 @@ public class RdeUploadActionTest {
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    persistResource(Cursor.create(RDE_STAGING, stagingCursor, Registry.get("tld")));
+    persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Registry.get("tld")));
     RdeUploadAction action = createAction(uploadUrl);
     gcsUtils.delete(GHOSTRYDE_FILE);
     gcsUtils.delete(LENGTH_FILE);
@@ -415,7 +415,7 @@ public class RdeUploadActionTest {
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    persistSimpleResource(Cursor.create(RDE_STAGING, stagingCursor, Registry.get("tld")));
+    persistSimpleResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Registry.get("tld")));
     BlobId ghostrydeR1FileWithPrefix =
         BlobId.of("bucket", JOB_PREFIX + "-job-name/tld_2010-10-17_full_S1_R1.xml.ghostryde");
     BlobId lengthR1FileWithPrefix =
@@ -446,7 +446,7 @@ public class RdeUploadActionTest {
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    persistResource(Cursor.create(RDE_STAGING, stagingCursor, Registry.get("tld")));
+    persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Registry.get("tld")));
     createAction(uploadUrl).runWithLock(uploadCursor);
     // Only verify signature for SFTP versions, since we check elsewhere that the GCS files are
     // identical to the ones sent over SFTP.
@@ -484,7 +484,7 @@ public class RdeUploadActionTest {
     URI url = URI.create("sftp://user:password@localhost:32323/");
     DateTime stagingCursor = DateTime.parse("2010-10-17TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    persistResource(Cursor.create(RDE_STAGING, stagingCursor, Registry.get("tld")));
+    persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Registry.get("tld")));
     NoContentException thrown =
         assertThrows(NoContentException.class, () -> createAction(url).runWithLock(uploadCursor));
     assertThat(thrown)
@@ -501,8 +501,8 @@ public class RdeUploadActionTest {
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
     DateTime sftpCursor = uploadCursor.minusMinutes(97); // Within the 2 hour cooldown period.
-    persistResource(Cursor.create(RDE_STAGING, stagingCursor, Registry.get("tld")));
-    persistResource(Cursor.create(RDE_UPLOAD_SFTP, sftpCursor, Registry.get("tld")));
+    persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Registry.get("tld")));
+    persistResource(Cursor.createScoped(RDE_UPLOAD_SFTP, sftpCursor, Registry.get("tld")));
     NoContentException thrown =
         assertThrows(NoContentException.class, () -> action.runWithLock(uploadCursor));
     assertThat(thrown)

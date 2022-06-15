@@ -57,6 +57,8 @@ import org.joda.time.DateTime;
 @Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)
 public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
+  private static final long serialVersionUID = -252782773382339534L;
+
   /**
    * Unique identifier in the registry for this resource.
    *
@@ -102,13 +104,13 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * The time when this resource was created.
    *
    * <p>Map the method to XML, not the field, because if we map the field (with an adaptor class) it
-   * will never be omitted from the xml even if the timestamp inside creationTime is null and we
+   * will never be omitted from the xml even if the timestamp inside creationTime is null, and we
    * return null from the adaptor (instead it gets written as an empty tag).
    *
    * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
    * resource fields.
    */
-  @AttributeOverrides({@AttributeOverride(name = "creationTime", column = @Column())})
+  @AttributeOverrides(@AttributeOverride(name = "creationTime", column = @Column))
   @Index
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
@@ -199,6 +201,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   public abstract String getForeignKey();
 
   /** Create the VKey for the specified EPP resource. */
+  @Override
   public abstract VKey<? extends EppResource> createVKey();
 
   /** Override of {@link Buildable#asBuilder} so that the extra methods are visible. */

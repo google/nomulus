@@ -57,7 +57,7 @@ final class ListCursorsCommand implements CommandWithRemoteApi {
             .map(Registry::get)
             .filter(r -> r.getTldType() == filterTldType)
             .filter(r -> !filterEscrowEnabled || r.getEscrowEnabled())
-            .collect(toImmutableMap(r -> r, r -> Cursor.createVKey(cursorType, r.getTldStr())));
+            .collect(toImmutableMap(r -> r, r -> Cursor.createScopedVKey(cursorType, r)));
     ImmutableMap<VKey<? extends Cursor>, Cursor> cursors =
         transactIfJpaTm(() -> tm().loadByKeysIfPresent(registries.values()));
     if (!registries.isEmpty()) {

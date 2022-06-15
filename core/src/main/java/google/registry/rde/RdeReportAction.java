@@ -19,7 +19,6 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
@@ -83,8 +82,10 @@ public final class RdeReportAction implements Runnable, EscrowTask {
   @Override
   public void runWithLock(DateTime watermark) throws Exception {
     Optional<Cursor> cursor =
-        transactIfJpaTm(
-            () -> tm().loadByKeyIfPresent(Cursor.createVKey(CursorType.RDE_UPLOAD, tld)));
+        tm().transact(
+                () ->
+                    tm().loadByKeyIfPresent(
+                            Cursor.createScopedVKey(CursorType.RDE_UPLOAD, Registry.get(tld))));
     DateTime cursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(cursorTime, watermark)) {
       throw new NoContentException(

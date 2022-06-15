@@ -252,6 +252,7 @@ public class DomainHistory extends HistoryEntry {
 
   /** Creates a {@link VKey} instance for this entity. */
   @SuppressWarnings("unchecked")
+  @Override
   public VKey<DomainHistory> createVKey() {
     return (VKey<DomainHistory>) createVKey(Key.create(this));
   }

@@ -59,7 +59,7 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
   void testListCursors_twoTldsOneAbsent_printsAbsentAndTimestampSorted() throws Exception {
     createTlds("foo", "bar");
     persistResource(
-        Cursor.create(CursorType.BRDA, DateTime.parse("1984-12-18TZ"), Registry.get("bar")));
+        Cursor.createScoped(CursorType.BRDA, DateTime.parse("1984-12-18TZ"), Registry.get("bar")));
     runCommand("--type=BRDA");
     assertThat(getStdoutAsLines())
         .containsExactly(

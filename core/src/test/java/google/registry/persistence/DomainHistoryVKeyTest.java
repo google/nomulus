@@ -96,6 +96,7 @@ class DomainHistoryVKeyTest {
       this.domainHistoryVKey = domainHistoryVKey;
     }
 
+    @Override
     public VKey<TestEntity> createVKey() {
       return VKey.createSql(TestEntity.class, id);
     }

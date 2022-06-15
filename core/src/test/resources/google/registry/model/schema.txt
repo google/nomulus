@@ -79,12 +79,6 @@ enum google.registry.model.billing.BillingEvent$RenewalPriceBehavior {
   NONPREMIUM;
   SPECIFIED;
 }
-class google.registry.model.common.Cursor {
-  @Id java.lang.String id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  google.registry.model.UpdateAutoTimestamp lastUpdateTime;
-  org.joda.time.DateTime cursorTime;
-}
 class google.registry.model.common.EntityGroupRoot {
   @Id java.lang.String id;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;

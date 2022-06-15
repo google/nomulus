@@ -96,6 +96,7 @@ public abstract class EppHistoryVKey<K, E extends EppResource> extends Immutable
   }
 
   /** Creates a {@link VKey} from this instance. */
+  @Override
   public VKey<K> createVKey() {
     Class<K> vKeyType = new TypeInstantiator<K>(getClass()) {}.getExactType();
     return VKey.create(vKeyType, createSqlKey(), createOfyKey());

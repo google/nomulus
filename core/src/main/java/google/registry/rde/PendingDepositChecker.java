@@ -92,7 +92,7 @@ public final class PendingDepositChecker {
       // Avoid creating a transaction unless absolutely necessary.
       Optional<Cursor> maybeCursor =
           transactIfJpaTm(
-              () -> tm().loadByKeyIfPresent(Cursor.createVKey(cursorType, registry.getTldStr())));
+              () -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, registry)));
       DateTime cursorValue = maybeCursor.map(Cursor::getCursorTime).orElse(startingPoint);
       if (isBeforeOrAt(cursorValue, now)) {
         DateTime watermark =
@@ -112,11 +112,11 @@ public final class PendingDepositChecker {
     return tm().transact(
             () -> {
               Optional<Cursor> maybeCursor =
-                  tm().loadByKeyIfPresent(Cursor.createVKey(cursorType, registry.getTldStr()));
+                  tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, registry));
               if (maybeCursor.isPresent()) {
                 return maybeCursor.get().getCursorTime();
               }
-              tm().put(Cursor.create(cursorType, initialValue, registry));
+              tm().put(Cursor.createScoped(cursorType, initialValue, registry));
               return initialValue;
             });
   }

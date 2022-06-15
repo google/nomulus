@@ -40,13 +40,12 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
   @BeforeEach
   void beforeEach() {
-    createTld("foo");
-    registry = Registry.get("foo");
+    registry = createTld("foo");
   }
 
   void doUpdateTest() throws Exception {
     runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "foo");
-    assertThat(loadByKey(Cursor.createVKey(CursorType.BRDA, "foo")).getCursorTime())
+    assertThat(loadByKey(Cursor.createScopedVKey(CursorType.BRDA, registry)).getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
     String changes = command.prompt();
     assertThat(changes)
@@ -66,14 +65,13 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
   @TestOfyAndSql
   void testSuccess_oldValueisEmpty() throws Exception {
-    assertThat(loadByKeyIfPresent(Cursor.createVKey(CursorType.BRDA, registry.getTldStr())))
-        .isEmpty();
+    assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(CursorType.BRDA, registry))).isEmpty();
     doUpdateTest();
   }
 
   @TestOfyAndSql
   void testSuccess_hasOldValue() throws Exception {
-    persistResource(Cursor.create(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry));
+    persistResource(Cursor.createScoped(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry));
     doUpdateTest();
   }
 
@@ -92,14 +90,15 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
   @TestOfyAndSql
   void testSuccess_multipleTlds_hasOldValue() throws Exception {
-    createTld("bar");
+    Registry barRegistry = createTld("bar");
     Registry registry2 = Registry.get("bar");
-    persistResource(Cursor.create(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry));
-    persistResource(Cursor.create(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry2));
+    persistResource(Cursor.createScoped(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry));
+    persistResource(
+        Cursor.createScoped(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry2));
     runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "foo", "bar");
-    assertThat(loadByKey(Cursor.createVKey(CursorType.BRDA, "foo")).getCursorTime())
+    assertThat(loadByKey(Cursor.createScopedVKey(CursorType.BRDA, registry)).getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
-    assertThat(loadByKey(Cursor.createVKey(CursorType.BRDA, "bar")).getCursorTime())
+    assertThat(loadByKey(Cursor.createScopedVKey(CursorType.BRDA, barRegistry)).getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
     String changes = command.prompt();
     assertThat(changes)
@@ -110,13 +109,13 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
   @TestOfyAndSql
   void testSuccess_multipleTlds_oldValueisEmpty() throws Exception {
-    createTld("bar");
-    assertThat(loadByKeyIfPresent(Cursor.createVKey(CursorType.BRDA, "foo"))).isEmpty();
-    assertThat(loadByKeyIfPresent(Cursor.createVKey(CursorType.BRDA, "bar"))).isEmpty();
+    Registry barRegistry = createTld("bar");
+    assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(CursorType.BRDA, registry))).isEmpty();
+    assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(CursorType.BRDA, barRegistry))).isEmpty();
     runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "foo", "bar");
-    assertThat(loadByKey(Cursor.createVKey(CursorType.BRDA, "foo")).getCursorTime())
+    assertThat(loadByKey(Cursor.createScopedVKey(CursorType.BRDA, registry)).getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
-    assertThat(loadByKey(Cursor.createVKey(CursorType.BRDA, "bar")).getCursorTime())
+    assertThat(loadByKey(Cursor.createScopedVKey(CursorType.BRDA, barRegistry)).getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
     String changes = command.prompt();
     assertThat(changes)

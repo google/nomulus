@@ -257,8 +257,8 @@ public class RdePipelineTest {
 
     tm().transact(
             () -> {
-              tm().put(Cursor.create(CursorType.BRDA, now, Registry.get("soy")));
-              tm().put(Cursor.create(RDE_STAGING, now, Registry.get("soy")));
+              tm().put(Cursor.createScoped(CursorType.BRDA, now, Registry.get("soy")));
+              tm().put(Cursor.createScoped(RDE_STAGING, now, Registry.get("soy")));
               RdeRevision.saveRevision("soy", now, THIN, 0);
               RdeRevision.saveRevision("soy", now, FULL, 0);
             });
@@ -567,7 +567,9 @@ public class RdePipelineTest {
   }
 
   private static DateTime loadCursorTime(CursorType type) {
-    return tm().transact(() -> tm().loadByKey(Cursor.createVKey(type, "soy")).getCursorTime());
+    return tm().transact(
+            () ->
+                tm().loadByKey(Cursor.createScopedVKey(type, Registry.get("soy"))).getCursorTime());
   }
 
   private static Function<DepositFragment, String> getXmlElement(String pattern) {

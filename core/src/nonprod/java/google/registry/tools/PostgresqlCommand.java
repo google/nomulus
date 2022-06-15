@@ -34,7 +34,7 @@ public abstract class PostgresqlCommand implements Command {
 
   @VisibleForTesting public static final int POSTGRESQL_PORT = 5432;
 
-  protected PostgreSQLContainer postgresContainer = null;
+  protected PostgreSQLContainer<?> postgresContainer = null;
 
   @Parameter(
       names = {"-s", "--start_postgresql"},
@@ -68,7 +68,7 @@ public abstract class PostgresqlCommand implements Command {
 
       // Start the container and store the address information.
       postgresContainer =
-          new PostgreSQLContainer(NomulusPostgreSql.getDockerTag())
+          new PostgreSQLContainer<>(NomulusPostgreSql.getDockerTag())
               .withDatabaseName(DB_NAME)
               .withUsername(DB_USERNAME)
               .withPassword(DB_PASSWORD);
@@ -79,7 +79,7 @@ public abstract class PostgresqlCommand implements Command {
         return false;
       }
       postgresContainer.start();
-      databaseHost = postgresContainer.getContainerIpAddress();
+      databaseHost = postgresContainer.getHost();
       databasePort = postgresContainer.getMappedPort(POSTGRESQL_PORT);
     } else if (databaseHost == null) {
       System.err.println(
