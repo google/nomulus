@@ -100,7 +100,6 @@ import org.joda.time.DateTime;
  * superuser. As such, adding or removing these statuses incurs a billing event. There will be only
  * one charge per update, even if several such statuses are updated at once.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.EppException.UnimplementedExtensionException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.AddRemoveSameValueException}
