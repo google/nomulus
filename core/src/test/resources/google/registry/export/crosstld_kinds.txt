@@ -1,3 +1,2 @@
 Registrar
-Registry
 ServerSecret

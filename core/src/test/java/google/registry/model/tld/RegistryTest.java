@@ -28,7 +28,7 @@ import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static java.math.BigDecimal.ROUND_UNNECESSARY;
+import static java.math.RoundingMode.UNNECESSARY;
 import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -77,8 +77,7 @@ public final class RegistryTest extends EntityTestCase {
     Registry registry =
         Registry.get("tld").asBuilder().setReservedLists(rl15).setPremiumList(pl).build();
     tm().transact(() -> tm().put(registry));
-    Registry persisted =
-        tm().transact(() -> tm().loadByKey(Registry.createVKey(registry.tldStrId)));
+    Registry persisted = tm().transact(() -> tm().loadByKey(Registry.createVKey(registry.tldStr)));
     assertThat(persisted).isEqualTo(registry);
   }
 
@@ -94,8 +93,7 @@ public final class RegistryTest extends EntityTestCase {
     ReservedList rl15 = persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED");
     Registry registry = Registry.get("tld").asBuilder().setReservedLists(rl15).build();
     tm().transact(() -> tm().put(registry));
-    Registry persisted =
-        tm().transact(() -> tm().loadByKey(Registry.createVKey(registry.tldStrId)));
+    Registry persisted = tm().transact(() -> tm().loadByKey(Registry.createVKey(registry.tldStr)));
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
@@ -582,7 +580,7 @@ public final class RegistryTest extends EntityTestCase {
   @TestOfyAndSql
   void testEapFee_undefined() {
     assertThat(Registry.get("tld").getEapFeeFor(fakeClock.nowUtc()).getCost())
-        .isEqualTo(BigDecimal.ZERO.setScale(2, ROUND_UNNECESSARY));
+        .isEqualTo(BigDecimal.ZERO.setScale(2, UNNECESSARY));
   }
 
   @TestOfyAndSql
@@ -602,7 +600,7 @@ public final class RegistryTest extends EntityTestCase {
     assertThat(registry.getEapFeeFor(fakeClock.nowUtc()).getCost())
         .isEqualTo(new BigDecimal("100.00"));
     assertThat(registry.getEapFeeFor(fakeClock.nowUtc().minusDays(2)).getCost())
-        .isEqualTo(BigDecimal.ZERO.setScale(2, ROUND_UNNECESSARY));
+        .isEqualTo(BigDecimal.ZERO.setScale(2, UNNECESSARY));
     assertThat(registry.getEapFeeFor(fakeClock.nowUtc().plusDays(2)).getCost())
         .isEqualTo(new BigDecimal("50.00"));
   }
@@ -626,7 +624,7 @@ public final class RegistryTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () -> Registry.get("tld").asBuilder().setRoidSuffix("123456789"));
-    assertThat(e).hasMessageThat().isEqualTo("ROID suffix must be in format ^[A-Z0-9_]{1,8}$");
+    assertThat(e).hasMessageThat().isEqualTo("ROID suffix must be in format ^[A-Z\\d_]{1,8}$");
   }
 
   @TestOfyAndSql

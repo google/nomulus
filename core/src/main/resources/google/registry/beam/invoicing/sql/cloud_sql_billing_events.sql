@@ -28,7 +28,7 @@
 SELECT b, r FROM BillingEvent b
 JOIN Registrar r ON b.clientId = r.clientIdentifier
 JOIN Domain d ON b.domainRepoId = d.repoId
-JOIN Tld t ON t.tldStrId = d.tld
+JOIN Tld t ON t.tldStr = d.tld
 LEFT JOIN BillingCancellation c ON b.id = c.refOneTime.billingId
 LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent = cr.refRecurring.billingId
 WHERE r.billingAccountMap IS NOT NULL

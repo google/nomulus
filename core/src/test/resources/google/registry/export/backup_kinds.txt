@@ -16,4 +16,3 @@ PollMessage
 RdeRevision
 Recurring
 Registrar
-Registry
