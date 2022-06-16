@@ -320,6 +320,8 @@ public class ContactResourceToXjcConverterTest {
         .setFaxNumber(new ContactPhoneNumber.Builder().setPhoneNumber("+1.2126660001").build())
         .setTransferData(
             new ContactTransferData.Builder()
+                .setRepoId("2-ROID")
+                .setHistoryEntryId(100L)
                 .setGainingRegistrarId("TheRegistrar")
                 .setLosingRegistrarId("NewRegistrar")
                 .setTransferRequestTime(DateTime.parse("1925-04-19TZ"))

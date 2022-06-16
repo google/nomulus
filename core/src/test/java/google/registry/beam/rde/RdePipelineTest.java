@@ -311,6 +311,10 @@ public class RdePipelineTest {
     persistDomainHistory(
         helloDomain
             .asBuilder()
+            .removeContacts(
+                helloDomain.getContacts().stream()
+                    .filter(dc -> dc.getType() == DesignatedContact.Type.ADMIN)
+                    .collect(toImmutableSet()))
             .addContacts(
                 ImmutableSet.of(
                     DesignatedContact.create(DesignatedContact.Type.ADMIN, contact3.createVKey())))

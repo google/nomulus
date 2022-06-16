@@ -82,6 +82,10 @@ public class TransferDataTest {
   void test_copyConstantFieldsToBuilder() {
     DomainTransferData constantTransferData =
         new DomainTransferData.Builder()
+            // Note that repo id and history are intentionally different from those in
+            // fulTransferData.
+            .setRepoId("7-TLD")
+            .setHistoryEntryId(100L)
             .setTransferRequestTrid(Trid.create("server-trid", "client-trid"))
             .setTransferRequestTime(now)
             .setGainingRegistrarId("NewRegistrar")
@@ -94,6 +98,8 @@ public class TransferDataTest {
             .asBuilder()
             .setPendingTransferExpirationTime(now)
             .setTransferStatus(TransferStatus.PENDING)
+            .setRepoId("4-TLD")
+            .setHistoryEntryId(1356L)
             .setServerApproveEntities(
                 ImmutableSet.of(
                     transferBillingEventKey,

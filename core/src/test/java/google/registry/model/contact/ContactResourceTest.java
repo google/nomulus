@@ -120,6 +120,8 @@ public class ContactResourceTest extends EntityTestCase {
                     .setTransferRequestTime(fakeClock.nowUtc())
                     .setTransferStatus(TransferStatus.SERVER_APPROVED)
                     .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
+                    .setRepoId("2-FOOBAR")
+                    .setHistoryEntryId(1L)
                     .build())
             .build();
     // Set up a new persisted ContactResource entity.

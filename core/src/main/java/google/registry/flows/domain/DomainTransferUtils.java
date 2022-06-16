@@ -51,6 +51,8 @@ public final class DomainTransferUtils {
 
   /** Sets up {@link TransferData} for a domain with links to entities for server approval. */
   public static DomainTransferData createPendingTransferData(
+      String domainRepoId,
+      Long historyId,
       DomainTransferData.Builder transferDataBuilder,
       ImmutableSet<TransferServerApproveEntity> serverApproveEntities,
       Period transferPeriod) {
@@ -82,6 +84,8 @@ public final class DomainTransferUtils {
                 .map(PollMessage.Autorenew.class::cast)
                 .collect(onlyElement())
                 .createVKey())
+        .setRepoId(domainRepoId)
+        .setHistoryEntryId(historyId)
         .setServerApproveEntities(serverApproveEntityKeys.build())
         .setTransferPeriod(transferPeriod)
         .build();

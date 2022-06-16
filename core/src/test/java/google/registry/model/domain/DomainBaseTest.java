@@ -200,6 +200,8 @@ public class DomainBaseTest extends EntityTestCase {
                             .setGainingRegistrarId("TheRegistrar")
                             .setLosingRegistrarId("NewRegistrar")
                             .setPendingTransferExpirationTime(fakeClock.nowUtc())
+                            .setRepoId(historyEntry.getDomainRepoId())
+                            .setHistoryEntryId(historyEntry.getId())
                             .setServerApproveEntities(
                                 ImmutableSet.of(oneTimeBillKey, recurringBillKey, autorenewPollKey))
                             .setServerApproveBillingEvent(oneTimeBillKey)
@@ -772,6 +774,8 @@ public class DomainBaseTest extends EntityTestCase {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
+            .setRepoId(domain.getRepoId())
+            .setHistoryEntryId(100L)
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
@@ -800,6 +804,8 @@ public class DomainBaseTest extends EntityTestCase {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
+            .setRepoId(domain.getRepoId())
+            .setHistoryEntryId(100L)
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
@@ -827,6 +833,8 @@ public class DomainBaseTest extends EntityTestCase {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
+            .setRepoId(domain.getRepoId())
+            .setHistoryEntryId(100L)
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
@@ -853,6 +861,8 @@ public class DomainBaseTest extends EntityTestCase {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
+            .setRepoId(domain.getRepoId())
+            .setHistoryEntryId(100L)
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")

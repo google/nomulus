@@ -503,6 +503,8 @@ public class DatabaseHelper {
       @Nullable DateTime extendedRegistrationExpirationTime) {
     TransferData transferData =
         createDomainTransferDataBuilder(requestTime, expirationTime)
+            .setRepoId(resource.getRepoId())
+            .setHistoryEntryId(historyEntry.getId())
             .setTransferredRegistrationExpirationTime(extendedRegistrationExpirationTime)
             .build();
     return new PollMessage.OneTime.Builder()
@@ -548,6 +550,8 @@ public class DatabaseHelper {
             .setTransferData(
                 createContactTransferDataBuilder(requestTime, expirationTime)
                     .setPendingTransferExpirationTime(now.plus(getContactAutomaticTransferLength()))
+                    .setRepoId(((ContactHistory) historyEntryContactTransfer).getContactRepoId())
+                    .setHistoryEntryId(historyEntryContactTransfer.getId())
                     .setServerApproveEntities(
                         ImmutableSet.of(
                             // Pretend it's 3 days since the request
@@ -711,6 +715,8 @@ public class DatabaseHelper {
                     .setServerApproveAutorenewEvent(gainingClientAutorenewEvent.createVKey())
                     .setServerApproveAutorenewPollMessage(
                         gainingClientAutorenewPollMessage.createVKey())
+                    .setRepoId(historyEntryDomainTransfer.getDomainRepoId())
+                    .setHistoryEntryId(historyEntryDomainTransfer.getId())
                     .setServerApproveEntities(
                         ImmutableSet.of(
                             transferBillingEvent.createVKey(),

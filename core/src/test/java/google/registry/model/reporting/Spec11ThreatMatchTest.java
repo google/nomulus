@@ -81,7 +81,11 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
         new ContactResource.Builder()
             .setRepoId("contact_id")
             .setCreationRegistrarId(REGISTRAR_ID)
-            .setTransferData(new ContactTransferData.Builder().build())
+            .setTransferData(
+                new ContactTransferData.Builder()
+                    .setRepoId("contact_id")
+                    .setHistoryEntryId(100L)
+                    .build())
             .setPersistedCurrentSponsorRegistrarId(REGISTRAR_ID)
             .build();
 

@@ -14,15 +14,12 @@
 
 package google.registry.model.transfer;
 
-import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.annotation.AlsoLoad;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
-import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.Unindex;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.billing.BillingEvent;
@@ -30,6 +27,7 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
+import google.registry.util.NullSafeCollectionBuilder;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
@@ -37,7 +35,6 @@ import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
-import javax.persistence.PostLoad;
 import org.joda.time.DateTime;
 
 /** Transfer data for domain. */
@@ -164,36 +161,17 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     return serverApproveAutorenewPollMessageHistoryId;
   }
 
-  @OnLoad
   @Override
-  void onLoad(
-      @AlsoLoad("serverApproveEntities")
-          Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
-    super.onLoad(serverApproveEntities);
-    mapBillingCancellationEntityToField(serverApproveEntities, this);
-  }
-
-  @PostLoad
-  @Override
-  void postLoad() {
-    super.postLoad();
-    // The superclass's serverApproveEntities should include the billing events if present
-    ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>> serverApproveEntitiesBuilder =
+  public ImmutableSet<VKey<? extends TransferServerApproveEntity>> getServerApproveEntities() {
+    ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>> builder =
         new ImmutableSet.Builder<>();
-    if (serverApproveEntities != null) {
-      serverApproveEntitiesBuilder.addAll(serverApproveEntities);
-    }
-    if (serverApproveBillingEvent != null) {
-      serverApproveEntitiesBuilder.add(serverApproveBillingEvent);
-    }
-    if (serverApproveAutorenewEvent != null) {
-      serverApproveEntitiesBuilder.add(serverApproveAutorenewEvent);
-    }
-    if (billingCancellationId != null) {
-      serverApproveEntitiesBuilder.add(billingCancellationId);
-    }
-    serverApproveEntities = forceEmptyToNull(serverApproveEntitiesBuilder.build());
-    hashCode = null; // reset the hash code since we may have changed the entities
+    builder.addAll(super.getServerApproveEntities());
+    return NullSafeCollectionBuilder.create(builder)
+        .add(serverApproveBillingEvent)
+        .add(serverApproveAutorenewEvent)
+        .add(billingCancellationId)
+        .getBuilder()
+        .build();
   }
 
   @Override
@@ -232,12 +210,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
       super(instance);
     }
 
-    @Override
-    public DomainTransferData build() {
-      mapBillingCancellationEntityToField(getInstance().serverApproveEntities, getInstance());
-      return super.build();
-    }
-
     public Builder setTransferPeriod(Period transferPeriod) {
       getInstance().transferPeriod = transferPeriod;
       return this;
@@ -264,6 +236,13 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     public Builder setServerApproveAutorenewPollMessage(
         VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage) {
       getInstance().serverApproveAutorenewPollMessage = serverApproveAutorenewPollMessage;
+      return this;
+    }
+
+    public Builder setServerApproveEntities(
+        ImmutableSet<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
+      super.setServerApproveEntities(serverApproveEntities);
+      mapBillingCancellationEntityToField(serverApproveEntities, getInstance());
       return this;
     }
   }

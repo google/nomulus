@@ -208,6 +208,8 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     // Create the transfer data that represents the pending transfer.
     DomainTransferData pendingTransferData =
         createPendingTransferData(
+            domainAtTransferTime.getRepoId(),
+            domainHistoryKey.getId(),
             new DomainTransferData.Builder()
                 .setTransferRequestTrid(trid)
                 .setTransferRequestTime(now)

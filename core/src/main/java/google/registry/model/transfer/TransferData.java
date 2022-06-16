@@ -14,26 +14,20 @@
 
 package google.registry.model.transfer;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullToEmpty;
-import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.AlsoLoad;
 import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.IgnoreSave;
-import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
-import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.util.NullSafeCollectionBuilder;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -42,8 +36,6 @@ import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.MappedSuperclass;
-import javax.persistence.PostLoad;
-import javax.persistence.Transient;
 
 /**
  * Common transfer data for {@link EppResource} types. Only applies to domains and contacts; hosts
@@ -66,20 +58,6 @@ public abstract class TransferData<
   })
   Trid transferRequestTrid;
 
-  /**
-   * The billing event and poll messages associated with a server-approved transfer.
-   *
-   * <p>This field should be null if there is not currently a pending transfer or if the object
-   * being transferred is not a domain. If there is a pending transfer for a domain there should be
-   * a number of poll messages and billing events for both the gaining and losing registrars. If the
-   * pending transfer is explicitly approved, rejected or cancelled, the referenced entities should
-   * be deleted.
-   */
-  @Transient
-  @DoNotCompare
-  @IgnoreSave(IfNull.class)
-  Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities;
-
   @Ignore
   @Column(name = "transfer_repo_id")
   String repoId;
@@ -89,11 +67,7 @@ public abstract class TransferData<
   Long historyEntryId;
 
   // The pollMessageId1 and pollMessageId2 are used to store the IDs for gaining and losing poll
-  // messages in Cloud SQL, and they are added to replace the VKeys in serverApproveEntities.
-  // Although we can distinguish which is which when we construct the TransferData instance from
-  // the transfer request flow, when the instance is loaded from Datastore, we cannot make this
-  // distinction because they are just VKeys. Also, the only way we use serverApproveEntities is to
-  // just delete all the entities referenced by the VKeys, so we don't need to make the distinction.
+  // messages in Cloud SQL.
   //
   // In addition, there may be a third poll message for the autorenew poll message on domain
   // transfer if applicable.
@@ -111,13 +85,23 @@ public abstract class TransferData<
 
   public abstract boolean isEmpty();
 
+  public Long getHistoryEntryId() {
+    return historyEntryId;
+  }
+
   @Nullable
   public Trid getTransferRequestTrid() {
     return transferRequestTrid;
   }
 
   public ImmutableSet<VKey<? extends TransferServerApproveEntity>> getServerApproveEntities() {
-    return nullToEmptyImmutableCopy(serverApproveEntities);
+    return NullSafeCollectionBuilder.create(
+            new ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>>())
+        .add(VKey.createSql(PollMessage.class, pollMessageId1))
+        .add(VKey.createSql(PollMessage.class, pollMessageId2))
+        .add(VKey.createSql(PollMessage.class, pollMessageId3))
+        .getBuilder()
+        .build();
   }
 
   @Override
@@ -147,67 +131,16 @@ public abstract class TransferData<
     return newBuilder;
   }
 
-  void onLoad(
-      @AlsoLoad("serverApproveEntities")
-          Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
-    mapServerApproveEntitiesToFields(serverApproveEntities, this);
-  }
-
-  @PostLoad
-  void postLoad() {
-    mapFieldsToServerApproveEntities();
-  }
-
-  /**
-   * Reconstructs serverApproveEntities set from the individual fields, e.g. repoId, historyEntryId,
-   * pollMessageId1.
-   */
-  void mapFieldsToServerApproveEntities() {
-    if (repoId == null) {
-      return;
-    }
-    Key<? extends EppResource> eppKey;
-    if (getClass().equals(DomainTransferData.class)) {
-      eppKey = Key.create(DomainBase.class, repoId);
-    } else {
-      eppKey = Key.create(ContactResource.class, repoId);
-    }
-    Key<HistoryEntry> historyEntryKey = Key.create(eppKey, HistoryEntry.class, historyEntryId);
-    ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>> entityKeysBuilder =
-        new ImmutableSet.Builder<>();
-    if (pollMessageId1 != null) {
-      Key<PollMessage> ofyKey = Key.create(historyEntryKey, PollMessage.class, pollMessageId1);
-      entityKeysBuilder.add(PollMessage.createVKey(ofyKey));
-    }
-    if (pollMessageId2 != null) {
-      Key<PollMessage> ofyKey = Key.create(historyEntryKey, PollMessage.class, pollMessageId2);
-      entityKeysBuilder.add(PollMessage.createVKey(ofyKey));
-    }
-    if (pollMessageId3 != null) {
-      Key<PollMessage> ofyKey = Key.create(historyEntryKey, PollMessage.class, pollMessageId3);
-      entityKeysBuilder.add(PollMessage.createVKey(ofyKey));
-    }
-    serverApproveEntities = entityKeysBuilder.build();
-  }
-
   /** Maps serverApproveEntities set to the individual fields. */
   static void mapServerApproveEntitiesToFields(
       Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities,
       TransferData transferData) {
     if (isNullOrEmpty(serverApproveEntities)) {
-      transferData.historyEntryId = null;
-      transferData.repoId = null;
       transferData.pollMessageId1 = null;
       transferData.pollMessageId2 = null;
       transferData.pollMessageId3 = null;
       return;
     }
-    // Each element in serverApproveEntities should have the exact same Key<HistoryEntry> as its
-    // parent. So, we can use any to set historyEntryId and repoId.
-    Key<?> key = serverApproveEntities.iterator().next().getOfyKey();
-    transferData.historyEntryId = key.getParent().getId();
-    transferData.repoId = key.getParent().getParent().getName();
-
     ImmutableList<Long> sortedPollMessageIds = getSortedPollMessageIds(serverApproveEntities);
     if (sortedPollMessageIds.size() >= 1) {
       transferData.pollMessageId1 = sortedPollMessageIds.get(0);
@@ -251,13 +184,24 @@ public abstract class TransferData<
 
     public B setServerApproveEntities(
         ImmutableSet<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
-      getInstance().serverApproveEntities = serverApproveEntities;
+      mapServerApproveEntitiesToFields(serverApproveEntities, getInstance());
+      return thisCastToDerived();
+    }
+
+    public B setRepoId(String repoId) {
+      getInstance().repoId = repoId;
+      return thisCastToDerived();
+    }
+
+    public B setHistoryEntryId(Long historyEntryId) {
+      getInstance().historyEntryId = historyEntryId;
       return thisCastToDerived();
     }
 
     @Override
     public T build() {
-      mapServerApproveEntitiesToFields(getInstance().serverApproveEntities, getInstance());
+      checkState(getInstance().repoId != null, "Repo id undefined");
+      checkState(getInstance().historyEntryId != null, "History entry undefined");
       return super.build();
     }
   }

@@ -122,7 +122,8 @@ public final class TestSetupHelper {
     return new ContactResource.Builder()
         .setRepoId(repoId)
         .setCreationRegistrarId(registrarId)
-        .setTransferData(new ContactTransferData.Builder().build())
+        .setTransferData(
+            new ContactTransferData.Builder().setRepoId(repoId).setHistoryEntryId(100L).build())
         .setPersistedCurrentSponsorRegistrarId(registrarId)
         .build();
   }

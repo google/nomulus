@@ -106,6 +106,8 @@ class ContactTransferRequestFlowTest
                 .setPendingTransferExpirationTime(afterTransfer)
                 // Make the server-approve entities field a no-op comparison; it's easier to
                 // do this comparison separately below.
+                .setRepoId(contact.getRepoId())
+                .setHistoryEntryId(contact.getTransferData().getHistoryEntryId())
                 .setServerApproveEntities(
                     forceEmptyToNull(contact.getTransferData().getServerApproveEntities()))
                 .build());

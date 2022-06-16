@@ -133,6 +133,8 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
         serverApproveTransferData
             .asBuilder()
             .setTransferStatus(TransferStatus.PENDING)
+            .setRepoId(serverApproveGainingPollMessage.getContactRepoId())
+            .setHistoryEntryId(contactHistoryKey.getId())
             .setServerApproveEntities(
                 ImmutableSet.of(
                     serverApproveGainingPollMessage.createVKey(),

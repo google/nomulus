@@ -176,7 +176,11 @@ public class RegistryJpaReadTest {
         new ContactResource.Builder()
             .setRepoId("contactid_1")
             .setCreationRegistrarId(registrar.getRegistrarId())
-            .setTransferData(new ContactTransferData.Builder().build())
+            .setTransferData(
+                new ContactTransferData.Builder()
+                    .setRepoId("4-COM")
+                    .setHistoryEntryId(100L)
+                    .build())
             .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
             .build();
     DomainBase domain =
