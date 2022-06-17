@@ -31,13 +31,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.taskqueue.Queue;
-import com.google.appengine.api.taskqueue.TaskOptions;
+import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.dns.DnsMetrics.ActionStatus;
 import google.registry.dns.DnsMetrics.CommitStatus;
@@ -46,13 +48,17 @@ import google.registry.dns.writer.DnsWriter;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
+import google.registry.request.Action.Service;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
+import google.registry.testing.FakeSleeper;
 import google.registry.testing.InjectExtension;
-import google.registry.util.TaskQueueUtils;
+import google.registry.util.CloudTasksUtils;
+import google.registry.util.CloudTasksUtils.SerializableCloudTasksClient;
+import google.registry.util.Retrier;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,7 +78,14 @@ public class PublishDnsUpdatesActionTest {
   private final DnsWriter dnsWriter = mock(DnsWriter.class);
   private final DnsMetrics dnsMetrics = mock(DnsMetrics.class);
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
-  private final TaskQueueUtils taskQueueUtils = mock(TaskQueueUtils.class);
+  private final CloudTasksUtils cloudTasksUtils =
+      new CloudTasksUtils(
+          new Retrier(new FakeSleeper(clock), 1),
+          clock,
+          "project",
+          "location",
+          mock(SerializableCloudTasksClient.class));
+  private final CloudTasksUtils spyCloudTasksUtils = spy(cloudTasksUtils);
   private final Queue queue = mock(Queue.class);
   private PublishDnsUpdatesAction action;
 
@@ -109,7 +122,7 @@ public class PublishDnsUpdatesActionTest {
     action.numPublishLocks = 1;
     action.lockHandler = lockHandler;
     action.clock = clock;
-    action.taskQueueUtils = taskQueueUtils;
+    action.cloudTasksUtils = spyCloudTasksUtils;
     action.retryCount = 0;
     action.dnsPublishPushQueue = queue;
     return action;
@@ -232,30 +245,38 @@ public class PublishDnsUpdatesActionTest {
     doThrow(new RuntimeException()).when(dnsWriter).commit();
     action.run();
 
-    TaskOptions taskOptions1 =
-        TaskOptions.Builder.withUrl(PublishDnsUpdatesAction.PATH)
-            .param(PARAM_TLD, "xn--q9jyb4c")
-            .param(PARAM_DNS_WRITER, "correctWriter")
-            .param(PARAM_LOCK_INDEX, "1")
-            .param(PARAM_NUM_PUBLISH_LOCKS, "1")
-            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_CREATED, action.itemsCreateTime.toString())
-            .param(PARAM_DOMAINS, "example2.xn--q9jyb4c,example1.xn--q9jyb4c")
-            .param(PARAM_HOSTS, "");
+    Task task1 =
+        cloudTasksUtils.createPostTask(
+            PublishDnsUpdatesAction.PATH,
+            Service.BACKEND.toString(),
+            ImmutableMultimap.<String, String>builder()
+                .put(PARAM_TLD, "xn--q9jyb4c")
+                .put(PARAM_DNS_WRITER, "correctWriter")
+                .put(PARAM_LOCK_INDEX, "1")
+                .put(PARAM_NUM_PUBLISH_LOCKS, "1")
+                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+                .put(PARAM_REFRESH_REQUEST_CREATED, action.itemsCreateTime.toString())
+                .put(PARAM_DOMAINS, "example1.xn--q9jyb4c,example2.xn--q9jyb4c")
+                .put(PARAM_HOSTS, "")
+                .build());
 
-    TaskOptions taskOptions2 =
-        TaskOptions.Builder.withUrl(PublishDnsUpdatesAction.PATH)
-            .param(PARAM_TLD, "xn--q9jyb4c")
-            .param(PARAM_DNS_WRITER, "correctWriter")
-            .param(PARAM_LOCK_INDEX, "1")
-            .param(PARAM_NUM_PUBLISH_LOCKS, "1")
-            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_CREATED, action.itemsCreateTime.toString())
-            .param(PARAM_DOMAINS, "example3.xn--q9jyb4c,example4.xn--q9jyb4c")
-            .param(PARAM_HOSTS, "ns1.example.xn--q9jyb4c");
+    Task task2 =
+        cloudTasksUtils.createPostTask(
+            PublishDnsUpdatesAction.PATH,
+            Service.BACKEND.toString(),
+            ImmutableMultimap.<String, String>builder()
+                .put(PARAM_TLD, "xn--q9jyb4c")
+                .put(PARAM_DNS_WRITER, "correctWriter")
+                .put(PARAM_LOCK_INDEX, "1")
+                .put(PARAM_NUM_PUBLISH_LOCKS, "1")
+                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+                .put(PARAM_REFRESH_REQUEST_CREATED, action.itemsCreateTime.toString())
+                .put(PARAM_DOMAINS, "example3.xn--q9jyb4c,example4.xn--q9jyb4c")
+                .put(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
+                .build());
 
-    verify(taskQueueUtils).enqueue(queue, taskOptions1);
-    verify(taskQueueUtils).enqueue(queue, taskOptions2);
+    verify(spyCloudTasksUtils).enqueue("dns-publish", task1);
+    verify(spyCloudTasksUtils).enqueue("dns-publish", task2);
   }
 
   @Test
@@ -265,7 +286,7 @@ public class PublishDnsUpdatesActionTest {
     action.retryCount = 9;
     doThrow(new RuntimeException()).when(dnsWriter).commit();
     assertThrows(RuntimeException.class, action::run);
-    verifyNoMoreInteractions(taskQueueUtils);
+    verifyNoMoreInteractions(spyCloudTasksUtils);
   }
 
   @Test

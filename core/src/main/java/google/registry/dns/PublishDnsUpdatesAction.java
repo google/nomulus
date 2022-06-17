@@ -27,7 +27,8 @@ import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 
 import com.google.appengine.api.taskqueue.Queue;
-import com.google.appengine.api.taskqueue.TaskOptions;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig.Config;
@@ -37,18 +38,19 @@ import google.registry.dns.DnsMetrics.PublishStatus;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.model.tld.Registry;
 import google.registry.request.Action;
+import google.registry.request.Action.Service;
 import google.registry.request.Header;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
+import google.registry.util.CloudTasksUtils;
 import google.registry.util.DomainNameUtils;
-import google.registry.util.TaskQueueUtils;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.joda.time.DateTime;
@@ -65,7 +67,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   public static final String PATH = "/_dr/task/publishDnsUpdates";
   public static final String LOCK_NAME = "DNS updates";
-  public static final String RETRY_HEADER = "X-AppEngine-TaskRetryCount";
+  public static final String RETRY_HEADER = "X-CloudTasks-TaskRetryCount";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -108,7 +110,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   @Inject LockHandler lockHandler;
   @Inject Clock clock;
-  @Inject TaskQueueUtils taskQueueUtils;
+  @Inject CloudTasksUtils cloudTasksUtils;
 
   @Inject PublishDnsUpdatesAction() {}
 
@@ -187,8 +189,9 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       if (domains.size() > 1 || hosts.size() > 1) {
         // split batch and requeue
         splitBatch();
-      } else if (retryCount < 10) {
-        // If the batch only contains 1 name, allow it 10 retries
+      }
+      // If the batch only contains 1 name, allow it 10 retries
+      else if (retryCount < 10) {
         throw e;
       }
       // If we get here, we should terminate this task as it is likely a perpetually failing task.
@@ -199,43 +202,31 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   /** Splits the domains and hosts in a batch into smaller batches and adds them to the queue. */
   private void splitBatch() {
-    Set<String> set1Domain = new HashSet<>();
-    Set<String> set2Domain = new HashSet<>();
-    Set<String> set1Host = new HashSet<>();
-    Set<String> set2Host = new HashSet<>();
+    List<String> domainList = new ArrayList<>(domains);
+    List<String> hostList = new ArrayList<>(hosts);
 
-    for (String domain : domains) {
-      if (set1Domain.size() < (domains.size() / 2)) {
-        set1Domain.add(domain);
-      } else {
-        set2Domain.add(domain);
-      }
-    }
-
-    for (String host : hosts) {
-      if (set1Host.size() < (hosts.size() / 2)) {
-        set1Host.add(host);
-      } else {
-        set2Host.add(host);
-      }
-    }
-
-    enqueue(set1Domain, set1Host);
-    enqueue(set2Domain, set2Host);
+    enqueue(domainList.subList(0, domains.size() / 2), hostList.subList(0, hosts.size() / 2));
+    enqueue(
+        domainList.subList(domains.size() / 2, domains.size()),
+        hostList.subList(hosts.size() / 2, hosts.size()));
   }
 
-  private void enqueue(Set<String> domains, Set<String> hosts) {
-    taskQueueUtils.enqueue(
-        dnsPublishPushQueue,
-        TaskOptions.Builder.withUrl(PATH)
-            .param(PARAM_TLD, tld)
-            .param(PARAM_DNS_WRITER, dnsWriter)
-            .param(PARAM_LOCK_INDEX, Integer.toString(lockIndex))
-            .param(PARAM_NUM_PUBLISH_LOCKS, Integer.toString(numPublishLocks))
-            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_CREATED, itemsCreateTime.toString())
-            .param(PARAM_DOMAINS, domains.stream().collect(Collectors.joining(",")))
-            .param(PARAM_HOSTS, hosts.stream().collect(Collectors.joining(","))));
+  private void enqueue(List<String> domains, List<String> hosts) {
+    cloudTasksUtils.enqueue(
+        DNS_PUBLISH_PUSH_QUEUE_NAME,
+        cloudTasksUtils.createPostTask(
+            PATH,
+            Service.BACKEND.toString(),
+            ImmutableMultimap.<String, String>builder()
+                .put(PARAM_TLD, tld)
+                .put(PARAM_DNS_WRITER, dnsWriter)
+                .put(PARAM_LOCK_INDEX, Integer.toString(lockIndex))
+                .put(PARAM_NUM_PUBLISH_LOCKS, Integer.toString(numPublishLocks))
+                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+                .put(PARAM_REFRESH_REQUEST_CREATED, itemsCreateTime.toString())
+                .put(PARAM_DOMAINS, Joiner.on(",").join(domains))
+                .put(PARAM_HOSTS, Joiner.on(",").join(hosts))
+                .build()));
   }
 
   /** Adds all the domains and hosts in the batch back to the queue to be processed later. */

@@ -15,8 +15,10 @@
 package google.registry.request;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static google.registry.dns.PublishDnsUpdatesAction.RETRY_HEADER;
 import static google.registry.model.tld.Registries.assertTldExists;
 import static google.registry.model.tld.Registries.assertTldsExist;
+import static google.registry.request.RequestParameters.extractRequiredHeader;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfParameters;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -244,5 +246,11 @@ public final class RequestModule {
       }
     }
     return params.build();
+  }
+
+  @Provides
+  @Header(RETRY_HEADER)
+  static int provideRetryCount(HttpServletRequest req) {
+    return Integer.parseInt(extractRequiredHeader(req, RETRY_HEADER));
   }
 }

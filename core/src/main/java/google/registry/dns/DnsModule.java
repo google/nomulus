@@ -16,10 +16,8 @@ package google.registry.dns;
 
 import static google.registry.dns.DnsConstants.DNS_PUBLISH_PUSH_QUEUE_NAME;
 import static google.registry.dns.DnsConstants.DNS_PULL_QUEUE_NAME;
-import static google.registry.dns.PublishDnsUpdatesAction.RETRY_HEADER;
 import static google.registry.request.RequestParameters.extractEnumParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
-import static google.registry.request.RequestParameters.extractRequiredHeader;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfParameters;
 
@@ -32,7 +30,6 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.dns.DnsConstants.TargetType;
 import google.registry.dns.writer.DnsWriterZone;
-import google.registry.request.Header;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import java.util.Set;
@@ -131,11 +128,5 @@ public abstract class DnsModule {
   @Parameter("type")
   static TargetType provideType(HttpServletRequest req) {
     return extractEnumParameter(req, TargetType.class, "type");
-  }
-
-  @Provides
-  @Header(RETRY_HEADER)
-  static int provideRetryCount(HttpServletRequest req) {
-    return Integer.parseInt(extractRequiredHeader(req, RETRY_HEADER));
   }
 }
