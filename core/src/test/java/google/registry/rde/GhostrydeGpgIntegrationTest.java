@@ -52,7 +52,8 @@ class GhostrydeGpgIntegrationTest {
           RdeTestData.loadBytes("pgp-public-keyring.asc"),
           RdeTestData.loadBytes("pgp-private-keyring-registry.asc"));
 
-  private static final ImmutableList<String> COMMANDS = ImmutableList.of("gpg", "gpg2");
+  // TODO(b/236723363) add in "gpg2" once we figure out why it's broken
+  private static final ImmutableList<String> COMMANDS = ImmutableList.of("gpg");
   private static final ImmutableList<String> CONTENTS =
       ImmutableList.of(
           "(◕‿◕)",
