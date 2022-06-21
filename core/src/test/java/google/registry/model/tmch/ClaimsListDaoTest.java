@@ -32,7 +32,10 @@ public class ClaimsListDaoTest {
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
-      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
+      new JpaTestExtensions.Builder()
+          .withClock(fakeClock)
+          .withoutCannedData()
+          .buildIntegrationWithCoverageExtension();
 
   @Test
   void save_insertsClaimsListSuccessfully() {
