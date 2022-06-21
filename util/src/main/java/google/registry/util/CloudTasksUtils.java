@@ -71,6 +71,8 @@ public class CloudTasksUtils implements Serializable {
   }
 
   public Task enqueue(String queue, Task task) {
+    // TODO(b/236726584): Change the retry header in PublishDnsUpdatesAction to the Cloud Tasks
+    // header once this class is refactored to create HTTP tasks.
     return retrier.callWithRetry(
         () -> {
           logger.atInfo().log(

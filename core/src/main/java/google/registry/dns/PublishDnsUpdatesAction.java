@@ -67,7 +67,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   public static final String PATH = "/_dr/task/publishDnsUpdates";
   public static final String LOCK_NAME = "DNS updates";
-  public static final String RETRY_HEADER = "X-CloudTasks-TaskRetryCount";
+  public static final String RETRY_HEADER = "X-AppEngine-TaskRetryCount";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -178,25 +178,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   /** Runs the task, with the lock. */
   @Override
   public Void call() {
-    try {
-      processBatch();
-    } catch (Throwable e) {
-      // Retry the batch 3 times
-      if (retryCount < 3) {
-        throw e;
-      }
-      // After 3 retries, split the batch
-      if (domains.size() > 1 || hosts.size() > 1) {
-        // split batch and requeue
-        splitBatch();
-      }
-      // If the batch only contains 1 name, allow it 10 retries
-      else if (retryCount < 10) {
-        throw e;
-      }
-      // If we get here, we should terminate this task as it is likely a perpetually failing task.
-      // TODO(sarahbot): Send an email notifying partner the dns update failed
-    }
+    processBatch();
     return null;
   }
 
