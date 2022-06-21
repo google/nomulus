@@ -97,9 +97,9 @@ public abstract class TransferData<
   public ImmutableSet<VKey<? extends TransferServerApproveEntity>> getServerApproveEntities() {
     return NullSafeCollectionBuilder.create(
             new ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>>())
-        .add(VKey.createSql(PollMessage.class, pollMessageId1))
-        .add(VKey.createSql(PollMessage.class, pollMessageId2))
-        .add(VKey.createSql(PollMessage.class, pollMessageId3))
+        .add(pollMessageId1 != null ? VKey.createSql(PollMessage.class, pollMessageId1) : null)
+        .add(pollMessageId2 != null ? VKey.createSql(PollMessage.class, pollMessageId2) : null)
+        .add(pollMessageId3 != null ? VKey.createSql(PollMessage.class, pollMessageId3) : null)
         .getBuilder()
         .build();
   }
@@ -183,25 +183,22 @@ public abstract class TransferData<
     }
 
     public B setServerApproveEntities(
+        String repoId,
+        Long historyId,
         ImmutableSet<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
-      mapServerApproveEntitiesToFields(serverApproveEntities, getInstance());
-      return thisCastToDerived();
-    }
-
-    public B setRepoId(String repoId) {
       getInstance().repoId = repoId;
-      return thisCastToDerived();
-    }
-
-    public B setHistoryEntryId(Long historyEntryId) {
-      getInstance().historyEntryId = historyEntryId;
+      getInstance().historyEntryId = historyId;
+      mapServerApproveEntitiesToFields(serverApproveEntities, getInstance());
       return thisCastToDerived();
     }
 
     @Override
     public T build() {
-      checkState(getInstance().repoId != null, "Repo id undefined");
-      checkState(getInstance().historyEntryId != null, "History entry undefined");
+
+      if (getInstance().pollMessageId1 != null) {
+        checkState(getInstance().repoId != null, "Repo id undefined");
+        checkState(getInstance().historyEntryId != null, "History entry undefined");
+      }
       return super.build();
     }
   }

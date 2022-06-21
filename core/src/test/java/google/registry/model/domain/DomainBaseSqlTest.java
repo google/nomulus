@@ -378,8 +378,7 @@ public class DomainBaseSqlTest {
     return new ContactResource.Builder()
         .setRepoId(repoId)
         .setCreationRegistrarId("registrar1")
-        .setTransferData(
-            new ContactTransferData.Builder().setRepoId(repoId).setHistoryEntryId(100L).build())
+        .setTransferData(new ContactTransferData.Builder().build())
         .setPersistedCurrentSponsorRegistrarId("registrar1")
         .build();
   }
@@ -447,8 +446,6 @@ public class DomainBaseSqlTest {
             .build();
     DomainTransferData transferData =
         new DomainTransferData.Builder()
-            .setRepoId("4-COM")
-            .setHistoryEntryId(100L)
             .setServerApproveBillingEvent(oneTimeBillingEvent.createVKey())
             .setServerApproveAutorenewEvent(billEvent.createVKey())
             .setServerApproveAutorenewPollMessage(autorenewPollMessage.createVKey())

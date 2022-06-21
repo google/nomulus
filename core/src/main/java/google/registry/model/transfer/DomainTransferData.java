@@ -239,9 +239,12 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
       return this;
     }
 
+    @Override
     public Builder setServerApproveEntities(
+        String repoId,
+        Long historyId,
         ImmutableSet<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
-      super.setServerApproveEntities(serverApproveEntities);
+      super.setServerApproveEntities(repoId, historyId, serverApproveEntities);
       mapBillingCancellationEntityToField(serverApproveEntities, getInstance());
       return this;
     }

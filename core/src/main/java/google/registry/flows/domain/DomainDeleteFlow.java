@@ -146,11 +146,6 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     DateTime now = tm().getTransactionTime();
     // Loads the target resource if it exists
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
-    System.err.println(
-        "xxx running flow, existing domain is "
-            + existingDomain.getRepoId()
-            + " poll message is "
-            + existingDomain.getAutorenewPollMessage());
     Registry registry = Registry.get(existingDomain.getTld());
     verifyDeleteAllowed(existingDomain, registry, now);
     flowCustomLogic.afterValidation(
@@ -259,8 +254,6 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     handlePendingTransferOnDelete(existingDomain, newDomain, now, domainHistory);
     // Close the autorenew billing event and poll message. This may delete the poll message.  Store
     // the updated recurring billing event, we'll need it later and can't reload it.
-    System.err.println(
-        "xxx poll message right before updating: " + existingDomain.getAutorenewPollMessage());
     BillingEvent.Recurring recurringBillingEvent =
         updateAutorenewRecurrenceEndTime(existingDomain, now);
     // If there's a pending transfer, the gaining client's autorenew billing

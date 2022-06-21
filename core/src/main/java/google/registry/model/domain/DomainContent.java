@@ -199,15 +199,6 @@ public class DomainContent extends EppResource
   VKey<PollMessage.OneTime> deletePollMessage;
 
   /**
-   * History record for the delete poll message.
-   *
-   * <p>Here so we can restore the original ofy key from sql.
-   */
-  @Column(name = "deletion_poll_message_history_id")
-  @Ignore
-  Long deletePollMessageHistoryId;
-
-  /**
    * The recurring billing event associated with this domain's autorenewals.
    *
    * <p>The recurrence should be open ended unless the domain is in pending delete or fully deleted,
@@ -517,13 +508,6 @@ public class DomainContent extends EppResource
       // extension set the transfer period to zero.
       // Set the expiration, autorenew events, and grace period for the transfer. (Transfer ends
       // all other graces).
-      System.err.println(
-          "xxx transfer data is "
-              + transferData
-              + " poll messages is "
-              + transferData.getServerApproveAutorenewPollMessage()
-              + " history id is "
-              + transferData.getServerApproveAutorenewPollMessageHistoryId());
       Builder builder =
           domainAtTransferTime
               .asBuilder()

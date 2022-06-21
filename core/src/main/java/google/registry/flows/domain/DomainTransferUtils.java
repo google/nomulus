@@ -84,9 +84,7 @@ public final class DomainTransferUtils {
                 .map(PollMessage.Autorenew.class::cast)
                 .collect(onlyElement())
                 .createVKey())
-        .setRepoId(domainRepoId)
-        .setHistoryEntryId(historyId)
-        .setServerApproveEntities(serverApproveEntityKeys.build())
+        .setServerApproveEntities(domainRepoId, historyId, serverApproveEntityKeys.build())
         .setTransferPeriod(transferPeriod)
         .build();
   }

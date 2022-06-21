@@ -174,8 +174,6 @@ class RdapJsonFormatterTest {
                                 .addStatusValue(StatusValue.PENDING_TRANSFER)
                                 .setTransferData(
                                     new DomainTransferData.Builder()
-                                        .setRepoId("dog.みんな")
-                                        .setHistoryEntryId(100L)
                                         .setTransferStatus(TransferStatus.PENDING)
                                         .setGainingRegistrarId("NewRegistrar")
                                         .setTransferRequestTime(clock.nowUtc().minusDays(1))

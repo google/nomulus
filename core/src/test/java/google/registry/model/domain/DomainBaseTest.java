@@ -200,9 +200,9 @@ public class DomainBaseTest extends EntityTestCase {
                             .setGainingRegistrarId("TheRegistrar")
                             .setLosingRegistrarId("NewRegistrar")
                             .setPendingTransferExpirationTime(fakeClock.nowUtc())
-                            .setRepoId(historyEntry.getDomainRepoId())
-                            .setHistoryEntryId(historyEntry.getId())
                             .setServerApproveEntities(
+                                historyEntry.getDomainRepoId(),
+                                historyEntry.getId(),
                                 ImmutableSet.of(oneTimeBillKey, recurringBillKey, autorenewPollKey))
                             .setServerApproveBillingEvent(oneTimeBillKey)
                             .setServerApproveAutorenewEvent(recurringBillKey)
@@ -213,7 +213,7 @@ public class DomainBaseTest extends EntityTestCase {
                             .build())
                     .setDeletePollMessage(onetimePollKey)
                     .setAutorenewBillingEvent(recurringBillKey)
-                    .setAutorenewPollMessage(autorenewPollKey, historyEntryKey.getId())
+                    .setAutorenewPollMessage(autorenewPollKey, historyEntry.getId())
                     .setSmdId("smdid")
                     .addGracePeriod(
                         GracePeriod.create(
@@ -437,7 +437,10 @@ public class DomainBaseTest extends EntityTestCase {
                     .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1))
                     .setGainingRegistrarId("TheRegistrar")
                     .setServerApproveBillingEvent(transferBillingEvent.createVKey())
-                    .setServerApproveEntities(ImmutableSet.of(transferBillingEvent.createVKey()))
+                    .setServerApproveEntities(
+                        domain.getRepoId(),
+                        historyEntry.getId(),
+                        ImmutableSet.of(transferBillingEvent.createVKey()))
                     .build())
             .addGracePeriod(
                 // Okay for billing event to be null since the point of this grace period is just
@@ -774,8 +777,6 @@ public class DomainBaseTest extends EntityTestCase {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
-            .setRepoId(domain.getRepoId())
-            .setHistoryEntryId(100L)
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
@@ -804,8 +805,6 @@ public class DomainBaseTest extends EntityTestCase {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
-            .setRepoId(domain.getRepoId())
-            .setHistoryEntryId(100L)
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
@@ -833,8 +832,6 @@ public class DomainBaseTest extends EntityTestCase {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
-            .setRepoId(domain.getRepoId())
-            .setHistoryEntryId(100L)
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
@@ -861,8 +858,6 @@ public class DomainBaseTest extends EntityTestCase {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
-            .setRepoId(domain.getRepoId())
-            .setHistoryEntryId(100L)
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
