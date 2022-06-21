@@ -140,6 +140,12 @@ public class JpaTestExtensions {
       return this;
     }
 
+    /** Disables insertion of canned data. */
+    public Builder withoutCannedData() {
+      this.withoutCannedData = true;
+      return this;
+    }
+
     /** Adds the specified property to those used to initialize the transaction manager. */
     Builder withProperty(String name, String value) {
       this.userProperties.put(name, value);
@@ -154,12 +160,6 @@ public class JpaTestExtensions {
      */
     Builder withSqlLogging() {
       withProperty(Environment.SHOW_SQL, "true");
-      return this;
-    }
-
-    /** Disables insertion of canned data. */
-    Builder withoutCannedData() {
-      this.withoutCannedData = true;
       return this;
     }
 
