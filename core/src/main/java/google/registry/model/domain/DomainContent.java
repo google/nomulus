@@ -210,15 +210,6 @@ public class DomainContent extends EppResource
   VKey<BillingEvent.Recurring> autorenewBillingEvent;
 
   /**
-   * History record for the autorenew billing event.
-   *
-   * <p>Here so we can restore the original ofy key from sql.
-   */
-  @Column(name = "billing_recurrence_history_id")
-  @Ignore
-  Long autorenewBillingEventHistoryId;
-
-  /**
    * The recurring poll message associated with this domain's autorenewals.
    *
    * <p>The recurrence should be open ended unless the domain is in pending delete or fully deleted,

@@ -224,18 +224,6 @@ public abstract class PollMessage extends ImmutableObject
         : (contactRepoId != null ? contactRepoId : hostRepoId);
   }
 
-  public Long getDomainHistoryRevisionId() {
-    return domainHistoryRevisionId;
-  }
-
-  public Long getContactHistoryRevisionId() {
-    return contactHistoryRevisionId;
-  }
-
-  public Long getHostHistoryRevisionId() {
-    return hostHistoryRevisionId;
-  }
-
   /** Gets the underlying history revision id, regardless of the type of the resource. */
   public Long getHistoryRevisionId() {
     return domainHistoryRevisionId != null
