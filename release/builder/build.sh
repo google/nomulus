@@ -19,6 +19,8 @@ apt-get install locales -y
 locale-gen en_US.UTF-8
 apt-get install apt-utils gnupg -y
 apt-get upgrade -y
+# Install GPG2 (in case it was not included)
+apt-get install gnupg2 -y
 # Install Java
 apt-get install openjdk-11-jdk-headless -y
 # Install Python
