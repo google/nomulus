@@ -38,18 +38,16 @@ import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link ExportDomainListsAction}. */
-@DualDatabaseTest
 class ExportDomainListsActionTest {
 
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
@@ -60,11 +58,7 @@ class ExportDomainListsActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withLocalModules()
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
 
   @Order(Order.DEFAULT - 1)
   @RegisterExtension
@@ -95,7 +89,7 @@ class ExportDomainListsActionTest {
     assertThat(new String(bytesExportedToDrive.getValue(), UTF_8)).isEqualTo(domains);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_outputsOnlyActiveDomains() throws Exception {
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
@@ -109,7 +103,7 @@ class ExportDomainListsActionTest {
     verifyNoMoreInteractions(driveConnection);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_outputsOnlyDomainsOnRealTlds() throws Exception {
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
@@ -128,7 +122,7 @@ class ExportDomainListsActionTest {
     verifyNoMoreInteractions(driveConnection);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_outputsDomainsFromDifferentTldsToMultipleFiles() throws Exception {
     createTld("tldtwo");
     persistResource(Registry.get("tldtwo").asBuilder().setDriveFolderId("hooray").build());

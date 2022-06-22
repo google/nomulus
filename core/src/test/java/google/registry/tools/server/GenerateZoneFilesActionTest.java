@@ -38,31 +38,25 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestSqlOnly;
 import java.net.InetAddress;
 import java.util.Map;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link GenerateZoneFilesAction}. */
-@DualDatabaseTest
 class GenerateZoneFilesActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withLocalModules()
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
 
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
-  @TestSqlOnly
+  @Test
   void testGenerate() throws Exception {
     DateTime now = DateTime.now(DateTimeZone.UTC).withTimeAtStartOfDay();
     createTlds("tld", "com");

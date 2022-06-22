@@ -48,9 +48,7 @@ public final class RegistryTestServerMain {
       validateWith = HostAndPortParameter.class)
   private HostAndPort address = HostAndPort.fromString("[::]:8080");
 
-  @Parameter(
-      names = "--fixtures",
-      description = "Fixtures to load into Datastore.")
+  @Parameter(names = "--fixtures", description = "Fixtures to load into the DB.")
   private List<Fixture> fixtures = ImmutableList.of(Fixture.BASIC);
 
   @Parameter(
@@ -137,7 +135,7 @@ public final class RegistryTestServerMain {
     System.out.printf("%sLoading SQL fixtures and AppEngineExtension...%s\n", BLUE, RESET);
     AppEngineExtension appEngine =
         AppEngineExtension.builder()
-            .withDatastoreAndCloudSql()
+            .withCloudSql()
             .withUrlFetch()
             .withTaskQueue()
             .withLocalModules()
@@ -149,7 +147,7 @@ public final class RegistryTestServerMain {
     appEngine.setUp();
     new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);
     AppEngineExtension.loadInitialData();
-    System.out.printf("%sLoading Datastore fixtures...%s\n", BLUE, RESET);
+    System.out.printf("%sLoading fixtures...%s\n", BLUE, RESET);
     for (Fixture fixture : fixtures) {
       fixture.load();
     }

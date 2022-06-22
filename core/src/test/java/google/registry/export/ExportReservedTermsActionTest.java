@@ -46,8 +46,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ExportReservedTermsActionTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
   private final Response response = mock(Response.class);

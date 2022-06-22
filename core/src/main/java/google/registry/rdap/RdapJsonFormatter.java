@@ -22,7 +22,6 @@ import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMulti
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.rdap.RdapIcannStandardInformation.CONTACT_REDACTED_VALUE;
 import static google.registry.util.CollectionUtils.union;
 
@@ -358,11 +357,11 @@ public class RdapJsonFormatter {
     // Kick off the database loads of the nameservers that we will need, so it can load
     // asynchronously while we load and process the contacts.
     ImmutableSet<HostResource> loadedHosts =
-        transactIfJpaTm(
-            () -> ImmutableSet.copyOf(tm().loadByKeys(domainBase.getNameservers()).values()));
+        tm().transact(
+                () -> ImmutableSet.copyOf(tm().loadByKeys(domainBase.getNameservers()).values()));
     // Load the registrant and other contacts and add them to the data.
     ImmutableMap<VKey<? extends ContactResource>, ContactResource> loadedContacts =
-        transactIfJpaTm(() -> tm().loadByKeysIfPresent(domainBase.getReferencedContacts()));
+        tm().transact(() -> tm().loadByKeysIfPresent(domainBase.getReferencedContacts()));
     // RDAP Response Profile 2.7.3, A domain MUST have the REGISTRANT, ADMIN, TECH roles and MAY
     // have others. We also add the BILLING.
     //
@@ -441,12 +440,12 @@ public class RdapJsonFormatter {
         statuses.add(StatusValue.LINKED);
       }
       if (hostResource.isSubordinate()
-          && transactIfJpaTm(
-              () ->
-                  tm().loadByKey(hostResource.getSuperordinateDomain())
-                      .cloneProjectedAtTime(getRequestTime())
-                      .getStatusValues()
-                      .contains(StatusValue.PENDING_TRANSFER))) {
+          && tm().transact(
+                  () ->
+                      tm().loadByKey(hostResource.getSuperordinateDomain())
+                          .cloneProjectedAtTime(getRequestTime())
+                          .getStatusValues()
+                          .contains(StatusValue.PENDING_TRANSFER))) {
         statuses.add(StatusValue.PENDING_TRANSFER);
       }
       builder

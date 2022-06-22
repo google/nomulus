@@ -35,12 +35,10 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainTransferQueryFlow}. */
-@DualDatabaseTest
 class DomainTransferQueryFlowTest
     extends DomainTransferFlowTestCase<DomainTransferQueryFlow, DomainBase> {
 
@@ -82,74 +80,74 @@ class DomainTransferQueryFlowTest
     runFlow();
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess() throws Exception {
     doSuccessfulTest("domain_transfer_query.xml", "domain_transfer_query_response.xml", 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_sponsoringClient() throws Exception {
     setRegistrarIdForFlow("TheRegistrar");
     doSuccessfulTest("domain_transfer_query.xml", "domain_transfer_query_response.xml", 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_domainAuthInfo() throws Exception {
     setRegistrarIdForFlow("ClientZ");
     doSuccessfulTest(
         "domain_transfer_query_domain_authinfo.xml", "domain_transfer_query_response.xml", 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_contactAuthInfo() throws Exception {
     setRegistrarIdForFlow("ClientZ");
     doSuccessfulTest(
         "domain_transfer_query_contact_authinfo.xml", "domain_transfer_query_response.xml", 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_clientApproved() throws Exception {
     changeTransferStatus(TransferStatus.CLIENT_APPROVED);
     doSuccessfulTest(
         "domain_transfer_query.xml", "domain_transfer_query_response_client_approved.xml", 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_clientRejected() throws Exception {
     changeTransferStatus(TransferStatus.CLIENT_REJECTED);
     doSuccessfulTest(
         "domain_transfer_query.xml", "domain_transfer_query_response_client_rejected.xml", 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_clientCancelled() throws Exception {
     changeTransferStatus(TransferStatus.CLIENT_CANCELLED);
     doSuccessfulTest(
         "domain_transfer_query.xml", "domain_transfer_query_response_client_cancelled.xml", 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_serverApproved() throws Exception {
     changeTransferStatus(TransferStatus.SERVER_APPROVED);
     doSuccessfulTest(
         "domain_transfer_query.xml", "domain_transfer_query_response_server_approved.xml", 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_serverCancelled() throws Exception {
     changeTransferStatus(TransferStatus.SERVER_CANCELLED);
     doSuccessfulTest(
         "domain_transfer_query.xml", "domain_transfer_query_response_server_cancelled.xml", 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_tenYears() throws Exception {
     // Extend registration by 9 years here; with the extra 1 year from the transfer, we should
     // hit the 10-year capping.
@@ -162,7 +160,7 @@ class DomainTransferQueryFlowTest
     doSuccessfulTest("domain_transfer_query.xml", "domain_transfer_query_response_10_years.xml", 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_pendingDeleteDomain() throws Exception {
     changeTransferStatus(TransferStatus.SERVER_CANCELLED);
     domain =
@@ -171,7 +169,7 @@ class DomainTransferQueryFlowTest
         "domain_transfer_query.xml", "domain_transfer_query_response_server_cancelled.xml", 1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badContactPassword() {
     // Change the contact's password so it does not match the password in the file.
     contact =
@@ -187,7 +185,7 @@ class DomainTransferQueryFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badDomainPassword() {
     // Change the domain's password so it does not match the password in the file.
     domain =
@@ -203,7 +201,7 @@ class DomainTransferQueryFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_neverBeenTransferred() {
     changeTransferStatus(null);
     EppException thrown =
@@ -213,7 +211,7 @@ class DomainTransferQueryFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_unrelatedClient() {
     setRegistrarIdForFlow("ClientZ");
     EppException thrown =
@@ -223,7 +221,7 @@ class DomainTransferQueryFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_deletedDomain() throws Exception {
     domain =
         persistResource(domain.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
@@ -233,7 +231,7 @@ class DomainTransferQueryFlowTest
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonexistentDomain() throws Exception {
     deleteTestDomain(domain, clock.nowUtc());
     ResourceDoesNotExistException thrown =
@@ -242,14 +240,14 @@ class DomainTransferQueryFlowTest
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-dom-transfer-query");
     assertTldsFieldLogged("tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_serverApproved_afterAutorenews() throws Exception {
     // Set the clock to just past the extended registration time.  We'd expect the domain to have
     // auto-renewed once, but the transfer query response should be the same.

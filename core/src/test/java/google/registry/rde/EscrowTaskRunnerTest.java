@@ -32,23 +32,21 @@ import google.registry.rde.EscrowTaskRunner.EscrowTask;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link EscrowTaskRunner}. */
-@DualDatabaseTest
 public class EscrowTaskRunnerTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private final EscrowTask task = mock(EscrowTask.class);
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
@@ -73,7 +71,7 @@ public class EscrowTaskRunnerTest {
     DateTimeZone.setDefault(previousDateTimeZone);
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_cursorIsToday_advancesCursorToTomorrow() throws Exception {
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
     persistResource(
@@ -86,7 +84,7 @@ public class EscrowTaskRunnerTest {
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-06-07TZ"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_cursorMissing_assumesTodayAndAdvancesCursorToTomorrow() throws Exception {
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
     runner.lockRunAndRollForward(
@@ -96,7 +94,7 @@ public class EscrowTaskRunnerTest {
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-06-07TZ"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_cursorInTheFuture_doesNothing() {
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
     persistResource(
@@ -110,7 +108,7 @@ public class EscrowTaskRunnerTest {
     assertThat(thrown).hasMessageThat().contains("Already completed");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_lockIsntAvailable_throws503() {
     String lockName = "EscrowTaskRunner " + task.getClass().getSimpleName();
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));

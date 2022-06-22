@@ -39,16 +39,12 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import google.registry.util.SerializeUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link AllocationToken}. */
-@DualDatabaseTest
 public class AllocationTokenTest extends EntityTestCase {
 
   public AllocationTokenTest() {
@@ -60,7 +56,7 @@ public class AllocationTokenTest extends EntityTestCase {
     createTld("foo");
   }
 
-  @TestOfyAndSql
+  @Test
   void testPersistence() {
     AllocationToken unlimitedUseToken =
         persistResource(
@@ -96,7 +92,7 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(loadByEntity(singleUseToken)).isEqualTo(singleUseToken);
   }
 
-  @TestSqlOnly
+  @Test
   void testSerializable() {
     AllocationToken unlimitedUseToken =
         persistResource(
@@ -134,25 +130,7 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
-  @TestOfyOnly
-  void testIndexing() throws Exception {
-    DomainBase domain = persistActiveDomain("blahdomain.foo");
-    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
-    verifyDatastoreIndexing(
-        persistResource(
-            new AllocationToken.Builder()
-                .setToken("abc123")
-                .setTokenType(SINGLE_USE)
-                .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
-                .setDomainName("blahdomain.foo")
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
-                .build()),
-        "token",
-        "redemptionHistoryEntry",
-        "domainName");
-  }
-
-  @TestOfyAndSql
+  @Test
   void testCreationTime_autoPopulates() {
     AllocationToken tokenBeforePersisting =
         new AllocationToken.Builder().setToken("abc123").setTokenType(SINGLE_USE).build();
@@ -161,7 +139,7 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(tokenAfterPersisting.getCreationTime()).hasValue(fakeClock.nowUtc());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetRenewalBehavior_returnsDefaultRenewBehavior() {
     assertThat(
             persistResource(
@@ -173,7 +151,7 @@ public class AllocationTokenTest extends EntityTestCase {
         .isEqualTo(RenewalPriceBehavior.DEFAULT);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetRenewalBehavior_assertsRenewalBehaviorIsNotDefault() {
     assertThat(
             persistResource(
@@ -186,7 +164,7 @@ public class AllocationTokenTest extends EntityTestCase {
         .isEqualTo(RenewalPriceBehavior.SPECIFIED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetRenewalBehavior_assertRenewalBehaviorIsModified() {
     AllocationToken token =
         persistResource(
@@ -203,7 +181,7 @@ public class AllocationTokenTest extends EntityTestCase {
         .isEqualTo(RenewalPriceBehavior.SPECIFIED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetCreationTime_cantCallMoreThanOnce() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
@@ -217,7 +195,7 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Creation time can only be set once");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetToken_cantCallMoreThanOnce() {
     AllocationToken.Builder builder = new AllocationToken.Builder().setToken("foobar");
     IllegalStateException thrown =
@@ -225,7 +203,7 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Token can only be set once");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetTokenType_cantCallMoreThanOnce() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder().setTokenType(TokenType.UNLIMITED_USE);
@@ -234,7 +212,7 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Token type can only be set once");
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuild_DomainNameWithLessThanTwoParts() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -252,7 +230,7 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Invalid domain name: example");
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuild_invalidTld() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -270,7 +248,7 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Invalid domain name: example.nosuchtld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuild_domainNameOnlyOnSingleUse() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
@@ -283,7 +261,7 @@ public class AllocationTokenTest extends EntityTestCase {
         .isEqualTo("Domain name can only be specified for SINGLE_USE tokens");
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuild_redemptionHistoryEntryOnlyInSingleUse() {
     DomainBase domain = persistActiveDomain("blahdomain.foo");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
@@ -298,7 +276,7 @@ public class AllocationTokenTest extends EntityTestCase {
         .isEqualTo("Redemption history entry can only be specified for SINGLE_USE tokens");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetTransitions_notStartOfTime() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -316,7 +294,7 @@ public class AllocationTokenTest extends EntityTestCase {
         .isEqualTo("tokenStatusTransitions map must start at START_OF_TIME.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetTransitions_badInitialValue() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -333,14 +311,14 @@ public class AllocationTokenTest extends EntityTestCase {
         .isEqualTo("tokenStatusTransitions must start with NOT_STARTED");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetTransitions_invalidInitialTransitions() {
     // NOT_STARTED can only go to VALID or CANCELLED
     assertBadInitialTransition(NOT_STARTED);
     assertBadInitialTransition(ENDED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetTransitions_badTransitionsFromValid() {
     // VALID can only go to ENDED or CANCELLED
     assertBadTransition(
@@ -361,14 +339,14 @@ public class AllocationTokenTest extends EntityTestCase {
         NOT_STARTED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetTransitions_terminalTransitions() {
     // both ENDED and CANCELLED are terminal
     assertTerminal(ENDED);
     assertTerminal(CANCELLED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetDiscountFractionTooHigh() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -379,7 +357,7 @@ public class AllocationTokenTest extends EntityTestCase {
         .isEqualTo("Discount fraction must be between 0 and 1 inclusive");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetDiscountFractionTooLow() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -390,7 +368,7 @@ public class AllocationTokenTest extends EntityTestCase {
         .isEqualTo("Discount fraction must be between 0 and 1 inclusive");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetDiscountYearsTooHigh() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -401,7 +379,7 @@ public class AllocationTokenTest extends EntityTestCase {
         .isEqualTo("Discount years must be between 1 and 10 inclusive");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetDiscountYearsTooLow() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -412,7 +390,7 @@ public class AllocationTokenTest extends EntityTestCase {
         .isEqualTo("Discount years must be between 1 and 10 inclusive");
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuild_noTokenType() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -421,7 +399,7 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Token type must be specified");
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuild_noToken() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -430,7 +408,7 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Token must not be null or empty");
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuild_emptyToken() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -439,7 +417,7 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Token must not be blank");
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuild_discountPremiumsRequiresDiscountFraction() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -455,7 +433,7 @@ public class AllocationTokenTest extends EntityTestCase {
         .isEqualTo("Discount premiums can only be specified along with a discount fraction");
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuild_discountYearsRequiresDiscountFraction() {
     IllegalArgumentException thrown =
         assertThrows(

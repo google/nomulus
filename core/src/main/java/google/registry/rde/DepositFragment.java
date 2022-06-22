@@ -17,7 +17,7 @@ package google.registry.rde;
 import com.google.auto.value.AutoValue;
 import java.io.Serializable;
 
-/** Container of Datastore resource marshalled by {@link RdeMarshaller}. */
+/** Container of RDE resource marshalled by {@link RdeMarshaller}. */
 @AutoValue
 public abstract class DepositFragment implements Serializable {
 

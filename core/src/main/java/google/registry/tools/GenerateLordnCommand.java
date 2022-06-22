@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static google.registry.persistence.transaction.QueryComposer.Comparator;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
@@ -63,14 +62,14 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
     DateTime now = clock.nowUtc();
     ImmutableList.Builder<String> claimsCsv = new ImmutableList.Builder<>();
     ImmutableList.Builder<String> sunriseCsv = new ImmutableList.Builder<>();
-    transactIfJpaTm(
-        () ->
-            tm()
-                .createQueryComposer(DomainBase.class)
-                .where("tld", Comparator.EQ, tld)
-                .orderBy("repoId")
-                .stream()
-                .forEach(domain -> processDomain(claimsCsv, sunriseCsv, domain)));
+    tm().transact(
+            () ->
+                tm()
+                    .createQueryComposer(DomainBase.class)
+                    .where("tld", Comparator.EQ, tld)
+                    .orderBy("repoId")
+                    .stream()
+                    .forEach(domain -> processDomain(claimsCsv, sunriseCsv, domain)));
     ImmutableList<String> claimsRows = claimsCsv.build();
     ImmutableList<String> claimsAll =
         new ImmutableList.Builder<String>()

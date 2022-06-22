@@ -21,7 +21,6 @@ import static google.registry.model.domain.rgp.GracePeriodStatus.AUTO_RENEW;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static java.util.function.Predicate.isEqual;
 
@@ -344,11 +343,11 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
 
   ImmutableSet<String> getContactsOfType(
       DomainBase domainBase, final DesignatedContact.Type contactType) {
-    return transactIfJpaTm(
-        () ->
-            domainBase.getContacts().stream()
-                .filter(contact -> contact.getType().equals(contactType))
-                .map(contact -> tm().loadByKey(contact.getContactKey()).getContactId())
-                .collect(toImmutableSet()));
+    return tm().transact(
+            () ->
+                domainBase.getContacts().stream()
+                    .filter(contact -> contact.getType().equals(contactType))
+                    .map(contact -> tm().loadByKey(contact.getContactKey()).getContactId())
+                    .collect(toImmutableSet()));
   }
 }

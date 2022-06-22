@@ -33,7 +33,7 @@ public class LongVKeyConverterTest {
   @RegisterExtension
   public final AppEngineExtension appEngineExtension =
       new AppEngineExtension.Builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withoutCannedData()
           .withJpaUnitTestEntities(
               TestLongEntity.class,

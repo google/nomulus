@@ -40,8 +40,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class TmchXmlSignatureTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 

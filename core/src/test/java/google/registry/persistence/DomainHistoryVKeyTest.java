@@ -28,24 +28,22 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import javax.persistence.Transient;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit test for {@link DomainHistoryVKey}. */
-@DualDatabaseTest
 class DomainHistoryVKeyTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withOfyTestEntities(TestEntity.class)
           .withJpaUnitTestEntities(TestEntity.class)
           .build();
 
-  @TestOfyAndSql
+  @Test
   void testRestoreSymmetricVKey() {
     Key<HistoryEntry> ofyKey =
         Key.create(Key.create(DomainBase.class, "domainRepoId"), HistoryEntry.class, 10L);
@@ -61,7 +59,7 @@ class DomainHistoryVKeyTest {
         .isEqualTo(VKey.createSql(HistoryEntry.class, new DomainHistoryId("domainRepoId", 10L)));
   }
 
-  @TestOfyAndSql
+  @Test
   void testCreateSymmetricVKeyFromOfyKey() {
     Key<HistoryEntry> ofyKey =
         Key.create(Key.create(DomainBase.class, "domainRepoId"), HistoryEntry.class, 10L);

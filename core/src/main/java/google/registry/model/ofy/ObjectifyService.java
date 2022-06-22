@@ -44,7 +44,6 @@ import google.registry.model.translators.DurationTranslatorFactory;
 import google.registry.model.translators.EppHistoryVKeyTranslatorFactory;
 import google.registry.model.translators.InetAddressTranslatorFactory;
 import google.registry.model.translators.ReadableInstantUtcTranslatorFactory;
-import google.registry.model.translators.UpdateAutoTimestampTranslatorFactory;
 import google.registry.model.translators.VKeyTranslatorFactory;
 
 /**
@@ -130,8 +129,7 @@ public class ObjectifyService {
             new InetAddressTranslatorFactory(),
             new MoneyStringTranslatorFactory(),
             new ReadableInstantUtcTranslatorFactory(),
-            new VKeyTranslatorFactory(),
-            new UpdateAutoTimestampTranslatorFactory())) {
+            new VKeyTranslatorFactory())) {
       factory().getTranslators().add(translatorFactory);
     }
   }

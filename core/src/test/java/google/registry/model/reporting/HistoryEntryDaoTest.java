@@ -16,7 +16,7 @@ package google.registry.model.reporting;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -32,12 +32,10 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@DualDatabaseTest
 class HistoryEntryDaoTest extends EntityTestCase {
 
   private DomainBase domain;
@@ -74,36 +72,37 @@ class HistoryEntryDaoTest extends EntityTestCase {
     persistResource(domainHistory);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSimpleLoadAll() {
     assertThat(HistoryEntryDao.loadAllHistoryObjects(START_OF_TIME, END_OF_TIME))
         .comparingElementsUsing(immutableObjectCorrespondence("nsHosts", "domainContent"))
         .containsExactly(domainHistory);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSkips_tooEarly() {
     assertThat(HistoryEntryDao.loadAllHistoryObjects(fakeClock.nowUtc().plusMillis(1), END_OF_TIME))
         .isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSkips_tooLate() {
     assertThat(
             HistoryEntryDao.loadAllHistoryObjects(START_OF_TIME, fakeClock.nowUtc().minusMillis(1)))
         .isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testLoadByResource() {
-    transactIfJpaTm(
-        () ->
-            assertThat(HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey()))
-                .comparingElementsUsing(immutableObjectCorrespondence("nsHosts", "domainContent"))
-                .containsExactly(domainHistory));
+    tm().transact(
+            () ->
+                assertThat(HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey()))
+                    .comparingElementsUsing(
+                        immutableObjectCorrespondence("nsHosts", "domainContent"))
+                    .containsExactly(domainHistory));
   }
 
-  @TestOfyAndSql
+  @Test
   void testLoadByResource_skips_tooEarly() {
     assertThat(
             HistoryEntryDao.loadHistoryObjectsForResource(
@@ -111,7 +110,7 @@ class HistoryEntryDaoTest extends EntityTestCase {
         .isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testLoadByResource_skips_tooLate() {
     assertThat(
             HistoryEntryDao.loadHistoryObjectsForResource(
@@ -119,7 +118,7 @@ class HistoryEntryDaoTest extends EntityTestCase {
         .isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testLoadByResource_noEntriesForResource() {
     DomainBase newDomain = persistResource(newDomainBase("new.foobar"));
     assertThat(HistoryEntryDao.loadHistoryObjectsForResource(newDomain.createVKey())).isEmpty();

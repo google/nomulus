@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
@@ -163,7 +162,7 @@ public final class EppResourceUtils {
     T resource =
         useCache
             ? EppResource.loadCached(fki.getResourceKey())
-            : transactIfJpaTm(() -> tm().loadByKeyIfPresent(fki.getResourceKey()).orElse(null));
+            : tm().transact(() -> tm().loadByKeyIfPresent(fki.getResourceKey()).orElse(null));
     if (resource == null || isAtOrAfter(now, resource.getDeletionTime())) {
       return Optional.empty();
     }

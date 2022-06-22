@@ -18,11 +18,9 @@ import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@DualDatabaseTest
 public class GetReservedListCommandTest extends CommandTestCase<GetReservedListCommand> {
 
   private static final String BASE_LIST_CONTENTS =
@@ -39,20 +37,20 @@ public class GetReservedListCommandTest extends CommandTestCase<GetReservedListC
     persistReservedList("tld_reserved-terms", BASE_LIST_CONTENTS);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_list() throws Exception {
     runCommand("-n=tld_reserved-terms");
     assertStdoutIs(BASE_LIST_CONTENTS);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonexistent() throws Exception {
     runCommand("-n=nonexistent");
     assertStdoutIs("");
     assertInStderr("No list found with name nonexistent.\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_noArgs() {
     assertThrows(ParameterException.class, this::runCommand);
   }

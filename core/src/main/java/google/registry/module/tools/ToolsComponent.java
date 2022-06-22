@@ -33,7 +33,6 @@ import google.registry.keyring.kms.KmsModule;
 import google.registry.module.tools.ToolsRequestComponent.ToolsRequestComponentModule;
 import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.privileges.secretmanager.SecretManagerModule;
-import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.Jackson2Module;
 import google.registry.request.Modules.NetHttpTransportModule;
 import google.registry.request.Modules.UserServiceModule;
@@ -50,7 +49,6 @@ import javax.inject.Singleton;
       CredentialModule.class,
       CustomLogicFactoryModule.class,
       CloudTasksUtilsModule.class,
-      DatastoreServiceModule.class,
       DirectoryModule.class,
       DummyKeyringModule.class,
       DriveModule.class,

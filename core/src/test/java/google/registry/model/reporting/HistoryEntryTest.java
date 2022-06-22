@@ -17,7 +17,6 @@ package google.registry.model.reporting;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -32,14 +31,12 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HistoryEntry}. */
-@DualDatabaseTest
+
 class HistoryEntryTest extends EntityTestCase {
 
   private DomainHistory domainHistory;
@@ -74,18 +71,18 @@ class HistoryEntryTest extends EntityTestCase {
     persistResource(domainHistory);
   }
 
-  @TestOfyAndSql
+  @Test
   void testPersistence() {
-    transactIfJpaTm(
-        () -> {
-          DomainHistory fromDatabase = tm().loadByEntity(domainHistory);
-          assertAboutImmutableObjects()
-              .that(fromDatabase)
-              .isEqualExceptFields(domainHistory, "domainContent");
-        });
+    tm().transact(
+            () -> {
+              DomainHistory fromDatabase = tm().loadByEntity(domainHistory);
+              assertAboutImmutableObjects()
+                  .that(fromDatabase)
+                  .isEqualExceptFields(domainHistory, "domainContent");
+            });
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuilder_typeMustBeSpecified() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -100,7 +97,7 @@ class HistoryEntryTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("History entry type must be specified");
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuilder_modificationTimeMustBeSpecified() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -115,7 +112,7 @@ class HistoryEntryTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Modification time must be specified");
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuilder_registrarIdMustBeSpecified() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -130,7 +127,7 @@ class HistoryEntryTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Registrar ID must be specified");
   }
 
-  @TestOfyAndSql
+  @Test
   void testBuilder_syntheticHistoryEntries_mustNotBeRequestedByRegistrar() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -147,10 +144,5 @@ class HistoryEntryTest extends EntityTestCase {
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Synthetic history entries cannot be requested by a registrar");
-  }
-
-  @TestOfyOnly
-  void testIndexing() throws Exception {
-    verifyDatastoreIndexing(domainHistory.asHistoryEntry(), "modificationTime", "clientId");
   }
 }

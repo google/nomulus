@@ -34,8 +34,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class TmchTestDataExpirationTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -78,11 +77,11 @@ final class DeleteTldCommand extends ConfirmingCommand implements CommandWithRem
   }
 
   private boolean tldContainsDomains(String tld) {
-    return transactIfJpaTm(
-        () ->
-            tm().createQueryComposer(DomainBase.class)
-                .where("tld", Comparator.EQ, tld)
-                .first()
-                .isPresent());
+    return tm().transact(
+            () ->
+                tm().createQueryComposer(DomainBase.class)
+                    .where("tld", Comparator.EQ, tld)
+                    .first()
+                    .isPresent());
   }
 }

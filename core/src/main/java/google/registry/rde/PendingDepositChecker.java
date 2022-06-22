@@ -16,7 +16,6 @@ package google.registry.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.collect.ImmutableSetMultimap;
@@ -91,8 +90,8 @@ public final class PendingDepositChecker {
       }
       // Avoid creating a transaction unless absolutely necessary.
       Optional<Cursor> maybeCursor =
-          transactIfJpaTm(
-              () -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, registry)));
+          tm().transact(
+                  () -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, registry)));
       DateTime cursorValue = maybeCursor.map(Cursor::getCursorTime).orElse(startingPoint);
       if (isBeforeOrAt(cursorValue, now)) {
         DateTime watermark =

@@ -26,8 +26,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class GaeUserIdConverterTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @AfterEach
   void verifyNoLingeringEntities() {

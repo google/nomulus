@@ -58,11 +58,7 @@ class IcannReportingStagingActionTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withLocalModules()
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
 
   @BeforeEach
   void beforeEach() throws Exception {

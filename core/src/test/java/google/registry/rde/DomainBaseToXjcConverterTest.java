@@ -56,9 +56,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.util.Idn;
 import google.registry.xjc.domain.XjcDomainStatusType;
 import google.registry.xjc.domain.XjcDomainStatusValueType;
@@ -74,6 +72,7 @@ import java.io.ByteArrayOutputStream;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
@@ -82,12 +81,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  * <p>This tests the mapping between {@link DomainBase} and {@link XjcRdeDomain} as well as some
  * exceptional conditions.
  */
-@DualDatabaseTest
 public class DomainBaseToXjcConverterTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final DateTime now = DateTime.parse("2014-01-01T00:00:00Z");
   private final FakeClock clock = new FakeClock(now);
@@ -97,7 +94,7 @@ public class DomainBaseToXjcConverterTest {
     createTld("xn--q9jyb4c");
   }
 
-  @TestOfyAndSql
+  @Test
   void testConvertThick() {
     XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.FULL);
 
@@ -178,7 +175,7 @@ public class DomainBaseToXjcConverterTest {
     assertThat(bean.getUpRr().getClient()).isNull();
   }
 
-  @TestOfyAndSql
+  @Test
   void testConvertThin() {
     XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.THIN);
     assertThat(bean.getRegistrant()).isNull();
@@ -186,13 +183,13 @@ public class DomainBaseToXjcConverterTest {
     assertThat(bean.getSecDNS()).isNull();
   }
 
-  @TestOfyAndSql
+  @Test
   void testMarshalThick() throws Exception {
     XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.FULL);
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
   }
 
-  @TestOfyAndSql
+  @Test
   void testMarshalThin() throws Exception {
     XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.THIN);
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);

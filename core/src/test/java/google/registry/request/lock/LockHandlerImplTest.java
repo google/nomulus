@@ -41,8 +41,7 @@ final class LockHandlerImplTest {
   private final FakeClock clock = new FakeClock(DateTime.parse("2001-08-29T12:20:00Z"));
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private static class CountingCallable implements Callable<Void> {
     int numCalled = 0;

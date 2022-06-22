@@ -37,7 +37,7 @@ public class InetAddressSetConverterTest {
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withJpaUnitTestEntities(InetAddressSetTestEntity.class)
           .build();
 

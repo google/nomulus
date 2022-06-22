@@ -49,10 +49,8 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.UserInfo;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.StringGenerator;
@@ -60,10 +58,10 @@ import google.registry.util.StringGenerator.Alphabets;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RegistryLockVerifyAction}. */
-@DualDatabaseTest
 final class RegistryLockVerifyActionTest {
 
   private final FakeClock fakeClock = new FakeClock();
@@ -71,7 +69,7 @@ final class RegistryLockVerifyActionTest {
   @RegisterExtension
   final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withClock(fakeClock)
           .withUserService(UserInfo.create("marla.singer@example.com", "12345"))
           .build();
@@ -98,7 +96,7 @@ final class RegistryLockVerifyActionTest {
     action = createAction(lockId, true);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_lockDomain() {
     saveRegistryLock(createLock());
     action.run();
@@ -114,7 +112,7 @@ final class RegistryLockVerifyActionTest {
     assertBillingEvent(historyEntry);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_unlockDomain() {
     action = createAction(lockId, false);
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
@@ -132,7 +130,7 @@ final class RegistryLockVerifyActionTest {
     assertBillingEvent(historyEntry);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_adminLock_createsOnlyHistoryEntry() {
     action.authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, true));
     saveRegistryLock(createLock().asBuilder().isSuperuser(true).build());
@@ -144,7 +142,7 @@ final class RegistryLockVerifyActionTest {
     DatabaseHelper.assertNoBillingEvents();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badVerificationCode() {
     saveRegistryLock(
         createLock().asBuilder().setVerificationCode("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA").build());
@@ -153,7 +151,7 @@ final class RegistryLockVerifyActionTest {
     assertNoDomainChanges();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_alreadyVerified() {
     saveRegistryLock(createLock().asBuilder().setLockCompletionTime(fakeClock.nowUtc()).build());
     action.run();
@@ -161,7 +159,7 @@ final class RegistryLockVerifyActionTest {
     assertNoDomainChanges();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_expired() {
     saveRegistryLock(createLock());
     fakeClock.advanceBy(Duration.standardHours(2));
@@ -171,7 +169,7 @@ final class RegistryLockVerifyActionTest {
     assertNoDomainChanges();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonAdmin_verifyingAdminLock() {
     saveRegistryLock(createLock().asBuilder().isSuperuser(true).build());
     action.run();
@@ -179,7 +177,7 @@ final class RegistryLockVerifyActionTest {
     assertNoDomainChanges();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_alreadyUnlocked() {
     action = createAction(lockId, false);
     saveRegistryLock(
@@ -194,7 +192,7 @@ final class RegistryLockVerifyActionTest {
     assertNoDomainChanges();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_alreadyLocked() {
     saveRegistryLock(createLock());
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
@@ -203,7 +201,7 @@ final class RegistryLockVerifyActionTest {
     assertNoDomainChanges();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_notLoggedIn() {
     action.authResult = AuthResult.NOT_AUTHENTICATED;
     action.run();
@@ -212,7 +210,7 @@ final class RegistryLockVerifyActionTest {
     assertNoDomainChanges();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_doesNotChangeLockObject() {
     // A failure when performing Datastore actions means that no actions should be taken in the
     // Cloud SQL RegistryLock object
@@ -231,7 +229,7 @@ final class RegistryLockVerifyActionTest {
     assertThat(afterAction).isEqualTo(lock);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_isLockTrue_shouldBeFalse() {
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     saveRegistryLock(
@@ -244,7 +242,7 @@ final class RegistryLockVerifyActionTest {
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already locked");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_isLockFalse_shouldBeTrue() {
     action = createAction(lockId, false);
     saveRegistryLock(createLock());
@@ -252,7 +250,7 @@ final class RegistryLockVerifyActionTest {
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already unlocked");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_lock_unlock_lockAgain() {
     RegistryLock lock = saveRegistryLock(createLock());
     action.run();
@@ -271,7 +269,7 @@ final class RegistryLockVerifyActionTest {
     assertThat(response.getPayload()).contains("Failed: Invalid verification code");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_lock_lockAgain() {
     saveRegistryLock(createLock());
     action.run();
@@ -281,7 +279,7 @@ final class RegistryLockVerifyActionTest {
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already locked");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_unlock_unlockAgain() {
     action = createAction(lockId, false);
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());

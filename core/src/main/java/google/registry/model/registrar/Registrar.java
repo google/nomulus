@@ -34,7 +34,6 @@ import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.tld.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -820,7 +819,7 @@ public class Registrar extends ImmutableObject
               .collect(toImmutableSet());
       Set<VKey<Registry>> missingTldKeys =
           Sets.difference(
-              newTldKeys, transactIfJpaTm(() -> tm().loadByKeysIfPresent(newTldKeys)).keySet());
+              newTldKeys, tm().transact(() -> tm().loadByKeysIfPresent(newTldKeys)).keySet());
       checkArgument(missingTldKeys.isEmpty(), "Trying to set nonexisting TLDs: %s", missingTldKeys);
       getInstance().allowedTlds = ImmutableSortedSet.copyOf(allowedTlds);
       return this;
@@ -1023,7 +1022,7 @@ public class Registrar extends ImmutableObject
 
   /** Loads all registrar entities directly from Datastore. */
   public static Iterable<Registrar> loadAll() {
-    return transactIfJpaTm(() -> tm().loadAllOf(Registrar.class));
+    return tm().transact(() -> tm().loadAllOf(Registrar.class));
   }
 
   /** Loads all registrar entities using an in-memory cache. */
@@ -1041,7 +1040,7 @@ public class Registrar extends ImmutableObject
   /** Loads and returns a registrar entity by its id directly from Datastore. */
   public static Optional<Registrar> loadByRegistrarId(String registrarId) {
     checkArgument(!Strings.isNullOrEmpty(registrarId), "registrarId must be specified");
-    return transactIfJpaTm(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));
+    return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));
   }
 
   /**

@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -59,7 +58,7 @@ final class ListCursorsCommand implements CommandWithRemoteApi {
             .filter(r -> !filterEscrowEnabled || r.getEscrowEnabled())
             .collect(toImmutableMap(r -> r, r -> Cursor.createScopedVKey(cursorType, r)));
     ImmutableMap<VKey<? extends Cursor>, Cursor> cursors =
-        transactIfJpaTm(() -> tm().loadByKeysIfPresent(registries.values()));
+        tm().transact(() -> tm().loadByKeysIfPresent(registries.values()));
     if (!registries.isEmpty()) {
       String header = String.format(OUTPUT_FMT, "TLD", "Cursor Time", "Last Update Time");
       System.out.printf("%s\n%s\n", header, Strings.repeat("-", header.length()));

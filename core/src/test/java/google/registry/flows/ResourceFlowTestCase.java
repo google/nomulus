@@ -18,7 +18,6 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 
@@ -87,7 +86,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     tm().clearSessionCache();
     @SuppressWarnings("unchecked")
     T refreshedResource =
-        (T) transactIfJpaTm(() -> tm().loadByEntity(resource)).cloneProjectedAtTime(now);
+        (T) tm().transact(() -> tm().loadByEntity(resource)).cloneProjectedAtTime(now);
     return refreshedResource;
   }
 

@@ -28,7 +28,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
-import google.registry.persistence.transaction.TransactionManagerUtil;
+import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestCacheExtension;
@@ -53,7 +53,7 @@ public class PremiumListDaoTest {
   @RegisterExtension
   final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .enableJpaEntityCoverageCheck(true)
           .withClock(fakeClock)
           .build();
@@ -260,8 +260,8 @@ public class PremiumListDaoTest {
     PremiumListDao.save(testList);
     PremiumList pl = PremiumListDao.getLatestRevision("testname").get();
     assertThat(PremiumListDao.premiumListCache.getIfPresent("testname")).hasValue(pl);
-    TransactionManagerUtil.transactIfJpaTm(
-        () -> PremiumListDao.save("testname", USD, ImmutableList.of("test,USD 1")));
+    TransactionManagerFactory.tm()
+        .transact(() -> PremiumListDao.save("testname", USD, ImmutableList.of("test,USD 1")));
     assertThat(PremiumListDao.premiumListCache.getIfPresent("testname")).isNull();
   }
 

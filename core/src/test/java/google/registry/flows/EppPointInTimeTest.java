@@ -34,29 +34,23 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Test that we can reload EPP resources as they were in the past. */
-@DualDatabaseTest
 class EppPointInTimeTest {
 
   private final FakeClock clock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(clock)
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
   @RegisterExtension final InjectExtension inject = new InjectExtension();
 
@@ -91,7 +85,7 @@ class EppPointInTimeTest {
         .run(EppMetric.builder());
   }
 
-  @TestOfyAndSql
+  @Test
   void testLoadAtPointInTime() throws Exception {
     clock.setTo(DateTime.parse("1984-12-18T12:30Z")); // not midnight
 

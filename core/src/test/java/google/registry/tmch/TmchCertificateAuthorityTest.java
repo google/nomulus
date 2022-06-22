@@ -40,8 +40,7 @@ class TmchCertificateAuthorityTest {
   private static final String REVOKED_TEST_CERTIFICATE = loadFile("icann-tmch-test-revoked.crt");
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private FakeClock clock = new FakeClock(DateTime.parse("2014-01-01T00:00:00Z"));
 

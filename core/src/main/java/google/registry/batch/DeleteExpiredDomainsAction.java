@@ -18,7 +18,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.flows.FlowUtils.marshalWithLenientRetry;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -129,15 +128,13 @@ public class DeleteExpiredDomainsAction implements Runnable {
     logger.atInfo().log(
         "Deleting non-renewing domains with autorenew end times up through %s.", runTime);
 
-    // Note: in Datastore, this query is (and must be) non-transactional, and thus, is only
-    // eventually consistent.
     ImmutableList<DomainBase> domainsToDelete =
-        transactIfJpaTm(
-            () ->
-                tm().createQueryComposer(DomainBase.class)
-                    .where("autorenewEndTime", Comparator.LTE, runTime)
-                    .where("deletionTime", Comparator.EQ, END_OF_TIME)
-                    .list());
+        tm().transact(
+                () ->
+                    tm().createQueryComposer(DomainBase.class)
+                        .where("autorenewEndTime", Comparator.LTE, runTime)
+                        .where("deletionTime", Comparator.EQ, END_OF_TIME)
+                        .list());
     if (domainsToDelete.isEmpty()) {
       logger.atInfo().log("Found 0 domains to delete.");
       response.setPayload("Found 0 domains to delete.");

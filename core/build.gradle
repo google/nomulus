@@ -705,14 +705,6 @@ createToolTask(
 createToolTask(
     'jpaDemoPipeline', 'google.registry.beam.common.JpaDemoPipeline')
 
-// Caller must provide projectId, GCP region, runner, and the kinds to delete
-// (comma-separated kind names or '*' for all). E.g.:
-// nom_build :core:bulkDeleteDatastore --args="--project=domain-registry-crash \
-//     --region=us-central1 --runner=DataflowRunner --kindsToDelete=*"
-createToolTask(
-    'bulkDeleteDatastore',
-    'google.registry.beam.datastore.BulkDeleteDatastorePipeline')
-
 project.tasks.create('generateSqlSchema', JavaExec) {
   classpath = sourceSets.nonprod.runtimeClasspath
   main = 'google.registry.tools.DevTool'
@@ -757,11 +749,6 @@ createUberJar(
 // User should install gcloud and login to GCP before invoking this tasks.
 if (environment == 'alpha') {
   def pipelines = [
-      bulkDeleteDatastore:
-          [
-              mainClass: 'google.registry.beam.datastore.BulkDeleteDatastorePipeline',
-              metaData : 'google/registry/beam/bulk_delete_datastore_pipeline_metadata.json'
-          ],
       spec11             :
           [
               mainClass: 'google.registry.beam.spec11.Spec11Pipeline',

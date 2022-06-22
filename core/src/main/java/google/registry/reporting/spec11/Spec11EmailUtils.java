@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.Resources.getResource;
 import static google.registry.persistence.transaction.QueryComposer.Comparator;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -131,21 +130,21 @@ public class Spec11EmailUtils {
   private RegistrarThreatMatches filterOutNonPublishedMatches(
       RegistrarThreatMatches registrarThreatMatches) {
     ImmutableList<ThreatMatch> filteredMatches =
-        transactIfJpaTm(
-            () -> {
-              return registrarThreatMatches.threatMatches().stream()
-                  .filter(
-                      threatMatch ->
-                          tm()
-                              .createQueryComposer(DomainBase.class)
-                              .where(
-                                  "fullyQualifiedDomainName",
-                                  Comparator.EQ,
-                                  threatMatch.fullyQualifiedDomainName())
-                              .stream()
-                              .anyMatch(DomainBase::shouldPublishToDns))
-                  .collect(toImmutableList());
-            });
+        tm().transact(
+                () -> {
+                  return registrarThreatMatches.threatMatches().stream()
+                      .filter(
+                          threatMatch ->
+                              tm()
+                                  .createQueryComposer(DomainBase.class)
+                                  .where(
+                                      "fullyQualifiedDomainName",
+                                      Comparator.EQ,
+                                      threatMatch.fullyQualifiedDomainName())
+                                  .stream()
+                                  .anyMatch(DomainBase::shouldPublishToDns))
+                      .collect(toImmutableList());
+                });
     return RegistrarThreatMatches.create(registrarThreatMatches.clientId(), filteredMatches);
   }
 

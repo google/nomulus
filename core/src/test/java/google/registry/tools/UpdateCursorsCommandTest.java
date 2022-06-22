@@ -27,13 +27,11 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.RegistryNotFoundException;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UpdateCursorsCommand}. */
-@DualDatabaseTest
 class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
   private Registry registry;
@@ -63,32 +61,32 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
                 + " 1984-12-18T00:00:00.000Z\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_oldValueisEmpty() throws Exception {
     assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(CursorType.BRDA, registry))).isEmpty();
     doUpdateTest();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_hasOldValue() throws Exception {
     persistResource(Cursor.createScoped(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry));
     doUpdateTest();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_global_hasOldValue() throws Exception {
     persistResource(
         Cursor.createGlobal(CursorType.RECURRING_BILLING, DateTime.parse("1950-12-18TZ")));
     doGlobalUpdateTest();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_global_oldValueIsEmpty() throws Exception {
     assertThat(loadByKeyIfPresent(Cursor.createGlobalVKey(CursorType.RECURRING_BILLING))).isEmpty();
     doGlobalUpdateTest();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_multipleTlds_hasOldValue() throws Exception {
     Registry barRegistry = createTld("bar");
     Registry registry2 = Registry.get("bar");
@@ -107,7 +105,7 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
                 + "Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00.000Z\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_multipleTlds_oldValueisEmpty() throws Exception {
     Registry barRegistry = createTld("bar");
     assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(CursorType.BRDA, registry))).isEmpty();
@@ -124,14 +122,14 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
                 + "Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00.000Z\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badTld() {
     assertThrows(
         RegistryNotFoundException.class,
         () -> runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "bar"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badCursorType() {
     ParameterException thrown =
         assertThrows(

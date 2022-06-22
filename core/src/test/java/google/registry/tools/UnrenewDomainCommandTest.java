@@ -44,15 +44,13 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UnrenewDomainCommand}. */
-@DualDatabaseTest
 public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainCommand> {
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
@@ -65,7 +63,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     command.clock = fakeClock;
   }
 
-  @TestOfyAndSql
+  @Test
   void test_unrenewTwoDomains_worksSuccessfully() throws Exception {
     ContactResource contact = persistActiveContact("jd1234");
     fakeClock.advanceOneMilli();
@@ -100,7 +98,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertInStdout("Successfully unrenewed all domains.");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_unrenewDomain_savesDependentEntitiesCorrectly() throws Exception {
     ContactResource contact = persistActiveContact("jd1234");
     fakeClock.advanceOneMilli();
@@ -169,7 +167,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertThat(domain.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_periodTooLow_fails() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -177,7 +175,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertThat(thrown).hasMessageThat().isEqualTo("Period must be in the range 1-9");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_periodTooHigh_fails() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -185,7 +183,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertThat(thrown).hasMessageThat().isEqualTo("Period must be in the range 1-9");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_varietyOfInvalidDomains_displaysErrors() {
     DateTime now = fakeClock.nowUtc();
     persistResource(

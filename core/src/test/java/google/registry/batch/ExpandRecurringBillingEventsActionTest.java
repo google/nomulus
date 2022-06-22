@@ -22,7 +22,6 @@ import static google.registry.model.domain.Period.Unit.YEARS;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_AUTORENEW;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getHistoryEntriesOfType;
@@ -55,29 +54,23 @@ import google.registry.model.reporting.DomainTransactionRecord.TransactionReport
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.TestOfyAndSql;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ExpandRecurringBillingEventsAction}. */
-@DualDatabaseTest
 public class ExpandRecurringBillingEventsActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withLocalModules()
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
 
   private DateTime currentTestTime = DateTime.parse("1999-01-05T00:00:00Z");
   private final FakeClock clock = new FakeClock(currentTestTime);
@@ -139,8 +132,7 @@ public class ExpandRecurringBillingEventsActionTest {
   }
 
   private void assertCursorAt(DateTime expectedCursorTime) {
-    Cursor cursor =
-        transactIfJpaTm(() -> tm().loadByKey(Cursor.createGlobalVKey(RECURRING_BILLING)));
+    Cursor cursor = tm().transact(() -> tm().loadByKey(Cursor.createGlobalVKey(RECURRING_BILLING)));
     assertThat(cursor).isNotNull();
     assertThat(cursor.getCursorTime()).isEqualTo(expectedCursorTime);
   }
@@ -183,7 +175,7 @@ public class ExpandRecurringBillingEventsActionTest {
         .setTargetId(domain.getDomainName());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
@@ -197,7 +189,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_deletedDomain() throws Exception {
     DateTime deletionTime = DateTime.parse("2000-08-01T00:00:00Z");
     DomainBase deletedDomain = persistDeletedDomain("deleted.tld", deletionTime);
@@ -240,7 +232,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_idempotentForDuplicateRuns() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
@@ -258,7 +250,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertBillingEventsForResource(domain, expected, recurring);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_idempotentForExistingOneTime() throws Exception {
     persistResource(recurring);
     BillingEvent.OneTime persisted =
@@ -272,7 +264,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertBillingEventsForResource(domain, persisted, recurring);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_notIdempotentForDifferentBillingTime() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
@@ -295,7 +287,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertBillingEventsForResource(domain, persisted, expected, recurring);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_notIdempotentForDifferentRecurring() throws Exception {
     persistResource(recurring);
     BillingEvent.Recurring recurring2 = persistResource(recurring.asBuilder().setId(3L).build());
@@ -321,7 +313,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertBillingEventsForResource(domain, persisted, expected, recurring, recurring2);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_ignoreRecurringBeforeWindow() throws Exception {
     recurring =
         persistResource(
@@ -338,7 +330,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_ignoreRecurringAfterWindow() throws Exception {
     recurring =
         persistResource(recurring.asBuilder().setEventTime(clock.nowUtc().plusYears(2)).build());
@@ -349,7 +341,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertBillingEventsForResource(domain, recurring);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_billingTimeAtCursorTime() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(DateTime.parse("2000-02-19T00:00:00Z"));
@@ -363,7 +355,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_cursorTimeBetweenEventAndBillingTime() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(DateTime.parse("2000-01-12T00:00:00Z"));
@@ -377,7 +369,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_billingTimeAtExecutionTime() throws Exception {
     clock.setTo(currentTestTime);
     persistResource(recurring);
@@ -393,7 +385,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_multipleYearCreate() throws Exception {
     action.cursorTimeParam = Optional.of(recurring.getEventTime());
     recurring =
@@ -415,7 +407,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_withCursor() throws Exception {
     persistResource(recurring);
     saveCursor(START_OF_TIME);
@@ -429,7 +421,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_withCursorPastExpected() throws Exception {
     persistResource(recurring);
     // Simulate a quick second run of the action (this should be a no-op).
@@ -441,7 +433,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_recurrenceEndBeforeEvent() throws Exception {
     // This can occur when a domain is transferred or deleted before a domain comes up for renewal.
     recurring =
@@ -458,7 +450,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_dryRun() throws Exception {
     persistResource(recurring);
     action.isDryRun = true;
@@ -470,7 +462,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(START_OF_TIME); // Cursor doesn't move on a dry run.
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_multipleYears() throws Exception {
     clock.setTo(clock.nowUtc().plusYears(5));
     List<BillingEvent> expectedEvents = new ArrayList<>();
@@ -497,7 +489,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_multipleYears_cursorInBetweenYears() throws Exception {
     clock.setTo(clock.nowUtc().plusYears(5));
     List<BillingEvent> expectedEvents = new ArrayList<>();
@@ -524,7 +516,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_singleEvent_beforeRenewal() throws Exception {
     // Need to restore to the time before the clock was advanced so that the commit log's timestamp
     // is not inverted when the clock is later reverted.
@@ -539,7 +531,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_singleEvent_afterRecurrenceEnd_inAutorenewGracePeriod() throws Exception {
     // The domain creation date is 1999-01-05, and the first renewal date is thus 2000-01-05.
     clock.setTo(DateTime.parse("2001-02-06T00:00:00Z"));
@@ -568,7 +560,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_singleEvent_afterRecurrenceEnd_outsideAutorenewGracePeriod() throws Exception {
     // The domain creation date is 1999-01-05, and the first renewal date is thus 2000-01-05.
     clock.setTo(DateTime.parse("2001-02-06T00:00:00Z"));
@@ -597,7 +589,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_billingTimeOnLeapYear() throws Exception {
     recurring =
         persistResource(
@@ -618,7 +610,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandSingleEvent_billingTimeNotOnLeapYear() throws Exception {
     recurring =
         persistResource(
@@ -640,7 +632,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandMultipleEvents() throws Exception {
     persistResource(recurring);
     DomainBase domain2 =
@@ -735,7 +727,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandMultipleEvents_anchorTenant() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -783,7 +775,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expandMultipleEvents_premiumDomain_internalRegistration() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -841,7 +833,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_premiumDomain() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -861,7 +853,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_premiumDomain_forAnchorTenant() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -881,7 +873,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_standardDomain_forAnchorTenant() throws Exception {
     recurring = persistResource(recurring.asBuilder().setRenewalPriceBehavior(NONPREMIUM).build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
@@ -895,7 +887,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_premiumDomain_forInternalRegistration() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -921,7 +913,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_standardDomain_forInternalRegistration() throws Exception {
     recurring =
         persistResource(
@@ -942,7 +934,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_varyingRenewPrices() throws Exception {
     clock.setTo(currentTestTime);
     persistResource(
@@ -986,7 +978,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_varyingRenewPrices_anchorTenant() throws Exception {
     clock.setTo(currentTestTime);
     persistResource(
@@ -1031,7 +1023,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_varyingRenewPrices_internalRegistration() throws Exception {
     clock.setTo(currentTestTime);
     persistResource(
@@ -1082,7 +1074,7 @@ public class ExpandRecurringBillingEventsActionTest {
     assertCursorAt(currentTestTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_cursorAfterExecutionTime() {
     action.cursorTimeParam = Optional.of(clock.nowUtc().plusYears(1));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, this::runAction);
@@ -1091,7 +1083,7 @@ public class ExpandRecurringBillingEventsActionTest {
         .contains("Cursor time must be earlier than execution time.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_cursorAtExecutionTime() {
     // The clock advances one milli on run.
     action.cursorTimeParam = Optional.of(clock.nowUtc().plusMillis(1));

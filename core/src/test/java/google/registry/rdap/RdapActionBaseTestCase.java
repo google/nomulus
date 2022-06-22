@@ -46,8 +46,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 

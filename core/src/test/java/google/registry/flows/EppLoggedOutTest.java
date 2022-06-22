@@ -27,8 +27,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EppLoggedOutTest extends EppTestCase {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void testHello() throws Exception {

@@ -19,23 +19,16 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import org.joda.time.YearMonth;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ActivityReportingQueryBuilder}. */
-@DualDatabaseTest
 class ActivityReportingQueryBuilderTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withLocalModules()
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
 
   private final YearMonth yearMonth = new YearMonth(2017, 9);
 
@@ -47,16 +40,7 @@ class ActivityReportingQueryBuilderTest {
             new BasicDnsCountQueryCoordinator.Params(null, "domain-registry-alpha", datasetName)));
   }
 
-  @TestOfyOnly
-  void testAggregateQueryMatch_datastore() {
-    ActivityReportingQueryBuilder queryBuilder = createQueryBuilder("icann_reporting");
-    assertThat(queryBuilder.getReportQuery(yearMonth))
-        .isEqualTo(
-            "#standardSQL\nSELECT * FROM "
-                + "`domain-registry-alpha.icann_reporting.activity_report_aggregation_201709`");
-  }
-
-  @TestSqlOnly
+  @Test
   void testAggregateQueryMatch_cloudSql() {
     ActivityReportingQueryBuilder queryBuilder = createQueryBuilder("cloud_sql_icann_reporting");
     assertThat(queryBuilder.getReportQuery(yearMonth))
@@ -66,28 +50,7 @@ class ActivityReportingQueryBuilderTest {
                 + "`domain-registry-alpha.cloud_sql_icann_reporting.activity_report_aggregation_201709`");
   }
 
-  @TestOfyOnly
-  void testIntermediaryQueryMatch_datastore() {
-    ImmutableList<String> expectedQueryNames =
-        ImmutableList.of(
-            ActivityReportingQueryBuilder.REGISTRAR_OPERATING_STATUS,
-            ActivityReportingQueryBuilder.MONTHLY_LOGS,
-            ActivityReportingQueryBuilder.DNS_COUNTS,
-            ActivityReportingQueryBuilder.EPP_METRICS,
-            ActivityReportingQueryBuilder.WHOIS_COUNTS,
-            ActivityReportingQueryBuilder.ACTIVITY_REPORT_AGGREGATION);
-
-    ActivityReportingQueryBuilder queryBuilder = createQueryBuilder("icann_reporting");
-    ImmutableMap<String, String> actualQueries = queryBuilder.getViewQueryMap(yearMonth);
-    for (String queryName : expectedQueryNames) {
-      String actualTableName = String.format("%s_201709", queryName);
-      String testFilename = String.format("%s_test.sql", queryName);
-      assertThat(actualQueries.get(actualTableName))
-          .isEqualTo(ReportingTestData.loadFile(testFilename));
-    }
-  }
-
-  @TestSqlOnly
+  @Test
   void testIntermediaryQueryMatch_cloud_sql() {
     ImmutableList<String> expectedQueryNames =
         ImmutableList.of(

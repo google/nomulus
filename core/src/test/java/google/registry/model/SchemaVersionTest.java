@@ -27,8 +27,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class SchemaVersionTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void testGoldenSchemaFile() {

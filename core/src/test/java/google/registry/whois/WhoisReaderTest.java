@@ -21,22 +21,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.testing.TestLogHandler;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.util.JdkLoggerConfig;
 import java.io.StringReader;
 import java.util.logging.Level;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link WhoisReader}. */
-@DualDatabaseTest
 class WhoisReaderTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final FakeClock clock = new FakeClock();
   private final TestLogHandler testLogHandler = new TestLogHandler();
@@ -85,245 +82,245 @@ class WhoisReaderTest {
         .isEqualTo("Example Registrar, Inc.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrarLookupWithOneToken() throws Exception {
     assertThat(this.<RegistrarLookupCommand>readCommand("Example").registrarName)
         .isEqualTo("Example");
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainLookupWithoutCRLF() throws Exception {
     assertLoadsExampleTld("example.tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testWhitespaceOnDomainLookupWithCommand() throws Exception {
     assertLoadsExampleTld(" \t domain \t \t   example.tld    \r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainLookup() throws Exception {
     assertLoadsExampleTld("example.tld\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainLookupWithCommand() throws Exception {
     assertLoadsExampleTld("domain example.tld\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testCaseInsensitiveDomainLookup() throws Exception {
     assertLoadsExampleTld("EXAMPLE.TLD\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testCaseInsensitiveDomainLookupWithCommand() throws Exception {
     assertLoadsExampleTld("DOMAIN EXAMPLE.TLD\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testIDNULabelDomainLookup() throws Exception {
     assertLoadsIDN("مثال.إختبار\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testIDNULabelDomainLookupWithCommand() throws Exception {
     assertLoadsIDN("domain مثال.إختبار\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testIDNALabelDomainLookupWithCommand() throws Exception {
     assertLoadsIDN("domain xn--mgbh0fb.xn--kgbechtv\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testIDNALabelDomainLookup() throws Exception {
     assertLoadsIDN("xn--mgbh0fb.xn--kgbechtv\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testTooManyArgsDomainLookup() {
     assertThrows(WhoisException.class, () -> readCommand("domain example.tld foo.bar"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testTooFewArgsDomainLookup() {
     assertThrows(WhoisException.class, () -> readCommand("domain"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testIllegalArgDomainLookup() {
     assertThrows(WhoisException.class, () -> readCommand("domain 1.1"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookupWithoutCRLF() throws Exception {
     assertLoadsExampleNs("ns.example.tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testWhitespaceOnNameserverLookupWithCommand() throws Exception {
     assertLoadsExampleNs(" \t nameserver \t \t   ns.example.tld    \r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookup() throws Exception {
     assertLoadsExampleNs("ns.example.tld\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeepNameserverLookup() throws Exception {
     NameserverLookupByHostCommand command = readCommand("ns.foo.bar.baz.example.tld\r\n");
     assertThat(command.domainOrHostName.toString()).isEqualTo("ns.foo.bar.baz.example.tld");
     assertThat(command.domainOrHostName.toString()).isEqualTo("ns.foo.bar.baz.example.tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookupWithCommand() throws Exception {
     assertLoadsExampleNs("nameserver ns.example.tld\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testCaseInsensitiveNameserverLookup() throws Exception {
     assertLoadsExampleNs("NS.EXAMPLE.TLD\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testCaseInsensitiveNameserverLookupWithCommand() throws Exception {
     assertLoadsExampleNs("NAMESERVER NS.EXAMPLE.TLD\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testIDNULabelNameserverLookup() throws Exception {
     assertLoadsIDNNs("ns.مثال.إختبار\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testIDNULabelNameserverLookupWithCommand() throws Exception {
     assertLoadsIDNNs("nameserver ns.مثال.إختبار\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testIDNALabelNameserverLookupWithCommand() throws Exception {
     assertLoadsIDNNs("nameserver ns.xn--mgbh0fb.xn--kgbechtv\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testIDNALabelNameserverLookup() throws Exception {
     assertLoadsIDNNs("ns.xn--mgbh0fb.xn--kgbechtv\r\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testTooManyArgsNameserverLookup() {
     assertThrows(WhoisException.class, () -> readCommand("nameserver ns.example.tld foo.bar"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testTooFewArgsNameserverLookup() {
     assertThrows(WhoisException.class, () -> readCommand("nameserver"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testIllegalArgNameserverLookup() {
     assertThrows(WhoisException.class, () -> readCommand("nameserver 1.1"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrarLookup() throws Exception {
     assertLoadsRegistrar("registrar Example Registrar, Inc.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrarLookupCaseInsensitive() throws Exception {
     assertLoadsRegistrar("REGISTRAR Example Registrar, Inc.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrarLookupWhitespace() throws Exception {
     assertLoadsRegistrar("  \t registrar \t  \tExample    Registrar,   Inc.  ");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrarLookupByDefault() throws Exception {
     assertLoadsRegistrar("Example Registrar, Inc.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrarLookupOnTLD() throws Exception {
     assertThat(this.<RegistrarLookupCommand>readCommand("com").registrarName).isEqualTo("com");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrarLookupNoArgs() {
     assertThrows(WhoisException.class, () -> readCommand("registrar"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookupByIp() throws Exception {
     assertNsLookup("43.34.12.213", "43.34.12.213");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookupByIpv6() throws Exception {
     assertNsLookup("1080:0:0:0:8:800:200c:417a", "1080:0:0:0:8:800:200c:417a");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookupByCompressedIpv6() throws Exception {
     assertNsLookup("1080::8:800:200c:417a", "1080:0:0:0:8:800:200c:417a");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookupByNoncanonicalIpv6() throws Exception {
     assertNsLookup("1080:0:0:0:8:800:200C:417A", "1080:0:0:0:8:800:200c:417a");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookupByBackwardsCompatibleIpv6() throws Exception {
     assertNsLookup("::FFFF:129.144.52.38", "129.144.52.38");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookupByIpWithCommand() throws Exception {
     assertNsLookup("nameserver 43.34.12.213", "43.34.12.213");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookupByIpv6WithCommand() throws Exception {
     assertNsLookup("nameserver 1080:0:0:0:8:800:200C:417a", "1080:0:0:0:8:800:200c:417a");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookupByIpCaseInsenstive() throws Exception {
     assertNsLookup("NAMESERVER 43.34.12.213", "43.34.12.213");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookupByIpWhitespace() throws Exception {
     assertNsLookup("  \t\t NAMESERVER   \t 43.34.12.213    \r\n", "43.34.12.213");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserverLookupByIpTooManyArgs() {
     assertThrows(WhoisException.class, () -> readCommand("nameserver 43.34.12.213 43.34.12.213"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testMultilevelDomainLookup() throws Exception {
     this.<DomainLookupCommand>readCommand("example.1.test");
   }
 
-  @TestOfyAndSql
+  @Test
   void testMultilevelNameserverLookup() throws Exception {
     this.<NameserverLookupByHostCommand>readCommand("ns.example.1.test");
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeepMultilevelNameserverLookup() throws Exception {
     this.<NameserverLookupByHostCommand>readCommand("ns.corp.example.1.test");
   }
 
-  @TestOfyAndSql
+  @Test
   void testUnconfiguredTld() throws Exception {
     this.<RegistrarLookupCommand>readCommand("example.test");
     this.<RegistrarLookupCommand>readCommand("1.example.test");
@@ -332,12 +329,12 @@ class WhoisReaderTest {
     this.<RegistrarLookupCommand>readCommand("tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNoArgs() {
     assertThrows(WhoisException.class, () -> readCommand(""));
   }
 
-  @TestOfyAndSql
+  @Test
   void testLogsDomainLookupCommand() throws Exception {
     readCommand("domain example.tld");
     assertAboutLogs()
@@ -346,7 +343,7 @@ class WhoisReaderTest {
             Level.INFO, "Attempting domain lookup command using domain name 'example.tld'.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testLogsNameserverLookupCommandWithIpAddress() throws Exception {
     readCommand("nameserver 43.34.12.213");
     assertAboutLogs()
@@ -356,7 +353,7 @@ class WhoisReaderTest {
             "Attempting nameserver lookup command using 43.34.12.213 as an IP address.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testLogsNameserverLookupCommandWithHostname() throws Exception {
     readCommand("nameserver ns.example.tld");
     assertAboutLogs()
@@ -365,7 +362,7 @@ class WhoisReaderTest {
             Level.INFO, "Attempting nameserver lookup command using ns.example.tld as a hostname.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testLogsRegistrarLookupCommand() throws Exception {
     readCommand("registrar Example Registrar, Inc.");
     assertAboutLogs()
@@ -375,7 +372,7 @@ class WhoisReaderTest {
             "Attempting registrar lookup command using registrar Example Registrar, Inc.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testLogsSingleArgumentNameserverLookupUsingIpAddress() throws Exception {
     readCommand("43.34.12.213");
     assertAboutLogs()
@@ -384,7 +381,7 @@ class WhoisReaderTest {
             Level.INFO, "Attempting nameserver lookup using 43.34.12.213 as an IP address.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testLogsSingleArgumentRegistrarLookup() throws Exception {
     readCommand("test");
     assertAboutLogs()
@@ -393,7 +390,7 @@ class WhoisReaderTest {
             Level.INFO, "Attempting registrar lookup using test as a registrar.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testLogsSingleArgumentDomainLookup() throws Exception {
     readCommand("example.tld");
     assertAboutLogs()
@@ -402,7 +399,7 @@ class WhoisReaderTest {
             Level.INFO, "Attempting domain lookup using example.tld as a domain name.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testLogsSingleArgumentNameserverLookupUsingHostname() throws Exception {
     readCommand("ns.example.tld");
     assertAboutLogs()
@@ -411,7 +408,7 @@ class WhoisReaderTest {
             Level.INFO, "Attempting nameserver lookup using ns.example.tld as a hostname.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testLogsMultipleArgumentsButNoParticularCommand() throws Exception {
     readCommand("Example Registrar, Inc.");
     assertAboutLogs()

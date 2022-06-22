@@ -16,7 +16,6 @@ package google.registry.flows.domain.token;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -161,7 +160,7 @@ public class AllocationTokenFlowUtils {
       throw new InvalidAllocationTokenException();
     }
     Optional<AllocationToken> maybeTokenEntity =
-        transactIfJpaTm(() -> tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token)));
+        tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token)));
     if (!maybeTokenEntity.isPresent()) {
       throw new InvalidAllocationTokenException();
     }

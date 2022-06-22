@@ -18,11 +18,9 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@DualDatabaseTest
 public class GetPremiumListCommandTest extends CommandTestCase<GetPremiumListCommand> {
 
   private static final String BASE_LIST_CONTENTS =
@@ -45,26 +43,26 @@ public class GetPremiumListCommandTest extends CommandTestCase<GetPremiumListCom
     createTld("tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_list() throws Exception {
     runCommand("tld");
     assertStdoutIs(BASE_LIST_CONTENTS);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_onlyOneExists() throws Exception {
     runCommand("tld", "nonexistent");
     assertStdoutIs(BASE_LIST_CONTENTS + "No list found with name nonexistent.\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonexistent() throws Exception {
     runCommand("nonexistent", "othernonexistent");
     assertStdoutIs(
         "No list found with name nonexistent.\nNo list found with name othernonexistent.\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_noArgs() {
     assertThrows(ParameterException.class, this::runCommand);
   }
