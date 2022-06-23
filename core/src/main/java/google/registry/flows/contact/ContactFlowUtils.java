@@ -26,6 +26,7 @@ import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactHistory;
+import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.poll.PendingActionNotificationResponse.ContactPendingActionNotificationResponse;
@@ -84,8 +85,9 @@ public class ContactFlowUtils {
                     transferData.getTransferStatus().isApproved(),
                     transferData.getTransferRequestTrid(),
                     now)))
-        .setContactRepoId(contactHistoryKey.getParent().getName())
-        .setContactHistoryRevisionId(contactHistoryKey.getId())
+        .setContactHistoryId(
+            new ContactHistoryId(
+                contactHistoryKey.getParent().getName(), contactHistoryKey.getId()))
         .build();
   }
 
@@ -97,8 +99,9 @@ public class ContactFlowUtils {
         .setEventTime(transferData.getPendingTransferExpirationTime())
         .setMsg(transferData.getTransferStatus().getMessage())
         .setResponseData(ImmutableList.of(createTransferResponse(targetId, transferData)))
-        .setContactRepoId(contactHistoryKey.getParent().getName())
-        .setContactHistoryRevisionId(contactHistoryKey.getId())
+        .setContactHistoryId(
+            new ContactHistoryId(
+                contactHistoryKey.getParent().getName(), contactHistoryKey.getId()))
         .build();
   }
 

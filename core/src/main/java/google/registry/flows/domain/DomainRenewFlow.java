@@ -58,6 +58,7 @@ import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand.Renew;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.DomainRenewData;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -187,8 +188,9 @@ public final class DomainRenewFlow implements TransactionalFlow {
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
             .setEventTime(newExpirationTime)
-            .setDomainRepoId(domainHistoryKey.getParent().getName())
-            .setDomainHistoryRevisionId(domainHistoryKey.getId())
+            .setDomainHistoryId(
+                new DomainHistoryId(
+                    domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
             .build();
     // End the old autorenew billing event and poll message now. This may delete the poll message.
     updateAutorenewRecurrenceEndTime(existingDomain, now);

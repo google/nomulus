@@ -25,6 +25,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
@@ -201,8 +202,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     return persistResource(
         new PollMessage.OneTime.Builder()
             .setId(id)
-            .setDomainRepoId("FSDGS-TLD")
-            .setDomainHistoryRevisionId(domainHistory.getId())
+            .setDomainHistoryId(new DomainHistoryId("FSDGS-TLD", domainHistory.getId()))
             .setRegistrarId("TheRegistrar")
             .setEventTime(eventTime)
             .setMsg(message)

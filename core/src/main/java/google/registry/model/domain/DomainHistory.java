@@ -331,8 +331,7 @@ public class DomainHistory extends HistoryEntry {
      *
      * <p>This method is private because it is only used by Hibernate.
      */
-    @SuppressWarnings("unused")
-    private String getDomainRepoId() {
+    public String getDomainRepoId() {
       return domainRepoId;
     }
 
@@ -341,8 +340,7 @@ public class DomainHistory extends HistoryEntry {
      *
      * <p>This method is private because it is only used by Hibernate.
      */
-    @SuppressWarnings("unused")
-    private long getId() {
+    public long getId() {
       return id;
     }
 

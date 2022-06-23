@@ -87,6 +87,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.DomainCommand.Create;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeCreateCommandExtension;
@@ -577,8 +578,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
         .setRegistrarId(registrarId)
         .setEventTime(registrationExpirationTime)
         .setMsg("Domain was auto-renewed.")
-        .setDomainRepoId(domainHistoryKey.getParent().getName())
-        .setDomainHistoryRevisionId(domainHistoryKey.getId())
+        .setDomainHistoryId(
+            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
         .build();
   }
 

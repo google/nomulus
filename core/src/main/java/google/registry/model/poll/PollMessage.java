@@ -33,12 +33,15 @@ import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.ContactHistory;
+import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.DomainRenewData;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
 import google.registry.model.host.HostHistory;
+import google.registry.model.host.HostHistory.HostHistoryId;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PendingActionNotificationResponse.ContactPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
@@ -287,47 +290,32 @@ public abstract class PollMessage extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setDomainRepoId(String revisionId) {
-      getInstance().domainRepoId = revisionId;
+    public B setDomainHistoryId(DomainHistoryId historyId) {
+      getInstance().domainRepoId = historyId.getDomainRepoId();
+      getInstance().domainHistoryRevisionId = historyId.getId();
       return thisCastToDerived();
     }
 
-    public B setContactRepoId(String revisionId) {
-      getInstance().contactRepoId = revisionId;
+    public B setContactHistoryId(ContactHistoryId historyId) {
+      getInstance().contactRepoId = historyId.getContactRepoId();
+      getInstance().contactHistoryRevisionId = historyId.getId();
       return thisCastToDerived();
     }
 
-    public B setHostRepoId(String revisionId) {
-      getInstance().hostRepoId = revisionId;
-      return thisCastToDerived();
-    }
-
-    public B setDomainHistoryRevisionId(Long revisionId) {
-      getInstance().domainHistoryRevisionId = revisionId;
-      return thisCastToDerived();
-    }
-
-    public B setContactHistoryRevisionId(Long revisionId) {
-      getInstance().contactHistoryRevisionId = revisionId;
-      return thisCastToDerived();
-    }
-
-    public B setHostHistoryRevisionId(Long revisionId) {
-      getInstance().hostHistoryRevisionId = revisionId;
+    public B setHostHistoryId(HostHistoryId historyId) {
+      getInstance().hostRepoId = historyId.getHostRepoId();
+      getInstance().hostHistoryRevisionId = historyId.getId();
       return thisCastToDerived();
     }
 
     public B setHistoryEntry(HistoryEntry history) {
       // Set the appropriate field based on the history entry type.
       if (history instanceof DomainHistory) {
-        setDomainRepoId(((DomainHistory) history).getDomainRepoId());
-        return setDomainHistoryRevisionId(history.getId());
+        return setDomainHistoryId(((DomainHistory) history).getDomainHistoryId());
       } else if (history instanceof ContactHistory) {
-        setContactRepoId(((ContactHistory) history).getContactRepoId());
-        return setContactHistoryRevisionId(history.getId());
+        return setContactHistoryId(((ContactHistory) history).getContactHistoryId());
       } else if (history instanceof HostHistory) {
-        setHostRepoId(((HostHistory) history).getHostRepoId());
-        return setHostHistoryRevisionId(history.getId());
+        return setHostHistoryId(((HostHistory) history).getHostHistoryId());
       }
       return thisCastToDerived();
     }

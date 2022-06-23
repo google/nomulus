@@ -66,6 +66,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Credit;
@@ -355,8 +356,8 @@ public final class DomainDeleteFlow implements TransactionalFlow {
             ImmutableList.of(
                 DomainPendingActionNotificationResponse.create(
                     existingDomain.getDomainName(), true, trid, deletionTime)))
-        .setDomainRepoId(domainHistoryKey.getParent().getName())
-        .setDomainHistoryRevisionId(domainHistoryKey.getId())
+        .setDomainHistoryId(
+            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
         .build();
   }
 
@@ -368,8 +369,8 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(existingDomain.getPersistedCurrentSponsorRegistrarId())
         .setEventTime(now)
-        .setDomainRepoId(domainHistoryKey.getParent().getName())
-        .setDomainHistoryRevisionId(domainHistoryKey.getId())
+        .setDomainHistoryId(
+            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
         .setMsg(
             String.format(
                 "Domain %s was deleted by registry administrator with final deletion effective: %s",

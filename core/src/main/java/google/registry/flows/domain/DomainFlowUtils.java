@@ -88,6 +88,7 @@ import google.registry.model.domain.DomainCommand.CreateOrUpdate;
 import google.registry.model.domain.DomainCommand.InvalidReferencesException;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.ForeignKeyedDesignatedContact;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.BaseFee;
@@ -568,7 +569,6 @@ public class DomainFlowUtils {
   public static PollMessage.Autorenew.Builder newAutorenewPollMessage(DomainBase domain) {
     return new PollMessage.Autorenew.Builder()
         .setTargetId(domain.getDomainName())
-        .setDomainRepoId(domain.getRepoId())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(domain.getRegistrationExpirationTime())
         .setMsg("Domain was auto-renewed.");
@@ -598,7 +598,9 @@ public class DomainFlowUtils {
             : newAutorenewPollMessage(domain)
                 .setId((Long) domain.getAutorenewPollMessage().getSqlKey())
                 .setAutorenewEndTime(newEndTime)
-                .setDomainHistoryRevisionId(domain.getAutorenewPollMessageHistoryId())
+                .setDomainHistoryId(
+                    new DomainHistoryId(
+                        domain.getRepoId(), domain.getAutorenewPollMessageHistoryId()))
                 .build();
 
     // If the resultant autorenew poll message would have no poll messages to deliver, then just

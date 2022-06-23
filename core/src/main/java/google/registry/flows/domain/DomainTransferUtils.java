@@ -26,6 +26,7 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -182,8 +183,8 @@ public final class DomainTransferUtils {
                     transferData.getTransferStatus().isApproved(),
                     transferData.getTransferRequestTrid(),
                     now)))
-        .setDomainRepoId(domainHistoryKey.getParent().getName())
-        .setDomainHistoryRevisionId(domainHistoryKey.getId())
+        .setDomainHistoryId(
+            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
         .build();
   }
 
@@ -200,8 +201,8 @@ public final class DomainTransferUtils {
         .setResponseData(
             ImmutableList.of(
                 createTransferResponse(targetId, transferData, extendedRegistrationExpirationTime)))
-        .setDomainRepoId(domainHistoryKey.getParent().getName())
-        .setDomainHistoryRevisionId(domainHistoryKey.getId())
+        .setDomainHistoryId(
+            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
         .build();
   }
 
@@ -232,8 +233,8 @@ public final class DomainTransferUtils {
         .setEventTime(serverApproveNewExpirationTime)
         .setAutorenewEndTime(END_OF_TIME)
         .setMsg("Domain was auto-renewed.")
-        .setDomainRepoId(domainHistoryKey.getParent().getName())
-        .setDomainHistoryRevisionId(domainHistoryKey.getId())
+        .setDomainHistoryId(
+            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
         .build();
   }
 
