@@ -159,6 +159,8 @@ public abstract class PollMessage extends ImmutableObject
   @Column(name = "message")
   String msg;
 
+  // TODO(b/456803336): Replace these fields with {Domain,Contact,Host}HistoryId objects.
+
   @Ignore String domainRepoId;
 
   @Ignore String contactRepoId;
@@ -326,6 +328,7 @@ public abstract class PollMessage extends ImmutableObject
      */
     private boolean exactlyOnePairNonNull(Object... pairs) {
       int count = 0;
+      checkArgument(pairs.length % 2 == 0, "Odd number of arguments provided.");
       for (int i = 0; i < pairs.length; i += 2) {
         // Add the number of non-null elements of each pair, after which the count should either be
         // zero (a non-null pair hasn't been found yet) or two (exactly one non-null pair has been
