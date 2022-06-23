@@ -30,11 +30,6 @@ import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.ofy.CommitLogBucket;
-import google.registry.model.ofy.CommitLogCheckpoint;
-import google.registry.model.ofy.CommitLogCheckpointRoot;
-import google.registry.model.ofy.CommitLogManifest;
-import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
@@ -58,11 +53,6 @@ public final class EntityClasses {
           BillingEvent.Modification.class,
           BillingEvent.OneTime.class,
           BillingEvent.Recurring.class,
-          CommitLogBucket.class,
-          CommitLogCheckpoint.class,
-          CommitLogCheckpointRoot.class,
-          CommitLogManifest.class,
-          CommitLogMutation.class,
           ContactHistory.class,
           ContactResource.class,
           Cursor.class,

@@ -72,8 +72,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
           StatusValue.PENDING_DELETE,
           StatusValue.SERVER_DELETE_PROHIBITED);
 
-  private static final DnsQueue dnsQueue = DnsQueue.create();
-
+  @Inject DnsQueue dnsQueue;
   @Inject ExtensionManager extensionManager;
   @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;

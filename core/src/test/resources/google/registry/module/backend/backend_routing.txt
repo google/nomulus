@@ -1,6 +1,4 @@
 PATH                                               CLASS                                          METHODS  OK AUTH_METHODS MIN USER_POLICY
-/_dr/cron/commitLogCheckpoint                      CommitLogCheckpointAction                      GET      y  INTERNAL,API APP ADMIN
-/_dr/cron/commitLogFanout                          CommitLogFanoutAction                          GET      y  INTERNAL,API APP ADMIN
 /_dr/cron/fanout                                   TldFanoutAction                                GET      y  INTERNAL,API APP ADMIN
 /_dr/cron/readDnsQueue                             ReadDnsQueueAction                             GET      y  INTERNAL,API APP ADMIN
 /_dr/dnsRefresh                                    RefreshDnsAction                               GET      y  INTERNAL,API APP ADMIN
@@ -10,10 +8,8 @@ PATH                                               CLASS                        
 /_dr/task/copyDetailReports                        CopyDetailReportsAction                        POST     n  INTERNAL,API APP ADMIN
 /_dr/task/deleteExpiredDomains                     DeleteExpiredDomainsAction                     GET      n  INTERNAL,API APP ADMIN
 /_dr/task/deleteLoadTestData                       DeleteLoadTestDataAction                       POST     n  INTERNAL,API APP ADMIN
-/_dr/task/deleteOldCommitLogs                      DeleteOldCommitLogsAction                      GET      n  INTERNAL,API APP ADMIN
 /_dr/task/deleteProberData                         DeleteProberDataAction                         POST     n  INTERNAL,API APP ADMIN
 /_dr/task/expandRecurringBillingEvents             ExpandRecurringBillingEventsAction             GET      n  INTERNAL,API APP ADMIN
-/_dr/task/exportCommitLogDiff                      ExportCommitLogDiffAction                      POST     y  INTERNAL,API APP ADMIN
 /_dr/task/exportDomainLists                        ExportDomainListsAction                        POST     n  INTERNAL,API APP ADMIN
 /_dr/task/exportPremiumTerms                       ExportPremiumTermsAction                       POST     n  INTERNAL,API APP ADMIN
 /_dr/task/exportReservedTerms                      ExportReservedTermsAction                      POST     n  INTERNAL,API APP ADMIN
@@ -31,7 +27,6 @@ PATH                                               CLASS                        
 /_dr/task/rdeStaging                               RdeStagingAction                               GET,POST n  INTERNAL,API APP ADMIN
 /_dr/task/rdeUpload                                RdeUploadAction                                POST     n  INTERNAL,API APP ADMIN
 /_dr/task/relockDomain                             RelockDomainAction                             POST     y  INTERNAL,API APP ADMIN
-/_dr/task/resaveAllEppResources                    ResaveAllEppResourcesAction                    GET      n  INTERNAL,API APP ADMIN
 /_dr/task/resaveAllEppResourcesPipeline            ResaveAllEppResourcesPipelineAction            GET      n  INTERNAL,API APP ADMIN
 /_dr/task/resaveEntity                             ResaveEntityAction                             POST     n  INTERNAL,API APP ADMIN
 /_dr/task/sendExpiringCertificateNotificationEmail SendExpiringCertificateNotificationEmailAction GET      n  INTERNAL,API APP ADMIN

@@ -17,14 +17,11 @@ package google.registry.model.translators;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.ClassPathManager;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.ofy.CommitLogCheckpoint;
-import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
@@ -60,20 +57,6 @@ public class VKeyTranslatorFactoryTest {
     assertThat(vkey.getKind()).isEqualTo(DomainBase.class);
     assertThat(vkey.getOfyKey()).isEqualTo(key);
     assertThat(vkey.getSqlKey()).isEqualTo("ROID-1");
-  }
-
-  @Test
-  void testKeyWithParent() {
-    Key<CommitLogCheckpointRoot> parent = Key.create(CommitLogCheckpointRoot.class, "parent");
-    Key<CommitLogCheckpoint> key = Key.create(parent, CommitLogCheckpoint.class, "foo");
-    IllegalArgumentException e =
-        assertThrows(IllegalArgumentException.class, () -> VKeyTranslatorFactory.createVKey(key));
-    assertThat(e)
-        .hasMessageThat()
-        .isEqualTo(
-            "Cannot auto-convert key Key<?>(CommitLogCheckpointRoot(\"parent\")/"
-                + "CommitLogCheckpoint(\"foo\")) of kind CommitLogCheckpoint because it has a "
-                + "parent.  Add a createVKey(Key) method for it.");
   }
 
   @Test

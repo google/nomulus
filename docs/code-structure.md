@@ -93,28 +93,6 @@ deterministic string that consists of the websafe string of the Key of the scope
 object concatenated with the name of the name of the cursor type, separated by
 an underscore.
 
-## Mapreduces
-
-Nomulus uses the [App Engine MapReduce
-framework](https://github.com/GoogleCloudPlatform/appengine-mapreduce/wiki/1-MapReduce)
-extensively, both for a variety of regularly scheduled background tasks and for
-one-off maintenance tasks. The MapReduce framework comes with a web UI for
-viewing the status of ongoing and completed tasks.
-
-Most MapReduces in Nomulus work by mapping over all entities of a given set of
-Datastore kind(s) (e.g. domains, contacts, etc.). All of the MapReduces in
-Nomulus are run by the `MapreduceRunner` class, which provides a standard set of
-ways to set the number of mapper and reducer shards. It is common to run
-map-only MapReduces when reducers aren't needed; these are supported as well.
-
-The main complication with MapReduces is that the mapper and reducer classes are
-required to be serializable as a consequence of how work is sharded out,
-pasued/resumed, and moved around. All fields on these classes must therefore be
-either `Serializable` or `transient`. This also means that dependency injection
-is of limited use -- the best you can do is to `@Inject` serializable fields on
-the entire MapReduce `Action`, and then set them manually on the mapper/reducer
-classes in their constructor.
-
 ## Guava
 
 The Nomulus codebase makes extensive use of the

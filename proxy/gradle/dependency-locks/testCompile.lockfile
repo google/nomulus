@@ -22,7 +22,7 @@ com.google.api:gax-httpjson:0.103.1
 com.google.api:gax:2.18.1
 com.google.apis:google-api-services-cloudkms:v1-rev20220513-1.32.1
 com.google.apis:google-api-services-monitoring:v3-rev20220525-1.32.1
-com.google.apis:google-api-services-storage:v1-rev20220604-1.32.1
+com.google.apis:google-api-services-storage:v1-rev20220509-1.32.1
 com.google.appengine:appengine-api-1.0-sdk:1.9.86
 com.google.appengine:appengine-testing:1.9.86
 com.google.auth:google-auth-library-credentials:1.7.0
@@ -31,7 +31,7 @@ com.google.auto.value:auto-value-annotations:1.9
 com.google.auto.value:auto-value:1.9
 com.google.cloud:google-cloud-core-http:2.7.1
 com.google.cloud:google-cloud-core:2.7.1
-com.google.cloud:google-cloud-storage:2.8.0
+com.google.cloud:google-cloud-storage:2.7.2
 com.google.cloud:google-cloud-tasks:2.2.0
 com.google.code.findbugs:jsr305:3.0.2
 com.google.code.gson:gson:2.9.0
@@ -78,8 +78,8 @@ io.netty:netty-codec:4.1.59.Final
 io.netty:netty-common:4.1.59.Final
 io.netty:netty-handler:4.1.59.Final
 io.netty:netty-resolver:4.1.59.Final
-io.netty:netty-tcnative-boringssl-static:2.0.53.Final
-io.netty:netty-tcnative-classes:2.0.53.Final
+io.netty:netty-tcnative-boringssl-static:2.0.52.Final
+io.netty:netty-tcnative-classes:2.0.52.Final
 io.netty:netty-transport:4.1.59.Final
 io.opencensus:opencensus-api:0.31.1
 io.opencensus:opencensus-contrib-http-util:0.31.1

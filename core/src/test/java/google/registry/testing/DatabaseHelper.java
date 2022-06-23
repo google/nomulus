@@ -976,14 +976,14 @@ public class DatabaseHelper {
    * {@link ForeignKeyIndex}.
    *
    * <p><b>Note:</b> Your resource will not be enrolled in a commit log. If you want backups, use
-   * {@link #persistResourceWithCommitLog(Object)}.
+   * {@link #persistResourceWithBackup(Object)}.
    */
   public static <R extends ImmutableObject> R persistResource(final R resource) {
     return persistResource(resource, false);
   }
 
   /** Same as {@link #persistResource(Object)} with backups enabled. */
-  public static <R extends ImmutableObject> R persistResourceWithCommitLog(final R resource) {
+  public static <R extends ImmutableObject> R persistResourceWithBackup(final R resource) {
     return persistResource(resource, true);
   }
 

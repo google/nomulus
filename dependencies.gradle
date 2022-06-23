@@ -114,7 +114,6 @@ ext {
       'com.google.apis:google-api-services-monitoring:[v3-rev540-1.25.0,)',
       'com.google.apis:google-api-services-sheets:[v4-rev612-1.25.0,)',
       'com.google.apis:google-api-services-storage:[v1-rev20210127-1.31.0,)',
-      'com.google.appengine.tools:appengine-mapreduce:[0.9,)',
       'com.google.appengine:appengine-api-stubs:[1.9.86,)',
       'com.google.appengine:appengine-remote-api:[1.9.86,)',
       'com.google.auth:google-auth-library-credentials:[0.24.1,)',

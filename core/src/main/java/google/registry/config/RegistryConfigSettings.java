@@ -107,7 +107,6 @@ public class RegistryConfigSettings {
 
   /** Configuration for Cloud Datastore. */
   public static class Datastore {
-    public int commitLogBucketsNum;
     public int eppResourceIndexBucketsNum;
     public int baseOfyRetryMillis;
   }

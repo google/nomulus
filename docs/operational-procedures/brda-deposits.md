@@ -28,7 +28,7 @@ The BRDA copy task reads the previous file and creates two files:
 ```
 
 If you see an `xml.ghostryde` file but not the others, an error has occurred
-during the mapreduce process. If you see the files in the
+during the process. If you see the files in the
 {PROJECT-ID}-icann-brda bucket as well, the process has completed successfully.
 
 Once the files have been created, they must be stored on an sFTP server from

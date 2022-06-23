@@ -44,7 +44,7 @@ import javax.inject.Inject;
 /**
  * Utilities for working with Google Cloud Storage.
  *
- * <p>It is {@link Serializable} so that it can be used in MapReduce or Beam.
+ * <p>It is {@link Serializable} so that it can be used in Beam.
  */
 public class GcsUtils implements Serializable {
 
