@@ -59,7 +59,7 @@
     <class>google.registry.model.poll.PollMessage$Autorenew</class>
     <class>google.registry.model.rde.RdeRevision</class>
     <class>google.registry.model.registrar.Registrar</class>
-    <class>google.registry.model.registrar.RegistrarContact</class>
+    <class>google.registry.model.registrar.RegistrarPoc</class>
     <class>google.registry.model.tld.label.PremiumList</class>
     <class>google.registry.model.tld.label.PremiumList$PremiumEntry</class>
     <class>google.registry.model.tld.label.ReservedList</class>

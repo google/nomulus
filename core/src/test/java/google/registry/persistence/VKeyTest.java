@@ -25,7 +25,7 @@ import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.common.ClassPathManager;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TestObject;
 import org.junit.jupiter.api.BeforeAll;
@@ -68,7 +68,7 @@ class VKeyTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> VKey.create(RegistrarContact.class, "fake@example.com"));
+            () -> VKey.create(RegistrarPoc.class, "fake@example.com"));
     assertThat(thrown).hasMessageThat().contains("BackupGroupRoot");
   }
 

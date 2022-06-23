@@ -33,7 +33,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
 import google.registry.model.domain.RegistryLock;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
@@ -70,7 +70,7 @@ final class RegistryLockGetActionTest {
 
   @BeforeEach
   void beforeEach() {
-    user = userFromRegistrarContact(AppEngineExtension.makeRegistrarContact3());
+    user = userFromRegistrarPoc(AppEngineExtension.makeRegistrarContact3());
     fakeClock.setTo(DateTime.parse("2000-06-08T22:00:00.0Z"));
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
     accessor =
@@ -356,8 +356,7 @@ final class RegistryLockGetActionTest {
     assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
-  static User userFromRegistrarContact(RegistrarContact registrarContact) {
-    return new User(
-        registrarContact.getEmailAddress(), "gmail.com", registrarContact.getGaeUserId());
+  static User userFromRegistrarPoc(RegistrarPoc registrarPoc) {
+    return new User(registrarPoc.getEmailAddress(), "gmail.com", registrarPoc.getGaeUserId());
   }
 }

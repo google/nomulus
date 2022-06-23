@@ -32,7 +32,7 @@ import com.google.template.soy.tofu.SoyTofu;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
@@ -227,9 +227,9 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
                       .setZip(optionalZip.orElse(null))
                       .build())
               .build();
-      RegistrarContact contact =
-          new RegistrarContact.Builder()
-              .setParent(registrar)
+      RegistrarPoc contact =
+          new RegistrarPoc.Builder()
+              .setRegistrar(registrar)
               .setName(consoleUserEmail.get())
               .setEmailAddress(consoleUserEmail.get())
               .setGaeUserId(gaeUserId)

@@ -23,8 +23,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
-import google.registry.model.registrar.RegistrarContact.Type;
+import google.registry.model.registrar.RegistrarPoc;
+import google.registry.model.registrar.RegistrarPoc.Type;
 import google.registry.testing.AppEngineExtension;
 import java.util.List;
 import java.util.Map;
@@ -80,8 +80,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
         action.handleJsonRequest(ImmutableMap.of("op", "update", "id", CLIENT_ID, "args", regMap));
     assertThat(response).containsEntry("status", "SUCCESS");
 
-    RegistrarContact foundContact =
-        Iterables.getOnlyElement(loadRegistrar(CLIENT_ID).getContacts());
+    RegistrarPoc foundContact = Iterables.getOnlyElement(loadRegistrar(CLIENT_ID).getContacts());
     assertThat(foundContact.getName()).isEqualTo(adminContact.get("name"));
     assertThat(foundContact.getEmailAddress()).isEqualTo(adminContact.get("emailAddress"));
     assertThat(foundContact.getPhoneNumber()).isEqualTo(adminContact.get("phoneNumber"));
@@ -130,7 +129,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
   void testPost_updateContacts_cannotRemoveWhoisAbuseContact_error() {
     // First make the contact's info visible in whois as abuse contact info.
     Registrar registrar = loadRegistrar(CLIENT_ID);
-    RegistrarContact rc =
+    RegistrarPoc rc =
         AppEngineExtension.makeRegistrarContact2()
             .asBuilder()
             .setVisibleInDomainWhoisAsAbuse(true)
@@ -157,7 +156,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
   void testPost_updateContacts_whoisAbuseContactMustHavePhoneNumber_error() {
     // First make the contact's info visible in whois as abuse contact info.
     Registrar registrar = loadRegistrar(CLIENT_ID);
-    RegistrarContact rc =
+    RegistrarPoc rc =
         AppEngineExtension.makeRegistrarContact2()
             .asBuilder()
             .setVisibleInDomainWhoisAsAbuse(true)
@@ -184,7 +183,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
   void testSuccess_setRegistryLockPassword() {
     addPasswordToContactTwo();
     String emailAddress = AppEngineExtension.makeRegistrarContact2().getEmailAddress();
-    RegistrarContact newContactWithPassword =
+    RegistrarPoc newContactWithPassword =
         loadRegistrar(CLIENT_ID).getContacts().stream()
             .filter(rc -> rc.getEmailAddress().equals(emailAddress))
             .findFirst()
@@ -197,7 +196,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
   void testSuccess_setRegistryLockPassword_notOverriddenLater() {
     addPasswordToContactTwo();
     String emailAddress = AppEngineExtension.makeRegistrarContact2().getEmailAddress();
-    RegistrarContact newContactWithPassword =
+    RegistrarPoc newContactWithPassword =
         loadRegistrar(CLIENT_ID).getContacts().stream()
             .filter(rc -> rc.getEmailAddress().equals(emailAddress))
             .findFirst()
@@ -226,7 +225,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
   }
 
   private void addPasswordToContactTwo() {
-    RegistrarContact contact =
+    RegistrarPoc contact =
         persistResource(
             AppEngineExtension.makeRegistrarContact2()
                 .asBuilder()
@@ -331,7 +330,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
     addPasswordToContactTwo();
     Map<String, Object> reqJson = loadRegistrar(CLIENT_ID).toJsonMap();
     String emailAddress = AppEngineExtension.makeRegistrarContact2().getEmailAddress();
-    RegistrarContact newContactWithPassword =
+    RegistrarPoc newContactWithPassword =
         loadRegistrar(CLIENT_ID).getContacts().stream()
             .filter(rc -> rc.getEmailAddress().equals(emailAddress))
             .findFirst()

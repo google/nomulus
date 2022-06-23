@@ -31,7 +31,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.RegistryLockDao;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
@@ -296,8 +296,8 @@ public class RelockDomainAction implements Runnable {
 
     ImmutableSet<String> registryLockEmailAddresses =
         registrar.getContacts().stream()
-            .filter(RegistrarContact::isRegistryLockAllowed)
-            .map(RegistrarContact::getRegistryLockEmailAddress)
+            .filter(RegistrarPoc::isRegistryLockAllowed)
+            .map(RegistrarPoc::getRegistryLockEmailAddress)
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(toImmutableSet());

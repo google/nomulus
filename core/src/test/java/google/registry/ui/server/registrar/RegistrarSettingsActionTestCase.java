@@ -37,7 +37,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.ofy.Ofy;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonResponse;
 import google.registry.request.ResponseImpl;
@@ -94,7 +94,7 @@ public abstract class RegistrarSettingsActionTestCase {
   final RegistrarSettingsAction action = new RegistrarSettingsAction();
   private final StringWriter writer = new StringWriter();
 
-  RegistrarContact techContact;
+  RegistrarPoc techContact;
 
   CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
 
@@ -107,7 +107,7 @@ public abstract class RegistrarSettingsActionTestCase {
     // Add a technical contact to the registrar (in addition to the default admin contact created by
     // AppEngineExtension).
     techContact =
-        getOnlyElement(loadRegistrar(CLIENT_ID).getContactsOfType(RegistrarContact.Type.TECH));
+        getOnlyElement(loadRegistrar(CLIENT_ID).getContactsOfType(RegistrarPoc.Type.TECH));
 
     action.registrarAccessor = null;
     action.jsonActionRunner =

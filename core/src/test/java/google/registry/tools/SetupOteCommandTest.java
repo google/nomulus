@@ -33,7 +33,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.testing.DeterministicStringGenerator;
@@ -109,13 +109,12 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   private void verifyRegistrarContactCreation(String registrarName, String email) {
-    ImmutableSet<RegistrarContact> registrarContacts =
-        loadRegistrar(registrarName).getContacts();
-    assertThat(registrarContacts).hasSize(1);
-    RegistrarContact registrarContact = registrarContacts.stream().findAny().get();
-    assertThat(registrarContact.getEmailAddress()).isEqualTo(email);
-    assertThat(registrarContact.getName()).isEqualTo(email);
-    assertThat(registrarContact.getGaeUserId()).isNotNull();
+    ImmutableSet<RegistrarPoc> registrarPocs = loadRegistrar(registrarName).getContacts();
+    assertThat(registrarPocs).hasSize(1);
+    RegistrarPoc registrarPoc = registrarPocs.stream().findAny().get();
+    assertThat(registrarPoc.getEmailAddress()).isEqualTo(email);
+    assertThat(registrarPoc.getName()).isEqualTo(email);
+    assertThat(registrarPoc.getGaeUserId()).isNotNull();
   }
 
   @Test

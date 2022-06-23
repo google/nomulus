@@ -25,7 +25,7 @@ import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoI
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
-import static google.registry.ui.server.registrar.RegistryLockGetActionTest.userFromRegistrarContact;
+import static google.registry.ui.server.registrar.RegistryLockGetActionTest.userFromRegistrarPoc;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -99,8 +99,8 @@ final class RegistryLockPostActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    userWithLockPermission = userFromRegistrarContact(AppEngineExtension.makeRegistrarContact3());
-    userWithoutPermission = userFromRegistrarContact(AppEngineExtension.makeRegistrarContact2());
+    userWithLockPermission = userFromRegistrarPoc(AppEngineExtension.makeRegistrarContact3());
+    userWithoutPermission = userFromRegistrarPoc(AppEngineExtension.makeRegistrarContact2());
     createTld("tld");
     domain = persistResource(newDomainBase("example.tld"));
 
@@ -314,7 +314,7 @@ final class RegistryLockPostActionTest {
   }
 
   @Test
-  void testFailure_notEnabledForRegistrarContact() {
+  void testFailure_notEnabledForRegistrarPoc() {
     action =
         createAction(
             AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, false)));

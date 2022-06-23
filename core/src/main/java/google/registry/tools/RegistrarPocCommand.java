@@ -31,7 +31,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.tools.params.OptionalPhoneNumberParameter;
 import google.registry.tools.params.PathParameter;
 import java.io.IOException;
@@ -51,7 +51,7 @@ import javax.annotation.Nullable;
 @Parameters(
     separators = " =",
     commandDescription = "Create/read/update/delete the various contact lists for a Registrar.")
-final class RegistrarContactCommand extends MutatingCommand {
+final class RegistrarPocCommand extends MutatingCommand {
 
   @Parameter(
       description = "Client identifier of the registrar account.",
@@ -155,8 +155,7 @@ final class RegistrarContactCommand extends MutatingCommand {
   private static final ImmutableSet<Mode> MODES_REQUIRING_CONTACT_SYNC =
       ImmutableSet.of(Mode.CREATE, Mode.UPDATE, Mode.DELETE);
 
-  @Nullable
-  private ImmutableSet<RegistrarContact.Type> contactTypes;
+  @Nullable private ImmutableSet<RegistrarPoc.Type> contactTypes;
 
   @Override
   protected void init() throws Exception {
@@ -179,17 +178,16 @@ final class RegistrarContactCommand extends MutatingCommand {
       contactTypes = ImmutableSet.of();
     } else {
       contactTypes =
-          contactTypeNames
-              .stream()
-              .map(Enums.stringConverter(RegistrarContact.Type.class))
+          contactTypeNames.stream()
+              .map(Enums.stringConverter(RegistrarPoc.Type.class))
               .collect(toImmutableSet());
     }
-    ImmutableSet<RegistrarContact> contacts = registrar.getContacts();
-    Map<String, RegistrarContact> contactsMap = new LinkedHashMap<>();
-    for (RegistrarContact rc : contacts) {
+    ImmutableSet<RegistrarPoc> contacts = registrar.getContacts();
+    Map<String, RegistrarPoc> contactsMap = new LinkedHashMap<>();
+    for (RegistrarPoc rc : contacts) {
       contactsMap.put(rc.getEmailAddress(), rc);
     }
-    RegistrarContact oldContact;
+    RegistrarPoc oldContact;
     switch (mode) {
       case LIST:
         listContacts(contacts);
@@ -206,7 +204,7 @@ final class RegistrarContactCommand extends MutatingCommand {
                 contactsMap.get(checkNotNull(email, "--email is required when --mode=UPDATE")),
                 "No contact with the given email: %s",
                 email);
-        RegistrarContact newContact = updateContact(oldContact, registrar);
+        RegistrarPoc newContact = updateContact(oldContact, registrar);
         checkArgument(
             !oldContact.getVisibleInDomainWhoisAsAbuse()
                 || newContact.getVisibleInDomainWhoisAsAbuse(),
@@ -236,19 +234,19 @@ final class RegistrarContactCommand extends MutatingCommand {
     }
   }
 
-  private void listContacts(Set<RegistrarContact> contacts) throws IOException {
+  private void listContacts(Set<RegistrarPoc> contacts) throws IOException {
     List<String> result = new ArrayList<>();
-    for (RegistrarContact c : contacts) {
+    for (RegistrarPoc c : contacts) {
       result.add(c.toStringMultilinePlainText());
     }
     Files.write(output, Joiner.on('\n').join(result).getBytes(UTF_8));
   }
 
-  private RegistrarContact createContact(Registrar registrar) {
+  private RegistrarPoc createContact(Registrar registrar) {
     checkArgument(!isNullOrEmpty(name), "--name is required when --mode=CREATE");
     checkArgument(!isNullOrEmpty(email), "--email is required when --mode=CREATE");
-    RegistrarContact.Builder builder = new RegistrarContact.Builder();
-    builder.setParent(registrar);
+    RegistrarPoc.Builder builder = new RegistrarPoc.Builder();
+    builder.setRegistrar(registrar);
     builder.setName(name);
     builder.setEmailAddress(email);
     if (!isNullOrEmpty(registryLockEmail)) {
@@ -282,11 +280,11 @@ final class RegistrarContactCommand extends MutatingCommand {
     return builder.build();
   }
 
-  private RegistrarContact updateContact(RegistrarContact contact, Registrar registrar) {
+  private RegistrarPoc updateContact(RegistrarPoc contact, Registrar registrar) {
     checkNotNull(registrar);
     checkArgument(!isNullOrEmpty(email), "--email is required when --mode=UPDATE");
-    RegistrarContact.Builder builder =
-        contact.asBuilder().setEmailAddress(email).setParent(registrar);
+    RegistrarPoc.Builder builder =
+        contact.asBuilder().setEmailAddress(email).setRegistrar(registrar);
     if (!isNullOrEmpty(name)) {
       builder.setName(name);
     }
@@ -327,12 +325,11 @@ final class RegistrarContactCommand extends MutatingCommand {
   }
 
   private void unsetOtherWhoisAbuseFlags(
-      ImmutableSet<RegistrarContact> contacts, @Nullable String emailAddressNotToChange) {
-    for (RegistrarContact contact : contacts) {
+      ImmutableSet<RegistrarPoc> contacts, @Nullable String emailAddressNotToChange) {
+    for (RegistrarPoc contact : contacts) {
       if (!contact.getEmailAddress().equals(emailAddressNotToChange)
           && contact.getVisibleInDomainWhoisAsAbuse()) {
-        RegistrarContact newContact =
-            contact.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build();
+        RegistrarPoc newContact = contact.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build();
         stageEntityChange(contact, newContact);
       }
     }

@@ -35,7 +35,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
@@ -55,7 +55,7 @@ class DomainWhoisResponseTest {
 
   private HostResource hostResource1;
   private HostResource hostResource2;
-  private RegistrarContact abuseContact;
+  private RegistrarPoc abuseContact;
   private ContactResource adminContact;
   private ContactResource registrant;
   private ContactResource techContact;
@@ -74,14 +74,15 @@ class DomainWhoisResponseTest {
                 .setIanaIdentifier(5555555L)
                 .build());
 
-    abuseContact = persistResource(
-        new RegistrarContact.Builder()
-            .setParent(registrar)
-            .setName("Jake Doe")
-            .setEmailAddress("jakedoe@theregistrar.com")
-            .setPhoneNumber("+1.2125551216")
-            .setVisibleInDomainWhoisAsAbuse(true)
-            .build());
+    abuseContact =
+        persistResource(
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
+                .setName("Jake Doe")
+                .setEmailAddress("jakedoe@theregistrar.com")
+                .setPhoneNumber("+1.2125551216")
+                .setVisibleInDomainWhoisAsAbuse(true)
+                .build());
 
     createTld("tld");
 

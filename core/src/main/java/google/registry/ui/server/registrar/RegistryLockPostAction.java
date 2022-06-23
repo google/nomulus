@@ -33,7 +33,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.HttpException.ForbiddenException;
@@ -192,7 +192,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
     // registry lock enabled, and that the user provided a correct password
     Registrar registrar =
         getRegistrarAndVerifyLockAccess(registrarAccessor, postInput.registrarId, false);
-    RegistrarContact registrarContact =
+    RegistrarPoc registrarPoc =
         getContactMatchingLogin(user, registrar)
             .orElseThrow(
                 () ->
@@ -200,16 +200,16 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
                         String.format(
                             "Cannot match user %s to registrar contact", user.getUserId())));
     checkArgument(
-        registrarContact.verifyRegistryLockPassword(postInput.password),
+        registrarPoc.verifyRegistryLockPassword(postInput.password),
         "Incorrect registry lock password for contact");
-    return registrarContact
+    return registrarPoc
         .getRegistryLockEmailAddress()
         .orElseThrow(
             () ->
                 new IllegalStateException(
                     String.format(
                         "Contact %s had no registry lock email address",
-                        registrarContact.getEmailAddress())));
+                        registrarPoc.getEmailAddress())));
   }
 
   /** Value class that represents the expected input body from the UI request. */

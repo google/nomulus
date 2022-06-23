@@ -37,7 +37,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.util.Idn;
@@ -89,34 +89,34 @@ public final class FullFieldsTestEntityHelper {
         .build();
   }
 
-  public static ImmutableList<RegistrarContact> makeRegistrarContacts(Registrar registrar) {
+  public static ImmutableList<RegistrarPoc> makeRegistrarContacts(Registrar registrar) {
     return ImmutableList.of(
-        new RegistrarContact.Builder()
-            .setParent(registrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
             .setName("John Doe")
             .setEmailAddress("johndoe@example.com")
             .setPhoneNumber("+1.2125551213")
             .setFaxNumber("+1.2125551213")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+            .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
             // Purposely flip the internal/external admin/tech
             // distinction to make sure we're not relying on it.  Sigh.
             .setVisibleInWhoisAsAdmin(false)
             .setVisibleInWhoisAsTech(true)
             .build(),
-        new RegistrarContact.Builder()
-            .setParent(registrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
             .setName("Jane Doe")
             .setEmailAddress("janedoe@example.com")
             .setPhoneNumber("+1.2125551215")
             .setFaxNumber("+1.2125551216")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+            .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
             // Purposely flip the internal/external admin/tech
             // distinction to make sure we're not relying on it.  Sigh.
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(false)
             .build(),
-        new RegistrarContact.Builder()
-            .setParent(registrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
             .setName("Jake Doe")
             .setEmailAddress("jakedoe@example.com")
             .setPhoneNumber("+1.2125551216")

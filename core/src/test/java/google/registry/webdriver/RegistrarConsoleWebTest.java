@@ -25,7 +25,7 @@ import com.googlecode.objectify.ObjectifyFilter;
 import google.registry.model.ofy.OfyFilter;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -179,10 +179,10 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
   void testContactSettingsView() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-settings"));
     driver.waitForDisplayedElement(By.id("reg-app-btn-add"));
-    ImmutableList<RegistrarContact> contacts =
+    ImmutableList<RegistrarPoc> contacts =
         server.runInAppEngineEnvironment(
             () -> loadRegistrar("TheRegistrar").getContacts().asList());
-    for (RegistrarContact contact : contacts) {
+    for (RegistrarPoc contact : contacts) {
       assertEltTextPresent(By.id("contacts[0].name"), contact.getName());
       assertEltTextPresent(By.id("contacts[0].emailAddress"), contact.getEmailAddress());
       assertEltTextPresent(By.id("contacts[0].phoneNumber"), contact.getPhoneNumber());

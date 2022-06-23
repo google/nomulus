@@ -34,7 +34,7 @@ import google.registry.beam.spec11.ThreatMatch;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
@@ -219,7 +219,7 @@ public class Spec11EmailUtils {
     return new InternetAddress(
         registrar
             .getWhoisAbuseContact()
-            .map(RegistrarContact::getEmailAddress)
+            .map(RegistrarPoc::getEmailAddress)
             .orElse(registrar.getEmailAddress()));
   }
 }

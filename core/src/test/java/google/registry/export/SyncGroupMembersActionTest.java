@@ -16,9 +16,9 @@ package google.registry.export;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.export.SyncGroupMembersAction.getGroupEmailAddressForContactType;
-import static google.registry.model.registrar.RegistrarContact.Type.ADMIN;
-import static google.registry.model.registrar.RegistrarContact.Type.MARKETING;
-import static google.registry.model.registrar.RegistrarContact.Type.TECH;
+import static google.registry.model.registrar.RegistrarPoc.Type.ADMIN;
+import static google.registry.model.registrar.RegistrarPoc.Type.MARKETING;
+import static google.registry.model.registrar.RegistrarPoc.Type.TECH;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -37,7 +37,7 @@ import com.google.common.collect.Iterables;
 import google.registry.groups.DirectoryGroupsConnection;
 import google.registry.groups.GroupsConnection.Role;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Response;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
@@ -78,10 +78,9 @@ public class SyncGroupMembersActionTest {
 
   @TestOfyAndSql
   void test_getGroupEmailAddressForContactType_convertsToLowercase() {
-    assertThat(getGroupEmailAddressForContactType(
-            "SomeRegistrar",
-            RegistrarContact.Type.ADMIN,
-            "domain-registry.example"))
+    assertThat(
+            getGroupEmailAddressForContactType(
+                "SomeRegistrar", RegistrarPoc.Type.ADMIN, "domain-registry.example"))
         .isEqualTo("someregistrar-primary-contacts@domain-registry.example");
   }
 
@@ -156,15 +155,15 @@ public class SyncGroupMembersActionTest {
     when(connection.getMembersOfGroup("theregistrar-primary-contacts@domain-registry.example"))
         .thenReturn(ImmutableSet.of());
     persistResource(
-        new RegistrarContact.Builder()
-            .setParent(loadRegistrar("NewRegistrar"))
+        new RegistrarPoc.Builder()
+            .setRegistrar(loadRegistrar("NewRegistrar"))
             .setName("Binary Star")
             .setEmailAddress("binarystar@example.tld")
             .setTypes(ImmutableSet.of(ADMIN, MARKETING))
             .build());
     persistResource(
-        new RegistrarContact.Builder()
-            .setParent(loadRegistrar("TheRegistrar"))
+        new RegistrarPoc.Builder()
+            .setRegistrar(loadRegistrar("TheRegistrar"))
             .setName("Hexadecimal")
             .setEmailAddress("hexadecimal@snow.fall")
             .setTypes(ImmutableSet.of(TECH))

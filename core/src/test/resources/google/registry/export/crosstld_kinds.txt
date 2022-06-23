@@ -1,5 +1,4 @@
 Cursor
 Registrar
-RegistrarContact
 Registry
 ServerSecret
