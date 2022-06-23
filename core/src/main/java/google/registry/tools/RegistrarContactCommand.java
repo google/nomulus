@@ -195,7 +195,8 @@ final class RegistrarContactCommand extends MutatingCommand {
         listContacts(contacts);
         break;
       case CREATE:
-        stageEntityChange(null, createContact(registrar));
+        RegistrarContact contact = createContact(registrar);
+        stageEntityChange(null, contact, null, contact.createVKey());
         if ((visibleInDomainWhoisAsAbuse != null) && visibleInDomainWhoisAsAbuse) {
           unsetOtherWhoisAbuseFlags(contacts, null);
         }
@@ -212,7 +213,7 @@ final class RegistrarContactCommand extends MutatingCommand {
                 || newContact.getVisibleInDomainWhoisAsAbuse(),
             "Cannot clear visible_in_domain_whois_as_abuse flag, as that would leave no domain"
                 + " WHOIS abuse contacts; instead, set the flag on another contact");
-        stageEntityChange(oldContact, newContact);
+        stageEntityChange(oldContact, newContact, oldContact.createVKey(), newContact.createVKey());
         if ((visibleInDomainWhoisAsAbuse != null) && visibleInDomainWhoisAsAbuse) {
           unsetOtherWhoisAbuseFlags(contacts, oldContact.getEmailAddress());
         }
@@ -226,13 +227,17 @@ final class RegistrarContactCommand extends MutatingCommand {
         checkArgument(
             !oldContact.getVisibleInDomainWhoisAsAbuse(),
             "Cannot delete the domain WHOIS abuse contact; set the flag on another contact first");
-        stageEntityChange(oldContact, null);
+        stageEntityChange(oldContact, null, oldContact.createVKey(), null);
         break;
       default:
         throw new AssertionError();
     }
     if (MODES_REQUIRING_CONTACT_SYNC.contains(mode)) {
-      stageEntityChange(registrar, registrar.asBuilder().setContactsRequireSyncing(true).build());
+      stageEntityChange(
+          registrar,
+          registrar.asBuilder().setContactsRequireSyncing(true).build(),
+          registrar.createVKey(),
+          registrar.createVKey());
     }
   }
 
@@ -333,7 +338,7 @@ final class RegistrarContactCommand extends MutatingCommand {
           && contact.getVisibleInDomainWhoisAsAbuse()) {
         RegistrarContact newContact =
             contact.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build();
-        stageEntityChange(contact, newContact);
+        stageEntityChange(contact, newContact, contact.createVKey(), newContact.createVKey());
       }
     }
   }

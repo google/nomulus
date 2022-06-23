@@ -375,7 +375,8 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
 
       // Update the Registry object.
       setCommandSpecificProperties(builder);
-      stageEntityChange(oldRegistry, builder.build());
+      stageEntityChange(
+          oldRegistry, builder.build(), Registry.createVKey(tld), Registry.createVKey(tld));
     }
   }
 

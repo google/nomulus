@@ -22,7 +22,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DatastoreServiceUtils.getNameOrId;
 import static google.registry.util.DiffUtils.prettyPrintEntityDeepDiff;
 import static java.util.stream.Collectors.joining;
 
@@ -30,7 +29,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 import java.util.ArrayList;
@@ -77,65 +75,25 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
     final ImmutableObject newEntity;
 
     /** The key that points to the entity being changed. */
-    final VKey<?> key;
+    final VKey<?> vkey;
 
-    private EntityChange(ImmutableObject oldEntity, ImmutableObject newEntity) {
+    private EntityChange(
+        ImmutableObject oldEntity,
+        ImmutableObject newEntity,
+        @Nullable VKey oldEntityVkey,
+        @Nullable VKey newEntityVkey) {
       type = ChangeType.get(oldEntity != null, newEntity != null);
       checkArgument(
-          type != ChangeType.UPDATE || Key.create(oldEntity).equals(Key.create(newEntity)),
+          type != ChangeType.UPDATE || oldEntityVkey.equals(newEntityVkey),
           "Both entity versions in an update must have the same Key.");
       this.oldEntity = oldEntity;
       this.newEntity = newEntity;
-      ImmutableObject entity = MoreObjects.firstNonNull(oldEntity, newEntity);
-
-      // This is one of the few cases where it is acceptable to create an asymmetric VKey (using
-      // createOfy()).  We can use this code on datastore-only entities where we can't construct a
-      // SQL key.
-      VKey<?> createdKey;
-      try {
-        createdKey = VKey.from(Key.create(entity));
-      } catch (RuntimeException e) {
-        createdKey = VKey.createOfy(entity.getClass(), Key.create(entity));
-      }
-      key = createdKey;
-    }
-
-    /**
-     * EntityChange constructor that supports Vkey override. A Vkey is a key of an entity. This is a
-     * workaround to handle cases when a SqlEntity instance does not have a primary key before being
-     * persisted.
-     */
-    private EntityChange(
-        @Nullable ImmutableObject oldEntity, @Nullable ImmutableObject newEntity, VKey<?> vkey) {
-      type = ChangeType.get(oldEntity != null, newEntity != null);
-      if (type == ChangeType.UPDATE) {
-        checkArgument(
-            Key.create(oldEntity).equals(Key.create(newEntity)),
-            "Both entity versions in an update must have the same Key.");
-        checkArgument(
-            Key.create(oldEntity).equals(vkey.getOfyKey()),
-            "The Key of the entity must be the same as the OfyKey of the vkey");
-      } else if (type == ChangeType.CREATE) {
-        checkArgument(
-            Key.create(newEntity).equals(vkey.getOfyKey()),
-            "Both entity versions in an update must have the same Key.");
-      } else if (type == ChangeType.DELETE) {
-        checkArgument(
-            Key.create(oldEntity).equals(vkey.getOfyKey()),
-            "The Key of the entity must be the same as the OfyKey of the vkey");
-      }
-      this.oldEntity = oldEntity;
-      this.newEntity = newEntity;
-      key = vkey;
+      vkey = type != ChangeType.CREATE ? oldEntityVkey : newEntityVkey;
     }
 
     /** Returns a human-readable ID string for the entity being changed. */
     String getEntityId() {
-      return String.format(
-          "%s@%s",
-          key.getOfyKey().getKind(),
-          // NB: try name before id, since name defaults to null, whereas id defaults to 0.
-          getNameOrId(key.getOfyKey().getRaw()));
+      return String.format("%s@%s", vkey.getKind().getSimpleName(), vkey.getSqlKey().toString());
     }
 
     /** Returns a string representation of this entity change. */
@@ -195,7 +153,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
   private void executeChange(EntityChange change) {
     // Load the key of the entity to mutate and double-check that it hasn't been
     // modified from the version that existed when the change was prepared.
-    Optional<?> existingEntity = tm().loadByKeyIfPresent(change.key);
+    Optional<?> existingEntity = tm().loadByKeyIfPresent(change.vkey);
     checkState(
         Objects.equals(change.oldEntity, existingEntity.orElse(null)),
         "Entity changed since init() was called.\n%s",
@@ -212,7 +170,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
         tm().update(change.newEntity);
         return;
       case DELETE:
-        tm().delete(change.key);
+        tm().delete(change.vkey);
         return;
     }
     throw new UnsupportedOperationException("Unknown entity change type: " + change.type);
@@ -227,7 +185,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
     ArrayList<EntityChange> nextBatch = new ArrayList<>();
     for (EntityChange change : changedEntitiesMap.values()) {
       nextBatch.add(change);
-      if (transactionBoundaries.contains(change.key)) {
+      if (transactionBoundaries.contains(change.vkey)) {
         batches.add(ImmutableList.copyOf(nextBatch));
         nextBatch.clear();
       }
@@ -246,33 +204,17 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
    * @param newEntity the new version of the entity to save, or null to delete the entity
    */
   protected void stageEntityChange(
-      @Nullable ImmutableObject oldEntity, @Nullable ImmutableObject newEntity) {
-    EntityChange change = new EntityChange(oldEntity, newEntity);
+      @Nullable ImmutableObject oldEntity,
+      @Nullable ImmutableObject newEntity,
+      @Nullable VKey oldEntityVkey,
+      @Nullable VKey newEntityVkey) {
+    EntityChange change = new EntityChange(oldEntity, newEntity, oldEntityVkey, newEntityVkey);
     checkArgument(
-        !changedEntitiesMap.containsKey(change.key),
+        !changedEntitiesMap.containsKey(change.vkey),
         "Cannot apply multiple changes for the same entity: %s",
         change.getEntityId());
-    changedEntitiesMap.put(change.key, change);
-    lastAddedKey = change.key;
-  }
-
-  /**
-   * Stages an entity change which will be applied by execute(), with the support of Vkey override.
-   * It supports cases of SqlEntity instances that do not have primary keys before being persisted.
-   *
-   * @param oldEntity the existing version of the entity, or null to create a new entity
-   * @param newEntity the new version of the entity to save, or null to delete the entity
-   * @param vkey the key of the entity
-   */
-  protected void stageEntityChange(
-      @Nullable ImmutableObject oldEntity, @Nullable ImmutableObject newEntity, VKey vkey) {
-    EntityChange change = new EntityChange(oldEntity, newEntity, vkey);
-    checkArgument(
-        !changedEntitiesMap.containsKey(change.key),
-        "Cannot apply multiple changes for the same entity: %s",
-        change.getEntityId());
-    changedEntitiesMap.put(change.key, change);
-    lastAddedKey = change.key;
+    changedEntitiesMap.put(change.vkey, change);
+    lastAddedKey = change.vkey;
   }
 
   /**
