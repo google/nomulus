@@ -375,6 +375,9 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     if (withCloudSql) {
       JpaTestExtensions.Builder builder =
           new JpaTestExtensions.Builder().withEntityClass(jpaTestEntities.toArray(new Class[0]));
+      if (withoutCannedData) {
+        builder.withoutCannedData();
+      }
       if (clock != null) {
         builder.withClock(clock);
       }
