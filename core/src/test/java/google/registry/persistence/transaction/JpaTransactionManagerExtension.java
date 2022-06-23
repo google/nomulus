@@ -118,7 +118,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
   private boolean includeNomulusSchema = true;
 
   // Whether to prepolulate some registrars for ease of testing.
-  private boolean withCannedData = false;
+  private final boolean withCannedData;
 
   JpaTransactionManagerExtension(
       Clock clock,
