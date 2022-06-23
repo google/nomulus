@@ -29,11 +29,13 @@ import google.registry.model.annotations.InCrossTld;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TmOverrideExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DatastoreTransactionManager}. */
+@Disabled
 public class DatastoreTransactionManagerTest {
 
   @RegisterExtension
