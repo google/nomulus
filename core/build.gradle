@@ -704,13 +704,6 @@ createToolTask(
     sourceSets.nonprod)
 
 createToolTask(
-    'initSqlPipeline', 'google.registry.beam.initsql.InitSqlPipeline')
-
-createToolTask(
-    'validateDatabasePipeline', 'google.registry.beam.comparedb.ValidateDatabasePipeline')
-
-
-createToolTask(
     'jpaDemoPipeline', 'google.registry.beam.common.JpaDemoPipeline')
 
 // Caller must provide projectId, GCP region, runner, and the kinds to delete
