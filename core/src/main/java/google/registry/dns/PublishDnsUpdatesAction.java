@@ -14,6 +14,7 @@
 
 package google.registry.dns;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.dns.DnsConstants.DNS_PUBLISH_PUSH_QUEUE_NAME;
 import static google.registry.dns.DnsModule.PARAM_DNS_WRITER;
 import static google.registry.dns.DnsModule.PARAM_DOMAINS;
@@ -25,9 +26,11 @@ import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_CREATED;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.util.CollectionUtils.nullToEmpty;
+import static java.lang.Math.max;
 
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
@@ -47,8 +50,6 @@ import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import google.registry.util.CloudTasksUtils;
 import google.registry.util.DomainNameUtils;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.inject.Inject;
@@ -67,7 +68,11 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   public static final String PATH = "/_dr/task/publishDnsUpdates";
   public static final String LOCK_NAME = "DNS updates";
-  public static final String RETRY_HEADER = "X-AppEngine-TaskRetryCount";
+  // TODO(b/236726584): Remove App Engine header once CloudTasksUtils is refactored to create HTTP
+  // tasks.
+  public static final String APP_ENGINE_RETRY_HEADER = "X-AppEngine-TaskRetryCount";
+  public static final String CLOUD_TASKS_RETRY_HEADER = "X-CloudTasks-TaskRetryCount";
+  public static final int RETRIES_BEFORE_PERMANENT_FAILURE = 10;
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -77,8 +82,12 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   @Inject @Config("publishDnsUpdatesLockDuration") Duration timeout;
 
   @Inject
-  @Header(RETRY_HEADER)
-  int retryCount;
+  @Header(APP_ENGINE_RETRY_HEADER)
+  int appEngineRetryCount;
+
+  @Inject
+  @Header(CLOUD_TASKS_RETRY_HEADER)
+  int cloudTasksRetryCount;
 
   /**
    * The DNS writer to use for this batch.
@@ -138,54 +147,60 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   /** Runs the task. */
   @Override
   public void run() {
-    try {
-      if (!validLockParams()) {
-        recordActionResult(ActionStatus.BAD_LOCK_INDEX);
-        requeueBatch();
-        return;
-      }
-      // If executeWithLocks fails to get the lock, it does not throw an exception, simply returns
-      // false. We need to make sure to take note of this error; otherwise, a failed lock might
-      // result in the update task being dequeued and dropped. A message will already have been
-      // logged to indicate the problem.
-      if (!lockHandler.executeWithLocks(
-          this,
-          tld,
-          timeout,
-          String.format("%s-lock %d of %d", LOCK_NAME, lockIndex, numPublishLocks))) {
-        recordActionResult(ActionStatus.LOCK_FAILURE);
-        throw new ServiceUnavailableException("Lock failure");
-      }
-    } catch (Throwable e) {
-      // Retry the batch 3 times
-      if (retryCount < 3) {
-        throw e;
-      }
-      // After 3 retries, split the batch
-      if (domains.size() > 1 || hosts.size() > 1) {
-        // split batch and requeue
-        splitBatch();
-      }
-      // If the batch only contains 1 name, allow it 10 retries
-      else if (retryCount < 10) {
-        throw e;
-      }
-      // If we get here, we should terminate this task as it is likely a perpetually failing task.
-      // TODO(sarahbot): Send an email notifying partner the dns update failed
+    if (!validLockParams()) {
+      recordActionResult(ActionStatus.BAD_LOCK_INDEX);
+      requeueBatch();
+      return;
+    }
+    // If executeWithLocks fails to get the lock, it does not throw an exception, simply returns
+    // false. We need to make sure to take note of this error; otherwise, a failed lock might
+    // result in the update task being dequeued and dropped. A message will already have been
+    // logged to indicate the problem.
+    if (!lockHandler.executeWithLocks(
+        this,
+        tld,
+        timeout,
+        String.format("%s-lock %d of %d", LOCK_NAME, lockIndex, numPublishLocks))) {
+      recordActionResult(ActionStatus.LOCK_FAILURE);
+      throw new ServiceUnavailableException("Lock failure");
     }
   }
 
   /** Runs the task, with the lock. */
   @Override
   public Void call() {
-    processBatch();
+    try {
+      processBatch();
+    } catch (Throwable e) {
+      // Retry the batch 3 times
+      if (max(appEngineRetryCount, cloudTasksRetryCount) < 3) {
+        throw e;
+      }
+      // After 3 retries, split the batch
+      if (domains.size() > 1 || hosts.size() > 1) {
+        // split batch and requeue
+        splitBatch();
+      } else if (domains.size() == 1 && hosts.size() == 1) {
+        // Enqueue the single domain and single host separately
+        enqueue(domains.stream().collect(toImmutableList()), ImmutableList.of());
+        enqueue(ImmutableList.of(), hosts.stream().collect(toImmutableList()));
+      }
+      // If the batch only contains 1 name, allow it more retries
+      else if (max(appEngineRetryCount, cloudTasksRetryCount) < RETRIES_BEFORE_PERMANENT_FAILURE) {
+        throw e;
+      }
+      // If we get here, we should terminate this task as it is likely a perpetually failing task.
+      // TODO(sarahbot): Send an email notifying partner the dns update failed
+      recordActionResult(ActionStatus.TIMED_OUT);
+      logger.atSevere().log("Terminated task after too many retries");
+    }
     return null;
   }
 
   /** Splits the domains and hosts in a batch into smaller batches and adds them to the queue. */
   private void splitBatch() {
-    List<String> domainList = new ArrayList<>(domains);
-    List<String> hostList = new ArrayList<>(hosts);
+    ImmutableList<String> domainList = domains.stream().collect(toImmutableList());
+    ImmutableList<String> hostList = hosts.stream().collect(toImmutableList());
 
     enqueue(domainList.subList(0, domains.size() / 2), hostList.subList(0, hosts.size() / 2));
     enqueue(
@@ -193,7 +208,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
         hostList.subList(hosts.size() / 2, hosts.size()));
   }
 
-  private void enqueue(List<String> domains, List<String> hosts) {
+  private void enqueue(ImmutableList<String> domains, ImmutableList<String> hosts) {
     cloudTasksUtils.enqueue(
         DNS_PUBLISH_PUSH_QUEUE_NAME,
         cloudTasksUtils.createPostTask(

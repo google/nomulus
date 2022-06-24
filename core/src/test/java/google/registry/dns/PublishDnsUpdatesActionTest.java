@@ -123,7 +123,7 @@ public class PublishDnsUpdatesActionTest {
     action.lockHandler = lockHandler;
     action.clock = clock;
     action.cloudTasksUtils = spyCloudTasksUtils;
-    action.retryCount = 0;
+    action.cloudTasksRetryCount = 0;
     action.dnsPublishPushQueue = queue;
     return action;
   }
@@ -241,7 +241,7 @@ public class PublishDnsUpdatesActionTest {
             "example3.xn--q9jyb4c",
             "example4.xn--q9jyb4c");
     action.hosts = ImmutableSet.of("ns1.example.xn--q9jyb4c");
-    action.retryCount = 3;
+    action.appEngineRetryCount = 3;
     doThrow(new RuntimeException()).when(dnsWriter).commit();
     action.run();
 
@@ -280,10 +280,103 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
+  void testTaskFails_splitsBatch5Names() {
+    action = createAction("xn--q9jyb4c");
+    action.domains =
+        ImmutableSet.of(
+            "example1.xn--q9jyb4c",
+            "example2.xn--q9jyb4c",
+            "example3.xn--q9jyb4c",
+            "example4.xn--q9jyb4c",
+            "example5.xn--q9jyb4c");
+    action.hosts = ImmutableSet.of("ns1.example.xn--q9jyb4c");
+    action.appEngineRetryCount = 3;
+    doThrow(new RuntimeException()).when(dnsWriter).commit();
+    action.run();
+
+    Task task1 =
+        cloudTasksUtils.createPostTask(
+            PublishDnsUpdatesAction.PATH,
+            Service.BACKEND.toString(),
+            ImmutableMultimap.<String, String>builder()
+                .put(PARAM_TLD, "xn--q9jyb4c")
+                .put(PARAM_DNS_WRITER, "correctWriter")
+                .put(PARAM_LOCK_INDEX, "1")
+                .put(PARAM_NUM_PUBLISH_LOCKS, "1")
+                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+                .put(PARAM_REFRESH_REQUEST_CREATED, action.itemsCreateTime.toString())
+                .put(PARAM_DOMAINS, "example1.xn--q9jyb4c,example2.xn--q9jyb4c")
+                .put(PARAM_HOSTS, "")
+                .build());
+
+    Task task2 =
+        cloudTasksUtils.createPostTask(
+            PublishDnsUpdatesAction.PATH,
+            Service.BACKEND.toString(),
+            ImmutableMultimap.<String, String>builder()
+                .put(PARAM_TLD, "xn--q9jyb4c")
+                .put(PARAM_DNS_WRITER, "correctWriter")
+                .put(PARAM_LOCK_INDEX, "1")
+                .put(PARAM_NUM_PUBLISH_LOCKS, "1")
+                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+                .put(PARAM_REFRESH_REQUEST_CREATED, action.itemsCreateTime.toString())
+                .put(
+                    PARAM_DOMAINS, "example3.xn--q9jyb4c,example4.xn--q9jyb4c,example5.xn--q9jyb4c")
+                .put(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
+                .build());
+
+    verify(spyCloudTasksUtils).enqueue("dns-publish", task1);
+    verify(spyCloudTasksUtils).enqueue("dns-publish", task2);
+  }
+
+  @Test
+  void testTaskFails_singleHostSingleDomain() {
+    action = createAction("xn--q9jyb4c");
+    action.domains = ImmutableSet.of("example1.xn--q9jyb4c");
+    action.hosts = ImmutableSet.of("ns1.example.xn--q9jyb4c");
+    action.appEngineRetryCount = 3;
+    doThrow(new RuntimeException()).when(dnsWriter).commit();
+    action.run();
+
+    Task task1 =
+        cloudTasksUtils.createPostTask(
+            PublishDnsUpdatesAction.PATH,
+            Service.BACKEND.toString(),
+            ImmutableMultimap.<String, String>builder()
+                .put(PARAM_TLD, "xn--q9jyb4c")
+                .put(PARAM_DNS_WRITER, "correctWriter")
+                .put(PARAM_LOCK_INDEX, "1")
+                .put(PARAM_NUM_PUBLISH_LOCKS, "1")
+                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+                .put(PARAM_REFRESH_REQUEST_CREATED, action.itemsCreateTime.toString())
+                .put(PARAM_DOMAINS, "example1.xn--q9jyb4c")
+                .put(PARAM_HOSTS, "")
+                .build());
+
+    Task task2 =
+        cloudTasksUtils.createPostTask(
+            PublishDnsUpdatesAction.PATH,
+            Service.BACKEND.toString(),
+            ImmutableMultimap.<String, String>builder()
+                .put(PARAM_TLD, "xn--q9jyb4c")
+                .put(PARAM_DNS_WRITER, "correctWriter")
+                .put(PARAM_LOCK_INDEX, "1")
+                .put(PARAM_NUM_PUBLISH_LOCKS, "1")
+                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+                .put(PARAM_REFRESH_REQUEST_CREATED, action.itemsCreateTime.toString())
+                .put(PARAM_DOMAINS, "")
+                .put(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
+                .build());
+
+    verify(spyCloudTasksUtils).enqueue("dns-publish", task1);
+    verify(spyCloudTasksUtils).enqueue("dns-publish", task2);
+  }
+
+  @Test
   void testTaskFailsAfterTenRetries_DoesNotRetry() {
     action = createAction("xn--q9jyb4c");
     action.hosts = ImmutableSet.of("ns1.example.xn--q9jyb4c");
-    action.retryCount = 9;
+    action.cloudTasksRetryCount = 9;
     doThrow(new RuntimeException()).when(dnsWriter).commit();
     assertThrows(RuntimeException.class, action::run);
     verifyNoMoreInteractions(spyCloudTasksUtils);

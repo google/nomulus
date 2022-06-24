@@ -40,7 +40,14 @@ public class DnsMetrics {
   public enum CommitStatus { SUCCESS, FAILURE }
 
   /** Disposition of the publish action. */
-  public enum ActionStatus { SUCCESS, COMMIT_FAILURE, LOCK_FAILURE, BAD_WRITER, BAD_LOCK_INDEX }
+  public enum ActionStatus {
+    SUCCESS,
+    COMMIT_FAILURE,
+    LOCK_FAILURE,
+    BAD_WRITER,
+    BAD_LOCK_INDEX,
+    TIMED_OUT
+  }
 
   private static final ImmutableSet<LabelDescriptor> LABEL_DESCRIPTORS_FOR_PUBLISH_REQUESTS =
       ImmutableSet.of(

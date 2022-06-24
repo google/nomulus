@@ -15,7 +15,8 @@
 package google.registry.request;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static google.registry.dns.PublishDnsUpdatesAction.RETRY_HEADER;
+import static google.registry.dns.PublishDnsUpdatesAction.APP_ENGINE_RETRY_HEADER;
+import static google.registry.dns.PublishDnsUpdatesAction.CLOUD_TASKS_RETRY_HEADER;
 import static google.registry.model.tld.Registries.assertTldExists;
 import static google.registry.model.tld.Registries.assertTldsExist;
 import static google.registry.request.RequestParameters.extractRequiredHeader;
@@ -249,8 +250,14 @@ public final class RequestModule {
   }
 
   @Provides
-  @Header(RETRY_HEADER)
-  static int provideRetryCount(HttpServletRequest req) {
-    return Integer.parseInt(extractRequiredHeader(req, RETRY_HEADER));
+  @Header(APP_ENGINE_RETRY_HEADER)
+  static int provideAppEngineRetryCount(HttpServletRequest req) {
+    return Integer.parseInt(extractRequiredHeader(req, APP_ENGINE_RETRY_HEADER));
+  }
+
+  @Provides
+  @Header(CLOUD_TASKS_RETRY_HEADER)
+  static int provideCloudTasksRetryCount(HttpServletRequest req) {
+    return Integer.parseInt(extractRequiredHeader(req, CLOUD_TASKS_RETRY_HEADER));
   }
 }
