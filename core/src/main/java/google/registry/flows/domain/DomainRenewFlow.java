@@ -54,6 +54,7 @@ import google.registry.flows.custom.EntityChanges;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand.Renew;
 import google.registry.model.domain.DomainHistory;
@@ -153,9 +154,15 @@ public final class DomainRenewFlow implements TransactionalFlow {
     validateRegistrationPeriod(now, newExpirationTime);
     Optional<FeeRenewCommandExtension> feeRenew =
         eppInput.getSingleExtension(FeeRenewCommandExtension.class);
+    Recurring existingRecurringBillingEvent =
+        tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     FeesAndCredits feesAndCredits =
         pricingLogic.getRenewPrice(
-            Registry.get(existingDomain.getTld()), targetId, now, years, null);
+            Registry.get(existingDomain.getTld()),
+            targetId,
+            now,
+            years,
+            existingRecurringBillingEvent);
     validateFeeChallenge(targetId, now, feeRenew, feesAndCredits);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder()
@@ -173,6 +180,8 @@ public final class DomainRenewFlow implements TransactionalFlow {
     BillingEvent.Recurring newAutorenewEvent =
         newAutorenewBillingEvent(existingDomain)
             .setEventTime(newExpirationTime)
+            .setRenewalPrice(existingRecurringBillingEvent.getRenewalPrice().orElse(null))
+            .setRenewalPriceBehavior(existingRecurringBillingEvent.getRenewalPriceBehavior())
             .setParent(domainHistoryKey)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
