@@ -106,7 +106,7 @@ class BillingVKeyTest {
       return billingRecurrenceVKey.createVKey();
     }
 
-    VKey<BillingVKeyTestEntity> createVKey() {
+    public VKey<BillingVKeyTestEntity> createVKey() {
       return VKey.create(
           BillingVKeyTestEntity.class, id, Key.create(parent, BillingVKeyTestEntity.class, id));
     }

@@ -24,7 +24,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
@@ -113,8 +112,7 @@ class EnqueuePollMessageCommand extends MutatingCommand {
                       .setRequestedByRegistrar(false)
                       .setRegistrarId(registryAdminClientId)
                       .build();
-              stageEntityChange(
-                  null, historyEntry, null, HistoryEntry.createVKey(Key.create(historyEntry)));
+              stageEntityChange(null, historyEntry);
               for (String registrarId : registrarIds) {
                 PollMessage pollMessage =
                     new PollMessage.OneTime.Builder()
@@ -123,7 +121,7 @@ class EnqueuePollMessageCommand extends MutatingCommand {
                         .setEventTime(tm().getTransactionTime())
                         .setMsg(message)
                         .build();
-                stageEntityChange(null, pollMessage, null, pollMessage.createVKey());
+                stageEntityChange(null, pollMessage);
               }
             });
   }

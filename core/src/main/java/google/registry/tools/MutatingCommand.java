@@ -75,25 +75,21 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
     final ImmutableObject newEntity;
 
     /** The key that points to the entity being changed. */
-    final VKey<?> vkey;
+    final VKey<?> vKey;
 
-    private EntityChange(
-        ImmutableObject oldEntity,
-        ImmutableObject newEntity,
-        @Nullable VKey oldEntityVkey,
-        @Nullable VKey newEntityVkey) {
+    private EntityChange(ImmutableObject oldEntity, ImmutableObject newEntity) {
       type = ChangeType.get(oldEntity != null, newEntity != null);
       checkArgument(
-          type != ChangeType.UPDATE || oldEntityVkey.equals(newEntityVkey),
+          type != ChangeType.UPDATE || oldEntity.createVKey().equals(newEntity.createVKey()),
           "Both entity versions in an update must have the same Key.");
       this.oldEntity = oldEntity;
       this.newEntity = newEntity;
-      vkey = type != ChangeType.CREATE ? oldEntityVkey : newEntityVkey;
+      vKey = MoreObjects.firstNonNull(oldEntity, newEntity).createVKey();
     }
 
     /** Returns a human-readable ID string for the entity being changed. */
     String getEntityId() {
-      return String.format("%s@%s", vkey.getKind().getSimpleName(), vkey.getSqlKey().toString());
+      return String.format("%s@%s", vKey.getKind().getSimpleName(), vKey.getSqlKey().toString());
     }
 
     /** Returns a string representation of this entity change. */
@@ -153,7 +149,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
   private void executeChange(EntityChange change) {
     // Load the key of the entity to mutate and double-check that it hasn't been
     // modified from the version that existed when the change was prepared.
-    Optional<?> existingEntity = tm().loadByKeyIfPresent(change.vkey);
+    Optional<?> existingEntity = tm().loadByKeyIfPresent(change.vKey);
     checkState(
         Objects.equals(change.oldEntity, existingEntity.orElse(null)),
         "Entity changed since init() was called.\n%s",
@@ -170,7 +166,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
         tm().update(change.newEntity);
         return;
       case DELETE:
-        tm().delete(change.vkey);
+        tm().delete(change.vKey);
         return;
     }
     throw new UnsupportedOperationException("Unknown entity change type: " + change.type);
@@ -185,7 +181,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
     ArrayList<EntityChange> nextBatch = new ArrayList<>();
     for (EntityChange change : changedEntitiesMap.values()) {
       nextBatch.add(change);
-      if (transactionBoundaries.contains(change.vkey)) {
+      if (transactionBoundaries.contains(change.vKey)) {
         batches.add(ImmutableList.copyOf(nextBatch));
         nextBatch.clear();
       }
@@ -204,17 +200,14 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
    * @param newEntity the new version of the entity to save, or null to delete the entity
    */
   protected void stageEntityChange(
-      @Nullable ImmutableObject oldEntity,
-      @Nullable ImmutableObject newEntity,
-      @Nullable VKey oldEntityVkey,
-      @Nullable VKey newEntityVkey) {
-    EntityChange change = new EntityChange(oldEntity, newEntity, oldEntityVkey, newEntityVkey);
+      @Nullable ImmutableObject oldEntity, @Nullable ImmutableObject newEntity) {
+    EntityChange change = new EntityChange(oldEntity, newEntity);
     checkArgument(
-        !changedEntitiesMap.containsKey(change.vkey),
+        !changedEntitiesMap.containsKey(change.vKey),
         "Cannot apply multiple changes for the same entity: %s",
         change.getEntityId());
-    changedEntitiesMap.put(change.vkey, change);
-    lastAddedKey = change.vkey;
+    changedEntitiesMap.put(change.vKey, change);
+    lastAddedKey = change.vKey;
   }
 
   /**

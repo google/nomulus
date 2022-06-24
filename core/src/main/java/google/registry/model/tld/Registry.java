@@ -293,6 +293,12 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     return createVKey(key.getName());
   }
 
+  @Override
+  public VKey<Registry> createVKey() {
+    return VKey.create(
+        Registry.class, this.tldStrId, Key.create(getCrossTldKey(), Registry.class, this.tldStrId));
+  }
+
   /**
    * The name of the pricing engine that this TLD uses.
    *

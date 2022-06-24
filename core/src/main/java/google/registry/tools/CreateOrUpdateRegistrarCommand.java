@@ -423,11 +423,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
             newRegistrar.getPhonePasscode() != null, "--passcode is required for REAL registrars.");
       }
 
-      stageEntityChange(
-          oldRegistrar,
-          newRegistrar,
-          oldRegistrar != null ? oldRegistrar.createVKey() : null,
-          newRegistrar.createVKey());
+      stageEntityChange(oldRegistrar, newRegistrar);
     }
   }
 }

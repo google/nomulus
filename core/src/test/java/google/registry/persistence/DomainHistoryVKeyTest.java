@@ -96,7 +96,7 @@ class DomainHistoryVKeyTest {
       this.domainHistoryVKey = domainHistoryVKey;
     }
 
-    VKey<TestEntity> createVKey() {
+    public VKey<TestEntity> createVKey() {
       return VKey.create(TestEntity.class, id, Key.create(parent, TestEntity.class, id));
     }
   }

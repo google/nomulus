@@ -89,12 +89,10 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           public void init() {
-            stageEntityChange(host1, newHost1, host1.createVKey(), newHost1.createVKey());
-            stageEntityChange(host2, newHost2, host2.createVKey(), newHost2.createVKey());
-            stageEntityChange(
-                registrar1, newRegistrar1, registrar1.createVKey(), newRegistrar1.createVKey());
-            stageEntityChange(
-                registrar2, newRegistrar2, registrar2.createVKey(), newRegistrar2.createVKey());
+            stageEntityChange(host1, newHost1);
+            stageEntityChange(host2, newHost2);
+            stageEntityChange(registrar1, newRegistrar1);
+            stageEntityChange(registrar2, newRegistrar2);
           }
         };
     command.init();
@@ -131,10 +129,10 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           protected void init() {
-            stageEntityChange(null, newHost1, null, newHost1.createVKey());
-            stageEntityChange(null, newHost2, null, newHost2.createVKey());
-            stageEntityChange(null, newRegistrar1, null, newRegistrar1.createVKey());
-            stageEntityChange(null, newRegistrar2, null, newRegistrar2.createVKey());
+            stageEntityChange(null, newHost1);
+            stageEntityChange(null, newHost2);
+            stageEntityChange(null, newRegistrar1);
+            stageEntityChange(null, newRegistrar2);
           }
         };
     command.init();
@@ -165,10 +163,10 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           protected void init() {
-            stageEntityChange(host1, null, host1.createVKey(), null);
-            stageEntityChange(host2, null, host2.createVKey(), null);
-            stageEntityChange(registrar1, null, registrar1.createVKey(), null);
-            stageEntityChange(registrar2, null, registrar2.createVKey(), null);
+            stageEntityChange(host1, null);
+            stageEntityChange(host2, null);
+            stageEntityChange(registrar1, null);
+            stageEntityChange(registrar2, null);
           }
         };
     command.init();
@@ -199,9 +197,8 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           protected void init() {
-            stageEntityChange(host1, host1, host1.createVKey(), host1.createVKey());
-            stageEntityChange(
-                registrar1, registrar1, registrar1.createVKey(), registrar1.createVKey());
+            stageEntityChange(host1, host1);
+            stageEntityChange(registrar1, registrar1);
           }
         };
     command.init();
@@ -225,13 +222,12 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           protected void init() {
-            stageEntityChange(host1, null, host1.createVKey(), null);
-            stageEntityChange(host2, newHost2, host2.createVKey(), newHost2.createVKey());
+            stageEntityChange(host1, null);
+            stageEntityChange(host2, newHost2);
             flushTransaction();
             flushTransaction(); // Flushing should be idempotent.
-            stageEntityChange(registrar1, null, registrar1.createVKey(), null);
-            stageEntityChange(
-                registrar2, newRegistrar2, registrar2.createVKey(), newRegistrar2.createVKey());
+            stageEntityChange(registrar1, null);
+            stageEntityChange(registrar2, newRegistrar2);
             // Even though there is no trailing flushTransaction(), these last two should be
             // executed.
           }
@@ -266,15 +262,11 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           protected void init() {
-            stageEntityChange(host1, null, host1.createVKey(), null);
-            stageEntityChange(host2, newHost2, host2.createVKey(), newHost2.createVKey());
+            stageEntityChange(host1, null);
+            stageEntityChange(host2, newHost2);
             flushTransaction();
-            stageEntityChange(registrar1, null, registrar1.createVKey(), null);
-            stageEntityChange(
-                registrar2,
-                newRegistrar2,
-                registrar2.createVKey(),
-                newRegistrar2.createVKey()); // This will fail.
+            stageEntityChange(registrar1, null);
+            stageEntityChange(registrar2, newRegistrar2); // This will fail.
             flushTransaction();
           }
         };
@@ -311,7 +303,7 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           protected void init() {
-            stageEntityChange(null, null, null, null);
+            stageEntityChange(null, null);
           }
         };
     assertThrows(IllegalArgumentException.class, command::init);
@@ -323,12 +315,9 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           protected void init() {
-            stageEntityChange(host1, newHost1, host1.createVKey(), newHost1.createVKey());
+            stageEntityChange(host1, newHost1);
             stageEntityChange(
-                host1,
-                host1.asBuilder().setLastEppUpdateTime(DateTime.now(UTC)).build(),
-                host1.createVKey(),
-                host1.createVKey());
+                host1, host1.asBuilder().setLastEppUpdateTime(DateTime.now(UTC)).build());
           }
         };
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
@@ -343,7 +332,7 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           protected void init() {
-            stageEntityChange(host1, host2, host1.createVKey(), host2.createVKey());
+            stageEntityChange(host1, host2);
           }
         };
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
@@ -358,8 +347,7 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           public void init() {
-            stageEntityChange(
-                registrar1, registrar2, registrar1.createVKey(), registrar2.createVKey());
+            stageEntityChange(registrar1, registrar2);
           }
         };
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
@@ -374,7 +362,7 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           public void init() {
-            stageEntityChange(host1, registrar1, host1.createVKey(), registrar1.createVKey());
+            stageEntityChange(host1, registrar1);
           }
         };
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
@@ -389,7 +377,7 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           public void init() {
-            stageEntityChange(host1, newHost1, host1.createVKey(), newHost1.createVKey());
+            stageEntityChange(host1, newHost1);
           }
         };
     command.init();
@@ -404,7 +392,7 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           protected void init() {
-            stageEntityChange(null, newHost1, null, newHost1.createVKey());
+            stageEntityChange(null, newHost1);
           }
         };
     command.init();
@@ -419,7 +407,7 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           protected void init() {
-            stageEntityChange(host1, null, host1.createVKey(), null);
+            stageEntityChange(host1, null);
           }
         };
     command.init();
@@ -434,7 +422,7 @@ public class MutatingCommandTest {
         new MutatingCommand() {
           @Override
           protected void init() {
-            stageEntityChange(host1, null, host1.createVKey(), null);
+            stageEntityChange(host1, null);
           }
         };
     command.init();
