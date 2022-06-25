@@ -202,29 +202,6 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  void testCommand_successWithBeam() throws Exception {
-    runCommand(
-        "--tld=tld",
-        "--watermark=2017-01-01T00:00:00Z",
-        "--mode=thin",
-        "--beam",
-        "-r 42",
-        "-o test");
-
-    cloudTasksHelper.assertTasksEnqueued(
-        "rde-report",
-        new TaskMatcher()
-            .url("/_dr/task/rdeStaging")
-            .param("mode", "THIN")
-            .param("beam", "true")
-            .param("watermarks", "2017-01-01T00:00:00.000Z")
-            .param("tlds", "tld")
-            .param("directory", "test")
-            .param("manual", "true")
-            .param("revision", "42"));
-  }
-
-  @Test
   void testCommand_successWithDefaultValidationMode() throws Exception {
     runCommand("--tld=tld", "--watermark=2017-01-01T00:00:00Z", "--mode=thin", "-r 42", "-o test");
 
@@ -250,7 +227,6 @@ public class GenerateEscrowDepositCommandTest
         new TaskMatcher()
             .url("/_dr/task/rdeStaging")
             .param("lenient", "false")
-            .param("beam", "false")
             .param("mode", "THIN")
             .param("watermarks", "2017-01-01T00:00:00.000Z")
             .param("tlds", "tld")
@@ -268,7 +244,6 @@ public class GenerateEscrowDepositCommandTest
             .url("/_dr/task/rdeStaging")
             .param("mode", "FULL")
             .param("lenient", "false")
-            .param("beam", "false")
             .param("watermarks", "2017-01-01T00:00:00.000Z")
             .param("tlds", "tld")
             .param("directory", "test")
@@ -291,7 +266,6 @@ public class GenerateEscrowDepositCommandTest
             .url("/_dr/task/rdeStaging")
             .param("mode", "THIN")
             .param("lenient", "false")
-            .param("beam", "false")
             .param("watermarks", "2017-01-01T00:00:00.000Z,2017-01-02T00:00:00.000Z")
             .param("tlds", "tld,anothertld")
             .param("directory", "test")
