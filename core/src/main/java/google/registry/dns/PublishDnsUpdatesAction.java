@@ -190,7 +190,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
         throw e;
       }
       // If we get here, we should terminate this task as it is likely a perpetually failing task.
-      // TODO(sarahbot): Send an email notifying partner the dns update failed
+      // TODO(b/237302821): Send an email notifying partner the dns update failed
       recordActionResult(ActionStatus.TIMED_OUT);
       logger.atSevere().log("Terminated task after too many retries");
     }
