@@ -19,7 +19,7 @@ import static google.registry.dns.PublishDnsUpdatesAction.APP_ENGINE_RETRY_HEADE
 import static google.registry.dns.PublishDnsUpdatesAction.CLOUD_TASKS_RETRY_HEADER;
 import static google.registry.model.tld.Registries.assertTldExists;
 import static google.registry.model.tld.Registries.assertTldsExist;
-import static google.registry.request.RequestParameters.extractRequiredHeader;
+import static google.registry.request.RequestParameters.extractOptionalHeader;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfParameters;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -252,12 +252,12 @@ public final class RequestModule {
   @Provides
   @Header(APP_ENGINE_RETRY_HEADER)
   static int provideAppEngineRetryCount(HttpServletRequest req) {
-    return Integer.parseInt(extractRequiredHeader(req, APP_ENGINE_RETRY_HEADER));
+    return Integer.parseInt(extractOptionalHeader(req, APP_ENGINE_RETRY_HEADER).orElse("0"));
   }
 
   @Provides
   @Header(CLOUD_TASKS_RETRY_HEADER)
   static int provideCloudTasksRetryCount(HttpServletRequest req) {
-    return Integer.parseInt(extractRequiredHeader(req, CLOUD_TASKS_RETRY_HEADER));
+    return Integer.parseInt(extractOptionalHeader(req, CLOUD_TASKS_RETRY_HEADER).orElse("0"));
   }
 }

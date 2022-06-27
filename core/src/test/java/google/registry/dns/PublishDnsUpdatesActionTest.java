@@ -123,7 +123,7 @@ public class PublishDnsUpdatesActionTest {
     action.lockHandler = lockHandler;
     action.clock = clock;
     action.cloudTasksUtils = spyCloudTasksUtils;
-    action.cloudTasksRetryCount = 0;
+    action.appEngineRetryCount = 0;
     action.dnsPublishPushQueue = queue;
     return action;
   }
