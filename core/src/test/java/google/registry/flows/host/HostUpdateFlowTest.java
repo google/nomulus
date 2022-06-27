@@ -47,7 +47,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
@@ -79,24 +78,15 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostUpdateFlow}. */
 @DualDatabaseTest
 class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResource> {
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   private void setEppHostUpdateInput(
       String oldHostName, String newHostName, String ipOrStatusToAdd, String ipOrStatusToRem) {
@@ -216,7 +206,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
             .build());
     HostResource renamedHost = doSuccessfulTest();
     assertThat(renamedHost.isSubordinate()).isTrue();
-    // Task enqueued to change the NS record of the referencing domain via mapreduce.
+    // Task enqueued to change the NS record of the referencing domain.
     assertTasksEnqueued(
         QUEUE_ASYNC_HOST_RENAME,
         new TaskMatcher()
@@ -1341,51 +1331,5 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     clock.advanceOneMilli();
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-host-update");
-  }
-
-  @TestOfyOnly
-  void testSuccess_nonHostRename_inNoAsyncPhase_succeeds() throws Exception {
-    setEppInput("host_update_name_unchanged.xml");
-    createTld("tld");
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryNoAsync(clock);
-    DomainBase domain = persistActiveDomain("example.tld");
-    HostResource oldHost = persistActiveSubordinateHost(oldHostName(), domain);
-    clock.advanceOneMilli();
-    runFlowAssertResponse(loadFile("generic_success_response.xml"));
-    // The example xml doesn't do a host rename, so reloading the host should work.
-    assertAboutHosts()
-        .that(reloadResourceByForeignKey())
-        .hasLastSuperordinateChange(oldHost.getLastSuperordinateChange())
-        .and()
-        .hasSuperordinateDomain(domain.createVKey())
-        .and()
-        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
-        .and()
-        .hasLastTransferTime(null)
-        .and()
-        .hasOnlyOneHistoryEntryWhich()
-        .hasType(HistoryEntry.Type.HOST_UPDATE);
-    assertDnsTasksEnqueued("ns1.example.tld");
-    DatabaseHelper.removeDatabaseMigrationSchedule();
-  }
-
-  @TestOfyOnly
-  void testRename_duringNoAsyncPhase_fails() throws Exception {
-    createTld("tld");
-    persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryNoAsync(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase_fails() throws Exception {
-    createTld("tld");
-    persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

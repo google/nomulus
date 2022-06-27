@@ -16,6 +16,9 @@ package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.flows.domain.DomainTransferFlowTestCase.persistWithPendingTransfer;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertPollMessages;
@@ -26,6 +29,7 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
@@ -43,7 +47,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
@@ -65,6 +68,7 @@ import google.registry.flows.exceptions.ResourceStatusProhibitsOperationExceptio
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -77,13 +81,11 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
 import google.registry.testing.SetClockExtension;
 import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import java.util.Map;
+import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -117,10 +119,6 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
   final SetClockExtension setClockExtension =
       new SetClockExtension(clock, expirationTime.minusMillis(20));
 
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
-
   @BeforeEach
   void initDomainTest() {
     createTld("tld");
@@ -133,6 +131,14 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
   }
 
   private void persistDomain(StatusValue... statusValues) throws Exception {
+    persistDomain(DEFAULT, null, statusValues);
+  }
+
+  private void persistDomain(
+      RenewalPriceBehavior renewalPriceBehavior,
+      @Nullable Money renewalPrice,
+      StatusValue... statusValues)
+      throws Exception {
     DomainBase domain = newDomainBase(getUniqueIdFromCommand());
     tm().transact(
             () -> {
@@ -153,6 +159,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
                         .setEventTime(expirationTime)
                         .setRecurrenceEndTime(END_OF_TIME)
                         .setParent(historyEntryDomainCreate)
+                        .setRenewalPriceBehavior(renewalPriceBehavior)
+                        .setRenewalPrice(renewalPrice)
                         .build();
                 PollMessage.Autorenew autorenewPollMessage =
                     new PollMessage.Autorenew.Builder()
@@ -195,7 +203,9 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
         "TheRegistrar",
         UserPrivileges.NORMAL,
         substitutions,
-        Money.of(USD, 11).multipliedBy(renewalYears));
+        Money.of(USD, 11).multipliedBy(renewalYears),
+        DEFAULT,
+        null);
   }
 
   private void doSuccessfulTest(
@@ -205,6 +215,27 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
       UserPrivileges userPrivileges,
       Map<String, String> substitutions,
       Money totalRenewCost)
+      throws Exception {
+    doSuccessfulTest(
+        responseFilename,
+        renewalYears,
+        renewalClientId,
+        userPrivileges,
+        substitutions,
+        totalRenewCost,
+        DEFAULT,
+        null);
+  }
+
+  private void doSuccessfulTest(
+      String responseFilename,
+      int renewalYears,
+      String renewalClientId,
+      UserPrivileges userPrivileges,
+      Map<String, String> substitutions,
+      Money totalRenewCost,
+      RenewalPriceBehavior renewalPriceBehavior,
+      @Nullable Money renewalPrice)
       throws Exception {
     assertTransactionalFlow(true);
     DateTime currentExpiration = reloadResourceByForeignKey().getRegistrationExpirationTime();
@@ -245,6 +276,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
         renewBillingEvent,
         new BillingEvent.Recurring.Builder()
             .setReason(Reason.RENEW)
+            .setRenewalPriceBehavior(renewalPriceBehavior)
+            .setRenewalPrice(renewalPrice)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
@@ -256,6 +289,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .build(),
         new BillingEvent.Recurring.Builder()
             .setReason(Reason.RENEW)
+            .setRenewalPriceBehavior(renewalPriceBehavior)
+            .setRenewalPrice(renewalPrice)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
@@ -323,6 +358,80 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
         UserPrivileges.SUPERUSER,
         ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2005-04-03T22:00:00.0Z"),
         Money.of(USD, 55));
+  }
+
+  @TestOfyAndSql
+  void testSuccess_internalRegistration_standardDomain() throws Exception {
+    persistDomain(SPECIFIED, Money.of(USD, 2));
+    setRegistrarIdForFlow("NewRegistrar");
+    doSuccessfulTest(
+        "domain_renew_response.xml",
+        5,
+        "NewRegistrar",
+        UserPrivileges.SUPERUSER,
+        ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2005-04-03T22:00:00.0Z"),
+        Money.of(USD, 10),
+        SPECIFIED,
+        Money.of(USD, 2));
+  }
+
+  @TestOfyAndSql
+  void testSuccess_internalRegiration_premiumDomain() throws Exception {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld", USD, "example,USD 100"))
+            .build());
+    persistDomain(SPECIFIED, Money.of(USD, 2));
+    setRegistrarIdForFlow("NewRegistrar");
+    ImmutableMap<String, String> customFeeMap = updateSubstitutions(FEE_06_MAP, "FEE", "10.0");
+    setEppInput("domain_renew_fee.xml", customFeeMap);
+    doSuccessfulTest(
+        "domain_renew_response_fee.xml",
+        5,
+        "NewRegistrar",
+        UserPrivileges.SUPERUSER,
+        customFeeMap,
+        Money.of(USD, 10),
+        SPECIFIED,
+        Money.of(USD, 2));
+  }
+
+  @TestOfyAndSql
+  void testSuccess_anchorTenant_standardDomain() throws Exception {
+    persistDomain(NONPREMIUM, null);
+    setRegistrarIdForFlow("NewRegistrar");
+    doSuccessfulTest(
+        "domain_renew_response.xml",
+        5,
+        "NewRegistrar",
+        UserPrivileges.SUPERUSER,
+        ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2005-04-03T22:00:00.0Z"),
+        Money.of(USD, 55),
+        NONPREMIUM,
+        null);
+  }
+
+  @TestOfyAndSql
+  void testSuccess_anchorTenant_premiumDomain() throws Exception {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld", USD, "example,USD 100"))
+            .build());
+    persistDomain(NONPREMIUM, null);
+    setRegistrarIdForFlow("NewRegistrar");
+    ImmutableMap<String, String> customFeeMap = updateSubstitutions(FEE_06_MAP, "FEE", "55.0");
+    setEppInput("domain_renew_fee.xml", customFeeMap);
+    doSuccessfulTest(
+        "domain_renew_response_fee.xml",
+        5,
+        "NewRegistrar",
+        UserPrivileges.SUPERUSER,
+        customFeeMap,
+        Money.of(USD, 55),
+        NONPREMIUM,
+        null);
   }
 
   @TestOfyAndSql
@@ -906,21 +1015,5 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
                 historyEntry.getModificationTime().plusMinutes(9),
                 TransactionReportField.netRenewsFieldFromYears(5),
                 1));
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() throws Exception {
-    persistDomain();
-    DomainBase domain = reloadResourceByForeignKey();
-    persistResource(
-        domain
-            .asBuilder()
-            .setRegistrationExpirationTime(domain.getRegistrationExpirationTime().minusYears(1))
-            .build());
-    clock.setTo(clock.nowUtc().minusSeconds(2));
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

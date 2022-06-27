@@ -110,8 +110,8 @@ class RegistrarWhoisResponseTest {
                 .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
                 .setVisibleInWhoisAsTech(true)
                 .build());
-    persistSimpleResources(contacts);
     persistResource(registrar);
+    persistSimpleResources(contacts);
 
     RegistrarWhoisResponse registrarWhoisResponse =
         new RegistrarWhoisResponse(registrar, clock.nowUtc());

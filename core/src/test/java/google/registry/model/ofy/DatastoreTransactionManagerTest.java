@@ -27,13 +27,20 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.common.EntityGroupRoot;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.TmOverrideExtension;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DatastoreTransactionManager}. */
+@Disabled
 public class DatastoreTransactionManagerTest {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
@@ -54,7 +61,6 @@ public class DatastoreTransactionManagerTest {
   }
 
   @Entity
-  @EntityForTesting
   @InCrossTld
   private static class InCrossTldTestEntity extends ImmutableObject {
 

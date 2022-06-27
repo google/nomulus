@@ -16,27 +16,18 @@ package google.registry.module.backend;
 
 import dagger.Module;
 import dagger.Subcomponent;
-import google.registry.backup.BackupModule;
-import google.registry.backup.CommitLogCheckpointAction;
-import google.registry.backup.DeleteOldCommitLogsAction;
-import google.registry.backup.ExportCommitLogDiffAction;
-import google.registry.backup.ReplayCommitLogsToSqlAction;
-import google.registry.backup.SyncDatastoreToSqlSnapshotAction;
 import google.registry.batch.BatchModule;
 import google.registry.batch.DeleteExpiredDomainsAction;
 import google.registry.batch.DeleteLoadTestDataAction;
 import google.registry.batch.DeleteProberDataAction;
 import google.registry.batch.ExpandRecurringBillingEventsAction;
-import google.registry.batch.RefreshDnsOnHostRenameAction;
 import google.registry.batch.RelockDomainAction;
-import google.registry.batch.ResaveAllEppResourcesAction;
 import google.registry.batch.ResaveAllEppResourcesPipelineAction;
 import google.registry.batch.ResaveEntityAction;
 import google.registry.batch.SendExpiringCertificateNotificationEmailAction;
 import google.registry.batch.WipeOutCloudSqlAction;
 import google.registry.batch.WipeOutContactHistoryPiiAction;
 import google.registry.batch.WipeoutDatastoreAction;
-import google.registry.cron.CommitLogFanoutAction;
 import google.registry.cron.CronModule;
 import google.registry.cron.TldFanoutAction;
 import google.registry.dns.DnsModule;
@@ -61,8 +52,6 @@ import google.registry.export.sheet.SheetModule;
 import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.flows.FlowComponent;
 import google.registry.flows.custom.CustomLogicModule;
-import google.registry.mapreduce.MapreduceModule;
-import google.registry.model.replay.ReplicateToDatastoreAction;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.rdap.UpdateRegistrarRdapBaseUrlsAction;
 import google.registry.rde.BrdaCopyAction;
@@ -97,7 +86,6 @@ import google.registry.tmch.TmchSmdrlAction;
 @RequestScope
 @Subcomponent(
     modules = {
-      BackupModule.class,
       BatchModule.class,
       BillingModule.class,
       CloudDnsWriterModule.class,
@@ -109,7 +97,6 @@ import google.registry.tmch.TmchSmdrlAction;
       DnsUpdateWriterModule.class,
       ExportRequestModule.class,
       IcannReportingModule.class,
-      MapreduceModule.class,
       RdeModule.class,
       ReportingModule.class,
       RequestModule.class,
@@ -129,23 +116,15 @@ interface BackendRequestComponent {
 
   CheckBackupAction checkBackupAction();
 
-  CommitLogCheckpointAction commitLogCheckpointAction();
-
-  CommitLogFanoutAction commitLogFanoutAction();
-
   CopyDetailReportsAction copyDetailReportAction();
 
   DeleteExpiredDomainsAction deleteExpiredDomainsAction();
 
   DeleteLoadTestDataAction deleteLoadTestDataAction();
 
-  DeleteOldCommitLogsAction deleteOldCommitLogsAction();
-
   DeleteProberDataAction deleteProberDataAction();
 
   ExpandRecurringBillingEventsAction expandRecurringBillingEventsAction();
-
-  ExportCommitLogDiffAction exportCommitLogDiffAction();
 
   ExportDomainListsAction exportDomainListsAction();
 
@@ -183,23 +162,13 @@ interface BackendRequestComponent {
 
   RefreshDnsAction refreshDnsAction();
 
-  RefreshDnsOnHostRenameAction refreshDnsOnHostRenameAction();
-
   RelockDomainAction relockDomainAction();
-
-  ReplayCommitLogsToSqlAction replayCommitLogsToSqlAction();
-
-  ReplicateToDatastoreAction replicateToDatastoreAction();
-
-  ResaveAllEppResourcesAction resaveAllEppResourcesAction();
 
   ResaveAllEppResourcesPipelineAction resaveAllEppResourcesPipelineAction();
 
   ResaveEntityAction resaveEntityAction();
 
   SendExpiringCertificateNotificationEmailAction sendExpiringCertificateNotificationEmailAction();
-
-  SyncDatastoreToSqlSnapshotAction syncDatastoreToSqlSnapshotAction();
 
   SyncGroupMembersAction syncGroupMembersAction();
 

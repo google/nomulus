@@ -23,6 +23,7 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.putInDb;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -334,8 +335,7 @@ class RegistrarContactCommandTest extends CommandTestCase<RegistrarContactComman
   @Test
   void testDelete_failsOnDomainWhoisAbuseContact() {
     RegistrarContact registrarContact = loadRegistrar("NewRegistrar").getContacts().asList().get(0);
-    persistSimpleResource(
-        registrarContact.asBuilder().setVisibleInDomainWhoisAsAbuse(true).build());
+    putInDb(registrarContact.asBuilder().setVisibleInDomainWhoisAsAbuse(true).build());
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

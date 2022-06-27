@@ -20,7 +20,6 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
@@ -32,16 +31,11 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.config.RegistryConfig;
 import google.registry.model.CacheUtils.AppEngineEnvironmentCacheLoader;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.index.EppResourceIndex;
-import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.util.NonFinalForTesting;
@@ -147,17 +141,6 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   // TODO(b/177567432): rename to "statuses" once we're off datastore.
   Set<StatusValue> status;
 
-  /**
-   * Sorted map of {@link DateTime} keys (modified time) to {@link CommitLogManifest} entries.
-   *
-   * <p><b>Note:</b> Only the last revision on a given date is stored. The key is the transaction
-   * timestamp, not midnight.
-   *
-   * @see google.registry.model.translators.CommitLogRevisionsTranslatorFactory
-   */
-  @Transient @DoNotCompare
-  ImmutableSortedMap<DateTime, Key<CommitLogManifest>> revisions = ImmutableSortedMap.of();
-
   public String getRepoId() {
     return repoId;
   }
@@ -209,10 +192,6 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     return deletionTime;
   }
 
-  public ImmutableSortedMap<DateTime, Key<CommitLogManifest>> getRevisions() {
-    return nullToEmptyImmutableCopy(revisions);
-  }
-
   /** Return a clone of the resource with timed status values modified using the given time. */
   public abstract EppResource cloneProjectedAtTime(DateTime now);
 
@@ -225,12 +204,6 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   /** Override of {@link Buildable#asBuilder} so that the extra methods are visible. */
   @Override
   public abstract Builder<?, ?> asBuilder();
-
-  /** Used when replaying from SQL to DS to populate the Datastore indexes. */
-  protected void saveIndexesToDatastore() {
-    ofyTm().putIgnoringReadOnlyWithBackup(ForeignKeyIndex.create(this, getDeletionTime()));
-    ofyTm().putIgnoringReadOnlyWithBackup(EppResourceIndex.create(Key.create(this)));
-  }
 
   /** EppResources that are loaded via foreign keys should implement this marker interface. */
   public interface ForeignKeyedEppResource {}

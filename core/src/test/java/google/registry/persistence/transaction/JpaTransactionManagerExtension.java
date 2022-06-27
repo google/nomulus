@@ -17,6 +17,7 @@ package google.registry.persistence.transaction;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.testing.DatabaseHelper.insertSimpleResources;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import com.google.common.base.Charsets;
@@ -24,10 +25,14 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
 import com.google.common.io.Resources;
-import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.Registrar.State;
+import google.registry.model.registrar.RegistrarAddress;
+import google.registry.model.registrar.RegistrarContact;
 import google.registry.persistence.HibernateSchemaExporter;
 import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.PersistenceModule;
@@ -57,6 +62,7 @@ import javax.persistence.EntityManagerFactory;
 import org.hibernate.cfg.Environment;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.spi.Bootstrap;
+import org.joda.money.CurrencyUnit;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -84,6 +90,9 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
   // is documented in PSQL's official user guide.
   private static final String CONNECTION_BACKEND_TYPE = "client backend";
   private static final int ACTIVE_CONNECTIONS_CAP = 5;
+  public static final String NEW_REGISTRAR_GAE_USER_ID = "666";
+  public static final String THE_REGISTRAR_GAE_USER_ID = "31337";
+  public static final String MARLA_SINGER_GAE_USER_ID = "12345";
 
   private final Clock clock;
   private final Optional<String> initScriptPath;
@@ -108,30 +117,23 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
   // to false.
   private boolean includeNomulusSchema = true;
 
+  // Whether to prepolulate some registrars for ease of testing.
+  private final boolean withCannedData;
+
   JpaTransactionManagerExtension(
       Clock clock,
       Optional<String> initScriptPath,
       boolean includeNomulusSchema,
       ImmutableList<Class<?>> extraEntityClasses,
-      ImmutableMap<String, String> userProperties) {
+      ImmutableMap<String, String> userProperties,
+      boolean withCannedData) {
     this.clock = clock;
     this.initScriptPath = initScriptPath;
     this.includeNomulusSchema = includeNomulusSchema;
     this.extraEntityClasses = extraEntityClasses;
     this.userProperties = userProperties;
     this.entityHash = getOrmEntityHash(initScriptPath, extraEntityClasses);
-  }
-
-  JpaTransactionManagerExtension(
-      Clock clock,
-      Optional<String> initScriptPath,
-      ImmutableList<Class<?>> extraEntityClasses,
-      ImmutableMap<String, String> userProperties) {
-    this.clock = clock;
-    this.initScriptPath = initScriptPath;
-    this.extraEntityClasses = extraEntityClasses;
-    this.userProperties = userProperties;
-    this.entityHash = getOrmEntityHash(initScriptPath, extraEntityClasses);
+    this.withCannedData = withCannedData;
   }
 
   private static JdbcDatabaseContainer create() {
@@ -168,7 +170,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
     if (!includeNomulusSchema) {
       File tempSqlFile = File.createTempFile("tempSqlFile", ".sql");
       tempSqlFile.deleteOnExit();
-      exporter.export(getTestEntities(), tempSqlFile);
+      exporter.export(extraEntityClasses, tempSqlFile);
       executeSql(new String(Files.readAllBytes(tempSqlFile.toPath()), StandardCharsets.UTF_8));
     }
     assertReasonableNumDbConnections();
@@ -219,14 +221,15 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
     TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(txnManager));
     TransactionManagerFactory.setReplicaJpaTm(
         Suppliers.ofInstance(new ReplicaSimulatingJpaTransactionManager(txnManager)));
+    if (withCannedData) {
+      loadInitialData();
+    }
   }
 
   @Override
   public void afterEach(ExtensionContext context) {
     TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(cachedTm));
     TransactionManagerFactory.setReplicaJpaTm(Suppliers.ofInstance(cachedTm));
-    // Even though we didn't set this, reset it to make sure no other tests are affected
-    JpaTransactionManagerImpl.removeReplaySqlToDsOverrideForTest();
     cachedTm = null;
   }
 
@@ -240,14 +243,16 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
       ResultSet rs =
           statement.executeQuery(
               "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';");
-      ImmutableList.Builder<String> tableNames = new ImmutableList.Builder<>();
+      ImmutableList.Builder<String> tableNamesBuilder = new ImmutableList.Builder<>();
       while (rs.next()) {
-        tableNames.add('"' + rs.getString(1) + '"');
+        tableNamesBuilder.add('"' + rs.getString(1) + '"');
       }
-      String sql =
-          String.format(
-              "TRUNCATE %s RESTART IDENTITY CASCADE", Joiner.on(',').join(tableNames.build()));
-      executeSql(sql);
+      ImmutableList<String> tableNames = tableNamesBuilder.build();
+      if (!tableNames.isEmpty()) {
+        String sql =
+            String.format("TRUNCATE %s RESTART IDENTITY CASCADE", Joiner.on(',').join(tableNames));
+        executeSql(sql);
+      }
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -323,6 +328,118 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
     }
   }
 
+  private static Registrar.Builder makeRegistrarCommon() {
+    return new Registrar.Builder()
+        .setType(Registrar.Type.REAL)
+        .setState(State.ACTIVE)
+        .setIcannReferralEmail("lol@sloth.test")
+        .setUrl("http://my.fake.url")
+        .setInternationalizedAddress(
+            new RegistrarAddress.Builder()
+                .setStreet(ImmutableList.of("123 Example Boulevard"))
+                .setCity("Williamsburg")
+                .setState("NY")
+                .setZip("11211")
+                .setCountryCode("US")
+                .build())
+        .setLocalizedAddress(
+            new RegistrarAddress.Builder()
+                .setStreet(ImmutableList.of("123 Example B\u0151ulevard"))
+                .setCity("Williamsburg")
+                .setState("NY")
+                .setZip("11211")
+                .setCountryCode("US")
+                .build())
+        .setPhoneNumber("+1.3334445555")
+        .setPhonePasscode("12345")
+        .setBillingAccountMap(ImmutableMap.of(CurrencyUnit.USD, "abc123"))
+        .setContactsRequireSyncing(true);
+  }
+
+  /** Public factory for first Registrar to allow comparison against stored value in unit tests. */
+  public static Registrar makeRegistrar1() {
+    return makeRegistrarCommon()
+        .setRegistrarId("NewRegistrar")
+        .setRegistrarName("New Registrar")
+        .setEmailAddress("new.registrar@example.com")
+        .setIanaIdentifier(8L)
+        .setPassword("foo-BAR2")
+        .setPhoneNumber("+1.3334445555")
+        .setPhonePasscode("12345")
+        .setRegistryLockAllowed(false)
+        .build();
+  }
+
+  /** Public factory for second Registrar to allow comparison against stored value in unit tests. */
+  public static Registrar makeRegistrar2() {
+    return makeRegistrarCommon()
+        .setRegistrarId("TheRegistrar")
+        .setRegistrarName("The Registrar")
+        .setEmailAddress("the.registrar@example.com")
+        .setIanaIdentifier(1L)
+        .setPassword("password2")
+        .setPhoneNumber("+1.2223334444")
+        .setPhonePasscode("22222")
+        .setRegistryLockAllowed(true)
+        .build();
+  }
+
+  /**
+   * Public factory for first RegistrarContact to allow comparison against stored value in unit
+   * tests.
+   */
+  public static RegistrarContact makeRegistrarContact1() {
+    return new RegistrarContact.Builder()
+        .setParent(makeRegistrar1())
+        .setName("Jane Doe")
+        .setVisibleInWhoisAsAdmin(true)
+        .setVisibleInWhoisAsTech(false)
+        .setEmailAddress("janedoe@theregistrar.com")
+        .setPhoneNumber("+1.1234567890")
+        .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+        .build();
+  }
+
+  /**
+   * Public factory for second RegistrarContact to allow comparison against stored value in unit
+   * tests.
+   */
+  public static RegistrarContact makeRegistrarContact2() {
+    return new RegistrarContact.Builder()
+        .setParent(makeRegistrar2())
+        .setName("John Doe")
+        .setEmailAddress("johndoe@theregistrar.com")
+        .setPhoneNumber("+1.1234567890")
+        .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+        .setGaeUserId(THE_REGISTRAR_GAE_USER_ID)
+        .build();
+  }
+
+  public static RegistrarContact makeRegistrarContact3() {
+    return new RegistrarContact.Builder()
+        .setParent(makeRegistrar2())
+        .setName("Marla Singer")
+        .setEmailAddress("Marla.Singer@crr.com")
+        .setRegistryLockEmailAddress("Marla.Singer.RegistryLock@crr.com")
+        .setPhoneNumber("+1.2128675309")
+        .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+        .setGaeUserId(MARLA_SINGER_GAE_USER_ID)
+        .setAllowedToSetRegistryLockPassword(true)
+        .setRegistryLockPassword("hi")
+        .build();
+  }
+
+  /** Create some fake registrars. */
+  public static void loadInitialData() {
+    insertSimpleResources(
+        ImmutableList.of(
+            makeRegistrar1(),
+            makeRegistrarContact1(),
+            makeRegistrar2(),
+            makeRegistrarContact2(),
+            makeRegistrarContact3()));
+  }
+
   /** Constructs the {@link EntityManagerFactory} instance. */
   private EntityManagerFactory createEntityManagerFactory(ImmutableMap<String, String> properties) {
     ParsedPersistenceXmlDescriptor descriptor =
@@ -346,17 +463,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
       descriptor.getManagedClassNames().addAll(nonEntityClasses);
     }
 
-    getTestEntities().stream().map(Class::getName).forEach(descriptor::addClasses);
+    extraEntityClasses.stream().map(Class::getName).forEach(descriptor::addClasses);
     return Bootstrap.getEntityManagerFactoryBuilder(descriptor, properties).build();
-  }
-
-  private ImmutableList<Class<?>> getTestEntities() {
-    // We have to add the DatabaseMigrationStateSchedule and TransactionEntity classes to extra
-    // entities, as they are required by the transaction manager factory and transaction replication
-    // mechanism, respectively.
-    return Stream.concat(
-            extraEntityClasses.stream(),
-            Stream.of(DatabaseMigrationStateSchedule.class, TransactionEntity.class))
-        .collect(toImmutableList());
   }
 }

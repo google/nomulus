@@ -88,8 +88,6 @@ steps:
       beam_pipeline_common \
       ${TAG_NAME} \
       ${PROJECT_ID} \
-      google.registry.beam.initsql.InitSqlPipeline \
-      google/registry/beam/init_sql_pipeline_metadata.json \
       google.registry.beam.datastore.BulkDeleteDatastorePipeline \
       google/registry/beam/bulk_delete_datastore_pipeline_metadata.json \
       google.registry.beam.spec11.Spec11Pipeline \
@@ -98,8 +96,6 @@ steps:
       google/registry/beam/invoicing_pipeline_metadata.json \
       google.registry.beam.rde.RdePipeline \
       google/registry/beam/rde_pipeline_metadata.json \
-      google.registry.beam.comparedb.ValidateDatabasePipeline \
-      google/registry/beam/validate_database_pipeline_metadata.json \
       google.registry.beam.resave.ResaveAllEppResourcesPipeline \
       google/registry/beam/resave_all_epp_resources_pipeline_metadata.json
 # Tentatively build and publish Cloud SQL schema jar here, before schema release

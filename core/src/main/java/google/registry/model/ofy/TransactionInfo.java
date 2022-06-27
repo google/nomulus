@@ -15,16 +15,10 @@
 package google.registry.model.ofy;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Predicates.not;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Maps.filterValues;
 import static com.google.common.collect.Maps.toMap;
-import static google.registry.model.ofy.CommitLogBucket.getArbitraryBucketId;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Map;
@@ -45,9 +39,6 @@ public class TransactionInfo {
   /** Whether this is a read-only transaction. */
   private boolean readOnly;
 
-  /** Bucket shard to under which commit log will be stored, chosen at random (in production). */
-  final Key<CommitLogBucket> bucketKey = CommitLogBucket.getBucketKey(getArbitraryBucketId());
-
   /**
    * Accumulator of save/delete operations performed in transaction.
    *
@@ -59,7 +50,6 @@ public class TransactionInfo {
 
   TransactionInfo(DateTime now) {
     this.transactionTime = now;
-    auditedOfy().load().key(bucketKey); // Asynchronously load value into session cache.
   }
 
   TransactionInfo setReadOnly() {
@@ -79,27 +69,5 @@ public class TransactionInfo {
   void putDeletes(Iterable<Key<?>> keys) {
     assertNotReadOnly();
     changesBuilder.putAll(toMap(keys, k -> Delete.SENTINEL));
-  }
-
-  ImmutableSet<Key<?>> getTouchedKeys() {
-    return ImmutableSet.copyOf(changesBuilder.build().keySet());
-  }
-
-  ImmutableMap<Key<?>, Object> getChanges() {
-    return changesBuilder.build();
-  }
-
-  ImmutableSet<Key<?>> getDeletes() {
-    return ImmutableSet.copyOf(
-        filterValues(changesBuilder.build(), Delete.SENTINEL::equals).keySet());
-  }
-
-  ImmutableSet<Object> getSaves() {
-    return changesBuilder
-        .build()
-        .values()
-        .stream()
-        .filter(not(Delete.SENTINEL::equals))
-        .collect(toImmutableSet());
   }
 }

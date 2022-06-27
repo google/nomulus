@@ -44,7 +44,6 @@ import google.registry.model.host.HostResource;
 import google.registry.model.poll.PendingActionNotificationResponse.ContactPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.HostPendingActionNotificationResponse;
-import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse;
@@ -99,7 +98,7 @@ import org.joda.time.DateTime;
       @javax.persistence.Index(columnList = "eventTime")
     })
 public abstract class PollMessage extends ImmutableObject
-    implements Buildable, DatastoreAndSqlEntity, TransferServerApproveEntity, UnsafeSerializable {
+    implements Buildable, TransferServerApproveEntity, UnsafeSerializable {
 
   /** Entity id. */
   @Id

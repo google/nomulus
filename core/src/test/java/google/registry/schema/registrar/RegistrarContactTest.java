@@ -27,7 +27,6 @@ import google.registry.model.registrar.RegistrarContact;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatastoreEntityExtension;
-import google.registry.testing.TmOverrideExtension;
 import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -44,10 +43,6 @@ class RegistrarContactTest {
   @RegisterExtension
   JpaIntegrationWithCoverageExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationWithCoverageExtension();
-
-  @RegisterExtension
-  @Order(Order.DEFAULT + 1)
-  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
 
   private Registrar testRegistrar;
 

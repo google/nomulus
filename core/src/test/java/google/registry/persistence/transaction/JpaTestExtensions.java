@@ -52,8 +52,15 @@ public class JpaTestExtensions {
     private JpaIntegrationTestExtension(
         Clock clock,
         ImmutableList<Class<?>> extraEntityClasses,
-        ImmutableMap<String, String> userProperties) {
-      super(clock, Optional.of(GOLDEN_SCHEMA_SQL_PATH), extraEntityClasses, userProperties);
+        ImmutableMap<String, String> userProperties,
+        boolean withCannedData) {
+      super(
+          clock,
+          Optional.of(GOLDEN_SCHEMA_SQL_PATH),
+          true,
+          extraEntityClasses,
+          userProperties,
+          withCannedData);
     }
   }
 
@@ -67,7 +74,7 @@ public class JpaTestExtensions {
         Optional<String> initScriptPath,
         ImmutableList<Class<?>> extraEntityClasses,
         ImmutableMap<String, String> userProperties) {
-      super(clock, initScriptPath, false, extraEntityClasses, userProperties);
+      super(clock, initScriptPath, false, extraEntityClasses, userProperties, false);
     }
   }
 
@@ -109,6 +116,7 @@ public class JpaTestExtensions {
     private Clock clock;
     private List<Class<?>> extraEntityClasses = new ArrayList<>();
     private Map<String, String> userProperties = new HashMap<>();
+    private boolean withoutCannedData = false;
 
     /**
      * Sets the SQL script to be used to initialize the database. If not set,
@@ -129,6 +137,12 @@ public class JpaTestExtensions {
     /** Adds annotated class(es) to the known entities for the database. */
     public Builder withEntityClass(Class<?>... classes) {
       this.extraEntityClasses.addAll(ImmutableSet.copyOf(classes));
+      return this;
+    }
+
+    /** Disables insertion of canned data. */
+    public Builder withoutCannedData() {
+      this.withoutCannedData = true;
       return this;
     }
 
@@ -154,7 +168,8 @@ public class JpaTestExtensions {
       return new JpaIntegrationTestExtension(
           clock == null ? new FakeClock(DateTime.now(UTC)) : clock,
           ImmutableList.copyOf(extraEntityClasses),
-          ImmutableMap.copyOf(userProperties));
+          ImmutableMap.copyOf(userProperties),
+          !withoutCannedData);
     }
 
     /**

@@ -19,7 +19,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.ImmutableObject;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import javax.persistence.Entity;
@@ -88,7 +87,6 @@ public class DurationConverterTest {
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
-  @EntityForTesting
   public static class DurationTestEntity extends ImmutableObject {
 
     @Id String name = "id";

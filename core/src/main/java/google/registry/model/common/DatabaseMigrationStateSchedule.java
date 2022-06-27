@@ -27,7 +27,6 @@ import google.registry.config.RegistryEnvironment;
 import google.registry.model.CacheUtils;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
-import google.registry.model.replay.SqlOnlyEntity;
 import java.time.Duration;
 import java.util.Arrays;
 import javax.persistence.Entity;
@@ -42,7 +41,7 @@ import org.joda.time.DateTime;
  */
 @DeleteAfterMigration
 @Entity
-public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements SqlOnlyEntity {
+public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -218,7 +217,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements
             MigrationState.DATASTORE_ONLY,
             "migrationTransitionMap must start with DATASTORE_ONLY");
     validateTransitionAtCurrentTime(transitions);
-    jpaTm().putIgnoringReadOnlyWithoutBackup(new DatabaseMigrationStateSchedule(transitions));
+    jpaTm().putWithoutBackup(new DatabaseMigrationStateSchedule(transitions));
     CACHE.invalidateAll();
   }
 

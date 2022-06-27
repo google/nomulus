@@ -87,8 +87,8 @@ public enum StatusValue implements EppEnum {
    * A status for a resource indicating that deletion has been requested but has not yet happened.
    *
    * <p>Contacts and hosts are deleted asynchronously because we need to check their incoming
-   * references with strong consistency, requiring a mapreduce, and during that asynchronous process
-   * they have the PENDING_DELETE status.
+   * references with strong consistency, requiring an asynchronous process, and during that
+   * asynchronous process they have the PENDING_DELETE status.
    *
    * <p>Domains in the add grace period are deleted synchronously and do not ever have this status.
    * Otherwise, domains go through an extended deletion process, consisting of a 30-day redemption

@@ -63,14 +63,6 @@
       ]
     },
     {
-      "name": "database",
-      "label": "Database to read from.",
-      "helpText": "DATASTORE or CLOUD_SQL.",
-      "regexes": [
-        "^DATASTORE|CLOUD_SQL$"
-      ]
-    },
-    {
       "name": "jpaTransactionManagerType",
       "label": "The type of JPA transaction manager to use if using SQL",
       "helpText": "The standard SQL instance or a read-only replica may be used",

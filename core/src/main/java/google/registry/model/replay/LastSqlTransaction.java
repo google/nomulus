@@ -27,7 +27,7 @@ import google.registry.model.annotations.DeleteAfterMigration;
 /** Datastore entity to keep track of the last SQL transaction imported into the datastore. */
 @Entity
 @DeleteAfterMigration
-public class LastSqlTransaction extends ImmutableObject implements DatastoreOnlyEntity {
+public class LastSqlTransaction extends ImmutableObject {
 
   /** The key for this singleton. */
   public static final Key<LastSqlTransaction> KEY = Key.create(LastSqlTransaction.class, 1);

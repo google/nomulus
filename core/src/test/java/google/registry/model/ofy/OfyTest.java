@@ -45,24 +45,30 @@ import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.persistence.transaction.TransactionManagerFactory.ReadOnlyModeException;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.util.SystemClock;
 import java.util.ConcurrentModificationException;
 import java.util.function.Supplier;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for our wrapper around Objectify. */
+@Disabled
 public class OfyTest {
 
   private final FakeClock fakeClock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withOfy();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
@@ -86,89 +92,6 @@ public class OfyTest {
     // This can't be initialized earlier because namespaces need the AppEngineExtension to work.
   }
 
-  private void doBackupGroupRootTimestampInversionTest(Runnable runnable) {
-    DateTime groupTimestamp =
-        auditedOfy().load().key(someObject.getParent()).now().getUpdateTimestamp().getTimestamp();
-    // Set the clock in Ofy to the same time as the backup group root's save time.
-    Ofy ofy = new Ofy(new FakeClock(groupTimestamp));
-    TimestampInversionException thrown =
-        assertThrows(TimestampInversionException.class, () -> ofy.transact(runnable));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            String.format(
-                "Timestamp inversion between transaction time (%s) and entities rooted under:\n"
-                    + "{Key<?>(ContactResource(\"2-ROID\"))=%s}",
-                groupTimestamp, groupTimestamp));
-  }
-
-  @Test
-  void testBackupGroupRootTimestampsMustIncreaseOnSave() {
-    doBackupGroupRootTimestampInversionTest(
-        () -> auditedOfy().save().entity(someObject.asHistoryEntry()));
-  }
-
-  @Test
-  void testBackupGroupRootTimestampsMustIncreaseOnDelete() {
-    doBackupGroupRootTimestampInversionTest(() -> auditedOfy().delete().entity(someObject));
-  }
-
-  @Test
-  void testSavingKeyTwice() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                tm().transact(
-                        () -> {
-                          auditedOfy().save().entity(someObject.asHistoryEntry());
-                          auditedOfy().save().entity(someObject.asHistoryEntry());
-                        }));
-    assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
-  }
-
-  @Test
-  void testDeletingKeyTwice() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                tm().transact(
-                        () -> {
-                          auditedOfy().delete().entity(someObject);
-                          auditedOfy().delete().entity(someObject);
-                        }));
-    assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
-  }
-
-  @Test
-  void testSaveDeleteKey() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                tm().transact(
-                        () -> {
-                          auditedOfy().save().entity(someObject.asHistoryEntry());
-                          auditedOfy().delete().entity(someObject);
-                        }));
-    assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
-  }
-
-  @Test
-  void testDeleteSaveKey() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                tm().transact(
-                        () -> {
-                          auditedOfy().delete().entity(someObject);
-                          auditedOfy().save().entity(someObject.asHistoryEntry());
-                        }));
-    assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
-  }
-
   @Test
   void testSavingKeyTwiceInOneCall() {
     assertThrows(
@@ -178,7 +101,6 @@ public class OfyTest {
 
   /** Simple entity class with lifecycle callbacks. */
   @com.googlecode.objectify.annotation.Entity
-  @EntityForTesting
   public static class LifecycleObject extends ImmutableObject {
 
     @Parent Key<?> parent = getCrossTldKey();
@@ -436,13 +358,5 @@ public class OfyTest {
     assertThat(ran).isTrue();
     // Test the normal loading again to verify that we've restored the original session unchanged.
     assertThat(auditedOfy().load().entity(someObject).now()).isEqualTo(someObject.asHistoryEntry());
-  }
-
-  @Test
-  void testReadOnly_failsWrite() {
-    Ofy ofy = new Ofy(fakeClock);
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(fakeClock);
-    assertThrows(ReadOnlyModeException.class, () -> ofy.save().entity(someObject).now());
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

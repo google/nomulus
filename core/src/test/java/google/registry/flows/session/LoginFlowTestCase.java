@@ -36,6 +36,7 @@ import google.registry.flows.session.LoginFlow.UnsupportedLanguageException;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
+import google.registry.testing.DatabaseHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -123,7 +124,8 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
 
   @Test
   void testFailure_unknownRegistrar() {
-    deleteResource(getRegistrarBuilder().build());
+    registrar.getContacts().forEach(DatabaseHelper::deleteResource);
+    deleteResource(registrar);
     doFailingTest("login_valid.xml", BadRegistrarIdException.class);
   }
 

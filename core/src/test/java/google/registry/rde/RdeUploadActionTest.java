@@ -24,6 +24,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
+import static google.registry.testing.GpgSystemCommandExtension.GPG_BINARY;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.Duration.standardDays;
@@ -440,7 +441,7 @@ public class RdeUploadActionTest {
 
   @TestOfyAndSql
   void testRunWithLock_producesValidSignature() throws Exception {
-    assumeTrue(hasCommand("gpg --version"));
+    assumeTrue(hasCommand(GPG_BINARY + " --version"));
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
@@ -451,7 +452,7 @@ public class RdeUploadActionTest {
     // identical to the ones sent over SFTP.
     Process pid =
         gpg.exec(
-            "gpg",
+            GPG_BINARY,
             "--verify",
             new File(folder, "tld_2010-10-17_full_S1_R0.sig").toString(),
             new File(folder, "tld_2010-10-17_full_S1_R0.ryde").toString());

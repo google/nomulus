@@ -19,12 +19,9 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.uniqueIndex;
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import static google.registry.config.RegistryConfig.getBaseOfyRetryDuration;
-import static google.registry.persistence.transaction.TransactionManagerFactory.assertNotReadOnlyMode;
-import static google.registry.util.CollectionUtils.union;
 
 import com.google.appengine.api.datastore.DatastoreFailureException;
 import com.google.appengine.api.datastore.DatastoreTimeoutException;
-import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.taskqueue.TransientFailureException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -134,7 +131,6 @@ public class Ofy {
    * <p>We only allow this in transactions so commit logs can be written in tandem with the delete.
    */
   public Deleter delete() {
-    assertNotReadOnlyMode();
     return deleteIgnoringReadOnlyWithBackup();
   }
 
@@ -144,7 +140,6 @@ public class Ofy {
    * <p>No backups get written.
    */
   public Deleter deleteWithoutBackup() {
-    assertNotReadOnlyMode();
     return deleteIgnoringReadOnlyWithoutBackup();
   }
 
@@ -155,7 +150,6 @@ public class Ofy {
    * <p>We only allow this in transactions so commit logs can be written in tandem with the save.
    */
   public Saver save() {
-    assertNotReadOnlyMode();
     return saveIgnoringReadOnlyWithBackup();
   }
 
@@ -165,7 +159,6 @@ public class Ofy {
    * <p>No backups get written.
    */
   public Saver saveWithoutBackup() {
-    assertNotReadOnlyMode();
     return saveIgnoringReadOnlyWithoutBackup();
   }
 
@@ -242,9 +235,8 @@ public class Ofy {
   }
 
   /** Pause the current transaction (if any) and complete this one before returning to it. */
-  <R> R transactNew(Supplier<R> work) {
-    // Wrap the Work in a CommitLoggedWork so that we can give transactions a frozen view of time
-    // and maintain commit logs for them.
+  public <R> R transactNew(Supplier<R> work) {
+    // Wrap the Work in a CommitLoggedWork so that we can give transactions a frozen view of time.
     return transactCommitLoggedWork(new CommitLoggedWork<>(work, getClock()));
   }
 
@@ -265,7 +257,7 @@ public class Ofy {
   /**
    * Transact with commit logs and retry with exponential backoff.
    *
-   * <p>This method is broken out from {@link #transactNew(Work)} for testing purposes.
+   * <p>This method is broken out from {@link #transactNew(Supplier)} for testing purposes.
    */
   @VisibleForTesting
   <R> R transactCommitLoggedWork(CommitLoggedWork<R> work) {
@@ -287,7 +279,7 @@ public class Ofy {
         // TimestampInversionExceptions are thrown by our code and are always retryable as well.
         // However, Datastore exceptions might get thrown even if the transaction succeeded.
         if ((e instanceof DatastoreTimeoutException || e instanceof DatastoreFailureException)
-            && checkIfAlreadySucceeded(work)) {
+            && work.hasRun()) {
           return work.getResult();
         }
         if (attempt == NUM_RETRIES) {
@@ -298,31 +290,6 @@ public class Ofy {
             "Retrying %s, attempt %d.", e.getClass().getSimpleName(), attempt);
       }
     }
-  }
-
-  /**
-   * We can determine whether a transaction has succeded by trying to read the commit log back in
-   * its own retryable read-only transaction.
-   */
-  private <R> Boolean checkIfAlreadySucceeded(final CommitLoggedWork<R> work) {
-      return work.hasRun() && transactNewReadOnly(() -> {
-        CommitLogManifest manifest = work.getManifest();
-        if (manifest == null) {
-          // Work ran but no commit log was created. This might mean that the transaction did not
-          // write anything to Datastore. We can safely retry because it only reads. (Although the
-          // transaction might have written a task to a queue, we consider that safe to retry too
-          // since we generally assume that tasks might be doubly executed.) Alternatively it
-          // might mean that the transaction wrote to Datastore but turned off commit logs by
-          // exclusively using save/deleteWithoutBackups() rather than save/delete(). Although we
-          // have no hard proof that retrying is safe, we use these methods judiciously and it is
-          // reasonable to assume that if the transaction really did succeed that the retry will
-          // either be idempotent or will fail with a non-transient error.
-          return false;
-        }
-        return Objects.equals(
-            union(work.getMutations(), manifest),
-            ImmutableSet.copyOf(load().ancestor(manifest)));
-      });
   }
 
   /** A read-only transaction is useful to get strongly consistent reads at a shared timestamp. */
@@ -384,23 +351,6 @@ public class Ofy {
   DateTime getTransactionTime() {
     assertInTransaction();
     return TRANSACTION_INFO.get().transactionTime;
-  }
-
-  /** Returns key of {@link CommitLogManifest} that will be saved when the transaction ends. */
-  public Key<CommitLogManifest> getCommitLogManifestKey() {
-    assertInTransaction();
-    TransactionInfo info = TRANSACTION_INFO.get();
-    return Key.create(info.bucketKey, CommitLogManifest.class, info.transactionTime.getMillis());
-  }
-
-  /** Convert an entity POJO to a datastore Entity. */
-  public Entity toEntity(Object pojo) {
-    return ofy().save().toEntity(pojo);
-  }
-
-  /** Convert a datastore entity to a POJO. */
-  public Object toPojo(Entity entity) {
-    return ofy().load().fromEntity(entity);
   }
 
   /**

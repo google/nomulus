@@ -261,11 +261,11 @@ td.section {
     </tr> 
     <tr> 
      <td class="property_name">generated on</td> 
-     <td class="property_value">2022-05-31 20:52:16.531047</td> 
+     <td class="property_value">2022-06-01 19:28:07.459496</td> 
     </tr> 
     <tr>
      <td class="property_name">last flyway file</td>
-     <td id="lastFlywayFile" class="property_value">V117__add_billing_recurrence_last_expansion_column.sql</td>
+     <td id="lastFlywayFile" class="property_value">V118__drop_billing_identifier_column_from_registrar.sql</td>
     </tr>
    </tbody>
   </table> 
@@ -284,7 +284,7 @@ td.section {
      generated on
     </text> 
     <text text-anchor="start" x="4755.52" y="-10.8" font-family="Helvetica,sans-Serif" font-size="14.00">
-     2022-05-31 20:52:16.531047
+     2022-06-01 19:28:07.459496
     </text> 
     <polygon fill="none" stroke="#888888" points="4668.02,-4 4668.02,-44 4933.02,-44 4933.02,-4 4668.02,-4" /> <!-- allocationtoken_a08ccbef --> 
     <g id="node1" class="node"> 
@@ -1360,23 +1360,23 @@ td.section {
       "hstore"
      </text> 
      <text text-anchor="start" x="11" y="-2252.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      billing_identifier
+      block_premium_names
      </text> 
      <text text-anchor="start" x="311" y="-2252.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-2252.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      int8
+      bool not null
      </text> 
      <text text-anchor="start" x="11" y="-2233.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      block_premium_names
+      client_certificate
      </text> 
      <text text-anchor="start" x="311" y="-2233.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-2233.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      bool not null
+      text
      </text> 
      <text text-anchor="start" x="11" y="-2214.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      client_certificate
+      client_certificate_hash
      </text> 
      <text text-anchor="start" x="311" y="-2214.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1384,31 +1384,31 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-2195.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      client_certificate_hash
+      contacts_require_syncing
      </text> 
      <text text-anchor="start" x="311" y="-2195.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-2195.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      text
+      bool not null
      </text> 
      <text text-anchor="start" x="11" y="-2176.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      contacts_require_syncing
+      creation_time
      </text> 
      <text text-anchor="start" x="311" y="-2176.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-2176.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      bool not null
+      timestamptz not null
      </text> 
      <text text-anchor="start" x="11" y="-2157.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      creation_time
+      drive_folder_id
      </text> 
      <text text-anchor="start" x="311" y="-2157.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-2157.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      timestamptz not null
+      text
      </text> 
      <text text-anchor="start" x="11" y="-2138.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      drive_folder_id
+      email_address
      </text> 
      <text text-anchor="start" x="311" y="-2138.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1416,7 +1416,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-2119.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      email_address
+      failover_client_certificate
      </text> 
      <text text-anchor="start" x="311" y="-2119.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1424,7 +1424,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-2100.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      failover_client_certificate
+      failover_client_certificate_hash
      </text> 
      <text text-anchor="start" x="311" y="-2100.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1432,7 +1432,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-2081.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      failover_client_certificate_hash
+      fax_number
      </text> 
      <text text-anchor="start" x="311" y="-2081.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1440,23 +1440,23 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-2062.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      fax_number
+      iana_identifier
      </text> 
      <text text-anchor="start" x="311" y="-2062.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-2062.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      text
+      int8
      </text> 
      <text text-anchor="start" x="11" y="-2043.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      iana_identifier
+      icann_referral_email
      </text> 
      <text text-anchor="start" x="311" y="-2043.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-2043.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      int8
+      text
      </text> 
      <text text-anchor="start" x="11" y="-2024.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      icann_referral_email
+      i18n_address_city
      </text> 
      <text text-anchor="start" x="311" y="-2024.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1464,7 +1464,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-2005.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      i18n_address_city
+      i18n_address_country_code
      </text> 
      <text text-anchor="start" x="311" y="-2005.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1472,7 +1472,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1986.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      i18n_address_country_code
+      i18n_address_state
      </text> 
      <text text-anchor="start" x="311" y="-1986.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1480,7 +1480,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1967.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      i18n_address_state
+      i18n_address_street_line1
      </text> 
      <text text-anchor="start" x="311" y="-1967.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1488,7 +1488,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1948.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      i18n_address_street_line1
+      i18n_address_street_line2
      </text> 
      <text text-anchor="start" x="311" y="-1948.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1496,7 +1496,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1929.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      i18n_address_street_line2
+      i18n_address_street_line3
      </text> 
      <text text-anchor="start" x="311" y="-1929.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1504,7 +1504,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1910.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      i18n_address_street_line3
+      i18n_address_zip
      </text> 
      <text text-anchor="start" x="311" y="-1910.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1512,39 +1512,39 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1891.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      i18n_address_zip
+      ip_address_allow_list
      </text> 
      <text text-anchor="start" x="311" y="-1891.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-1891.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      text
+      _text
      </text> 
      <text text-anchor="start" x="11" y="-1872.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      ip_address_allow_list
+      last_certificate_update_time
      </text> 
      <text text-anchor="start" x="311" y="-1872.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-1872.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      _text
+      timestamptz
      </text> 
      <text text-anchor="start" x="11" y="-1853.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      last_certificate_update_time
+      last_update_time
      </text> 
      <text text-anchor="start" x="311" y="-1853.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-1853.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      timestamptz
+      timestamptz not null
      </text> 
      <text text-anchor="start" x="11" y="-1834.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      last_update_time
+      localized_address_city
      </text> 
      <text text-anchor="start" x="311" y="-1834.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-1834.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      timestamptz not null
+      text
      </text> 
      <text text-anchor="start" x="11" y="-1815.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      localized_address_city
+      localized_address_country_code
      </text> 
      <text text-anchor="start" x="311" y="-1815.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1552,7 +1552,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1796.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      localized_address_country_code
+      localized_address_state
      </text> 
      <text text-anchor="start" x="311" y="-1796.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1560,7 +1560,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1777.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      localized_address_state
+      localized_address_street_line1
      </text> 
      <text text-anchor="start" x="311" y="-1777.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1568,7 +1568,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1758.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      localized_address_street_line1
+      localized_address_street_line2
      </text> 
      <text text-anchor="start" x="311" y="-1758.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1576,7 +1576,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1739.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      localized_address_street_line2
+      localized_address_street_line3
      </text> 
      <text text-anchor="start" x="311" y="-1739.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1584,7 +1584,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1720.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      localized_address_street_line3
+      localized_address_zip
      </text> 
      <text text-anchor="start" x="311" y="-1720.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1592,7 +1592,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1701.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      localized_address_zip
+      password_hash
      </text> 
      <text text-anchor="start" x="311" y="-1701.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1600,7 +1600,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1682.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      password_hash
+      phone_number
      </text> 
      <text text-anchor="start" x="311" y="-1682.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1608,7 +1608,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1663.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      phone_number
+      phone_passcode
      </text> 
      <text text-anchor="start" x="311" y="-1663.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1616,7 +1616,7 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1644.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      phone_passcode
+      po_number
      </text> 
      <text text-anchor="start" x="311" y="-1644.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1624,39 +1624,39 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1625.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      po_number
+      rdap_base_urls
      </text> 
      <text text-anchor="start" x="311" y="-1625.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-1625.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      text
+      _text
      </text> 
      <text text-anchor="start" x="11" y="-1606.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      rdap_base_urls
+      registrar_name
      </text> 
      <text text-anchor="start" x="311" y="-1606.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-1606.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      _text
+      text not null
      </text> 
      <text text-anchor="start" x="11" y="-1587.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      registrar_name
+      registry_lock_allowed
      </text> 
      <text text-anchor="start" x="311" y="-1587.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-1587.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      text not null
+      bool not null
      </text> 
      <text text-anchor="start" x="11" y="-1568.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      registry_lock_allowed
+      password_salt
      </text> 
      <text text-anchor="start" x="311" y="-1568.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-1568.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      bool not null
+      text
      </text> 
      <text text-anchor="start" x="11" y="-1549.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      password_salt
+      state
      </text> 
      <text text-anchor="start" x="311" y="-1549.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1664,23 +1664,23 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1530.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      state
+      type
      </text> 
      <text text-anchor="start" x="311" y="-1530.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-1530.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      text
+      text not null
      </text> 
      <text text-anchor="start" x="11" y="-1511.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      type
+      url
      </text> 
      <text text-anchor="start" x="311" y="-1511.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-1511.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      text not null
+      text
      </text> 
      <text text-anchor="start" x="11" y="-1492.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      url
+      whois_server
      </text> 
      <text text-anchor="start" x="311" y="-1492.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
@@ -1688,30 +1688,22 @@ td.section {
       text
      </text> 
      <text text-anchor="start" x="11" y="-1473.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      whois_server
+      last_expiring_cert_notification_sent_date
      </text> 
      <text text-anchor="start" x="311" y="-1473.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-1473.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      text
+      timestamptz
      </text> 
      <text text-anchor="start" x="11" y="-1454.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      last_expiring_cert_notification_sent_date
+      last_expiring_failover_cert_notification_sent_date
      </text> 
      <text text-anchor="start" x="311" y="-1454.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
      <text text-anchor="start" x="319" y="-1454.3" font-family="Helvetica,sans-Serif" font-size="14.00">
       timestamptz
      </text> 
-     <text text-anchor="start" x="11" y="-1435.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      last_expiring_failover_cert_notification_sent_date
-     </text> 
-     <text text-anchor="start" x="311" y="-1435.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
-     </text> 
-     <text text-anchor="start" x="319" y="-1435.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      timestamptz
-     </text> 
-     <polygon fill="none" stroke="#888888" points="8,-1428.5 8,-2342.5 444,-2342.5 444,-1428.5 8,-1428.5" /> 
+     <polygon fill="none" stroke="#888888" points="8,-1448 8,-2343 444,-2343 444,-1448 8,-1448" /> 
     </g> <!-- billingevent_a57d1815&#45;&gt;registrar_6e1503e3 --> 
     <g id="edge51" class="edge"> 
      <title>billingevent_a57d1815:w-&gt;registrar_6e1503e3:e</title> 
@@ -12473,11 +12465,6 @@ td.section {
      <td class="spacer"></td> 
      <td class="minwidth">billing_account_map</td> 
      <td class="minwidth">"hstore"</td> 
-    </tr> 
-    <tr> 
-     <td class="spacer"></td> 
-     <td class="minwidth">billing_identifier</td> 
-     <td class="minwidth">int8</td> 
     </tr> 
     <tr> 
      <td class="spacer"></td> 

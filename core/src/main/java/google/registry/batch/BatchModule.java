@@ -21,6 +21,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
+import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
 import static google.registry.request.RequestParameters.extractLongParameter;
 import static google.registry.request.RequestParameters.extractOptionalBooleanParameter;
@@ -44,6 +45,9 @@ import org.joda.time.DateTime;
 /** Dagger module for injecting common settings for batch actions. */
 @Module
 public class BatchModule {
+
+  public static final String PARAM_DRY_RUN = "dryRun";
+  public static final String PARAM_FAST = "fast";
 
   @Provides
   @Parameter("jobName")
@@ -113,9 +117,15 @@ public class BatchModule {
   }
 
   @Provides
-  @Parameter(ResaveAllEppResourcesPipelineAction.PARAM_FAST)
-  static Optional<Boolean> provideIsFast(HttpServletRequest req) {
-    return extractOptionalBooleanParameter(req, ResaveAllEppResourcesPipelineAction.PARAM_FAST);
+  @Parameter(PARAM_FAST)
+  static boolean provideIsFast(HttpServletRequest req) {
+    return extractBooleanParameter(req, PARAM_FAST);
+  }
+
+  @Provides
+  @Parameter(PARAM_DRY_RUN)
+  static boolean provideIsDryRun(HttpServletRequest req) {
+    return extractBooleanParameter(req, PARAM_DRY_RUN);
   }
 
   @Provides

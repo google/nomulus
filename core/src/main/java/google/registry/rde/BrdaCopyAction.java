@@ -49,9 +49,9 @@ import org.joda.time.DateTime;
 /**
  * Action that re-encrypts a BRDA escrow deposit and puts it into the upload bucket.
  *
- * <p>This action is run by the mapreduce for each BRDA staging file it generates. The staging file
- * is encrypted with our internal {@link Ghostryde} encryption. We then re-encrypt it as a RyDE
- * file, which is what the third-party escrow provider understands.
+ * <p>This action is run for each BRDA staging file it generates. The staging file is encrypted with
+ * our internal {@link Ghostryde} encryption. We then re-encrypt it as a RyDE file, which is what
+ * the third-party escrow provider understands.
  *
  * <p>Then we put the RyDE file (along with our digital signature) into the configured BRDA bucket.
  * This bucket is special because a separate script will rsync it to the third party escrow provider

@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.ofy.DatastoreTransactionManager.toSqlEntity;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.util.AbstractMap.SimpleEntry;
 import static java.util.stream.Collectors.joining;
@@ -30,17 +29,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
-import google.registry.model.common.DatabaseMigrationStateSchedule;
-import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
-import google.registry.model.ofy.DatastoreTransactionManager;
-import google.registry.model.replay.NonReplicatedEntity;
-import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.persistence.JpaRetries;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
@@ -106,11 +99,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private static final ThreadLocal<TransactionInfo> transactionInfo =
       ThreadLocal.withInitial(TransactionInfo::new);
 
-  // If this value is present, use it to determine whether or not to replay SQL transactions to
-  // Datastore, rather than using the schedule stored in Datastore.
-  private static final ThreadLocal<Optional<Boolean>> replaySqlToDatastoreOverrideForTest =
-      ThreadLocal.withInitial(Optional::empty);
-
   public JpaTransactionManagerImpl(EntityManagerFactory emf, Clock clock) {
     this.emf = emf;
     this.clock = clock;
@@ -142,15 +130,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     // Postgresql-specific: 'set transaction' command must be called inside a transaction
     assertInTransaction();
 
-    ReadOnlyCheckingEntityManager entityManager =
-        (ReadOnlyCheckingEntityManager) getEntityManager();
+    EntityManager entityManager = getEntityManager();
     // Isolation is hardcoded to REPEATABLE READ, as specified by parent's Javadoc.
     entityManager
         .createNativeQuery("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-        .executeUpdateIgnoringReadOnly();
+        .executeUpdate();
     entityManager
         .createNativeQuery(String.format("SET TRANSACTION SNAPSHOT '%s'", snapshotId))
-        .executeUpdateIgnoringReadOnly();
+        .executeUpdate();
     return this;
   }
 
@@ -183,45 +170,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T transact(Supplier<T> work) {
-    return transact(work, true);
+    return retrier.callWithRetry(() -> transactNoRetry(work), JpaRetries::isFailedTxnRetriable);
   }
 
   @Override
   public <T> T transactWithoutBackup(Supplier<T> work) {
-    return transact(work, false);
-  }
-
-  private <T> T transact(Supplier<T> work, boolean withBackup) {
-    return retrier.callWithRetry(
-        () -> {
-          if (inTransaction()) {
-            return work.get();
-          }
-          TransactionInfo txnInfo = transactionInfo.get();
-          txnInfo.entityManager = createReadOnlyCheckingEntityManager();
-          EntityTransaction txn = txnInfo.entityManager.getTransaction();
-          try {
-            txn.begin();
-            txnInfo.start(clock, withBackup);
-            T result = work.get();
-            txnInfo.recordTransaction();
-            txn.commit();
-            return result;
-          } catch (RuntimeException | Error e) {
-            // Error is unchecked!
-            try {
-              txn.rollback();
-              logger.atWarning().log("Error during transaction; transaction rolled back.");
-            } catch (Throwable rollbackException) {
-              logger.atSevere().withCause(rollbackException).log(
-                  "Rollback failed; suppressing error.");
-            }
-            throw e;
-          } finally {
-            txnInfo.clear();
-          }
-        },
-        JpaRetries::isFailedTxnRetriable);
+    return transact(work);
   }
 
   @Override
@@ -230,13 +184,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       return work.get();
     }
     TransactionInfo txnInfo = transactionInfo.get();
-    txnInfo.entityManager = createReadOnlyCheckingEntityManager();
+    txnInfo.entityManager = emf.createEntityManager();
     EntityTransaction txn = txnInfo.entityManager.getTransaction();
     try {
       txn.begin();
-      txnInfo.start(clock, true);
+      txnInfo.start(clock);
       T result = work.get();
-      txnInfo.recordTransaction();
       txn.commit();
       return result;
     } catch (RuntimeException | Error e) {
@@ -325,9 +278,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       return;
     }
     assertInTransaction();
-    // Necessary due to the changes in HistoryEntry representation during the migration to SQL
-    Object toPersist = toSqlEntity(entity);
-    transactionInfo.get().insertObject(toPersist);
+    transactionInfo.get().insertObject(entity);
   }
 
   @Override
@@ -359,9 +310,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       return;
     }
     assertInTransaction();
-    // Necessary due to the changes in HistoryEntry representation during the migration to SQL
-    Object toPersist = toSqlEntity(entity);
-    transactionInfo.get().updateObject(toPersist);
+    transactionInfo.get().updateObject(entity);
   }
 
   @Override
@@ -398,9 +347,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
     assertInTransaction();
     checkArgument(exists(entity), "Given entity does not exist");
-    // Necessary due to the changes in HistoryEntry representation during the migration to SQL
-    Object toPersist = toSqlEntity(entity);
-    transactionInfo.get().updateObject(toPersist);
+    transactionInfo.get().updateObject(entity);
   }
 
   @Override
@@ -436,7 +383,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public boolean exists(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
-    entity = toSqlEntity(entity);
     EntityType<?> entityType = getEntityType(entity.getClass());
     ImmutableSet<EntityId> entityIds = getEntityIdsFromEntity(entityType, entity);
     return exists(entityType.getName(), entityIds);
@@ -480,7 +426,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public <T> ImmutableList<T> loadByEntitiesIfPresent(Iterable<T> entities) {
     return Streams.stream(entities)
-        .map(DatastoreTransactionManager::toSqlEntity)
         .filter(this::exists)
         .map(this::loadByEntity)
         .collect(toImmutableList());
@@ -515,16 +460,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> T loadByEntity(T entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
-    // If the caller requested a HistoryEntry, load the corresponding *History class
-    T possibleChild = toSqlEntity(entity);
     @SuppressWarnings("unchecked")
     T returnValue =
         (T)
             loadByKey(
                 VKey.createSql(
-                    possibleChild.getClass(),
+                    entity.getClass(),
                     // Casting to Serializable is safe according to JPA (JSR 338 sec. 2.4).
-                    (Serializable) emf.getPersistenceUnitUtil().getIdentifier(possibleChild)));
+                    (Serializable) emf.getPersistenceUnitUtil().getIdentifier(entity)));
     return returnValue;
   }
 
@@ -575,7 +518,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         String.format("DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
     Query query = query(sql);
     entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
-    transactionInfo.get().addDelete(key);
     return query.executeUpdate();
   }
 
@@ -597,7 +539,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       return entity;
     }
     assertInTransaction();
-    entity = toSqlEntity(entity);
     T managedEntity = entity;
     if (!getEntityManager().contains(entity)) {
       // We don't add the entity to "objectsToSave": once deleted, the object should never be
@@ -605,13 +546,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       managedEntity = getEntityManager().merge(entity);
     }
     getEntityManager().remove(managedEntity);
-
-    // We check shouldReplicate() in TransactionInfo.addDelete(), but we have to check it here as
-    // well prior to attempting to create a datastore key because a non-replicated entity may not
-    // have one.
-    if (shouldReplicate(entity.getClass())) {
-      transactionInfo.get().addDelete(VKey.from(Key.create(entity)));
-    }
     return managedEntity;
   }
 
@@ -646,47 +580,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void putIgnoringReadOnlyWithoutBackup(Object entity) {
-    checkArgumentNotNull(entity);
-    if (isEntityOfIgnoredClass(entity)) {
-      return;
-    }
-    assertInTransaction();
-    // Necessary due to the changes in HistoryEntry representation during the migration to SQL
-    Object toPersist = toSqlEntity(entity);
-    TransactionInfo txn = transactionInfo.get();
-    Object merged = txn.entityManager.mergeIgnoringReadOnly(toPersist);
-    txn.objectsToSave.add(merged);
-    txn.addUpdate(toPersist);
-  }
-
-  @Override
-  public void deleteIgnoringReadOnlyWithoutBackup(VKey<?> key) {
-    checkArgumentNotNull(key, "key must be specified");
-    assertInTransaction();
-    if (IGNORED_ENTITY_CLASSES.contains(key.getKind())) {
-      return;
-    }
-    EntityType<?> entityType = getEntityType(key.getKind());
-    ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getSqlKey());
-    String sql =
-        String.format("DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
-    ReadOnlyCheckingQuery query = transactionInfo.get().entityManager.createQuery(sql);
-    entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
-    transactionInfo.get().addDelete(key);
-    query.executeUpdateIgnoringReadOnly();
-  }
-
-  @Override
   public <T> void assertDelete(VKey<T> key) {
     if (internalDelete(key) != 1) {
       throw new IllegalArgumentException(
           String.format("Error deleting the entity of the key: %s", key.getSqlKey()));
     }
-  }
-
-  private ReadOnlyCheckingEntityManager createReadOnlyCheckingEntityManager() {
-    return new ReadOnlyCheckingEntityManager(emf.createEntityManager());
   }
 
   private <T> EntityType<T> getEntityType(Class<T> clazz) {
@@ -825,58 +723,28 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     return entity;
   }
 
-  /** Sets the override to always/never replay SQL transactions to Datastore. */
-  public static void setReplaySqlToDatastoreOverrideForTest(boolean replaySqlToDs) {
-    replaySqlToDatastoreOverrideForTest.set(Optional.of(replaySqlToDs));
-  }
-
-  /** Removes the replay-SQL-to-Datastore override; the migration schedule will then be used. */
-  public static void removeReplaySqlToDsOverrideForTest() {
-    replaySqlToDatastoreOverrideForTest.set(Optional.empty());
-  }
-
-  /** Returns true if the entity class should be replicated from SQL to datastore. */
-  private static boolean shouldReplicate(Class<?> entityClass) {
-    return !NonReplicatedEntity.class.isAssignableFrom(entityClass)
-        && !SqlOnlyEntity.class.isAssignableFrom(entityClass);
-  }
-
   private static class TransactionInfo {
-    ReadOnlyCheckingEntityManager entityManager;
+    EntityManager entityManager;
     boolean inTransaction = false;
     DateTime transactionTime;
-
-    // Serializable representation of the transaction to be persisted in the Transaction table.
-    Transaction.Builder contentsBuilder;
 
     // The set of entity objects that have been either persisted (via insert()) or merged (via
     // put()/update()).  If the entity manager returns these as a result of a find() or query
     // operation, we can not detach them -- detaching removes them from the transaction and causes
     // them to not be saved to the database -- so we throw an exception instead.
-    Set<Object> objectsToSave = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
+    Set<Object> objectsToSave = Collections.newSetFromMap(new IdentityHashMap<>());
 
     /** Start a new transaction. */
-    private void start(Clock clock, boolean withBackup) {
+    private void start(Clock clock) {
       checkArgumentNotNull(clock);
       inTransaction = true;
       transactionTime = clock.nowUtc();
-      if (withBackup
-          && replaySqlToDatastoreOverrideForTest
-              .get()
-              .orElseGet(
-                  () ->
-                      DatabaseMigrationStateSchedule.getValueAtTime(transactionTime)
-                          .getReplayDirection()
-                          .equals(ReplayDirection.SQL_TO_DATASTORE))) {
-        contentsBuilder = new Transaction.Builder();
-      }
     }
 
     private void clear() {
       inTransaction = false;
       transactionTime = null;
-      contentsBuilder = null;
-      objectsToSave = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
+      objectsToSave = Collections.newSetFromMap(new IdentityHashMap<>());
       if (entityManager != null) {
         // Close this EntityManager just let the connection pool be able to reuse it, it doesn't
         // close the underlying database connection.
@@ -885,39 +753,16 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       }
     }
 
-    private void addUpdate(Object entity) {
-      if (contentsBuilder != null && shouldReplicate(entity.getClass())) {
-        contentsBuilder.addUpdate(entity);
-      }
-    }
-
-    private void addDelete(VKey<?> key) {
-      if (contentsBuilder != null && shouldReplicate(key.getKind())) {
-        contentsBuilder.addDelete(key);
-      }
-    }
-
-    private void recordTransaction() {
-      if (contentsBuilder != null) {
-        Transaction persistedTxn = contentsBuilder.build();
-        if (!persistedTxn.isEmpty()) {
-          entityManager.persist(persistedTxn.toEntity());
-        }
-      }
-    }
-
     /** Does the full "update" on an object including all internal housekeeping. */
     private void updateObject(Object object) {
       Object merged = entityManager.merge(object);
       objectsToSave.add(merged);
-      addUpdate(object);
     }
 
     /** Does the full "insert" on a new object including all internal housekeeping. */
     private void insertObject(Object object) {
       entityManager.persist(object);
       objectsToSave.add(object);
-      addUpdate(object);
     }
 
     /** Returns true if the object has been persisted/merged and will be saved on commit. */

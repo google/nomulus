@@ -59,7 +59,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.FlowUtils.NotLoggedInException;
@@ -106,17 +105,12 @@ import google.registry.model.poll.PendingActionNotificationResponse.DomainPendin
 import google.registry.model.poll.PollMessage;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainUpdateFlow}. */
 @DualDatabaseTest
@@ -138,10 +132,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   private ContactResource sh8013Contact;
   private ContactResource mak21Contact;
   private ContactResource unusedContact;
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   @BeforeEach
   void beforeEach() {
@@ -206,7 +196,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setDomain(domain)
             .build());
     clock.advanceOneMilli();
-    replayExtension.expectUpdateFor(domain);
     return domain;
   }
 
@@ -218,7 +207,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile(expectedXmlFilename));
     DomainBase domain = reloadResourceByForeignKey();
-    replayExtension.expectUpdateFor(domain);
     // Check that the domain was updated. These values came from the xml.
     assertAboutDomains()
         .that(domain)
@@ -236,10 +224,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertNoBillingEvents();
     assertDnsTasksEnqueued("example.tld");
     assertLastHistoryContainsResource(reloadResourceByForeignKey());
-
-    // Verify that all timestamps are correct after SQL -> DS replay.
-    // Added to confirm that timestamps get updated correctly.
-    replayExtension.enableDomainTimestampChecks();
   }
 
   @TestOfyAndSql
@@ -319,9 +303,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     }
     persistResource(
         reloadResourceByForeignKey().asBuilder().setNameservers(nameservers.build()).build());
-    // Add a null update here so we don't compare.
-    replayExtension.expectUpdateFor(null);
-    clock.advanceOneMilli();
   }
 
   @TestOfyAndSql
@@ -1760,15 +1741,5 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     clock.advanceOneMilli();
     runFlowAsSuperuser();
     assertAboutDomains().that(reloadResourceByForeignKey()).hasNoAutorenewEndTime();
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() throws Exception {
-    persistReferencedEntities();
-    persistDomain();
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

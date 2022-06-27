@@ -27,7 +27,6 @@ import google.registry.model.CacheUtils;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.model.replay.NonReplicatedEntity;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,7 +40,7 @@ import javax.persistence.Transient;
 @Unindex
 @NotBackedUp(reason = Reason.AUTO_GENERATED)
 // TODO(b/27427316): Replace this with an entry in KMSKeyring
-public class ServerSecret extends CrossTldSingleton implements NonReplicatedEntity {
+public class ServerSecret extends CrossTldSingleton {
 
   /**
    * Cache of the singleton ServerSecret instance that creates it if not present.

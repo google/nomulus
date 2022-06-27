@@ -38,8 +38,6 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.ofy.CommitLogManifest;
-import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.model.tld.Registry;
@@ -49,7 +47,6 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -271,32 +268,7 @@ public final class EppResourceUtils {
    * perform a single fetch operation.
    *
    * <p><b>Warning:</b> A resource can only be rolled backwards in time, not forwards; therefore
-   * {@code resource} should be whatever's currently in Datastore.
-   *
-   * <p><b>Warning:</b> In Datastore, revisions are granular to 24-hour periods. It's recommended
-   * that {@code timestamp} be set to midnight. If you don't use midnight, you must take into
-   * consideration that under certain circumstances, a resource might be restored to a revision on
-   * the previous day, even if there were revisions made earlier on the same date as {@code
-   * timestamp}; however, a resource will never be restored to a revision occurring after {@code
-   * timestamp}. This behavior is due to the way {@link
-   * google.registry.model.translators.CommitLogRevisionsTranslatorFactory
-   * CommitLogRevisionsTranslatorFactory} manages the {@link EppResource#revisions} field. Please
-   * note however that the creation and deletion times of a resource are granular to the
-   * millisecond.
-   *
-   * <p>Example: a resource in Datastore has three revisions A, B, and C
-   *
-   * <ul>
-   *   <li>A: Day 0, 1pm
-   *   <li>B: Day 1, 1pm
-   *   <li>C: Day 1, 3pm
-   * </ul>
-   *
-   * <p>If one requests the resource as of day 1 at 2pm, we will return revision A because as far as
-   * the commit logs are concerned, revision C completely overwrites the existence of revision B.
-   *
-   * <p>When using the SQL backend (post-Registry-3.0-migration) this restriction goes away and
-   * objects can be restored to any revision.
+   * {@code resource} should be whatever's currently in SQL.
    *
    * @return the resource at {@code timestamp} or {@code null} if resource is deleted or not yet
    *     created
@@ -344,49 +316,6 @@ public final class EppResourceUtils {
    */
   private static <T extends EppResource> T loadMostRecentRevisionAtTime(
       final T resource, final DateTime timestamp) {
-    if (tm().isOfy()) {
-      return loadMostRecentRevisionAtTimeDatastore(resource, timestamp);
-    } else {
-      return loadMostRecentRevisionAtTimeSql(resource, timestamp);
-    }
-  }
-
-  /**
-   * Returns the most recent Datastore revision of a given EppResource before or at the provided
-   * timestamp using the EppResource revisions map, falling back to using the resource as-is if
-   * there are no revisions.
-   *
-   * @see #loadAtPointInTimeAsync(EppResource, DateTime)
-   */
-  private static <T extends EppResource> T loadMostRecentRevisionAtTimeDatastore(
-      final T resource, final DateTime timestamp) {
-    final Key<T> resourceKey = Key.create(resource);
-    final Key<CommitLogManifest> revision =
-        findMostRecentDatastoreRevisionAtTime(resource, timestamp);
-    if (revision == null) {
-      logger.atSevere().log("No revision found for %s, falling back to resource.", resourceKey);
-      return resource;
-    }
-    final CommitLogMutation mutation =
-        auditedOfy().load().key(CommitLogMutation.createKey(revision, resourceKey)).now();
-    if (mutation != null) {
-      return auditedOfy().load().fromEntity(mutation.getEntity());
-    }
-    logger.atSevere().log(
-        "Couldn't load mutation for revision at %s for %s, falling back to resource."
-            + " Revision: %s",
-        timestamp, resourceKey, revision);
-    return resource;
-  }
-
-  /**
-   * Returns the most recent SQL revision of a given EppResource before or at the provided timestamp
-   * using *History objects, falling back to using the resource as-is if there are no revisions.
-   *
-   * @see #loadAtPointInTimeAsync(EppResource, DateTime)
-   */
-  private static <T extends EppResource> T loadMostRecentRevisionAtTimeSql(
-      T resource, DateTime timestamp) {
     @SuppressWarnings("unchecked")
     T resourceAtPointInTime =
         (T)
@@ -403,30 +332,6 @@ public final class EppResourceUtils {
       return resource;
     }
     return resourceAtPointInTime;
-  }
-
-  @Nullable
-  private static <T extends EppResource>
-      Key<CommitLogManifest> findMostRecentDatastoreRevisionAtTime(
-          final T resource, final DateTime timestamp) {
-    final Key<T> resourceKey = Key.create(resource);
-    Entry<?, Key<CommitLogManifest>> revision = resource.getRevisions().floorEntry(timestamp);
-    if (revision != null) {
-      logger.atInfo().log(
-          "Found revision history at %s for %s: %s", timestamp, resourceKey, revision);
-      return revision.getValue();
-    }
-    // Fall back to the earliest revision if we don't have one before the requested timestamp.
-    revision = resource.getRevisions().firstEntry();
-    if (revision != null) {
-      logger.atSevere().log(
-          "Found no revision history at %s for %s, using earliest revision: %s",
-          timestamp, resourceKey, revision);
-      return revision.getValue();
-    }
-    // Ultimate fallback: There are no revisions whatsoever, so return null.
-    logger.atSevere().log("Found no revision history at all for %s", resourceKey);
-    return null;
   }
 
   /**

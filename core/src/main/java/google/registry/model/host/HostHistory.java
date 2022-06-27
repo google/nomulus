@@ -14,19 +14,14 @@
 
 package google.registry.model.host;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.host.HostHistory.HostHistoryId;
-import google.registry.model.replay.DatastoreEntity;
-import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.util.DomainNameUtils;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -62,7 +57,7 @@ import javax.persistence.PostLoad;
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(HostHistoryId.class)
-public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerializable {
+public class HostHistory extends HistoryEntry implements UnsafeSerializable {
 
   // Store HostBase instead of HostResource so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
@@ -128,22 +123,6 @@ public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerial
       // use of the Builder is not necessarily problematic in this case, this is still safer as the
       // Builder can do things like comparisons that compute the hash code.
       hostBase.setRepoId(parent.getName());
-    }
-  }
-
-  // In Datastore, save as a HistoryEntry object regardless of this object's type
-  @Override
-  public Optional<DatastoreEntity> toDatastoreEntity() {
-    return Optional.of(asHistoryEntry());
-  }
-
-  // Used to fill out the hostBase field during asynchronous replay
-  @Override
-  public void beforeSqlSaveOnReplay() {
-    if (hostBase == null) {
-      hostBase = jpaTm().getEntityManager().find(HostResource.class, getHostRepoId());
-      hostBase.fullyQualifiedHostName =
-          DomainNameUtils.canonicalizeHostname(hostBase.fullyQualifiedHostName);
     }
   }
 

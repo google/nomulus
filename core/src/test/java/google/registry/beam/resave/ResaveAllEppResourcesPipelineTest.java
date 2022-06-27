@@ -42,7 +42,6 @@ import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TmOverrideExtension;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -69,10 +68,6 @@ public class ResaveAllEppResourcesPipelineTest {
   @RegisterExtension
   final JpaIntegrationTestExtension database =
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
-
-  @RegisterExtension
-  @Order(Order.DEFAULT + 1)
-  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
 
   private final ResaveAllEppResourcesPipelineOptions options =
       PipelineOptionsFactory.create().as(ResaveAllEppResourcesPipelineOptions.class);

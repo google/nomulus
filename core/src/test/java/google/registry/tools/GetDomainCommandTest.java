@@ -19,18 +19,14 @@ import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetDomainCommand}. */
 class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
-
-  private DateTime now = DateTime.now(UTC);
 
   @BeforeEach
   void beforeEach() {
@@ -55,7 +51,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     persistActiveDomain("example.tld");
     runCommand("example.tld", "--expand");
     assertInStdout("fullyQualifiedDomainName=example.tld");
-    assertInStdout("contactId=contact1234");
+    assertInStdout("contact=Key<?>(ContactResource(\"3-ROID\"))");
     assertInStdout(
         "Websafe key: "
             + "kind:DomainBase"
@@ -70,7 +66,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     persistActiveDomain("xn--aualito-txac.xn--q9jyb4c");
     runCommand("çauçalito.みんな", "--expand");
     assertInStdout("fullyQualifiedDomainName=xn--aualito-txac.xn--q9jyb4c");
-    assertInStdout("contactId=contact1234");
+    assertInStdout("contact=Key<?>(ContactResource(\"4-ROID\"))");
   }
 
   @Test
@@ -94,15 +90,18 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
 
   @Test
   void testSuccess_domainDeletedInFuture() throws Exception {
-    persistResource(newDomainBase("example.tld").asBuilder()
-        .setDeletionTime(now.plusDays(1)).build());
-    runCommand("example.tld", "--read_timestamp=" + now.plusMonths(1));
+    persistResource(
+        newDomainBase("example.tld")
+            .asBuilder()
+            .setDeletionTime(fakeClock.nowUtc().plusDays(1))
+            .build());
+    runCommand("example.tld", "--read_timestamp=" + fakeClock.nowUtc().plusMonths(1));
     assertInStdout("Domain 'example.tld' does not exist or is deleted");
   }
 
   @Test
   void testSuccess_deletedDomain() throws Exception {
-    persistDeletedDomain("example.tld", now.minusDays(1));
+    persistDeletedDomain("example.tld", fakeClock.nowUtc().minusDays(1));
     runCommand("example.tld");
     assertInStdout("Domain 'example.tld' does not exist or is deleted");
   }

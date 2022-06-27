@@ -21,7 +21,6 @@ import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
-import static google.registry.persistence.transaction.TransactionManagerFactory.assertAsyncActionsAreAllowed;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -55,7 +54,6 @@ import org.joda.time.DateTime;
  * references to the host before the deletion is allowed to proceed. A poll message will be written
  * with the success or failure message when the process is complete.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}
@@ -74,8 +72,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
           StatusValue.PENDING_DELETE,
           StatusValue.SERVER_DELETE_PROHIBITED);
 
-  private static final DnsQueue dnsQueue = DnsQueue.create();
-
+  @Inject DnsQueue dnsQueue;
   @Inject ExtensionManager extensionManager;
   @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
@@ -93,7 +90,6 @@ public final class HostDeleteFlow implements TransactionalFlow {
     extensionManager.register(MetadataExtension.class);
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
-    assertAsyncActionsAreAllowed();
     DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
     checkLinkedDomains(targetId, now, HostResource.class);

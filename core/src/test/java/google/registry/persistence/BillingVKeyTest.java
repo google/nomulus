@@ -26,7 +26,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.BillingVKey.BillingEventVKey;
 import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
@@ -80,7 +79,6 @@ class BillingVKeyTest {
     assertThat(persisted).isEqualTo(original);
   }
 
-  @EntityForTesting
   @Entity
   @javax.persistence.Entity
   private static class BillingVKeyTestEntity extends ImmutableObject {

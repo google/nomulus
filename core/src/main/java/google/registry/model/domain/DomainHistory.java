@@ -15,7 +15,6 @@
 package google.registry.model.domain;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableSet;
@@ -28,12 +27,9 @@ import google.registry.model.domain.GracePeriod.GracePeriodHistory;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.domain.secdns.DomainDsDataHistory;
 import google.registry.model.host.HostResource;
-import google.registry.model.replay.DatastoreEntity;
-import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.util.DomainNameUtils;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Optional;
@@ -82,7 +78,7 @@ import org.hibernate.Hibernate;
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(DomainHistoryId.class)
-public class DomainHistory extends HistoryEntry implements SqlEntity {
+public class DomainHistory extends HistoryEntry {
 
   // Store DomainContent instead of DomainBase so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
@@ -294,23 +290,6 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
           domainContent.setRepoId(parent.getName());
         }
       }
-    }
-  }
-
-  // In Datastore, save as a HistoryEntry object regardless of this object's type
-  @Override
-  public Optional<DatastoreEntity> toDatastoreEntity() {
-    return Optional.of(asHistoryEntry());
-  }
-
-  // Used to fill out the domainContent field during asynchronous replay
-  @Override
-  public void beforeSqlSaveOnReplay() {
-    if (domainContent == null) {
-      domainContent = jpaTm().getEntityManager().find(DomainBase.class, getDomainRepoId());
-      domainContent.fullyQualifiedDomainName =
-          DomainNameUtils.canonicalizeHostname(domainContent.fullyQualifiedDomainName);
-      fillAuxiliaryFieldsFromDomain(this);
     }
   }
 

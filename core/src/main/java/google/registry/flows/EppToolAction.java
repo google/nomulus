@@ -84,5 +84,11 @@ public class EppToolAction implements Runnable {
     static String provideClientId(HttpServletRequest req) {
       return extractRequiredParameter(req, "clientId");
     }
+
+    @Provides
+    @Parameter("dryRun")
+    static boolean provideIsDryRun(HttpServletRequest req) {
+      return extractBooleanParameter(req, "dryRun");
+    }
   }
 }

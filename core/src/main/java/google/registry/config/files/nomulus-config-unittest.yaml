@@ -11,7 +11,6 @@ registryPolicy:
     Line 2 is this 1.
 
 datastore:
-  commitLogBucketsNum: 3
   eppResourceIndexBucketsNum: 3
   baseOfyRetryMillis: 0
 

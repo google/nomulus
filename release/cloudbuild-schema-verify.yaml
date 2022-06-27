@@ -23,7 +23,9 @@
 # variable references must avoid the ${var} format. Valid formats include
 # $var or ${"${var}"}. This file use the former. Since _ENV is expanded in the
 # copies sent to Spinnaker, we preserve the brackets around them for safe
-# pattern matching during release.
+# pattern matching during release. If the invalid ${var} format is used, the
+# Spinnaker error message will have the following:
+# 'Invalid JSON payload received. Unknown name \"expressionEvaluationSummary\"'
 # See https://github.com/spinnaker/spinnaker/issues/3028 for more information.
 steps:
 # Download and decrypt the nomulus tool credential, which has the privilege to
@@ -69,7 +71,7 @@ steps:
     set -e
     deployed_schema_tag=$(gsutil cat \
         gs://$PROJECT_ID-deployed-tags/sql.${_ENV}.tag)
-    gsutil cp gs://$PROJECT_ID-deploy/${deployed_schema_tag}/schema.jar \
+    gsutil cp gs://$PROJECT_ID-deploy/$deployed_schema_tag/schema.jar \
       /schema
 # Verify the schema
 - name: 'gcr.io/$PROJECT_ID/schema_verifier:latest'

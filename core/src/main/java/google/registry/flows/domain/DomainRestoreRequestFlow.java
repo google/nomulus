@@ -94,7 +94,6 @@ import org.joda.time.DateTime;
  * restored to a single year expiration starting at the restore time, regardless of what the
  * original expiration time was.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.EppException.UnimplementedExtensionException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.FlowUtils.UnknownCurrencyEppException}

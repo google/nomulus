@@ -33,7 +33,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
-import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.DomainLabelMetrics.MetricsReservedListMatch;
 import java.io.Serializable;
@@ -61,8 +60,7 @@ import org.joda.time.DateTime;
 @javax.persistence.Entity
 @Table(indexes = {@Index(columnList = "name", name = "reservedlist_name_idx")})
 public final class ReservedList
-    extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry>
-    implements SqlOnlyEntity {
+    extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry> {
 
   /**
    * Mapping from domain name to its reserved list info.
@@ -88,7 +86,7 @@ public final class ReservedList
 
   /**
    * Hibernate hook called on the insert of a new ReservedList. Stores the associated {@link
-   * ReservedEntry}'s.
+   * ReservedListEntry}'s.
    *
    * <p>We need to persist the list entries, but only on the initial insert (not on update) since
    * the entries themselves never get changed, so we only annotate it with {@link PostPersist}, not
@@ -113,7 +111,7 @@ public final class ReservedList
    */
   @javax.persistence.Entity(name = "ReservedEntry")
   public static class ReservedListEntry extends DomainLabelEntry<ReservationType, ReservedListEntry>
-      implements Buildable, SqlOnlyEntity, Serializable {
+      implements Buildable, Serializable {
 
     @Insignificant @Id Long revisionId;
 
