@@ -195,8 +195,7 @@ final class RegistrarContactCommand extends MutatingCommand {
         listContacts(contacts);
         break;
       case CREATE:
-        RegistrarContact contact = createContact(registrar);
-        stageEntityChange(null, contact);
+        stageEntityChange(null, createContact(registrar));
         if ((visibleInDomainWhoisAsAbuse != null) && visibleInDomainWhoisAsAbuse) {
           unsetOtherWhoisAbuseFlags(contacts, null);
         }

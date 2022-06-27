@@ -114,14 +114,14 @@ class EnqueuePollMessageCommand extends MutatingCommand {
                       .build();
               stageEntityChange(null, historyEntry);
               for (String registrarId : registrarIds) {
-                PollMessage pollMessage =
+                stageEntityChange(
+                    null,
                     new PollMessage.OneTime.Builder()
                         .setRegistrarId(registrarId)
                         .setParent(historyEntry)
                         .setEventTime(tm().getTransactionTime())
                         .setMsg(message)
-                        .build();
-                stageEntityChange(null, pollMessage);
+                        .build());
               }
             });
   }

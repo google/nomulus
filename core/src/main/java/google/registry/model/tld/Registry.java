@@ -295,8 +295,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
 
   @Override
   public VKey<Registry> createVKey() {
-    return VKey.create(
-        Registry.class, this.tldStrId, Key.create(getCrossTldKey(), Registry.class, this.tldStrId));
+    return VKey.createSql(Registry.class, this.tldStrId);
   }
 
   /**

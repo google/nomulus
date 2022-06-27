@@ -85,16 +85,15 @@ public class MutatingCommandTest {
 
   @Test
   void testSuccess_update() throws Exception {
-    MutatingCommand command =
-        new MutatingCommand() {
-          @Override
-          public void init() {
-            stageEntityChange(host1, newHost1);
-            stageEntityChange(host2, newHost2);
-            stageEntityChange(registrar1, newRegistrar1);
-            stageEntityChange(registrar2, newRegistrar2);
-          }
-        };
+    MutatingCommand command = new MutatingCommand() {
+      @Override
+      public void init() {
+        stageEntityChange(host1, newHost1);
+        stageEntityChange(host2, newHost2);
+        stageEntityChange(registrar1, newRegistrar1);
+        stageEntityChange(registrar2, newRegistrar2);
+      }
+    };
     command.init();
     String changes = command.prompt();
     assertThat(changes)
@@ -125,16 +124,15 @@ public class MutatingCommandTest {
             .map(entity -> VKey.from(Key.create(entity)))
             .collect(toImmutableList());
     tm().transact(() -> tm().deleteWithoutBackup(keys));
-    MutatingCommand command =
-        new MutatingCommand() {
-          @Override
-          protected void init() {
-            stageEntityChange(null, newHost1);
-            stageEntityChange(null, newHost2);
-            stageEntityChange(null, newRegistrar1);
-            stageEntityChange(null, newRegistrar2);
-          }
-        };
+    MutatingCommand command = new MutatingCommand() {
+      @Override
+      protected void init() {
+        stageEntityChange(null, newHost1);
+        stageEntityChange(null, newHost2);
+        stageEntityChange(null, newRegistrar1);
+        stageEntityChange(null, newRegistrar2);
+      }
+    };
     command.init();
     String changes = command.prompt();
     assertThat(changes).isEqualTo(
@@ -159,16 +157,15 @@ public class MutatingCommandTest {
 
   @Test
   void testSuccess_delete() throws Exception {
-    MutatingCommand command =
-        new MutatingCommand() {
-          @Override
-          protected void init() {
-            stageEntityChange(host1, null);
-            stageEntityChange(host2, null);
-            stageEntityChange(registrar1, null);
-            stageEntityChange(registrar2, null);
-          }
-        };
+    MutatingCommand command = new MutatingCommand() {
+      @Override
+      protected void init() {
+        stageEntityChange(host1, null);
+        stageEntityChange(host2, null);
+        stageEntityChange(registrar1, null);
+        stageEntityChange(registrar2, null);
+      }
+    };
     command.init();
     String changes = command.prompt();
     assertThat(changes).isEqualTo(
@@ -193,14 +190,13 @@ public class MutatingCommandTest {
 
   @Test
   void testSuccess_noopUpdate() throws Exception {
-    MutatingCommand command =
-        new MutatingCommand() {
-          @Override
-          protected void init() {
-            stageEntityChange(host1, host1);
-            stageEntityChange(registrar1, registrar1);
-          }
-        };
+    MutatingCommand command = new MutatingCommand() {
+      @Override
+      protected void init() {
+        stageEntityChange(host1, host1);
+        stageEntityChange(registrar1, registrar1);
+      }
+    };
     command.init();
     String changes = command.prompt();
     System.out.println(changes);
@@ -218,20 +214,18 @@ public class MutatingCommandTest {
 
   @Test
   void testSuccess_batching() throws Exception {
-    MutatingCommand command =
-        new MutatingCommand() {
-          @Override
-          protected void init() {
-            stageEntityChange(host1, null);
-            stageEntityChange(host2, newHost2);
-            flushTransaction();
-            flushTransaction(); // Flushing should be idempotent.
-            stageEntityChange(registrar1, null);
-            stageEntityChange(registrar2, newRegistrar2);
-            // Even though there is no trailing flushTransaction(), these last two should be
-            // executed.
-          }
-        };
+    MutatingCommand command = new MutatingCommand() {
+      @Override
+      protected void init() {
+        stageEntityChange(host1, null);
+        stageEntityChange(host2, newHost2);
+        flushTransaction();
+        flushTransaction(); // Flushing should be idempotent.
+        stageEntityChange(registrar1, null);
+        stageEntityChange(registrar2, newRegistrar2);
+        // Even though there is no trailing flushTransaction(), these last two should be executed.
+      }
+    };
     command.init();
     String changes = command.prompt();
     assertThat(changes).isEqualTo(
@@ -258,18 +252,17 @@ public class MutatingCommandTest {
   void testSuccess_batching_partialExecutionWorks() throws Exception {
     // The expected behavior here is that the first transaction will work and be committed, and
     // the second transaction will throw an IllegalStateException and not commit.
-    MutatingCommand command =
-        new MutatingCommand() {
-          @Override
-          protected void init() {
-            stageEntityChange(host1, null);
-            stageEntityChange(host2, newHost2);
-            flushTransaction();
-            stageEntityChange(registrar1, null);
-            stageEntityChange(registrar2, newRegistrar2); // This will fail.
-            flushTransaction();
-          }
-        };
+    MutatingCommand command = new MutatingCommand() {
+      @Override
+      protected void init() {
+        stageEntityChange(host1, null);
+        stageEntityChange(host2, newHost2);
+        flushTransaction();
+        stageEntityChange(registrar1, null);
+        stageEntityChange(registrar2, newRegistrar2); // This will fail.
+        flushTransaction();
+      }
+    };
     command.init();
     // Save an update to registrar2 that will cause the second transaction to fail because the
     // resource has been updated since the command inited the resources to process.
@@ -299,13 +292,12 @@ public class MutatingCommandTest {
 
   @Test
   void testFailure_nullEntityChange() {
-    MutatingCommand command =
-        new MutatingCommand() {
-          @Override
-          protected void init() {
-            stageEntityChange(null, null);
-          }
-        };
+    MutatingCommand command = new MutatingCommand() {
+      @Override
+      protected void init() {
+        stageEntityChange(null, null);
+      }
+    };
     assertThrows(IllegalArgumentException.class, command::init);
   }
 
@@ -328,13 +320,12 @@ public class MutatingCommandTest {
 
   @Test
   void testFailure_updateDifferentLongId() {
-    MutatingCommand command =
-        new MutatingCommand() {
-          @Override
-          protected void init() {
-            stageEntityChange(host1, host2);
-          }
-        };
+    MutatingCommand command = new MutatingCommand() {
+      @Override
+      protected void init() {
+        stageEntityChange(host1, host2);
+      }
+    };
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
     assertThat(thrown)
         .hasMessageThat()
