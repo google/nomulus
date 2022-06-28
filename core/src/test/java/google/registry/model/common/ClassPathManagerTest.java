@@ -34,7 +34,6 @@ import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.replay.LastSqlTransaction;
 import google.registry.model.replay.ReplayGap;
 import google.registry.model.reporting.HistoryEntry;
@@ -70,7 +69,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("ReplayGap")).isEqualTo(ReplayGap.class);
     assertThat(ClassPathManager.getClass("ContactResource")).isEqualTo(ContactResource.class);
     assertThat(ClassPathManager.getClass("Cancellation")).isEqualTo(Cancellation.class);
-    assertThat(ClassPathManager.getClass("RegistrarContact")).isEqualTo(RegistrarContact.class);
     assertThat(ClassPathManager.getClass("LastSqlTransaction")).isEqualTo(LastSqlTransaction.class);
     assertThat(ClassPathManager.getClass("GaeUserIdConverter")).isEqualTo(GaeUserIdConverter.class);
     assertThat(ClassPathManager.getClass("EppResourceIndexBucket"))
@@ -130,7 +128,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClassName(ReplayGap.class)).isEqualTo("ReplayGap");
     assertThat(ClassPathManager.getClassName(ContactResource.class)).isEqualTo("ContactResource");
     assertThat(ClassPathManager.getClassName(Cancellation.class)).isEqualTo("Cancellation");
-    assertThat(ClassPathManager.getClassName(RegistrarContact.class)).isEqualTo("RegistrarContact");
     assertThat(ClassPathManager.getClassName(LastSqlTransaction.class))
         .isEqualTo("LastSqlTransaction");
     assertThat(ClassPathManager.getClassName(GaeUserIdConverter.class))

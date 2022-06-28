@@ -35,7 +35,7 @@ import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.Registry.TldType;
@@ -127,8 +127,7 @@ public final class OteAccountBuilder {
   private final Registry sunriseTld;
   private final Registry gaTld;
   private final Registry eapTld;
-  private final ImmutableList.Builder<RegistrarContact> contactsBuilder =
-      new ImmutableList.Builder<>();
+  private final ImmutableList.Builder<RegistrarPoc> contactsBuilder = new ImmutableList.Builder<>();
 
   private ImmutableList<Registrar> registrars;
   private boolean replaceExisting = false;
@@ -259,7 +258,7 @@ public final class OteAccountBuilder {
   private void saveAllEntities() {
     // use ImmutableObject instead of Registry so that the Key generation doesn't break
     ImmutableList<Registry> registries = ImmutableList.of(sunriseTld, gaTld, eapTld);
-    ImmutableList<RegistrarContact> contacts = contactsBuilder.build();
+    ImmutableList<RegistrarPoc> contacts = contactsBuilder.build();
 
     tm().transact(
             () -> {
@@ -269,7 +268,7 @@ public final class OteAccountBuilder {
                             registries.stream()
                                 .map(registry -> Registry.createVKey(registry.getTldStr())),
                             registrars.stream().map(Registrar::createVKey),
-                            contacts.stream().map(RegistrarContact::createVKey))
+                            contacts.stream().map(RegistrarPoc::createVKey))
                         .collect(toImmutableList());
                 ImmutableMap<VKey<? extends ImmutableObject>, ImmutableObject> existingObjects =
                     tm().loadByKeysIfPresent(keys);
@@ -351,10 +350,10 @@ public final class OteAccountBuilder {
         .build();
   }
 
-  private static RegistrarContact createRegistrarContact(
+  private static RegistrarPoc createRegistrarContact(
       String email, String gaeUserId, Registrar registrar) {
-    return new RegistrarContact.Builder()
-        .setParent(registrar)
+    return new RegistrarPoc.Builder()
+        .setRegistrar(registrar)
         .setName(email)
         .setEmailAddress(email)
         .setGaeUserId(gaeUserId)

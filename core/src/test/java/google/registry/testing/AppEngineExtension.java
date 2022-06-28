@@ -49,7 +49,7 @@ import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
@@ -326,15 +326,15 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
    * Public factory for first RegistrarContact to allow comparison against stored value in unit
    * tests.
    */
-  public static RegistrarContact makeRegistrarContact1() {
-    return new RegistrarContact.Builder()
-        .setParent(makeRegistrar1())
+  public static RegistrarPoc makeRegistrarContact1() {
+    return new RegistrarPoc.Builder()
+        .setRegistrar(makeRegistrar1())
         .setName("Jane Doe")
         .setVisibleInWhoisAsAdmin(true)
         .setVisibleInWhoisAsTech(false)
         .setEmailAddress("janedoe@theregistrar.com")
         .setPhoneNumber("+1.1234567890")
-        .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+        .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
         .build();
   }
 
@@ -342,25 +342,25 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
    * Public factory for second RegistrarContact to allow comparison against stored value in unit
    * tests.
    */
-  public static RegistrarContact makeRegistrarContact2() {
-    return new RegistrarContact.Builder()
-        .setParent(makeRegistrar2())
+  public static RegistrarPoc makeRegistrarContact2() {
+    return new RegistrarPoc.Builder()
+        .setRegistrar(makeRegistrar2())
         .setName("John Doe")
         .setEmailAddress("johndoe@theregistrar.com")
         .setPhoneNumber("+1.1234567890")
-        .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+        .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
         .setGaeUserId(THE_REGISTRAR_GAE_USER_ID)
         .build();
   }
 
-  public static RegistrarContact makeRegistrarContact3() {
-    return new RegistrarContact.Builder()
-        .setParent(makeRegistrar2())
+  public static RegistrarPoc makeRegistrarContact3() {
+    return new RegistrarPoc.Builder()
+        .setRegistrar(makeRegistrar2())
         .setName("Marla Singer")
         .setEmailAddress("Marla.Singer@crr.com")
         .setRegistryLockEmailAddress("Marla.Singer.RegistryLock@crr.com")
         .setPhoneNumber("+1.2128675309")
-        .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+        .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
         .setGaeUserId(MARLA_SINGER_GAE_USER_ID)
         .setAllowedToSetRegistryLockPassword(true)
         .setRegistryLockPassword("hi")

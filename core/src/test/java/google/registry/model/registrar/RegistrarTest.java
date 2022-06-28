@@ -63,7 +63,7 @@ import org.junit.jupiter.api.BeforeEach;
 class RegistrarTest extends EntityTestCase {
 
   private Registrar registrar;
-  private RegistrarContact abuseAdminContact;
+  private RegistrarPoc abuseAdminContact;
 
   @BeforeEach
   void setUp() {
@@ -127,27 +127,26 @@ class RegistrarTest extends EntityTestCase {
                 .build());
     persistResource(registrar);
     abuseAdminContact =
-        new RegistrarContact.Builder()
-            .setParent(registrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
             .setName("John Abused")
             .setEmailAddress("johnabuse@example.com")
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(false)
             .setPhoneNumber("+1.2125551213")
             .setFaxNumber("+1.2125551213")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.ABUSE, RegistrarContact.Type.ADMIN))
+            .setTypes(ImmutableSet.of(RegistrarPoc.Type.ABUSE, RegistrarPoc.Type.ADMIN))
             .build();
     persistSimpleResources(
         ImmutableList.of(
             abuseAdminContact,
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("John Doe")
                 .setEmailAddress("johndoe@example.com")
                 .setPhoneNumber("+1.2125551213")
                 .setFaxNumber("+1.2125551213")
-                .setTypes(
-                    ImmutableSet.of(RegistrarContact.Type.LEGAL, RegistrarContact.Type.MARKETING))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.LEGAL, RegistrarPoc.Type.MARKETING))
                 .build()));
   }
 
@@ -296,50 +295,50 @@ class RegistrarTest extends EntityTestCase {
   @TestOfyAndSql
   void testSuccess_emptyContactTypesAllowed() {
     persistSimpleResource(
-        new RegistrarContact.Builder()
-            .setParent(registrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
             .setName("John Abussy")
             .setEmailAddress("johnabussy@example.com")
             .setPhoneNumber("+1.2125551213")
             .setFaxNumber("+1.2125551213")
             // No setTypes(...)
             .build());
-    for (RegistrarContact rc : registrar.getContacts()) {
+    for (RegistrarPoc rc : registrar.getContacts()) {
       rc.toJsonMap();
     }
   }
 
   @TestOfyAndSql
   void testSuccess_getContactsByType() {
-    RegistrarContact newTechContact =
+    RegistrarPoc newTechContact =
         persistSimpleResource(
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Jake Tech")
                 .setEmailAddress("jaketech@example.com")
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(true)
                 .setPhoneNumber("+1.2125551213")
                 .setFaxNumber("+1.2125551213")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .build());
-    RegistrarContact newTechAbuseContact =
+    RegistrarPoc newTechAbuseContact =
         persistSimpleResource(
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Jim Tech-Abuse")
                 .setEmailAddress("jimtechAbuse@example.com")
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(true)
                 .setPhoneNumber("+1.2125551213")
                 .setFaxNumber("+1.2125551213")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH, RegistrarContact.Type.ABUSE))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH, RegistrarPoc.Type.ABUSE))
                 .build());
-    ImmutableSortedSet<RegistrarContact> techContacts =
-        registrar.getContactsOfType(RegistrarContact.Type.TECH);
+    ImmutableSortedSet<RegistrarPoc> techContacts =
+        registrar.getContactsOfType(RegistrarPoc.Type.TECH);
     assertThat(techContacts).containsExactly(newTechContact, newTechAbuseContact).inOrder();
-    ImmutableSortedSet<RegistrarContact> abuseContacts =
-        registrar.getContactsOfType(RegistrarContact.Type.ABUSE);
+    ImmutableSortedSet<RegistrarPoc> abuseContacts =
+        registrar.getContactsOfType(RegistrarPoc.Type.ABUSE);
     assertThat(abuseContacts).containsExactly(newTechAbuseContact, abuseAdminContact).inOrder();
   }
 

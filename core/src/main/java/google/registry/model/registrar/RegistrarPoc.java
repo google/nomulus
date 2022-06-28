@@ -18,10 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Sets.difference;
 import static com.google.common.io.BaseEncoding.base64;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registrar.Registrar.checkValidEmail;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -31,36 +28,26 @@ import static google.registry.util.PasswordUtils.hashPassword;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Enums;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.annotation.OnLoad;
-import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
-import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.model.registrar.RegistrarContact.RegistrarPocId;
+import google.registry.model.registrar.RegistrarPoc.RegistrarPocId;
 import google.registry.persistence.VKey;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.PostLoad;
+import javax.persistence.Index;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
 /**
  * A contact for a Registrar. Note, equality, hashCode and comparable have been overridden to only
@@ -69,21 +56,12 @@ import javax.persistence.Transient;
  * <p>IMPORTANT NOTE: Any time that you change, update, or delete RegistrarContact entities, you
  * *MUST* also modify the persisted Registrar entity with {@link Registrar#contactsRequireSyncing}
  * set to true.
- *
- * <p>TODO(b/177567432): Rename the class name to RegistrarPoc after database migration
  */
 @ReportedOn
 @Entity
-@javax.persistence.Entity(name = "RegistrarPoc")
-@Table(
-    indexes = {
-      @javax.persistence.Index(columnList = "gaeUserId", name = "registrarpoc_gae_user_id_idx")
-    })
+@Table(indexes = {@Index(columnList = "gaeUserId", name = "registrarpoc_gae_user_id_idx")})
 @IdClass(RegistrarPocId.class)
-@InCrossTld
-public class RegistrarContact extends ImmutableObject implements Jsonifiable, UnsafeSerializable {
-
-  @Parent @Transient Key<Registrar> parent;
+public class RegistrarPoc extends ImmutableObject implements Jsonifiable, UnsafeSerializable {
 
   /**
    * Registrar contacts types for partner communication tracking.
@@ -122,9 +100,9 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable, Un
   String name;
 
   /** The email address of the contact. */
-  @Id @javax.persistence.Id String emailAddress;
+  @Id String emailAddress;
 
-  @Ignore @javax.persistence.Id String registrarId;
+  @Id String registrarId;
 
   /** External email address of this contact used for registry lock confirmations. */
   String registryLockEmailAddress;
@@ -148,7 +126,7 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable, Un
    *
    * @see com.google.appengine.api.users.User#getUserId()
    */
-  @Index String gaeUserId;
+  String gaeUserId;
 
   /**
    * Whether this contact is publicly visible in WHOIS registrar query results as an Admin contact.
@@ -168,7 +146,7 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable, Un
   boolean visibleInDomainWhoisAsAbuse = false;
 
   /**
-   * Whether or not the contact is allowed to set their registry lock password through the registrar
+   * Whether the contact is allowed to set their registry lock password through the registrar
    * console. This will be set to false on contact creation and when the user sets a password.
    */
   boolean allowedToSetRegistryLockPassword = false;
@@ -182,16 +160,6 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable, Un
   /** Randomly generated hash salt. */
   String registryLockPasswordSalt;
 
-  public static ImmutableSet<Type> typesFromCSV(String csv) {
-    return typesFromStrings(Arrays.asList(csv.split(",")));
-  }
-
-  public static ImmutableSet<Type> typesFromStrings(Iterable<String> typeNames) {
-    return Streams.stream(typeNames)
-        .map(Enums.stringConverter(Type.class))
-        .collect(toImmutableSet());
-  }
-
   /**
    * Helper to update the contacts associated with a Registrar. This requires querying for the
    * existing contacts, deleting existing contacts that are not part of the given {@code contacts}
@@ -201,43 +169,21 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable, Un
    * relevant Registrar entity with the {@link Registrar#contactsRequireSyncing} field set to true.
    */
   public static void updateContacts(
-      final Registrar registrar, final ImmutableSet<RegistrarContact> contacts) {
+      final Registrar registrar, final ImmutableSet<RegistrarPoc> contacts) {
     tm().transact(
             () -> {
-              if (tm().isOfy()) {
-                ImmutableSet<Key<RegistrarContact>> existingKeys =
-                    ImmutableSet.copyOf(
-                        auditedOfy()
-                            .load()
-                            .type(RegistrarContact.class)
-                            .ancestor(registrar)
-                            .keys());
-                tm().delete(
-                        difference(
-                                existingKeys,
-                                contacts.stream().map(Key::create).collect(toImmutableSet()))
-                            .stream()
-                            .map(key -> VKey.createOfy(RegistrarContact.class, key))
-                            .collect(toImmutableSet()));
-              } else {
-                ImmutableSet<String> emailAddressesToKeep =
-                    contacts.stream()
-                        .map(RegistrarContact::getEmailAddress)
-                        .collect(toImmutableSet());
-                jpaTm()
-                    .query(
-                        "DELETE FROM RegistrarPoc WHERE registrarId = :registrarId AND "
-                            + "emailAddress NOT IN :emailAddressesToKeep")
-                    .setParameter("registrarId", registrar.getRegistrarId())
-                    .setParameter("emailAddressesToKeep", emailAddressesToKeep)
-                    .executeUpdate();
-              }
+              ImmutableSet<String> emailAddressesToKeep =
+                  contacts.stream().map(RegistrarPoc::getEmailAddress).collect(toImmutableSet());
+              jpaTm()
+                  .query(
+                      "DELETE FROM RegistrarPoc WHERE registrarId = :registrarId AND "
+                          + "emailAddress NOT IN :emailAddressesToKeep")
+                  .setParameter("registrarId", registrar.getRegistrarId())
+                  .setParameter("emailAddressesToKeep", emailAddressesToKeep)
+                  .executeUpdate();
+
               tm().putAll(contacts);
             });
-  }
-
-  public Key<Registrar> getParent() {
-    return parent;
   }
 
   public String getName() {
@@ -371,31 +317,11 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable, Un
         .build();
   }
 
-  /** Sets Cloud SQL specific fields when the entity is loaded from Datastore. */
-  @OnLoad
-  void onLoad() {
-    registrarId = parent.getName();
+  public VKey<RegistrarPoc> createVKey() {
+    return VKey.createSql(RegistrarPoc.class, new RegistrarPocId(emailAddress, registrarId));
   }
 
-  /** Sets Datastore specific fields when the entity is loaded from Cloud SQL. */
-  @PostLoad
-  void postLoad() {
-    parent = Key.create(getCrossTldKey(), Registrar.class, registrarId);
-  }
-
-  public VKey<RegistrarContact> createVKey() {
-    return createVKey(Key.create(this));
-  }
-
-  /** Creates a {@link VKey} instance from a {@link Key} instance. */
-  public static VKey<RegistrarContact> createVKey(Key<RegistrarContact> key) {
-    Key<Registrar> parent = key.getParent();
-    String registrarId = parent.getName();
-    String emailAddress = key.getName();
-    return VKey.create(RegistrarContact.class, new RegistrarPocId(emailAddress, registrarId), key);
-  }
-
-  /** Class to represent the composite primary key for {@link RegistrarContact} entity. */
+  /** Class to represent the composite primary key for {@link RegistrarPoc} entity. */
   @VisibleForTesting
   public static class RegistrarPocId extends ImmutableObject implements Serializable {
 
@@ -404,6 +330,7 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable, Un
     String registrarId;
 
     // Hibernate requires this default constructor.
+    @SuppressWarnings("unused")
     private RegistrarPocId() {}
 
     @VisibleForTesting
@@ -413,27 +340,18 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable, Un
     }
   }
 
-  /** A builder for constructing a {@link RegistrarContact}, since it is immutable. */
-  public static class Builder extends Buildable.Builder<RegistrarContact> {
+  /** A builder for constructing a {@link RegistrarPoc}, since it is immutable. */
+  public static class Builder extends Buildable.Builder<RegistrarPoc> {
     public Builder() {}
 
-    private Builder(RegistrarContact instance) {
+    private Builder(RegistrarPoc instance) {
       super(instance);
-    }
-
-    public Builder setParent(Registrar parent) {
-      return this.setParent(Key.create(parent));
-    }
-
-    public Builder setParent(Key<Registrar> parentKey) {
-      getInstance().parent = parentKey;
-      return this;
     }
 
     /** Build the registrar, nullifying empty fields. */
     @Override
-    public RegistrarContact build() {
-      checkNotNull(getInstance().parent, "Registrar parent cannot be null");
+    public RegistrarPoc build() {
+      checkNotNull(getInstance().registrarId, "Registrar ID cannot be null");
       checkValidEmail(getInstance().emailAddress);
       // Check allowedToSetRegistryLockPassword here because if we want to allow the user to set
       // a registry lock password, we must also set up the correct registry lock email concurrently
@@ -443,7 +361,6 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable, Un
             !isNullOrEmpty(getInstance().registryLockEmailAddress),
             "Registry lock email must not be null if allowing registry lock access");
       }
-      getInstance().registrarId = getInstance().parent.getName();
       return cloneEmptyToNull(super.build());
     }
 
@@ -464,6 +381,16 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable, Un
 
     public Builder setPhoneNumber(String phoneNumber) {
       getInstance().phoneNumber = phoneNumber;
+      return this;
+    }
+
+    public Builder setRegistrarId(String registrarId) {
+      getInstance().registrarId = registrarId;
+      return this;
+    }
+
+    public Builder setRegistrar(Registrar registrar) {
+      getInstance().registrarId = registrar.getRegistrarId();
       return this;
     }
 

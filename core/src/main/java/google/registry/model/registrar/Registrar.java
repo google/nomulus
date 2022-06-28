@@ -217,11 +217,9 @@ public class Registrar extends ImmutableObject
       immutableEnumSet(
           Type.REAL, Type.PDT, Type.OTE, Type.EXTERNAL_MONITORING, Type.MONITORING, Type.INTERNAL);
 
-  /**
-   * Compare two instances of {@link RegistrarContact} by their email addresses lexicographically.
-   */
-  private static final Comparator<RegistrarContact> CONTACT_EMAIL_COMPARATOR =
-      comparing(RegistrarContact::getEmailAddress, String::compareTo);
+  /** Compare two instances of {@link RegistrarPoc} by their email addresses lexicographically. */
+  private static final Comparator<RegistrarPoc> CONTACT_EMAIL_COMPARATOR =
+      comparing(RegistrarPoc::getEmailAddress, String::compareTo);
 
   /**
    * A caching {@link Supplier} of a registrarId to {@link Registrar} map.
@@ -628,46 +626,43 @@ public class Registrar extends ImmutableObject
   }
 
   /**
-   * Returns a list of all {@link RegistrarContact} objects for this registrar sorted by their email
+   * Returns a list of all {@link RegistrarPoc} objects for this registrar sorted by their email
    * address.
    */
-  public ImmutableSortedSet<RegistrarContact> getContacts() {
+  public ImmutableSortedSet<RegistrarPoc> getContacts() {
     return Streams.stream(getContactsIterable())
         .filter(Objects::nonNull)
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
   }
 
   /**
-   * Returns a list of {@link RegistrarContact} objects of a given type for this registrar sorted by
+   * Returns a list of {@link RegistrarPoc} objects of a given type for this registrar sorted by
    * their email address.
    */
-  public ImmutableSortedSet<RegistrarContact> getContactsOfType(final RegistrarContact.Type type) {
+  public ImmutableSortedSet<RegistrarPoc> getContactsOfType(final RegistrarPoc.Type type) {
     return Streams.stream(getContactsIterable())
         .filter(Objects::nonNull)
-        .filter((@Nullable RegistrarContact contact) -> contact.getTypes().contains(type))
+        .filter((@Nullable RegistrarPoc contact) -> contact.getTypes().contains(type))
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
   }
 
   /**
-   * Returns the {@link RegistrarContact} that is the WHOIS abuse contact for this registrar, or
-   * empty if one does not exist.
+   * Returns the {@link RegistrarPoc} that is the WHOIS abuse contact for this registrar, or empty
+   * if one does not exist.
    */
-  public Optional<RegistrarContact> getWhoisAbuseContact() {
-    return getContacts().stream()
-        .filter(RegistrarContact::getVisibleInDomainWhoisAsAbuse)
-        .findFirst();
+  public Optional<RegistrarPoc> getWhoisAbuseContact() {
+    return getContacts().stream().filter(RegistrarPoc::getVisibleInDomainWhoisAsAbuse).findFirst();
   }
 
-  private Iterable<RegistrarContact> getContactsIterable() {
+  private Iterable<RegistrarPoc> getContactsIterable() {
     if (tm().isOfy()) {
-      return auditedOfy().load().type(RegistrarContact.class).ancestor(Registrar.this);
+      return auditedOfy().load().type(RegistrarPoc.class).ancestor(Registrar.this);
     } else {
       return tm().transact(
               () ->
                   jpaTm()
                       .query(
-                          "FROM RegistrarPoc WHERE registrarId = :registrarId",
-                          RegistrarContact.class)
+                          "FROM RegistrarPoc WHERE registrarId = :registrarId", RegistrarPoc.class)
                       .setParameter("registrarId", clientIdentifier)
                       .getResultStream()
                       .collect(toImmutableList()));

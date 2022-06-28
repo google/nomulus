@@ -35,8 +35,8 @@ import google.registry.batch.SendExpiringCertificateNotificationEmailAction.Regi
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
-import google.registry.model.registrar.RegistrarContact.Type;
+import google.registry.model.registrar.RegistrarPoc;
+import google.registry.model.registrar.RegistrarPoc.Type;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
@@ -220,15 +220,15 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .asBuilder()
                 .setFailoverClientCertificate(cert.get(), clock.nowUtc())
                 .build());
-    ImmutableList<RegistrarContact> contacts =
+    ImmutableList<RegistrarPoc> contacts =
         ImmutableList.of(
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Will Doe")
                 .setEmailAddress("will@example-registrar.tld")
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .build());
@@ -510,51 +510,51 @@ class SendExpiringCertificateNotificationEmailActionTest {
   @TestOfyAndSql
   void getEmailAddresses_success_returnsAListOfEmails() throws Exception {
     Registrar registrar = persistResource(makeRegistrar1());
-    ImmutableList<RegistrarContact> contacts =
+    ImmutableList<RegistrarPoc> contacts =
         ImmutableList.of(
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("John Doe")
                 .setEmailAddress("jd@example-registrar.tld")
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("John Smith")
                 .setEmailAddress("js@example-registrar.tld")
                 .setPhoneNumber("+1.1111111111")
                 .setFaxNumber("+1.1111111111")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Will Doe")
                 .setEmailAddress("will@example-registrar.tld")
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Mike Doe")
                 .setEmailAddress("mike@example-registrar.tld")
                 .setPhoneNumber("+1.1111111111")
                 .setFaxNumber("+1.1111111111")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("John T")
                 .setEmailAddress("john@example-registrar.tld")
                 .setPhoneNumber("+1.3105551215")
                 .setFaxNumber("+1.3105551216")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
                 .setVisibleInWhoisAsTech(true)
                 .build());
     persistSimpleResources(contacts);
@@ -710,20 +710,20 @@ class SendExpiringCertificateNotificationEmailActionTest {
   }
 
   /** Returns persisted sample contacts with a customized contact email type. */
-  private ImmutableList<RegistrarContact> persistSampleContacts(
-      Registrar registrar, RegistrarContact.Type emailType) {
+  private ImmutableList<RegistrarPoc> persistSampleContacts(
+      Registrar registrar, RegistrarPoc.Type emailType) {
     return persistSimpleResources(
         ImmutableList.of(
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Will Doe")
                 .setEmailAddress("will@example-registrar.tld")
                 .setPhoneNumber("+1.0105551213")
                 .setFaxNumber("+1.0105551213")
                 .setTypes(ImmutableSet.of(emailType))
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Will Smith")
                 .setEmailAddress("will@test-registrar.tld")
                 .setPhoneNumber("+1.3105551213")

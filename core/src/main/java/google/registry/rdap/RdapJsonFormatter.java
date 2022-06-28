@@ -52,7 +52,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.persistence.VKey;
@@ -777,7 +777,7 @@ public class RdapJsonFormatter {
   }
 
   /**
-   * Creates a JSON object for a {@link RegistrarContact}.
+   * Creates a JSON object for a {@link RegistrarPoc}.
    *
    * <p>Returns empty if this contact shouldn't be visible (doesn't have a role).
    *
@@ -794,11 +794,10 @@ public class RdapJsonFormatter {
    * <li>Registrar inside a Nameserver isn't required at all, and if given doesn't require any
    *     contacts
    *
-   * @param registrarContact the registrar contact for which the JSON object should be created
+   * @param registrarPoc the registrar contact for which the JSON object should be created
    */
-  static Optional<RdapContactEntity> makeRdapJsonForRegistrarContact(
-      RegistrarContact registrarContact) {
-    ImmutableList<RdapEntity.Role> roles = makeRdapRoleList(registrarContact);
+  static Optional<RdapContactEntity> makeRdapJsonForRegistrarContact(RegistrarPoc registrarPoc) {
+    ImmutableList<RdapEntity.Role> roles = makeRdapRoleList(registrarPoc);
     if (roles.isEmpty()) {
       return Optional.empty();
     }
@@ -808,20 +807,20 @@ public class RdapJsonFormatter {
     // Create the vCard.
     VcardArray.Builder vcardBuilder = VcardArray.builder();
     // MUST include FN member: RDAP Response Profile 3.2
-    String name = registrarContact.getName();
+    String name = registrarPoc.getName();
     if (name != null) {
       vcardBuilder.add(Vcard.create("fn", "text", name));
     }
     // MUST include TEL and EMAIL members: RDAP Response Profile 2.4.5, 3.2
-    String voicePhoneNumber = registrarContact.getPhoneNumber();
+    String voicePhoneNumber = registrarPoc.getPhoneNumber();
     if (voicePhoneNumber != null) {
       vcardBuilder.add(makePhoneEntry(PHONE_TYPE_VOICE, "tel:" + voicePhoneNumber));
     }
-    String faxPhoneNumber = registrarContact.getFaxNumber();
+    String faxPhoneNumber = registrarPoc.getFaxNumber();
     if (faxPhoneNumber != null) {
       vcardBuilder.add(makePhoneEntry(PHONE_TYPE_FAX, "tel:" + faxPhoneNumber));
     }
-    String emailAddress = registrarContact.getEmailAddress();
+    String emailAddress = registrarPoc.getEmailAddress();
     if (emailAddress != null) {
       vcardBuilder.add(Vcard.create("email", "text", emailAddress));
     }
@@ -857,16 +856,15 @@ public class RdapJsonFormatter {
    *
    * <p>3.2. For direct Registrar queries, we SHOULD have at least "admin" and "tech".
    */
-  private static ImmutableList<RdapEntity.Role> makeRdapRoleList(
-      RegistrarContact registrarContact) {
+  private static ImmutableList<RdapEntity.Role> makeRdapRoleList(RegistrarPoc registrarPoc) {
     ImmutableList.Builder<RdapEntity.Role> rolesBuilder = new ImmutableList.Builder<>();
-    if (registrarContact.getVisibleInWhoisAsAdmin()) {
+    if (registrarPoc.getVisibleInWhoisAsAdmin()) {
       rolesBuilder.add(RdapEntity.Role.ADMIN);
     }
-    if (registrarContact.getVisibleInWhoisAsTech()) {
+    if (registrarPoc.getVisibleInWhoisAsTech()) {
       rolesBuilder.add(RdapEntity.Role.TECH);
     }
-    if (registrarContact.getVisibleInDomainWhoisAsAbuse()) {
+    if (registrarPoc.getVisibleInDomainWhoisAsAbuse()) {
       rolesBuilder.add(RdapEntity.Role.ABUSE);
     }
     return rolesBuilder.build();

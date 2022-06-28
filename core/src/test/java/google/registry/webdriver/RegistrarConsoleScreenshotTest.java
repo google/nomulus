@@ -34,7 +34,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.ofy.OfyFilter;
 import google.registry.model.registrar.Registrar.State;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
 import google.registry.testing.AppEngineExtension;
@@ -181,7 +181,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
     server.runInAppEngineEnvironment(
         () -> {
-          RegistrarContact contact =
+          RegistrarPoc contact =
               loadRegistrar("TheRegistrar").getContacts().stream()
                   .filter(c -> c.getEmailAddress().equals("johndoe@theregistrar.com"))
                   .findFirst()

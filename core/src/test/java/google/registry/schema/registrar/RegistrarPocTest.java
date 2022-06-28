@@ -15,7 +15,7 @@
 package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.registrar.RegistrarContact.Type.WHOIS;
+import static google.registry.model.registrar.RegistrarPoc.Type.WHOIS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
@@ -23,7 +23,7 @@ import static google.registry.testing.SqlHelper.saveRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatastoreEntityExtension;
@@ -33,8 +33,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for persisting {@link RegistrarContact} entities. */
-class RegistrarContactTest {
+/** Unit tests for persisting {@link RegistrarPoc} entities. */
+class RegistrarPocTest {
 
   @RegisterExtension
   @Order(value = 1)
@@ -46,14 +46,14 @@ class RegistrarContactTest {
 
   private Registrar testRegistrar;
 
-  private RegistrarContact testRegistrarPoc;
+  private RegistrarPoc testRegistrarPoc;
 
   @BeforeEach
   public void beforeEach() {
     testRegistrar = saveRegistrar("registrarId");
     testRegistrarPoc =
-        new RegistrarContact.Builder()
-            .setParent(testRegistrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(testRegistrar)
             .setName("Judith Registrar")
             .setEmailAddress("judith.doe@example.com")
             .setRegistryLockEmailAddress("judith.doe@external.com")
@@ -75,7 +75,7 @@ class RegistrarContactTest {
   @Test
   void testSerializable_succeeds() {
     insertInDb(testRegistrarPoc);
-    RegistrarContact persisted = jpaTm().transact(() -> jpaTm().loadByEntity(testRegistrarPoc));
+    RegistrarPoc persisted = jpaTm().transact(() -> jpaTm().loadByEntity(testRegistrarPoc));
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 }

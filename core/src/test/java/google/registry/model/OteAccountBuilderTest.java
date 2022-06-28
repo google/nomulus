@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.testing.AppEngineExtension;
@@ -93,9 +93,8 @@ public final class OteAccountBuilderTest {
 
   private void assertContactExists(String registrarId, String email) {
     Registrar registrar = Registrar.loadByRegistrarId(registrarId).get();
-    assertThat(registrar.getContacts().stream().map(RegistrarContact::getEmailAddress))
-        .contains(email);
-    RegistrarContact contact =
+    assertThat(registrar.getContacts().stream().map(RegistrarPoc::getEmailAddress)).contains(email);
+    RegistrarPoc contact =
         registrar.getContacts().stream()
             .filter(c -> email.equals(c.getEmailAddress()))
             .findAny()

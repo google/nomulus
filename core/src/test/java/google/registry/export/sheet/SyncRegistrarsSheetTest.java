@@ -38,7 +38,7 @@ import google.registry.model.common.Cursor;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
@@ -85,7 +85,7 @@ public class SyncRegistrarsSheetTest {
     // We don't do this for ofy because ofy's loadAllOf() can't be called in a transaction but
     // _must_ be called in a transaction in JPA.
     if (!tm().isOfy()) {
-      tm().transact(() -> tm().loadAllOf(RegistrarContact.class))
+      tm().transact(() -> tm().loadAllOf(RegistrarPoc.class))
           .forEach(DatabaseHelper::deleteResource);
     }
     Registrar.loadAll().forEach(DatabaseHelper::deleteResource);
@@ -161,33 +161,34 @@ public class SyncRegistrarsSheetTest {
             .setUrl("http://www.example.org/aaa_registrar")
             .setBillingAccountMap(ImmutableMap.of(USD, "USD1234", JPY, "JPY7890"))
             .build();
-    ImmutableList<RegistrarContact> contacts = ImmutableList.of(
-        new RegistrarContact.Builder()
-            .setParent(registrar)
-            .setName("Jane Doe")
-            .setEmailAddress("contact@example.com")
-            .setPhoneNumber("+1.1234567890")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN, RegistrarContact.Type.BILLING))
-            .build(),
-        new RegistrarContact.Builder()
-            .setParent(registrar)
-            .setName("John Doe")
-            .setEmailAddress("john.doe@example.tld")
-            .setPhoneNumber("+1.1234567890")
-            .setFaxNumber("+1.1234567891")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
-            // Purposely flip the internal/external admin/tech
-            // distinction to make sure we're not relying on it.  Sigh.
-            .setVisibleInWhoisAsAdmin(false)
-            .setVisibleInWhoisAsTech(true)
-            .setGaeUserId("light")
-            .build(),
-        new RegistrarContact.Builder()
-            .setParent(registrar)
-            .setName("Jane Smith")
-            .setEmailAddress("pride@example.net")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
-        .build());
+    ImmutableList<RegistrarPoc> contacts =
+        ImmutableList.of(
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
+                .setName("Jane Doe")
+                .setEmailAddress("contact@example.com")
+                .setPhoneNumber("+1.1234567890")
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN, RegistrarPoc.Type.BILLING))
+                .build(),
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
+                .setName("John Doe")
+                .setEmailAddress("john.doe@example.tld")
+                .setPhoneNumber("+1.1234567890")
+                .setFaxNumber("+1.1234567891")
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
+                // Purposely flip the internal/external admin/tech
+                // distinction to make sure we're not relying on it.  Sigh.
+                .setVisibleInWhoisAsAdmin(false)
+                .setVisibleInWhoisAsTech(true)
+                .setGaeUserId("light")
+                .build(),
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
+                .setName("Jane Smith")
+                .setEmailAddress("pride@example.net")
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
+                .build());
     // Use registrar key for contacts' parent.
     DateTime registrarCreationTime = persistResource(registrar).getCreationTime();
     persistSimpleResources(contacts);

@@ -16,26 +16,21 @@ package google.registry.request.auth;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.Streams.stream;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.appengine.api.users.User;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
 import dagger.Lazy;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.groups.GroupsConnection;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 import javax.inject.Inject;
@@ -43,8 +38,8 @@ import javax.inject.Inject;
 /**
  * Allows access only to {@link Registrar}s the current user has access to.
  *
- * <p>A user has OWNER role on a Registrar if there exists a {@link RegistrarContact} with that
- * user's gaeId and the registrar as a parent.
+ * <p>A user has OWNER role on a Registrar if there exists a {@link RegistrarPoc} with that user's
+ * gaeId and the registrar as a parent.
  *
  * <p>An "admin" has in addition OWNER role on {@code #registryAdminClientId} and to all non-{@code
  * REAL} registrars (see {@link Registrar#getType}).
@@ -54,8 +49,8 @@ import javax.inject.Inject;
  * <p>A user is an "admin" if they are a GAE-admin, or if their email is in the "Support" G Suite
  * group.
  *
- * <p>NOTE: to check whether the user is in the "Support" G Suite group, we need a connection to
- * G Suite. This in turn requires we have valid JsonCredentials, which not all environments have set
+ * <p>NOTE: to check whether the user is in the "Support" G Suite group, we need a connection to G
+ * Suite. This in turn requires we have valid JsonCredentials, which not all environments have set
  * up. This connection will be created lazily (only if needed).
  *
  * <p>Specifically, we don't instantiate the connection if: (a) gSuiteSupportGroupEmailAddress isn't
@@ -319,34 +314,19 @@ public class AuthenticatedRegistrarAccessor {
     logger.atInfo().log("Checking registrar contacts for user ID %s.", user.getUserId());
 
     // Find all registrars that have a registrar contact with this user's ID.
-    if (tm().isOfy()) {
-      ImmutableList<Key<Registrar>> accessibleClientIds =
-          stream(
-                  auditedOfy()
-                      .load()
-                      .type(RegistrarContact.class)
-                      .filter("gaeUserId", user.getUserId()))
-              .map(RegistrarContact::getParent)
-              .collect(toImmutableList());
-      // Filter out disabled registrars (note that pending registrars still allow console login).
-      auditedOfy().load().keys(accessibleClientIds).values().stream()
-          .filter(registrar -> registrar.getState() != State.DISABLED)
-          .forEach(registrar -> builder.put(registrar.getRegistrarId(), Role.OWNER));
-    } else {
-      jpaTm()
-          .transact(
-              () ->
-                  jpaTm()
-                      .query(
-                          "SELECT r FROM Registrar r INNER JOIN RegistrarPoc rp ON "
-                              + "r.clientIdentifier = rp.registrarId WHERE rp.gaeUserId = "
-                              + ":gaeUserId AND r.state != :state",
-                          Registrar.class)
-                      .setParameter("gaeUserId", user.getUserId())
-                      .setParameter("state", State.DISABLED)
-                      .getResultStream()
-                      .forEach(registrar -> builder.put(registrar.getRegistrarId(), Role.OWNER)));
-    }
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .query(
+                        "SELECT r FROM Registrar r INNER JOIN RegistrarPoc rp ON "
+                            + "r.clientIdentifier = rp.registrarId WHERE rp.gaeUserId = "
+                            + ":gaeUserId AND r.state != :state",
+                        Registrar.class)
+                    .setParameter("gaeUserId", user.getUserId())
+                    .setParameter("state", State.DISABLED)
+                    .getResultStream()
+                    .forEach(registrar -> builder.put(registrar.getRegistrarId(), Role.OWNER)));
 
     // Admins have ADMIN access to all registrars, and also OWNER access to the registry registrar
     // and all non-REAL or non-live registrars.

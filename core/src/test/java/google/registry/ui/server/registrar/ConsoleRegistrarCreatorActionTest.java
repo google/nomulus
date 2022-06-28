@@ -32,7 +32,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
@@ -218,8 +218,8 @@ final class ConsoleRegistrarCreatorActionTest {
 
     assertThat(registrar.getContacts())
         .containsExactly(
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setGaeUserId("-1509175207")
                 .setGaeUserId(convertEmailAddressToGaeUserId("myclientid@registry.example"))
                 .setName("myclientid@registry.example")

@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.whois.WhoisResponse.WhoisResponseResults;
@@ -64,50 +64,50 @@ class RegistrarWhoisResponseTest {
             .setUrl("http://my.fake.url")
             .build();
     // Use the registrar key for contacts' parent.
-    ImmutableList<RegistrarContact> contacts =
+    ImmutableList<RegistrarPoc> contacts =
         ImmutableList.of(
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Joe Registrar")
                 .setEmailAddress("joeregistrar@example-registrar.tld")
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("John Doe")
                 .setEmailAddress("johndoe@example-registrar.tld")
                 .setPhoneNumber("+1.1111111111")
                 .setFaxNumber("+1.1111111111")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Jane Registrar")
                 .setEmailAddress("janeregistrar@example-registrar.tld")
                 .setPhoneNumber("+1.3105551214")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
                 .setVisibleInWhoisAsAdmin(true)
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Jane Doe")
                 .setEmailAddress("janedoe@example-registrar.tld")
                 .setPhoneNumber("+1.1111111112")
                 .setFaxNumber("+1.1111111112")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Bonnie & Clyde")
                 .setEmailAddress("johngeek@example-registrar.tld")
                 .setPhoneNumber("+1.3105551215")
                 .setFaxNumber("+1.3105551216")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .setVisibleInWhoisAsTech(true)
                 .build());
     persistResource(registrar);
