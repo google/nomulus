@@ -105,16 +105,16 @@ class IcannReportingUploadActionTest {
     when(mockReporter.send(PAYLOAD_SUCCESS, "foo-activity-200606.csv")).thenReturn(true);
     clock.setTo(DateTime.parse("2006-07-05T00:30:00Z"));
     persistResource(
-        Cursor.create(
+        Cursor.createScoped(
             CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-07-01TZ"), Registry.get("tld")));
     persistResource(
-        Cursor.create(
+        Cursor.createScoped(
             CursorType.ICANN_UPLOAD_TX, DateTime.parse("2006-07-01TZ"), Registry.get("tld")));
     persistResource(
-        Cursor.create(
+        Cursor.createScoped(
             CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-07-01TZ"), Registry.get("foo")));
     persistResource(
-        Cursor.create(
+        Cursor.createScoped(
             CursorType.ICANN_UPLOAD_TX, DateTime.parse("2006-07-01TZ"), Registry.get("foo")));
     loggerToIntercept.addHandler(logHandler);
   }
@@ -146,10 +146,10 @@ class IcannReportingUploadActionTest {
   void testSuccess_january() throws Exception {
     clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
     persistResource(
-        Cursor.create(
+        Cursor.createScoped(
             CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-01-01TZ"), Registry.get("tld")));
     persistResource(
-        Cursor.create(
+        Cursor.createScoped(
             CursorType.ICANN_UPLOAD_TX, DateTime.parse("2006-01-01TZ"), Registry.get("tld")));
     gcsUtils.createFromBytes(
         BlobId.of("basin/icann/monthly/2005-12", "tld-transactions-200512.csv"), PAYLOAD_SUCCESS);
@@ -183,7 +183,8 @@ class IcannReportingUploadActionTest {
     IcannReportingUploadAction action = createAction();
     action.run();
     tm().clearSessionCache();
-    Cursor cursor = loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "tld"));
+    Cursor cursor =
+        loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
   }
 
@@ -241,7 +242,8 @@ class IcannReportingUploadActionTest {
     runTest_nonRetryableException(
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
     tm().clearSessionCache();
-    Cursor cursor = loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "tld"));
+    Cursor cursor =
+        loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
   }
 
@@ -251,7 +253,8 @@ class IcannReportingUploadActionTest {
     IcannReportingUploadAction action = createAction();
     action.run();
     tm().clearSessionCache();
-    Cursor cursor = loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "foo"));
+    Cursor cursor =
+        loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("foo")));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
     verifyNoMoreInteractions(mockReporter);
   }
@@ -286,7 +289,7 @@ class IcannReportingUploadActionTest {
   void testFail_fileNotFound() throws Exception {
     clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
     persistResource(
-        Cursor.create(
+        Cursor.createScoped(
             CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-01-01TZ"), Registry.get("tld")));
     IcannReportingUploadAction action = createAction();
     action.run();
@@ -302,7 +305,7 @@ class IcannReportingUploadActionTest {
   @TestOfyAndSql
   void testWarning_fileNotStagedYet() throws Exception {
     persistResource(
-        Cursor.create(
+        Cursor.createScoped(
             CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-08-01TZ"), Registry.get("foo")));
     clock.setTo(DateTime.parse("2006-08-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
@@ -352,9 +355,10 @@ class IcannReportingUploadActionTest {
                 new InternetAddress("sender@example.com")));
 
     Cursor newActivityCursor =
-        loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "new"));
+        loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("new")));
     assertThat(newActivityCursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
-    Cursor newTransactionCursor = loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_TX, "new"));
+    Cursor newTransactionCursor =
+        loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_TX, Registry.get("new")));
     assertThat(newTransactionCursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
   }
 }

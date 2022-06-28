@@ -730,6 +730,7 @@ public class Registrar extends ImmutableObject
   }
 
   /** Creates a {@link VKey} for this instance. */
+  @Override
   public VKey<Registrar> createVKey() {
     return createVKey(Key.create(this));
   }

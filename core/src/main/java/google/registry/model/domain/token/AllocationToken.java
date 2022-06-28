@@ -248,6 +248,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
     return renewalPriceBehavior;
   }
 
+  @Override
   public VKey<AllocationToken> createVKey() {
     return VKey.create(AllocationToken.class, getToken(), Key.create(this));
   }

@@ -106,6 +106,7 @@ class BillingVKeyTest {
       return billingRecurrenceVKey.createVKey();
     }
 
+    @Override
     public VKey<BillingVKeyTestEntity> createVKey() {
       return VKey.createSql(BillingVKeyTestEntity.class, id);
     }

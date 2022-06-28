@@ -19,24 +19,18 @@ import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.CursorType.RDE_UPLOAD;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.tld.Registry;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestSqlOnly;
 import google.registry.util.SerializeUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Cursor}. */
-@DualDatabaseTest
 public class CursorTest extends EntityTestCase {
 
   public CursorTest() {
@@ -48,7 +42,7 @@ public class CursorTest extends EntityTestCase {
     fakeClock.setTo(DateTime.parse("2010-10-17TZ"));
   }
 
-  @TestSqlOnly
+  @Test
   void testSerializable() {
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
     tm().transact(() -> tm().put(Cursor.createGlobal(RECURRING_BILLING, time)));
@@ -57,22 +51,23 @@ public class CursorTest extends EntityTestCase {
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_persistScopedCursor() {
-    createTld("tld");
+    Registry tld = createTld("tld");
     this.fakeClock.advanceOneMilli();
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
-    Cursor cursor = Cursor.create(RDE_UPLOAD, time, Registry.get("tld"));
+    Cursor cursor = Cursor.createScoped(RDE_UPLOAD, time, tld);
     tm().transact(() -> tm().put(cursor));
-    transactIfJpaTm(
-        () -> {
-          assertThat(tm().loadByKeyIfPresent(Cursor.createVKey(BRDA, "tld")).isPresent()).isFalse();
-          assertThat(tm().loadByKey(Cursor.createVKey(RDE_UPLOAD, "tld")).getCursorTime())
-              .isEqualTo(time);
-        });
+    tm().transact(
+            () -> {
+              assertThat(tm().loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, tld)).isPresent())
+                  .isFalse();
+              assertThat(tm().loadByKey(Cursor.createScopedVKey(RDE_UPLOAD, tld)).getCursorTime())
+                  .isEqualTo(time);
+            });
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_persistGlobalCursor() {
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
     Cursor cursor = Cursor.createGlobal(RECURRING_BILLING, time);
@@ -81,86 +76,47 @@ public class CursorTest extends EntityTestCase {
         .isEqualTo(time);
   }
 
-  @TestOfyAndSql
-  void testIndexing() throws Exception {
-    final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
-    tm().transact(() -> tm().put(Cursor.createGlobal(RECURRING_BILLING, time)));
-    Cursor cursor = tm().transact(() -> tm().loadByKey(Cursor.createGlobalVKey(RECURRING_BILLING)));
-    verifyDatastoreIndexing(cursor);
+  @Test
+  void testFailure_VKeyWrongScope() {
+    Registry tld = createTld("tld");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Cursor.createGlobalVKey(RDE_UPLOAD),
+        "Scope GLOBAL does not match cursor type RDE_UPLOAD");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Cursor.createScopedVKey(RECURRING_BILLING, tld),
+        "Scope tld does not match cursor type RECURRING_BILLING");
+    assertThrows(
+        NullPointerException.class, () -> Cursor.createScopedVKey(RECURRING_BILLING, null));
   }
 
-  @TestOfyAndSql
-  void testFailure_invalidScopeOnCreate() {
-    createTld("tld");
-    this.fakeClock.advanceOneMilli();
-    final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
-    final DomainBase domain = persistActiveDomain("notaregistry.tld");
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> Cursor.create(RDE_UPLOAD, time, domain),
-            domain.getTld());
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("Class required for cursor does not match scope class");
-  }
-
-  @TestOfyAndSql
-  void testFailure_invalidScopeOnKeyCreate() {
-    createTld("tld");
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> Cursor.createKey(RDE_UPLOAD, persistActiveDomain("notaregistry.tld")));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("Class required for cursor does not match scope class");
-  }
-
-  @TestOfyAndSql
-  void testFailure_createGlobalKeyForScopedCursorType() {
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Cursor.createGlobalKey(RDE_UPLOAD));
-    assertThat(thrown).hasMessageThat().contains("Cursor type is not a global cursor");
-  }
-
-  @TestOfyAndSql
-  void testFailure_invalidScopeOnGlobalKeyCreate() {
-    createTld("tld");
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> Cursor.createKey(RECURRING_BILLING, persistActiveDomain("notaregistry.tld")));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("Class required for cursor does not match scope class");
-  }
-
-  @TestOfyAndSql
+  @Test
   void testFailure_nullScope() {
     NullPointerException thrown =
         assertThrows(
             NullPointerException.class,
-            () -> Cursor.create(RECURRING_BILLING, START_OF_TIME, null));
+            () -> Cursor.createScoped(RECURRING_BILLING, START_OF_TIME, null));
     assertThat(thrown).hasMessageThat().contains("Cursor scope cannot be null");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nullCursorType() {
     createTld("tld");
     NullPointerException thrown =
         assertThrows(
             NullPointerException.class,
-            () -> Cursor.create(null, START_OF_TIME, Registry.get("tld")));
+            () -> Cursor.createScoped(null, START_OF_TIME, Registry.get("tld")));
     assertThat(thrown).hasMessageThat().contains("Cursor type cannot be null");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nullTime() {
     createTld("tld");
     NullPointerException thrown =
         assertThrows(
-            NullPointerException.class, () -> Cursor.create(RDE_UPLOAD, null, Registry.get("tld")));
+            NullPointerException.class,
+            () -> Cursor.createScoped(RDE_UPLOAD, null, Registry.get("tld")));
     assertThat(thrown).hasMessageThat().contains("Cursor time cannot be null");
   }
 }

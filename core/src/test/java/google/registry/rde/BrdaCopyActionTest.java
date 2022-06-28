@@ -125,13 +125,13 @@ public class BrdaCopyActionTest {
             () -> {
               RdeRevision.saveRevision("lol", DateTime.parse("2010-10-17TZ"), RdeMode.THIN, 0);
             });
-    persistResource(Cursor.create(BRDA, action.watermark.plusDays(1), Registry.get("lol")));
+    persistResource(Cursor.createScoped(BRDA, action.watermark.plusDays(1), Registry.get("lol")));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"", "job-name/"})
   void testRun_stagingNotFinished_throws204(String prefix) throws Exception {
-    persistResource(Cursor.create(BRDA, action.watermark, Registry.get("lol")));
+    persistResource(Cursor.createScoped(BRDA, action.watermark, Registry.get("lol")));
     NoContentException thrown = assertThrows(NoContentException.class, () -> runAction(prefix));
     assertThat(thrown)
         .hasMessageThat()

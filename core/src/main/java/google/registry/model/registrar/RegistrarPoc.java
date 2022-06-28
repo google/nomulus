@@ -317,6 +317,7 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
         .build();
   }
 
+  @Override
   public VKey<RegistrarPoc> createVKey() {
     return VKey.createSql(RegistrarPoc.class, new RegistrarPocId(emailAddress, registrarId));
   }

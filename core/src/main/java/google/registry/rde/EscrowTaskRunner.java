@@ -92,9 +92,7 @@ class EscrowTaskRunner {
           DateTime startOfToday = clock.nowUtc().withTimeAtStartOfDay();
           DateTime nextRequiredRun =
               transactIfJpaTm(
-                      () ->
-                          tm().loadByKeyIfPresent(
-                                  Cursor.createVKey(cursorType, registry.getTldStr())))
+                      () -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, registry)))
                   .map(Cursor::getCursorTime)
                   .orElse(startOfToday);
           if (nextRequiredRun.isAfter(startOfToday)) {
@@ -104,7 +102,7 @@ class EscrowTaskRunner {
           task.runWithLock(nextRequiredRun);
           DateTime nextRun = nextRequiredRun.plus(interval);
           logger.atInfo().log("Rolling cursor forward to %s.", nextRun);
-          tm().transact(() -> tm().put(Cursor.create(cursorType, nextRun, registry)));
+          tm().transact(() -> tm().put(Cursor.createScoped(cursorType, nextRun, registry)));
           return null;
         };
     String lockName = String.format("EscrowTaskRunner %s", task.getClass().getSimpleName());

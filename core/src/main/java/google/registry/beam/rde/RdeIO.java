@@ -279,7 +279,7 @@ public class RdeIO {
                     transactIfJpaTm(
                         () ->
                             tm().loadByKeyIfPresent(
-                                    Cursor.createVKey(key.cursor(), registry.getTldStr())));
+                                    Cursor.createScopedVKey(key.cursor(), registry)));
                 DateTime position = getCursorTimeOrStartOfTime(cursor);
                 checkState(key.interval() != null, "Interval must be present");
                 DateTime newPosition = key.watermark().plus(key.interval());
@@ -292,7 +292,7 @@ public class RdeIO {
                     "Partial ordering of RDE deposits broken: %s %s",
                     position,
                     key);
-                tm().put(Cursor.create(key.cursor(), newPosition, registry));
+                tm().put(Cursor.createScoped(key.cursor(), newPosition, registry));
                 logger.atInfo().log(
                     "Rolled forward %s on %s cursor to %s.", key.cursor(), key.tld(), newPosition);
                 RdeRevision.saveRevision(key.tld(), key.watermark(), key.mode(), input.getValue());

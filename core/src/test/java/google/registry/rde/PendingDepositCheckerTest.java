@@ -101,10 +101,9 @@ public class PendingDepositCheckerTest {
     createTldWithEscrowEnabled("lol");
     clock.advanceOneMilli();
     Registry registry = Registry.get("lol");
-    Truth8.assertThat(loadByKeyIfPresent(Cursor.createVKey(RDE_STAGING, registry.getTldStr())))
-        .isEmpty();
+    Truth8.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(RDE_STAGING, registry))).isEmpty();
     checker.getTldsAndWatermarksPendingDepositForRdeAndBrda();
-    assertThat(loadByKey(Cursor.createVKey(RDE_STAGING, registry.getTldStr())).getCursorTime())
+    assertThat(loadByKey(Cursor.createScopedVKey(RDE_STAGING, registry)).getCursorTime())
         .isEqualTo(DateTime.parse("2000-01-01TZ"));
   }
 
@@ -117,7 +116,7 @@ public class PendingDepositCheckerTest {
     setCursor(Registry.get("lol"), RDE_STAGING, yesterday);
     clock.advanceOneMilli();
     checker.getTldsAndWatermarksPendingDepositForRdeAndBrda();
-    Cursor cursor = loadByKey(Cursor.createVKey(RDE_STAGING, "lol"));
+    Cursor cursor = loadByKey(Cursor.createScopedVKey(RDE_STAGING, Registry.get("lol")));
     assertThat(cursor.getCursorTime()).isEqualTo(yesterday);
   }
 
@@ -129,9 +128,9 @@ public class PendingDepositCheckerTest {
     clock.advanceOneMilli();
     setCursor(registry, RDE_STAGING, DateTime.parse("2000-01-02TZ")); // assume rde is already done
     clock.advanceOneMilli();
-    Truth8.assertThat(loadByKeyIfPresent(Cursor.createVKey(BRDA, registry.getTldStr()))).isEmpty();
+    Truth8.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, registry))).isEmpty();
     assertThat(checker.getTldsAndWatermarksPendingDepositForRdeAndBrda()).isEmpty();
-    Truth8.assertThat(loadByKeyIfPresent(Cursor.createVKey(BRDA, registry.getTldStr()))).isEmpty();
+    Truth8.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, registry))).isEmpty();
   }
 
   @TestOfyAndSql
@@ -171,7 +170,7 @@ public class PendingDepositCheckerTest {
 
   private static void setCursor(
       final Registry registry, final CursorType cursorType, final DateTime value) {
-    tm().transact(() -> tm().put(Cursor.create(cursorType, value, registry)));
+    tm().transact(() -> tm().put(Cursor.createScoped(cursorType, value, registry)));
   }
 
   private static void createTldWithEscrowEnabled(final String tld) {

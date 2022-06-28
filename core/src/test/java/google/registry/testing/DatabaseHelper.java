@@ -388,12 +388,12 @@ public class DatabaseHelper {
   }
 
   /** Creates and persists a tld. */
-  public static void createTld(String tld) {
-    createTld(tld, GENERAL_AVAILABILITY);
+  public static Registry createTld(String tld) {
+    return createTld(tld, GENERAL_AVAILABILITY);
   }
 
-  public static void createTld(String tld, String roidSuffix) {
-    createTld(tld, roidSuffix, ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
+  public static Registry createTld(String tld, String roidSuffix) {
+    return createTld(tld, roidSuffix, ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
   }
 
   /** Creates and persists the given TLDs. */
@@ -403,23 +403,25 @@ public class DatabaseHelper {
     }
   }
 
-  public static void createTld(String tld, TldState tldState) {
-    createTld(tld, ImmutableSortedMap.of(START_OF_TIME, tldState));
+  public static Registry createTld(String tld, TldState tldState) {
+    return createTld(tld, ImmutableSortedMap.of(START_OF_TIME, tldState));
   }
 
-  public static void createTld(String tld, ImmutableSortedMap<DateTime, TldState> tldStates) {
+  public static Registry createTld(String tld, ImmutableSortedMap<DateTime, TldState> tldStates) {
     // Coerce the TLD string into a valid ROID suffix.
     String roidSuffix =
         Ascii.toUpperCase(tld.replaceFirst(ACE_PREFIX_REGEX, "").replace('.', '_'))
             .replace('-', '_');
-    createTld(tld, roidSuffix.length() > 8 ? roidSuffix.substring(0, 8) : roidSuffix, tldStates);
+    return createTld(
+        tld, roidSuffix.length() > 8 ? roidSuffix.substring(0, 8) : roidSuffix, tldStates);
   }
 
-  public static void createTld(
+  public static Registry createTld(
       String tld, String roidSuffix, ImmutableSortedMap<DateTime, TldState> tldStates) {
-    persistResource(newRegistry(tld, roidSuffix, tldStates));
+    Registry registry = persistResource(newRegistry(tld, roidSuffix, tldStates));
     allowRegistrarAccess("TheRegistrar", tld);
     allowRegistrarAccess("NewRegistrar", tld);
+    return registry;
   }
 
   public static void deleteTld(String tld) {

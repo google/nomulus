@@ -61,7 +61,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("Modification")).isEqualTo(Modification.class);
     assertThat(ClassPathManager.getClass("AllocationToken")).isEqualTo(AllocationToken.class);
     assertThat(ClassPathManager.getClass("OneTime")).isEqualTo(OneTime.class);
-    assertThat(ClassPathManager.getClass("Cursor")).isEqualTo(Cursor.class);
     assertThat(ClassPathManager.getClass("RdeRevision")).isEqualTo(RdeRevision.class);
     assertThat(ClassPathManager.getClass("HostResource")).isEqualTo(HostResource.class);
     assertThat(ClassPathManager.getClass("Recurring")).isEqualTo(Recurring.class);
@@ -120,7 +119,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClassName(Modification.class)).isEqualTo("Modification");
     assertThat(ClassPathManager.getClassName(AllocationToken.class)).isEqualTo("AllocationToken");
     assertThat(ClassPathManager.getClassName(OneTime.class)).isEqualTo("OneTime");
-    assertThat(ClassPathManager.getClassName(Cursor.class)).isEqualTo("Cursor");
     assertThat(ClassPathManager.getClassName(RdeRevision.class)).isEqualTo("RdeRevision");
     assertThat(ClassPathManager.getClassName(HostResource.class)).isEqualTo("HostResource");
     assertThat(ClassPathManager.getClassName(Recurring.class)).isEqualTo("Recurring");

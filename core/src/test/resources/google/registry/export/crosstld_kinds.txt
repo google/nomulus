@@ -1,4 +1,3 @@
-Cursor
 Registrar
 Registry
 ServerSecret

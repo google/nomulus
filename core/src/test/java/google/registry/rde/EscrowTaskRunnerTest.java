@@ -77,12 +77,12 @@ public class EscrowTaskRunnerTest {
   void testRun_cursorIsToday_advancesCursorToTomorrow() throws Exception {
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
     persistResource(
-        Cursor.create(CursorType.RDE_STAGING, DateTime.parse("2006-06-06TZ"), registry));
+        Cursor.createScoped(CursorType.RDE_STAGING, DateTime.parse("2006-06-06TZ"), registry));
     runner.lockRunAndRollForward(
         task, registry, standardSeconds(30), CursorType.RDE_STAGING, standardDays(1));
     verify(task).runWithLock(DateTime.parse("2006-06-06TZ"));
     tm().clearSessionCache();
-    Cursor cursor = loadByKey(Cursor.createVKey(CursorType.RDE_STAGING, registry.getTldStr()));
+    Cursor cursor = loadByKey(Cursor.createScopedVKey(CursorType.RDE_STAGING, registry));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-06-07TZ"));
   }
 
@@ -92,7 +92,7 @@ public class EscrowTaskRunnerTest {
     runner.lockRunAndRollForward(
         task, registry, standardSeconds(30), CursorType.RDE_STAGING, standardDays(1));
     verify(task).runWithLock(DateTime.parse("2006-06-06TZ"));
-    Cursor cursor = loadByKey(Cursor.createVKey(CursorType.RDE_STAGING, "lol"));
+    Cursor cursor = loadByKey(Cursor.createScopedVKey(CursorType.RDE_STAGING, registry));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-06-07TZ"));
   }
 
@@ -100,7 +100,7 @@ public class EscrowTaskRunnerTest {
   void testRun_cursorInTheFuture_doesNothing() {
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
     persistResource(
-        Cursor.create(CursorType.RDE_STAGING, DateTime.parse("2006-06-07TZ"), registry));
+        Cursor.createScoped(CursorType.RDE_STAGING, DateTime.parse("2006-06-07TZ"), registry));
     NoContentException thrown =
         assertThrows(
             NoContentException.class,
@@ -115,7 +115,7 @@ public class EscrowTaskRunnerTest {
     String lockName = "EscrowTaskRunner " + task.getClass().getSimpleName();
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
     persistResource(
-        Cursor.create(CursorType.RDE_STAGING, DateTime.parse("2006-06-06TZ"), registry));
+        Cursor.createScoped(CursorType.RDE_STAGING, DateTime.parse("2006-06-06TZ"), registry));
     runner.lockHandler = new FakeLockHandler(false);
     ServiceUnavailableException thrown =
         assertThrows(

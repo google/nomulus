@@ -97,6 +97,7 @@ public class RdeReportActionTest {
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final BlobId reportFile =
       BlobId.of("tub", "test_2006-06-06_full_S1_R0-report.xml.ghostryde");
+  private Registry registry;
 
   private RdeReportAction createAction() {
     RdeReporter reporter = new RdeReporter();
@@ -120,11 +121,9 @@ public class RdeReportActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    createTld("test");
-    persistResource(
-        Cursor.create(RDE_REPORT, DateTime.parse("2006-06-06TZ"), Registry.get("test")));
-    persistResource(
-        Cursor.create(RDE_UPLOAD, DateTime.parse("2006-06-07TZ"), Registry.get("test")));
+    registry = createTld("test");
+    persistResource(Cursor.createScoped(RDE_REPORT, DateTime.parse("2006-06-06TZ"), registry));
+    persistResource(Cursor.createScoped(RDE_UPLOAD, DateTime.parse("2006-06-07TZ"), registry));
     gcsUtils.createFromBytes(reportFile, Ghostryde.encode(REPORT_XML.read(), encryptKey));
     tm().transact(() -> RdeRevision.saveRevision("test", DateTime.parse("2006-06-06TZ"), FULL, 0));
   }
@@ -211,7 +210,7 @@ public class RdeReportActionTest {
   }
 
   void testRunWithLock_nonexistentCursor_throws204() {
-    tm().transact(() -> tm().delete(Cursor.createVKey(RDE_UPLOAD, "test")));
+    tm().transact(() -> tm().delete(Cursor.createScopedVKey(RDE_UPLOAD, Registry.get("test"))));
     NoContentException thrown =
         assertThrows(
             NoContentException.class, () -> createAction().runWithLock(loadRdeReportCursor()));
@@ -225,7 +224,7 @@ public class RdeReportActionTest {
   @TestOfyAndSql
   void testRunWithLock_uploadNotFinished_throws204() {
     persistResource(
-        Cursor.create(RDE_UPLOAD, DateTime.parse("2006-06-06TZ"), Registry.get("test")));
+        Cursor.createScoped(RDE_UPLOAD, DateTime.parse("2006-06-06TZ"), Registry.get("test")));
     NoContentException thrown =
         assertThrows(
             NoContentException.class, () -> createAction().runWithLock(loadRdeReportCursor()));
@@ -270,7 +269,7 @@ public class RdeReportActionTest {
   }
 
   private DateTime loadRdeReportCursor() {
-    return loadByKey(Cursor.createVKey(RDE_REPORT, "test")).getCursorTime();
+    return loadByKey(Cursor.createScopedVKey(RDE_REPORT, registry)).getCursorTime();
   }
 
   private static ImmutableMap<String, String> mapifyHeaders(Iterable<HTTPHeader> headers) {
