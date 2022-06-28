@@ -337,7 +337,7 @@ class google.registry.model.domain.token.AllocationToken {
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.billing.BillingEvent$RenewalPriceBehavior renewalPriceBehavior;
-  google.registry.model.common.TimedTransitionProperty<google.registry.model.domain.token.AllocationToken$TokenStatus, google.registry.model.domain.token.AllocationToken$TokenStatusTransition> tokenStatusTransitions;
+  google.registry.model.common.TimedTransitionProperty<google.registry.model.domain.token.AllocationToken$TokenStatus> tokenStatusTransitions;
   google.registry.model.domain.token.AllocationToken$TokenType tokenType;
   google.registry.persistence.DomainHistoryVKey redemptionHistoryEntry;
   int discountYears;
@@ -350,10 +350,6 @@ enum google.registry.model.domain.token.AllocationToken$TokenStatus {
   ENDED;
   NOT_STARTED;
   VALID;
-}
-class google.registry.model.domain.token.AllocationToken$TokenStatusTransition {
-  google.registry.model.domain.token.AllocationToken$TokenStatus tokenStatus;
-  org.joda.time.DateTime transitionTime;
 }
 enum google.registry.model.domain.token.AllocationToken$TokenType {
   SINGLE_USE;
@@ -520,16 +516,12 @@ class google.registry.model.registrar.Registrar {
   java.lang.String url;
   java.lang.String whoisServer;
   java.util.List<google.registry.util.CidrAddressBlock> ipAddressWhitelist;
-  java.util.Map<org.joda.money.CurrencyUnit, google.registry.model.registrar.Registrar$BillingAccountEntry> billingAccountMap;
+  java.util.Map<org.joda.money.CurrencyUnit, java.lang.String> billingAccountMap;
   java.util.Set<java.lang.String> allowedTlds;
   java.util.Set<java.lang.String> rdapBaseUrls;
   org.joda.time.DateTime lastCertificateUpdateTime;
   org.joda.time.DateTime lastExpiringCertNotificationSentDate;
   org.joda.time.DateTime lastExpiringFailoverCertNotificationSentDate;
-}
-class google.registry.model.registrar.Registrar$BillingAccountEntry {
-  java.lang.String accountId;
-  org.joda.money.CurrencyUnit currency;
 }
 enum google.registry.model.registrar.Registrar$State {
   ACTIVE;

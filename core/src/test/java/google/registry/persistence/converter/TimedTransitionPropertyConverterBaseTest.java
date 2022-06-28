@@ -21,13 +21,10 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Maps;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
-import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
-import java.util.Map;
 import javax.persistence.Converter;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -54,8 +51,8 @@ class TimedTransitionPropertyConverterBaseTest {
           DATE_1, "val2",
           DATE_2, "val3");
 
-  private static final TimedTransitionProperty<String, TestTransition> TIMED_TRANSITION_PROPERTY =
-      TimedTransitionProperty.fromValueMap(VALUES, TestTransition.class);
+  private static final TimedTransitionProperty<String> TIMED_TRANSITION_PROPERTY =
+      TimedTransitionProperty.fromValueMap(VALUES);
 
   @Test
   void roundTripConversion_returnsSameTimedTransitionProperty() {
@@ -74,11 +71,11 @@ class TimedTransitionPropertyConverterBaseTest {
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property).containsExactlyEntriesIn(TIMED_TRANSITION_PROPERTY);
     ImmutableSortedMap<DateTime, String> newValues = ImmutableSortedMap.of(START_OF_TIME, "val4");
-    persisted.property = TimedTransitionProperty.fromValueMap(newValues, TestTransition.class);
+    persisted.property = TimedTransitionProperty.fromValueMap(newValues);
     jpaTm().transact(() -> jpaTm().getEntityManager().merge(persisted));
     TestEntity updated =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(updated.property.toValueMap()).isEqualTo(newValues);
+    assertThat(updated.property).isEqualTo(newValues);
   }
 
   @Test
@@ -131,37 +128,18 @@ class TimedTransitionPropertyConverterBaseTest {
     jpaTm().transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).executeUpdate());
   }
 
-  public static class TestTransition extends TimedTransition<String> {
-    private String transition;
-
-    @Override
-    public String getValue() {
-      return transition;
-    }
-
-    @Override
-    protected void setValue(String transition) {
-      this.transition = transition;
-    }
-  }
-
   @Converter(autoApply = true)
   private static class TestTimedTransitionPropertyConverter
-      extends TimedTransitionPropertyConverterBase<String, TestTransition> {
+      extends TimedTransitionPropertyConverterBase<String> {
 
     @Override
-    Map.Entry<DateTime, String> convertToEntityMapEntry(Map.Entry<String, String> entry) {
-      return Maps.immutableEntry(DateTime.parse(entry.getKey()), entry.getValue());
+    protected String convertValueToString(String value) {
+      return value;
     }
 
     @Override
-    Class<TestTransition> getTimedTransitionSubclass() {
-      return TestTransition.class;
-    }
-
-    @Override
-    Map.Entry<String, String> convertToDatabaseMapEntry(Map.Entry<DateTime, TestTransition> entry) {
-      return Maps.immutableEntry(entry.getKey().toString(), entry.getValue().getValue());
+    protected String convertStringToValue(String string) {
+      return string;
     }
   }
 
@@ -170,12 +148,12 @@ class TimedTransitionPropertyConverterBaseTest {
 
     @Id String name = "id";
 
-    TimedTransitionProperty<String, TestTransition> property;
+    TimedTransitionProperty<String> property;
 
     private TestEntity() {}
 
-    private TestEntity(TimedTransitionProperty<String, TestTransition> timedTransitionProperty) {
-      this.property = timedTransitionProperty;
+    private TestEntity(TimedTransitionProperty<String> timedTransitionProperty) {
+      property = timedTransitionProperty;
     }
   }
 }

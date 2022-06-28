@@ -20,7 +20,6 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
@@ -128,7 +127,7 @@ public class StringMapConverterBaseTest {
   }
 
   private static class Key extends ImmutableObject {
-    private String key;
+    private final String key;
 
     private Key(String key) {
       this.key = key;
@@ -136,7 +135,7 @@ public class StringMapConverterBaseTest {
   }
 
   private static class Value extends ImmutableObject {
-    private String value;
+    private final String value;
 
     private Value(String value) {
       this.value = value;
@@ -144,16 +143,32 @@ public class StringMapConverterBaseTest {
   }
 
   @Converter(autoApply = true)
-  private static class TestStringMapConverter extends StringMapConverterBase<Key, Value> {
+  private static class TestStringMapConverter
+      extends StringMapConverterBase<Key, Value, Map<Key, Value>> {
 
     @Override
-    Map.Entry<String, String> convertToDatabaseMapEntry(Map.Entry<Key, Value> entry) {
-      return Maps.immutableEntry(entry.getKey().key, entry.getValue().value);
+    protected String convertKeyToString(Key key) {
+      return key.key;
     }
 
     @Override
-    Map.Entry<Key, Value> convertToEntityMapEntry(Map.Entry<String, String> entry) {
-      return Maps.immutableEntry(new Key(entry.getKey()), new Value(entry.getValue()));
+    protected String convertValueToString(Value value) {
+      return value.value;
+    }
+
+    @Override
+    protected Key convertStringToKey(String string) {
+      return new Key(string);
+    }
+
+    @Override
+    protected Value convertStringToValue(String string) {
+      return new Value(string);
+    }
+
+    @Override
+    protected Map<Key, Value> convertMapToDerivedType(Map<Key, Value> map) {
+      return map;
     }
   }
 

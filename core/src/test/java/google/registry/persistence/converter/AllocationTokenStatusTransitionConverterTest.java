@@ -26,7 +26,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
-import google.registry.model.domain.token.AllocationToken.TokenStatusTransition;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import javax.persistence.Entity;
@@ -55,8 +54,8 @@ public class AllocationTokenStatusTransitionConverterTest {
 
   @Test
   void roundTripConversion_returnsSameTimedTransitionProperty() {
-    TimedTransitionProperty<TokenStatus, TokenStatusTransition> timedTransitionProperty =
-        TimedTransitionProperty.fromValueMap(values, TokenStatusTransition.class);
+    TimedTransitionProperty<TokenStatus> timedTransitionProperty =
+        TimedTransitionProperty.fromValueMap(values);
     AllocationTokenStatusTransitionConverterTestEntity testEntity =
         new AllocationTokenStatusTransitionConverterTestEntity(timedTransitionProperty);
     insertInDb(testEntity);
@@ -75,12 +74,12 @@ public class AllocationTokenStatusTransitionConverterTest {
 
     @Id String name = "id";
 
-    TimedTransitionProperty<TokenStatus, TokenStatusTransition> timedTransitionProperty;
+    TimedTransitionProperty<TokenStatus> timedTransitionProperty;
 
     private AllocationTokenStatusTransitionConverterTestEntity() {}
 
     private AllocationTokenStatusTransitionConverterTestEntity(
-        TimedTransitionProperty<TokenStatus, TokenStatusTransition> timedTransitionProperty) {
+        TimedTransitionProperty<TokenStatus> timedTransitionProperty) {
       this.timedTransitionProperty = timedTransitionProperty;
     }
   }

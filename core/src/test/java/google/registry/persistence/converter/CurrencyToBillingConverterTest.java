@@ -20,7 +20,6 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
-import google.registry.model.registrar.Registrar.BillingAccountEntry;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.util.Map;
@@ -39,12 +38,10 @@ public class CurrencyToBillingConverterTest {
 
   @Test
   void roundTripConversion_returnsSameCurrencyToBillingMap() {
-    ImmutableMap<CurrencyUnit, BillingAccountEntry> currencyToBilling =
+    ImmutableMap<CurrencyUnit, String> currencyToBilling =
         ImmutableMap.of(
-            CurrencyUnit.of("USD"),
-            new BillingAccountEntry(CurrencyUnit.of("USD"), "accountId1"),
-            CurrencyUnit.of("CNY"),
-            new BillingAccountEntry(CurrencyUnit.of("CNY"), "accountId2"));
+            CurrencyUnit.of("USD"), "accountId1",
+            CurrencyUnit.of("CNY"), "accountId2");
     TestEntity testEntity = new TestEntity(currencyToBilling);
     insertInDb(testEntity);
     TestEntity persisted =
@@ -57,11 +54,11 @@ public class CurrencyToBillingConverterTest {
 
     @Id String name = "id";
 
-    Map<CurrencyUnit, BillingAccountEntry> currencyToBilling;
+    Map<CurrencyUnit, String> currencyToBilling;
 
     private TestEntity() {}
 
-    private TestEntity(Map<CurrencyUnit, BillingAccountEntry> currencyToBilling) {
+    private TestEntity(Map<CurrencyUnit, String> currencyToBilling) {
       this.currencyToBilling = currencyToBilling;
     }
   }
