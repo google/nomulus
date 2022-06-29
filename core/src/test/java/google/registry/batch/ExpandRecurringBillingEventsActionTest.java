@@ -15,6 +15,8 @@
 package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.domain.Period.Unit.YEARS;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_AUTORENEW;
@@ -38,6 +40,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.googlecode.objectify.Key;
+import google.registry.flows.custom.DomainPricingCustomLogic;
+import google.registry.flows.domain.DomainPricingLogic;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
@@ -89,6 +93,8 @@ public class ExpandRecurringBillingEventsActionTest {
     action.clock = clock;
     action.cursorTimeParam = Optional.empty();
     action.batchSize = 2;
+    action.domainPricingLogic =
+        new DomainPricingLogic(new DomainPricingCustomLogic(null, null, null));
     createTld("tld");
     domain =
         persistResource(
@@ -730,6 +736,112 @@ public class ExpandRecurringBillingEventsActionTest {
   }
 
   @TestOfyAndSql
+  void testSuccess_expandMultipleEvents_anchorTenant() throws Exception {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld2", USD, "example,USD 100"))
+            .build());
+    recurring = persistResource(recurring.asBuilder().setRenewalPriceBehavior(NONPREMIUM).build());
+    BillingEvent.Recurring recurring2 =
+        persistResource(
+            recurring
+                .asBuilder()
+                .setEventTime(recurring.getEventTime().plusMonths(3))
+                .setId(3L)
+                .build());
+    action.cursorTimeParam = Optional.of(START_OF_TIME);
+    runAction();
+    List<DomainHistory> persistedEntries =
+        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
+    assertThat(persistedEntries).hasSize(2);
+    assertHistoryEntryMatches(
+        domain,
+        persistedEntries.get(0),
+        "TheRegistrar",
+        DateTime.parse("2000-02-19T00:00:00Z"),
+        true);
+    BillingEvent.OneTime expected =
+        defaultOneTimeBuilder()
+            .setParent(persistedEntries.get(0))
+            .setCancellationMatchingBillingEvent(recurring.createVKey())
+            .build();
+    assertHistoryEntryMatches(
+        domain,
+        persistedEntries.get(1),
+        "TheRegistrar",
+        DateTime.parse("2000-05-20T00:00:00Z"),
+        true);
+    BillingEvent.OneTime expected2 =
+        defaultOneTimeBuilder()
+            .setBillingTime(DateTime.parse("2000-05-20T00:00:00Z"))
+            .setEventTime(DateTime.parse("2000-04-05T00:00:00Z"))
+            .setParent(persistedEntries.get(1))
+            .setCancellationMatchingBillingEvent(recurring2.createVKey())
+            .build();
+    assertBillingEventsForResource(domain, expected, expected2, recurring, recurring2);
+    assertCursorAt(currentTestTime);
+  }
+
+  @TestOfyAndSql
+  void testSuccess_expandMultipleEvents_premiumDomain_internalRegistration() throws Exception {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld2", USD, "example,USD 100"))
+            .build());
+    recurring =
+        persistResource(
+            recurring
+                .asBuilder()
+                .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 4))
+                .build());
+    BillingEvent.Recurring recurring2 =
+        persistResource(
+            recurring
+                .asBuilder()
+                .setEventTime(recurring.getEventTime().plusMonths(3))
+                .setId(3L)
+                .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 4))
+                .build());
+    action.cursorTimeParam = Optional.of(START_OF_TIME);
+    runAction();
+    List<DomainHistory> persistedEntries =
+        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
+    assertThat(persistedEntries).hasSize(2);
+    assertHistoryEntryMatches(
+        domain,
+        persistedEntries.get(0),
+        "TheRegistrar",
+        DateTime.parse("2000-02-19T00:00:00Z"),
+        true);
+    BillingEvent.OneTime expected =
+        defaultOneTimeBuilder()
+            .setCost(Money.of(USD, 4))
+            .setParent(persistedEntries.get(0))
+            .setCancellationMatchingBillingEvent(recurring.createVKey())
+            .build();
+    assertHistoryEntryMatches(
+        domain,
+        persistedEntries.get(1),
+        "TheRegistrar",
+        DateTime.parse("2000-05-20T00:00:00Z"),
+        true);
+    BillingEvent.OneTime expected2 =
+        defaultOneTimeBuilder()
+            .setCost(Money.of(USD, 4))
+            .setBillingTime(DateTime.parse("2000-05-20T00:00:00Z"))
+            .setEventTime(DateTime.parse("2000-04-05T00:00:00Z"))
+            .setParent(persistedEntries.get(1))
+            .setCancellationMatchingBillingEvent(recurring2.createVKey())
+            .build();
+    assertBillingEventsForResource(domain, expected, expected2, recurring, recurring2);
+    assertCursorAt(currentTestTime);
+  }
+
+  @TestOfyAndSql
   void testSuccess_premiumDomain() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -745,6 +857,87 @@ public class ExpandRecurringBillingEventsActionTest {
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected =
         defaultOneTimeBuilder().setParent(persistedEntry).setCost(Money.of(USD, 100)).build();
+    assertBillingEventsForResource(domain, expected, recurring);
+    assertCursorAt(currentTestTime);
+  }
+
+  @TestOfyAndSql
+  void testSuccess_premiumDomain_forAnchorTenant() throws Exception {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld2", USD, "example,USD 100"))
+            .build());
+    recurring = persistResource(recurring.asBuilder().setRenewalPriceBehavior(NONPREMIUM).build());
+    action.cursorTimeParam = Optional.of(START_OF_TIME);
+    runAction();
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
+    assertHistoryEntryMatches(
+        domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
+    BillingEvent.OneTime expected =
+        defaultOneTimeBuilder().setParent(persistedEntry).setCost(Money.of(USD, 11)).build();
+    assertBillingEventsForResource(domain, expected, recurring);
+    assertCursorAt(currentTestTime);
+  }
+
+  @TestOfyAndSql
+  void testSuccess_standardDomain_forAnchorTenant() throws Exception {
+    recurring = persistResource(recurring.asBuilder().setRenewalPriceBehavior(NONPREMIUM).build());
+    action.cursorTimeParam = Optional.of(START_OF_TIME);
+    runAction();
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
+    assertHistoryEntryMatches(
+        domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
+    BillingEvent.OneTime expected = defaultOneTimeBuilder().setParent(persistedEntry).build();
+    assertBillingEventsForResource(domain, expected, recurring);
+    assertCursorAt(currentTestTime);
+  }
+
+  @TestOfyAndSql
+  void testSuccess_premiumDomain_forInternalRegistration() throws Exception {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld2", USD, "example,USD 100"))
+            .build());
+    recurring =
+        persistResource(
+            recurring
+                .asBuilder()
+                .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 20))
+                .build());
+    action.cursorTimeParam = Optional.of(START_OF_TIME);
+    runAction();
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
+    assertHistoryEntryMatches(
+        domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
+    BillingEvent.OneTime expected =
+        defaultOneTimeBuilder().setParent(persistedEntry).setCost(Money.of(USD, 20)).build();
+    assertBillingEventsForResource(domain, expected, recurring);
+    assertCursorAt(currentTestTime);
+  }
+
+  @TestOfyAndSql
+  void testSuccess_standardDomain_forInternalRegistration() throws Exception {
+    recurring =
+        persistResource(
+            recurring
+                .asBuilder()
+                .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 2))
+                .build());
+    action.cursorTimeParam = Optional.of(START_OF_TIME);
+    runAction();
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
+    assertHistoryEntryMatches(
+        domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
+    BillingEvent.OneTime expected =
+        defaultOneTimeBuilder().setParent(persistedEntry).setCost(Money.of(USD, 2)).build();
     assertBillingEventsForResource(domain, expected, recurring);
     assertCursorAt(currentTestTime);
   }
@@ -785,6 +978,102 @@ public class ExpandRecurringBillingEventsActionTest {
         cheaper
             .asBuilder()
             .setCost(Money.of(USD, 10))
+            .setBillingTime(billingDate.plusYears(1))
+            .setEventTime(eventDate.plusYears(1))
+            .setParent(persistedEntries.get(1))
+            .build();
+    assertBillingEventsForResource(domain, recurring, cheaper, expensive);
+    assertCursorAt(currentTestTime);
+  }
+
+  @TestOfyAndSql
+  void testSuccess_varyingRenewPrices_anchorTenant() throws Exception {
+    clock.setTo(currentTestTime);
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld2", USD, "example,USD 100"))
+            .setRenewBillingCostTransitions(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    Money.of(USD, 8),
+                    DateTime.parse("2000-06-01T00:00:00Z"),
+                    Money.of(USD, 10)))
+            .build());
+    clock.setTo(DateTime.parse("2001-10-02T00:00:00Z"));
+    recurring = persistResource(recurring.asBuilder().setRenewalPriceBehavior(NONPREMIUM).build());
+    action.cursorTimeParam = Optional.of(START_OF_TIME);
+    runAction();
+    List<DomainHistory> persistedEntries =
+        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
+    assertThat(persistedEntries).hasSize(2);
+    DateTime eventDate = DateTime.parse("2000-01-05T00:00:00Z");
+    DateTime billingDate = DateTime.parse("2000-02-19T00:00:00Z");
+    assertHistoryEntryMatches(domain, persistedEntries.get(0), "TheRegistrar", billingDate, true);
+    BillingEvent.OneTime cheaper =
+        defaultOneTimeBuilder()
+            .setBillingTime(billingDate)
+            .setEventTime(eventDate)
+            .setParent(persistedEntries.get(0))
+            .setCost(Money.of(USD, 8))
+            .build();
+    assertHistoryEntryMatches(
+        domain, persistedEntries.get(1), "TheRegistrar", billingDate.plusYears(1), true);
+    BillingEvent.OneTime expensive =
+        cheaper
+            .asBuilder()
+            .setCost(Money.of(USD, 10))
+            .setBillingTime(billingDate.plusYears(1))
+            .setEventTime(eventDate.plusYears(1))
+            .setParent(persistedEntries.get(1))
+            .build();
+    assertBillingEventsForResource(domain, recurring, cheaper, expensive);
+    assertCursorAt(currentTestTime);
+  }
+
+  @TestOfyAndSql
+  void testSuccess_varyingRenewPrices_internalRegistration() throws Exception {
+    clock.setTo(currentTestTime);
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld2", USD, "example,USD 100"))
+            .setRenewBillingCostTransitions(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    Money.of(USD, 8),
+                    DateTime.parse("2000-06-01T00:00:00Z"),
+                    Money.of(USD, 10)))
+            .build());
+    clock.setTo(DateTime.parse("2001-10-02T00:00:00Z"));
+    recurring =
+        persistResource(
+            recurring
+                .asBuilder()
+                .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 5))
+                .build());
+    action.cursorTimeParam = Optional.of(START_OF_TIME);
+    runAction();
+    List<DomainHistory> persistedEntries =
+        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
+    assertThat(persistedEntries).hasSize(2);
+    DateTime eventDate = DateTime.parse("2000-01-05T00:00:00Z");
+    DateTime billingDate = DateTime.parse("2000-02-19T00:00:00Z");
+    assertHistoryEntryMatches(domain, persistedEntries.get(0), "TheRegistrar", billingDate, true);
+    BillingEvent.OneTime cheaper =
+        defaultOneTimeBuilder()
+            .setBillingTime(billingDate)
+            .setEventTime(eventDate)
+            .setParent(persistedEntries.get(0))
+            .setCost(Money.of(USD, 5))
+            .build();
+    assertHistoryEntryMatches(
+        domain, persistedEntries.get(1), "TheRegistrar", billingDate.plusYears(1), true);
+    BillingEvent.OneTime expensive =
+        cheaper
+            .asBuilder()
+            .setCost(Money.of(USD, 5))
             .setBillingTime(billingDate.plusYears(1))
             .setEventTime(eventDate.plusYears(1))
             .setParent(persistedEntries.get(1))

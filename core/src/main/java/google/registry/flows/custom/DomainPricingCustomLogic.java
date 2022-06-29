@@ -50,8 +50,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
   /** A hook that customizes the renew price. */
   @SuppressWarnings("unused")
-  public FeesAndCredits customizeRenewPrice(RenewPriceParameters priceParameters)
-      throws EppException {
+  public FeesAndCredits customizeRenewPrice(RenewPriceParameters priceParameters) {
     return priceParameters.feesAndCredits();
   }
 
