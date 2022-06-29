@@ -14,7 +14,6 @@
 
 package google.registry.dns;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.dns.DnsConstants.DNS_PUBLISH_PUSH_QUEUE_NAME;
 import static google.registry.dns.DnsModule.PARAM_DNS_WRITER;
 import static google.registry.dns.DnsModule.PARAM_DOMAINS;
@@ -76,18 +75,14 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Inject DnsQueue dnsQueue;
-  @Inject DnsWriterProxy dnsWriterProxy;
-  @Inject DnsMetrics dnsMetrics;
-  @Inject @Config("publishDnsUpdatesLockDuration") Duration timeout;
+  private final DnsQueue dnsQueue;
+  private final DnsWriterProxy dnsWriterProxy;
+  private final DnsMetrics dnsMetrics;
+  private final Duration timeout;
 
-  @Inject
-  @Header(APP_ENGINE_RETRY_HEADER)
-  int appEngineRetryCount;
+  private final int appEngineRetryCount;
 
-  @Inject
-  @Header(CLOUD_TASKS_RETRY_HEADER)
-  int cloudTasksRetryCount;
+  private final int cloudTasksRetryCount;
 
   /**
    * The DNS writer to use for this batch.
@@ -97,31 +92,63 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
    * writers configured in {@link Registry#getDnsWriters()}, as of the time the batch was written
    * out (and not necessarily currently).
    */
-  @Inject @Parameter(PARAM_DNS_WRITER) String dnsWriter;
+  private final String dnsWriter;
+
+  private final DateTime enqueuedTime;
+
+  private final DateTime itemsCreateTime;
+
+  private final int lockIndex;
+  private final int numPublishLocks;
+  private final Set<String> domains;
+  private final Set<String> hosts;
+  private final String tld;
+
+  private final Queue dnsPublishPushQueue;
+
+  private final LockHandler lockHandler;
+  private final Clock clock;
+  private final CloudTasksUtils cloudTasksUtils;
 
   @Inject
-  @Parameter(PARAM_PUBLISH_TASK_ENQUEUED)
-  DateTime enqueuedTime;
-
-  @Inject
-  @Parameter(PARAM_REFRESH_REQUEST_CREATED)
-  DateTime itemsCreateTime;
-
-  @Inject @Parameter(PARAM_LOCK_INDEX) int lockIndex;
-  @Inject @Parameter(PARAM_NUM_PUBLISH_LOCKS) int numPublishLocks;
-  @Inject @Parameter(PARAM_DOMAINS) Set<String> domains;
-  @Inject @Parameter(PARAM_HOSTS) Set<String> hosts;
-  @Inject @Parameter(PARAM_TLD) String tld;
-
-  @Inject
-  @Named(DNS_PUBLISH_PUSH_QUEUE_NAME)
-  Queue dnsPublishPushQueue;
-
-  @Inject LockHandler lockHandler;
-  @Inject Clock clock;
-  @Inject CloudTasksUtils cloudTasksUtils;
-
-  @Inject PublishDnsUpdatesAction() {}
+  public PublishDnsUpdatesAction(
+      @Parameter(PARAM_DNS_WRITER) String dnsWriter,
+      @Parameter(PARAM_PUBLISH_TASK_ENQUEUED) DateTime enqueuedTime,
+      @Parameter(PARAM_REFRESH_REQUEST_CREATED) DateTime itemsCreateTime,
+      @Parameter(PARAM_LOCK_INDEX) int lockIndex,
+      @Parameter(PARAM_NUM_PUBLISH_LOCKS) int numPublishLocks,
+      @Parameter(PARAM_DOMAINS) Set<String> domains,
+      @Parameter(PARAM_HOSTS) Set<String> hosts,
+      @Parameter(PARAM_TLD) String tld,
+      @Config("publishDnsUpdatesLockDuration") Duration timeout,
+      @Header(APP_ENGINE_RETRY_HEADER) int appEngineRetryCount,
+      @Header(CLOUD_TASKS_RETRY_HEADER) int cloudTasksRetryCount,
+      @Named(DNS_PUBLISH_PUSH_QUEUE_NAME) Queue dnsPublishPushQueue,
+      DnsQueue dnsQueue,
+      DnsWriterProxy dnsWriterProxy,
+      DnsMetrics dnsMetrics,
+      LockHandler lockHandler,
+      Clock clock,
+      CloudTasksUtils cloudTasksUtils) {
+    this.dnsQueue = dnsQueue;
+    this.dnsWriterProxy = dnsWriterProxy;
+    this.dnsMetrics = dnsMetrics;
+    this.timeout = timeout;
+    this.appEngineRetryCount = appEngineRetryCount;
+    this.cloudTasksRetryCount = cloudTasksRetryCount;
+    this.dnsWriter = dnsWriter;
+    this.enqueuedTime = enqueuedTime;
+    this.itemsCreateTime = itemsCreateTime;
+    this.lockIndex = lockIndex;
+    this.numPublishLocks = numPublishLocks;
+    this.domains = domains;
+    this.hosts = hosts;
+    this.tld = tld;
+    this.dnsPublishPushQueue = dnsPublishPushQueue;
+    this.lockHandler = lockHandler;
+    this.clock = clock;
+    this.cloudTasksUtils = cloudTasksUtils;
+  }
 
   private void recordActionResult(ActionStatus status) {
     DateTime now = clock.nowUtc();
@@ -182,8 +209,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
         splitBatch();
       } else if (domains.size() == 1 && hosts.size() == 1) {
         // Enqueue the single domain and single host separately
-        enqueue(domains.stream().collect(toImmutableList()), ImmutableList.of());
-        enqueue(ImmutableList.of(), hosts.stream().collect(toImmutableList()));
+        enqueue(ImmutableList.copyOf(domains), ImmutableList.of());
+        enqueue(ImmutableList.of(), ImmutableList.copyOf(hosts));
       }
       // If the batch only contains 1 name, allow it more retries
       else if (max(appEngineRetryCount, cloudTasksRetryCount) < RETRIES_BEFORE_PERMANENT_FAILURE) {
@@ -199,8 +226,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   /** Splits the domains and hosts in a batch into smaller batches and adds them to the queue. */
   private void splitBatch() {
-    ImmutableList<String> domainList = domains.stream().collect(toImmutableList());
-    ImmutableList<String> hostList = hosts.stream().collect(toImmutableList());
+    ImmutableList<String> domainList = ImmutableList.copyOf(domains);
+    ImmutableList<String> hostList = ImmutableList.copyOf(hosts);
 
     enqueue(domainList.subList(0, domains.size() / 2), hostList.subList(0, hosts.size() / 2));
     enqueue(

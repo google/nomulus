@@ -252,12 +252,12 @@ public final class RequestModule {
   @Provides
   @Header(APP_ENGINE_RETRY_HEADER)
   static int provideAppEngineRetryCount(HttpServletRequest req) {
-    return Integer.parseInt(extractOptionalHeader(req, APP_ENGINE_RETRY_HEADER).orElse("0"));
+    return extractOptionalHeader(req, APP_ENGINE_RETRY_HEADER).map(Integer::parseInt).orElse(0);
   }
 
   @Provides
   @Header(CLOUD_TASKS_RETRY_HEADER)
   static int provideCloudTasksRetryCount(HttpServletRequest req) {
-    return Integer.parseInt(extractOptionalHeader(req, CLOUD_TASKS_RETRY_HEADER).orElse("0"));
+    return extractOptionalHeader(req, CLOUD_TASKS_RETRY_HEADER).map(Integer::parseInt).orElse(0);
   }
 }
