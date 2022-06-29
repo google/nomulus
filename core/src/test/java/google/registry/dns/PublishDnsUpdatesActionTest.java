@@ -36,7 +36,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.taskqueue.Queue;
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -87,7 +86,6 @@ public class PublishDnsUpdatesActionTest {
           "location",
           mock(SerializableCloudTasksClient.class));
   private final CloudTasksUtils spyCloudTasksUtils = spy(cloudTasksUtils);
-  private final Queue queue = mock(Queue.class);
   private PublishDnsUpdatesAction action;
 
   @BeforeEach
@@ -153,7 +151,6 @@ public class PublishDnsUpdatesActionTest {
         Duration.standardSeconds(10),
         retryCount,
         0,
-        queue,
         dnsQueue,
         new DnsWriterProxy(ImmutableMap.of("correctWriter", dnsWriter)),
         dnsMetrics,

@@ -27,7 +27,6 @@ import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static java.lang.Math.max;
 
-import com.google.appengine.api.taskqueue.Queue;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
@@ -52,7 +51,6 @@ import google.registry.util.DomainNameUtils;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.inject.Inject;
-import javax.inject.Named;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -79,9 +77,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   private final DnsWriterProxy dnsWriterProxy;
   private final DnsMetrics dnsMetrics;
   private final Duration timeout;
-
   private final int appEngineRetryCount;
-
   private final int cloudTasksRetryCount;
 
   /**
@@ -95,17 +91,12 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   private final String dnsWriter;
 
   private final DateTime enqueuedTime;
-
   private final DateTime itemsCreateTime;
-
   private final int lockIndex;
   private final int numPublishLocks;
   private final Set<String> domains;
   private final Set<String> hosts;
   private final String tld;
-
-  private final Queue dnsPublishPushQueue;
-
   private final LockHandler lockHandler;
   private final Clock clock;
   private final CloudTasksUtils cloudTasksUtils;
@@ -123,7 +114,6 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       @Config("publishDnsUpdatesLockDuration") Duration timeout,
       @Header(APP_ENGINE_RETRY_HEADER) int appEngineRetryCount,
       @Header(CLOUD_TASKS_RETRY_HEADER) int cloudTasksRetryCount,
-      @Named(DNS_PUBLISH_PUSH_QUEUE_NAME) Queue dnsPublishPushQueue,
       DnsQueue dnsQueue,
       DnsWriterProxy dnsWriterProxy,
       DnsMetrics dnsMetrics,
@@ -144,7 +134,6 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     this.domains = domains;
     this.hosts = hosts;
     this.tld = tld;
-    this.dnsPublishPushQueue = dnsPublishPushQueue;
     this.lockHandler = lockHandler;
     this.clock = clock;
     this.cloudTasksUtils = cloudTasksUtils;
