@@ -37,7 +37,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junitpioneer.jupiter.RetryingTest;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -47,8 +46,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public class DatabaseSnapshotTest {
 
   /**
-   * For reasons unknown, an EntityManagerFactory created by {@code JpaIntegrationTestExtension} or
-   * {@code JpaUnitTestExtension} enters a bad state after exporting the first snapshot. Starting
+   * Directly start a PSQL database instead of going through the test extensions.
+   *
+   * <p>For reasons unknown, an EntityManagerFactory created by {@code JpaIntegrationTestExtension}
+   * or {@code JpaUnitTestExtension} enters a bad state after exporting the first snapshot. Starting
    * with the second attempt, exports alternate between error ("cannot export a snapshot from a
    * subtransaction") and success. The {@link #createSnapshot_twiceNoRead} test below fails with
    * either extension. EntityManagerFactory created for production does not have this problem.
@@ -107,7 +108,7 @@ public class DatabaseSnapshotTest {
     try (DatabaseSnapshot databaseSnapshot = DatabaseSnapshot.createSnapshot()) {}
   }
 
-  @RetryingTest(2) // TODO(b/226945065) revert to @Test when DatbaseMigrationSchedule is removed.
+  @Test
   void readSnapshot() {
     try (DatabaseSnapshot databaseSnapshot = DatabaseSnapshot.createSnapshot()) {
       Registry snapshotRegistry =
@@ -121,7 +122,7 @@ public class DatabaseSnapshotTest {
     }
   }
 
-  @RetryingTest(2) // TODO(b/226945065) revert to @Test when DatbaseMigrationSchedule is removed.
+  @Test
   void readSnapshot_withSubsequentChange() {
     try (DatabaseSnapshot databaseSnapshot = DatabaseSnapshot.createSnapshot()) {
       Registry updated =
