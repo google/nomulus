@@ -53,7 +53,7 @@ import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithLongVKey;
-import google.registry.util.NullSafeCollectionBuilder;
+import google.registry.util.NullIgnoringCollectionBuilder;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
@@ -115,6 +115,10 @@ public abstract class PollMessage extends ImmutableObject
       this.clazz = clazz;
     }
 
+    /**
+     * Returns a numeric id for the enum, which is used as part of an externally published string
+     * key for the message.
+     */
     public long getId() {
       return id;
     }
@@ -454,7 +458,7 @@ public abstract class PollMessage extends ImmutableObject
 
     @Override
     public ImmutableList<ResponseData> getResponseData() {
-      return NullSafeCollectionBuilder.create(new ImmutableList.Builder<ResponseData>())
+      return NullIgnoringCollectionBuilder.create(new ImmutableList.Builder<ResponseData>())
           .add(pendingActionNotificationResponse)
           .add(transferResponse)
           .getBuilder()

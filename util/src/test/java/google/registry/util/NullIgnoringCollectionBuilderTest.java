@@ -20,20 +20,20 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.junit.jupiter.api.Test;
 
-public class NullSafeCollectionBuilderTest {
+public class NullIgnoringCollectionBuilderTest {
 
-  public NullSafeCollectionBuilderTest() {}
+  public NullIgnoringCollectionBuilderTest() {}
 
   @Test
   public void testNullSafeCollections() {
     assertThat(
-            NullSafeCollectionBuilder.create(new ImmutableList.Builder<Integer>())
+            NullIgnoringCollectionBuilder.create(new ImmutableList.Builder<Integer>())
                 .getBuilder()
                 .build())
         .isEqualTo(ImmutableList.of());
 
     assertThat(
-            NullSafeCollectionBuilder.create(new ImmutableList.Builder<Integer>())
+            NullIgnoringCollectionBuilder.create(new ImmutableList.Builder<Integer>())
                 .add(100)
                 .add(200)
                 .add(null)
@@ -43,7 +43,7 @@ public class NullSafeCollectionBuilderTest {
         .inOrder();
 
     assertThat(
-            NullSafeCollectionBuilder.create(new ImmutableSet.Builder<Integer>())
+            NullIgnoringCollectionBuilder.create(new ImmutableSet.Builder<Integer>())
                 .add(100)
                 .add(200)
                 .add(null)

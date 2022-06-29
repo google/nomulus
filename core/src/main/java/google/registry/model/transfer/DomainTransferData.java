@@ -27,7 +27,7 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
-import google.registry.util.NullSafeCollectionBuilder;
+import google.registry.util.NullIgnoringCollectionBuilder;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
@@ -110,7 +110,7 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage;
 
   /**
-   * Autorenew history, which we need to preserve because it's often used in contexts where we don't
+   * Autorenew history, which we need to preserve because it's often used in contexts where we
    * haven't loaded the autorenew object.
    */
   @Ignore
@@ -166,7 +166,7 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>> builder =
         new ImmutableSet.Builder<>();
     builder.addAll(super.getServerApproveEntities());
-    return NullSafeCollectionBuilder.create(builder)
+    return NullIgnoringCollectionBuilder.create(builder)
         .add(serverApproveBillingEvent)
         .add(serverApproveAutorenewEvent)
         .add(billingCancellationId)

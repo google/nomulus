@@ -326,20 +326,12 @@ public class DomainHistory extends HistoryEntry {
       this.id = id;
     }
 
-    /**
-     * Returns the domain repository id.
-     *
-     * <p>This method is private because it is only used by Hibernate.
-     */
+    /** Returns the domain repository id. */
     public String getDomainRepoId() {
       return domainRepoId;
     }
 
-    /**
-     * Returns the history revision id.
-     *
-     * <p>This method is private because it is only used by Hibernate.
-     */
+    /** Returns the history revision id. */
     public long getId() {
       return id;
     }

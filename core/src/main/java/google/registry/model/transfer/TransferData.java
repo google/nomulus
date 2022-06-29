@@ -27,7 +27,7 @@ import google.registry.model.EppResource;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
-import google.registry.util.NullSafeCollectionBuilder;
+import google.registry.util.NullIgnoringCollectionBuilder;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -95,7 +95,7 @@ public abstract class TransferData<
   }
 
   public ImmutableSet<VKey<? extends TransferServerApproveEntity>> getServerApproveEntities() {
-    return NullSafeCollectionBuilder.create(
+    return NullIgnoringCollectionBuilder.create(
             new ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>>())
         .add(pollMessageId1 != null ? VKey.createSql(PollMessage.class, pollMessageId1) : null)
         .add(pollMessageId2 != null ? VKey.createSql(PollMessage.class, pollMessageId2) : null)
@@ -194,7 +194,6 @@ public abstract class TransferData<
 
     @Override
     public T build() {
-
       if (getInstance().pollMessageId1 != null) {
         checkState(getInstance().repoId != null, "Repo id undefined");
         checkState(getInstance().historyEntryId != null, "History entry undefined");

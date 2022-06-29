@@ -22,21 +22,21 @@ import javax.annotation.Nullable;
  *
  * <p>Useful because we do this in a number of cases.
  */
-public class NullSafeCollectionBuilder<E, B extends ImmutableCollection.Builder<E>> {
+public class NullIgnoringCollectionBuilder<E, B extends ImmutableCollection.Builder<E>> {
 
   private B builder;
 
-  private NullSafeCollectionBuilder(B builder) {
+  private NullIgnoringCollectionBuilder(B builder) {
     this.builder = builder;
   }
 
   public static <E2, B2 extends ImmutableCollection.Builder<E2>>
-      NullSafeCollectionBuilder<E2, B2> create(B2 builder) {
-    return new NullSafeCollectionBuilder<E2, B2>(builder);
+      NullIgnoringCollectionBuilder<E2, B2> create(B2 builder) {
+    return new NullIgnoringCollectionBuilder<E2, B2>(builder);
   }
 
   /** If 'elem' is not null, add it to the builder. */
-  public NullSafeCollectionBuilder<E, B> add(@Nullable E elem) {
+  public NullIgnoringCollectionBuilder<E, B> add(@Nullable E elem) {
     if (elem != null) {
       builder.add(elem);
     }
