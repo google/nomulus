@@ -95,6 +95,8 @@ public class TransferDataTest {
             .setPendingTransferExpirationTime(now)
             .setTransferStatus(TransferStatus.PENDING)
             .setServerApproveEntities(
+                "4-TLD",
+                1356L,
                 ImmutableSet.of(
                     transferBillingEventKey,
                     otherServerApproveBillingEventKey,

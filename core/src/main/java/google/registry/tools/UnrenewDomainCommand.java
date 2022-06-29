@@ -201,7 +201,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
                 String.format(
                     "Domain %s was unrenewed by %d years; now expires at %s.",
                     domainName, period, newExpirationTime))
-            .setParent(domainHistory)
+            .setHistoryEntry(domainHistory)
             .setEventTime(now)
             .build();
     // Create a new autorenew billing event and poll message starting at the new expiration time.
@@ -213,7 +213,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(domain)
             .setEventTime(newExpirationTime)
-            .setParent(domainHistory)
+            .setHistoryEntry(domainHistory)
             .build();
     // End the old autorenew billing event and poll message now.
     updateAutorenewRecurrenceEndTime(domain, now);
@@ -224,7 +224,9 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
             .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setAutorenewBillingEvent(newAutorenewEvent.createVKey())
-            .setAutorenewPollMessage(newAutorenewPollMessage.createVKey())
+            .setAutorenewPollMessage(
+                newAutorenewPollMessage.createVKey(),
+                newAutorenewPollMessage.getHistoryRevisionId())
             .build();
     // In order to do it'll need to write out a new HistoryEntry (likely of type SYNTHETIC), a new
     // autorenew billing event and poll message, and a new one time poll message at the present time

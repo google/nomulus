@@ -348,7 +348,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setMsg("Domain was auto-renewed.")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build());
 
     assertGracePeriods(
@@ -1656,10 +1656,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setMsg("Domain was auto-renewed.")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build(),
         new PollMessage.OneTime.Builder()
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .setEventTime(domain.getCreationTime())
             .setRegistrarId("TheRegistrar")
             .setMsg(DomainFlowUtils.COLLISION_MESSAGE)
@@ -1811,10 +1811,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setMsg("Domain was auto-renewed.")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build(),
         new PollMessage.OneTime.Builder()
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .setEventTime(domain.getCreationTime())
             .setRegistrarId("TheRegistrar")
             .setMsg("Custom logic was triggered")

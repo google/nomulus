@@ -191,7 +191,8 @@ class DeleteExpiredDomainsActionTest {
                 .asBuilder()
                 .setAutorenewEndTime(Optional.of(clock.nowUtc().minusDays(10)))
                 .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
-                .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+                .setAutorenewPollMessage(
+                    autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
                 .build());
 
     return pendingExpirationDomain;
@@ -216,6 +217,6 @@ class DeleteExpiredDomainsActionTest {
         .setRegistrarId("TheRegistrar")
         .setEventTime(clock.nowUtc().plusYears(1))
         .setAutorenewEndTime(END_OF_TIME)
-        .setParent(createHistoryEntry);
+        .setHistoryEntry(createHistoryEntry);
   }
 }

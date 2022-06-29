@@ -107,6 +107,8 @@ class ContactTransferRequestFlowTest
                 // Make the server-approve entities field a no-op comparison; it's easier to
                 // do this comparison separately below.
                 .setServerApproveEntities(
+                    contact.getRepoId(),
+                    contact.getTransferData().getHistoryEntryId(),
                     forceEmptyToNull(contact.getTransferData().getServerApproveEntities()))
                 .build());
     assertNoBillingEvents();

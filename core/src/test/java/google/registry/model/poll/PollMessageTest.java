@@ -80,7 +80,7 @@ public class PollMessageTest extends EntityTestCase {
             .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build();
     autoRenew =
         new PollMessage.Autorenew.Builder()
@@ -88,7 +88,7 @@ public class PollMessageTest extends EntityTestCase {
             .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
             .setTargetId("foobar.foo")
             .build();
@@ -116,7 +116,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
   }
@@ -135,16 +135,15 @@ public class PollMessageTest extends EntityTestCase {
             .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .setResponseData(ImmutableList.of(hostPendingActionNotificationResponse))
             .build();
     persistResource(pollMessage);
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage).getMsg()))
         .isEqualTo(pollMessage.msg);
     assertThat(
-            tm().transact(() -> tm().loadByEntity(pollMessage))
-                .hostPendingActionNotificationResponses)
-        .contains(hostPendingActionNotificationResponse);
+            tm().transact(() -> tm().loadByEntity(pollMessage)).pendingActionNotificationResponse)
+        .isEqualTo(hostPendingActionNotificationResponse);
   }
 
   @TestSqlOnly
@@ -155,7 +154,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
     PollMessage persisted = tm().transact(() -> tm().loadByEntity(pollMessage));
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
@@ -169,7 +168,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
                 .setTargetId("foobar.foo")
                 .build());
@@ -184,7 +183,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
                 .setTargetId("foobar.foo")
                 .build());
@@ -200,7 +199,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
                 .setTargetId("foobar.foo")
                 .build());

@@ -226,7 +226,7 @@ public final class EppResourceUtils {
     checkArgument(TransferStatus.PENDING.equals(transferData.getTransferStatus()));
     TransferData.Builder transferDataBuilder = transferData.asBuilder();
     transferDataBuilder.setTransferStatus(TransferStatus.SERVER_APPROVED);
-    transferDataBuilder.setServerApproveEntities(null);
+    transferDataBuilder.setServerApproveEntities(null, null, null);
     if (transferData instanceof DomainTransferData) {
       ((DomainTransferData.Builder) transferDataBuilder)
           .setServerApproveBillingEvent(null)

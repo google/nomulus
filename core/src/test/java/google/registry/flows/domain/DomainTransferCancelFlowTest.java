@@ -97,7 +97,7 @@ class DomainTransferCancelFlowTest
             .setEventTime(EXTENDED_REGISTRATION_EXPIRATION_TIME)
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
-            .setParent(historyEntryDomainTransferRequest)
+            .setHistoryEntry(historyEntryDomainTransferRequest)
             .build(),
         createPollMessageForImplicitTransfer(
             domain,
@@ -164,7 +164,7 @@ class DomainTransferCancelFlowTest
             .setEventTime(originalExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
-            .setParent(getOnlyHistoryEntryOfType(domain, DOMAIN_CREATE))
+            .setHistoryEntry(getOnlyHistoryEntryOfType(domain, DOMAIN_CREATE))
             .build(),
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")
@@ -180,7 +180,7 @@ class DomainTransferCancelFlowTest
                         .setPendingTransferExpirationTime(clock.nowUtc())
                         .build()))
             .setMsg("Transfer cancelled.")
-            .setParent(getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL))
+            .setHistoryEntry(getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL))
             .build());
 
     // The original grace periods should remain untouched.

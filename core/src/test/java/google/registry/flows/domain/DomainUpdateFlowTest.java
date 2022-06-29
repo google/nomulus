@@ -1160,7 +1160,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         updatedDomain,
         new PollMessage.OneTime.Builder()
             .setEventTime(clock.nowUtc())
-            .setParent(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
+            .setHistoryEntry(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
             .setRegistrarId("NewRegistrar")
             .setMsg("The registry administrator has added the status(es) [serverHold].")
             .setResponseData(
@@ -1199,7 +1199,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         updatedDomain,
         new PollMessage.OneTime.Builder()
             .setEventTime(clock.nowUtc())
-            .setParent(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
+            .setHistoryEntry(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
             .setRegistrarId("NewRegistrar")
             .setMsg(
                 "The registry administrator has removed the status(es) [serverHold,"
@@ -1237,7 +1237,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         updatedDomain,
         new PollMessage.OneTime.Builder()
             .setEventTime(clock.nowUtc())
-            .setParent(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
+            .setHistoryEntry(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
             .setRegistrarId("NewRegistrar")
             .setMsg(
                 "The registry administrator has added the status(es) [serverHold,"

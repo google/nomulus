@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
@@ -28,6 +29,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
@@ -41,7 +43,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
-import google.registry.model.EntityTestCase;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.billing.BillingEvent;
@@ -62,15 +63,28 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.testing.AppEngineExtension;
+import google.registry.testing.FakeClock;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainBase}. */
 @SuppressWarnings("WeakerAccess") // Referred to by EppInputTest.
-public class DomainBaseTest extends EntityTestCase {
+public class DomainBaseTest {
+
+  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .enableJpaEntityCoverageCheck(true)
+          .withClock(fakeClock)
+          .build();
 
   private DomainBase domain;
   private VKey<BillingEvent.OneTime> oneTimeBillKey;
@@ -80,6 +94,10 @@ public class DomainBaseTest extends EntityTestCase {
 
   @BeforeEach
   void setUp() {
+    saveRegistrar("registrar1");
+    saveRegistrar("registrar2");
+    saveRegistrar("losing");
+    saveRegistrar("gaining");
     createTld("com");
     domain = persistActiveDomain("example.com");
     VKey<HostResource> hostKey = persistActiveHost("ns1.example.com").createVKey();
@@ -107,19 +125,48 @@ public class DomainBaseTest extends EntityTestCase {
                     .setParent(domainHistory)
                     .build())
             .createVKey();
-    recurringBillKey =
-        persistResource(
-                new BillingEvent.Recurring.Builder()
-                    .setReason(Reason.RENEW)
-                    .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-                    .setTargetId(domain.getDomainName())
-                    .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-                    .setDomainRepoId(domain.getRepoId())
-                    .setEventTime(DateTime.now(UTC).plusYears(1))
-                    .setRecurrenceEndTime(END_OF_TIME)
-                    .setParent(domainHistory)
-                    .build())
-            .createVKey();
+    DomainHistory historyEntry =
+        new DomainHistory.Builder()
+            .setId(100L)
+            .setType(HistoryEntry.Type.DOMAIN_CREATE)
+            .setPeriod(Period.create(1, Period.Unit.YEARS))
+            .setModificationTime(DateTime.now(UTC))
+            .setDomainRepoId(domain.getRepoId())
+            .setRegistrarId(domain.getCurrentSponsorRegistrarId())
+            // These are non-null, but I don't think some tests set them.
+            .setReason("felt like it")
+            .setRequestedByRegistrar(false)
+            .setXmlBytes(new byte[0])
+            .build();
+    BillingEvent.OneTime oneTimeBill =
+        new BillingEvent.OneTime.Builder()
+            .setId(500L)
+            // Use SERVER_STATUS so we don't have to add a period.
+            .setReason(Reason.SERVER_STATUS)
+            .setTargetId("example.com")
+            .setRegistrarId("registrar1")
+            .setDomainRepoId("4-COM")
+            .setBillingTime(DateTime.now(UTC))
+            .setCost(Money.of(USD, 100))
+            .setEventTime(DateTime.now(UTC).plusYears(1))
+            .setParent(historyEntry)
+            .build();
+    oneTimeBillKey = oneTimeBill.createVKey();
+    BillingEvent.Recurring recurringBill =
+        new BillingEvent.Recurring.Builder()
+            .setId(200L)
+            .setReason(Reason.RENEW)
+            .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+            .setTargetId(domain.getDomainName())
+            .setRegistrarId(domain.getCurrentSponsorRegistrarId())
+            .setDomainRepoId(domain.getRepoId())
+            .setDomainHistoryRevisionId(historyEntry.getId())
+            .setEventTime(DateTime.now(UTC).plusYears(1))
+            .setRecurrenceEndTime(END_OF_TIME)
+            .setParent(historyEntry)
+            .build();
+    insertInDb(historyEntry, oneTimeBill, recurringBill);
+    recurringBillKey = recurringBill.createVKey();
     VKey<PollMessage.Autorenew> autorenewPollKey =
         VKey.from(Key.create(Key.create(domainHistory), PollMessage.Autorenew.class, 3));
     VKey<PollMessage.OneTime> onetimePollKey =
@@ -134,6 +181,7 @@ public class DomainBaseTest extends EntityTestCase {
                     .setCreationRegistrarId("TheRegistrar")
                     .setLastEppUpdateTime(fakeClock.nowUtc())
                     .setLastEppUpdateRegistrarId("NewRegistrar")
+                    .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                     .setLastTransferTime(fakeClock.nowUtc())
                     .setStatusValues(
                         ImmutableSet.of(
@@ -144,7 +192,6 @@ public class DomainBaseTest extends EntityTestCase {
                             StatusValue.SERVER_RENEW_PROHIBITED,
                             StatusValue.SERVER_HOLD))
                     .setRegistrant(contact1Key)
-                    .setContacts(ImmutableSet.of(DesignatedContact.create(Type.ADMIN, contact2Key)))
                     .setNameservers(ImmutableSet.of(hostKey))
                     .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
                     .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
@@ -160,6 +207,8 @@ public class DomainBaseTest extends EntityTestCase {
                             .setLosingRegistrarId("NewRegistrar")
                             .setPendingTransferExpirationTime(fakeClock.nowUtc())
                             .setServerApproveEntities(
+                                historyEntry.getDomainRepoId(),
+                                historyEntry.getId(),
                                 ImmutableSet.of(oneTimeBillKey, recurringBillKey, autorenewPollKey))
                             .setServerApproveBillingEvent(oneTimeBillKey)
                             .setServerApproveAutorenewEvent(recurringBillKey)
@@ -170,7 +219,7 @@ public class DomainBaseTest extends EntityTestCase {
                             .build())
                     .setDeletePollMessage(onetimePollKey)
                     .setAutorenewBillingEvent(recurringBillKey)
-                    .setAutorenewPollMessage(autorenewPollKey)
+                    .setAutorenewPollMessage(autorenewPollKey, historyEntry.getId())
                     .setSmdId("smdid")
                     .addGracePeriod(
                         GracePeriod.create(
@@ -201,19 +250,6 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  void testVKeyRestoration() {
-    assertThat(domain.deletePollMessageHistoryId).isEqualTo(domainHistory.getId());
-    assertThat(domain.autorenewBillingEventHistoryId).isEqualTo(domainHistory.getId());
-    assertThat(domain.autorenewPollMessageHistoryId).isEqualTo(domainHistory.getId());
-    assertThat(domain.getTransferData().getServerApproveBillingEventHistoryId())
-        .isEqualTo(domainHistory.getId());
-    assertThat(domain.getTransferData().getServerApproveAutorenewEventHistoryId())
-        .isEqualTo(domainHistory.getId());
-    assertThat(domain.getTransferData().getServerApproveAutorenewPollMessageHistoryId())
-        .isEqualTo(domainHistory.getId());
-  }
-
-  @Test
   void testEmptyStringsBecomeNull() {
     assertThat(
             newDomainBase("example.com")
@@ -238,7 +274,6 @@ public class DomainBaseTest extends EntityTestCase {
         .isNotNull();
   }
 
-  @Test
   void testEmptySetsAndArraysBecomeNull() {
     assertThat(
             newDomainBase("example.com")
@@ -407,7 +442,10 @@ public class DomainBaseTest extends EntityTestCase {
                     .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1))
                     .setGainingRegistrarId("TheRegistrar")
                     .setServerApproveBillingEvent(transferBillingEvent.createVKey())
-                    .setServerApproveEntities(ImmutableSet.of(transferBillingEvent.createVKey()))
+                    .setServerApproveEntities(
+                        domain.getRepoId(),
+                        historyEntry.getId(),
+                        ImmutableSet.of(transferBillingEvent.createVKey()))
                     .build())
             .addGracePeriod(
                 // Okay for billing event to be null since the point of this grace period is just

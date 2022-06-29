@@ -510,7 +510,7 @@ public class DatabaseHelper {
         .setEventTime(expirationTime)
         .setMsg("Transfer server approved.")
         .setResponseData(ImmutableList.of(createTransferResponse(resource, transferData)))
-        .setParent(historyEntry)
+        .setHistoryEntry(historyEntry)
         .build();
   }
 
@@ -549,6 +549,8 @@ public class DatabaseHelper {
                 createContactTransferDataBuilder(requestTime, expirationTime)
                     .setPendingTransferExpirationTime(now.plus(getContactAutomaticTransferLength()))
                     .setServerApproveEntities(
+                        ((ContactHistory) historyEntryContactTransfer).getContactRepoId(),
+                        historyEntryContactTransfer.getId(),
                         ImmutableSet.of(
                             // Pretend it's 3 days since the request
                             persistResource(
@@ -630,13 +632,14 @@ public class DatabaseHelper {
                 .setEventTime(expirationTime)
                 .setAutorenewEndTime(END_OF_TIME)
                 .setMsg("Domain was auto-renewed.")
-                .setParent(historyEntryDomainCreate)
+                .setHistoryEntry(historyEntryDomainCreate)
                 .build());
     return persistResource(
         domain
             .asBuilder()
             .setAutorenewBillingEvent(autorenewEvent.createVKey())
-            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+            .setAutorenewPollMessage(
+                autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
             .build());
   }
 
@@ -676,7 +679,7 @@ public class DatabaseHelper {
                 .setEventTime(extendedRegistrationExpirationTime)
                 .setAutorenewEndTime(END_OF_TIME)
                 .setMsg("Domain was auto-renewed.")
-                .setParent(historyEntryDomainTransfer)
+                .setHistoryEntry(historyEntryDomainTransfer)
                 .build());
     // Modify the existing autorenew event to reflect the pending transfer.
     persistResource(
@@ -711,6 +714,8 @@ public class DatabaseHelper {
                     .setServerApproveAutorenewPollMessage(
                         gainingClientAutorenewPollMessage.createVKey())
                     .setServerApproveEntities(
+                        historyEntryDomainTransfer.getDomainRepoId(),
+                        historyEntryDomainTransfer.getId(),
                         ImmutableSet.of(
                             transferBillingEvent.createVKey(),
                             gainingClientAutorenewEvent.createVKey(),
@@ -887,9 +892,7 @@ public class DatabaseHelper {
     return transactIfJpaTm(
         () ->
             tm().loadAllOf(PollMessage.class).stream()
-                .filter(
-                    pollMessage ->
-                        pollMessage.getParentKey().getParent().getName().equals(domain.getRepoId()))
+                .filter(pollMessage -> pollMessage.getDomainRepoId().equals(domain.getRepoId()))
                 .collect(toImmutableList()));
   }
 
@@ -909,13 +912,7 @@ public class DatabaseHelper {
     return transactIfJpaTm(
         () ->
             tm().loadAllOf(PollMessage.class).stream()
-                .filter(
-                    pollMessage ->
-                        pollMessage
-                            .getParentKey()
-                            .getParent()
-                            .getName()
-                            .equals(resource.getRepoId()))
+                .filter(pollMessage -> pollMessage.getDomainRepoId().equals(resource.getRepoId()))
                 .filter(pollMessage -> pollMessage.getRegistrarId().equals(registrarId))
                 .filter(
                     pollMessage ->
@@ -1176,7 +1173,14 @@ public class DatabaseHelper {
             () ->
                 tm().loadAllOf(PollMessage.class).stream()
                     .filter(
-                        pollMessage -> pollMessage.getParentKey().equals(Key.create(historyEntry)))
+                        pollMessage ->
+                            pollMessage.getResourceName().equals(historyEntry.getParent().getName())
+                                && pollMessage.getHistoryRevisionId() == historyEntry.getId()
+                                && pollMessage
+                                    .getType()
+                                    .getResourceClass()
+                                    .getName()
+                                    .equals(historyEntry.getParent().getKind()))
                     .collect(toImmutableList())));
   }
 

@@ -23,9 +23,9 @@ import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
@@ -100,7 +100,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         persistResource(
             new PollMessage.Autorenew.Builder()
                 .setId(625L)
-                .setParentKey(domainHistory.createVKey().getOfyKey())
+                .setHistoryEntry(domainHistory)
                 .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
                 .setRegistrarId("TheRegistrar")
                 .setMsg("autorenew")
@@ -127,7 +127,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         persistResource(
             new PollMessage.Autorenew.Builder()
                 .setId(625L)
-                .setParentKey(domainHistory.createVKey().getOfyKey())
+                .setHistoryEntry(domainHistory)
                 .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
                 .setAutorenewEndTime(DateTime.parse("2012-01-01T22:33:44Z"))
                 .setRegistrarId("TheRegistrar")
@@ -172,7 +172,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         persistResource(
             new PollMessage.OneTime.Builder()
                 .setId(2474L)
-                .setParentKey(domainHistory.createVKey().getOfyKey())
+                .setHistoryEntry(domainHistory)
                 .setRegistrarId("NewRegistrar")
                 .setEventTime(DateTime.parse("2013-06-01T22:33:44Z"))
                 .setMsg("baaaahh")
@@ -202,11 +202,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     return persistResource(
         new PollMessage.OneTime.Builder()
             .setId(id)
-            .setParentKey(
-                Key.create(
-                    Key.create(DomainBase.class, "FSDGS-TLD"),
-                    HistoryEntry.class,
-                    domainHistory.getId()))
+            .setDomainHistoryId(new DomainHistoryId("FSDGS-TLD", domainHistory.getId()))
             .setRegistrarId("TheRegistrar")
             .setEventTime(eventTime)
             .setMsg(message)

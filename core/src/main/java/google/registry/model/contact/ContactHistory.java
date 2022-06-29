@@ -84,6 +84,10 @@ public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
     return super.getId();
   }
 
+  public ContactHistoryId getContactHistoryId() {
+    return new ContactHistoryId(getContactRepoId(), getId());
+  }
+
   /**
    * The values of all the fields on the {@link ContactBase} object after the action represented by
    * this history object was executed.
@@ -147,8 +151,7 @@ public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
      *
      * <p>This method is private because it is only used by Hibernate.
      */
-    @SuppressWarnings("unused")
-    private String getContactRepoId() {
+    public String getContactRepoId() {
       return contactRepoId;
     }
 
@@ -157,8 +160,7 @@ public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
      *
      * <p>This method is private because it is only used by Hibernate.
      */
-    @SuppressWarnings("unused")
-    private long getId() {
+    public long getId() {
       return id;
     }
 

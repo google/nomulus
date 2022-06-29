@@ -14,19 +14,12 @@
 
 package google.registry.model.poll;
 
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
-import google.registry.model.EppResource;
-import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
-import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import java.util.List;
-import java.util.Map;
 
 /**
  * A converter between external key strings for {@link PollMessage}s (i.e. what registrars use to
@@ -50,28 +43,13 @@ public class PollMessageExternalKeyConverter {
   /** An exception thrown when an external key cannot be parsed. */
   public static class PollMessageExternalKeyParseException extends RuntimeException {}
 
-  /** Maps that detail the correspondence between EppResource classes and external IDs. */
-  private static final ImmutableMap<Long, Class<? extends EppResource>> ID_TO_CLASS_MAP =
-      ImmutableMap.of(
-          1L, DomainBase.class,
-          2L, ContactResource.class,
-          3L, HostResource.class);
-
-  private static final ImmutableMap<String, Long> KEY_KIND_TO_ID_MAP =
-      ID_TO_CLASS_MAP.entrySet().stream()
-          .collect(toImmutableMap(entry -> entry.getValue().getSimpleName(), Map.Entry::getKey));
-
   /** Returns an external poll message ID for the given poll message. */
   public static String makePollMessageExternalId(PollMessage pollMessage) {
-    @SuppressWarnings("unchecked")
-    Key<EppResource> ancestorResource =
-        (Key<EppResource>) (Key<?>) pollMessage.getParentKey().getParent();
-    long externalKeyClassId = KEY_KIND_TO_ID_MAP.get(ancestorResource.getKind());
     return String.format(
         "%d-%s-%d-%d-%d",
-        externalKeyClassId,
-        ancestorResource.getName(),
-        pollMessage.getParentKey().getId(),
+        pollMessage.getType().getId(),
+        pollMessage.getResourceName(),
+        pollMessage.getHistoryRevisionId(),
         pollMessage.getId(),
         pollMessage.getEventTime().getYear());
   }
@@ -92,10 +70,10 @@ public class PollMessageExternalKeyConverter {
       throw new PollMessageExternalKeyParseException();
     }
     try {
-      Class<?> resourceClazz = ID_TO_CLASS_MAP.get(Long.parseLong(idComponents.get(0)));
-      if (resourceClazz == null) {
-        throw new PollMessageExternalKeyParseException();
-      }
+      Class<?> resourceClazz =
+          PollMessage.Type.fromId(Long.parseLong(idComponents.get(0)))
+              .orElseThrow(() -> new PollMessageExternalKeyParseException())
+              .getResourceClass();
       return VKey.from(
           Key.create(
               Key.create(
@@ -115,4 +93,3 @@ public class PollMessageExternalKeyConverter {
 
   private PollMessageExternalKeyConverter() {}
 }
-

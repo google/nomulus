@@ -156,7 +156,7 @@ public class ContactResourceTest extends EntityTestCase {
                 originalContact
                     .getTransferData()
                     .asBuilder()
-                    .setServerApproveEntities(null)
+                    .setServerApproveEntities(null, null, null)
                     .build())
             .build();
     assertAboutImmutableObjects().that(persisted).isEqualExceptFields(fixed, "updateTimestamp");

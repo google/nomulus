@@ -16,6 +16,7 @@ package google.registry.persistence;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.model.ImmutableObject.Insignificant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.base.Splitter;
@@ -52,7 +53,8 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   // The SQL key for the referenced entity.
   Serializable sqlKey;
 
-  // The objectify key for the referenced entity.
+  // The objectify key for the referenced entity.  Marked Insignificant to exclude it from
+  // hashing/equality.
   @Insignificant Key<T> ofyKey;
 
   Class<? extends T> kind;

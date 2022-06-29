@@ -85,6 +85,10 @@ public class HostHistory extends HistoryEntry implements UnsafeSerializable {
     return super.getId();
   }
 
+  public HostHistoryId getHostHistoryId() {
+    return new HostHistoryId(getHostRepoId(), getId());
+  }
+
   /**
    * The values of all the fields on the {@link HostBase} object after the action represented by
    * this history object was executed.
@@ -147,8 +151,7 @@ public class HostHistory extends HistoryEntry implements UnsafeSerializable {
      *
      * <p>This method is private because it is only used by Hibernate.
      */
-    @SuppressWarnings("unused")
-    private String getHostRepoId() {
+    public String getHostRepoId() {
       return hostRepoId;
     }
 
@@ -157,8 +160,7 @@ public class HostHistory extends HistoryEntry implements UnsafeSerializable {
      *
      * <p>This method is private because it is only used by Hibernate.
      */
-    @SuppressWarnings("unused")
-    private long getId() {
+    public long getId() {
       return id;
     }
 

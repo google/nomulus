@@ -87,6 +87,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.DomainCommand.Create;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeCreateCommandExtension;
@@ -357,7 +358,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
             .setIdnTableName(validateDomainNameWithIdnTables(domainName))
             .setRegistrationExpirationTime(registrationExpirationTime)
             .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
-            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+            .setAutorenewPollMessage(
+                autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
             .setLaunchNotice(hasClaimsNotice ? launchCreate.get().getNotice() : null)
             .setSmdId(signedMarkId)
             .setDsData(secDnsCreate.map(SecDnsCreateExtension::getDsData).orElse(null))
@@ -576,7 +578,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
         .setRegistrarId(registrarId)
         .setEventTime(registrationExpirationTime)
         .setMsg("Domain was auto-renewed.")
-        .setParentKey(domainHistoryKey)
+        .setDomainHistoryId(
+            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
         .build();
   }
 
@@ -608,7 +611,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
             ImmutableList.of(
                 DomainPendingActionNotificationResponse.create(
                     fullyQualifiedDomainName, true, historyEntry.getTrid(), now)))
-        .setParent(historyEntry)
+        .setHistoryEntry(historyEntry)
         .build();
   }
 

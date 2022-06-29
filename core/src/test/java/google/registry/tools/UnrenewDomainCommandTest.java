@@ -35,7 +35,6 @@ import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntr
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -148,7 +147,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
         getPollMessages(domain),
         ImmutableSet.of(
             new PollMessage.OneTime.Builder()
-                .setParent(synthetic)
+                .setHistoryEntry(synthetic)
                 .setRegistrarId("TheRegistrar")
                 .setMsg(
                     "Domain foo.tld was unrenewed by 2 years; "
@@ -156,7 +155,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
                 .setEventTime(unrenewTime)
                 .build(),
             new PollMessage.Autorenew.Builder()
-                .setParent(synthetic)
+                .setHistoryEntry(synthetic)
                 .setTargetId("foo.tld")
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(newExpirationTime)
@@ -164,8 +163,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
                 .build()));
 
     // Check that fields on domain were updated correctly.
-    assertThat(domain.getAutorenewPollMessage().getOfyKey().getParent())
-        .isEqualTo(Key.create(synthetic));
+    assertThat(domain.getAutorenewPollMessageHistoryId()).isEqualTo(synthetic.getId());
     assertThat(domain.getRegistrationExpirationTime()).isEqualTo(newExpirationTime);
     assertThat(domain.getLastEppUpdateTime()).isEqualTo(unrenewTime);
     assertThat(domain.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");

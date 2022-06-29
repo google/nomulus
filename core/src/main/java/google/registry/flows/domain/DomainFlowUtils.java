@@ -63,7 +63,6 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.CommandUseErrorException;
@@ -89,6 +88,7 @@ import google.registry.model.domain.DomainCommand.CreateOrUpdate;
 import google.registry.model.domain.DomainCommand.InvalidReferencesException;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.ForeignKeyedDesignatedContact;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.BaseFee;
@@ -592,14 +592,15 @@ public class DomainFlowUtils {
     // where all autorenew poll messages had already been delivered (this would cause the poll
     // message to be deleted), and then subsequently the transfer was canceled, rejected, or deleted
     // (which would cause the poll message to be recreated here).
-    Key<PollMessage.Autorenew> existingAutorenewKey = domain.getAutorenewPollMessage().getOfyKey();
     PollMessage.Autorenew updatedAutorenewPollMessage =
         autorenewPollMessage.isPresent()
             ? autorenewPollMessage.get().asBuilder().setAutorenewEndTime(newEndTime).build()
             : newAutorenewPollMessage(domain)
-                .setId(existingAutorenewKey.getId())
+                .setId((Long) domain.getAutorenewPollMessage().getSqlKey())
                 .setAutorenewEndTime(newEndTime)
-                .setParentKey(existingAutorenewKey.getParent())
+                .setDomainHistoryId(
+                    new DomainHistoryId(
+                        domain.getRepoId(), domain.getAutorenewPollMessageHistoryId()))
                 .build();
 
     // If the resultant autorenew poll message would have no poll messages to deliver, then just

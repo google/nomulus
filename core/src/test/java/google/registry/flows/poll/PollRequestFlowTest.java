@@ -87,7 +87,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
                         .setPendingTransferExpirationTime(clock.nowUtc().minusDays(1))
                         .setExtendedRegistrationExpirationTime(clock.nowUtc().plusYears(1))
                         .build()))
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
   }
 
@@ -125,7 +125,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
                         .setLosingRegistrarId("NewRegistrar")
                         .setPendingTransferExpirationTime(clock.nowUtc())
                         .build()))
-            .setParent(createHistoryEntryForEppResource(contact))
+            .setHistoryEntry(createHistoryEntryForEppResource(contact))
             .build());
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_response_contact_transfer.xml"));
@@ -145,7 +145,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
                         true,
                         Trid.create("ABC-12345", "other-trid"),
                         clock.nowUtc())))
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_response_domain_pending_notification.xml"));
@@ -169,7 +169,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
                         true,
                         Trid.create("ABC-12345", "other-trid"),
                         clock.nowUtc())))
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_message_domain_pending_action_immediate_delete.xml"));
@@ -183,7 +183,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Domain was auto-renewed.")
             .setTargetId("test.example")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_response_autorenew.xml"));
@@ -201,7 +201,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
             .setRegistrarId("BadRegistrar")
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Poll message")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     runFlowAssertResponse(loadFile("poll_response_empty.xml"));
   }
@@ -213,7 +213,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
             .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().plusDays(1))
             .setMsg("Poll message")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     runFlowAssertResponse(loadFile("poll_response_empty.xml"));
   }
@@ -226,7 +226,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
             .setEventTime(clock.nowUtc().plusDays(1))
             .setMsg("Domain was auto-renewed.")
             .setTargetId("target.example")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_response_empty.xml"));
@@ -248,7 +248,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
         new PollMessage.OneTime.Builder()
             .setRegistrarId("NewRegistrar")
             .setMsg("Deleted contact jd1234")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .setEventTime(clock.nowUtc().minusDays(1))
             .build());
     assertTransactionalFlow(false);
@@ -271,7 +271,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
         new PollMessage.OneTime.Builder()
             .setRegistrarId("NewRegistrar")
             .setMsg("Deleted host ns1.test.example")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .setEventTime(clock.nowUtc().minusDays(1))
             .build());
     clock.advanceOneMilli();

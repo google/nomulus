@@ -316,7 +316,7 @@ class DeleteProberDataActionTest {
     PollMessage.OneTime pollMessage =
         persistSimpleResource(
             new PollMessage.OneTime.Builder()
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .setEventTime(DELETION_TIME)
                 .setRegistrarId("TheRegistrar")
                 .setMsg("Domain registered")
