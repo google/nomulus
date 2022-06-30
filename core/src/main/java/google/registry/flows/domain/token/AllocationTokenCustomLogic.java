@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Registry;
@@ -31,13 +32,21 @@ import org.joda.time.DateTime;
  */
 public class AllocationTokenCustomLogic {
 
-  /** Performs additional custom logic for validating a token. */
+  /** Performs additional custom logic for validating a token on a domain create. */
   public AllocationToken validateToken(
       DomainCommand.Create command,
       AllocationToken token,
       Registry registry,
       String registrarId,
       DateTime now)
+      throws EppException {
+    // Do nothing.
+    return token;
+  }
+
+  /** Performs additional custom logic for validating a token on a domain renew. */
+  public AllocationToken validateToken(
+      DomainBase domain, AllocationToken token, Registry registry, String registrarId, DateTime now)
       throws EppException {
     // Do nothing.
     return token;

@@ -489,10 +489,13 @@ comes in at the exact millisecond that the domain would have expired.
     *   Registrar is missing the billing account map for this currency type.
     *   Registrar is not authorized to access this TLD.
     *   Registrar must be active in order to perform this operation.
+    *   The allocation token is invalid.
 *   2303
     *   Resource with this id does not exist.
 *   2304
     *   Resource status prohibits this operation.
+*   2305
+    *   The allocation token is not valid for this domain.
 *   2306
     *   Periods for domain registrations must be specified in years.
     *   The requested fees cannot be provided in the requested currency.

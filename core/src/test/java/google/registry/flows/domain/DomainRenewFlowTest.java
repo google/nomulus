@@ -19,6 +19,7 @@ import static google.registry.flows.domain.DomainTransferFlowTestCase.persistWit
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertPollMessages;
@@ -64,6 +65,8 @@ import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException
 import google.registry.flows.domain.DomainFlowUtils.RegistrarMustBeActiveForThisOperationException;
 import google.registry.flows.domain.DomainFlowUtils.UnsupportedFeeAttributeException;
 import google.registry.flows.domain.DomainRenewFlow.IncorrectCurrentExpirationDateException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
@@ -73,6 +76,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
@@ -81,6 +85,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
+import google.registry.persistence.VKey;
 import google.registry.testing.SetClockExtension;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -319,6 +324,13 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
                 renewalClientId,
                 null),
             renewBillingEvent));
+  }
+
+  @Test
+  private void assertAllocationTokenWasNotRedeemed(String token) {
+    AllocationToken reloadedToken =
+        tm().transact(() -> tm().loadByKey(VKey.create(AllocationToken.class, token)));
+    assertThat(reloadedToken.isRedeemed()).isFalse();
   }
 
   @Test
@@ -575,6 +587,50 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
     persistDomain();
     EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_allocationToken() throws Exception {
+    setEppInput(
+        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistDomain();
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("example.tld")
+            .build());
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+  }
+
+  @Test
+  void testFailure_invalidAllocationToken() throws Exception {
+    setEppInput(
+        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistDomain();
+    EppException thrown = assertThrows(InvalidAllocationTokenException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_allocationTokenIsForADifferentDomain() throws Exception {
+    setEppInput(
+        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistDomain();
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("otherdomain.tld")
+            .build());
+    clock.advanceOneMilli();
+    EppException thrown =
+        assertThrows(AllocationTokenNotValidForDomainException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    assertAllocationTokenWasNotRedeemed("abc123");
   }
 
   @Test

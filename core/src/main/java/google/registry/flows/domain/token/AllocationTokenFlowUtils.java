@@ -26,6 +26,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -70,6 +71,23 @@ public class AllocationTokenFlowUtils {
         registrarId,
         now);
     return tokenCustomLogic.validateToken(command, tokenEntity, registry, registrarId, now);
+  }
+
+  /**
+   * Loads an allocation token given a string and verifies that the token is valid for the domain
+   * renew request.
+   *
+   * @return the loaded {@link AllocationToken} for that string.
+   * @throws EppException if the token doesn't exist, is already redeemed, or is otherwise invalid
+   *     for this request.
+   */
+  public AllocationToken loadTokenAndValidateDomainRenew(
+      DomainBase existingDomain, String token, Registry registry, String registrarId, DateTime now)
+      throws EppException {
+    AllocationToken tokenEntity = loadToken(token);
+    validateToken(
+        InternetDomainName.from(existingDomain.getDomainName()), tokenEntity, registrarId, now);
+    return tokenCustomLogic.validateToken(existingDomain, tokenEntity, registry, registrarId, now);
   }
 
   /**

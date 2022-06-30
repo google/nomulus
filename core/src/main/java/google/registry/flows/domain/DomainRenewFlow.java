@@ -51,6 +51,8 @@ import google.registry.flows.custom.DomainRenewFlowCustomLogic.BeforeResponsePar
 import google.registry.flows.custom.DomainRenewFlowCustomLogic.BeforeResponseReturnData;
 import google.registry.flows.custom.DomainRenewFlowCustomLogic.BeforeSaveParameters;
 import google.registry.flows.custom.EntityChanges;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils;
+import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -68,6 +70,9 @@ import google.registry.model.domain.fee.FeeRenewCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenType;
+import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppinput.EppInput;
@@ -113,6 +118,10 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.RegistrarMustBeActiveForThisOperationException}
  * @error {@link DomainFlowUtils.UnsupportedFeeAttributeException}
  * @error {@link DomainRenewFlow.IncorrectCurrentExpirationDateException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_RENEW)
 public final class DomainRenewFlow implements TransactionalFlow {
@@ -133,13 +142,15 @@ public final class DomainRenewFlow implements TransactionalFlow {
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
+  @Inject AllocationTokenFlowUtils allocationTokenFlowUtils;
   @Inject DomainRenewFlowCustomLogic flowCustomLogic;
   @Inject DomainPricingLogic pricingLogic;
   @Inject DomainRenewFlow() {}
 
   @Override
   public EppResponse run() throws EppException {
-    extensionManager.register(FeeRenewCommandExtension.class, MetadataExtension.class);
+    extensionManager.register(
+        FeeRenewCommandExtension.class, MetadataExtension.class, AllocationTokenExtension.class);
     flowCustomLogic.beforeValidation();
     validateRegistrarIsLoggedIn(registrarId);
     verifyRegistrarIsActive(registrarId);
@@ -148,6 +159,9 @@ public final class DomainRenewFlow implements TransactionalFlow {
     Renew command = (Renew) resourceCommand;
     // Loads the target resource if it exists
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
+    Optional<AllocationToken> allocationToken =
+        verifyAllocationTokenIfPresent(
+            existingDomain, Registry.get(existingDomain.getTld()), registrarId, now);
     verifyRenewAllowed(authInfo, existingDomain, command);
     int years = command.getPeriod().getValue();
     DateTime newExpirationTime =
@@ -176,7 +190,8 @@ public final class DomainRenewFlow implements TransactionalFlow {
     String tld = existingDomain.getTld();
     // Bill for this explicit renew itself.
     BillingEvent.OneTime explicitRenewEvent =
-        createRenewBillingEvent(tld, feesAndCredits.getTotalCost(), years, domainHistoryKey, now);
+        createRenewBillingEvent(
+            tld, feesAndCredits.getTotalCost(), years, domainHistoryKey, allocationToken, now);
     // Create a new autorenew billing event and poll message starting at the new expiration time.
     BillingEvent.Recurring newAutorenewEvent =
         newAutorenewBillingEvent(existingDomain)
@@ -212,6 +227,14 @@ public final class DomainRenewFlow implements TransactionalFlow {
     DomainHistory domainHistory =
         buildDomainHistory(
             newDomain, now, command.getPeriod(), registry.getRenewGracePeriodLength());
+    ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
+    entitiesToSave.add(
+        newDomain, domainHistory, explicitRenewEvent, newAutorenewEvent, newAutorenewPollMessage);
+    if (allocationToken.isPresent()
+        && TokenType.SINGLE_USE.equals(allocationToken.get().getTokenType())) {
+      entitiesToSave.add(
+          allocationTokenFlowUtils.redeemToken(allocationToken.get(), domainHistory.createVKey()));
+    }
     EntityChanges entityChanges =
         flowCustomLogic.beforeSave(
             BeforeSaveParameters.newBuilder()
@@ -221,15 +244,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
                 .setYears(years)
                 .setHistoryEntry(domainHistory)
                 .setEntityChanges(
-                    EntityChanges.newBuilder()
-                        .setSaves(
-                            ImmutableSet.of(
-                                newDomain,
-                                domainHistory,
-                                explicitRenewEvent,
-                                newAutorenewEvent,
-                                newAutorenewPollMessage))
-                        .build())
+                    EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
                 .build());
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(
@@ -289,8 +304,26 @@ public final class DomainRenewFlow implements TransactionalFlow {
     }
   }
 
+  /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
+  private Optional<AllocationToken> verifyAllocationTokenIfPresent(
+      DomainBase existingDomain, Registry registry, String registrarId, DateTime now)
+      throws EppException {
+    Optional<AllocationTokenExtension> extension =
+        eppInput.getSingleExtension(AllocationTokenExtension.class);
+    return Optional.ofNullable(
+        extension.isPresent()
+            ? allocationTokenFlowUtils.loadTokenAndValidateDomainRenew(
+                existingDomain, extension.get().getAllocationToken(), registry, registrarId, now)
+            : null);
+  }
+
   private OneTime createRenewBillingEvent(
-      String tld, Money renewCost, int years, Key<DomainHistory> domainHistoryKey, DateTime now) {
+      String tld,
+      Money renewCost,
+      int years,
+      Key<DomainHistory> domainHistoryKey,
+      Optional<AllocationToken> allocationToken,
+      DateTime now) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.RENEW)
         .setTargetId(targetId)
@@ -298,6 +331,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
         .setPeriodYears(years)
         .setCost(renewCost)
         .setEventTime(now)
+        .setAllocationToken(allocationToken.map(AllocationToken::createVKey).orElse(null))
         .setBillingTime(now.plus(Registry.get(tld).getRenewGracePeriodLength()))
         .setParent(domainHistoryKey)
         .build();
