@@ -16,7 +16,6 @@ package google.registry.rde;
 
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static google.registry.beam.BeamUtils.createJobName;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.xml.ValidationMode.LENIENT;
@@ -44,10 +43,6 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
 import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.KeyModule.Key;
-import google.registry.mapreduce.MapreduceRunner;
-import google.registry.mapreduce.inputs.EppResourceInputs;
-import google.registry.mapreduce.inputs.NullInput;
-import google.registry.model.EppResource;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.contact.ContactResource;
@@ -72,29 +67,14 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
- * Action that kicks off either a MapReduce (for Datastore) or Dataflow (for Cloud SQL) job to stage
- * escrow deposit XML files on GCS for RDE/BRDA for all TLDs.
+ * Action that kicks off a Dataflow job to stage escrow deposit XML files on GCS for RDE/BRDA for
+ * all TLDs.
  *
  * <h3>Pending Deposits</h3>
  *
  * <p>This task starts by asking {@link PendingDepositChecker} which deposits need to be generated.
- * If there's nothing to deposit, we return 204 No Content; otherwise, we fire off a MapReduce job
- * and redirect to its status GUI. The task can also be run in manual operation, as described below.
- *
- * <h3>MapReduce</h3>
- *
- * <p>The mapreduce job scans every {@link EppResource} in Datastore. It maps a point-in-time
- * representation of each entity to the escrow XML files in which it should appear.
- *
- * <p>There is one map worker for each {@code EppResourceIndexBucket} entity group shard. There is
- * one reduce worker for each deposit being generated.
- *
- * <p>{@link ContactResource} and {@link HostResource} are emitted on all TLDs, even when the
- * domains on a TLD don't reference them. BRDA {@link RdeMode#THIN thin} deposits exclude contacts
- * and hosts entirely.
- *
- * <p>{@link Registrar} entities, both active and inactive, are included in all deposits. They are
- * not rewinded point-in-time.
+ * If there's nothing to deposit, we return 204 No Content; otherwise, we fire off a job and
+ * redirect to its status GUI. The task can also be run in manual operation, as described below.
  *
  * <h3>Dataflow</h3>
  *
@@ -165,10 +145,6 @@ import org.joda.time.Duration;
  * more difficult for an attacker. But security ultimately depends on the bucket.
  *
  * <h3>Idempotency</h3>
- *
- * <p>We lock the reduce tasks for the MapReduce job. This is necessary because: a) App Engine tasks
- * might get double executed; and b) Cloud Storage file handles get committed on close <i>even if
- * our code throws an exception.</i>
  *
  * <p>For the Dataflow job we do not employ a lock because it is difficult to span a lock across
  * three subsequent transforms (save to GCS, roll forward cursor, enqueue next action). Instead, we
@@ -250,10 +226,8 @@ public final class RdeStagingAction implements Runnable {
 
   @Inject Clock clock;
   @Inject PendingDepositChecker pendingDepositChecker;
-  @Inject RdeStagingReducer.Factory reducerFactory;
   @Inject Response response;
   @Inject GcsUtils gcsUtils;
-  @Inject MapreduceRunner mrRunner;
   @Inject @Config("projectId") String projectId;
   @Inject @Config("defaultJobRegion") String jobRegion;
 
@@ -269,10 +243,6 @@ public final class RdeStagingAction implements Runnable {
   @Inject @Config("beamStagingBucketUrl") String stagingBucketUrl;
   @Inject @Config("rdeBucket") String rdeBucket;
   @Inject @Parameter(RdeModule.PARAM_MANUAL) boolean manual;
-
-  @Inject
-  @Parameter(RdeModule.PARAM_BEAM)
-  boolean beam;
 
   @Inject @Parameter(RdeModule.PARAM_DIRECTORY) Optional<String> directory;
   @Inject @Parameter(RdeModule.PARAM_MODE) ImmutableSet<String> modeStrings;
@@ -299,85 +269,67 @@ public final class RdeStagingAction implements Runnable {
       logger.atInfo().log("Pending deposit: %s", pending);
     }
     ValidationMode validationMode = lenient ? LENIENT : STRICT;
-    if (tm().isOfy() && !beam) {
-      RdeStagingMapper mapper = new RdeStagingMapper(validationMode, pendings);
-      RdeStagingReducer reducer = reducerFactory.create(validationMode, gcsUtils);
-      mrRunner
-          .setJobName("Stage escrow deposits for all TLDs")
-          .setModuleName("backend")
-          .setDefaultReduceShards(pendings.size())
-          .runMapreduce(
-              mapper,
-              reducer,
-              ImmutableList.of(
-                  // Add an extra shard that maps over a null resource. See the mapper code for why.
-                  new NullInput<>(), EppResourceInputs.createEntityInput(EppResource.class)))
-          .sendLinkToMapreduceConsole(response);
-    } else {
-      ImmutableList.Builder<String> jobNameBuilder = new ImmutableList.Builder<>();
-      pendings.values().stream()
-          .collect(toImmutableSetMultimap(PendingDeposit::watermark, identity()))
-          .asMap()
-          .forEach(
-              (watermark, pendingDeposits) -> {
-                try {
-                  LaunchFlexTemplateParameter parameter =
-                      new LaunchFlexTemplateParameter()
-                          .setJobName(
-                              createJobName(
-                                  String.format(
-                                      "rde-%s", watermark.toString("yyyy-MM-dd't'HH-mm-ss'z'")),
-                                  clock))
-                          .setContainerSpecGcsPath(
-                              String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
-                          .setParameters(
-                              new ImmutableMap.Builder<String, String>()
-                                  .put(
-                                      "pendings",
-                                      RdePipeline.encodePendingDeposits(
-                                          ImmutableSet.copyOf(pendingDeposits)))
-                                  .put("validationMode", validationMode.name())
-                                  .put("rdeStagingBucket", rdeBucket)
-                                  .put(
-                                      "stagingKey",
-                                      BaseEncoding.base64Url()
-                                          .omitPadding()
-                                          .encode(stagingKeyBytes))
-                                  .put("registryEnvironment", RegistryEnvironment.get().name())
-                                  .put("workerMachineType", machineType)
-                                  .put("numWorkers", String.valueOf(numWorkers))
-                                  .put(
-                                      "jpaTransactionManagerType",
-                                      JpaTransactionManagerType.READ_ONLY_REPLICA.toString())
-                                  // TODO (jianglai): Investigate turning off public IPs (for which
-                                  // there is a quota) in order to increase the total number of
-                                  // workers allowed (also under quota).
-                                  // See:
-                                  // https://cloud.google.com/dataflow/docs/guides/routes-firewall
-                                  .put("usePublicIps", "true")
-                                  .build());
-                  LaunchFlexTemplateResponse launchResponse =
-                      dataflow
-                          .projects()
-                          .locations()
-                          .flexTemplates()
-                          .launch(
-                              projectId,
-                              jobRegion,
-                              new LaunchFlexTemplateRequest().setLaunchParameter(parameter))
-                          .execute();
-                  logger.atInfo().log("Got response: %s", launchResponse.getJob().toPrettyString());
-                  jobNameBuilder.add(launchResponse.getJob().getId());
-                } catch (IOException e) {
-                  logger.atWarning().withCause(e).log("Pipeline Launch failed");
-                  response.setStatus(SC_INTERNAL_SERVER_ERROR);
-                  response.setPayload(String.format("Pipeline launch failed: %s", e.getMessage()));
-                }
-              });
-      response.setStatus(SC_OK);
-      response.setPayload(
-          String.format("Launched RDE pipeline: %s", Joiner.on(", ").join(jobNameBuilder.build())));
-    }
+    ImmutableList.Builder<String> jobNameBuilder = new ImmutableList.Builder<>();
+    pendings.values().stream()
+        .collect(toImmutableSetMultimap(PendingDeposit::watermark, identity()))
+        .asMap()
+        .forEach(
+            (watermark, pendingDeposits) -> {
+              try {
+                LaunchFlexTemplateParameter parameter =
+                    new LaunchFlexTemplateParameter()
+                        .setJobName(
+                            createJobName(
+                                String.format(
+                                    "rde-%s", watermark.toString("yyyy-MM-dd't'HH-mm-ss'z'")),
+                                clock))
+                        .setContainerSpecGcsPath(
+                            String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
+                        .setParameters(
+                            new ImmutableMap.Builder<String, String>()
+                                .put(
+                                    "pendings",
+                                    RdePipeline.encodePendingDeposits(
+                                        ImmutableSet.copyOf(pendingDeposits)))
+                                .put("validationMode", validationMode.name())
+                                .put("rdeStagingBucket", rdeBucket)
+                                .put(
+                                    "stagingKey",
+                                    BaseEncoding.base64Url().omitPadding().encode(stagingKeyBytes))
+                                .put("registryEnvironment", RegistryEnvironment.get().name())
+                                .put("workerMachineType", machineType)
+                                .put("numWorkers", String.valueOf(numWorkers))
+                                .put(
+                                    "jpaTransactionManagerType",
+                                    JpaTransactionManagerType.READ_ONLY_REPLICA.toString())
+                                // TODO (jianglai): Investigate turning off public IPs (for which
+                                // there is a quota) in order to increase the total number of
+                                // workers allowed (also under quota).
+                                // See:
+                                // https://cloud.google.com/dataflow/docs/guides/routes-firewall
+                                .put("usePublicIps", "true")
+                                .build());
+                LaunchFlexTemplateResponse launchResponse =
+                    dataflow
+                        .projects()
+                        .locations()
+                        .flexTemplates()
+                        .launch(
+                            projectId,
+                            jobRegion,
+                            new LaunchFlexTemplateRequest().setLaunchParameter(parameter))
+                        .execute();
+                logger.atInfo().log("Got response: %s", launchResponse.getJob().toPrettyString());
+                jobNameBuilder.add(launchResponse.getJob().getId());
+              } catch (IOException e) {
+                logger.atWarning().withCause(e).log("Pipeline Launch failed");
+                response.setStatus(SC_INTERNAL_SERVER_ERROR);
+                response.setPayload(String.format("Pipeline launch failed: %s", e.getMessage()));
+              }
+            });
+    response.setStatus(SC_OK);
+    response.setPayload(
+        String.format("Launched RDE pipeline: %s", Joiner.on(", ").join(jobNameBuilder.build())));
   }
 
   private ImmutableSetMultimap<String, PendingDeposit> getStandardPendingDeposits() {

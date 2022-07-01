@@ -51,10 +51,12 @@ import org.joda.time.DateTime;
  */
 public final class DomainPricingLogic {
 
-  @Inject DomainPricingCustomLogic customLogic;
+  private final DomainPricingCustomLogic customLogic;
 
   @Inject
-  DomainPricingLogic() {}
+  public DomainPricingLogic(DomainPricingCustomLogic customLogic) {
+    this.customLogic = customLogic;
+  }
 
   /**
    * Returns a new create price for the pricer.
@@ -105,13 +107,12 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new renewal cost for the pricer. */
-  FeesAndCredits getRenewPrice(
+  public FeesAndCredits getRenewPrice(
       Registry registry,
       String domainName,
       DateTime dateTime,
       int years,
-      @Nullable Recurring recurringBillingEvent)
-      throws EppException {
+      @Nullable Recurring recurringBillingEvent) {
     checkArgument(years > 0, "Number of years must be positive");
     Money renewCost;
     boolean isRenewCostPremiumPrice;

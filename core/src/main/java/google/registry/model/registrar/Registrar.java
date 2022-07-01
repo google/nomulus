@@ -34,7 +34,6 @@ import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.tld.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -79,7 +78,6 @@ import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.registrar.Registrar.BillingAccountEntry.CurrencyMapper;
-import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.persistence.VKey;
@@ -119,7 +117,7 @@ import org.joda.time.DateTime;
     })
 @InCrossTld
 public class Registrar extends ImmutableObject
-    implements Buildable, DatastoreAndSqlEntity, Jsonifiable, UnsafeSerializable {
+    implements Buildable, Jsonifiable, UnsafeSerializable {
 
   /** Represents the type of a registrar entity. */
   public enum Type {
@@ -218,11 +216,9 @@ public class Registrar extends ImmutableObject
       immutableEnumSet(
           Type.REAL, Type.PDT, Type.OTE, Type.EXTERNAL_MONITORING, Type.MONITORING, Type.INTERNAL);
 
-  /**
-   * Compare two instances of {@link RegistrarContact} by their email addresses lexicographically.
-   */
-  private static final Comparator<RegistrarContact> CONTACT_EMAIL_COMPARATOR =
-      comparing(RegistrarContact::getEmailAddress, String::compareTo);
+  /** Compare two instances of {@link RegistrarPoc} by their email addresses lexicographically. */
+  private static final Comparator<RegistrarPoc> CONTACT_EMAIL_COMPARATOR =
+      comparing(RegistrarPoc::getEmailAddress, String::compareTo);
 
   /**
    * A caching {@link Supplier} of a registrarId to {@link Registrar} map.
@@ -629,46 +625,43 @@ public class Registrar extends ImmutableObject
   }
 
   /**
-   * Returns a list of all {@link RegistrarContact} objects for this registrar sorted by their email
+   * Returns a list of all {@link RegistrarPoc} objects for this registrar sorted by their email
    * address.
    */
-  public ImmutableSortedSet<RegistrarContact> getContacts() {
+  public ImmutableSortedSet<RegistrarPoc> getContacts() {
     return Streams.stream(getContactsIterable())
         .filter(Objects::nonNull)
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
   }
 
   /**
-   * Returns a list of {@link RegistrarContact} objects of a given type for this registrar sorted by
+   * Returns a list of {@link RegistrarPoc} objects of a given type for this registrar sorted by
    * their email address.
    */
-  public ImmutableSortedSet<RegistrarContact> getContactsOfType(final RegistrarContact.Type type) {
+  public ImmutableSortedSet<RegistrarPoc> getContactsOfType(final RegistrarPoc.Type type) {
     return Streams.stream(getContactsIterable())
         .filter(Objects::nonNull)
-        .filter((@Nullable RegistrarContact contact) -> contact.getTypes().contains(type))
+        .filter((@Nullable RegistrarPoc contact) -> contact.getTypes().contains(type))
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
   }
 
   /**
-   * Returns the {@link RegistrarContact} that is the WHOIS abuse contact for this registrar, or
-   * empty if one does not exist.
+   * Returns the {@link RegistrarPoc} that is the WHOIS abuse contact for this registrar, or empty
+   * if one does not exist.
    */
-  public Optional<RegistrarContact> getWhoisAbuseContact() {
-    return getContacts().stream()
-        .filter(RegistrarContact::getVisibleInDomainWhoisAsAbuse)
-        .findFirst();
+  public Optional<RegistrarPoc> getWhoisAbuseContact() {
+    return getContacts().stream().filter(RegistrarPoc::getVisibleInDomainWhoisAsAbuse).findFirst();
   }
 
-  private Iterable<RegistrarContact> getContactsIterable() {
+  private Iterable<RegistrarPoc> getContactsIterable() {
     if (tm().isOfy()) {
-      return auditedOfy().load().type(RegistrarContact.class).ancestor(Registrar.this);
+      return auditedOfy().load().type(RegistrarPoc.class).ancestor(Registrar.this);
     } else {
       return tm().transact(
               () ->
                   jpaTm()
                       .query(
-                          "FROM RegistrarPoc WHERE registrarId = :registrarId",
-                          RegistrarContact.class)
+                          "FROM RegistrarPoc WHERE registrarId = :registrarId", RegistrarPoc.class)
                       .setParameter("registrarId", clientIdentifier)
                       .getResultStream()
                       .collect(toImmutableList()));
@@ -736,6 +729,7 @@ public class Registrar extends ImmutableObject
   }
 
   /** Creates a {@link VKey} for this instance. */
+  @Override
   public VKey<Registrar> createVKey() {
     return createVKey(Key.create(this));
   }
@@ -825,7 +819,7 @@ public class Registrar extends ImmutableObject
               .collect(toImmutableSet());
       Set<VKey<Registry>> missingTldKeys =
           Sets.difference(
-              newTldKeys, transactIfJpaTm(() -> tm().loadByKeysIfPresent(newTldKeys)).keySet());
+              newTldKeys, tm().transact(() -> tm().loadByKeysIfPresent(newTldKeys)).keySet());
       checkArgument(missingTldKeys.isEmpty(), "Trying to set nonexisting TLDs: %s", missingTldKeys);
       getInstance().allowedTlds = ImmutableSortedSet.copyOf(allowedTlds);
       return this;
@@ -1028,7 +1022,7 @@ public class Registrar extends ImmutableObject
 
   /** Loads all registrar entities directly from Datastore. */
   public static Iterable<Registrar> loadAll() {
-    return transactIfJpaTm(() -> tm().loadAllOf(Registrar.class));
+    return tm().transact(() -> tm().loadAllOf(Registrar.class));
   }
 
   /** Loads all registrar entities using an in-memory cache. */
@@ -1046,7 +1040,7 @@ public class Registrar extends ImmutableObject
   /** Loads and returns a registrar entity by its id directly from Datastore. */
   public static Optional<Registrar> loadByRegistrarId(String registrarId) {
     checkArgument(!Strings.isNullOrEmpty(registrarId), "registrarId must be specified");
-    return transactIfJpaTm(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));
+    return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));
   }
 
   /**

@@ -40,11 +40,6 @@ public class DomainHistoryVKey extends EppHistoryVKey<HistoryEntry, DomainBase> 
     return new DomainHistoryId(repoId, historyRevisionId);
   }
 
-  @Override
-  public Key<HistoryEntry> createOfyKey() {
-    return Key.create(Key.create(DomainBase.class, repoId), HistoryEntry.class, historyRevisionId);
-  }
-
   /** Creates {@link DomainHistoryVKey} from the given {@link Key} instance. */
   public static DomainHistoryVKey create(Key<? extends HistoryEntry> ofyKey) {
     checkArgumentNotNull(ofyKey, "ofyKey must be specified");

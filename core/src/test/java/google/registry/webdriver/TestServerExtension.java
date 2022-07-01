@@ -24,6 +24,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
+import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.server.Fixture;
 import google.registry.server.Route;
@@ -81,7 +82,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     // choose whether the user is an admin or not.
     this.appEngineExtension =
         AppEngineExtension.builder()
-            .withDatastoreAndCloudSql()
+            .withCloudSql()
             .withLocalModules()
             .withUrlFetch()
             .withTaskQueue()
@@ -202,7 +203,13 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
       }
     }
 
-    void runInner() throws InterruptedException {
+    void runInner() throws Exception {
+      // Clear the SQL database and set it as primary (we have to do this out of band because the
+      // AppEngineExtension can't natively do it for us yet due to remaining ofy dependencies)
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);
+      // sleep a few millis to make sure we get to SQL-primary mode
+      Thread.sleep(4);
+      AppEngineExtension.loadInitialData();
       for (Fixture fixture : fixtures) {
         fixture.load();
       }

@@ -63,7 +63,6 @@ import org.joda.time.Duration;
  * by the losing registrar or rejected, and the gaining registrar can also cancel the transfer
  * request.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
@@ -135,6 +134,8 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
             .asBuilder()
             .setTransferStatus(TransferStatus.PENDING)
             .setServerApproveEntities(
+                serverApproveGainingPollMessage.getContactRepoId(),
+                contactHistoryKey.getId(),
                 ImmutableSet.of(
                     serverApproveGainingPollMessage.createVKey(),
                     serverApproveLosingPollMessage.createVKey()))

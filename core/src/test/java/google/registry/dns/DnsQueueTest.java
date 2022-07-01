@@ -33,7 +33,7 @@ public class DnsQueueTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private DnsQueue dnsQueue;
   private final FakeClock clock = new FakeClock(DateTime.parse("2010-01-01T10:00:00Z"));

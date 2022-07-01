@@ -25,32 +25,23 @@ import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceCheckFlowTestCase;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.contact.ContactResource;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
-import google.registry.testing.TestOfyAndSql;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactCheckFlow}. */
-@DualDatabaseTest
 class ContactCheckFlowTest extends ResourceCheckFlowTestCase<ContactCheckFlow, ContactResource> {
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   ContactCheckFlowTest() {
     setEppInput("contact_check.xml");
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testNothingExists() throws Exception {
     // These ids come from the check xml.
     doCheckTest(
@@ -59,7 +50,7 @@ class ContactCheckFlowTest extends ResourceCheckFlowTestCase<ContactCheckFlow, C
         create(true, "8013sah", null));
   }
 
-  @TestOfyAndSql
+  @Test
   void testOneExists() throws Exception {
     persistActiveContact("sh8013");
     // These ids come from the check xml.
@@ -69,7 +60,7 @@ class ContactCheckFlowTest extends ResourceCheckFlowTestCase<ContactCheckFlow, C
         create(true, "8013sah", null));
   }
 
-  @TestOfyAndSql
+  @Test
   void testOneExistsButWasDeleted() throws Exception {
     persistDeletedContact("sh8013", clock.nowUtc().minusDays(1));
     // These ids come from the check xml.
@@ -79,27 +70,27 @@ class ContactCheckFlowTest extends ResourceCheckFlowTestCase<ContactCheckFlow, C
         create(true, "8013sah", null));
   }
 
-  @TestOfyAndSql
+  @Test
   void testXmlMatches() throws Exception {
     persistActiveContact("sah8013");
     runFlowAssertResponse(loadFile("contact_check_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void test50IdsAllowed() throws Exception {
     // Make sure we don't have a regression that reduces the number of allowed checks.
     setEppInput("contact_check_50.xml");
     runFlow();
   }
 
-  @TestOfyAndSql
+  @Test
   void testTooManyIds() {
     setEppInput("contact_check_51.xml");
     EppException thrown = assertThrows(TooManyResourceChecksException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-check");

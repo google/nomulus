@@ -31,8 +31,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class RegistryToolTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   // Lock for stdout/stderr.  Note that this is static: since we're dealing with globals, we need
   // to lock for the entire JVM.

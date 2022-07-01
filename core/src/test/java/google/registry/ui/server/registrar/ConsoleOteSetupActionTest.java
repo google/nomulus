@@ -64,7 +64,7 @@ public final class ConsoleOteSetupActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+      AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension
   @Order(value = Integer.MAX_VALUE)

@@ -31,7 +31,7 @@ import com.google.common.net.MediaType;
 import com.google.gson.Gson;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.RegistryLockDao;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
@@ -118,17 +118,15 @@ public final class RegistryLockGetAction implements JsonGetAction {
     }
   }
 
-  static Optional<RegistrarContact> getContactMatchingLogin(User user, Registrar registrar) {
-    ImmutableList<RegistrarContact> matchingContacts =
+  static Optional<RegistrarPoc> getContactMatchingLogin(User user, Registrar registrar) {
+    ImmutableList<RegistrarPoc> matchingContacts =
         registrar.getContacts().stream()
             .filter(contact -> contact.getGaeUserId() != null)
             .filter(contact -> Objects.equals(contact.getGaeUserId(), user.getUserId()))
             .collect(toImmutableList());
     if (matchingContacts.size() > 1) {
       ImmutableList<String> matchingEmails =
-          matchingContacts.stream()
-              .map(RegistrarContact::getEmailAddress)
-              .collect(toImmutableList());
+          matchingContacts.stream().map(RegistrarPoc::getEmailAddress).collect(toImmutableList());
       throw new IllegalArgumentException(
           String.format(
               "User ID %s had multiple matching contacts with email addresses %s",
@@ -157,15 +155,15 @@ public final class RegistryLockGetAction implements JsonGetAction {
     Registrar registrar = getRegistrarAndVerifyLockAccess(registrarAccessor, registrarId, isAdmin);
     User user = authResult.userAuthInfo().get().user();
 
-    Optional<RegistrarContact> contactOptional = getContactMatchingLogin(user, registrar);
+    Optional<RegistrarPoc> contactOptional = getContactMatchingLogin(user, registrar);
     boolean isRegistryLockAllowed =
-        isAdmin || contactOptional.map(RegistrarContact::isRegistryLockAllowed).orElse(false);
+        isAdmin || contactOptional.map(RegistrarPoc::isRegistryLockAllowed).orElse(false);
     // Use the contact's registry lock email if it's present, else use the login email (for admins)
     String relevantEmail =
         isAdmin
             ? user.getEmail()
             // if the contact isn't present, we shouldn't display the email anyway so empty is fine
-            : contactOptional.flatMap(RegistrarContact::getRegistryLockEmailAddress).orElse("");
+            : contactOptional.flatMap(RegistrarPoc::getRegistryLockEmailAddress).orElse("");
     return ImmutableMap.of(
         LOCK_ENABLED_FOR_CONTACT_PARAM,
         isRegistryLockAllowed,

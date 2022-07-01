@@ -16,6 +16,7 @@ package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.testing.GpgSystemCommandExtension.GPG_BINARY;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -52,7 +53,6 @@ class GhostrydeGpgIntegrationTest {
           RdeTestData.loadBytes("pgp-public-keyring.asc"),
           RdeTestData.loadBytes("pgp-private-keyring-registry.asc"));
 
-  private static final ImmutableList<String> COMMANDS = ImmutableList.of("gpg", "gpg2");
   private static final ImmutableList<String> CONTENTS =
       ImmutableList.of(
           "(◕‿◕)",
@@ -63,18 +63,16 @@ class GhostrydeGpgIntegrationTest {
   @SuppressWarnings("unused")
   static Stream<Arguments> provideTestCombinations() {
     Stream.Builder<Arguments> stream = Stream.builder();
-    for (String command : COMMANDS) {
-      for (String content : CONTENTS) {
-        stream.add(Arguments.of(command, content));
-      }
+    for (String content : CONTENTS) {
+      stream.add(Arguments.of(content));
     }
     return stream.build();
   }
 
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
-  void test(String command, String content) throws Exception {
-    assumeTrue(hasCommand(command + " --version"));
+  void test(String content) throws Exception {
+    assumeTrue(hasCommand(GPG_BINARY + " --version"));
     Keyring keyring = new FakeKeyringModule().get();
     PGPPublicKey publicKey = keyring.getRdeStagingEncryptionKey();
     File file = new File(gpg.getCwd(), "love.gpg");
@@ -85,7 +83,7 @@ class GhostrydeGpgIntegrationTest {
       ghostrydeEncoder.write(data);
     }
 
-    Process pid = gpg.exec(command, "--list-packets", "--keyid-format", "long", file.getPath());
+    Process pid = gpg.exec(GPG_BINARY, "--list-packets", "--keyid-format", "long", file.getPath());
     String stdout = CharStreams.toString(new InputStreamReader(pid.getInputStream(), UTF_8));
     String stderr = CharStreams.toString(new InputStreamReader(pid.getErrorStream(), UTF_8));
     assertWithMessage(stderr).that(pid.waitFor()).isEqualTo(0);
@@ -95,7 +93,7 @@ class GhostrydeGpgIntegrationTest {
     assertThat(stdout).contains("name=\"" + Ghostryde.INNER_FILENAME + "\"");
     assertThat(stderr).contains("encrypted with 2048-bit RSA key, ID A59C132F3589A1D5");
 
-    pid = gpg.exec(command, "--use-embedded-filename", file.getPath());
+    pid = gpg.exec(GPG_BINARY, "--use-embedded-filename", file.getPath());
     stderr = CharStreams.toString(new InputStreamReader(pid.getErrorStream(), UTF_8));
     assertWithMessage(stderr).that(pid.waitFor()).isEqualTo(0);
     File dataFile = new File(gpg.getCwd(), Ghostryde.INNER_FILENAME);

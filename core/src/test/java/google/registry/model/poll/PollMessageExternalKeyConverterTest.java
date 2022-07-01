@@ -34,21 +34,18 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PollMessageExternalKeyConverter}. */
-@DualDatabaseTest
 public class PollMessageExternalKeyConverterTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension public InjectExtension inject = new InjectExtension();
 
@@ -75,7 +72,7 @@ public class PollMessageExternalKeyConverterTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_domain() {
     PollMessage.OneTime pollMessage =
         persistResource(
@@ -83,13 +80,13 @@ public class PollMessageExternalKeyConverterTest {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
     assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("1-2-FOOBAR-4-5-2007");
     assertVKeysEqual(parsePollMessageExternalId("1-2-FOOBAR-4-5-2007"), pollMessage.createVKey());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_contact() {
     historyEntry =
         persistResource(
@@ -100,13 +97,13 @@ public class PollMessageExternalKeyConverterTest {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
     assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("2-5-ROID-6-7-2007");
     assertVKeysEqual(parsePollMessageExternalId("2-5-ROID-6-7-2007"), pollMessage.createVKey());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_host() {
     historyEntry =
         persistResource(
@@ -117,20 +114,20 @@ public class PollMessageExternalKeyConverterTest {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
     assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("3-5-ROID-6-7-2007");
     assertVKeysEqual(parsePollMessageExternalId("3-5-ROID-6-7-2007"), pollMessage.createVKey());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingYearField() {
     assertThrows(
         PollMessageExternalKeyParseException.class,
         () -> parsePollMessageExternalId("1-2-FOOBAR-4-5"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidEppResourceTypeId() {
     // Populate the testdata correctly as for 1-2-FOOBAR-4-5 so we know that the only thing that
     // is wrong here is the EppResourceTypeId.
@@ -140,21 +137,21 @@ public class PollMessageExternalKeyConverterTest {
         () -> parsePollMessageExternalId("4-2-FOOBAR-4-5-2007"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_tooFewComponentParts() {
     assertThrows(
         PollMessageExternalKeyParseException.class,
         () -> parsePollMessageExternalId("1-3-EXAMPLE"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_tooManyComponentParts() {
     assertThrows(
         PollMessageExternalKeyParseException.class,
         () -> parsePollMessageExternalId("1-3-EXAMPLE-4-5-2007-2009"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonNumericIds() {
     assertThrows(
         PollMessageExternalKeyParseException.class,
@@ -170,6 +167,5 @@ public class PollMessageExternalKeyConverterTest {
                 || two.getKind().isAssignableFrom(one.getKind()))
         .isTrue();
     assertThat(one.getSqlKey()).isEqualTo(two.getSqlKey());
-    assertThat(one.getOfyKey()).isEqualTo(two.getOfyKey());
   }
 }

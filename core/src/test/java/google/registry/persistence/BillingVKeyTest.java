@@ -26,28 +26,25 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.BillingVKey.BillingEventVKey;
 import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import javax.persistence.Transient;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit test for {@link BillingVKey}. */
-@DualDatabaseTest
 class BillingVKeyTest {
   @RegisterExtension
   final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withOfyTestEntities(BillingVKeyTestEntity.class)
           .withJpaUnitTestEntities(BillingVKeyTestEntity.class)
           .build();
 
-  @TestOfyAndSql
+  @Test
   void testRestoreSymmetricVKey() {
     Key<HistoryEntry> domainHistoryKey =
         Key.create(Key.create(DomainBase.class, "domainRepoId"), HistoryEntry.class, 10L);
@@ -71,7 +68,7 @@ class BillingVKeyTest {
     assertThat(persisted.getBillingRecurrenceVKey()).isEqualTo(recurringVKey);
   }
 
-  @TestOfyAndSql
+  @Test
   void testHandleNullVKeyCorrectly() {
     BillingVKeyTestEntity original = new BillingVKeyTestEntity(null, null);
     tm().transact(() -> tm().insert(original));
@@ -80,7 +77,6 @@ class BillingVKeyTest {
     assertThat(persisted).isEqualTo(original);
   }
 
-  @EntityForTesting
   @Entity
   @javax.persistence.Entity
   private static class BillingVKeyTestEntity extends ImmutableObject {
@@ -108,9 +104,9 @@ class BillingVKeyTest {
       return billingRecurrenceVKey.createVKey();
     }
 
-    VKey<BillingVKeyTestEntity> createVKey() {
-      return VKey.create(
-          BillingVKeyTestEntity.class, id, Key.create(parent, BillingVKeyTestEntity.class, id));
+    @Override
+    public VKey<BillingVKeyTestEntity> createVKey() {
+      return VKey.createSql(BillingVKeyTestEntity.class, id);
     }
   }
 }

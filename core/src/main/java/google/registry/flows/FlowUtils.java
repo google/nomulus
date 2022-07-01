@@ -53,7 +53,7 @@ public final class FlowUtils {
     }
   }
 
-  /** Persists the saves and deletes in an {@link EntityChanges} to Datastore. */
+  /** Persists the saves and deletes in an {@link EntityChanges} to the DB. */
   public static void persistEntityChanges(EntityChanges entityChanges) {
     tm().putAll(entityChanges.getSaves());
     tm().delete(entityChanges.getDeletes());

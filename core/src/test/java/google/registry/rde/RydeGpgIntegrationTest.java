@@ -16,6 +16,7 @@ package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.testing.GpgSystemCommandExtension.GPG_BINARY;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -60,7 +61,6 @@ public class RydeGpgIntegrationTest {
 
   private final FakeKeyringModule keyringFactory = new FakeKeyringModule();
 
-  private static final ImmutableList<String> COMMANDS = ImmutableList.of("gpg", "gpg2");
   private static final ImmutableList<String> CONTENTS =
       ImmutableList.of(
           "(◕‿◕)",
@@ -70,20 +70,18 @@ public class RydeGpgIntegrationTest {
 
   static Stream<Arguments> provideTestCombinations() {
     Stream.Builder<Arguments> stream = Stream.builder();
-    for (String command : COMMANDS) {
       for (String content : CONTENTS) {
-        stream.add(Arguments.of(command, content));
-      }
+      stream.add(Arguments.of(content));
     }
     return stream.build();
   }
 
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
-  void test(String command, String content) throws Exception {
+  void test(String content) throws Exception {
     final String filename = "sloth";
     assumeTrue(hasCommand("tar"));
-    assumeTrue(hasCommand(command + " --version"));
+    assumeTrue(hasCommand(GPG_BINARY + " --version"));
 
     Keyring keyring = keyringFactory.get();
     PGPKeyPair signingKey = keyring.getRdeSigningKey();
@@ -124,7 +122,7 @@ public class RydeGpgIntegrationTest {
     {
       Process pid =
           gpg.exec(
-              command,
+              GPG_BINARY,
               "--list-packets",
               "--ignore-mdc-error",
               "--keyid-format",
@@ -169,7 +167,7 @@ public class RydeGpgIntegrationTest {
     // gpg: Good signature from <rde-unittest@registry.test>
     logger.atInfo().log("Running GPG to verify signature...");
     {
-      Process pid = gpg.exec(command, "--verify", sigFile.toString(), rydeFile.toString());
+      Process pid = gpg.exec(GPG_BINARY, "--verify", sigFile.toString(), rydeFile.toString());
       String stderr = slurp(pid.getErrorStream());
       assertWithMessage(stderr).that(pid.waitFor()).isEqualTo(0);
       assertThat(stderr).contains("Good signature");
@@ -188,7 +186,8 @@ public class RydeGpgIntegrationTest {
     logger.atInfo().log("Running GPG to extract tar...");
     {
       Process pid =
-          gpg.exec(command, "--use-embedded-filename", "--ignore-mdc-error", rydeFile.toString());
+          gpg.exec(
+              GPG_BINARY, "--use-embedded-filename", "--ignore-mdc-error", rydeFile.toString());
       String stderr = slurp(pid.getErrorStream());
       assertWithMessage(stderr).that(pid.waitFor()).isEqualTo(0);
     }

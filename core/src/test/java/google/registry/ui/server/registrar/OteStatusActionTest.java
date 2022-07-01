@@ -46,8 +46,7 @@ public final class OteStatusActionTest {
   private final OteStatusAction action = new OteStatusAction();
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @BeforeEach
   void beforeEach() {

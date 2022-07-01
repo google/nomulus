@@ -14,29 +14,18 @@
 
 package google.registry.beam.spec11;
 
-import static google.registry.beam.BeamUtils.checkFieldsNotNull;
-import static google.registry.beam.BeamUtils.extractField;
-
 import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import java.io.Serializable;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord;
 
 /**
  * A POJO representing a domain name and associated info, parsed from a {@code SchemaAndRecord}.
  *
- * <p>This is a trivially serializable class that allows Beam to transform the results of a Bigquery
- * query into a standard Java representation, giving us the type guarantees and ease of manipulation
- * Bigquery lacks, while localizing any Bigquery-side failures to the {@link #parseFromRecord}
- * function.
+ * <p>This is a trivially serializable class that allows Beam to transform the results of a SQL
+ * query into a standard Java representation.
  */
 @AutoValue
 public abstract class DomainNameInfo implements Serializable {
-
-  private static final ImmutableList<String> FIELD_NAMES =
-      ImmutableList.of("domainName", "domainRepoId", "registrarId", "registrarEmailAddress");
 
   /** Returns the fully qualified domain name. */
   abstract String domainName();
@@ -51,27 +40,7 @@ public abstract class DomainNameInfo implements Serializable {
   abstract String registrarEmailAddress();
 
   /**
-   * Constructs a {@link DomainNameInfo} from an Apache Avro {@code SchemaAndRecord}.
-   *
-   * @see <a
-   *     href=http://avro.apache.org/docs/1.7.7/api/java/org/apache/avro/generic/GenericData.Record.html>
-   *     Apache AVRO GenericRecord</a>
-   */
-  static DomainNameInfo parseFromRecord(SchemaAndRecord schemaAndRecord) {
-    checkFieldsNotNull(FIELD_NAMES, schemaAndRecord);
-    GenericRecord record = schemaAndRecord.getRecord();
-    return create(
-        extractField(record, "domainName"),
-        extractField(record, "domainRepoId"),
-        extractField(record, "registrarId"),
-        extractField(record, "registrarEmailAddress"));
-  }
-
-  /**
    * Creates a concrete {@link DomainNameInfo}.
-   *
-   * <p>This should only be used outside this class for testing- instances of {@link DomainNameInfo}
-   * should otherwise come from {@link #parseFromRecord}.
    */
   @VisibleForTesting
   static DomainNameInfo create(

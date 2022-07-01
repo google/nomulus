@@ -24,7 +24,6 @@ import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.export.DriveModule;
-import google.registry.export.datastore.DatastoreAdminModule;
 import google.registry.export.sheet.SheetsServiceModule;
 import google.registry.flows.ServerTridProviderModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
@@ -40,7 +39,6 @@ import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.rde.JSchModule;
-import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.Jackson2Module;
 import google.registry.request.Modules.NetHttpTransportModule;
 import google.registry.request.Modules.UrlConnectionServiceModule;
@@ -63,8 +61,6 @@ import javax.inject.Singleton;
       CloudTasksUtilsModule.class,
       CredentialModule.class,
       CustomLogicFactoryModule.class,
-      DatastoreAdminModule.class,
-      DatastoreServiceModule.class,
       DirectoryModule.class,
       DummyKeyringModule.class,
       DriveModule.class,

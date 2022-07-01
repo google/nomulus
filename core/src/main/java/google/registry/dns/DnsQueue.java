@@ -41,7 +41,6 @@ import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.tld.Registries;
 import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
-import google.registry.util.SystemClock;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -81,17 +80,6 @@ public class DnsQueue {
   public DnsQueue(@Named(DNS_PULL_QUEUE_NAME) Queue queue, Clock clock) {
     this.queue = queue;
     this.clock = clock;
-  }
-
-  /**
-   * Constructs a new instance.
-   *
-   * <p><b>Note:</b> Prefer <code>@Inject</code>ing DnsQueue instances instead. You should only use
-   * this helper method in situations for which injection does not work, e.g. inside mapper or
-   * reducer classes in mapreduces that need to be Serializable.
-   */
-  public static DnsQueue create() {
-    return new DnsQueue(getQueue(DNS_PULL_QUEUE_NAME), new SystemClock());
   }
 
   @VisibleForTesting

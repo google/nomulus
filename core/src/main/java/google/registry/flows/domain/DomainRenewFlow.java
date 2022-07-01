@@ -54,9 +54,11 @@ import google.registry.flows.custom.EntityChanges;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand.Renew;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.DomainRenewData;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -95,7 +97,6 @@ import org.joda.time.Duration;
  * longer than 10 years unless it comes in at the exact millisecond that the domain would have
  * expired.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.FlowUtils.UnknownCurrencyEppException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
@@ -154,9 +155,15 @@ public final class DomainRenewFlow implements TransactionalFlow {
     validateRegistrationPeriod(now, newExpirationTime);
     Optional<FeeRenewCommandExtension> feeRenew =
         eppInput.getSingleExtension(FeeRenewCommandExtension.class);
+    Recurring existingRecurringBillingEvent =
+        tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     FeesAndCredits feesAndCredits =
         pricingLogic.getRenewPrice(
-            Registry.get(existingDomain.getTld()), targetId, now, years, null);
+            Registry.get(existingDomain.getTld()),
+            targetId,
+            now,
+            years,
+            existingRecurringBillingEvent);
     validateFeeChallenge(targetId, now, feeRenew, feesAndCredits);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder()
@@ -174,12 +181,16 @@ public final class DomainRenewFlow implements TransactionalFlow {
     BillingEvent.Recurring newAutorenewEvent =
         newAutorenewBillingEvent(existingDomain)
             .setEventTime(newExpirationTime)
+            .setRenewalPrice(existingRecurringBillingEvent.getRenewalPrice().orElse(null))
+            .setRenewalPriceBehavior(existingRecurringBillingEvent.getRenewalPriceBehavior())
             .setParent(domainHistoryKey)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
             .setEventTime(newExpirationTime)
-            .setParentKey(domainHistoryKey)
+            .setDomainHistoryId(
+                new DomainHistoryId(
+                    domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
             .build();
     // End the old autorenew billing event and poll message now. This may delete the poll message.
     updateAutorenewRecurrenceEndTime(existingDomain, now);
@@ -190,7 +201,9 @@ public final class DomainRenewFlow implements TransactionalFlow {
             .setLastEppUpdateRegistrarId(registrarId)
             .setRegistrationExpirationTime(newExpirationTime)
             .setAutorenewBillingEvent(newAutorenewEvent.createVKey())
-            .setAutorenewPollMessage(newAutorenewPollMessage.createVKey())
+            .setAutorenewPollMessage(
+                newAutorenewPollMessage.createVKey(),
+                newAutorenewPollMessage.getHistoryRevisionId())
             .addGracePeriod(
                 GracePeriod.forBillingEvent(
                     GracePeriodStatus.RENEW, existingDomain.getRepoId(), explicitRenewEvent))

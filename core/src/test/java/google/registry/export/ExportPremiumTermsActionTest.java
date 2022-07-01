@@ -58,8 +58,7 @@ public class ExportPremiumTermsActionTest {
       DISCLAIMER_WITH_NEWLINE + "0, 549.00\n" + "2048, 549.00\n";
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
   private final Response response = mock(Response.class);

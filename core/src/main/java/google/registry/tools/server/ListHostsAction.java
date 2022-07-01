@@ -16,7 +16,6 @@ package google.registry.tools.server;
 
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static java.util.Comparator.comparing;
@@ -51,7 +50,7 @@ public final class ListHostsAction extends ListObjectsAction<HostResource> {
   @Override
   public ImmutableSet<HostResource> loadObjects() {
     final DateTime now = clock.nowUtc();
-    return transactIfJpaTm(() -> tm().loadAllOf(HostResource.class)).stream()
+    return tm().transact(() -> tm().loadAllOf(HostResource.class)).stream()
         .filter(host -> EppResourceUtils.isActive(host, now))
         .collect(toImmutableSortedSet(comparing(HostResource::getHostName)));
   }

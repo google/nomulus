@@ -69,7 +69,7 @@ final class RegistryLockVerifyActionTest {
   @RegisterExtension
   final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withClock(fakeClock)
           .withUserService(UserInfo.create("marla.singer@example.com", "12345"))
           .build();

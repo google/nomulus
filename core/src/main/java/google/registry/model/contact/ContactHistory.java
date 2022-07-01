@@ -14,16 +14,12 @@
 
 package google.registry.model.contact;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
-import google.registry.model.replay.DatastoreEntity;
-import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import java.io.Serializable;
@@ -60,7 +56,7 @@ import javax.persistence.PostLoad;
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(ContactHistoryId.class)
-public class ContactHistory extends HistoryEntry implements SqlEntity, UnsafeSerializable {
+public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
 
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
@@ -88,6 +84,10 @@ public class ContactHistory extends HistoryEntry implements SqlEntity, UnsafeSer
     return super.getId();
   }
 
+  public ContactHistoryId getContactHistoryId() {
+    return new ContactHistoryId(getContactRepoId(), getId());
+  }
+
   /**
    * The values of all the fields on the {@link ContactBase} object after the action represented by
    * this history object was executed.
@@ -105,6 +105,7 @@ public class ContactHistory extends HistoryEntry implements SqlEntity, UnsafeSer
 
   /** Creates a {@link VKey} instance for this entity. */
   @SuppressWarnings("unchecked")
+  @Override
   public VKey<ContactHistory> createVKey() {
     return (VKey<ContactHistory>) createVKey(Key.create(this));
   }
@@ -130,20 +131,6 @@ public class ContactHistory extends HistoryEntry implements SqlEntity, UnsafeSer
     }
   }
 
-  // In Datastore, save as a HistoryEntry object regardless of this object's type
-  @Override
-  public Optional<DatastoreEntity> toDatastoreEntity() {
-    return Optional.of(asHistoryEntry());
-  }
-
-  // Used to fill out the contactBase field during asynchronous replay
-  @Override
-  public void beforeSqlSaveOnReplay() {
-    if (contactBase == null) {
-      contactBase = jpaTm().getEntityManager().find(ContactResource.class, getContactRepoId());
-    }
-  }
-
   /** Class to represent the composite primary key of {@link ContactHistory} entity. */
   public static class ContactHistoryId extends ImmutableObject implements Serializable {
 
@@ -164,8 +151,7 @@ public class ContactHistory extends HistoryEntry implements SqlEntity, UnsafeSer
      *
      * <p>This method is private because it is only used by Hibernate.
      */
-    @SuppressWarnings("unused")
-    private String getContactRepoId() {
+    public String getContactRepoId() {
       return contactRepoId;
     }
 
@@ -174,8 +160,7 @@ public class ContactHistory extends HistoryEntry implements SqlEntity, UnsafeSer
      *
      * <p>This method is private because it is only used by Hibernate.
      */
-    @SuppressWarnings("unused")
-    private long getId() {
+    public long getId() {
       return id;
     }
 

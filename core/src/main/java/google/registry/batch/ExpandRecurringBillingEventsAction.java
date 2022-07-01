@@ -18,35 +18,25 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.newHashSet;
-import static google.registry.mapreduce.MapreduceRunner.PARAM_DRY_RUN;
-import static google.registry.mapreduce.inputs.EppResourceInputs.createChildEntityInput;
+import static google.registry.batch.BatchModule.PARAM_DRY_RUN;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.domain.Period.Unit.YEARS;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_AUTORENEW;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
-import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.earliestOf;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 
-import com.google.appengine.tools.mapreduce.Mapper;
-import com.google.appengine.tools.mapreduce.Reducer;
-import com.google.appengine.tools.mapreduce.ReducerInput;
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.domain.DomainPricingLogic;
-import google.registry.mapreduce.MapreduceRunner;
-import google.registry.mapreduce.inputs.NullInput;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
@@ -70,13 +60,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
-import org.joda.money.Money;
 import org.joda.time.DateTime;
 
 /**
- * A mapreduce that expands {@link Recurring} billing events into synthetic {@link OneTime} events.
+ * An action that expands {@link Recurring} billing events into synthetic {@link OneTime} events.
  *
- * <p>The cursor used throughout this mapreduce (overridden if necessary using the parameter {@code
+ * <p>The cursor used throughout this action (overridden if necessary using the parameter {@code
  * cursorTime}) represents the inclusive lower bound on the range of billing times that will be
  * expanded as a result of the job (the exclusive upper bound being the execution time of the job).
  */
@@ -87,11 +76,9 @@ import org.joda.time.DateTime;
 public class ExpandRecurringBillingEventsAction implements Runnable {
 
   public static final String PARAM_CURSOR_TIME = "cursorTime";
-  private static final String ERROR_COUNTER = "errors";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject Clock clock;
-  @Inject MapreduceRunner mrRunner;
 
   @Inject
   @Config("jdbcBatchSize")
@@ -108,33 +95,18 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
   public void run() {
     DateTime executeTime = clock.nowUtc();
     DateTime persistedCursorTime =
-        transactIfJpaTm(
-            () ->
-                tm().loadByKeyIfPresent(Cursor.createGlobalVKey(RECURRING_BILLING))
-                    .orElse(Cursor.createGlobal(RECURRING_BILLING, START_OF_TIME))
-                    .getCursorTime());
+        tm().transact(
+                () ->
+                    tm().loadByKeyIfPresent(Cursor.createGlobalVKey(RECURRING_BILLING))
+                        .orElse(Cursor.createGlobal(RECURRING_BILLING, START_OF_TIME))
+                        .getCursorTime());
     DateTime cursorTime = cursorTimeParam.orElse(persistedCursorTime);
     checkArgument(
         cursorTime.isBefore(executeTime), "Cursor time must be earlier than execution time.");
     logger.atInfo().log(
         "Running Recurring billing event expansion for billing time range [%s, %s).",
         cursorTime, executeTime);
-    if (tm().isOfy()) {
-      mrRunner
-          .setJobName("Expand Recurring billing events into synthetic OneTime events.")
-          .setModuleName("backend")
-          .runMapreduce(
-              new ExpandRecurringBillingEventsMapper(isDryRun, cursorTime, clock.nowUtc()),
-              new ExpandRecurringBillingEventsReducer(isDryRun, persistedCursorTime),
-              // Add an extra shard that maps over a null recurring event (see the mapper for why).
-              ImmutableList.of(
-                  new NullInput<>(),
-                  createChildEntityInput(
-                      ImmutableSet.of(DomainBase.class), ImmutableSet.of(Recurring.class))))
-          .sendLinkToMapreduceConsole(response);
-    } else {
-      expandSqlBillingEventsInBatches(executeTime, cursorTime, persistedCursorTime);
-    }
+    expandSqlBillingEventsInBatches(executeTime, cursorTime, persistedCursorTime);
   }
 
   private void expandSqlBillingEventsInBatches(
@@ -183,7 +155,8 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                         continue;
                       }
                       int billingEventsSaved =
-                          expandBillingEvent(recurring, executeTime, cursorTime, isDryRun);
+                          expandBillingEvent(
+                              recurring, executeTime, cursorTime, isDryRun, domainPricingLogic);
                       batchBillingEventsSaved += billingEventsSaved;
                       if (billingEventsSaved > 0) {
                         expandedDomains.add(recurring.getTargetId());
@@ -257,118 +230,17 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
     }
   }
 
-  /** Mapper to expand {@link Recurring} billing events into synthetic {@link OneTime} events. */
-  public static class ExpandRecurringBillingEventsMapper
-      extends Mapper<Recurring, DateTime, DateTime> {
-
-    private static final long serialVersionUID = 8376442755556228455L;
-
-    private final boolean isDryRun;
-    private final DateTime cursorTime;
-    private final DateTime executeTime;
-
-    public ExpandRecurringBillingEventsMapper(
-        boolean isDryRun, DateTime cursorTime, DateTime executeTime) {
-      this.isDryRun = isDryRun;
-      this.cursorTime = cursorTime;
-      this.executeTime = executeTime;
-    }
-
-    @Override
-    public final void map(final Recurring recurring) {
-      // This single emit forces the reducer to run at the end of the map job, so that a mapper
-      // that runs without error will advance the cursor at the end of processing (unless this was
-      // a dry run, in which case the cursor should not be advanced).
-      if (recurring == null) {
-        emit(cursorTime, executeTime);
-        return;
-      }
-      getContext().incrementCounter("Recurring billing events encountered");
-      // Ignore any recurring billing events that have yet to apply.
-      if (recurring.getEventTime().isAfter(executeTime)
-          // This second case occurs when a domain is transferred or deleted before first renewal.
-          || recurring.getRecurrenceEndTime().isBefore(recurring.getEventTime())) {
-        getContext().incrementCounter("Recurring billing events ignored");
-        return;
-      }
-      int numBillingEventsSaved = 0;
-      try {
-        numBillingEventsSaved =
-            tm().transactNew(
-                    () -> expandBillingEvent(recurring, executeTime, cursorTime, isDryRun));
-      } catch (Throwable t) {
-        getContext().incrementCounter("error: " + t.getClass().getSimpleName());
-        getContext().incrementCounter(ERROR_COUNTER);
-        throw new RuntimeException(
-            String.format(
-                "Error while expanding Recurring billing events for %d", recurring.getId()),
-            t);
-      }
-      if (!isDryRun) {
-        getContext().incrementCounter("Saved OneTime billing events", numBillingEventsSaved);
-      } else {
-        getContext()
-            .incrementCounter("Generated OneTime billing events (dry run)", numBillingEventsSaved);
-      }
-    }
-  }
-
-  /**
-   * "Reducer" to advance the cursor after all map jobs have been completed. The NullInput into the
-   * mapper will cause the mapper to emit one timestamp pair (current cursor and execution time),
-   * and the cursor will be advanced (and the timestamps logged) at the end of a successful
-   * mapreduce.
-   */
-  public static class ExpandRecurringBillingEventsReducer
-      extends Reducer<DateTime, DateTime, Void> {
-
-    private final boolean isDryRun;
-    private final DateTime expectedPersistedCursorTime;
-
-    public ExpandRecurringBillingEventsReducer(
-        boolean isDryRun, DateTime expectedPersistedCursorTime) {
-      this.isDryRun = isDryRun;
-      this.expectedPersistedCursorTime = expectedPersistedCursorTime;
-    }
-
-    @Override
-    public void reduce(final DateTime cursorTime, final ReducerInput<DateTime> executionTimeInput) {
-      if (getContext().getCounter(ERROR_COUNTER).getValue() > 0) {
-        logger.atSevere().log(
-            "One or more errors logged during recurring event expansion. Cursor will"
-                + " not be advanced.");
-        return;
-      }
-      final DateTime executionTime = executionTimeInput.next();
-      logger.atInfo().log(
-          "Recurring event expansion %s complete for billing event range [%s, %s).",
-          isDryRun ? "(dry run) " : "", cursorTime, executionTime);
-      tm().transact(
-              () -> {
-                Cursor cursor =
-                    auditedOfy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
-                DateTime currentCursorTime =
-                    (cursor == null ? START_OF_TIME : cursor.getCursorTime());
-                if (!currentCursorTime.equals(expectedPersistedCursorTime)) {
-                  logger.atSevere().log(
-                      "Current cursor position %s does not match expected cursor position %s.",
-                      currentCursorTime, expectedPersistedCursorTime);
-                  return;
-                }
-                if (!isDryRun) {
-                  tm().put(Cursor.createGlobal(RECURRING_BILLING, executionTime));
-                }
-              });
-    }
-  }
-
   private static int expandBillingEvent(
-      Recurring recurring, DateTime executeTime, DateTime cursorTime, boolean isDryRun) {
+      Recurring recurring,
+      DateTime executeTime,
+      DateTime cursorTime,
+      boolean isDryRun,
+      DomainPricingLogic domainPricingLogic) {
     ImmutableSet.Builder<OneTime> syntheticOneTimesBuilder = new ImmutableSet.Builder<>();
     final Registry tld = Registry.get(getTldFromDomainName(recurring.getTargetId()));
 
     // Determine the complete set of times at which this recurring event should
-    // occur (up to and including the runtime of the mapreduce).
+    // occur (up to and including the runtime of the action).
     Iterable<DateTime> eventTimes =
         recurring
             .getRecurrenceTimeOfYear()
@@ -385,14 +257,10 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
         VKey.create(
             DomainBase.class, recurring.getDomainRepoId(), recurring.getParentKey().getParent());
     Iterable<OneTime> oneTimesForDomain;
-    if (tm().isOfy()) {
-      oneTimesForDomain = auditedOfy().load().type(OneTime.class).ancestor(domainKey.getOfyKey());
-    } else {
-      oneTimesForDomain =
-          tm().createQueryComposer(OneTime.class)
-              .where("domainRepoId", EQ, recurring.getDomainRepoId())
-              .list();
-    }
+    oneTimesForDomain =
+        tm().createQueryComposer(OneTime.class)
+            .where("domainRepoId", EQ, recurring.getDomainRepoId())
+            .list();
 
     // Determine the billing times that already have OneTime events persisted.
     ImmutableSet<DateTime> existingBillingTimes =
@@ -431,13 +299,16 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
       historyEntriesBuilder.add(historyEntry);
 
       DateTime eventTime = billingTime.minus(tld.getAutoRenewGracePeriodLength());
-      // Determine the cost for a one-year renewal.
-      Money renewCost = getDomainRenewCost(recurring.getTargetId(), eventTime, 1);
+
       syntheticOneTimesBuilder.add(
           new OneTime.Builder()
               .setBillingTime(billingTime)
               .setRegistrarId(recurring.getRegistrarId())
-              .setCost(renewCost)
+              // Determine the cost for a one-year renewal.
+              .setCost(
+                  domainPricingLogic
+                      .getRenewPrice(tld, recurring.getTargetId(), eventTime, 1, recurring)
+                      .getRenewCost())
               .setEventTime(eventTime)
               .setFlags(union(recurring.getFlags(), Flag.SYNTHETIC))
               .setParent(historyEntry)
@@ -463,7 +334,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
 
   /**
    * Filters a set of {@link DateTime}s down to event times that are in scope for a particular
-   * mapreduce run, given the cursor time and the mapreduce execution time.
+   * action run, given the cursor time and the action execution time.
    */
   protected static ImmutableSet<DateTime> getBillingTimesInScope(
       Iterable<DateTime> eventTimes,

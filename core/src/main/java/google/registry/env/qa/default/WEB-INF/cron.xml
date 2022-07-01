@@ -35,7 +35,6 @@
     <url><![CDATA[/_dr/task/resaveAllEppResourcesPipeline?fast=true]]></url>
     <description>
       This job resaves all our resources, projected in time to "now".
-      It is needed for "deleteOldCommitLogs" to work correctly.
     </description>
     <schedule>1st monday of month 09:00</schedule>
     <target>backend</target>

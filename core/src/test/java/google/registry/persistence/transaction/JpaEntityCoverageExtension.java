@@ -41,11 +41,6 @@ public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEach
 
   private static final ImmutableSet<String> IGNORE_ENTITIES =
       ImmutableSet.of(
-          // DatabaseMigrationStateSchedule is persisted in tests, however any test that sets it
-          // needs to remove it in order to avoid affecting any other tests running in the same JVM.
-          // TODO(gbrodman): remove this when we implement proper read-only modes for the
-          // transaction managers.
-          "DatabaseMigrationStateSchedule",
           // TransactionEntity is trivial; its persistence is tested in TransactionTest.
           "TransactionEntity");
 

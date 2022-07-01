@@ -17,7 +17,6 @@ package google.registry.model;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.common.Cursor;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.contact.ContactHistory;
@@ -30,21 +29,14 @@ import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.ofy.CommitLogBucket;
-import google.registry.model.ofy.CommitLogCheckpoint;
-import google.registry.model.ofy.CommitLogCheckpointRoot;
-import google.registry.model.ofy.CommitLogManifest;
-import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.replay.LastSqlTransaction;
 import google.registry.model.replay.ReplayGap;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
-import google.registry.model.tld.Registry;
 
 /** Sets of classes of the Objectify-registered entities in use throughout the model. */
 @DeleteAfterMigration
@@ -58,14 +50,8 @@ public final class EntityClasses {
           BillingEvent.Modification.class,
           BillingEvent.OneTime.class,
           BillingEvent.Recurring.class,
-          CommitLogBucket.class,
-          CommitLogCheckpoint.class,
-          CommitLogCheckpointRoot.class,
-          CommitLogManifest.class,
-          CommitLogMutation.class,
           ContactHistory.class,
           ContactResource.class,
-          Cursor.class,
           DomainBase.class,
           DomainHistory.class,
           EntityGroupRoot.class,
@@ -85,8 +71,6 @@ public final class EntityClasses {
           PollMessage.OneTime.class,
           RdeRevision.class,
           Registrar.class,
-          RegistrarContact.class,
-          Registry.class,
           ReplayGap.class,
           ServerSecret.class);
 

@@ -35,27 +35,25 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.whois.WhoisResponse.WhoisResponseResults;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainWhoisResponse}. */
-@DualDatabaseTest
 class DomainWhoisResponseTest {
 
   @RegisterExtension
-  final AppEngineExtension gae = AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension gae = AppEngineExtension.builder().withCloudSql().build();
 
   private HostResource hostResource1;
   private HostResource hostResource2;
-  private RegistrarContact abuseContact;
+  private RegistrarPoc abuseContact;
   private ContactResource adminContact;
   private ContactResource registrant;
   private ContactResource techContact;
@@ -74,14 +72,15 @@ class DomainWhoisResponseTest {
                 .setIanaIdentifier(5555555L)
                 .build());
 
-    abuseContact = persistResource(
-        new RegistrarContact.Builder()
-            .setParent(registrar)
-            .setName("Jake Doe")
-            .setEmailAddress("jakedoe@theregistrar.com")
-            .setPhoneNumber("+1.2125551216")
-            .setVisibleInDomainWhoisAsAbuse(true)
-            .build());
+    abuseContact =
+        persistResource(
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
+                .setName("Jake Doe")
+                .setEmailAddress("jakedoe@theregistrar.com")
+                .setPhoneNumber("+1.2125551216")
+                .setVisibleInDomainWhoisAsAbuse(true)
+                .build());
 
     createTld("tld");
 
@@ -279,7 +278,7 @@ class DomainWhoisResponseTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void getPlainTextOutputTest() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(domainBase, false, "Please contact registrar", clock.nowUtc());
@@ -290,7 +289,7 @@ class DomainWhoisResponseTest {
         .isEqualTo(WhoisResponseResults.create(loadFile("whois_domain.txt"), 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void getPlainTextOutputTest_registrarAbuseInfoMissing() {
     persistResource(abuseContact.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build());
     DomainWhoisResponse domainWhoisResponse =
@@ -302,7 +301,7 @@ class DomainWhoisResponseTest {
                 loadFile("whois_domain_registrar_abuse_info_missing.txt"), 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void getPlainTextOutputTest_fullOutput() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(domainBase, true, "Please contact registrar", clock.nowUtc());
@@ -313,7 +312,7 @@ class DomainWhoisResponseTest {
         .isEqualTo(WhoisResponseResults.create(loadFile("whois_domain_full_output.txt"), 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void addImplicitOkStatusTest() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(

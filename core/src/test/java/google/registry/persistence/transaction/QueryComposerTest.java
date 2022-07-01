@@ -18,7 +18,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.QueryComposer.Comparator;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static org.junit.Assert.assertThrows;
 
 import com.googlecode.objectify.annotation.Entity;
@@ -27,19 +26,15 @@ import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-@DualDatabaseTest
 public class QueryComposerTest {
 
   private final FakeClock fakeClock = new FakeClock();
@@ -52,7 +47,7 @@ public class QueryComposerTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withClock(fakeClock)
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withOfyTestEntities(TestEntity.class)
           .withJpaUnitTestEntities(TestEntity.class)
           .build();
@@ -69,289 +64,259 @@ public class QueryComposerTest {
             });
   }
 
-  @TestOfyAndSql
+  @Test
   public void testFirstQueries() {
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.GT, "bravo")
-                        .first()
-                        .map(QueryComposerTest::assertDetachedIfJpa)
-                        .get()))
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.GT, "bravo")
+                            .first()
+                            .map(QueryComposerTest::assertDetachedIfJpa)
+                            .get()))
         .isEqualTo(charlie);
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.GTE, "charlie")
-                        .first()
-                        .map(QueryComposerTest::assertDetachedIfJpa)
-                        .get()))
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.GTE, "charlie")
+                            .first()
+                            .map(QueryComposerTest::assertDetachedIfJpa)
+                            .get()))
         .isEqualTo(charlie);
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.LT, "bravo")
-                        .first()
-                        .map(QueryComposerTest::assertDetachedIfJpa)
-                        .get()))
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.LT, "bravo")
+                            .first()
+                            .map(QueryComposerTest::assertDetachedIfJpa)
+                            .get()))
         .isEqualTo(alpha);
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.LTE, "alpha")
-                        .first()
-                        .map(QueryComposerTest::assertDetachedIfJpa)
-                        .get()))
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.LTE, "alpha")
+                            .first()
+                            .map(QueryComposerTest::assertDetachedIfJpa)
+                            .get()))
         .isEqualTo(alpha);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testCount() {
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.GTE, "bravo")
-                        .count()))
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.GTE, "bravo")
+                            .count()))
         .isEqualTo(2L);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testGetSingleResult() {
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    QueryComposerTest.assertDetachedIfJpa(
-                        tm().createQueryComposer(TestEntity.class)
-                            .where("name", Comparator.EQ, "alpha")
-                            .getSingleResult())))
+            tm().transact(
+                    () ->
+                        QueryComposerTest.assertDetachedIfJpa(
+                            tm().createQueryComposer(TestEntity.class)
+                                .where("name", Comparator.EQ, "alpha")
+                                .getSingleResult())))
         .isEqualTo(alpha);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testGetSingleResult_noResults() {
     assertThrows(
         NoResultException.class,
         () ->
-            transactIfJpaTm(
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.EQ, "ziggy")
-                        .getSingleResult()));
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.EQ, "ziggy")
+                            .getSingleResult()));
   }
 
-  @TestOfyAndSql
+  @Test
   public void testGetSingleResult_nonUniqueResult() {
     assertThrows(
         NonUniqueResultException.class,
         () ->
-            transactIfJpaTm(
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.GT, "alpha")
-                        .getSingleResult()));
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.GT, "alpha")
+                            .getSingleResult()));
   }
 
-  @TestOfyAndSql
+  @Test
   public void testStreamQueries() {
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm()
-                        .createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.EQ, "alpha")
-                        .stream()
-                        .collect(toImmutableList())))
+            tm().transact(
+                    () ->
+                        tm()
+                            .createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.EQ, "alpha")
+                            .stream()
+                            .collect(toImmutableList())))
         .containsExactly(alpha);
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm()
-                        .createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.GT, "alpha")
-                        .stream()
-                        .map(QueryComposerTest::assertDetachedIfJpa)
-                        .collect(toImmutableList())))
+            tm().transact(
+                    () ->
+                        tm()
+                            .createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.GT, "alpha")
+                            .stream()
+                            .map(QueryComposerTest::assertDetachedIfJpa)
+                            .collect(toImmutableList())))
         .containsExactly(bravo, charlie);
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm()
-                        .createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.GTE, "bravo")
-                        .stream()
-                        .map(QueryComposerTest::assertDetachedIfJpa)
-                        .collect(toImmutableList())))
+            tm().transact(
+                    () ->
+                        tm()
+                            .createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.GTE, "bravo")
+                            .stream()
+                            .map(QueryComposerTest::assertDetachedIfJpa)
+                            .collect(toImmutableList())))
         .containsExactly(bravo, charlie);
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm()
-                        .createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.LT, "charlie")
-                        .stream()
-                        .map(QueryComposerTest::assertDetachedIfJpa)
-                        .collect(toImmutableList())))
+            tm().transact(
+                    () ->
+                        tm()
+                            .createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.LT, "charlie")
+                            .stream()
+                            .map(QueryComposerTest::assertDetachedIfJpa)
+                            .collect(toImmutableList())))
         .containsExactly(alpha, bravo);
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm()
-                        .createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.LTE, "bravo")
-                        .stream()
-                        .map(QueryComposerTest::assertDetachedIfJpa)
-                        .collect(toImmutableList())))
+            tm().transact(
+                    () ->
+                        tm()
+                            .createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.LTE, "bravo")
+                            .stream()
+                            .map(QueryComposerTest::assertDetachedIfJpa)
+                            .collect(toImmutableList())))
         .containsExactly(alpha, bravo);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testListQueries() {
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.GT, "alpha")
-                        .list()))
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.GT, "alpha")
+                            .list()))
         .containsExactly(bravo, charlie);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testNonPrimaryKey() {
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("val", Comparator.EQ, 2)
-                        .first()
-                        .map(QueryComposerTest::assertDetachedIfJpa)
-                        .get()))
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(TestEntity.class)
+                            .where("val", Comparator.EQ, 2)
+                            .first()
+                            .map(QueryComposerTest::assertDetachedIfJpa)
+                            .get()))
         .isEqualTo(bravo);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testOrderBy() {
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm()
-                        .createQueryComposer(TestEntity.class)
-                        .where("val", Comparator.GT, 1)
-                        .orderBy("val")
-                        .stream()
-                        .map(QueryComposerTest::assertDetachedIfJpa)
-                        .collect(toImmutableList())))
+            tm().transact(
+                    () ->
+                        tm()
+                            .createQueryComposer(TestEntity.class)
+                            .where("val", Comparator.GT, 1)
+                            .orderBy("val")
+                            .stream()
+                            .map(QueryComposerTest::assertDetachedIfJpa)
+                            .collect(toImmutableList())))
         .containsExactly(bravo, alpha);
   }
 
-  @TestOfyAndSql
+  @Test
   public void testEmptyQueries() {
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.GT, "foxtrot")
-                        .first()))
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.GT, "foxtrot")
+                            .first()))
         .isEqualTo(Optional.empty());
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm()
-                        .createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.GT, "foxtrot")
-                        .stream()
-                        .collect(toImmutableList())))
+            tm().transact(
+                    () ->
+                        tm()
+                            .createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.GT, "foxtrot")
+                            .stream()
+                            .collect(toImmutableList())))
         .isEmpty();
   }
 
-  @TestOfyOnly
-  void testMultipleInequalities_failsDatastore() {
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("val", Comparator.GT, 1)
-                        .where("name", Comparator.LT, "b")
-                        .list()))
-        .hasMessageThat()
-        .isEqualTo(
-            "Datastore cannot handle inequality queries on multiple fields, we found 2 fields.");
-  }
-
-  @TestSqlOnly
+  @Test
   void testMultipleInequalities_succeedsSql() {
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm().createQueryComposer(TestEntity.class)
-                        .where("val", Comparator.GT, 1)
-                        .where("name", Comparator.LT, "b")
-                        .list()))
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(TestEntity.class)
+                            .where("val", Comparator.GT, 1)
+                            .where("name", Comparator.LT, "b")
+                            .list()))
         .containsExactly(alpha);
   }
 
-  @TestSqlOnly
+  @Test
   public void testLikeQueries() {
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm()
-                        .createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.LIKE, "%harl%")
-                        .stream()
-                        .collect(toImmutableList())))
+            tm().transact(
+                    () ->
+                        tm()
+                            .createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.LIKE, "%harl%")
+                            .stream()
+                            .collect(toImmutableList())))
         .containsExactly(charlie);
 
     // Verify that full matches work.
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm()
-                        .createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.LIKE, "alpha")
-                        .stream()
-                        .collect(toImmutableList())))
+            tm().transact(
+                    () ->
+                        tm()
+                            .createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.LIKE, "alpha")
+                            .stream()
+                            .collect(toImmutableList())))
         .containsExactly(alpha);
 
     // verify that we don't do partial matches.
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm()
-                        .createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.LIKE, "%harl")
-                        .stream()
-                        .collect(toImmutableList())))
+            tm().transact(
+                    () ->
+                        tm()
+                            .createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.LIKE, "%harl")
+                            .stream()
+                            .collect(toImmutableList())))
         .isEmpty();
     assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm()
-                        .createQueryComposer(TestEntity.class)
-                        .where("name", Comparator.LIKE, "harl%")
-                        .stream()
-                        .collect(toImmutableList())))
+            tm().transact(
+                    () ->
+                        tm()
+                            .createQueryComposer(TestEntity.class)
+                            .where("name", Comparator.LIKE, "harl%")
+                            .stream()
+                            .collect(toImmutableList())))
         .isEmpty();
-  }
-
-  @TestOfyOnly
-  public void testLikeQueries_failsOnOfy() {
-    UnsupportedOperationException thrown =
-        assertThrows(
-            UnsupportedOperationException.class,
-            () ->
-                tm()
-                    .createQueryComposer(TestEntity.class)
-                    .where("name", Comparator.LIKE, "%")
-                    .stream());
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("The LIKE operation is not supported on Datastore.");
   }
 
   private static <T> T assertDetachedIfJpa(T entity) {

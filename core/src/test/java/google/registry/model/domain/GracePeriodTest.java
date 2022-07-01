@@ -39,7 +39,7 @@ public class GracePeriodTest {
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql() // Needed to be able to construct Keys.
+          .withCloudSql() // Needed to be able to construct Keys.
           .build();
 
   private final DateTime now = DateTime.now(UTC);

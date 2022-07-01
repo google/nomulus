@@ -15,10 +15,7 @@
 package google.registry.model.host;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -31,27 +28,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.index.EppResourceIndex;
-import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import google.registry.util.SerializeUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostResource}. */
-@DualDatabaseTest
 class HostResourceTest extends EntityTestCase {
 
   private final DateTime day3 = fakeClock.nowUtc();
@@ -97,14 +86,14 @@ class HostResourceTest extends EntityTestCase {
                     .build()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testHostBaseToHostResource() {
     ImmutableObjectSubject.assertAboutImmutableObjects()
         .that(new HostResource.Builder().copyFrom(host).build())
         .isEqualExceptFields(host, "updateTimestamp", "revisions");
   }
 
-  @TestOfyAndSql
+  @Test
   void testPersistence() {
     HostResource newHost = host.asBuilder().setRepoId("NEWHOST").build();
     tm().transact(() -> tm().insert(newHost));
@@ -113,7 +102,7 @@ class HostResourceTest extends EntityTestCase {
         .containsExactly(newHost);
   }
 
-  @TestSqlOnly
+  @Test
   void testSerializable() {
     HostResource newHost = host.asBuilder().setRepoId("NEWHOST").build();
     tm().transact(() -> tm().insert(newHost));
@@ -121,26 +110,7 @@ class HostResourceTest extends EntityTestCase {
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
-  @TestOfyOnly
-  void testLoadingByForeignKey() {
-    assertThat(loadByForeignKey(HostResource.class, host.getForeignKey(), fakeClock.nowUtc()))
-        .hasValue(host);
-  }
-
-  @TestOfyOnly
-  void testIndexing() throws Exception {
-    // Clone it and save it before running the indexing test so that its transferData fields are
-    // populated from the superordinate domain.
-    verifyDatastoreIndexing(
-        persistResource(host),
-        "deletionTime",
-        "fullyQualifiedHostName",
-        "inetAddresses",
-        "superordinateDomain",
-        "currentSponsorClientId");
-  }
-
-  @TestOfyAndSql
+  @Test
   void testEmptyStringsBecomeNull() {
     assertThat(
             new HostResource.Builder()
@@ -162,7 +132,7 @@ class HostResourceTest extends EntityTestCase {
         .isNotNull();
   }
 
-  @TestOfyAndSql
+  @Test
   void testEmptySetsBecomeNull() {
     assertThat(new HostResource.Builder().setInetAddresses(null).build().inetAddresses).isNull();
     assertThat(new HostResource.Builder().setInetAddresses(ImmutableSet.of()).build().inetAddresses)
@@ -175,7 +145,7 @@ class HostResourceTest extends EntityTestCase {
         .isNotNull();
   }
 
-  @TestOfyAndSql
+  @Test
   void testImplicitStatusValues() {
     // OK is implicit if there's no other statuses.
     assertAboutHosts()
@@ -197,13 +167,13 @@ class HostResourceTest extends EntityTestCase {
         .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
   }
 
-  @TestOfyAndSql
+  @Test
   void testToHydratedString_notCircular() {
     // If there are circular references, this will overflow the stack.
     host.toHydratedString();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_uppercaseHostName() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -213,7 +183,7 @@ class HostResourceTest extends EntityTestCase {
         .isEqualTo("Host name AAA.BBB.CCC not in puny-coded, lower-case form");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_utf8HostName() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -223,14 +193,14 @@ class HostResourceTest extends EntityTestCase {
         .isEqualTo("Host name みんな.みんな.みんな not in puny-coded, lower-case form");
   }
 
-  @TestOfyAndSql
+  @Test
   void testComputeLastTransferTime_hostNeverSwitchedDomains_domainWasNeverTransferred() {
     domain = domain.asBuilder().setLastTransferTime(null).build();
     host = host.asBuilder().setLastTransferTime(null).setLastSuperordinateChange(null).build();
     assertThat(host.computeLastTransferTime(domain)).isNull();
   }
 
-  @TestOfyAndSql
+  @Test
   void testComputeLastTransferTime_hostNeverSwitchedDomains_domainWasTransferred() {
     // Host was created on Day 1.
     // Domain was transferred on Day 2.
@@ -245,7 +215,7 @@ class HostResourceTest extends EntityTestCase {
     assertThat(host.computeLastTransferTime(domain)).isEqualTo(day2);
   }
 
-  @TestOfyAndSql
+  @Test
   void testComputeLastTransferTime_hostCreatedAfterDomainWasTransferred() {
     // Domain was transferred on Day 1.
     // Host was created subordinate to domain on Day 2.
@@ -267,7 +237,7 @@ class HostResourceTest extends EntityTestCase {
     assertThat(host.computeLastTransferTime(domain)).isNull();
   }
 
-  @TestOfyAndSql
+  @Test
   void testComputeLastTransferTime_hostWasTransferred_domainWasNeverTransferred() {
     // Host was transferred on Day 1.
     // Host was made subordinate to domain on Day 2.
@@ -277,7 +247,7 @@ class HostResourceTest extends EntityTestCase {
     assertThat(host.computeLastTransferTime(domain)).isEqualTo(day1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testComputeLastTransferTime_domainWasTransferredBeforeHostBecameSubordinate() {
     // Host was transferred on Day 1.
     // Domain was transferred on Day 2.
@@ -287,7 +257,7 @@ class HostResourceTest extends EntityTestCase {
     assertThat(host.computeLastTransferTime(domain)).isEqualTo(day1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testComputeLastTransferTime_domainWasTransferredAfterHostBecameSubordinate() {
     // Host was transferred on Day 1.
     // Host was made subordinate to domain on Day 2.
@@ -295,41 +265,5 @@ class HostResourceTest extends EntityTestCase {
     domain = domain.asBuilder().setLastTransferTime(day3).build();
     host = host.asBuilder().setLastTransferTime(day1).setLastSuperordinateChange(day2).build();
     assertThat(host.computeLastTransferTime(domain)).isEqualTo(day3);
-  }
-
-  @TestOfyOnly
-  void testBeforeDatastoreSaveOnReplay_indexes() {
-    ImmutableList<ForeignKeyHostIndex> foreignKeyIndexes =
-        ofyTm().loadAllOf(ForeignKeyHostIndex.class);
-    ImmutableList<EppResourceIndex> eppResourceIndexes = ofyTm().loadAllOf(EppResourceIndex.class);
-    fakeClock.advanceOneMilli();
-    ofyTm()
-        .transact(
-            () -> {
-              foreignKeyIndexes.forEach(ofyTm()::delete);
-              eppResourceIndexes.forEach(ofyTm()::delete);
-            });
-    assertThat(ofyTm().loadAllOf(ForeignKeyHostIndex.class)).isEmpty();
-    assertThat(ofyTm().loadAllOf(EppResourceIndex.class)).isEmpty();
-
-    ofyTm().transact(() -> host.beforeDatastoreSaveOnReplay());
-
-    assertThat(ofyTm().loadAllOf(ForeignKeyHostIndex.class))
-        .containsExactly(ForeignKeyIndex.create(host, host.getDeletionTime()));
-    assertThat(ofyTm().loadAllOf(EppResourceIndex.class))
-        .containsExactly(EppResourceIndex.create(Key.create(host)));
-  }
-
-  @TestOfyOnly
-  void testBeforeSqlSaveOnReplay_canonicalName() {
-    host.fullyQualifiedHostName = "NS1.EXAMPLE.COM";
-    assertThat(host.getHostName()).isEqualTo("NS1.EXAMPLE.COM");
-    host.beforeSqlSaveOnReplay();
-    assertThat(host.getHostName()).isEqualTo("ns1.example.com");
-
-    host.fullyQualifiedHostName = "ns1.kittyçat.com";
-    assertThat(host.getHostName()).isEqualTo("ns1.kittyçat.com");
-    host.beforeSqlSaveOnReplay();
-    assertThat(host.getHostName()).isEqualTo("ns1.xn--kittyat-yxa.com");
   }
 }

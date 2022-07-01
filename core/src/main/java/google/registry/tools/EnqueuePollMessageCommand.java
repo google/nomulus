@@ -118,7 +118,7 @@ class EnqueuePollMessageCommand extends MutatingCommand {
                     null,
                     new PollMessage.OneTime.Builder()
                         .setRegistrarId(registrarId)
-                        .setParent(historyEntry)
+                        .setHistoryEntry(historyEntry)
                         .setEventTime(tm().getTransactionTime())
                         .setMsg(message)
                         .build());

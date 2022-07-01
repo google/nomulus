@@ -44,8 +44,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 final class TlsCredentialsTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   protected final FakeClock clock = new FakeClock();
 

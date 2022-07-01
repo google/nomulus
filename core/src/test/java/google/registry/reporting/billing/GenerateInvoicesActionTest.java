@@ -24,27 +24,24 @@ import static org.mockito.Mockito.when;
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.net.MediaType;
 import google.registry.beam.BeamActionTestBase;
-import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.reporting.ReportingModule;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.util.CloudTasksUtils;
 import java.io.IOException;
 import org.joda.time.Duration;
 import org.joda.time.YearMonth;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.billing.GenerateInvoicesAction}. */
-@DualDatabaseTest
 class GenerateInvoicesActionTest extends BeamActionTestBase {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private final BillingEmailUtils emailUtils = mock(BillingEmailUtils.class);
   private FakeClock clock = new FakeClock();
@@ -52,7 +49,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
   private CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
   private GenerateInvoicesAction action;
 
-  @TestOfyAndSql
+  @Test
   void testLaunchTemplateJob_withPublish() throws Exception {
     action =
         new GenerateInvoicesAction(
@@ -62,7 +59,6 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
             "billing_bucket",
             "REG-INV",
             true,
-            PrimaryDatabase.DATASTORE,
             new YearMonth(2017, 10),
             emailUtils,
             cloudTasksUtils,
@@ -87,7 +83,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
                     .plus(Duration.standardMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES))));
   }
 
-  @TestOfyAndSql
+  @Test
   void testLaunchTemplateJob_withoutPublish() throws Exception {
     action =
         new GenerateInvoicesAction(
@@ -97,7 +93,6 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
             "billing_bucket",
             "REG-INV",
             false,
-            PrimaryDatabase.DATASTORE,
             new YearMonth(2017, 10),
             emailUtils,
             cloudTasksUtils,
@@ -111,7 +106,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
     cloudTasksHelper.assertNoTasksEnqueued("beam-reporting");
   }
 
-  @TestOfyAndSql
+  @Test
   void testCaughtIOException() throws IOException {
     when(launch.execute()).thenThrow(new IOException("Pipeline error"));
     action =
@@ -122,7 +117,6 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
             "billing_bucket",
             "REG-INV",
             false,
-            PrimaryDatabase.DATASTORE,
             new YearMonth(2017, 10),
             emailUtils,
             cloudTasksUtils,

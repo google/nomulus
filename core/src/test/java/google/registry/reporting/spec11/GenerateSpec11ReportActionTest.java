@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.net.MediaType;
 import google.registry.beam.BeamActionTestBase;
-import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.reporting.ReportingModule;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
@@ -40,7 +39,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2018-06-11T12:23:56Z"));
   private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
@@ -57,7 +56,6 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
             clock.nowUtc().toLocalDate(),
-            PrimaryDatabase.DATASTORE,
             true,
             clock,
             response,
@@ -81,7 +79,6 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
             clock.nowUtc().toLocalDate(),
-            PrimaryDatabase.DATASTORE,
             true,
             clock,
             response,
@@ -115,7 +112,6 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
             clock.nowUtc().toLocalDate(),
-            PrimaryDatabase.DATASTORE,
             false,
             clock,
             response,

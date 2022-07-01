@@ -27,13 +27,11 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.RegistryNotFoundException;
 import google.registry.model.tld.Registry.TldType;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DeleteTldCommand}. */
-@DualDatabaseTest
 class DeleteTldCommandTest extends CommandTestCase<DeleteTldCommand> {
 
   private static final String TLD_REAL = "tldreal";
@@ -55,7 +53,7 @@ class DeleteTldCommandTest extends CommandTestCase<DeleteTldCommand> {
             TldType.TEST));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_otherTldUnaffected() throws Exception {
     runCommandForced("--tld=" + TLD_TEST);
 
@@ -63,24 +61,24 @@ class DeleteTldCommandTest extends CommandTestCase<DeleteTldCommand> {
     assertThrows(RegistryNotFoundException.class, () -> Registry.get(TLD_TEST));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_whenTldDoesNotExist() {
     assertThrows(RegistryNotFoundException.class, () -> runCommandForced("--tld=nonexistenttld"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_whenTldIsReal() {
     assertThrows(IllegalStateException.class, () -> runCommandForced("--tld=" + TLD_REAL));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_whenDomainsArePresent() {
     persistDeletedDomain("domain." + TLD_TEST, DateTime.parse("2000-01-01TZ"));
 
     assertThrows(IllegalStateException.class, () -> runCommandForced("--tld=" + TLD_TEST));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_whenRegistrarLinksToTld() {
     allowRegistrarAccess("TheRegistrar", TLD_TEST);
 

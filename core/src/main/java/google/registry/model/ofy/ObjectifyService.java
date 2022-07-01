@@ -38,14 +38,12 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.translators.BloomFilterOfStringTranslatorFactory;
 import google.registry.model.translators.CidrAddressBlockTranslatorFactory;
-import google.registry.model.translators.CommitLogRevisionsTranslatorFactory;
 import google.registry.model.translators.CreateAutoTimestampTranslatorFactory;
 import google.registry.model.translators.CurrencyUnitTranslatorFactory;
 import google.registry.model.translators.DurationTranslatorFactory;
 import google.registry.model.translators.EppHistoryVKeyTranslatorFactory;
 import google.registry.model.translators.InetAddressTranslatorFactory;
 import google.registry.model.translators.ReadableInstantUtcTranslatorFactory;
-import google.registry.model.translators.UpdateAutoTimestampTranslatorFactory;
 import google.registry.model.translators.VKeyTranslatorFactory;
 
 /**
@@ -124,7 +122,6 @@ public class ObjectifyService {
         ImmutableList.of(
             new BloomFilterOfStringTranslatorFactory(),
             new CidrAddressBlockTranslatorFactory(),
-            new CommitLogRevisionsTranslatorFactory(),
             new CreateAutoTimestampTranslatorFactory(),
             new CurrencyUnitTranslatorFactory(),
             new DurationTranslatorFactory(),
@@ -132,8 +129,7 @@ public class ObjectifyService {
             new InetAddressTranslatorFactory(),
             new MoneyStringTranslatorFactory(),
             new ReadableInstantUtcTranslatorFactory(),
-            new VKeyTranslatorFactory(),
-            new UpdateAutoTimestampTranslatorFactory())) {
+            new VKeyTranslatorFactory())) {
       factory().getTranslators().add(translatorFactory);
     }
   }

@@ -30,8 +30,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ListActionTestCase {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private FakeJsonResponse response;
 

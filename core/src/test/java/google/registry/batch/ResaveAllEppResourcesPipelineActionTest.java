@@ -15,7 +15,7 @@
 package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.batch.ResaveAllEppResourcesPipelineAction.PARAM_FAST;
+import static google.registry.batch.BatchModule.PARAM_FAST;
 import static google.registry.batch.ResaveAllEppResourcesPipelineAction.PIPELINE_NAME;
 import static google.registry.beam.BeamUtils.createJobName;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -28,7 +28,6 @@ import google.registry.beam.BeamActionTestBase;
 import google.registry.config.RegistryEnvironment;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -36,20 +35,13 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ResaveAllEppResourcesPipelineActionTest extends BeamActionTestBase {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final FakeClock fakeClock = new FakeClock();
 
   private ResaveAllEppResourcesPipelineAction createAction(boolean isFast) {
     return new ResaveAllEppResourcesPipelineAction(
-        "test-project",
-        "test-region",
-        "staging-bucket",
-        Optional.of(isFast),
-        fakeClock,
-        response,
-        dataflow);
+        "test-project", "test-region", "staging-bucket", isFast, fakeClock, response, dataflow);
   }
 
   @Test

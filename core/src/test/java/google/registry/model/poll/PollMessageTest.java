@@ -34,15 +34,11 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PendingActionNotificationResponse.HostPendingActionNotificationResponse;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PollMessage}. */
-@DualDatabaseTest
 public class PollMessageTest extends EntityTestCase {
 
   private DomainBase domain;
@@ -80,7 +76,7 @@ public class PollMessageTest extends EntityTestCase {
             .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build();
     autoRenew =
         new PollMessage.Autorenew.Builder()
@@ -88,13 +84,13 @@ public class PollMessageTest extends EntityTestCase {
             .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
             .setTargetId("foobar.foo")
             .build();
   }
 
-  @TestSqlOnly
+  @Test
   void testCloudSqlSupportForPolymorphicVKey() {
     insertInDb(oneTime);
     PollMessage persistedOneTime = loadByKey(VKey.createSql(PollMessage.class, oneTime.getId()));
@@ -108,7 +104,7 @@ public class PollMessageTest extends EntityTestCase {
     assertThat(persistedAutoRenew).isEqualTo(autoRenew);
   }
 
-  @TestOfyAndSql
+  @Test
   void testPersistenceOneTime() {
     PollMessage.OneTime pollMessage =
         persistResource(
@@ -116,12 +112,12 @@ public class PollMessageTest extends EntityTestCase {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
   }
 
-  @TestOfyAndSql
+  @Test
   void testPersistenceOneTime_hostPendingActionNotification() {
     HostPendingActionNotificationResponse hostPendingActionNotificationResponse =
         HostPendingActionNotificationResponse.create(
@@ -135,19 +131,18 @@ public class PollMessageTest extends EntityTestCase {
             .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .setResponseData(ImmutableList.of(hostPendingActionNotificationResponse))
             .build();
     persistResource(pollMessage);
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage).getMsg()))
         .isEqualTo(pollMessage.msg);
     assertThat(
-            tm().transact(() -> tm().loadByEntity(pollMessage))
-                .hostPendingActionNotificationResponses)
-        .contains(hostPendingActionNotificationResponse);
+            tm().transact(() -> tm().loadByEntity(pollMessage)).pendingActionNotificationResponse)
+        .isEqualTo(hostPendingActionNotificationResponse);
   }
 
-  @TestSqlOnly
+  @Test
   void testSerializableOneTime() {
     PollMessage.OneTime pollMessage =
         persistResource(
@@ -155,13 +150,13 @@ public class PollMessageTest extends EntityTestCase {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
     PollMessage persisted = tm().transact(() -> tm().loadByEntity(pollMessage));
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
-  @TestOfyAndSql
+  @Test
   void testPersistenceAutorenew() {
     PollMessage.Autorenew pollMessage =
         persistResource(
@@ -169,14 +164,14 @@ public class PollMessageTest extends EntityTestCase {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
                 .setTargetId("foobar.foo")
                 .build());
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
   }
 
-  @TestSqlOnly
+  @Test
   void testSerializableAutorenew() {
     PollMessage.Autorenew pollMessage =
         persistResource(
@@ -184,26 +179,11 @@ public class PollMessageTest extends EntityTestCase {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
                 .setTargetId("foobar.foo")
                 .build());
     PollMessage persisted = tm().transact(() -> tm().loadByEntity(pollMessage));
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
-  }
-
-  @TestOfyOnly
-  void testIndexingAutorenew() throws Exception {
-    PollMessage.Autorenew pollMessage =
-        persistResource(
-            new PollMessage.Autorenew.Builder()
-                .setRegistrarId("TheRegistrar")
-                .setEventTime(fakeClock.nowUtc())
-                .setMsg("Test poll message")
-                .setParent(historyEntry)
-                .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
-                .setTargetId("foobar.foo")
-                .build());
-    verifyDatastoreIndexing(pollMessage);
   }
 }

@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.Resources.getResource;
 import static google.registry.persistence.transaction.QueryComposer.Comparator;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -34,7 +33,7 @@ import google.registry.beam.spec11.ThreatMatch;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
@@ -131,21 +130,21 @@ public class Spec11EmailUtils {
   private RegistrarThreatMatches filterOutNonPublishedMatches(
       RegistrarThreatMatches registrarThreatMatches) {
     ImmutableList<ThreatMatch> filteredMatches =
-        transactIfJpaTm(
-            () -> {
-              return registrarThreatMatches.threatMatches().stream()
-                  .filter(
-                      threatMatch ->
-                          tm()
-                              .createQueryComposer(DomainBase.class)
-                              .where(
-                                  "fullyQualifiedDomainName",
-                                  Comparator.EQ,
-                                  threatMatch.fullyQualifiedDomainName())
-                              .stream()
-                              .anyMatch(DomainBase::shouldPublishToDns))
-                  .collect(toImmutableList());
-            });
+        tm().transact(
+                () -> {
+                  return registrarThreatMatches.threatMatches().stream()
+                      .filter(
+                          threatMatch ->
+                              tm()
+                                  .createQueryComposer(DomainBase.class)
+                                  .where(
+                                      "fullyQualifiedDomainName",
+                                      Comparator.EQ,
+                                      threatMatch.fullyQualifiedDomainName())
+                                  .stream()
+                                  .anyMatch(DomainBase::shouldPublishToDns))
+                      .collect(toImmutableList());
+                });
     return RegistrarThreatMatches.create(registrarThreatMatches.clientId(), filteredMatches);
   }
 
@@ -219,7 +218,7 @@ public class Spec11EmailUtils {
     return new InternetAddress(
         registrar
             .getWhoisAbuseContact()
-            .map(RegistrarContact::getEmailAddress)
+            .map(RegistrarPoc::getEmailAddress)
             .orElse(registrar.getEmailAddress()));
   }
 }

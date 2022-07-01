@@ -26,14 +26,13 @@ import google.registry.model.BackupGroupRoot;
 import google.registry.model.EppResource;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.model.replay.DatastoreOnlyEntity;
 import google.registry.persistence.VKey;
 
 /** An index that allows for quick enumeration of all EppResource entities (e.g. via map reduce). */
 @ReportedOn
 @Entity
 @DeleteAfterMigration
-public class EppResourceIndex extends BackupGroupRoot implements DatastoreOnlyEntity {
+public class EppResourceIndex extends BackupGroupRoot {
 
   @Id String id;
 

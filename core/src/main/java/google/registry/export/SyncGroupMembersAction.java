@@ -32,7 +32,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.groups.GroupsConnection;
 import google.registry.groups.GroupsConnection.Role;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -47,7 +47,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
- * Action that syncs changes to {@link RegistrarContact} entities with Google Groups.
+ * Action that syncs changes to {@link RegistrarPoc} entities with Google Groups.
  *
  * <p>This uses the <a href="https://developers.google.com/admin-sdk/directory/">Directory API</a>.
  */
@@ -99,7 +99,7 @@ public final class SyncGroupMembersAction implements Runnable {
    * Returns the Google Groups email address for the given registrar ID and RegistrarContact.Type.
    */
   public static String getGroupEmailAddressForContactType(
-      String registrarId, RegistrarContact.Type type, String gSuiteDomainName) {
+      String registrarId, RegistrarPoc.Type type, String gSuiteDomainName) {
     // Take the registrar's ID, make it lowercase, and remove all characters that aren't
     // alphanumeric, hyphens, or underscores.
     return String.format(
@@ -171,18 +171,17 @@ public final class SyncGroupMembersAction implements Runnable {
   private void syncRegistrarContacts(Registrar registrar) {
     String groupKey = "";
     try {
-      Set<RegistrarContact> registrarContacts = registrar.getContacts();
+      Set<RegistrarPoc> registrarPocs = registrar.getContacts();
       long totalAdded = 0;
       long totalRemoved = 0;
-      for (final RegistrarContact.Type type : RegistrarContact.Type.values()) {
+      for (final RegistrarPoc.Type type : RegistrarPoc.Type.values()) {
         groupKey =
             getGroupEmailAddressForContactType(registrar.getRegistrarId(), type, gSuiteDomainName);
         Set<String> currentMembers = groupsConnection.getMembersOfGroup(groupKey);
         Set<String> desiredMembers =
-            registrarContacts
-                .stream()
+            registrarPocs.stream()
                 .filter(contact -> contact.getTypes().contains(type))
-                .map(RegistrarContact::getEmailAddress)
+                .map(RegistrarPoc::getEmailAddress)
                 .collect(toImmutableSet());
         for (String email : Sets.difference(desiredMembers, currentMembers)) {
           groupsConnection.addMemberToGroup(groupKey, email, Role.MEMBER);

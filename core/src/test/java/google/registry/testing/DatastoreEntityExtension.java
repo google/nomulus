@@ -15,6 +15,7 @@
 package google.registry.testing;
 
 import google.registry.model.AppEngineEnvironment;
+import google.registry.model.annotations.DeleteAfterMigration;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  *
  * @see AppEngineEnvironment
  */
+@DeleteAfterMigration
 public class DatastoreEntityExtension implements BeforeEachCallback, AfterEachCallback {
 
   private final AppEngineEnvironment environment;

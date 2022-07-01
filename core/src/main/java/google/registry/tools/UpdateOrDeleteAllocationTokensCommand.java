@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.collect.ImmutableSet;
@@ -59,18 +58,18 @@ abstract class UpdateOrDeleteAllocationTokensCommand extends ConfirmingCommand
               .map(token -> VKey.create(AllocationToken.class, token))
               .collect(toImmutableSet());
       ImmutableSet<VKey<AllocationToken>> nonexistentKeys =
-          transactIfJpaTm(
-              () -> keys.stream().filter(key -> !tm().exists(key)).collect(toImmutableSet()));
+          tm().transact(
+                  () -> keys.stream().filter(key -> !tm().exists(key)).collect(toImmutableSet()));
       checkState(nonexistentKeys.isEmpty(), "Tokens with keys %s did not exist.", nonexistentKeys);
       return keys;
     } else {
       checkArgument(!prefix.isEmpty(), "Provided prefix should not be blank");
-      return transactIfJpaTm(
-          () ->
-              tm().loadAllOf(AllocationToken.class).stream()
-                  .filter(token -> token.getToken().startsWith(prefix))
-                  .map(AllocationToken::createVKey)
-                  .collect(toImmutableSet()));
+      return tm().transact(
+              () ->
+                  tm().loadAllOf(AllocationToken.class).stream()
+                      .filter(token -> token.getToken().startsWith(prefix))
+                      .map(AllocationToken::createVKey)
+                      .collect(toImmutableSet()));
     }
   }
 }

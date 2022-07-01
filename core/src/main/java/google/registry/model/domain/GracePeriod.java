@@ -24,10 +24,6 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.replay.DatastoreAndSqlEntity;
-import google.registry.model.replay.SqlOnlyEntity;
-import google.registry.persistence.BillingVKey.BillingEventVKey;
-import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.persistence.VKey;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
@@ -52,7 +48,7 @@ import org.joda.time.DateTime;
       @Index(columnList = "billing_event_id"),
       @Index(columnList = "billing_recurrence_id")
     })
-public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntity {
+public class GracePeriod extends GracePeriodBase {
 
   @Id
   @Access(AccessType.PROPERTY)
@@ -80,8 +76,8 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
     instance.domainRepoId = checkArgumentNotNull(domainRepoId);
     instance.expirationTime = checkArgumentNotNull(expirationTime);
     instance.clientId = checkArgumentNotNull(registrarId);
-    instance.billingEventOneTime = BillingEventVKey.create(billingEventOneTime);
-    instance.billingEventRecurring = BillingRecurrenceVKey.create(billingEventRecurring);
+    instance.billingEventOneTime = billingEventOneTime;
+    instance.billingEventRecurring = billingEventRecurring;
     return instance;
   }
 
@@ -128,8 +124,8 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
         history.domainRepoId,
         history.expirationTime,
         history.clientId,
-        history.billingEventOneTime == null ? null : history.billingEventOneTime.createVKey(),
-        history.billingEventRecurring == null ? null : history.billingEventRecurring.createVKey(),
+        history.billingEventOneTime,
+        history.billingEventRecurring,
         history.gracePeriodId);
   }
 
@@ -197,7 +193,7 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
   /** Entity class to represent a historic {@link GracePeriod}. */
   @Entity(name = "GracePeriodHistory")
   @Table(indexes = @Index(columnList = "domainRepoId"))
-  public static class GracePeriodHistory extends GracePeriodBase implements SqlOnlyEntity {
+  public static class GracePeriodHistory extends GracePeriodBase {
     @Id Long gracePeriodHistoryRevisionId;
 
     /** ID for the associated {@link DomainHistory} entity. */

@@ -14,23 +14,17 @@
 
 package google.registry.flows;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
 import com.google.common.testing.TestLogHandler;
-import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
@@ -41,8 +35,6 @@ import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
-import google.registry.model.index.EppResourceIndex;
-import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
@@ -94,7 +86,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     tm().clearSessionCache();
     @SuppressWarnings("unchecked")
     T refreshedResource =
-        (T) transactIfJpaTm(() -> tm().loadByEntity(resource)).cloneProjectedAtTime(now);
+        (T) tm().transact(() -> tm().loadByEntity(resource)).cloneProjectedAtTime(now);
     return refreshedResource;
   }
 
@@ -115,30 +107,6 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
   /** Persists a testing claims list to Cloud SQL. */
   protected void persistClaimsList(ImmutableMap<String, String> labelsToKeys) {
     ClaimsListDao.save(ClaimsList.create(clock.nowUtc(), labelsToKeys));
-  }
-
-  /**
-   * Confirms that an EppResourceIndex entity exists in Datastore for a given resource.
-   */
-  protected static <T extends EppResource> void assertEppResourceIndexEntityFor(final T resource) {
-    if (!tm().isOfy()) {
-      // Indices aren't explicitly stored as objects in SQL
-      return;
-    }
-    ImmutableList<EppResourceIndex> indices =
-        Streams.stream(
-                auditedOfy()
-                    .load()
-                    .type(EppResourceIndex.class)
-                    .filter("kind", Key.getKind(resource.getClass())))
-            .filter(
-                index ->
-                    Key.create(resource).equals(index.getKey())
-                        && auditedOfy().load().key(index.getKey()).now().equals(resource))
-            .collect(toImmutableList());
-    assertThat(indices).hasSize(1);
-    assertThat(indices.get(0).getBucket())
-        .isEqualTo(EppResourceIndexBucket.getBucketKey(Key.create(resource)));
   }
 
   /** Asserts the presence of a single enqueued async contact or host deletion */
@@ -180,26 +148,24 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
   }
 
   protected void assertLastHistoryContainsResource(EppResource resource) {
-    if (!tm().isOfy()) {
-      HistoryEntry historyEntry = Iterables.getLast(DatabaseHelper.getHistoryEntries(resource));
-      if (resource instanceof ContactBase) {
-        ContactHistory contactHistory = (ContactHistory) historyEntry;
-        // Don't use direct equals comparison since one might be a subclass of the other
-        assertAboutImmutableObjects()
-            .that(contactHistory.getContactBase().get())
-            .hasFieldsEqualTo(resource);
-      } else if (resource instanceof DomainContent) {
-        DomainHistory domainHistory = (DomainHistory) historyEntry;
-        assertAboutImmutableObjects()
-            .that(domainHistory.getDomainContent().get())
-            .isEqualExceptFields(resource, "gracePeriods", "dsData", "nsHosts");
-      } else if (resource instanceof HostBase) {
-        HostHistory hostHistory = (HostHistory) historyEntry;
-        // Don't use direct equals comparison since one might be a subclass of the other
-        assertAboutImmutableObjects()
-            .that(hostHistory.getHostBase().get())
-            .hasFieldsEqualTo(resource);
-      }
+    HistoryEntry historyEntry = Iterables.getLast(DatabaseHelper.getHistoryEntries(resource));
+    if (resource instanceof ContactBase) {
+      ContactHistory contactHistory = (ContactHistory) historyEntry;
+      // Don't use direct equals comparison since one might be a subclass of the other
+      assertAboutImmutableObjects()
+          .that(contactHistory.getContactBase().get())
+          .hasFieldsEqualTo(resource);
+    } else if (resource instanceof DomainContent) {
+      DomainHistory domainHistory = (DomainHistory) historyEntry;
+      assertAboutImmutableObjects()
+          .that(domainHistory.getDomainContent().get())
+          .isEqualExceptFields(resource, "gracePeriods", "dsData", "nsHosts");
+    } else if (resource instanceof HostBase) {
+      HostHistory hostHistory = (HostHistory) historyEntry;
+      // Don't use direct equals comparison since one might be a subclass of the other
+      assertAboutImmutableObjects()
+          .that(hostHistory.getHostBase().get())
+          .hasFieldsEqualTo(resource);
     }
   }
 }

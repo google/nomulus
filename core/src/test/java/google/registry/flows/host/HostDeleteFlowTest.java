@@ -16,7 +16,6 @@ package google.registry.flows.host;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
@@ -35,7 +34,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -47,89 +45,63 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostDeleteFlow}. */
-@DualDatabaseTest
 class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResource> {
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   @BeforeEach
   void initFlowTest() {
     setEppInput("host_delete.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun() throws Exception {
     persistActiveHost("ns1.example.tld");
-    if (tm().isOfy()) {
-      dryRunFlowAssertResponse(loadFile("host_delete_response_pending.xml"));
-    } else {
-      dryRunFlowAssertResponse(loadFile("host_delete_response.xml"));
-    }
+    dryRunFlowAssertResponse(loadFile("host_delete_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess() throws Exception {
     persistActiveHost("ns1.example.tld");
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
-    if (tm().isOfy()) {
-      runFlowAssertResponse(loadFile("host_delete_response_pending.xml"));
-      assertOfyDeleteSuccess();
-    } else {
-      runFlowAssertResponse(loadFile("host_delete_response.xml"));
-      assertSqlDeleteSuccess();
-    }
+    runFlowAssertResponse(loadFile("host_delete_response.xml"));
+    assertSqlDeleteSuccess();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_clTridNotSpecified() throws Exception {
     setEppInput("host_delete_no_cltrid.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"));
     persistActiveHost("ns1.example.tld");
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
-    if (tm().isOfy()) {
-      runFlowAssertResponse(loadFile("host_delete_response_no_cltrid_pending.xml"));
-      assertOfyDeleteSuccess("TheRegistrar", null, false);
-    } else {
-      runFlowAssertResponse(loadFile("host_delete_response_no_cltrid.xml"));
-      assertSqlDeleteSuccess();
-    }
+    runFlowAssertResponse(loadFile("host_delete_response_no_cltrid.xml"));
+    assertSqlDeleteSuccess();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_neverExisted() {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains("(ns1.example.tld)");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_existedButWasDeleted() {
     persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
     ResourceDoesNotExistException thrown =
@@ -147,25 +119,25 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertThat(e).hasMessageThat().contains(statusValue.getXmlName());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_existedButWasClientDeleteProhibited() {
     doFailingStatusTest(
         StatusValue.CLIENT_DELETE_PROHIBITED, ResourceStatusProhibitsOperationException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_existedButWasServerDeleteProhibited() {
     doFailingStatusTest(
         StatusValue.SERVER_DELETE_PROHIBITED, ResourceStatusProhibitsOperationException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_existedButWasPendingDelete() {
     doFailingStatusTest(
         StatusValue.PENDING_DELETE, ResourceStatusProhibitsOperationException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_unauthorizedClient() {
     sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveHost("ns1.example.tld");
@@ -173,23 +145,17 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserUnauthorizedClient() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveHost("ns1.example.tld");
     clock.advanceOneMilli();
-    if (tm().isOfy()) {
-      runFlowAssertResponse(
-          CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("host_delete_response_pending.xml"));
-      assertOfyDeleteSuccess("NewRegistrar", "ABC-12345", true);
-    } else {
-      runFlowAssertResponse(
-          CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("host_delete_response.xml"));
-      assertSqlDeleteSuccess();
-    }
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("host_delete_response.xml"));
+    assertSqlDeleteSuccess();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_authorizedClientReadFromSuperordinate() throws Exception {
     sessionMetadata.setRegistrarId("TheRegistrar");
     createTld("tld");
@@ -206,16 +172,11 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
             .setSuperordinateDomain(domain.createVKey())
             .build());
     clock.advanceOneMilli();
-    if (tm().isOfy()) {
-      runFlowAssertResponse(loadFile("host_delete_response_pending.xml"));
-      assertOfyDeleteSuccess();
-    } else {
-      runFlowAssertResponse(loadFile("host_delete_response.xml"));
-      assertSqlDeleteSuccess(true);
-    }
+    runFlowAssertResponse(loadFile("host_delete_response.xml"));
+    assertSqlDeleteSuccess(true);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_unauthorizedClientReadFromSuperordinate() {
     sessionMetadata.setRegistrarId("TheRegistrar");
     createTld("tld");
@@ -235,7 +196,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_authorizedClientReadFromTransferredSuperordinate() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
@@ -265,16 +226,11 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
             .setSuperordinateDomain(domain.createVKey())
             .build());
     clock.advanceOneMilli();
-    if (tm().isOfy()) {
-      runFlowAssertResponse(loadFile("host_delete_response_pending.xml"));
-      assertOfyDeleteSuccess("NewRegistrar", "ABC-12345", false);
-    } else {
-      runFlowAssertResponse(loadFile("host_delete_response.xml"));
-      assertSqlDeleteSuccess(true);
-    }
+    runFlowAssertResponse(loadFile("host_delete_response.xml"));
+    assertSqlDeleteSuccess(true);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_unauthorizedClientReadFromTransferredSuperordinate() {
     sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
@@ -307,7 +263,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_failfastWhenLinkedToDomain() {
     createTld("tld");
     persistResource(
@@ -319,14 +275,14 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonLowerCaseHostname() {
     setEppInput("host_delete.xml", ImmutableMap.of("HOSTNAME", "NS1.EXAMPLE.NET"));
     EppException thrown = assertThrows(HostNameNotLowerCaseException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonPunyCodedHostname() {
     setEppInput("host_delete.xml", ImmutableMap.of("HOSTNAME", "ns1.çauçalito.tld"));
     HostNameNotPunyCodedException thrown =
@@ -334,56 +290,19 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertThat(thrown).hasMessageThat().contains("expected ns1.xn--aualito-txac.tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonCanonicalHostname() {
     setEppInput("host_delete.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld."));
     EppException thrown = assertThrows(HostNameNotNormalizedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     persistActiveHost("ns1.example.tld");
     clock.advanceOneMilli();
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-host-delete");
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() {
-    persistActiveHost("ns1.example.tld");
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
-  }
-
-  @TestOfyOnly
-  void testModification_duringNoAsyncPhase() {
-    persistActiveHost("ns1.example.tld");
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryNoAsync(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
-  }
-
-  private void assertOfyDeleteSuccess(String registrarId, String clientTrid, boolean isSuperuser)
-      throws Exception {
-    HostResource deletedHost = reloadResourceByForeignKey();
-    assertAsyncDeletionTaskEnqueued(
-        deletedHost, registrarId, Trid.create(clientTrid, "server-trid"), isSuperuser);
-    assertAboutHosts()
-        .that(deletedHost)
-        .hasStatusValue(StatusValue.PENDING_DELETE)
-        .and()
-        .hasOnlyOneHistoryEntryWhich()
-        .hasType(Type.HOST_PENDING_DELETE);
-    assertNoBillingEvents();
-    assertNoDnsTasksEnqueued();
-  }
-
-  private void assertOfyDeleteSuccess() throws Exception {
-    assertOfyDeleteSuccess("TheRegistrar", "ABC-12345", false);
   }
 
   private void assertSqlDeleteSuccess(boolean isSubordinate) throws Exception {

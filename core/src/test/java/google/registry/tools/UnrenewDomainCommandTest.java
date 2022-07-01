@@ -35,7 +35,6 @@ import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntr
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -45,15 +44,13 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UnrenewDomainCommand}. */
-@DualDatabaseTest
 public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainCommand> {
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
@@ -66,7 +63,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     command.clock = fakeClock;
   }
 
-  @TestOfyAndSql
+  @Test
   void test_unrenewTwoDomains_worksSuccessfully() throws Exception {
     ContactResource contact = persistActiveContact("jd1234");
     fakeClock.advanceOneMilli();
@@ -101,7 +98,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertInStdout("Successfully unrenewed all domains.");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_unrenewDomain_savesDependentEntitiesCorrectly() throws Exception {
     ContactResource contact = persistActiveContact("jd1234");
     fakeClock.advanceOneMilli();
@@ -148,7 +145,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
         getPollMessages(domain),
         ImmutableSet.of(
             new PollMessage.OneTime.Builder()
-                .setParent(synthetic)
+                .setHistoryEntry(synthetic)
                 .setRegistrarId("TheRegistrar")
                 .setMsg(
                     "Domain foo.tld was unrenewed by 2 years; "
@@ -156,7 +153,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
                 .setEventTime(unrenewTime)
                 .build(),
             new PollMessage.Autorenew.Builder()
-                .setParent(synthetic)
+                .setHistoryEntry(synthetic)
                 .setTargetId("foo.tld")
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(newExpirationTime)
@@ -164,14 +161,13 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
                 .build()));
 
     // Check that fields on domain were updated correctly.
-    assertThat(domain.getAutorenewPollMessage().getOfyKey().getParent())
-        .isEqualTo(Key.create(synthetic));
+    assertThat(domain.getAutorenewPollMessageHistoryId()).isEqualTo(synthetic.getId());
     assertThat(domain.getRegistrationExpirationTime()).isEqualTo(newExpirationTime);
     assertThat(domain.getLastEppUpdateTime()).isEqualTo(unrenewTime);
     assertThat(domain.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_periodTooLow_fails() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -179,7 +175,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertThat(thrown).hasMessageThat().isEqualTo("Period must be in the range 1-9");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_periodTooHigh_fails() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -187,7 +183,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertThat(thrown).hasMessageThat().isEqualTo("Period must be in the range 1-9");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_varietyOfInvalidDomains_displaysErrors() {
     DateTime now = fakeClock.nowUtc();
     persistResource(

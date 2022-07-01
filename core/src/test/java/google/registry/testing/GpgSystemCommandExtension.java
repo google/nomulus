@@ -47,6 +47,7 @@ public final class GpgSystemCommandExtension implements BeforeEachCallback, Afte
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final File DEV_NULL = new File("/dev/null");
   private static final String TEMP_FILE_PREFIX = "gpgtest";
+  public static final String GPG_BINARY = "gpg2";
 
   private File cwd = DEV_NULL;
   private File conf = DEV_NULL;
@@ -105,7 +106,7 @@ public final class GpgSystemCommandExtension implements BeforeEachCallback, Afte
           "PATH=" + System.getenv("PATH"), "GNUPGHOME=" + conf.getAbsolutePath(),
         };
 
-    Process pid = exec("gpg", "--import");
+    Process pid = exec(GPG_BINARY, "--import");
     publicKeyring.copyTo(pid.getOutputStream());
     pid.getOutputStream().close();
     int returnValue = pid.waitFor();
@@ -114,7 +115,7 @@ public final class GpgSystemCommandExtension implements BeforeEachCallback, Afte
         .that(returnValue)
         .isEqualTo(0);
 
-    pid = exec("gpg", "--allow-secret-key-import", "--import");
+    pid = exec(GPG_BINARY, "--allow-secret-key-import", "--import");
     privateKeyring.copyTo(pid.getOutputStream());
     pid.getOutputStream().close();
     returnValue = pid.waitFor();

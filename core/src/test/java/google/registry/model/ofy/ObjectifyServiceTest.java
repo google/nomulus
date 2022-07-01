@@ -22,8 +22,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ObjectifyServiceTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void test_initOfy_canBeCalledTwice() {

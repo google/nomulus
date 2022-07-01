@@ -52,12 +52,10 @@ import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.util.Retrier;
 import google.registry.xjc.XjcXmlTransformer;
 import google.registry.xjc.rdereport.XjcRdeReportReport;
@@ -69,11 +67,11 @@ import java.util.Optional;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link RdeReportAction}. */
-@DualDatabaseTest
 public class RdeReportActionTest {
 
   private static final ByteSource REPORT_XML = RdeTestData.loadBytes("report.xml");
@@ -84,8 +82,7 @@ public class RdeReportActionTest {
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final FakeResponse response = new FakeResponse();
   private final EscrowTaskRunner runner = mock(EscrowTaskRunner.class);
@@ -97,6 +94,7 @@ public class RdeReportActionTest {
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final BlobId reportFile =
       BlobId.of("tub", "test_2006-06-06_full_S1_R0-report.xml.ghostryde");
+  private Registry registry;
 
   private RdeReportAction createAction() {
     RdeReporter reporter = new RdeReporter();
@@ -120,16 +118,14 @@ public class RdeReportActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    createTld("test");
-    persistResource(
-        Cursor.create(RDE_REPORT, DateTime.parse("2006-06-06TZ"), Registry.get("test")));
-    persistResource(
-        Cursor.create(RDE_UPLOAD, DateTime.parse("2006-06-07TZ"), Registry.get("test")));
+    registry = createTld("test");
+    persistResource(Cursor.createScoped(RDE_REPORT, DateTime.parse("2006-06-06TZ"), registry));
+    persistResource(Cursor.createScoped(RDE_UPLOAD, DateTime.parse("2006-06-07TZ"), registry));
     gcsUtils.createFromBytes(reportFile, Ghostryde.encode(REPORT_XML.read(), encryptKey));
     tm().transact(() -> RdeRevision.saveRevision("test", DateTime.parse("2006-06-06TZ"), FULL, 0));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun() {
     createTld("lol");
     RdeReportAction action = createAction();
@@ -140,7 +136,7 @@ public class RdeReportActionTest {
     verifyNoMoreInteractions(runner);
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock() throws Exception {
     when(httpResponse.getResponseCode()).thenReturn(SC_OK);
     when(httpResponse.getContent()).thenReturn(IIRDEA_GOOD_XML.read());
@@ -165,7 +161,7 @@ public class RdeReportActionTest {
     assertThat(report.getWatermark()).isEqualTo(DateTime.parse("2010-10-17T00:00:00Z"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_withPrefix() throws Exception {
     when(httpResponse.getResponseCode()).thenReturn(SC_OK);
     when(httpResponse.getContent()).thenReturn(IIRDEA_GOOD_XML.read());
@@ -196,7 +192,7 @@ public class RdeReportActionTest {
     assertThat(report.getWatermark()).isEqualTo(DateTime.parse("2010-10-17T00:00:00Z"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_regeneratedReport() throws Exception {
     gcsUtils.delete(reportFile);
     BlobId newReport = BlobId.of("tub", "test_2006-06-06_full_S1_R1-report.xml.ghostryde");
@@ -211,7 +207,7 @@ public class RdeReportActionTest {
   }
 
   void testRunWithLock_nonexistentCursor_throws204() {
-    tm().transact(() -> tm().delete(Cursor.createVKey(RDE_UPLOAD, "test")));
+    tm().transact(() -> tm().delete(Cursor.createScopedVKey(RDE_UPLOAD, Registry.get("test"))));
     NoContentException thrown =
         assertThrows(
             NoContentException.class, () -> createAction().runWithLock(loadRdeReportCursor()));
@@ -222,10 +218,10 @@ public class RdeReportActionTest {
                 + " upload completion was at 1970-01-01T00:00:00.000Z");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_uploadNotFinished_throws204() {
     persistResource(
-        Cursor.create(RDE_UPLOAD, DateTime.parse("2006-06-06TZ"), Registry.get("test")));
+        Cursor.createScoped(RDE_UPLOAD, DateTime.parse("2006-06-06TZ"), Registry.get("test")));
     NoContentException thrown =
         assertThrows(
             NoContentException.class, () -> createAction().runWithLock(loadRdeReportCursor()));
@@ -236,7 +232,7 @@ public class RdeReportActionTest {
                 + "last upload completion was at 2006-06-06T00:00:00.000Z");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_badRequest_throws500WithErrorInfo() throws Exception {
     when(httpResponse.getResponseCode()).thenReturn(SC_BAD_REQUEST);
     when(httpResponse.getContent()).thenReturn(IIRDEA_BAD_XML.read());
@@ -248,7 +244,7 @@ public class RdeReportActionTest {
     assertThat(thrown).hasMessageThat().contains("The structure of the report is invalid.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_fetchFailed_throwsRuntimeException() throws Exception {
     class ExpectedThrownException extends RuntimeException {}
     when(urlFetchService.fetch(any(HTTPRequest.class))).thenThrow(new ExpectedThrownException());
@@ -256,7 +252,7 @@ public class RdeReportActionTest {
         ExpectedThrownException.class, () -> createAction().runWithLock(loadRdeReportCursor()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_socketTimeout_doesRetry() throws Exception {
     when(httpResponse.getResponseCode()).thenReturn(SC_OK);
     when(httpResponse.getContent()).thenReturn(IIRDEA_GOOD_XML.read());
@@ -270,7 +266,7 @@ public class RdeReportActionTest {
   }
 
   private DateTime loadRdeReportCursor() {
-    return loadByKey(Cursor.createVKey(RDE_REPORT, "test")).getCursorTime();
+    return loadByKey(Cursor.createScopedVKey(RDE_REPORT, registry)).getCursorTime();
   }
 
   private static ImmutableMap<String, String> mapifyHeaders(Iterable<HTTPHeader> headers) {

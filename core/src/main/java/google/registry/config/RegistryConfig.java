@@ -27,14 +27,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.persistence.transaction.JpaTransactionManager;
-import google.registry.util.TaskQueueUtils;
 import google.registry.util.YamlUtils;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -43,7 +41,9 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Named;
@@ -225,7 +225,7 @@ public final class RegistryConfig {
     /**
      * Returns the Google Cloud Storage bucket for storing zone files.
      *
-     * @see google.registry.backup.ExportCommitLogDiffAction
+     * @see google.registry.tools.server.GenerateZoneFilesAction
      */
     @Provides
     @Config("zoneFilesBucket")
@@ -233,22 +233,11 @@ public final class RegistryConfig {
       return projectId + "-zonefiles";
     }
 
-    /**
-     * Returns the Google Cloud Storage bucket for storing commit logs.
-     *
-     * @see google.registry.backup.ExportCommitLogDiffAction
-     */
+    /** @see RegistryConfig#getDatabaseRetention() */
     @Provides
-    @Config("commitLogGcsBucket")
-    public static String provideCommitLogGcsBucket(@Config("projectId") String projectId) {
-      return projectId + "-commits";
-    }
-
-    /** @see RegistryConfig#getCommitLogDatastoreRetention() */
-    @Provides
-    @Config("commitLogDatastoreRetention")
-    public static Duration provideCommitLogDatastoreRetention() {
-      return RegistryConfig.getCommitLogDatastoreRetention();
+    @Config("databaseRetention")
+    public static Duration provideDatabaseRetention() {
+      return RegistryConfig.getDatabaseRetention();
     }
 
     /**
@@ -260,18 +249,6 @@ public final class RegistryConfig {
     @Config("domainListsGcsBucket")
     public static String provideDomainListsGcsBucket(@Config("projectId") String projectId) {
       return projectId + "-domain-lists";
-    }
-
-    /**
-     * Batch size for the number of transactions' worth of commit log data to process at once when
-     * exporting a commit log diff.
-     *
-     * @see google.registry.backup.ExportCommitLogDiffAction
-     */
-    @Provides
-    @Config("commitLogDiffExportBatchSize")
-    public static int provideCommitLogDiffExportBatchSize() {
-      return 100;
     }
 
     /**
@@ -766,17 +743,6 @@ public final class RegistryConfig {
     }
 
     /**
-     * Maximum amount of time generating an escrow deposit for a TLD could take, before killing.
-     *
-     * @see google.registry.rde.RdeStagingReducer
-     */
-    @Provides
-    @Config("rdeStagingLockTimeout")
-    public static Duration provideRdeStagingLockTimeout() {
-      return Duration.standardHours(2);
-    }
-
-    /**
      * Maximum amount of time it should ever take to upload an escrow deposit, before killing.
      *
      * @see google.registry.rde.RdeUploadAction
@@ -792,7 +758,7 @@ public final class RegistryConfig {
      *
      * <p>This value was communicated to us by the escrow provider.
      *
-     * @see google.registry.rde.RdeStagingReducer
+     * @see google.registry.rde.RdeUploadAction
      */
     @Provides
     @Config("rdeUploadSftpCooldown")
@@ -952,7 +918,7 @@ public final class RegistryConfig {
      * <p>Note that this uses {@code @Named} instead of {@code @Config} so that it can be used from
      * the low-level util package, which cannot have a dependency on the config package.
      *
-     * @see TaskQueueUtils
+     * @see google.registry.util.CloudTasksUtils
      */
     @Provides
     @Named("transientFailureRetries")
@@ -1088,8 +1054,8 @@ public final class RegistryConfig {
      * @see google.registry.batch.AsyncTaskEnqueuer
      */
     @Provides
-    @Config("asyncDeleteFlowMapreduceDelay")
-    public static Duration provideAsyncDeleteFlowMapreduceDelay(RegistryConfigSettings config) {
+    @Config("asyncDeleteDelay")
+    public static Duration provideAsyncDeleteDelay(RegistryConfigSettings config) {
       return Duration.standardSeconds(config.misc.asyncDeleteDelaySeconds);
     }
 
@@ -1301,7 +1267,7 @@ public final class RegistryConfig {
                       e.getKey().equals("START_OF_TIME")
                           ? START_OF_TIME
                           : DateTime.parse(e.getKey()),
-                  e -> e.getValue()));
+                  Entry::getValue));
     }
 
     @Provides
@@ -1365,41 +1331,11 @@ public final class RegistryConfig {
   }
 
   /**
-   * Returns the Google Cloud Storage bucket for storing Datastore backups.
+   * Returns the length of time before commit logs should be deleted from the database.
    *
-   * @see google.registry.export.BackupDatastoreAction
+   * @see google.registry.tools.server.GenerateZoneFilesAction
    */
-  public static String getDatastoreBackupsBucket() {
-    return "gs://" + getProjectId() + "-datastore-backups";
-  }
-
-  /**
-   * Number of sharded commit log buckets.
-   *
-   * <p>This number is crucial for determining how much transactional throughput the system can
-   * allow, because it determines how many entity groups are available for writing commit logs.
-   * Since entity groups have a one transaction per second SLA (which is actually like ten in
-   * practice), a registry that wants to be able to handle one hundred transactions per second
-   * should have one hundred buckets.
-   *
-   * <p><b>Warning:</b> This can be raised but never lowered.
-   *
-   * @see google.registry.model.ofy.CommitLogBucket
-   */
-  public static int getCommitLogBucketCount() {
-    return CONFIG_SETTINGS.get().datastore.commitLogBucketsNum;
-  }
-
-  /**
-   * Returns the length of time before commit logs should be deleted from Datastore.
-   *
-   * <p>The only reason you'll want to retain this commit logs in Datastore is for performing
-   * point-in-time restoration queries for subsystems like RDE.
-   *
-   * @see google.registry.backup.DeleteOldCommitLogsAction
-   * @see google.registry.model.translators.CommitLogRevisionsTranslatorFactory
-   */
-  public static Duration getCommitLogDatastoreRetention() {
+  public static Duration getDatabaseRetention() {
     return Duration.standardDays(30);
   }
 

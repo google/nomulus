@@ -36,8 +36,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class TransferDataTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final DateTime now = DateTime.now(UTC);
 
@@ -95,6 +94,8 @@ public class TransferDataTest {
             .setPendingTransferExpirationTime(now)
             .setTransferStatus(TransferStatus.PENDING)
             .setServerApproveEntities(
+                "4-TLD",
+                1356L,
                 ImmutableSet.of(
                     transferBillingEventKey,
                     otherServerApproveBillingEventKey,

@@ -14,7 +14,6 @@
 
 package google.registry.tmch;
 
-import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
@@ -28,30 +27,23 @@ import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import google.registry.util.Clock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link LordnTaskUtils}. */
-@DualDatabaseTest
 public class LordnTaskUtilsTest {
 
   private static final Clock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12Z"));
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(clock)
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
@@ -71,7 +63,7 @@ public class LordnTaskUtilsTest {
         .setCreationRegistrarId("TheRegistrar");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_enqueueDomainBaseTask_sunrise() {
     persistDomainAndEnqueueLordn(newDomainBuilder().setRepoId("A-EXAMPLE").build());
     String expectedPayload =
@@ -80,7 +72,7 @@ public class LordnTaskUtilsTest {
         "lordn-sunrise", new TaskMatcher().payload(expectedPayload).tag("example"));
   }
 
-  @TestOfyAndSql
+  @Test
   void test_enqueueDomainBaseTask_claims() {
     DomainBase domain =
         newDomainBuilder()
@@ -95,7 +87,7 @@ public class LordnTaskUtilsTest {
     assertTasksEnqueued("lordn-claims", new TaskMatcher().payload(expectedPayload).tag("example"));
   }
 
-  @TestOfyAndSql
+  @Test
   void test_oteRegistrarWithNullIanaId() {
     tm().transact(
             () ->
@@ -111,21 +103,7 @@ public class LordnTaskUtilsTest {
         "lordn-sunrise", new TaskMatcher().payload(expectedPayload).tag("example"));
   }
 
-  @TestOfyOnly // moot in SQL since the domain creation fails the registrar foreign key check
-  void test_enqueueDomainBaseTask_throwsExceptionOnInvalidRegistrar() {
-    DomainBase domain =
-        newDomainBuilder()
-            .setRepoId("9000-EXAMPLE")
-            .setCreationRegistrarId("nonexistentRegistrar")
-            .build();
-    IllegalStateException thrown =
-        assertThrows(IllegalStateException.class, () -> persistDomainAndEnqueueLordn(domain));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("No registrar found with ID: nonexistentRegistrar");
-  }
-
-  @TestOfyAndSql
+  @Test
   void test_enqueueDomainBaseTask_throwsNpeOnNullDomain() {
     assertThrows(
         NullPointerException.class,

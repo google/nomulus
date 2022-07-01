@@ -67,7 +67,10 @@ public class RegistryJpaReadTest {
 
   @RegisterExtension
   final transient JpaIntegrationTestExtension database =
-      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
+      new JpaTestExtensions.Builder()
+          .withClock(fakeClock)
+          .withoutCannedData()
+          .buildIntegrationTestExtension();
 
   @RegisterExtension
   final transient TestPipelineExtension testPipeline =

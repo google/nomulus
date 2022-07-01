@@ -42,7 +42,6 @@
     <class>google.registry.model.billing.BillingEvent$OneTime</class>
     <class>google.registry.model.billing.BillingEvent$Recurring</class>
     <class>google.registry.model.common.Cursor</class>
-    <class>google.registry.model.common.DatabaseMigrationStateSchedule</class>
     <class>google.registry.model.contact.ContactHistory</class>
     <class>google.registry.model.contact.ContactResource</class>
     <class>google.registry.model.domain.DomainBase</class>
@@ -59,7 +58,7 @@
     <class>google.registry.model.poll.PollMessage$Autorenew</class>
     <class>google.registry.model.rde.RdeRevision</class>
     <class>google.registry.model.registrar.Registrar</class>
-    <class>google.registry.model.registrar.RegistrarContact</class>
+    <class>google.registry.model.registrar.RegistrarPoc</class>
     <class>google.registry.model.tld.label.PremiumList</class>
     <class>google.registry.model.tld.label.PremiumList$PremiumEntry</class>
     <class>google.registry.model.tld.label.ReservedList</class>
@@ -85,7 +84,6 @@
     <class>google.registry.persistence.converter.CidrAddressBlockListConverter</class>
     <class>google.registry.persistence.converter.CurrencyToBillingConverter</class>
     <class>google.registry.persistence.converter.CurrencyUnitConverter</class>
-    <class>google.registry.persistence.converter.DatabaseMigrationScheduleTransitionConverter</class>
     <class>google.registry.persistence.converter.DateTimeConverter</class>
     <class>google.registry.persistence.converter.DurationConverter</class>
     <class>google.registry.persistence.converter.InetAddressSetConverter</class>

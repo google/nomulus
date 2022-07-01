@@ -18,7 +18,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.BaseEncoding.base16;
 import static google.registry.model.tld.Registries.assertTldExists;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -75,11 +74,11 @@ final class GenerateDnsReportCommand implements CommandWithRemoteApi {
       result.append("[\n");
 
       List<DomainBase> domains =
-          transactIfJpaTm(
-              () ->
-                  tm().createQueryComposer(DomainBase.class)
-                      .where("tld", Comparator.EQ, tld)
-                      .list());
+          tm().transact(
+                  () ->
+                      tm().createQueryComposer(DomainBase.class)
+                          .where("tld", Comparator.EQ, tld)
+                          .list());
       for (DomainBase domain : domains) {
         // Skip deleted domains and domains that don't get published to DNS.
         if (isBeforeOrAt(domain.getDeletionTime(), now) || !domain.shouldPublishToDns()) {
@@ -88,8 +87,7 @@ final class GenerateDnsReportCommand implements CommandWithRemoteApi {
         write(domain);
       }
 
-      Iterable<HostResource> nameservers =
-          transactIfJpaTm(() -> tm().loadAllOf(HostResource.class));
+      Iterable<HostResource> nameservers = tm().transact(() -> tm().loadAllOf(HostResource.class));
       for (HostResource nameserver : nameservers) {
         // Skip deleted hosts and external hosts.
         if (isBeforeOrAt(nameserver.getDeletionTime(), now)

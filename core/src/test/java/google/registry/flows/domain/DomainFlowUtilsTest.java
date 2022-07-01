@@ -40,13 +40,11 @@ import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainFlowUtils}. */
-@DualDatabaseTest
 class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase> {
 
   @BeforeEach
@@ -56,12 +54,12 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     persistResource(AppEngineExtension.makeRegistrar1().asBuilder().build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidateDomainNameAcceptsValidName() throws EppException {
     assertThat(DomainFlowUtils.validateDomainName("example.tld")).isNotNull();
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidateDomainName_IllegalCharacters() {
     BadDomainNameCharacterException thrown =
         assertThrows(
@@ -73,7 +71,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidateDomainName_DomainNameWithEmptyParts() {
     EmptyDomainNamePartException thrown =
         assertThrows(
@@ -83,7 +81,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidateDomainName_DomainNameWithLessThanTwoParts() {
     BadDomainNamePartsCountException thrown =
         assertThrows(
@@ -95,7 +93,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidateDomainName_invalidTLD() {
     TldDoesNotExistException thrown =
         assertThrows(
@@ -107,7 +105,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidateDomainName_DomainNameIsTooLong() {
     DomainLabelTooLongException thrown =
         assertThrows(
@@ -121,7 +119,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidateDomainName_leadingDash() {
     LeadingDashException thrown =
         assertThrows(
@@ -130,7 +128,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidateDomainName_trailingDash() {
     TrailingDashException thrown =
         assertThrows(
@@ -139,7 +137,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidateDomainName_invalidIDN() {
     InvalidPunycodeException thrown =
         assertThrows(
@@ -151,7 +149,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidateDomainName_containsInvalidDashes() {
     DashesInThirdAndFourthException thrown =
         assertThrows(
@@ -163,13 +161,13 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testCheckHasBillingAccount_ignoresTestTlds() throws EppException {
     persistFoobarTld(TldType.TEST);
     checkHasBillingAccount("TheRegistrar", "foobar");
   }
 
-  @TestOfyAndSql
+  @Test
   void testCheckHasBillingAccount_failsOnRealTld() throws EppException {
     persistFoobarTld(TldType.REAL);
     MissingBillingAccountMapException thrown =

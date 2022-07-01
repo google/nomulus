@@ -26,68 +26,65 @@ import google.registry.flows.host.HostFlowUtils.HostNameTooLongException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooShallowException;
 import google.registry.flows.host.HostFlowUtils.InvalidHostNameException;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostFlowUtils}. */
-@DualDatabaseTest
 class HostFlowUtilsTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
-  @TestOfyAndSql
+  @Test
   void test_validExternalHostName_validates() throws Exception {
     assertThat(validateHostName("host.example.com").toString()).isEqualTo("host.example.com");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validExternalHostNameOnRegistrySuffixList_validates() throws Exception {
     assertThat(validateHostName("host.blogspot.com").toString()).isEqualTo("host.blogspot.com");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validExternalHostNameOnRegistrySuffixList_multipartTLD_validates() throws Exception {
     assertThat(validateHostName("ns1.host.co.uk").toString()).isEqualTo("ns1.host.co.uk");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validExternalHostNameOnRegistrySuffixList_multipartTLD_tooShallow() {
     assertThrows(
         HostNameTooShallowException.class, () -> validateHostName("host.co.uk").toString());
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateHostName_hostNameTooLong() {
     assertThrows(
         HostNameTooLongException.class,
         () -> validateHostName(Strings.repeat("na", 200) + ".wat.man"));
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateHostName_hostNameNotLowerCase() {
     assertThrows(HostNameNotLowerCaseException.class, () -> validateHostName("NA.CAPS.TLD"));
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateHostName_hostNameNotPunyCoded() {
     assertThrows(
         HostNameNotPunyCodedException.class, () -> validateHostName("motörhead.death.metal"));
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateHostName_hostNameNotNormalized() {
     assertThrows(HostNameNotNormalizedException.class, () -> validateHostName("root.node.yeah."));
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateHostName_hostNameHasLeadingHyphen() {
     assertThrows(InvalidHostNameException.class, () -> validateHostName("-giga.mega.tld"));
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateHostName_hostNameTooShallow() {
     assertThrows(HostNameTooShallowException.class, () -> validateHostName("domain.tld"));
   }

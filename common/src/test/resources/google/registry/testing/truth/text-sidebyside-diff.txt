@@ -1,5 +1,4 @@
 |Expected                                              |Actual                                               |
 |------------------------------------------------------|-----------------------------------------------------|
 |This is a random file,                                |This is a random file,                               |
-|                                                      |with **two** lines and terminates **with** a newline.|
-|with ~three~ lines and terminates ~without~ a newline.|                                                     |
+|with ~three~ lines and terminates ~without~ a newline.|with **two** lines and terminates **with** a newline.|

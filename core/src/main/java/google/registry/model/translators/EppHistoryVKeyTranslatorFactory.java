@@ -103,7 +103,7 @@ public class EppHistoryVKeyTranslatorFactory
       @Nullable
       @Override
       public Key saveValue(@Nullable EppHistoryVKey pojoValue) {
-        return pojoValue == null ? null : pojoValue.createOfyKey().getRaw();
+        throw new UnsupportedOperationException("saveValue for EppHistory keys removed.");
       }
     };
   }

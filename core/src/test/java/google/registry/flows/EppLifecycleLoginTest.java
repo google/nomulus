@@ -27,7 +27,7 @@ class EppLifecycleLoginTest extends EppTestCase {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   @Test
   void testLoginAndLogout_recordsEppMetric() throws Exception {

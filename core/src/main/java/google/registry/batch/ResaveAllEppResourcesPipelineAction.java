@@ -14,6 +14,7 @@
 
 package google.registry.batch;
 
+import static google.registry.batch.BatchModule.PARAM_FAST;
 import static google.registry.beam.BeamUtils.createJobName;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -32,7 +33,6 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
-import java.util.Optional;
 import javax.inject.Inject;
 
 /**
@@ -63,8 +63,6 @@ public class ResaveAllEppResourcesPipelineAction implements Runnable {
   static final String PATH = "/_dr/task/resaveAllEppResourcesPipeline";
   static final String PIPELINE_NAME = "resave_all_epp_resources_pipeline";
 
-  public static final String PARAM_FAST = "fast";
-
   private final String projectId;
   private final String jobRegion;
   private final String stagingBucketUrl;
@@ -78,14 +76,14 @@ public class ResaveAllEppResourcesPipelineAction implements Runnable {
       @Config("projectId") String projectId,
       @Config("defaultJobRegion") String jobRegion,
       @Config("beamStagingBucketUrl") String stagingBucketUrl,
-      @Parameter(PARAM_FAST) Optional<Boolean> fast,
+      @Parameter(PARAM_FAST) boolean fast,
       Clock clock,
       Response response,
       Dataflow dataflow) {
     this.projectId = projectId;
     this.jobRegion = jobRegion;
     this.stagingBucketUrl = stagingBucketUrl;
-    this.fast = fast.orElse(false);
+    this.fast = fast;
     this.clock = clock;
     this.response = response;
     this.dataflow = dataflow;

@@ -51,6 +51,7 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -78,7 +79,6 @@ import org.joda.time.DateTime;
  * timestamps such that they only would become active when the transfer period passed. In this flow,
  * those speculative objects are deleted and replaced with new ones with the correct approval time.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
@@ -177,7 +177,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setEventTime(newExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
-            .setParentKey(domainHistoryKey)
+            .setDomainHistoryId(
+                new DomainHistoryId(
+                    domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
             .build();
     // Construct the post-transfer domain.
     DomainBase partiallyApprovedDomain =
@@ -195,7 +197,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .build())
             .setRegistrationExpirationTime(newExpirationTime)
             .setAutorenewBillingEvent(autorenewEvent.createVKey())
-            .setAutorenewPollMessage(gainingClientAutorenewPollMessage.createVKey())
+            .setAutorenewPollMessage(
+                gainingClientAutorenewPollMessage.createVKey(),
+                gainingClientAutorenewPollMessage.getHistoryRevisionId())
             // Remove all the old grace periods and add a new one for the transfer.
             .setGracePeriods(
                 billingEvent

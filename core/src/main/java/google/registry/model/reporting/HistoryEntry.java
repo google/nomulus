@@ -48,8 +48,6 @@ import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostHistory.HostHistoryId;
 import google.registry.model.host.HostResource;
-import google.registry.model.replay.DatastoreEntity;
-import google.registry.model.replay.SqlEntity;
 import google.registry.persistence.VKey;
 import java.util.Optional;
 import java.util.Set;
@@ -86,8 +84,7 @@ import org.joda.time.DateTime;
 @Entity
 @MappedSuperclass
 @Access(AccessType.FIELD)
-public class HistoryEntry extends ImmutableObject
-    implements Buildable, DatastoreEntity, UnsafeSerializable {
+public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSerializable {
 
   /** Represents the type of history entry. */
   public enum Type {
@@ -403,12 +400,6 @@ public class HistoryEntry extends ImmutableObject
           String.format("Unknown kind of HistoryEntry parent %s", parentKind));
     }
     return resultEntity;
-  }
-
-  // In SQL, save the child type
-  @Override
-  public Optional<SqlEntity> toSqlEntity() {
-    return Optional.of((SqlEntity) toChildHistoryEntity());
   }
 
   /** Creates a {@link VKey} instance from a {@link Key} instance. */

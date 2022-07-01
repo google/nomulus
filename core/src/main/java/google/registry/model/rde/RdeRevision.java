@@ -17,7 +17,6 @@ package google.registry.model.rde;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.rde.RdeNamingUtils.makePartialName;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.base.VerifyException;
 import com.googlecode.objectify.Key;
@@ -27,7 +26,6 @@ import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.ImmutableObject;
 import google.registry.model.rde.RdeRevision.RdeRevisionId;
-import google.registry.model.replay.NonReplicatedEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.LocalDateConverter;
 import java.io.Serializable;
@@ -51,7 +49,7 @@ import org.joda.time.LocalDate;
 @Entity
 @javax.persistence.Entity
 @IdClass(RdeRevisionId.class)
-public final class RdeRevision extends BackupGroupRoot implements NonReplicatedEntity {
+public final class RdeRevision extends BackupGroupRoot {
 
   /** String triplet of tld, date, and mode, e.g. {@code soy_2015-09-01_full}. */
   @Id @Transient String id;
@@ -98,8 +96,8 @@ public final class RdeRevision extends BackupGroupRoot implements NonReplicatedE
     RdeRevisionId sqlKey = RdeRevisionId.create(tld, date.toLocalDate(), mode);
     Key<RdeRevision> ofyKey = Key.create(RdeRevision.class, id);
     Optional<RdeRevision> revisionOptional =
-        transactIfJpaTm(
-            () -> tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, sqlKey, ofyKey)));
+        tm().transact(
+                () -> tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, sqlKey, ofyKey)));
     return revisionOptional.map(rdeRevision -> rdeRevision.revision + 1).orElse(0);
   }
 

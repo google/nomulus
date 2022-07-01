@@ -37,17 +37,22 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.net.InetAddress;
 import java.util.Map;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link GenerateZoneFilesAction}. */
-class GenerateZoneFilesActionTest extends MapreduceTestCase<GenerateZoneFilesAction> {
+class GenerateZoneFilesActionTest {
+
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
 
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
@@ -111,10 +116,9 @@ class GenerateZoneFilesActionTest extends MapreduceTestCase<GenerateZoneFilesAct
         .build());
 
     GenerateZoneFilesAction action = new GenerateZoneFilesAction();
-    action.mrRunner = makeDefaultRunner();
     action.bucket = "zonefiles-bucket";
     action.gcsUtils = gcsUtils;
-    action.datastoreRetention = standardDays(29);
+    action.databaseRetention = standardDays(29);
     action.dnsDefaultATtl = Duration.standardSeconds(11);
     action.dnsDefaultNsTtl = Duration.standardSeconds(222);
     action.dnsDefaultDsTtl = Duration.standardSeconds(3333);
@@ -125,13 +129,6 @@ class GenerateZoneFilesActionTest extends MapreduceTestCase<GenerateZoneFilesAct
             ImmutableMap.<String, Object>of("tlds", ImmutableList.of("tld"), "exportTime", now));
     assertThat(response)
         .containsEntry("filenames", ImmutableList.of("gs://zonefiles-bucket/tld-" + now + ".zone"));
-    assertThat(response).containsKey("mapreduceConsoleLink");
-    assertThat(response.get("mapreduceConsoleLink").toString())
-        .startsWith(
-            "Mapreduce console: https://backend-dot-projectid.appspot.com"
-                + "/_ah/pipeline/status.html?root=");
-
-    executeTasksUntilEmpty("mapreduce");
 
     BlobId gcsFilename = BlobId.of("zonefiles-bucket", String.format("tld-%s.zone", now));
     String generatedFile = new String(gcsUtils.readBytesFrom(gcsFilename), UTF_8);

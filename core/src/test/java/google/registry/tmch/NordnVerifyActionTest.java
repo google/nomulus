@@ -74,7 +74,7 @@ class NordnVerifyActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private final FakeResponse response = new FakeResponse();
   private final LordnRequestInitializer lordnRequestInitializer =

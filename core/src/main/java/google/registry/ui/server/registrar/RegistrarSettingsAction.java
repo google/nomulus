@@ -42,8 +42,8 @@ import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
-import google.registry.model.registrar.RegistrarContact.Type;
+import google.registry.model.registrar.RegistrarPoc;
+import google.registry.model.registrar.RegistrarPoc.Type;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.HttpException.BadRequestException;
@@ -116,7 +116,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
 
   @Inject RegistrarSettingsAction() {}
 
-  private static boolean hasPhone(RegistrarContact contact) {
+  private static boolean hasPhone(RegistrarPoc contact) {
     return contact.getPhoneNumber() != null;
   }
 
@@ -202,15 +202,15 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
 
     abstract Registrar updatedRegistrar();
 
-    abstract ImmutableSet<RegistrarContact> contacts();
+    abstract ImmutableSet<RegistrarPoc> contacts();
 
-    abstract ImmutableSet<RegistrarContact> updatedContacts();
+    abstract ImmutableSet<RegistrarPoc> updatedContacts();
 
     static EmailInfo create(
         Registrar registrar,
         Registrar updatedRegistrar,
-        ImmutableSet<RegistrarContact> contacts,
-        ImmutableSet<RegistrarContact> updatedContacts) {
+        ImmutableSet<RegistrarPoc> contacts,
+        ImmutableSet<RegistrarPoc> updatedContacts) {
       return new AutoValue_RegistrarSettingsAction_EmailInfo(
           registrar, updatedRegistrar, contacts, updatedContacts);
     }
@@ -264,7 +264,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
 
     // Keep the current contacts so we can later check that no required contact was
     // removed, email the changes to the contacts
-    ImmutableSet<RegistrarContact> contacts = registrar.getContacts();
+    ImmutableSet<RegistrarPoc> contacts = registrar.getContacts();
 
     Registrar updatedRegistrar = registrar;
     // Do OWNER only updates to the registrar from the request.
@@ -273,7 +273,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     updatedRegistrar = checkAndUpdateAdminControlledFields(updatedRegistrar, args);
 
     // read the contacts from the request.
-    ImmutableSet<RegistrarContact> updatedContacts = readContacts(registrar, contacts, args);
+    ImmutableSet<RegistrarPoc> updatedContacts = readContacts(registrar, contacts, args);
 
     // Save the updated contacts
     if (!updatedContacts.equals(contacts)) {
@@ -281,7 +281,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
         throw new ForbiddenException("Only OWNERs can update the contacts");
       }
       checkContactRequirements(contacts, updatedContacts);
-      RegistrarContact.updateContacts(updatedRegistrar, updatedContacts);
+      RegistrarPoc.updateContacts(updatedRegistrar, updatedContacts);
       updatedRegistrar = updatedRegistrar.asBuilder().setContactsRequireSyncing(true).build();
     }
 
@@ -293,10 +293,10 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   }
 
   private Map<String, Object> expandRegistrarWithContacts(
-      Iterable<RegistrarContact> contacts, Registrar registrar) {
+      Iterable<RegistrarPoc> contacts, Registrar registrar) {
     ImmutableSet<Map<String, Object>> expandedContacts =
         Streams.stream(contacts)
-            .map(RegistrarContact::toDiffableFieldMap)
+            .map(RegistrarPoc::toDiffableFieldMap)
             // Note: per the javadoc, toDiffableFieldMap includes sensitive data but we don't want
             // to display it here
             .peek(
@@ -463,10 +463,10 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   }
 
   /** Reads the contacts from the supplied args. */
-  public static ImmutableSet<RegistrarContact> readContacts(
-      Registrar registrar, ImmutableSet<RegistrarContact> existingContacts, Map<String, ?> args) {
+  public static ImmutableSet<RegistrarPoc> readContacts(
+      Registrar registrar, ImmutableSet<RegistrarPoc> existingContacts, Map<String, ?> args) {
     return RegistrarFormFields.getRegistrarContactBuilders(existingContacts, args).stream()
-        .map(builder -> builder.setParent(registrar).build())
+        .map(builder -> builder.setRegistrar(registrar).build())
         .collect(toImmutableSet());
   }
 
@@ -476,11 +476,10 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    * @throws FormException if the checks fail.
    */
   void checkContactRequirements(
-      ImmutableSet<RegistrarContact> existingContacts,
-      ImmutableSet<RegistrarContact> updatedContacts) {
+      ImmutableSet<RegistrarPoc> existingContacts, ImmutableSet<RegistrarPoc> updatedContacts) {
     // Check that no two contacts use the same email address.
     Set<String> emails = new HashSet<>();
-    for (RegistrarContact contact : updatedContacts) {
+    for (RegistrarPoc contact : updatedContacts) {
       if (!emails.add(contact.getEmailAddress())) {
         throw new ContactRequirementException(
             String.format(
@@ -489,14 +488,14 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       }
     }
     // Check that required contacts don't go away, once they are set.
-    Multimap<Type, RegistrarContact> oldContactsByType = HashMultimap.create();
-    for (RegistrarContact contact : existingContacts) {
+    Multimap<Type, RegistrarPoc> oldContactsByType = HashMultimap.create();
+    for (RegistrarPoc contact : existingContacts) {
       for (Type t : contact.getTypes()) {
         oldContactsByType.put(t, contact);
       }
     }
-    Multimap<Type, RegistrarContact> newContactsByType = HashMultimap.create();
-    for (RegistrarContact contact : updatedContacts) {
+    Multimap<Type, RegistrarPoc> newContactsByType = HashMultimap.create();
+    for (RegistrarPoc contact : updatedContacts) {
       for (Type t : contact.getTypes()) {
         newContactsByType.put(t, contact);
       }
@@ -507,7 +506,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       }
     }
     ensurePhoneNumberNotRemovedForContactTypes(oldContactsByType, newContactsByType, Type.TECH);
-    Optional<RegistrarContact> domainWhoisAbuseContact =
+    Optional<RegistrarPoc> domainWhoisAbuseContact =
         getDomainWhoisVisibleAbuseContact(updatedContacts);
     // If the new set has a domain WHOIS abuse contact, it must have a phone number.
     if (domainWhoisAbuseContact.isPresent()
@@ -525,13 +524,12 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   }
 
   private static void checkContactRegistryLockRequirements(
-      ImmutableSet<RegistrarContact> existingContacts,
-      ImmutableSet<RegistrarContact> updatedContacts) {
+      ImmutableSet<RegistrarPoc> existingContacts, ImmutableSet<RegistrarPoc> updatedContacts) {
     // Any contact(s) with new passwords must be allowed to set them
-    for (RegistrarContact updatedContact : updatedContacts) {
+    for (RegistrarPoc updatedContact : updatedContacts) {
       if (updatedContact.isRegistryLockAllowed()
           || updatedContact.isAllowedToSetRegistryLockPassword()) {
-        RegistrarContact existingContact =
+        RegistrarPoc existingContact =
             existingContacts.stream()
                 .filter(
                     contact -> contact.getEmailAddress().equals(updatedContact.getEmailAddress()))
@@ -564,10 +562,10 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
 
     // Any previously-existing contacts with registry lock enabled cannot be deleted
     existingContacts.stream()
-        .filter(RegistrarContact::isRegistryLockAllowed)
+        .filter(RegistrarPoc::isRegistryLockAllowed)
         .forEach(
             contact -> {
-              Optional<RegistrarContact> updatedContactOptional =
+              Optional<RegistrarPoc> updatedContactOptional =
                   updatedContacts.stream()
                       .filter(
                           updatedContact ->
@@ -593,8 +591,8 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    * one before.
    */
   private static void ensurePhoneNumberNotRemovedForContactTypes(
-      Multimap<Type, RegistrarContact> oldContactsByType,
-      Multimap<Type, RegistrarContact> newContactsByType,
+      Multimap<Type, RegistrarPoc> oldContactsByType,
+      Multimap<Type, RegistrarPoc> newContactsByType,
       Type... types) {
     for (Type type : types) {
       if (oldContactsByType.get(type).stream().anyMatch(RegistrarSettingsAction::hasPhone)
@@ -615,9 +613,9 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    * WHOIS record. Therefore it is possible to return inside the loop once one such contact is
    * found.
    */
-  private static Optional<RegistrarContact> getDomainWhoisVisibleAbuseContact(
-      Set<RegistrarContact> contacts) {
-    return contacts.stream().filter(RegistrarContact::getVisibleInDomainWhoisAsAbuse).findFirst();
+  private static Optional<RegistrarPoc> getDomainWhoisVisibleAbuseContact(
+      Set<RegistrarPoc> contacts) {
+    return contacts.stream().filter(RegistrarPoc::getVisibleInDomainWhoisAsAbuse).findFirst();
   }
 
   /**
@@ -626,7 +624,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    * contact addresses and enqueues a task to re-sync the registrar sheet.
    */
   private void sendExternalUpdatesIfNecessary(EmailInfo emailInfo) {
-    ImmutableSet<RegistrarContact> existingContacts = emailInfo.contacts();
+    ImmutableSet<RegistrarPoc> existingContacts = emailInfo.contacts();
     if (!sendEmailUtils.hasRecipients() && existingContacts.isEmpty()) {
       return;
     }
@@ -663,7 +661,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
             DiffUtils.prettyPrintDiffedMap(diffs, null)),
         existingContacts.stream()
             .filter(c -> c.getTypes().contains(Type.ADMIN))
-            .map(RegistrarContact::getEmailAddress)
+            .map(RegistrarPoc::getEmailAddress)
             .collect(toImmutableList()));
   }
 

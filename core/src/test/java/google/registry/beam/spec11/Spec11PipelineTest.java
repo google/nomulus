@@ -50,7 +50,6 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.TmOverrideExtension;
 import google.registry.util.ResourceUtils;
 import google.registry.util.Retrier;
 import java.io.File;
@@ -128,10 +127,6 @@ class Spec11PipelineTest {
   final JpaIntegrationTestExtension database =
       new JpaTestExtensions.Builder().withClock(new FakeClock()).buildIntegrationTestExtension();
 
-  @RegisterExtension
-  @Order(Order.DEFAULT + 1)
-  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
-
   private final Spec11PipelineOptions options =
       PipelineOptionsFactory.create().as(Spec11PipelineOptions.class);
 
@@ -146,7 +141,6 @@ class Spec11PipelineTest {
     options.setDate(DATE);
     options.setSafeBrowsingApiKey(SAFE_BROWSING_API_KEY);
     options.setReportingBucketUrl(reportingBucketUrl.getAbsolutePath());
-    options.setDatabase("DATASTORE");
     threatMatches =
         pipeline.apply(
             Create.of(
@@ -199,7 +193,6 @@ class Spec11PipelineTest {
   @Test
   void testSuccess_fullSqlPipeline() throws Exception {
     setupCloudSql();
-    options.setDatabase("CLOUD_SQL");
     EvaluateSafeBrowsingFn safeBrowsingFn =
         new EvaluateSafeBrowsingFn(
             SAFE_BROWSING_API_KEY,

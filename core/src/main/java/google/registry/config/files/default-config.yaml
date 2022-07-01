@@ -183,10 +183,6 @@ registryPolicy:
   requireSslCertificates: true
 
 datastore:
-  # Number of commit log buckets in Datastore. Lowering this after initial
-  # install risks losing up to a days' worth of differential backups.
-  commitLogBucketsNum: 397
-
   # Number of EPP resource index buckets in Datastore. Don’t change after
   # initial install.
   eppResourceIndexBucketsNum: 997

@@ -18,7 +18,6 @@ import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -68,11 +67,7 @@ public abstract class CommandTestCase<C extends Command> {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(fakeClock)
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withClock(fakeClock).withTaskQueue().build();
 
   @RegisterExtension
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
@@ -177,12 +172,12 @@ public abstract class CommandTestCase<C extends Command> {
 
   /** Reloads the given resource from Datastore. */
   <T> T reloadResource(T resource) {
-    return transactIfJpaTm(() -> tm().loadByEntity(resource));
+    return tm().transact(() -> tm().loadByEntity(resource));
   }
 
   /** Returns count of all poll messages in Datastore. */
   int getPollMessageCount() {
-    return transactIfJpaTm(() -> tm().loadAllOf(PollMessage.class).size());
+    return tm().transact(() -> tm().loadAllOf(PollMessage.class).size());
   }
 
   /**

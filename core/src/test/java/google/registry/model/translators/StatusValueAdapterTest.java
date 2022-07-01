@@ -38,8 +38,7 @@ public class StatusValueAdapterTest {
 
   // Needed to create HostResources.
   @RegisterExtension
-  public AppEngineExtension appEngine =
-      new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
+  public AppEngineExtension appEngine = new AppEngineExtension.Builder().withCloudSql().build();
 
   @Test
   void testMarshalling() throws Exception {

@@ -18,7 +18,6 @@ import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.rde.RdeMode.THIN;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
@@ -31,6 +30,7 @@ import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.common.Cursor;
 import google.registry.model.rde.RdeNamingUtils;
 import google.registry.model.rde.RdeRevision;
+import google.registry.model.tld.Registry;
 import google.registry.request.Action;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.Parameter;
@@ -49,9 +49,9 @@ import org.joda.time.DateTime;
 /**
  * Action that re-encrypts a BRDA escrow deposit and puts it into the upload bucket.
  *
- * <p>This action is run by the mapreduce for each BRDA staging file it generates. The staging file
- * is encrypted with our internal {@link Ghostryde} encryption. We then re-encrypt it as a RyDE
- * file, which is what the third-party escrow provider understands.
+ * <p>This action is run for each BRDA staging file it generates. The staging file is encrypted with
+ * our internal {@link Ghostryde} encryption. We then re-encrypt it as a RyDE file, which is what
+ * the third-party escrow provider understands.
  *
  * <p>Then we put the RyDE file (along with our digital signature) into the configured BRDA bucket.
  * This bucket is special because a separate script will rsync it to the third party escrow provider
@@ -97,7 +97,8 @@ public final class BrdaCopyAction implements Runnable {
     // TODO(b/217772483): consider guarding this action with a lock and check if there is work.
     // Not urgent since file writes on GCS are atomic.
     Optional<Cursor> cursor =
-        transactIfJpaTm(() -> tm().loadByKeyIfPresent(Cursor.createVKey(BRDA, tld)));
+        tm().transact(
+                () -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, Registry.get(tld))));
     DateTime brdaCursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(brdaCursorTime, watermark)) {
       throw new NoContentException(

@@ -28,13 +28,11 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestSqlOnly;
 import org.joda.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Spec11ThreatMatchDao}. */
-@DualDatabaseTest
 class Spec11ThreatMatchDaoTest extends EntityTestCase {
 
   private static final LocalDate TODAY = new LocalDate(2020, 8, 4);
@@ -61,7 +59,7 @@ class Spec11ThreatMatchDaoTest extends EntityTestCase {
             });
   }
 
-  @TestSqlOnly
+  @Test
   void testDeleteEntriesByDate() {
     // Verify that all entries with the date TODAY were removed
     jpaTm()
@@ -85,7 +83,7 @@ class Spec11ThreatMatchDaoTest extends EntityTestCase {
             });
   }
 
-  @TestSqlOnly
+  @Test
   void testLoadEntriesByDate() {
     jpaTm()
         .transact(

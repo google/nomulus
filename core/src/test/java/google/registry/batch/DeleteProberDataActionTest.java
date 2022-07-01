@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryEnvironment;
+import google.registry.dns.DnsQueue;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -49,26 +50,31 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.FakeResponse;
+import google.registry.testing.AppEngineExtension;
+import google.registry.testing.FakeClock;
 import google.registry.testing.SystemPropertyExtension;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.util.Optional;
 import java.util.Set;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DeleteProberDataAction}. */
-@DualDatabaseTest
-class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataAction> {
+class DeleteProberDataActionTest {
 
   private static final DateTime DELETION_TIME = DateTime.parse("2010-01-01T00:00:00.000Z");
 
   @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
+
+  @RegisterExtension
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
+
+  private DeleteProberDataAction action;
 
   @BeforeEach
   void beforeEach() {
@@ -94,27 +100,26 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
 
   private void resetAction() {
     action = new DeleteProberDataAction();
-    action.mrRunner = makeDefaultRunner();
-    action.response = new FakeResponse();
+    action.dnsQueue = DnsQueue.createForTesting(new FakeClock());
     action.isDryRun = false;
     action.tlds = ImmutableSet.of();
     action.registryAdminRegistrarId = "TheRegistrar";
-    RegistryEnvironment.SANDBOX.setup(systemPropertyExtension);
+    // RegistryEnvironment.SANDBOX.setup(systemPropertyExtension);
   }
 
-  private void runMapreduce() throws Exception {
-    action.run();
-    executeTasksUntilEmpty("mapreduce");
+  @AfterEach
+  void afterEach() {
+    RegistryEnvironment.UNITTEST.setup(systemPropertyExtension);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_deletesAllAndOnlyProberData() throws Exception {
     Set<ImmutableObject> tldEntities = persistLotsOfDomains("tld");
     Set<ImmutableObject> exampleEntities = persistLotsOfDomains("example");
     Set<ImmutableObject> notTestEntities = persistLotsOfDomains("not-test.test");
     Set<ImmutableObject> ibEntities = persistLotsOfDomains("ib-any.test");
     Set<ImmutableObject> oaEntities = persistLotsOfDomains("oa-canary.test");
-    runMapreduce();
+    action.run();
     assertAllExist(tldEntities);
     assertAllExist(exampleEntities);
     assertAllExist(notTestEntities);
@@ -122,7 +127,7 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
     assertAllAbsent(oaEntities);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_deletesAllAndOnlyGivenTlds() throws Exception {
     Set<ImmutableObject> tldEntities = persistLotsOfDomains("tld");
     Set<ImmutableObject> exampleEntities = persistLotsOfDomains("example");
@@ -130,7 +135,7 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
     Set<ImmutableObject> ibEntities = persistLotsOfDomains("ib-any.test");
     Set<ImmutableObject> oaEntities = persistLotsOfDomains("oa-canary.test");
     action.tlds = ImmutableSet.of("example", "ib-any.test");
-    runMapreduce();
+    action.run();
     assertAllExist(tldEntities);
     assertAllExist(notTestEntities);
     assertAllExist(oaEntities);
@@ -138,62 +143,54 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
     assertAllAbsent(ibEntities);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFail_givenNonTestTld() {
     action.tlds = ImmutableSet.of("not-test.test");
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, this::runMapreduce);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
     assertThat(thrown)
         .hasMessageThat()
         .contains("If tlds are given, they must all exist and be TEST tlds");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFail_givenNonExistentTld() {
     action.tlds = ImmutableSet.of("non-existent.test");
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, this::runMapreduce);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
     assertThat(thrown)
         .hasMessageThat()
         .contains("If tlds are given, they must all exist and be TEST tlds");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFail_givenNonDotTestTldOnProd() {
     action.tlds = ImmutableSet.of("example");
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, this::runMapreduce);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
     assertThat(thrown)
         .hasMessageThat()
         .contains("On production, can only work on TLDs that end with .test");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_doesntDeleteNicDomainForProbers() throws Exception {
     DomainBase nic = persistActiveDomain("nic.ib-any.test");
-    ForeignKeyIndex<DomainBase> fkiNic =
-        ForeignKeyIndex.load(DomainBase.class, "nic.ib-any.test", START_OF_TIME);
     Set<ImmutableObject> ibEntities = persistLotsOfDomains("ib-any.test");
-    runMapreduce();
+    action.run();
     assertAllAbsent(ibEntities);
     assertAllExist(ImmutableSet.of(nic));
-    if (tm().isOfy()) {
-      assertAllExist(ImmutableSet.of(fkiNic));
-    }
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun_doesntDeleteData() throws Exception {
     Set<ImmutableObject> tldEntities = persistLotsOfDomains("tld");
     Set<ImmutableObject> oaEntities = persistLotsOfDomains("oa-canary.test");
     action.isDryRun = true;
-    runMapreduce();
+    action.run();
     assertAllExist(tldEntities);
     assertAllExist(oaEntities);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_activeDomain_isSoftDeleted() throws Exception {
     DomainBase domain =
         persistResource(
@@ -201,45 +198,45 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
                 .asBuilder()
                 .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
                 .build());
-    runMapreduce();
+    action.run();
     DateTime timeAfterDeletion = DateTime.now(UTC);
     assertThat(loadByForeignKey(DomainBase.class, "blah.ib-any.test", timeAfterDeletion)).isEmpty();
     assertThat(loadByEntity(domain).getDeletionTime()).isLessThan(timeAfterDeletion);
     assertDnsTasksEnqueued("blah.ib-any.test");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_activeDomain_doubleMapSoftDeletes() throws Exception {
     DomainBase domain = persistResource(
         newDomainBase("blah.ib-any.test")
             .asBuilder()
             .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
             .build());
-    runMapreduce();
+    action.run();
     DateTime timeAfterDeletion = DateTime.now(UTC);
     resetAction();
-    runMapreduce();
+    action.run();
     assertThat(loadByForeignKey(DomainBase.class, "blah.ib-any.test", timeAfterDeletion))
         .isEmpty();
     assertThat(loadByEntity(domain).getDeletionTime()).isLessThan(timeAfterDeletion);
     assertDnsTasksEnqueued("blah.ib-any.test");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_recentlyCreatedDomain_isntDeletedYet() throws Exception {
     persistResource(
         newDomainBase("blah.ib-any.test")
             .asBuilder()
             .setCreationTimeForTest(DateTime.now(UTC).minusSeconds(1))
             .build());
-    runMapreduce();
+    action.run();
     Optional<DomainBase> domain =
         loadByForeignKey(DomainBase.class, "blah.ib-any.test", DateTime.now(UTC));
     assertThat(domain).isPresent();
     assertThat(domain.get().getDeletionTime()).isEqualTo(END_OF_TIME);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun_doesntSoftDeleteData() throws Exception {
     DomainBase domain =
         persistResource(
@@ -248,11 +245,11 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
                 .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
                 .build());
     action.isDryRun = true;
-    runMapreduce();
+    action.run();
     assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(END_OF_TIME);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_domainWithSubordinateHosts_isSkipped() throws Exception {
     persistActiveHost("ns1.blah.ib-any.test");
     DomainBase nakedDomain =
@@ -264,13 +261,13 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
                 .setSubordinateHosts(ImmutableSet.of("ns1.blah.ib-any.test"))
                 .build(),
             DateTime.now(UTC).minusYears(1));
-    runMapreduce();
+    action.run();
 
     assertAllExist(ImmutableSet.of(domainWithSubord));
     assertAllAbsent(ImmutableSet.of(nakedDomain));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_registryAdminClientId_isRequiredForSoftDeletion() {
     persistResource(
         newDomainBase("blah.ib-any.test")
@@ -278,7 +275,7 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
             .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
             .build());
     action.registryAdminRegistrarId = null;
-    IllegalStateException thrown = assertThrows(IllegalStateException.class, this::runMapreduce);
+    IllegalStateException thrown = assertThrows(IllegalStateException.class, action::run);
     assertThat(thrown).hasMessageThat().contains("Registry admin client ID must be configured");
   }
 
@@ -311,7 +308,7 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
     PollMessage.OneTime pollMessage =
         persistSimpleResource(
             new PollMessage.OneTime.Builder()
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .setEventTime(DELETION_TIME)
                 .setRegistrarId("TheRegistrar")
                 .setMsg("Domain registered")

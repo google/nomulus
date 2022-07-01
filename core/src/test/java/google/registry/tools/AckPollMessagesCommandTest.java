@@ -23,25 +23,23 @@ import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link AckPollMessagesCommand}. */
-@DualDatabaseTest
 public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesCommand> {
 
   private FakeClock clock = new FakeClock(DateTime.parse("2015-02-04T08:16:32.064Z"));
@@ -69,7 +67,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     clock.advanceOneMilli();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_doesntDeletePollMessagesInFuture() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
@@ -90,7 +88,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     assertNotInStdout("1-FSDGS-TLD-2406-123-2015,2015-09-01T22:33:44.000Z,notme");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_resavesAutorenewPollMessages() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
@@ -100,7 +98,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         persistResource(
             new PollMessage.Autorenew.Builder()
                 .setId(625L)
-                .setParentKey(domainHistory.createVKey().getOfyKey())
+                .setHistoryEntry(domainHistory)
                 .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
                 .setRegistrarId("TheRegistrar")
                 .setMsg("autorenew")
@@ -117,7 +115,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_deletesExpiredAutorenewPollMessages() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
@@ -127,7 +125,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         persistResource(
             new PollMessage.Autorenew.Builder()
                 .setId(625L)
-                .setParentKey(domainHistory.createVKey().getOfyKey())
+                .setHistoryEntry(domainHistory)
                 .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
                 .setAutorenewEndTime(DateTime.parse("2012-01-01T22:33:44Z"))
                 .setRegistrarId("TheRegistrar")
@@ -142,7 +140,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_onlyDeletesPollMessagesMatchingMessage() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good")
@@ -160,7 +158,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         .containsExactly(notMatched1, notMatched2);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_onlyDeletesPollMessagesMatchingClientId() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good")
@@ -172,7 +170,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         persistResource(
             new PollMessage.OneTime.Builder()
                 .setId(2474L)
-                .setParentKey(domainHistory.createVKey().getOfyKey())
+                .setHistoryEntry(domainHistory)
                 .setRegistrarId("NewRegistrar")
                 .setEventTime(DateTime.parse("2013-06-01T22:33:44Z"))
                 .setMsg("baaaahh")
@@ -183,7 +181,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         .containsExactly(notMatched);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_dryRunDoesntDeleteAnything() throws Exception {
     OneTime pm1 = persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar");
     OneTime pm2 = persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives");
@@ -202,11 +200,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     return persistResource(
         new PollMessage.OneTime.Builder()
             .setId(id)
-            .setParentKey(
-                Key.create(
-                    Key.create(DomainBase.class, "FSDGS-TLD"),
-                    HistoryEntry.class,
-                    domainHistory.getId()))
+            .setDomainHistoryId(new DomainHistoryId("FSDGS-TLD", domainHistory.getId()))
             .setRegistrarId("TheRegistrar")
             .setEventTime(eventTime)
             .setMsg(message)

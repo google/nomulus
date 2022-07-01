@@ -22,7 +22,6 @@ import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
 import static google.registry.flows.domain.DomainFlowUtils.loadForeignKeyedDesignatedContacts;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -102,11 +101,6 @@ public final class DomainInfoFlow implements Flow {
     verifyOptionalAuthInfo(authInfo, domain);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setDomain(domain).build());
-    // In ofy, refetch all referenced resources.
-    if (tm().isOfy()) {
-      tm().loadByKeys(domain.getNameservers());
-      tm().loadByKeys(domain.getReferencedContacts());
-    }
     // Registrars can only see a few fields on unauthorized domains.
     // This is a policy decision that is left up to us by the rfcs.
     DomainInfoData.Builder infoBuilder =
@@ -115,7 +109,7 @@ public final class DomainInfoFlow implements Flow {
             .setRepoId(domain.getRepoId())
             .setCurrentSponsorClientId(domain.getCurrentSponsorRegistrarId())
             .setRegistrant(
-                transactIfJpaTm(() -> tm().loadByKey(domain.getRegistrant())).getContactId());
+                tm().transact(() -> tm().loadByKey(domain.getRegistrant())).getContactId());
     // If authInfo is non-null, then the caller is authorized to see the full information since we
     // will have already verified the authInfo is valid.
     if (registrarId.equals(domain.getCurrentSponsorRegistrarId()) || authInfo.isPresent()) {
@@ -123,7 +117,7 @@ public final class DomainInfoFlow implements Flow {
       infoBuilder
           .setStatusValues(domain.getStatusValues())
           .setContacts(
-              transactIfJpaTm(() -> loadForeignKeyedDesignatedContacts(domain.getContacts())))
+              tm().transact(() -> loadForeignKeyedDesignatedContacts(domain.getContacts())))
           .setNameservers(hostsRequest.requestDelegated() ? domain.loadNameserverHostNames() : null)
           .setSubordinateHosts(
               hostsRequest.requestSubordinate() ? domain.getSubordinateHosts() : null)

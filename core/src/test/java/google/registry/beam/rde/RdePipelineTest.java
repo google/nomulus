@@ -87,7 +87,6 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
-import google.registry.testing.TmOverrideExtension;
 import java.io.IOException;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -165,10 +164,6 @@ public class RdePipelineTest {
   @RegisterExtension
   final JpaIntegrationTestExtension database =
       new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
-
-  @RegisterExtension
-  @Order(Order.DEFAULT + 1)
-  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
 
   @RegisterExtension
   final TestPipelineExtension pipeline =
@@ -262,8 +257,8 @@ public class RdePipelineTest {
 
     tm().transact(
             () -> {
-              tm().put(Cursor.create(CursorType.BRDA, now, Registry.get("soy")));
-              tm().put(Cursor.create(RDE_STAGING, now, Registry.get("soy")));
+              tm().put(Cursor.createScoped(CursorType.BRDA, now, Registry.get("soy")));
+              tm().put(Cursor.createScoped(RDE_STAGING, now, Registry.get("soy")));
               RdeRevision.saveRevision("soy", now, THIN, 0);
               RdeRevision.saveRevision("soy", now, FULL, 0);
             });
@@ -316,6 +311,10 @@ public class RdePipelineTest {
     persistDomainHistory(
         helloDomain
             .asBuilder()
+            .removeContacts(
+                helloDomain.getContacts().stream()
+                    .filter(dc -> dc.getType() == DesignatedContact.Type.ADMIN)
+                    .collect(toImmutableSet()))
             .addContacts(
                 ImmutableSet.of(
                     DesignatedContact.create(DesignatedContact.Type.ADMIN, contact3.createVKey())))
@@ -572,7 +571,9 @@ public class RdePipelineTest {
   }
 
   private static DateTime loadCursorTime(CursorType type) {
-    return tm().transact(() -> tm().loadByKey(Cursor.createVKey(type, "soy")).getCursorTime());
+    return tm().transact(
+            () ->
+                tm().loadByKey(Cursor.createScopedVKey(type, Registry.get("soy"))).getCursorTime());
   }
 
   private static Function<DepositFragment, String> getXmlElement(String pattern) {

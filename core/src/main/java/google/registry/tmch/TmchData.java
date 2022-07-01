@@ -24,7 +24,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.bc.BcPGPPublicKeyRing;
 
-/** Helper class for common data loaded from the jar and Datastore at runtime. */
+/** Helper class for common data loaded from the jar and SQL at runtime. */
 public final class TmchData {
 
   private static final String BEGIN_ENCODED_SMD = "-----BEGIN ENCODED SMD-----";

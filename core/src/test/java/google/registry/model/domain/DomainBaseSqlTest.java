@@ -53,19 +53,17 @@ import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestSqlOnly;
 import google.registry.util.SerializeUtils;
 import java.util.Arrays;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 /** Verify that we can store/retrieve DomainBase objects from a SQL database. */
-@DualDatabaseTest
 public class DomainBaseSqlTest {
 
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
@@ -73,7 +71,7 @@ public class DomainBaseSqlTest {
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .enableJpaEntityCoverageCheck(true)
           .withClock(fakeClock)
           .build();
@@ -141,25 +139,25 @@ public class DomainBaseSqlTest {
     contact2 = makeContact("contact_id2");
   }
 
-  @TestSqlOnly
+  @Test
   void testDomainBasePersistence() {
     persistDomain();
     assertEqualDomainExcept(loadByKey(domain.createVKey()));
   }
 
-  @TestSqlOnly
+  @Test
   void testHostForeignKeyConstraints() {
     // Persist the domain without the associated host object.
     assertThrowForeignKeyViolation(() -> insertInDb(contact, contact2, domain));
   }
 
-  @TestSqlOnly
+  @Test
   void testContactForeignKeyConstraints() {
     // Persist the domain without the associated contact objects.
     assertThrowForeignKeyViolation(() -> insertInDb(domain, host));
   }
 
-  @TestSqlOnly
+  @Test
   void testResaveDomain_succeeds() {
     persistDomain();
     jpaTm()
@@ -172,7 +170,7 @@ public class DomainBaseSqlTest {
     assertEqualDomainExcept(loadByKey(domain.createVKey()));
   }
 
-  @TestSqlOnly
+  @Test
   void testModifyGracePeriod_setEmptyCollectionSuccessfully() {
     persistDomain();
     jpaTm()
@@ -192,7 +190,7 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @TestSqlOnly
+  @Test
   void testModifyGracePeriod_setNullCollectionSuccessfully() {
     persistDomain();
     jpaTm()
@@ -211,7 +209,7 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @TestSqlOnly
+  @Test
   void testModifyGracePeriod_addThenRemoveSuccessfully() {
     persistDomain();
     jpaTm()
@@ -267,7 +265,7 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @TestSqlOnly
+  @Test
   void testModifyGracePeriod_removeThenAddSuccessfully() {
     persistDomain();
     jpaTm()
@@ -311,7 +309,7 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @TestSqlOnly
+  @Test
   void testModifyDsData_addThenRemoveSuccessfully() {
     persistDomain();
     DelegationSignerData extraDsData =
@@ -355,7 +353,7 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @TestSqlOnly
+  @Test
   void testSerializable() {
     createTld("com");
     insertInDb(contact, contact2, domain, host);
@@ -363,7 +361,7 @@ public class DomainBaseSqlTest {
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
-  @TestSqlOnly
+  @Test
   void testUpdates() {
     createTld("com");
     insertInDb(contact, contact2, domain, host);
@@ -388,7 +386,7 @@ public class DomainBaseSqlTest {
     insertInDb(contact, contact2, domain, host);
   }
 
-  @TestSqlOnly
+  @Test
   void persistDomainWithCompositeVKeys() {
     createTld("com");
     historyEntry =
@@ -422,14 +420,14 @@ public class DomainBaseSqlTest {
             .setId(300L)
             .setRegistrarId("registrar1")
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build();
     PollMessage.OneTime deletePollMessage =
         new PollMessage.OneTime.Builder()
             .setId(400L)
             .setRegistrarId("registrar1")
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build();
     BillingEvent.OneTime oneTimeBillingEvent =
         new BillingEvent.OneTime.Builder()
@@ -469,7 +467,8 @@ public class DomainBaseSqlTest {
         domain
             .asBuilder()
             .setAutorenewBillingEvent(billEvent.createVKey())
-            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+            .setAutorenewPollMessage(
+                autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
             .setDeletePollMessage(deletePollMessage.createVKey())
             .setTransferData(transferData)
             .setGracePeriods(gracePeriods)
@@ -514,7 +513,7 @@ public class DomainBaseSqlTest {
     assertThat(persisted.getGracePeriods()).isEqualTo(gracePeriods);
   }
 
-  @TestSqlOnly
+  @Test
   void persistDomainWithLegacyVKeys() {
     createTld("com");
     historyEntry =
@@ -548,14 +547,14 @@ public class DomainBaseSqlTest {
             .setId(300L)
             .setRegistrarId("registrar1")
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build();
     PollMessage.OneTime deletePollMessage =
         new PollMessage.OneTime.Builder()
             .setId(400L)
             .setRegistrarId("registrar1")
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .build();
     BillingEvent.OneTime oneTimeBillingEvent =
         new BillingEvent.OneTime.Builder()
@@ -572,6 +571,8 @@ public class DomainBaseSqlTest {
             .build();
     DomainTransferData transferData =
         createPendingTransferData(
+            domain.getRepoId(),
+            historyEntry.getId(),
             new DomainTransferData.Builder()
                 .setTransferRequestTrid(Trid.create("foo", "bar"))
                 .setTransferRequestTime(fakeClock.nowUtc())
@@ -601,7 +602,8 @@ public class DomainBaseSqlTest {
             .setAutorenewBillingEvent(
                 createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId()))
             .setAutorenewPollMessage(
-                createLegacyVKey(PollMessage.Autorenew.class, autorenewPollMessage.getId()))
+                createLegacyVKey(PollMessage.Autorenew.class, autorenewPollMessage.getId()),
+                autorenewPollMessage.getHistoryRevisionId())
             .setDeletePollMessage(
                 createLegacyVKey(PollMessage.OneTime.class, deletePollMessage.getId()))
             .setTransferData(transferData)
@@ -672,7 +674,7 @@ public class DomainBaseSqlTest {
         .isEqualExceptFields(thatDomain.getTransferData(), "serverApproveEntities");
   }
 
-  @TestSqlOnly
+  @Test
   void testUpdateTimeAfterNameserverUpdate() {
     persistDomain();
     DomainBase persisted = loadByKey(domain.createVKey());
@@ -699,7 +701,7 @@ public class DomainBaseSqlTest {
     assertThat(domain.getUpdateTimestamp().getTimestamp()).isNotEqualTo(originalUpdateTime);
   }
 
-  @TestSqlOnly
+  @Test
   void testUpdateTimeAfterDsDataUpdate() {
     persistDomain();
     DomainBase persisted = loadByKey(domain.createVKey());

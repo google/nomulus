@@ -17,7 +17,6 @@ package google.registry.model.bulkquery;
 import com.google.common.base.Objects;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.host.HostResource;
-import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.persistence.VKey;
 import java.io.Serializable;
 import javax.persistence.Access;
@@ -33,7 +32,7 @@ import javax.persistence.IdClass;
 @Entity
 @Access(AccessType.FIELD)
 @IdClass(DomainHistoryHost.class)
-public class DomainHistoryHost implements Serializable, SqlOnlyEntity {
+public class DomainHistoryHost implements Serializable {
 
   @Id private Long domainHistoryHistoryRevisionId;
   @Id private String domainHistoryDomainRepoId;

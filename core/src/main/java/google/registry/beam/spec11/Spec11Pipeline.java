@@ -15,7 +15,6 @@
 package google.registry.beam.spec11;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.beam.BeamUtils.getQueryFromFile;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.auto.value.AutoValue;
@@ -33,15 +32,12 @@ import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
 import google.registry.util.Retrier;
-import google.registry.util.SqlTemplate;
 import google.registry.util.UtilsModule;
 import java.io.Serializable;
 import javax.inject.Singleton;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
-import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.io.TextIO;
-import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.GroupByKey;
@@ -104,10 +100,7 @@ public class Spec11Pipeline implements Serializable {
 
   void setupPipeline(Pipeline pipeline) {
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
-    PCollection<DomainNameInfo> domains =
-        options.getDatabase().equals("DATASTORE")
-            ? readFromBigQuery(options, pipeline)
-            : readFromCloudSql(pipeline);
+    PCollection<DomainNameInfo> domains = readFromCloudSql(pipeline);
 
     PCollection<KV<DomainNameInfo, ThreatMatch>> threatMatches =
         domains.apply("Run through SafeBrowsing API", ParDo.of(safeBrowsingFn));
@@ -154,24 +147,6 @@ public class Spec11Pipeline implements Serializable {
                     output.output(domainNameInfo);
                   }
                 }));
-  }
-
-  static PCollection<DomainNameInfo> readFromBigQuery(
-      Spec11PipelineOptions options, Pipeline pipeline) {
-    return pipeline.apply(
-        "Read active domains from BigQuery",
-        BigQueryIO.read(DomainNameInfo::parseFromRecord)
-            .fromQuery(
-                SqlTemplate.create(getQueryFromFile(Spec11Pipeline.class, "domain_name_infos.sql"))
-                    .put("PROJECT_ID", options.getProject())
-                    .put("DATASTORE_EXPORT_DATASET", "latest_datastore_export")
-                    .put("REGISTRAR_TABLE", "Registrar")
-                    .put("DOMAIN_BASE_TABLE", "DomainBase")
-                    .build())
-            .withCoder(SerializableCoder.of(DomainNameInfo.class))
-            .usingStandardSql()
-            .withoutValidation()
-            .withTemplateCompatibility());
   }
 
   private static KV<String, String> parseRow(Object[] row) {

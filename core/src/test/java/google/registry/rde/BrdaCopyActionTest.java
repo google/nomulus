@@ -20,6 +20,7 @@ import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.GpgSystemCommandExtension.GPG_BINARY;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -72,8 +73,7 @@ public class BrdaCopyActionTest {
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension
   public final GpgSystemCommandExtension gpg =
@@ -124,13 +124,13 @@ public class BrdaCopyActionTest {
             () -> {
               RdeRevision.saveRevision("lol", DateTime.parse("2010-10-17TZ"), RdeMode.THIN, 0);
             });
-    persistResource(Cursor.create(BRDA, action.watermark.plusDays(1), Registry.get("lol")));
+    persistResource(Cursor.createScoped(BRDA, action.watermark.plusDays(1), Registry.get("lol")));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"", "job-name/"})
   void testRun_stagingNotFinished_throws204(String prefix) throws Exception {
-    persistResource(Cursor.create(BRDA, action.watermark, Registry.get("lol")));
+    persistResource(Cursor.createScoped(BRDA, action.watermark, Registry.get("lol")));
     NoContentException thrown = assertThrows(NoContentException.class, () -> runAction(prefix));
     assertThat(thrown)
         .hasMessageThat()
@@ -152,14 +152,14 @@ public class BrdaCopyActionTest {
   @ParameterizedTest
   @ValueSource(strings = {"", "job-name/"})
   void testRun_rydeFormat(String prefix) throws Exception {
-    assumeTrue(hasCommand("gpg --version"));
+    assumeTrue(hasCommand(GPG_BINARY + " --version"));
     runAction(prefix);
 
     File rydeTmp = new File(gpg.getCwd(), "ryde");
     Files.write(gcsUtils.readBytesFrom(RYDE_FILE), rydeTmp);
     Process pid =
         gpg.exec(
-            "gpg",
+            GPG_BINARY,
             "--list-packets",
             "--ignore-mdc-error",
             "--keyid-format",
@@ -200,7 +200,7 @@ public class BrdaCopyActionTest {
   @ParameterizedTest
   @ValueSource(strings = {"", "job-name/"})
   void testRun_rydeSignature(String prefix) throws Exception {
-    assumeTrue(hasCommand("gpg --version"));
+    assumeTrue(hasCommand(GPG_BINARY + " --version"));
     runAction(prefix);
 
     File rydeTmp = new File(gpg.getCwd(), "ryde");
@@ -208,7 +208,7 @@ public class BrdaCopyActionTest {
     Files.write(gcsUtils.readBytesFrom(RYDE_FILE), rydeTmp);
     Files.write(gcsUtils.readBytesFrom(SIG_FILE), sigTmp);
 
-    Process pid = gpg.exec("gpg", "--verify", sigTmp.toString(), rydeTmp.toString());
+    Process pid = gpg.exec(GPG_BINARY, "--verify", sigTmp.toString(), rydeTmp.toString());
     String stderr = slurp(pid.getErrorStream());
     assertWithMessage(stderr).that(pid.waitFor()).isEqualTo(0);
     assertThat(stderr).contains("Good signature");

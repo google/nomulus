@@ -14,7 +14,7 @@
 
 package google.registry.persistence.converter;
 
-import google.registry.model.registrar.RegistrarContact.Type;
+import google.registry.model.registrar.RegistrarPoc.Type;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 

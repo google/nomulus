@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -46,8 +45,6 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
-import google.registry.model.replay.DatastoreAndSqlEntity;
-import google.registry.model.replay.DatastoreOnlyEntity;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.persistence.BillingVKey.BillingEventVKey;
 import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
@@ -347,7 +344,7 @@ public abstract class BillingEvent extends ImmutableObject
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_event_id"))
   @WithLongVKey(compositeKey = true)
-  public static class OneTime extends BillingEvent implements DatastoreAndSqlEntity {
+  public static class OneTime extends BillingEvent {
 
     /** The billable value. */
     @Type(type = JodaMoneyType.TYPE_NAME)
@@ -559,7 +556,7 @@ public abstract class BillingEvent extends ImmutableObject
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_recurrence_id"))
   @WithLongVKey(compositeKey = true)
-  public static class Recurring extends BillingEvent implements DatastoreAndSqlEntity {
+  public static class Recurring extends BillingEvent {
 
     /**
      * The billing event recurs every year between {@link #eventTime} and this time on the
@@ -696,7 +693,7 @@ public abstract class BillingEvent extends ImmutableObject
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_cancellation_id"))
   @WithLongVKey(compositeKey = true)
-  public static class Cancellation extends BillingEvent implements DatastoreAndSqlEntity {
+  public static class Cancellation extends BillingEvent {
 
     /** The billing time of the charge that is being cancelled. */
     @Index
@@ -819,7 +816,7 @@ public abstract class BillingEvent extends ImmutableObject
   @ReportedOn
   @Entity
   @WithLongVKey(compositeKey = true)
-  public static class Modification extends BillingEvent implements DatastoreOnlyEntity {
+  public static class Modification extends BillingEvent {
 
     /** The change in cost that should be applied to the original billing event. */
     Money cost;
@@ -911,7 +908,7 @@ public abstract class BillingEvent extends ImmutableObject
         checkNotNull(instance.reason);
         checkNotNull(instance.eventRef);
         BillingEvent.OneTime billingEvent =
-            transactIfJpaTm(() -> tm().loadByKey(VKey.from(instance.eventRef)));
+            tm().transact(() -> tm().loadByKey(VKey.from(instance.eventRef)));
         checkArgument(
             Objects.equals(instance.cost.getCurrencyUnit(), billingEvent.cost.getCurrencyUnit()),
             "Referenced billing event is in a different currency");

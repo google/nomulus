@@ -28,7 +28,6 @@ import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomain
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_UPDATE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.assertAsyncActionsAreAllowed;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
@@ -79,7 +78,6 @@ import org.joda.time.DateTime;
  * when it is renamed from external to internal at least one must be added. If the host is renamed
  * or IP addresses are added, tasks are enqueued to update DNS accordingly.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.AddRemoveSameValueException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
@@ -137,9 +135,6 @@ public final class HostUpdateFlow implements TransactionalFlow {
     validateHostName(targetId);
     HostResource existingHost = loadAndVerifyExistence(HostResource.class, targetId, now);
     boolean isHostRename = suppliedNewHostName != null;
-    if (isHostRename) {
-      assertAsyncActionsAreAllowed();
-    }
     String oldHostName = targetId;
     String newHostName = firstNonNull(suppliedNewHostName, oldHostName);
     DomainBase oldSuperordinateDomain =

@@ -67,8 +67,7 @@ import org.mockito.quality.Strictness;
 class EppControllerTest {
 
   @RegisterExtension
-  AppEngineExtension appEngineExtension =
-      new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
+  AppEngineExtension appEngineExtension = new AppEngineExtension.Builder().withCloudSql().build();
 
   @Mock SessionMetadata sessionMetadata;
   @Mock TransportCredentials transportCredentials;

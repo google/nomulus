@@ -166,7 +166,7 @@ public final class IcannReportingUploadAction implements Runnable {
     // Set cursor to first day of next month if the upload succeeded
     if (success) {
       Cursor newCursor =
-          Cursor.create(
+          Cursor.createScoped(
               cursorType,
               cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1),
               Registry.get(tldStr));
@@ -227,7 +227,7 @@ public final class IcannReportingUploadAction implements Runnable {
 
   private ImmutableMap<VKey<? extends Cursor>, Registry> loadKeyMap(
       ImmutableSet<Registry> registries, CursorType type) {
-    return Maps.uniqueIndex(registries, r -> Cursor.createVKey(type, r.getTldStr()));
+    return Maps.uniqueIndex(registries, r -> Cursor.createScopedVKey(type, r));
   }
 
   /**
@@ -247,7 +247,7 @@ public final class IcannReportingUploadAction implements Runnable {
           Cursor cursor =
               cursorMap.getOrDefault(
                   key,
-                  Cursor.create(
+                  Cursor.createScoped(
                       type,
                       clock.nowUtc().withDayOfMonth(1).withTimeAtStartOfDay().plusMonths(1),
                       registry));

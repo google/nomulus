@@ -14,19 +14,14 @@
 
 package google.registry.model.host;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.host.HostHistory.HostHistoryId;
-import google.registry.model.replay.DatastoreEntity;
-import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.util.DomainNameUtils;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -62,7 +57,7 @@ import javax.persistence.PostLoad;
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(HostHistoryId.class)
-public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerializable {
+public class HostHistory extends HistoryEntry implements UnsafeSerializable {
 
   // Store HostBase instead of HostResource so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
@@ -90,6 +85,10 @@ public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerial
     return super.getId();
   }
 
+  public HostHistoryId getHostHistoryId() {
+    return new HostHistoryId(getHostRepoId(), getId());
+  }
+
   /**
    * The values of all the fields on the {@link HostBase} object after the action represented by
    * this history object was executed.
@@ -107,6 +106,7 @@ public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerial
 
   /** Creates a {@link VKey} instance for this entity. */
   @SuppressWarnings("unchecked")
+  @Override
   public VKey<HostHistory> createVKey() {
     return (VKey<HostHistory>) createVKey(Key.create(this));
   }
@@ -131,22 +131,6 @@ public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerial
     }
   }
 
-  // In Datastore, save as a HistoryEntry object regardless of this object's type
-  @Override
-  public Optional<DatastoreEntity> toDatastoreEntity() {
-    return Optional.of(asHistoryEntry());
-  }
-
-  // Used to fill out the hostBase field during asynchronous replay
-  @Override
-  public void beforeSqlSaveOnReplay() {
-    if (hostBase == null) {
-      hostBase = jpaTm().getEntityManager().find(HostResource.class, getHostRepoId());
-      hostBase.fullyQualifiedHostName =
-          DomainNameUtils.canonicalizeHostname(hostBase.fullyQualifiedHostName);
-    }
-  }
-
   /** Class to represent the composite primary key of {@link HostHistory} entity. */
   public static class HostHistoryId extends ImmutableObject implements Serializable {
 
@@ -167,8 +151,7 @@ public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerial
      *
      * <p>This method is private because it is only used by Hibernate.
      */
-    @SuppressWarnings("unused")
-    private String getHostRepoId() {
+    public String getHostRepoId() {
       return hostRepoId;
     }
 
@@ -177,8 +160,7 @@ public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerial
      *
      * <p>This method is private because it is only used by Hibernate.
      */
-    @SuppressWarnings("unused")
-    private long getId() {
+    public long getId() {
       return id;
     }
 

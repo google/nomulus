@@ -1,6 +1,5 @@
 --- expected
 +++ actual
-@@ -2,2 +2,1 @@
--
+@@ -2,1 +2,1 @@
 -with three lines and terminates without a newline.
 +with two lines and terminates with a newline.

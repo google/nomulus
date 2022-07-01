@@ -37,7 +37,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -57,25 +56,14 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.ReplayExtension;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainTransferCancelFlow}. */
-@DualDatabaseTest
 class DomainTransferCancelFlowTest
     extends DomainTransferFlowTestCase<DomainTransferCancelFlow, DomainBase> {
-
-  @Order(value = Order.DEFAULT - 2)
-  @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   @BeforeEach
   void beforeEach() {
@@ -107,7 +95,7 @@ class DomainTransferCancelFlowTest
             .setEventTime(EXTENDED_REGISTRATION_EXPIRATION_TIME)
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
-            .setParent(historyEntryDomainTransferRequest)
+            .setHistoryEntry(historyEntryDomainTransferRequest)
             .build(),
         createPollMessageForImplicitTransfer(
             domain,
@@ -174,7 +162,7 @@ class DomainTransferCancelFlowTest
             .setEventTime(originalExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
-            .setParent(getOnlyHistoryEntryOfType(domain, DOMAIN_CREATE))
+            .setHistoryEntry(getOnlyHistoryEntryOfType(domain, DOMAIN_CREATE))
             .build(),
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")
@@ -190,7 +178,7 @@ class DomainTransferCancelFlowTest
                         .setPendingTransferExpirationTime(clock.nowUtc())
                         .build()))
             .setMsg("Transfer cancelled.")
-            .setParent(getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL))
+            .setHistoryEntry(getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL))
             .build());
 
     // The original grace periods should remain untouched.
@@ -206,36 +194,36 @@ class DomainTransferCancelFlowTest
     runFlow();
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun() throws Exception {
     setEppInput("domain_transfer_cancel.xml");
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     dryRunFlowAssertResponse(loadFile("domain_transfer_cancel_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess() throws Exception {
     doSuccessfulTest("domain_transfer_cancel.xml");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_domainAuthInfo() throws Exception {
     doSuccessfulTest("domain_transfer_cancel_domain_authinfo.xml");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_contactAuthInfo() throws Exception {
     doSuccessfulTest("domain_transfer_cancel_contact_authinfo.xml");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badContactPassword() {
     // Change the contact's password so it does not match the password in the file.
     contact =
@@ -251,7 +239,7 @@ class DomainTransferCancelFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badDomainPassword() {
     // Change the domain's password so it does not match the password in the file.
     domain =
@@ -267,7 +255,7 @@ class DomainTransferCancelFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_neverBeenTransferred() {
     changeTransferStatus(null);
     EppException thrown =
@@ -276,7 +264,7 @@ class DomainTransferCancelFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientApproved() {
     changeTransferStatus(TransferStatus.CLIENT_APPROVED);
     EppException thrown =
@@ -285,7 +273,7 @@ class DomainTransferCancelFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientRejected() {
     changeTransferStatus(TransferStatus.CLIENT_REJECTED);
     EppException thrown =
@@ -294,7 +282,7 @@ class DomainTransferCancelFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientCancelled() {
     changeTransferStatus(TransferStatus.CLIENT_CANCELLED);
     EppException thrown =
@@ -303,7 +291,7 @@ class DomainTransferCancelFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_serverApproved() {
     changeTransferStatus(TransferStatus.SERVER_APPROVED);
     EppException thrown =
@@ -312,7 +300,7 @@ class DomainTransferCancelFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_serverCancelled() {
     changeTransferStatus(TransferStatus.SERVER_CANCELLED);
     EppException thrown =
@@ -321,7 +309,7 @@ class DomainTransferCancelFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_sponsoringClient() {
     setRegistrarIdForFlow("TheRegistrar");
     EppException thrown =
@@ -330,7 +318,7 @@ class DomainTransferCancelFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_unrelatedClient() {
     setRegistrarIdForFlow("ClientZ");
     EppException thrown =
@@ -339,7 +327,7 @@ class DomainTransferCancelFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_deletedDomain() throws Exception {
     domain =
         persistResource(domain.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
@@ -349,7 +337,7 @@ class DomainTransferCancelFlowTest
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonexistentDomain() throws Exception {
     deleteTestDomain(domain, clock.nowUtc());
     ResourceDoesNotExistException thrown =
@@ -358,7 +346,7 @@ class DomainTransferCancelFlowTest
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_notAuthorizedForTld() {
     persistResource(
         loadRegistrar("NewRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
@@ -369,7 +357,7 @@ class DomainTransferCancelFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserNotAuthorizedForTld() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
@@ -381,7 +369,7 @@ class DomainTransferCancelFlowTest
   // NB: No need to test pending delete status since pending transfers will get cancelled upon
   // entering pending delete phase. So it's already handled in that test case.
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     clock.advanceOneMilli();
     runFlow();
@@ -389,7 +377,7 @@ class DomainTransferCancelFlowTest
     assertTldsFieldLogged("tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannTransactionRecord_noRecordsToCancel() throws Exception {
     clock.advanceOneMilli();
     runFlow();
@@ -398,7 +386,7 @@ class DomainTransferCancelFlowTest
     assertThat(persistedEntry.getDomainTransactionRecords()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannTransactionRecord_cancelsPreviousRecords() throws Exception {
     clock.advanceOneMilli();
     persistResource(
@@ -426,13 +414,5 @@ class DomainTransferCancelFlowTest
     // We should only produce a cancellation record for the original transfer success
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(previousSuccessRecord.asBuilder().setReportAmount(-1).build());
-  }
-
-  @TestOfyOnly
-  void testModification_duringReadOnlyPhase() {
-    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
-    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

@@ -26,7 +26,6 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.model.domain.DomainBase.MAX_REGISTRATION_YEARS;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.tld.Registries.findTldForName;
 import static google.registry.model.tld.Registries.getTlds;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
@@ -64,7 +63,6 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.CommandUseErrorException;
@@ -90,6 +88,7 @@ import google.registry.model.domain.DomainCommand.CreateOrUpdate;
 import google.registry.model.domain.DomainCommand.InvalidReferencesException;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.ForeignKeyedDesignatedContact;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.BaseFee;
@@ -593,14 +592,15 @@ public class DomainFlowUtils {
     // where all autorenew poll messages had already been delivered (this would cause the poll
     // message to be deleted), and then subsequently the transfer was canceled, rejected, or deleted
     // (which would cause the poll message to be recreated here).
-    Key<PollMessage.Autorenew> existingAutorenewKey = domain.getAutorenewPollMessage().getOfyKey();
     PollMessage.Autorenew updatedAutorenewPollMessage =
         autorenewPollMessage.isPresent()
             ? autorenewPollMessage.get().asBuilder().setAutorenewEndTime(newEndTime).build()
             : newAutorenewPollMessage(domain)
-                .setId(existingAutorenewKey.getId())
+                .setId((Long) domain.getAutorenewPollMessage().getSqlKey())
                 .setAutorenewEndTime(newEndTime)
-                .setParentKey(existingAutorenewKey.getParent())
+                .setDomainHistoryId(
+                    new DomainHistoryId(
+                        domain.getRepoId(), domain.getAutorenewPollMessageHistoryId()))
                 .build();
 
     // If the resultant autorenew poll message would have no poll messages to deliver, then just
@@ -1163,24 +1163,14 @@ public class DomainFlowUtils {
 
   private static List<? extends HistoryEntry> findRecentHistoryEntries(
       DomainBase domainBase, DateTime now, Duration maxSearchPeriod) {
-    if (tm().isOfy()) {
-      return auditedOfy()
-          .load()
-          .type(HistoryEntry.class)
-          .ancestor(domainBase)
-          .filter("modificationTime >=", now.minus(maxSearchPeriod))
-          .order("modificationTime")
-          .list();
-    } else {
-      return jpaTm()
-          .query(
-              "FROM DomainHistory WHERE modificationTime >= :beginning AND domainRepoId = "
-                  + ":repoId ORDER BY modificationTime ASC",
-              DomainHistory.class)
-          .setParameter("beginning", now.minus(maxSearchPeriod))
-          .setParameter("repoId", domainBase.getRepoId())
-          .getResultList();
-    }
+    return jpaTm()
+        .query(
+            "FROM DomainHistory WHERE modificationTime >= :beginning AND domainRepoId = "
+                + ":repoId ORDER BY modificationTime ASC",
+            DomainHistory.class)
+        .setParameter("beginning", now.minus(maxSearchPeriod))
+        .setParameter("repoId", domainBase.getRepoId())
+        .getResultList();
   }
 
   /** Resource linked to this domain does not exist. */

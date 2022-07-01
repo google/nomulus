@@ -34,23 +34,20 @@ import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PendingDepositChecker}. */
-@DualDatabaseTest
 public class PendingDepositCheckerTest {
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final FakeClock clock = new FakeClock();
   private final PendingDepositChecker checker = new PendingDepositChecker();
@@ -64,14 +61,14 @@ public class PendingDepositCheckerTest {
     checker.rdeInterval = standardDays(1);
   }
 
-  @TestOfyAndSql
+  @Test
   void testMethod_noTldsWithEscrowEnabled_returnsEmpty() {
     createTld("pal");
     createTld("fun");
     assertThat(checker.getTldsAndWatermarksPendingDepositForRdeAndBrda()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testMethod_firstDeposit_depositsRdeTodayAtMidnight() {
     clock.setTo(DateTime.parse("2000-01-01T08:00Z"));  // Saturday
     createTldWithEscrowEnabled("lol");
@@ -82,7 +79,7 @@ public class PendingDepositCheckerTest {
                 "lol", DateTime.parse("2000-01-01TZ"), FULL, RDE_STAGING, standardDays(1))));
   }
 
-  @TestOfyAndSql
+  @Test
   void testMethod_firstDepositOnBrdaDay_depositsBothRdeAndBrda() {
     clock.setTo(DateTime.parse("2000-01-04T08:00Z"));  // Tuesday
     createTldWithEscrowEnabled("lol");
@@ -95,20 +92,19 @@ public class PendingDepositCheckerTest {
                 "lol", DateTime.parse("2000-01-04TZ"), THIN, BRDA, standardDays(7))));
   }
 
-  @TestOfyAndSql
+  @Test
   void testMethod_firstRdeDeposit_initializesCursorToMidnightToday() {
     clock.setTo(DateTime.parse("2000-01-01TZ"));  // Saturday
     createTldWithEscrowEnabled("lol");
     clock.advanceOneMilli();
     Registry registry = Registry.get("lol");
-    Truth8.assertThat(loadByKeyIfPresent(Cursor.createVKey(RDE_STAGING, registry.getTldStr())))
-        .isEmpty();
+    Truth8.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(RDE_STAGING, registry))).isEmpty();
     checker.getTldsAndWatermarksPendingDepositForRdeAndBrda();
-    assertThat(loadByKey(Cursor.createVKey(RDE_STAGING, registry.getTldStr())).getCursorTime())
+    assertThat(loadByKey(Cursor.createScopedVKey(RDE_STAGING, registry)).getCursorTime())
         .isEqualTo(DateTime.parse("2000-01-01TZ"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testMethod_subsequentRdeDeposit_doesntMutateCursor() {
     clock.setTo(DateTime.parse("2000-01-01TZ"));  // Saturday
     createTldWithEscrowEnabled("lol");
@@ -117,11 +113,11 @@ public class PendingDepositCheckerTest {
     setCursor(Registry.get("lol"), RDE_STAGING, yesterday);
     clock.advanceOneMilli();
     checker.getTldsAndWatermarksPendingDepositForRdeAndBrda();
-    Cursor cursor = loadByKey(Cursor.createVKey(RDE_STAGING, "lol"));
+    Cursor cursor = loadByKey(Cursor.createScopedVKey(RDE_STAGING, Registry.get("lol")));
     assertThat(cursor.getCursorTime()).isEqualTo(yesterday);
   }
 
-  @TestOfyAndSql
+  @Test
   void testMethod_firstBrdaDepositButNotOnBrdaDay_doesntInitializeCursor() {
     clock.setTo(DateTime.parse("2000-01-01TZ"));  // Saturday
     createTldWithEscrowEnabled("lol");
@@ -129,12 +125,12 @@ public class PendingDepositCheckerTest {
     clock.advanceOneMilli();
     setCursor(registry, RDE_STAGING, DateTime.parse("2000-01-02TZ")); // assume rde is already done
     clock.advanceOneMilli();
-    Truth8.assertThat(loadByKeyIfPresent(Cursor.createVKey(BRDA, registry.getTldStr()))).isEmpty();
+    Truth8.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, registry))).isEmpty();
     assertThat(checker.getTldsAndWatermarksPendingDepositForRdeAndBrda()).isEmpty();
-    Truth8.assertThat(loadByKeyIfPresent(Cursor.createVKey(BRDA, registry.getTldStr()))).isEmpty();
+    Truth8.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, registry))).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testMethod_backloggedTwoDays_onlyWantsLeastRecentDay() {
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     createTldWithEscrowEnabled("lol");
@@ -147,7 +143,7 @@ public class PendingDepositCheckerTest {
                 "lol", DateTime.parse("1999-12-30TZ"), FULL, RDE_STAGING, standardDays(1))));
   }
 
-  @TestOfyAndSql
+  @Test
   void testMethod_multipleTldsWithEscrowEnabled_depositsBoth() {
     clock.setTo(DateTime.parse("2000-01-01TZ"));  // Saturday
     createTldWithEscrowEnabled("pal");
@@ -171,7 +167,7 @@ public class PendingDepositCheckerTest {
 
   private static void setCursor(
       final Registry registry, final CursorType cursorType, final DateTime value) {
-    tm().transact(() -> tm().put(Cursor.create(cursorType, value, registry)));
+    tm().transact(() -> tm().put(Cursor.createScoped(cursorType, value, registry)));
   }
 
   private static void createTldWithEscrowEnabled(final String tld) {

@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.partition;
 import static com.google.common.collect.Streams.stream;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -118,17 +117,19 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     }
 
     tokensToSave =
-        transactIfJpaTm(
-            () ->
-                tm().loadByKeys(getTokenKeys()).values().stream()
-                    .collect(toImmutableMap(Function.identity(), this::updateToken))
-                    .entrySet()
-                    .stream()
-                    .filter(
-                        entry ->
-                            !entry.getKey().equals(entry.getValue())) // only update changed tokens
-                    .map(Map.Entry::getValue)
-                    .collect(toImmutableSet()));
+        tm().transact(
+                () ->
+                    tm().loadByKeys(getTokenKeys()).values().stream()
+                        .collect(toImmutableMap(Function.identity(), this::updateToken))
+                        .entrySet()
+                        .stream()
+                        .filter(
+                            entry ->
+                                !entry
+                                    .getKey()
+                                    .equals(entry.getValue())) // only update changed tokens
+                        .map(Map.Entry::getValue)
+                        .collect(toImmutableSet()));
   }
 
   @Override

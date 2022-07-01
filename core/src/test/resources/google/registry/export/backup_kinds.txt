@@ -1,7 +1,6 @@
 AllocationToken
 Cancellation
 ContactResource
-Cursor
 DomainBase
 EntityGroupRoot
 EppResourceIndex
@@ -17,5 +16,3 @@ PollMessage
 RdeRevision
 Recurring
 Registrar
-RegistrarContact
-Registry

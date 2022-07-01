@@ -29,21 +29,18 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.whois.WhoisResponse.WhoisResponseResults;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link NameserverWhoisResponse}. */
-@DualDatabaseTest
 class NameserverWhoisResponseTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private HostResource hostResource1;
   private HostResource hostResource2;
@@ -93,7 +90,7 @@ class NameserverWhoisResponseTest {
             .build();
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetTextOutput() {
     NameserverWhoisResponse nameserverWhoisResponse =
         new NameserverWhoisResponse(hostResource1, clock.nowUtc());
@@ -104,7 +101,7 @@ class NameserverWhoisResponseTest {
         .isEqualTo(WhoisResponseResults.create(loadFile("whois_nameserver.txt"), 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetMultipleNameserversResponse() {
     NameserverWhoisResponse nameserverWhoisResponse =
         new NameserverWhoisResponse(ImmutableList.of(hostResource1, hostResource2), clock.nowUtc());
@@ -115,7 +112,7 @@ class NameserverWhoisResponseTest {
         .isEqualTo(WhoisResponseResults.create(loadFile("whois_multiple_nameservers.txt"), 2));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSubordinateDomains() {
     NameserverWhoisResponse nameserverWhoisResponse =
         new NameserverWhoisResponse(hostResource3, clock.nowUtc());

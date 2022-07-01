@@ -39,7 +39,7 @@ public class RefreshDnsActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
   private final FakeClock clock = new FakeClock();

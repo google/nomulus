@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.rde.RdeModule.BRDA_QUEUE;
 import static google.registry.rde.RdeModule.RDE_UPLOAD_QUEUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -249,9 +248,6 @@ public class RdeIO {
       // Now that we're done, output roll the cursor forward.
       if (key.manual()) {
         logger.atInfo().log("Manual operation; not advancing cursor or enqueuing upload task.");
-        // Temporary measure to run RDE in beam in parallel with the daily MapReduce based RDE runs.
-      } else if (tm().isOfy()) {
-        logger.atInfo().log("Ofy is primary TM; not advancing cursor or enqueuing upload task.");
       } else {
         outputReceiver.output(KV.of(key, revision));
       }
@@ -273,16 +269,15 @@ public class RdeIO {
     @ProcessElement
     public void processElement(
         @Element KV<PendingDeposit, Integer> input, PipelineOptions options) {
-
       tm().transact(
               () -> {
                 PendingDeposit key = input.getKey();
                 Registry registry = Registry.get(key.tld());
                 Optional<Cursor> cursor =
-                    transactIfJpaTm(
-                        () ->
-                            tm().loadByKeyIfPresent(
-                                    Cursor.createVKey(key.cursor(), registry.getTldStr())));
+                    tm().transact(
+                            () ->
+                                tm().loadByKeyIfPresent(
+                                        Cursor.createScopedVKey(key.cursor(), registry)));
                 DateTime position = getCursorTimeOrStartOfTime(cursor);
                 checkState(key.interval() != null, "Interval must be present");
                 DateTime newPosition = key.watermark().plus(key.interval());
@@ -295,7 +290,7 @@ public class RdeIO {
                     "Partial ordering of RDE deposits broken: %s %s",
                     position,
                     key);
-                tm().put(Cursor.create(key.cursor(), newPosition, registry));
+                tm().put(Cursor.createScoped(key.cursor(), newPosition, registry));
                 logger.atInfo().log(
                     "Rolled forward %s on %s cursor to %s.", key.cursor(), key.tld(), newPosition);
                 RdeRevision.saveRevision(key.tld(), key.watermark(), key.mode(), input.getValue());

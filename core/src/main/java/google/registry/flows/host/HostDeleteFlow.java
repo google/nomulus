@@ -21,8 +21,6 @@ import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
-import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
-import static google.registry.persistence.transaction.TransactionManagerFactory.assertAsyncActionsAreAllowed;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -36,15 +34,12 @@ import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.EppResource;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse;
-import google.registry.model.eppoutput.Result;
 import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import javax.inject.Inject;
@@ -59,7 +54,6 @@ import org.joda.time.DateTime;
  * references to the host before the deletion is allowed to proceed. A poll message will be written
  * with the success or failure message when the process is complete.
  *
- * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}
@@ -78,8 +72,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
           StatusValue.PENDING_DELETE,
           StatusValue.SERVER_DELETE_PROHIBITED);
 
-  private static final DnsQueue dnsQueue = DnsQueue.create();
-
+  @Inject DnsQueue dnsQueue;
   @Inject ExtensionManager extensionManager;
   @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
@@ -97,10 +90,9 @@ public final class HostDeleteFlow implements TransactionalFlow {
     extensionManager.register(MetadataExtension.class);
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
-    assertAsyncActionsAreAllowed();
     DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
-    checkLinkedDomains(targetId, now, HostResource.class, DomainBase::getNameservers);
+    checkLinkedDomains(targetId, now, HostResource.class);
     HostResource existingHost = loadAndVerifyExistence(HostResource.class, targetId, now);
     verifyNoDisallowedStatuses(existingHost, DISALLOWED_STATUSES);
     if (!isSuperuser) {
@@ -112,31 +104,19 @@ public final class HostDeleteFlow implements TransactionalFlow {
               : existingHost;
       verifyResourceOwnership(registrarId, owningResource);
     }
-    HistoryEntry.Type historyEntryType;
-    Result.Code resultCode;
-    HostResource newHost;
-    if (tm().isOfy()) {
-      asyncTaskEnqueuer.enqueueAsyncDelete(
-          existingHost, tm().getTransactionTime(), registrarId, trid, isSuperuser);
-      newHost = existingHost.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build();
-      historyEntryType = Type.HOST_PENDING_DELETE;
-      resultCode = SUCCESS_WITH_ACTION_PENDING;
-    } else {
-      newHost = existingHost.asBuilder().setStatusValues(null).setDeletionTime(now).build();
-      if (existingHost.isSubordinate()) {
-        dnsQueue.addHostRefreshTask(existingHost.getHostName());
-        tm().update(
-                tm().loadByKey(existingHost.getSuperordinateDomain())
-                    .asBuilder()
-                    .removeSubordinateHost(existingHost.getHostName())
-                    .build());
-      }
-      historyEntryType = Type.HOST_DELETE;
-      resultCode = SUCCESS;
+    HostResource newHost =
+        existingHost.asBuilder().setStatusValues(null).setDeletionTime(now).build();
+    if (existingHost.isSubordinate()) {
+      dnsQueue.addHostRefreshTask(existingHost.getHostName());
+      tm().update(
+              tm().loadByKey(existingHost.getSuperordinateDomain())
+                  .asBuilder()
+                  .removeSubordinateHost(existingHost.getHostName())
+                  .build());
     }
-    historyBuilder.setType(historyEntryType).setHost(newHost);
+    historyBuilder.setType(Type.HOST_DELETE).setHost(newHost);
     tm().insert(historyBuilder.build());
     tm().update(newHost);
-    return responseBuilder.setResultFromCode(resultCode).build();
+    return responseBuilder.setResultFromCode(SUCCESS).build();
   }
 }

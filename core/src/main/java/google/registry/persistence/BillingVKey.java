@@ -69,11 +69,6 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
       super(repoId, historyRevisionId, billingEventId);
     }
 
-    @Override
-    public Key<OneTime> createOfyKey() {
-      return Key.create(createHistoryEntryKey(), BillingEvent.OneTime.class, billingId);
-    }
-
     /** Creates a {@link BillingEventVKey} instance from the given {@link Key} instance. */
     public static BillingEventVKey create(@Nullable Key<BillingEvent.OneTime> ofyKey) {
       if (ofyKey == null) {
@@ -87,7 +82,7 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
 
     /** Creates a {@link BillingEventVKey} instance from the given {@link VKey} instance. */
     public static BillingEventVKey create(@Nullable VKey<BillingEvent.OneTime> vKey) {
-      return vKey == null ? null : create(vKey.getOfyKey());
+      return vKey == null ? null : new BillingEventVKey(null, 0, (Long) vKey.getSqlKey());
     }
   }
 
@@ -111,11 +106,6 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
       super(repoId, historyRevisionId, billingEventId);
     }
 
-    @Override
-    public Key<Recurring> createOfyKey() {
-      return Key.create(createHistoryEntryKey(), BillingEvent.Recurring.class, billingId);
-    }
-
     /** Creates a {@link BillingRecurrenceVKey} instance from the given {@link Key} instance. */
     public static BillingRecurrenceVKey create(@Nullable Key<BillingEvent.Recurring> ofyKey) {
       if (ofyKey == null) {
@@ -129,7 +119,7 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
 
     /** Creates a {@link BillingRecurrenceVKey} instance from the given {@link VKey} instance. */
     public static BillingRecurrenceVKey create(@Nullable VKey<BillingEvent.Recurring> vKey) {
-      return vKey == null ? null : create(vKey.getOfyKey());
+      return vKey == null ? null : new BillingRecurrenceVKey(null, 0, (Long) vKey.getSqlKey());
     }
   }
 }

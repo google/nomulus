@@ -50,29 +50,26 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link AllocationTokenFlowUtils}. */
-@DualDatabaseTest
 class AllocationTokenFlowUtilsTest {
 
   private final AllocationTokenFlowUtils flowUtils =
       new AllocationTokenFlowUtils(new AllocationTokenCustomLogic());
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @BeforeEach
   void beforeEach() {
     createTld("tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateToken_successfullyVerifiesValidToken() throws Exception {
     AllocationToken token =
         persistResource(
@@ -87,12 +84,12 @@ class AllocationTokenFlowUtilsTest {
         .isEqualTo(token);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateToken_failsOnNonexistentToken() {
     assertValidateThrowsEppException(InvalidAllocationTokenException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateToken_failsOnNullToken() {
     assertAboutEppExceptions()
         .that(
@@ -108,7 +105,7 @@ class AllocationTokenFlowUtilsTest {
         .marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateToken_callsCustomLogic() {
     AllocationTokenFlowUtils failingFlowUtils =
         new AllocationTokenFlowUtils(new FailingAllocationTokenCustomLogic());
@@ -127,7 +124,7 @@ class AllocationTokenFlowUtilsTest {
     assertThat(thrown).hasMessageThat().isEqualTo("failed for tests");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateToken_invalidForClientId() {
     persistResource(
         createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
@@ -136,7 +133,7 @@ class AllocationTokenFlowUtilsTest {
     assertValidateThrowsEppException(AllocationTokenNotValidForRegistrarException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateToken_invalidForTld() {
     persistResource(
         createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
@@ -145,19 +142,19 @@ class AllocationTokenFlowUtilsTest {
     assertValidateThrowsEppException(AllocationTokenNotValidForTldException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateToken_beforePromoStart() {
     persistResource(createOneMonthPromoTokenBuilder(DateTime.now(UTC).plusDays(1)).build());
     assertValidateThrowsEppException(AllocationTokenNotInPromotionException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateToken_afterPromoEnd() {
     persistResource(createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusMonths(2)).build());
     assertValidateThrowsEppException(AllocationTokenNotInPromotionException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_validateToken_promoCancelled() {
     // the promo would be valid but it was cancelled 12 hours ago
     persistResource(
@@ -172,7 +169,7 @@ class AllocationTokenFlowUtilsTest {
     assertValidateThrowsEppException(AllocationTokenNotInPromotionException.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_checkDomainsWithToken_successfullyVerifiesValidToken() {
     persistResource(
         new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
@@ -191,7 +188,7 @@ class AllocationTokenFlowUtilsTest {
         .inOrder();
   }
 
-  @TestOfyAndSql
+  @Test
   void test_checkDomainsWithToken_showsFailureMessageForRedeemedToken() {
     DomainBase domain = persistActiveDomain("example.tld");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1051L);
@@ -219,7 +216,7 @@ class AllocationTokenFlowUtilsTest {
         .inOrder();
   }
 
-  @TestOfyAndSql
+  @Test
   void test_checkDomainsWithToken_callsCustomLogic() {
     persistResource(
         new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
@@ -238,7 +235,7 @@ class AllocationTokenFlowUtilsTest {
     assertThat(thrown).hasMessageThat().isEqualTo("failed for tests");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_checkDomainsWithToken_resultsFromCustomLogicAreIntegrated() {
     persistResource(
         new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());

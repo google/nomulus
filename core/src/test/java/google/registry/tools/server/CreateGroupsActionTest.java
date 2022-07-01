@@ -37,8 +37,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class CreateGroupsActionTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension final InjectExtension inject = new InjectExtension();
 

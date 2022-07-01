@@ -26,7 +26,13 @@ import java.io.Serializable;
 import java.util.List;
 import javax.inject.Inject;
 
-/** Utilities for dealing with App Engine task queues. */
+/**
+ * Utilities for dealing with App Engine task queues.
+ *
+ * <p>Use {@link CloudTasksUtils} to interact with push queues (Cloud Task queues). Pull queues will
+ * be implemented separately in SQL and you can continue using this class for that for now.
+ */
+@Deprecated
 public class TaskQueueUtils implements Serializable {
 
   private static final long serialVersionUID = 7893211200220508362L;

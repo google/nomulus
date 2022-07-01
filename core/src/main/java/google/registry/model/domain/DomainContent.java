@@ -23,9 +23,7 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static google.registry.model.EppResourceUtils.projectResourceOntoBuilderAtTime;
 import static google.registry.model.EppResourceUtils.setAutomaticTransferSuccessProperties;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -43,12 +41,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.dns.RefreshDnsAction;
 import google.registry.flows.ResourceFlowUtils;
@@ -63,7 +59,6 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PollMessage;
-import google.registry.model.replay.ReplaySpecializer;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
@@ -84,7 +79,6 @@ import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.persistence.MappedSuperclass;
-import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import org.hibernate.collection.internal.PersistentSet;
 import org.joda.time.DateTime;
@@ -141,23 +135,12 @@ public class DomainContent extends EppResource
   /** References to hosts that are the nameservers for the domain. */
   @EmptySetToNull @Index @Transient Set<VKey<HostResource>> nsHosts;
 
-  /**
-   * The union of the contacts visible via {@link #getContacts} and {@link #getRegistrant}.
-   *
-   * <p>These are stored in one field so that we can query across all contacts at once.
-   */
-  @Transient Set<DesignatedContact> allContacts;
+  /** Contacts. */
+  VKey<ContactResource> adminContact;
 
-  /**
-   * Contacts as they are stored in cloud SQL.
-   *
-   * <p>This information is duplicated in allContacts, and must be kept in sync with it.
-   */
-  @Ignore VKey<ContactResource> adminContact;
-
-  @Ignore VKey<ContactResource> billingContact;
-  @Ignore VKey<ContactResource> techContact;
-  @Ignore VKey<ContactResource> registrantContact;
+  VKey<ContactResource> billingContact;
+  VKey<ContactResource> techContact;
+  VKey<ContactResource> registrantContact;
 
   /** Authorization info (aka transfer secret) of the domain. */
   @Embedded
@@ -167,12 +150,7 @@ public class DomainContent extends EppResource
   })
   DomainAuthInfo authInfo;
 
-  /**
-   * Data used to construct DS records for this domain.
-   *
-   * <p>This is {@literal @}XmlTransient because it needs to be returned under the "extension" tag
-   * of an info response rather than inside the "infData" tag.
-   */
+  /** Data used to construct DS records for this domain. */
   @Transient Set<DelegationSignerData> dsData;
 
   /**
@@ -180,7 +158,6 @@ public class DomainContent extends EppResource
    *
    * <p>It's {@literal @}XmlTransient because it's not returned in an info response.
    */
-  @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "noticeId.tcnId", column = @Column(name = "launch_notice_tcn_id")),
@@ -221,15 +198,6 @@ public class DomainContent extends EppResource
   VKey<PollMessage.OneTime> deletePollMessage;
 
   /**
-   * History record for the delete poll message.
-   *
-   * <p>Here so we can restore the original ofy key from sql.
-   */
-  @Column(name = "deletion_poll_message_history_id")
-  @Ignore
-  Long deletePollMessageHistoryId;
-
-  /**
    * The recurring billing event associated with this domain's autorenewals.
    *
    * <p>The recurrence should be open ended unless the domain is in pending delete or fully deleted,
@@ -239,15 +207,6 @@ public class DomainContent extends EppResource
    */
   @Column(name = "billing_recurrence_id")
   VKey<BillingEvent.Recurring> autorenewBillingEvent;
-
-  /**
-   * History record for the autorenew billing event.
-   *
-   * <p>Here so we can restore the original ofy key from sql.
-   */
-  @Column(name = "billing_recurrence_history_id")
-  @Ignore
-  Long autorenewBillingEventHistoryId;
 
   /**
    * The recurring poll message associated with this domain's autorenewals.
@@ -334,92 +293,6 @@ public class DomainContent extends EppResource
     return Optional.ofNullable(dnsRefreshRequestTime);
   }
 
-  @OnLoad
-  void load() {
-    // Reconstitute all of the contacts so that they have VKeys.
-    allContacts =
-        allContacts.stream().map(DesignatedContact::reconstitute).collect(toImmutableSet());
-    setContactFields(allContacts, true);
-
-    // We have to return the cloned object here because the original object's hashcode is not
-    // correct due to the change to its domainRepoId and history ids. The cloned object will have a
-    // null hashcode so that it can get a recalculated hashcode when its hashCode() is invoked.
-    // TODO(b/162739503): Remove this after fully migrating to Cloud SQL.
-    gracePeriods =
-        nullToEmptyImmutableCopy(gracePeriods).stream()
-            .map(gracePeriod -> gracePeriod.cloneAfterOfyLoad(getRepoId()))
-            .collect(toImmutableSet());
-
-    // Restore history record ids.
-    autorenewPollMessageHistoryId = getHistoryId(autorenewPollMessage);
-    autorenewBillingEventHistoryId = getHistoryId(autorenewBillingEvent);
-    deletePollMessageHistoryId = getHistoryId(deletePollMessage);
-
-    // Fix PollMessage VKeys.
-    autorenewPollMessage = PollMessage.Autorenew.convertVKey(autorenewPollMessage);
-    deletePollMessage = PollMessage.OneTime.convertVKey(deletePollMessage);
-
-    dsData =
-        nullToEmptyImmutableCopy(dsData).stream()
-            .map(dsData -> dsData.cloneWithDomainRepoId(getRepoId()))
-            .collect(toImmutableSet());
-
-    if (transferData != null) {
-      transferData.convertVKeys();
-    }
-  }
-
-  @PostLoad
-  protected void postLoad() {
-    // Reconstitute the contact list.
-    ImmutableSet.Builder<DesignatedContact> contactsBuilder = new ImmutableSet.Builder<>();
-
-    if (registrantContact != null) {
-      contactsBuilder.add(
-          DesignatedContact.create(DesignatedContact.Type.REGISTRANT, registrantContact));
-    }
-    if (billingContact != null) {
-      contactsBuilder.add(DesignatedContact.create(DesignatedContact.Type.BILLING, billingContact));
-    }
-    if (techContact != null) {
-      contactsBuilder.add(DesignatedContact.create(DesignatedContact.Type.TECH, techContact));
-    }
-    if (adminContact != null) {
-      contactsBuilder.add(DesignatedContact.create(DesignatedContact.Type.ADMIN, adminContact));
-    }
-
-    allContacts = contactsBuilder.build();
-
-    // Reconstitute the composite ofy keys from the SQL data.
-    Key<DomainBase> myKey = Key.create(DomainBase.class, getRepoId());
-    deletePollMessage = restoreOfyFrom(myKey, deletePollMessage, deletePollMessageHistoryId);
-    autorenewBillingEvent =
-        restoreOfyFrom(myKey, autorenewBillingEvent, autorenewBillingEventHistoryId);
-    autorenewPollMessage =
-        restoreOfyFrom(myKey, autorenewPollMessage, autorenewPollMessageHistoryId);
-
-    if (transferData != null) {
-      transferData.restoreOfyKeys(myKey);
-    }
-  }
-
-  /**
-   * Callback to delete grace periods and DelegationSignerData records prior to domain delete.
-   *
-   * <p>See {@link ReplaySpecializer}.
-   */
-  public static void beforeSqlDelete(VKey<DomainBase> key) {
-    // Delete all grace periods associated with the domain.
-    jpaTm()
-        .query("DELETE FROM GracePeriod WHERE domain_repo_id = :repo_id")
-        .setParameter("repo_id", key.getSqlKey())
-        .executeUpdate();
-    jpaTm()
-        .query("DELETE FROM DelegationSignerData WHERE domain_repo_id = :repo_id")
-        .setParameter("repo_id", key.getSqlKey())
-        .executeUpdate();
-  }
-
   public static <T> VKey<T> restoreOfyFrom(Key<DomainBase> domainKey, VKey<T> key, Long historyId) {
     if (historyId == null) {
       // This is a legacy key (or a null key, in which case this works too)
@@ -447,6 +320,10 @@ public class DomainContent extends EppResource
 
   public VKey<PollMessage.Autorenew> getAutorenewPollMessage() {
     return autorenewPollMessage;
+  }
+
+  public Long getAutorenewPollMessageHistoryId() {
+    return autorenewPollMessageHistoryId;
   }
 
   public ImmutableSet<GracePeriod> getGracePeriods() {
@@ -628,7 +505,9 @@ public class DomainContent extends EppResource
               // Set the speculatively-written new autorenew events as the domain's autorenew
               // events.
               .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
-              .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage());
+              .setAutorenewPollMessage(
+                  transferData.getServerApproveAutorenewPollMessage(),
+                  transferData.getServerApproveAutorenewPollMessageHistoryId());
       if (transferData.getTransferPeriod().getValue() == 1) {
         // Set the grace period using a key to the prescheduled transfer billing event.  Not using
         // GracePeriod.forBillingEvent() here in order to avoid the actual Datastore fetch.
@@ -724,11 +603,11 @@ public class DomainContent extends EppResource
 
   /** Loads and returns the fully qualified host names of all linked nameservers. */
   public ImmutableSortedSet<String> loadNameserverHostNames() {
-    return transactIfJpaTm(
-        () ->
-            tm().loadByKeys(getNameservers()).values().stream()
-                .map(HostResource::getHostName)
-                .collect(toImmutableSortedSet(Ordering.natural())));
+    return tm().transact(
+            () ->
+                tm().loadByKeys(getNameservers()).values().stream()
+                    .map(HostResource::getHostName)
+                    .collect(toImmutableSortedSet(Ordering.natural())));
   }
 
   /** A key to the registrant who registered this domain. */
@@ -750,9 +629,7 @@ public class DomainContent extends EppResource
 
   /** Associated contacts for the domain (other than registrant). */
   public ImmutableSet<DesignatedContact> getContacts() {
-    return nullToEmpty(allContacts).stream()
-        .filter(IS_REGISTRANT.negate())
-        .collect(toImmutableSet());
+    return getAllContacts(false);
   }
 
   public DomainAuthInfo getAuthInfo() {
@@ -761,10 +638,27 @@ public class DomainContent extends EppResource
 
   /** Returns all referenced contacts from this domain. */
   public ImmutableSet<VKey<ContactResource>> getReferencedContacts() {
-    return nullToEmptyImmutableCopy(allContacts).stream()
+    return nullToEmptyImmutableCopy(getAllContacts(true)).stream()
         .map(DesignatedContact::getContactKey)
         .filter(Objects::nonNull)
         .collect(toImmutableSet());
+  }
+
+  private ImmutableSet<DesignatedContact> getAllContacts(boolean includeRegistrant) {
+    ImmutableSet.Builder<DesignatedContact> builder = new ImmutableSet.Builder<>();
+    if (includeRegistrant && registrantContact != null) {
+      builder.add(DesignatedContact.create(DesignatedContact.Type.REGISTRANT, registrantContact));
+    }
+    if (adminContact != null) {
+      builder.add(DesignatedContact.create(DesignatedContact.Type.ADMIN, adminContact));
+    }
+    if (billingContact != null) {
+      builder.add(DesignatedContact.create(DesignatedContact.Type.BILLING, billingContact));
+    }
+    if (techContact != null) {
+      builder.add(DesignatedContact.create(DesignatedContact.Type.TECH, techContact));
+    }
+    return builder.build();
   }
 
   public String getTld() {
@@ -783,7 +677,13 @@ public class DomainContent extends EppResource
     if (includeRegistrant) {
       registrantContact = null;
     }
+    HashSet<DesignatedContact.Type> contactsDiscovered = new HashSet<DesignatedContact.Type>();
     for (DesignatedContact contact : contacts) {
+      checkArgument(
+          !contactsDiscovered.contains(contact.getType()),
+          "Duplicate contact type %s in designated contact set.",
+          contact.getType());
+      contactsDiscovered.add(contact.getType());
       switch (contact.getType()) {
         case BILLING:
           billingContact = contact.getContactKey();
@@ -810,24 +710,6 @@ public class DomainContent extends EppResource
     throw new UnsupportedOperationException(
         "DomainContent is not an actual persisted entity you can create a key to;"
             + " use DomainBase instead");
-  }
-
-  /**
-   * Obtains a history id from the given key.
-   *
-   * <p>The key must be a composite key either of the form domain-key/history-key/long-event-key or
-   * EntityGroupRoot/long-event-key (for legacy keys). In the latter case or for a null key returns
-   * a history id of null.
-   */
-  public static Long getHistoryId(VKey<?> key) {
-    if (key == null) {
-      return null;
-    }
-    Key<?> parent = key.getOfyKey().getParent();
-    if (parent == null || parent.getKind().equals("EntityGroupRoot")) {
-      return null;
-    }
-    return parent.getId();
   }
 
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */
@@ -867,10 +749,6 @@ public class DomainContent extends EppResource
       instance.autorenewEndTime = firstNonNull(getInstance().autorenewEndTime, END_OF_TIME);
 
       checkArgumentNotNull(emptyToNull(instance.fullyQualifiedDomainName), "Missing domainName");
-      if (instance.getRegistrant() == null
-          && instance.allContacts.stream().anyMatch(IS_REGISTRANT)) {
-        throw new IllegalArgumentException("registrant is null but is in allContacts");
-      }
       checkArgumentNotNull(instance.getRegistrant(), "Missing registrant");
       instance.tld = getTldFromDomainName(instance.fullyQualifiedDomainName);
 
@@ -904,13 +782,6 @@ public class DomainContent extends EppResource
     }
 
     public B setRegistrant(VKey<ContactResource> registrant) {
-      // Replace the registrant contact inside allContacts.
-      getInstance().allContacts =
-          union(
-              getInstance().getContacts(),
-              DesignatedContact.create(
-                  DesignatedContact.Type.REGISTRANT, checkArgumentNotNull(registrant)));
-
       // Set the registrant field specifically.
       getInstance().registrantContact = registrant;
       return thisCastToDerived();
@@ -958,13 +829,6 @@ public class DomainContent extends EppResource
     public B setContacts(ImmutableSet<DesignatedContact> contacts) {
       checkArgument(contacts.stream().noneMatch(IS_REGISTRANT), "Registrant cannot be a contact");
 
-      // Replace the non-registrant contacts inside allContacts.
-      getInstance().allContacts =
-          Streams.concat(
-                  nullToEmpty(getInstance().allContacts).stream().filter(IS_REGISTRANT),
-                  contacts.stream())
-              .collect(toImmutableSet());
-
       // Set the individual fields.
       getInstance().setContactFields(contacts, false);
       return thisCastToDerived();
@@ -1011,19 +875,19 @@ public class DomainContent extends EppResource
 
     public B setDeletePollMessage(VKey<PollMessage.OneTime> deletePollMessage) {
       getInstance().deletePollMessage = deletePollMessage;
-      getInstance().deletePollMessageHistoryId = getHistoryId(deletePollMessage);
       return thisCastToDerived();
     }
 
     public B setAutorenewBillingEvent(VKey<BillingEvent.Recurring> autorenewBillingEvent) {
       getInstance().autorenewBillingEvent = autorenewBillingEvent;
-      getInstance().autorenewBillingEventHistoryId = getHistoryId(autorenewBillingEvent);
       return thisCastToDerived();
     }
 
-    public B setAutorenewPollMessage(VKey<PollMessage.Autorenew> autorenewPollMessage) {
+    public B setAutorenewPollMessage(
+        @Nullable VKey<PollMessage.Autorenew> autorenewPollMessage,
+        @Nullable Long autorenewPollMessageHistoryId) {
       getInstance().autorenewPollMessage = autorenewPollMessage;
-      getInstance().autorenewPollMessageHistoryId = getHistoryId(autorenewPollMessage);
+      getInstance().autorenewPollMessageHistoryId = autorenewPollMessageHistoryId;
       return thisCastToDerived();
     }
 

@@ -16,7 +16,6 @@ package google.registry.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.collect.ImmutableSetMultimap;
@@ -39,17 +38,17 @@ import org.joda.time.Duration;
  * <p>This class is called by {@link RdeStagingAction} at the beginning of its execution. Since it
  * stages everything in a single run, it needs to know what's awaiting deposit.
  *
- * <p>We start off by getting the list of TLDs with escrow enabled. We then check {@code cursor}
- * to see when it when it was due for a deposit. If that's in the past, then we know that we need
- * to generate a deposit. If it's really far in the past, we might have to generate multiple
- * deposits for that TLD, based on the configured interval.
+ * <p>We start off by getting the list of TLDs with escrow enabled. We then check {@code cursor} to
+ * see when it was due for a deposit. If that's in the past, then we know that we need to generate a
+ * deposit. If it's really far in the past, we might have to generate multiple deposits for that
+ * TLD, based on the configured interval.
  *
- * <p><i>However</i> we will only generate one interval forward per mapreduce, since the reduce
- * phase rolls forward a TLD's cursor, and we can't have that happening in parallel.
+ * <p><i>However</i> we will only generate one interval forward per run, since the reduce phase
+ * rolls forward a TLD's cursor, and we can't have that happening in parallel.
  *
- * <p>If no deposits have been made so far, then {@code startingPoint} is used as the watermark
- * of the next deposit. If that's a day in the future, then escrow won't start until that date.
- * This first deposit time will be set to Datastore in a transaction.
+ * <p>If no deposits have been made so far, then {@code startingPoint} is used as the watermark of
+ * the next deposit. If that's a day in the future, then escrow won't start until that date. This
+ * first deposit time will be set to Datastore in a transaction.
  */
 public final class PendingDepositChecker {
 
@@ -91,8 +90,8 @@ public final class PendingDepositChecker {
       }
       // Avoid creating a transaction unless absolutely necessary.
       Optional<Cursor> maybeCursor =
-          transactIfJpaTm(
-              () -> tm().loadByKeyIfPresent(Cursor.createVKey(cursorType, registry.getTldStr())));
+          tm().transact(
+                  () -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, registry)));
       DateTime cursorValue = maybeCursor.map(Cursor::getCursorTime).orElse(startingPoint);
       if (isBeforeOrAt(cursorValue, now)) {
         DateTime watermark =
@@ -112,11 +111,11 @@ public final class PendingDepositChecker {
     return tm().transact(
             () -> {
               Optional<Cursor> maybeCursor =
-                  tm().loadByKeyIfPresent(Cursor.createVKey(cursorType, registry.getTldStr()));
+                  tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, registry));
               if (maybeCursor.isPresent()) {
                 return maybeCursor.get().getCursorTime();
               }
-              tm().put(Cursor.create(cursorType, initialValue, registry));
+              tm().put(Cursor.createScoped(cursorType, initialValue, registry));
               return initialValue;
             });
   }

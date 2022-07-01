@@ -52,7 +52,7 @@ class FlowRunnerTest {
 
   @RegisterExtension
   final AppEngineExtension appEngineExtension =
-      new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
+      new AppEngineExtension.Builder().withCloudSql().build();
 
   private final FlowRunner flowRunner = new FlowRunner();
   private final EppMetric.Builder eppMetricBuilder = EppMetric.builderForRequest(new FakeClock());

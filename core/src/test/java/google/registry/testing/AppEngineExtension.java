@@ -17,10 +17,7 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertSimpleResources;
-import static google.registry.testing.DualDatabaseTestInvocationContextProvider.injectTmForDualDatabaseTest;
-import static google.registry.testing.DualDatabaseTestInvocationContextProvider.restoreTmAfterDualDatabaseTest;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -28,7 +25,6 @@ import static java.nio.file.Files.walk;
 import static java.util.Comparator.reverseOrder;
 import static org.json.XML.toJSONObject;
 
-import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
@@ -49,7 +45,7 @@ import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
@@ -129,7 +125,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
 
   private JpaUnitTestExtension jpaUnitTestExtension;
 
-  private boolean withDatastore;
   private boolean withoutCannedData;
   private boolean withCloudSql;
   private boolean enableJpaEntityCoverageCheck;
@@ -158,17 +153,9 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     private ImmutableList.Builder<Class<?>> ofyTestEntities = new ImmutableList.Builder<>();
     private ImmutableList.Builder<Class<?>> jpaTestEntities = new ImmutableList.Builder<>();
 
-    /** Turn on the Datastore service and the Cloud SQL service. */
-    public Builder withDatastoreAndCloudSql() {
-      extension.withDatastore = true;
-      extension.withCloudSql = true;
-      return this;
-    }
-
     /** Turns on Cloud SQL only, for use by test data generators. */
     public Builder withCloudSql() {
       extension.withCloudSql = true;
-      extension.withDatastore = false;
       return this;
     }
 
@@ -326,15 +313,15 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
    * Public factory for first RegistrarContact to allow comparison against stored value in unit
    * tests.
    */
-  public static RegistrarContact makeRegistrarContact1() {
-    return new RegistrarContact.Builder()
-        .setParent(makeRegistrar1())
+  public static RegistrarPoc makeRegistrarContact1() {
+    return new RegistrarPoc.Builder()
+        .setRegistrar(makeRegistrar1())
         .setName("Jane Doe")
         .setVisibleInWhoisAsAdmin(true)
         .setVisibleInWhoisAsTech(false)
         .setEmailAddress("janedoe@theregistrar.com")
         .setPhoneNumber("+1.1234567890")
-        .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+        .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
         .build();
   }
 
@@ -342,25 +329,25 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
    * Public factory for second RegistrarContact to allow comparison against stored value in unit
    * tests.
    */
-  public static RegistrarContact makeRegistrarContact2() {
-    return new RegistrarContact.Builder()
-        .setParent(makeRegistrar2())
+  public static RegistrarPoc makeRegistrarContact2() {
+    return new RegistrarPoc.Builder()
+        .setRegistrar(makeRegistrar2())
         .setName("John Doe")
         .setEmailAddress("johndoe@theregistrar.com")
         .setPhoneNumber("+1.1234567890")
-        .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+        .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
         .setGaeUserId(THE_REGISTRAR_GAE_USER_ID)
         .build();
   }
 
-  public static RegistrarContact makeRegistrarContact3() {
-    return new RegistrarContact.Builder()
-        .setParent(makeRegistrar2())
+  public static RegistrarPoc makeRegistrarContact3() {
+    return new RegistrarPoc.Builder()
+        .setRegistrar(makeRegistrar2())
         .setName("Marla Singer")
         .setEmailAddress("Marla.Singer@crr.com")
         .setRegistryLockEmailAddress("Marla.Singer.RegistryLock@crr.com")
         .setPhoneNumber("+1.2128675309")
-        .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+        .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
         .setGaeUserId(MARLA_SINGER_GAE_USER_ID)
         .setAllowedToSetRegistryLockPassword(true)
         .setRegistryLockPassword("hi")
@@ -375,6 +362,9 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     if (withCloudSql) {
       JpaTestExtensions.Builder builder =
           new JpaTestExtensions.Builder().withEntityClass(jpaTestEntities.toArray(new Class[0]));
+      if (withoutCannedData) {
+        builder.withoutCannedData();
+      }
       if (clock != null) {
         builder.withClock(clock);
       }
@@ -389,11 +379,8 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
         jpaIntegrationTestExtension.beforeEach(context);
       }
     }
-    if (isWithDatastoreAndCloudSql()) {
-      injectTmForDualDatabaseTest(context);
-    }
-    if (withDatastore || withCloudSql) {
-      if (!withoutCannedData && (tm().isOfy() || (withCloudSql && !withJpaUnitTest))) {
+    if (withCloudSql) {
+      if (!withoutCannedData && !withJpaUnitTest) {
         loadInitialData();
       }
     }
@@ -414,17 +401,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     if (withUrlFetch) {
       configs.add(new LocalURLFetchServiceTestConfig());
     }
-    if (withDatastore) {
-      configs.add(
-          new LocalDatastoreServiceTestConfig()
-              // We need to set this to allow cross entity group transactions.
-              .setApplyAllHighRepJobPolicy()
-              // This causes unit tests to write a file containing any indexes the test required. We
-              // can use that file below to make sure we have the right indexes in our prod code.
-              .setNoIndexAutoGen(false));
-      // This forces App Engine to write the generated indexes to a usable location.
-      System.setProperty("appengine.generated.dir", tmpDir.getAbsolutePath());
-    }
+
     if (withLocalModules) {
       configs.add(
           new LocalModulesServiceTestConfig()
@@ -460,57 +437,28 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     if (withLocalModules) {
       helper.setEnvInstance("0");
     }
-
     helper.setUp();
 
-    if (withDatastore) {
-      ObjectifyService.initOfy();
-      // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
-      IdService.resetSelfAllocatedId();
-      this.ofyTestEntities.forEach(AppEngineExtension::register);
-    }
+    ObjectifyService.initOfy();
+    // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
+    IdService.resetSelfAllocatedId();
+    this.ofyTestEntities.forEach(AppEngineExtension::register);
   }
 
   /** Called after each test method. */
   @Override
   public void afterEach(ExtensionContext context) throws Exception {
     checkArgumentNotNull(context, "The ExtensionContext must not be null");
-    try {
-      // If there is a replay extension, we'll want to call its replay() method.
-      //
-      // We have to provide this hook here for ReplayExtension instead of relying on
-      // ReplayExtension's afterEach() method because of ordering and the conflation of environment
-      // initialization and basic entity initialization.
-      //
-      // ReplayExtension's beforeEach() has to be called before this so that the entities that we
-      // initialize (e.g. "TheRegistrar") also get replayed.  But that means that ReplayExtension's
-      // afterEach() won't be called until after ours.  Since we tear down the datastore and SQL
-      // database in our own afterEach(), ReplayExtension's afterEach() would fail if we let the
-      // replay happen there.
-      ReplayExtension replayer =
-          (ReplayExtension)
-              context.getStore(ExtensionContext.Namespace.GLOBAL).get(ReplayExtension.class);
-      if (replayer != null) {
-        replayer.replay();
-      }
-    } finally {
-      try {
-        if (withCloudSql) {
-          if (enableJpaEntityCoverageCheck) {
-            jpaIntegrationWithCoverageExtension.afterEach(context);
-          } else if (withJpaUnitTest) {
-            jpaUnitTestExtension.afterEach(context);
-          } else {
-            jpaIntegrationTestExtension.afterEach(context);
-          }
-        }
-        tearDown();
-      } finally {
-        if (isWithDatastoreAndCloudSql()) {
-          restoreTmAfterDualDatabaseTest(context);
-        }
+    if (withCloudSql) {
+      if (enableJpaEntityCoverageCheck) {
+        jpaIntegrationWithCoverageExtension.afterEach(context);
+      } else if (withJpaUnitTest) {
+        jpaUnitTestExtension.afterEach(context);
+      } else {
+        jpaIntegrationTestExtension.afterEach(context);
       }
     }
+    tearDown();
   }
 
   /**
@@ -646,7 +594,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
             makeRegistrarContact3()));
   }
 
-  boolean isWithDatastoreAndCloudSql() {
-    return withDatastore && withCloudSql;
+  boolean isWithCloudSql() {
+    return withCloudSql;
   }
 }

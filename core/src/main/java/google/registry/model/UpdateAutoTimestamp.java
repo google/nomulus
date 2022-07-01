@@ -19,7 +19,6 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.OnLoad;
-import google.registry.model.translators.UpdateAutoTimestampTranslatorFactory;
 import google.registry.util.DateTimeUtils;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -34,8 +33,6 @@ import org.joda.time.DateTime;
 
 /**
  * A timestamp that auto-updates on each save to Datastore/Cloud SQL.
- *
- * @see UpdateAutoTimestampTranslatorFactory
  */
 @Embeddable
 public class UpdateAutoTimestamp extends ImmutableObject implements UnsafeSerializable {

@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
-import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.math.BigDecimal;
@@ -289,7 +288,6 @@ public class JodaMoneyConverterTest {
   // Override entity name to exclude outer-class name in table name. Not necessary if class is not
   // inner class.
   @Entity(name = "TestEntity")
-  @EntityForTesting
   public static class TestEntity extends ImmutableObject {
 
     @Id String name = "id";
@@ -307,7 +305,6 @@ public class JodaMoneyConverterTest {
 
   // See comments on the annotation for TestEntity above for reason.
   @Entity(name = "ComplexTestEntity")
-  @EntityForTesting
   // This entity is used to test column override for embedded fields and collections.
   public static class ComplexTestEntity extends ImmutableObject {
 

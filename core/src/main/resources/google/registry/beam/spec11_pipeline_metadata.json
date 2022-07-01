@@ -49,7 +49,7 @@
     {
       "name": "safeBrowsingApiKey",
       "label": "API Key used to identify the project with Safe Browsing",
-      "helpText": "The earliest CommitLogs to load, in ISO8601 format.",
+      "helpText": "API key used to authenticate the project with the SafeBrowsing API.",
       "regexes": [
         "^[0-9a-zA-Z_]+[\\n]?$"
       ]
@@ -60,14 +60,6 @@
       "helpText": "The root directory of the report to upload.",
       "regexes": [
         "^gs:\\/\\/[^\\n\\r]+$"
-      ]
-    },
-    {
-      "name": "database",
-      "label": "Database to read from.",
-      "helpText": "DATASTORE or CLOUD_SQL.",
-      "regexes": [
-        "^DATASTORE|CLOUD_SQL$"
       ]
     }
   ]
