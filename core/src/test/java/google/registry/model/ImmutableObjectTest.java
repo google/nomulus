@@ -48,7 +48,7 @@ public class ImmutableObjectTest {
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withJpaUnitTestEntities(ValueObject.class)
           .withOfyTestEntities(ValueObject.class)
           .build();

@@ -17,7 +17,6 @@ package google.registry.tools;
 import com.google.common.collect.ImmutableMap;
 import google.registry.tools.javascrap.BackfillRegistrarBillingAccountsCommand;
 import google.registry.tools.javascrap.CompareEscrowDepositsCommand;
-import google.registry.tools.javascrap.HardDeleteHostCommand;
 
 /** Container class to create and run remote commands against a Datastore instance. */
 public final class RegistryTool {
@@ -70,7 +69,6 @@ public final class RegistryTool {
           .put("get_history_entries", GetHistoryEntriesCommand.class)
           .put("get_host", GetHostCommand.class)
           .put("get_keyring_secret", GetKeyringSecretCommand.class)
-          .put("get_operation_status", GetOperationStatusCommand.class)
           .put("get_premium_list", GetPremiumListCommand.class)
           .put("get_registrar", GetRegistrarCommand.class)
           .put("get_reserved_list", GetReservedListCommand.class)
@@ -80,18 +78,14 @@ public final class RegistryTool {
           .put("get_sql_credential", GetSqlCredentialCommand.class)
           .put("get_tld", GetTldCommand.class)
           .put("ghostryde", GhostrydeCommand.class)
-          .put("hard_delete_host", HardDeleteHostCommand.class)
           .put("hash_certificate", HashCertificateCommand.class)
-          .put("import_datastore", ImportDatastoreCommand.class)
           .put("list_cursors", ListCursorsCommand.class)
-          .put("list_datastore_operations", ListDatastoreOperationsCommand.class)
           .put("list_domains", ListDomainsCommand.class)
           .put("list_hosts", ListHostsCommand.class)
           .put("list_premium_lists", ListPremiumListsCommand.class)
           .put("list_registrars", ListRegistrarsCommand.class)
           .put("list_reserved_lists", ListReservedListsCommand.class)
           .put("list_tlds", ListTldsCommand.class)
-          .put("load_snapshot", LoadSnapshotCommand.class)
           .put("load_test", LoadTestCommand.class)
           .put("lock_domain", LockDomainCommand.class)
           .put("login", LoginCommand.class)

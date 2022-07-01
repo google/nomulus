@@ -24,29 +24,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link Registries}. */
-@DualDatabaseTest
 class RegistriesTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private void initTestTlds() {
     createTlds("foo", "a.b.c"); // Test a multipart tld.
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetTlds() {
     initTestTlds();
     assertThat(Registries.getTlds()).containsExactly("foo", "a.b.c");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_getTldEntities() {
     initTestTlds();
     persistResource(newRegistry("testtld", "TESTTLD").asBuilder().setTldType(TldType.TEST).build());
@@ -56,25 +53,25 @@ class RegistriesTest {
         .containsExactly(Registry.get("testtld"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetTlds_withNoRegistriesPersisted_returnsEmptySet() {
     assertThat(Registries.getTlds()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testAssertTldExists_doesExist() {
     initTestTlds();
     Registries.assertTldExists("foo");
     Registries.assertTldExists("a.b.c");
   }
 
-  @TestOfyAndSql
+  @Test
   void testAssertTldExists_doesntExist() {
     initTestTlds();
     assertThrows(IllegalArgumentException.class, () -> Registries.assertTldExists("baz"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFindTldForName() {
     initTestTlds();
     assertThat(Registries.findTldForName(InternetDomainName.from("example.foo")).get().toString())

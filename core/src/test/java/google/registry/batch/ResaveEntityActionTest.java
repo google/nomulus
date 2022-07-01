@@ -40,13 +40,12 @@ import google.registry.request.Response;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
@@ -56,12 +55,11 @@ import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link ResaveEntityAction}. */
 @ExtendWith(MockitoExtension.class)
-@DualDatabaseTest
 public class ResaveEntityActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
@@ -88,7 +86,7 @@ public class ResaveEntityActionTest {
   }
 
   @MockitoSettings(strictness = Strictness.LENIENT)
-  @TestOfyAndSql
+  @Test
   void test_domainPendingTransfer_isResavedAndTransferCompleted() {
     DomainBase domain =
         persistDomainWithPendingTransfer(
@@ -113,7 +111,7 @@ public class ResaveEntityActionTest {
     verify(response).setPayload("Entity re-saved.");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_domainPendingDeletion_isResavedAndReenqueued() {
     DomainBase newDomain = newDomainBase("domain.tld");
     DomainBase domain =

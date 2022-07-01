@@ -25,16 +25,14 @@ import google.registry.model.common.CrossTldSingleton;
 import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdateAutoTimestamp}. */
-@DualDatabaseTest
 public class UpdateAutoTimestampTest {
 
   FakeClock clock = new FakeClock();
@@ -42,7 +40,7 @@ public class UpdateAutoTimestampTest {
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withJpaUnitTestEntities(UpdateAutoTimestampTestObject.class)
           .withOfyTestEntities(UpdateAutoTimestampTestObject.class)
           .withClock(clock)
@@ -73,7 +71,7 @@ public class UpdateAutoTimestampTest {
                             Key.create(new UpdateAutoTimestampTestObject()))));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSaveSetsTime() {
     DateTime transactionTime =
         tm().transact(
@@ -88,7 +86,7 @@ public class UpdateAutoTimestampTest {
     assertThat(reload().updateTime.timestamp).isEqualTo(transactionTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDisabledUpdates() throws Exception {
     DateTime initialTime =
         tm().transact(
@@ -114,7 +112,7 @@ public class UpdateAutoTimestampTest {
     assertThat(reload().updateTime.timestamp).isEqualTo(initialTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testResavingOverwritesOriginalTime() {
     DateTime transactionTime =
         tm().transact(
@@ -129,7 +127,7 @@ public class UpdateAutoTimestampTest {
     assertThat(reload().updateTime.timestamp).isEqualTo(transactionTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testReadingTwiceDoesNotModify() {
     DateTime originalTime = DateTime.parse("1999-01-01T00:00:00Z");
     clock.setTo(originalTime);

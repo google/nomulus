@@ -25,7 +25,6 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_AUTORENEW
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.earliestOf;
@@ -96,11 +95,11 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
   public void run() {
     DateTime executeTime = clock.nowUtc();
     DateTime persistedCursorTime =
-        transactIfJpaTm(
-            () ->
-                tm().loadByKeyIfPresent(Cursor.createGlobalVKey(RECURRING_BILLING))
-                    .orElse(Cursor.createGlobal(RECURRING_BILLING, START_OF_TIME))
-                    .getCursorTime());
+        tm().transact(
+                () ->
+                    tm().loadByKeyIfPresent(Cursor.createGlobalVKey(RECURRING_BILLING))
+                        .orElse(Cursor.createGlobal(RECURRING_BILLING, START_OF_TIME))
+                        .getCursorTime());
     DateTime cursorTime = cursorTimeParam.orElse(persistedCursorTime);
     checkArgument(
         cursorTime.isBefore(executeTime), "Cursor time must be earlier than execution time.");

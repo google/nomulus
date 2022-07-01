@@ -15,7 +15,6 @@
 package google.registry.rde;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor;
@@ -91,7 +90,7 @@ class EscrowTaskRunner {
           logger.atInfo().log("Performing escrow for TLD '%s'.", registry.getTld());
           DateTime startOfToday = clock.nowUtc().withTimeAtStartOfDay();
           DateTime nextRequiredRun =
-              transactIfJpaTm(
+              tm().transact(
                       () -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, registry)))
                   .map(Cursor::getCursorTime)
                   .orElse(startOfToday);

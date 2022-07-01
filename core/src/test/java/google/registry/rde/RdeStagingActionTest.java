@@ -32,19 +32,17 @@ import google.registry.gcs.GcsUtils;
 import google.registry.model.tld.Registry;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestSqlOnly;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdeStagingAction}. */
-@DualDatabaseTest
 public class RdeStagingActionTest extends BeamActionTestBase {
 
   private final FakeClock clock = new FakeClock();
@@ -53,7 +51,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
 
   @RegisterExtension
   public final AppEngineExtension extension =
-      AppEngineExtension.builder().withClock(clock).withDatastoreAndCloudSql().build();
+      AppEngineExtension.builder().withClock(clock).withCloudSql().build();
 
   @BeforeEach
   @Override
@@ -82,7 +80,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     action.machineType = "machine-type";
   }
 
-  @TestSqlOnly
+  @Test
   void testRun_modeInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -91,7 +89,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     verifyNoMoreInteractions(dataflow);
   }
 
-  @TestSqlOnly
+  @Test
   void testRun_tldInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -100,7 +98,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     verifyNoMoreInteractions(dataflow);
   }
 
-  @TestSqlOnly
+  @Test
   void testRun_watermarkInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -109,7 +107,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     verifyNoMoreInteractions(dataflow);
   }
 
-  @TestSqlOnly
+  @Test
   void testRun_revisionInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -118,14 +116,14 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     verifyNoMoreInteractions(dataflow);
   }
 
-  @TestSqlOnly
+  @Test
   void testRun_noTlds_returns204() {
     action.run();
     assertThat(response.getStatus()).isEqualTo(204);
     verifyNoMoreInteractions(dataflow);
   }
 
-  @TestSqlOnly
+  @Test
   void testRun_tldWithoutEscrowEnabled_returns204() {
     createTld("lol");
     persistResource(Registry.get("lol").asBuilder().setEscrowEnabled(false).build());
@@ -135,7 +133,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     verifyNoMoreInteractions(dataflow);
   }
 
-  @TestSqlOnly
+  @Test
   void testRun_tldWithEscrowEnabled_launchesPipeline() throws Exception {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -146,7 +144,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
         .launch(eq("projectId"), eq("jobRegion"), any(LaunchFlexTemplateRequest.class));
   }
 
-  @TestSqlOnly
+  @Test
   void testRun_withinTransactionCooldown_getsExcludedAndReturns204() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01T00:04:59Z"));
@@ -156,7 +154,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     verifyNoMoreInteractions(dataflow);
   }
 
-  @TestSqlOnly
+  @Test
   void testRun_afterTransactionCooldown_runsPipeline() throws Exception {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01T00:05:00Z"));
@@ -168,7 +166,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
         .launch(eq("projectId"), eq("jobRegion"), any(LaunchFlexTemplateRequest.class));
   }
 
-  @TestSqlOnly
+  @Test
   void testManualRun_emptyMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -180,7 +178,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @TestSqlOnly
+  @Test
   void testManualRun_invalidMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -192,7 +190,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @TestSqlOnly
+  @Test
   void testManualRun_emptyTld_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -204,7 +202,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @TestSqlOnly
+  @Test
   void testManualRun_emptyWatermark_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -216,7 +214,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @TestSqlOnly
+  @Test
   void testManualRun_nonDayStartWatermark_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -228,7 +226,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @TestSqlOnly
+  @Test
   void testManualRun_invalidRevision_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -241,7 +239,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @TestSqlOnly
+  @Test
   void testManualRun_validParameters_runsPipeline() throws Exception {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));

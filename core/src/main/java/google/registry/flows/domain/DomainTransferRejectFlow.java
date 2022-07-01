@@ -63,7 +63,7 @@ import org.joda.time.DateTime;
  * transfer is automatically approved. Within that window, this flow allows the losing client to
  * reject the transfer request.
  *
- * <p>When the transfer was requested, poll messages and billing events were saved to Datastore with
+ * <p>When the transfer was requested, poll messages and billing events were saved to SQL with
  * timestamps such that they only would become active when the transfer period passed. In this flow,
  * those speculative objects are deleted.
  *

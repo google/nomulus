@@ -81,7 +81,7 @@ public class DomainBaseTest {
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .enableJpaEntityCoverageCheck(true)
           .withClock(fakeClock)
           .build();

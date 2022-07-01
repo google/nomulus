@@ -19,7 +19,6 @@ import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -176,7 +175,7 @@ public final class ResourceFlowUtils {
       throw new BadAuthInfoForResourceException();
     }
     // Check the authInfo against the contact.
-    verifyAuthInfo(authInfo, transactIfJpaTm(() -> tm().loadByKey(foundContact.get())));
+    verifyAuthInfo(authInfo, tm().transact(() -> tm().loadByKey(foundContact.get())));
   }
 
   /** Check that the given {@link AuthInfo} is valid for the given contact. */

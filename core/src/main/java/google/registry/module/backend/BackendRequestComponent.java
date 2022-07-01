@@ -27,7 +27,6 @@ import google.registry.batch.ResaveEntityAction;
 import google.registry.batch.SendExpiringCertificateNotificationEmailAction;
 import google.registry.batch.WipeOutCloudSqlAction;
 import google.registry.batch.WipeOutContactHistoryPiiAction;
-import google.registry.batch.WipeoutDatastoreAction;
 import google.registry.cron.CronModule;
 import google.registry.cron.TldFanoutAction;
 import google.registry.dns.DnsModule;
@@ -38,16 +37,10 @@ import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.dns.writer.clouddns.CloudDnsWriterModule;
 import google.registry.dns.writer.dnsupdate.DnsUpdateConfigModule;
 import google.registry.dns.writer.dnsupdate.DnsUpdateWriterModule;
-import google.registry.export.BackupDatastoreAction;
-import google.registry.export.BigqueryPollJobAction;
-import google.registry.export.CheckBackupAction;
 import google.registry.export.ExportDomainListsAction;
 import google.registry.export.ExportPremiumTermsAction;
-import google.registry.export.ExportRequestModule;
 import google.registry.export.ExportReservedTermsAction;
 import google.registry.export.SyncGroupMembersAction;
-import google.registry.export.UpdateSnapshotViewAction;
-import google.registry.export.UploadDatastoreBackupAction;
 import google.registry.export.sheet.SheetModule;
 import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.flows.FlowComponent;
@@ -95,7 +88,6 @@ import google.registry.tmch.TmchSmdrlAction;
       DnsModule.class,
       DnsUpdateConfigModule.class,
       DnsUpdateWriterModule.class,
-      ExportRequestModule.class,
       IcannReportingModule.class,
       RdeModule.class,
       ReportingModule.class,
@@ -108,13 +100,7 @@ import google.registry.tmch.TmchSmdrlAction;
     })
 interface BackendRequestComponent {
 
-  BackupDatastoreAction backupDatastoreAction();
-
-  BigqueryPollJobAction bigqueryPollJobAction();
-
   BrdaCopyAction brdaCopyAction();
-
-  CheckBackupAction checkBackupAction();
 
   CopyDetailReportsAction copyDetailReportAction();
 
@@ -147,6 +133,8 @@ interface BackendRequestComponent {
   NordnVerifyAction nordnVerifyAction();
 
   PublishDnsUpdatesAction publishDnsUpdatesAction();
+
+  PublishInvoicesAction uploadInvoicesAction();
 
   PublishSpec11ReportAction publishSpec11ReportAction();
 
@@ -182,17 +170,9 @@ interface BackendRequestComponent {
 
   TmchSmdrlAction tmchSmdrlAction();
 
-  UploadDatastoreBackupAction uploadDatastoreBackupAction();
-
   UpdateRegistrarRdapBaseUrlsAction updateRegistrarRdapBaseUrlsAction();
 
-  UpdateSnapshotViewAction updateSnapshotViewAction();
-
-  PublishInvoicesAction uploadInvoicesAction();
-
   WipeOutCloudSqlAction wipeOutCloudSqlAction();
-
-  WipeoutDatastoreAction wipeoutDatastoreAction();
 
   WipeOutContactHistoryPiiAction wipeOutContactHistoryPiiAction();
 

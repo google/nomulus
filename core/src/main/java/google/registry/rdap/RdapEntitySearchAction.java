@@ -17,7 +17,6 @@ package google.registry.rdap;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.rdap.RdapUtils.getRegistrarByIanaIdentifier;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
@@ -325,11 +324,11 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
         contactResourceList = ImmutableList.of();
       } else {
         Optional<ContactResource> contactResource =
-            transactIfJpaTm(
-                () ->
-                    tm().loadByKeyIfPresent(
-                            VKey.create(
-                                ContactResource.class, partialStringQuery.getInitialString())));
+            tm().transact(
+                    () ->
+                        tm().loadByKeyIfPresent(
+                                VKey.create(
+                                    ContactResource.class, partialStringQuery.getInitialString())));
         contactResourceList =
             (contactResource.isPresent() && shouldBeVisible(contactResource.get()))
                 ? ImmutableList.of(contactResource.get())

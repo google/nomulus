@@ -84,7 +84,7 @@ final class RegistryLockPostActionTest {
 
   @RegisterExtension
   final AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(clock).build();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).build();
 
   private User userWithoutPermission;
   private User userWithLockPermission;

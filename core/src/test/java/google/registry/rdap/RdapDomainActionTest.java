@@ -40,11 +40,10 @@ import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for {@link RdapDomainAction}.
@@ -52,7 +51,6 @@ import org.junit.jupiter.api.Disabled;
  * <p>TODO(b/26872828): The next time we do any work on RDAP, consider adding the APNIC RDAP
  * conformance checker to the unit test suite.
  */
-@DualDatabaseTest
 class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
 
   RdapDomainActionTest() {
@@ -249,7 +247,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
-  @TestOfyAndSql
+  @Test
   void testInvalidDomain_returns400() {
     assertThat(generateActualJson("invalid/domain/name"))
         .isEqualTo(
@@ -260,7 +258,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertThat(response.getStatus()).isEqualTo(400);
   }
 
-  @TestOfyAndSql
+  @Test
   void testUnknownDomain_returns400() {
     assertThat(generateActualJson("missingdomain.com"))
         .isEqualTo(
@@ -271,45 +269,45 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertThat(response.getStatus()).isEqualTo(400);
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidDomain_works() {
     login("evilregistrar");
     assertProperResponseForCatLol("cat.lol", "rdap_domain.json");
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidDomain_asAdministrator_works() {
     loginAsAdmin();
     assertProperResponseForCatLol("cat.lol", "rdap_domain.json");
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidDomain_notLoggedIn_noContacts() {
     assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_with_remark.json");
   }
 
-  @TestOfyAndSql
+  @Test
   void testValidDomain_loggedInAsOtherRegistrar_noContacts() {
     login("idnregistrar");
     assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_with_remark.json");
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpperCase_ignored() {
     assertProperResponseForCatLol("CaT.lOl", "rdap_domain_no_contacts_with_remark.json");
   }
 
-  @TestOfyAndSql
+  @Test
   void testTrailingDot_ignored() {
     assertProperResponseForCatLol("cat.lol.", "rdap_domain_no_contacts_with_remark.json");
   }
 
-  @TestOfyAndSql
+  @Test
   void testQueryParameter_ignored() {
     assertProperResponseForCatLol("cat.lol?key=value", "rdap_domain_no_contacts_with_remark.json");
   }
 
-  @TestOfyAndSql
+  @Test
   void testIdnDomain_works() {
     login("idnregistrar");
     assertThat(generateActualJson("cat.みんな"))
@@ -327,7 +325,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
-  @TestOfyAndSql
+  @Test
   void testIdnDomainWithPercentEncoding_works() {
     login("idnregistrar");
     assertThat(generateActualJson("cat.%E3%81%BF%E3%82%93%E3%81%AA"))
@@ -345,7 +343,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
-  @TestOfyAndSql
+  @Test
   void testPunycodeDomain_works() {
     login("idnregistrar");
     assertThat(generateActualJson("cat.xn--q9jyb4c"))
@@ -363,7 +361,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
-  @TestOfyAndSql
+  @Test
   void testMultilevelDomain_works() {
     login("1tldregistrar");
     assertThat(generateActualJson("cat.1.tld"))
@@ -383,35 +381,35 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
 
   // todo (b/27378695): reenable or delete this test
   @Disabled
-  @TestOfyAndSql
+  @Test
   void testDomainInTestTld_notFound() {
     persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
     generateActualJson("cat.lol");
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeletedDomain_notFound() {
     assertThat(generateActualJson("dodo.lol"))
         .isEqualTo(generateExpectedJsonError("dodo.lol not found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeletedDomain_notFound_includeDeletedSetFalse() {
     action.includeDeletedParam = Optional.of(true);
     generateActualJson("dodo.lol");
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeletedDomain_notFound_notLoggedIn() {
     action.includeDeletedParam = Optional.of(true);
     generateActualJson("dodo.lol");
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeletedDomain_notFound_loggedInAsDifferentRegistrar() {
     login("1tldregistrar");
     action.includeDeletedParam = Optional.of(true);
@@ -419,7 +417,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeletedDomain_works_loggedInAsCorrectRegistrar() {
     login("evilregistrar");
     action.includeDeletedParam = Optional.of(true);
@@ -438,7 +436,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeletedDomain_works_loggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
@@ -457,7 +455,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
-  @TestOfyAndSql
+  @Test
   void testMetrics() {
     generateActualJson("cat.lol");
     verify(rdapMetrics)

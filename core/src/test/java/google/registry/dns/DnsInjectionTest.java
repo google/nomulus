@@ -45,7 +45,7 @@ public final class DnsInjectionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 

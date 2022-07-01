@@ -22,15 +22,13 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import google.registry.model.domain.launch.LaunchNotice;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-@DualDatabaseTest
 class GenerateLordnCommandTest extends CommandTestCase<GenerateLordnCommand> {
 
   @TempDir Path outputDir;
@@ -41,7 +39,7 @@ class GenerateLordnCommandTest extends CommandTestCase<GenerateLordnCommand> {
     command.clock = fakeClock;
   }
 
-  @TestOfyAndSql
+  @Test
   void testExample() throws Exception {
     createTld("tld");
     persistResource(newDomainBase("sneezy.tld").asBuilder().setSmdId("smd1").build());

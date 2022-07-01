@@ -75,16 +75,14 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import java.util.Map;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainRestoreRequestFlow}. */
-@DualDatabaseTest
 class DomainRestoreRequestFlowTest
     extends ResourceFlowTestCase<DomainRestoreRequestFlow, DomainBase> {
 
@@ -146,21 +144,21 @@ class DomainRestoreRequestFlowTest
     clock.advanceOneMilli();
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun() throws Exception {
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     persistPendingDeleteDomain();
     dryRunFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expiryStillInFuture_notExtended() throws Exception {
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     DateTime expirationTime = clock.nowUtc().plusYears(5).plusDays(45);
@@ -228,7 +226,7 @@ class DomainRestoreRequestFlowTest
             .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_expiryInPast_extendedByOneYear() throws Exception {
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     DateTime expirationTime = clock.nowUtc().minusDays(20);
@@ -307,7 +305,7 @@ class DomainRestoreRequestFlowTest
             .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_autorenewEndTimeIsCleared() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
@@ -321,14 +319,14 @@ class DomainRestoreRequestFlowTest
     assertThat(reloadResourceByForeignKey().getAutorenewEndTime()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_fee_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_06_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_fee_v06_noRenewal() throws Exception {
     setEppInput("domain_update_restore_request_fee_no_renewal.xml", FEE_06_MAP);
     persistPendingDeleteDomain(clock.nowUtc().plusMonths(6));
@@ -336,42 +334,42 @@ class DomainRestoreRequestFlowTest
         loadFile("domain_update_restore_request_response_fee_no_renewal.xml", FEE_06_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_fee_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_11_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_fee_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_12_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_fee_withDefaultAttributes_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee_defaults.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_06_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_fee_withDefaultAttributes_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee_defaults.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_11_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_fee_withDefaultAttributes_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee_defaults.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_12_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_fee_unknownCurrency() {
     ImmutableMap<String, String> substitutions =
         ImmutableMap.of("FEE_VERSION", "0.12", "FEE_NS", "fee12", "CURRENCY", "BAD");
@@ -381,7 +379,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_refundableFee_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee_refundable.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
@@ -389,7 +387,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_refundableFee_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee_refundable.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
@@ -397,7 +395,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_refundableFee_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee_refundable.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
@@ -405,7 +403,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_gracePeriodFee_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee_grace_period.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
@@ -413,7 +411,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_gracePeriodFee_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee_grace_period.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
@@ -421,7 +419,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_gracePeriodFee_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee_grace_period.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
@@ -429,7 +427,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_appliedFee_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee_applied.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
@@ -437,7 +435,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_appliedFee_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee_applied.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
@@ -445,7 +443,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_appliedFee_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee_applied.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
@@ -453,7 +451,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_premiumNotBlocked() throws Exception {
     createTld("example");
     setEppInput("domain_update_restore_request_premium.xml");
@@ -461,7 +459,7 @@ class DomainRestoreRequestFlowTest
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_premium.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_premiumNotBlocked_andNoRenewal() throws Exception {
     createTld("example");
     setEppInput("domain_update_restore_request_premium_no_renewal.xml");
@@ -470,7 +468,7 @@ class DomainRestoreRequestFlowTest
         loadFile("domain_update_restore_request_response_fee_no_renewal.xml", FEE_12_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserOverridesReservedList() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -482,7 +480,7 @@ class DomainRestoreRequestFlowTest
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserOverridesPremiumNameBlock() throws Exception {
     createTld("example");
     setEppInput("domain_update_restore_request_premium.xml");
@@ -495,7 +493,7 @@ class DomainRestoreRequestFlowTest
         loadFile("domain_update_restore_request_response_premium.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_doesNotExist() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
@@ -503,7 +501,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_suspendedRegistrarCantRestoreDomain() {
     persistResource(
         Registrar.loadByRegistrarId("TheRegistrar")
@@ -516,7 +514,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_pendingRegistrarCantRestoreDomain() {
     persistResource(
         Registrar.loadByRegistrarId("TheRegistrar")
@@ -529,7 +527,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_wrongFeeAmount_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
@@ -539,7 +537,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_wrongFeeAmount_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
@@ -549,7 +547,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_wrongFeeAmount_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
@@ -577,22 +575,22 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_wrongCurrency_v06() throws Exception {
     runWrongCurrencyTest(FEE_06_MAP);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_wrongCurrency_v11() throws Exception {
     runWrongCurrencyTest(FEE_11_MAP);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_wrongCurrency_v12() throws Exception {
     runWrongCurrencyTest(FEE_12_MAP);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_feeGivenInWrongScale_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee_bad_scale.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
@@ -600,7 +598,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_feeGivenInWrongScale_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee_bad_scale.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
@@ -608,7 +606,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_feeGivenInWrongScale_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee_bad_scale.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
@@ -616,7 +614,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_notInRedemptionPeriod() throws Exception {
     persistResource(
         newDomainBase(getUniqueIdFromCommand())
@@ -628,21 +626,21 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_notDeleted() throws Exception {
     persistActiveDomain(getUniqueIdFromCommand());
     EppException thrown = assertThrows(DomainNotEligibleForRestoreException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_fullyDeleted() throws Exception {
     persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     EppException thrown = assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_withChange() throws Exception {
     persistPendingDeleteDomain();
     setEppInput("domain_update_restore_request_with_change.xml");
@@ -650,7 +648,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_withAdd() throws Exception {
     persistPendingDeleteDomain();
     setEppInput("domain_update_restore_request_with_add.xml");
@@ -658,7 +656,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_withRemove() throws Exception {
     persistPendingDeleteDomain();
     setEppInput("domain_update_restore_request_with_remove.xml");
@@ -666,7 +664,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_withSecDnsExtension() throws Exception {
     persistPendingDeleteDomain();
     setEppInput("domain_update_restore_request_with_secdns.xml");
@@ -674,7 +672,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_unauthorizedClient() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     persistPendingDeleteDomain();
@@ -682,7 +680,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserUnauthorizedClient() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     persistPendingDeleteDomain();
@@ -693,7 +691,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_notAuthorizedForTld() throws Exception {
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
@@ -702,7 +700,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingBillingAccount() throws Exception {
     persistPendingDeleteDomain();
     persistResource(
@@ -721,7 +719,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserNotAuthorizedForTld() throws Exception {
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
@@ -730,7 +728,7 @@ class DomainRestoreRequestFlowTest
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_premiumBlocked() throws Exception {
     createTld("example");
     setEppInput("domain_update_restore_request_premium.xml");
@@ -741,7 +739,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_reservedBlocked() throws Exception {
     createTld("tld");
     persistResource(
@@ -754,7 +752,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_premiumNotAcked() throws Exception {
     createTld("example");
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "rich.example"));
@@ -763,7 +761,7 @@ class DomainRestoreRequestFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     persistPendingDeleteDomain();
     runFlow();
@@ -771,7 +769,7 @@ class DomainRestoreRequestFlowTest
     assertTldsFieldLogged("tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannTransactionReportField_getsStored() throws Exception {
     persistPendingDeleteDomain();
     runFlow();
@@ -787,7 +785,7 @@ class DomainRestoreRequestFlowTest
                 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_restoreReportsAreNotSupported() {
     setEppInput("domain_update_restore_report.xml");
     // This exception is referred to by its fully qualified path (rather than being imported) so

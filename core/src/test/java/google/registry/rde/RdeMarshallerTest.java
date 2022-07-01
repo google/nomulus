@@ -30,8 +30,7 @@ public class RdeMarshallerTest {
       "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n";
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void testMarshalRegistrar_validData_producesXmlFragment() throws Exception {

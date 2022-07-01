@@ -62,16 +62,12 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.GpgSystemCommandExtension;
 import google.registry.testing.Lazies;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import google.registry.testing.sftp.SftpServerExtension;
 import google.registry.util.Retrier;
 import java.io.File;
@@ -84,12 +80,12 @@ import java.util.Optional;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.stubbing.OngoingStubbing;
 
 /** Unit tests for {@link RdeUploadAction}. */
-@DualDatabaseTest
 public class RdeUploadActionTest {
 
   private static final ByteSource REPORT_XML = RdeTestData.loadBytes("report.xml");
@@ -136,7 +132,7 @@ public class RdeUploadActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private final PGPPublicKey encryptKey =
       new FakeKeyringModule().get().getRdeStagingEncryptionKey();
@@ -211,7 +207,7 @@ public class RdeUploadActionTest {
             });
   }
 
-  @TestOfyAndSql
+  @Test
   void testSocketConnection() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     try (Socket socket = new Socket("localhost", port)) {
@@ -219,7 +215,7 @@ public class RdeUploadActionTest {
     }
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun() {
     createTld("lol");
     RdeUploadAction action = createAction(null);
@@ -238,7 +234,7 @@ public class RdeUploadActionTest {
     verifyNoMoreInteractions(runner);
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_withPrefix() throws Exception {
     createTld("lol");
     RdeUploadAction action = createAction(null);
@@ -261,7 +257,7 @@ public class RdeUploadActionTest {
     verifyNoMoreInteractions(runner);
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_succeedsOnThirdTry() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
@@ -280,7 +276,7 @@ public class RdeUploadActionTest {
         .containsExactly("tld_2010-10-17_full_S1_R0.ryde", "tld_2010-10-17_full_S1_R0.sig");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_failsAfterThreeAttempts() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
@@ -294,7 +290,7 @@ public class RdeUploadActionTest {
     assertThat(thrown).hasMessageThat().contains("The crow flies in square circles.");
   }
 
-  @TestSqlOnly
+  @Test
   void testRunWithLock_cannotGuessPrefix() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
@@ -314,32 +310,7 @@ public class RdeUploadActionTest {
     assertThat(folder.list()).isEmpty();
   }
 
-  @TestOfyOnly
-  void testRunWithLock_copiesOnGcs() throws Exception {
-    int port = sftpd.serve("user", "password", folder);
-    URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
-    DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
-    DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Registry.get("tld")));
-    gcsUtils.delete(GHOSTRYDE_FILE_WITH_PREFIX);
-    gcsUtils.delete(LENGTH_FILE_WITH_PREFIX);
-    gcsUtils.delete(REPORT_FILE_WITH_PREFIX);
-    createAction(uploadUrl).runWithLock(uploadCursor);
-    assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
-    assertThat(response.getPayload()).isEqualTo("OK tld 2010-10-17T00:00:00.000Z\n");
-    cloudTasksHelper.assertNoTasksEnqueued("rde-upload");
-    // Assert that both files are written to SFTP and GCS, and that the contents are identical.
-    String rydeFilename = "tld_2010-10-17_full_S1_R0.ryde";
-    String sigFilename = "tld_2010-10-17_full_S1_R0.sig";
-    assertThat(folder.list()).asList().containsExactly(rydeFilename, sigFilename);
-    assertThat(gcsUtils.readBytesFrom(BlobId.of("bucket", rydeFilename)))
-        .isEqualTo(Files.toByteArray(new File(folder, rydeFilename)));
-    assertThat(gcsUtils.readBytesFrom(BlobId.of("bucket", sigFilename)))
-        .isEqualTo(Files.toByteArray(new File(folder, sigFilename)));
-  }
-
-  @TestSqlOnly
+  @Test
   void testRunWithLock_copiesOnGcs_withPrefix() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
@@ -368,7 +339,7 @@ public class RdeUploadActionTest {
         .isEqualTo(Files.toByteArray(new File(folder, sigFilename)));
   }
 
-  @TestSqlOnly
+  @Test
   void testRunWithLock_copiesOnGcs_withoutPrefix() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
@@ -408,7 +379,7 @@ public class RdeUploadActionTest {
         .isEqualTo(Files.toByteArray(new File(folder, sigFilename)));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_resend() throws Exception {
     tm().transact(() -> RdeRevision.saveRevision("tld", DateTime.parse("2010-10-17TZ"), FULL, 1));
     int port = sftpd.serve("user", "password", folder);
@@ -439,7 +410,7 @@ public class RdeUploadActionTest {
         .containsExactly("tld_2010-10-17_full_S1_R1.ryde", "tld_2010-10-17_full_S1_R1.sig");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_producesValidSignature() throws Exception {
     assumeTrue(hasCommand(GPG_BINARY + " --version"));
     int port = sftpd.serve("user", "password", folder);
@@ -462,7 +433,7 @@ public class RdeUploadActionTest {
     assertThat(stderr).contains("rde-unittest@registry.test");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_nonexistentCursor_throws204() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
@@ -479,7 +450,7 @@ public class RdeUploadActionTest {
     assertThat(folder.list()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_stagingNotFinished_throws204() {
     URI url = URI.create("sftp://user:password@localhost:32323/");
     DateTime stagingCursor = DateTime.parse("2010-10-17TZ");
@@ -494,7 +465,7 @@ public class RdeUploadActionTest {
                 + "last RDE staging completion was before 2010-10-17T00:00:00.000Z");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRunWithLock_sftpCooldownNotPassed_throws204() {
     RdeUploadAction action = createAction(URI.create("sftp://user:password@localhost:32323/"));
     action.sftpCooldown = standardHours(2);

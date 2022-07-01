@@ -19,15 +19,13 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 
 import com.google.common.collect.ImmutableSet;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestOfyAndSql;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ListDomainsAction}. */
-@DualDatabaseTest
 class ListDomainsActionTest extends ListActionTestCase {
 
   private ListDomainsAction action;
@@ -40,7 +38,7 @@ class ListDomainsActionTest extends ListActionTestCase {
     action.limit = Integer.MAX_VALUE;
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_invalidRequest_missingTlds() {
     action.tlds = ImmutableSet.of();
     testRunError(
@@ -51,7 +49,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^Must specify TLDs to query$");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_invalidRequest_invalidTld() {
     action.tlds = ImmutableSet.of("%%%badtld%%%");
     testRunError(
@@ -62,13 +60,13 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^TLDs do not exist: %%%badtld%%%$");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_noParameters() {
     action.tlds = ImmutableSet.of("foo");
     testRunSuccess(action, null, null, null);
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_twoLinesWithIdOnly() {
     action.tlds = ImmutableSet.of("foo");
     createTlds("bar", "sim");
@@ -86,7 +84,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^example2.foo$");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_multipleTlds() {
     action.tlds = ImmutableSet.of("bar", "foo");
     createTlds("bar", "sim");
@@ -104,7 +102,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^example2.foo$");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_moreTldsThanMaxNumSubqueries() {
     ListDomainsAction.maxNumSubqueries = 2;
     createTlds("baa", "bab", "bac", "bad");
@@ -127,7 +125,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^domain3.bac$");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_twoLinesWithIdOnlyNoHeader() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
@@ -141,7 +139,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^example2.foo$");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_twoLinesWithIdOnlyExplicitHeader() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
@@ -157,7 +155,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^example2.foo\\s*$");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_twoLinesWithRepoId() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
@@ -173,7 +171,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^example3.foo\\s+4-FOO\\s*$");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_twoLinesWithRepoIdNoHeader() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
@@ -187,7 +185,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^example3.foo  4-FOO$");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_twoLinesWithRepoIdExplicitHeader() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
@@ -203,7 +201,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^example3.foo\\s+4-FOO\\s*$");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_twoLinesWithWildcard() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
@@ -219,7 +217,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^example3.foo\\s+.*4-FOO");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_twoLinesWithWildcardAndAnotherField() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
@@ -235,7 +233,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^example3.foo\\s+.*4-FOO");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_withBadField_returnsError() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example2.foo");
@@ -248,7 +246,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^Field 'badfield' not found - recognized fields are:");
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_limitFiltersOutOldestDomains() {
     createTlds("bar", "baz");
     action.tlds = ImmutableSet.of("foo", "bar");

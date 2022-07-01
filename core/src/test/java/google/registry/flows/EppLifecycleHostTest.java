@@ -26,24 +26,18 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for host lifecycle. */
-@DualDatabaseTest
 class EppLifecycleHostTest extends EppTestCase {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(clock)
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
-  @TestOfyAndSql
+  @Test
   void testLifecycle() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatCommand("hello.xml")
@@ -91,7 +85,7 @@ class EppLifecycleHostTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testRenamingHostToExistingHost_fails() throws Exception {
     createTld("example");
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -141,7 +135,7 @@ class EppLifecycleHostTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_multipartTldsWithSharedSuffixes() throws Exception {
     createTlds("bar.foo.tld", "foo.tld", "tld");
 

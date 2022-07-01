@@ -24,7 +24,6 @@ import static com.google.common.collect.Sets.intersection;
 import static google.registry.model.EppResourceUtils.projectResourceOntoBuilderAtTime;
 import static google.registry.model.EppResourceUtils.setAutomaticTransferSuccessProperties;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -604,11 +603,11 @@ public class DomainContent extends EppResource
 
   /** Loads and returns the fully qualified host names of all linked nameservers. */
   public ImmutableSortedSet<String> loadNameserverHostNames() {
-    return transactIfJpaTm(
-        () ->
-            tm().loadByKeys(getNameservers()).values().stream()
-                .map(HostResource::getHostName)
-                .collect(toImmutableSortedSet(Ordering.natural())));
+    return tm().transact(
+            () ->
+                tm().loadByKeys(getNameservers()).values().stream()
+                    .map(HostResource::getHostName)
+                    .collect(toImmutableSortedSet(Ordering.natural())));
   }
 
   /** A key to the registrant who registered this domain. */

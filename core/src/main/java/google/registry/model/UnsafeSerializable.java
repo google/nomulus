@@ -21,7 +21,6 @@ import java.io.Serializable;
  * entities are made {@link Serializable} so that they can be passed between JVMs. The intended use
  * case is BEAM pipeline-based cross-database data validation between Datastore and Cloud SQL during
  * the migration. Note that only objects loaded from the SQL database need serialization support.
- * Objects exported from Datastore can already be serialized as protocol buffers.
  *
  * <p>All entities implementing this interface take advantage of the fact that all Java collection
  * classes we use, either directly or indirectly, including those in Java libraries, Guava,

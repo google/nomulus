@@ -38,8 +38,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 final class WhoisInjectionTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);

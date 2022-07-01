@@ -2,9 +2,7 @@ PATH                                               CLASS                        
 /_dr/cron/fanout                                   TldFanoutAction                                GET      y  INTERNAL,API APP ADMIN
 /_dr/cron/readDnsQueue                             ReadDnsQueueAction                             GET      y  INTERNAL,API APP ADMIN
 /_dr/dnsRefresh                                    RefreshDnsAction                               GET      y  INTERNAL,API APP ADMIN
-/_dr/task/backupDatastore                          BackupDatastoreAction                          POST     y  INTERNAL,API APP ADMIN
 /_dr/task/brdaCopy                                 BrdaCopyAction                                 POST     y  INTERNAL,API APP ADMIN
-/_dr/task/checkDatastoreBackup                     CheckBackupAction                              POST,GET y  INTERNAL,API APP ADMIN
 /_dr/task/copyDetailReports                        CopyDetailReportsAction                        POST     n  INTERNAL,API APP ADMIN
 /_dr/task/deleteExpiredDomains                     DeleteExpiredDomainsAction                     GET      n  INTERNAL,API APP ADMIN
 /_dr/task/deleteLoadTestData                       DeleteLoadTestDataAction                       POST     n  INTERNAL,API APP ADMIN
@@ -19,7 +17,6 @@ PATH                                               CLASS                        
 /_dr/task/icannReportingUpload                     IcannReportingUploadAction                     POST     n  INTERNAL,API APP ADMIN
 /_dr/task/nordnUpload                              NordnUploadAction                              POST     y  INTERNAL,API APP ADMIN
 /_dr/task/nordnVerify                              NordnVerifyAction                              POST     y  INTERNAL,API APP ADMIN
-/_dr/task/pollBigqueryJob                          BigqueryPollJobAction                          GET,POST y  INTERNAL     APP IGNORED
 /_dr/task/publishDnsUpdates                        PublishDnsUpdatesAction                        POST     y  INTERNAL,API APP ADMIN
 /_dr/task/publishInvoices                          PublishInvoicesAction                          POST     n  INTERNAL,API APP ADMIN
 /_dr/task/publishSpec11                            PublishSpec11ReportAction                      POST     n  INTERNAL,API APP ADMIN
@@ -36,8 +33,5 @@ PATH                                               CLASS                        
 /_dr/task/tmchDnl                                  TmchDnlAction                                  POST     y  INTERNAL,API APP ADMIN
 /_dr/task/tmchSmdrl                                TmchSmdrlAction                                POST     y  INTERNAL,API APP ADMIN
 /_dr/task/updateRegistrarRdapBaseUrls              UpdateRegistrarRdapBaseUrlsAction              GET      y  INTERNAL,API APP ADMIN
-/_dr/task/updateSnapshotView                       UpdateSnapshotViewAction                       POST     n  INTERNAL,API APP ADMIN
-/_dr/task/uploadDatastoreBackup                    UploadDatastoreBackupAction                    POST     n  INTERNAL,API APP ADMIN
 /_dr/task/wipeOutCloudSql                          WipeOutCloudSqlAction                          GET      n  INTERNAL,API APP ADMIN
 /_dr/task/wipeOutContactHistoryPii                 WipeOutContactHistoryPiiAction                 GET      n  INTERNAL,API APP ADMIN
-/_dr/task/wipeOutDatastore                         WipeoutDatastoreAction                         GET      n  INTERNAL,API APP ADMIN

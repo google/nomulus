@@ -18,7 +18,6 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.appengine.api.users.User;
 import com.google.common.annotations.VisibleForTesting;
@@ -331,18 +330,18 @@ public class AuthenticatedRegistrarAccessor {
     // Admins have ADMIN access to all registrars, and also OWNER access to the registry registrar
     // and all non-REAL or non-live registrars.
     if (isAdmin) {
-      transactIfJpaTm(
-          () ->
-              tm().loadAllOf(Registrar.class)
-                  .forEach(
-                      registrar -> {
-                        if (registrar.getType() != Registrar.Type.REAL
-                            || !registrar.isLive()
-                            || registrar.getRegistrarId().equals(registryAdminClientId)) {
-                          builder.put(registrar.getRegistrarId(), Role.OWNER);
-                        }
-                        builder.put(registrar.getRegistrarId(), Role.ADMIN);
-                      }));
+      tm().transact(
+              () ->
+                  tm().loadAllOf(Registrar.class)
+                      .forEach(
+                          registrar -> {
+                            if (registrar.getType() != Registrar.Type.REAL
+                                || !registrar.isLive()
+                                || registrar.getRegistrarId().equals(registryAdminClientId)) {
+                              builder.put(registrar.getRegistrarId(), Role.OWNER);
+                            }
+                            builder.put(registrar.getRegistrarId(), Role.ADMIN);
+                          }));
     }
 
     return builder.build();

@@ -73,8 +73,7 @@ public class BrdaCopyActionTest {
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension
   public final GpgSystemCommandExtension gpg =

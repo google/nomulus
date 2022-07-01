@@ -657,8 +657,8 @@ default five days) after which the transfer is automatically approved. Within
 that window, this flow allows the losing client to reject the transfer request.
 
 When the transfer was requested, poll messages and billing events were saved to
-Datastore with timestamps such that they only would become active when the
-transfer period passed. In this flow, those speculative objects are deleted.
+SQL with timestamps such that they only would become active when the transfer
+period passed. In this flow, those speculative objects are deleted.
 
 ### Errors
 

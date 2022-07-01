@@ -32,16 +32,14 @@ import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link AckPollMessagesCommand}. */
-@DualDatabaseTest
 public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesCommand> {
 
   private FakeClock clock = new FakeClock(DateTime.parse("2015-02-04T08:16:32.064Z"));
@@ -69,7 +67,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     clock.advanceOneMilli();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_doesntDeletePollMessagesInFuture() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
@@ -90,7 +88,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     assertNotInStdout("1-FSDGS-TLD-2406-123-2015,2015-09-01T22:33:44.000Z,notme");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_resavesAutorenewPollMessages() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
@@ -117,7 +115,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_deletesExpiredAutorenewPollMessages() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
@@ -142,7 +140,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_onlyDeletesPollMessagesMatchingMessage() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good")
@@ -160,7 +158,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         .containsExactly(notMatched1, notMatched2);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_onlyDeletesPollMessagesMatchingClientId() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good")
@@ -183,7 +181,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         .containsExactly(notMatched);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_dryRunDoesntDeleteAnything() throws Exception {
     OneTime pm1 = persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar");
     OneTime pm2 = persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives");

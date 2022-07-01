@@ -22,13 +22,11 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdeRevision}. */
-@DualDatabaseTest
 public class RdeRevisionTest extends EntityTestCase {
 
   public RdeRevisionTest() {
@@ -40,20 +38,20 @@ public class RdeRevisionTest extends EntityTestCase {
     fakeClock.setTo(DateTime.parse("1984-12-18TZ"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetNextRevision_objectDoesntExist_returnsZero() {
     tm().transact(
             () -> assertThat(getNextRevision("torment", fakeClock.nowUtc(), FULL)).isEqualTo(0));
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetNextRevision_objectExistsAtZero_returnsOne() {
     save("sorrow", fakeClock.nowUtc(), FULL, 0);
     tm().transact(
             () -> assertThat(getNextRevision("sorrow", fakeClock.nowUtc(), FULL)).isEqualTo(1));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSaveRevision_objectDoesntExist_newRevisionIsZero_nextRevIsOne() {
     tm().transact(() -> saveRevision("despondency", fakeClock.nowUtc(), FULL, 0));
     tm().transact(
@@ -61,7 +59,7 @@ public class RdeRevisionTest extends EntityTestCase {
                 assertThat(getNextRevision("despondency", fakeClock.nowUtc(), FULL)).isEqualTo(1));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSaveRevision_objectDoesntExist_newRevisionIsOne_throwsVe() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -74,7 +72,7 @@ public class RdeRevisionTest extends EntityTestCase {
                 + "when trying to save new revision 1");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSaveRevision_objectExistsAtZero_newRevisionIsZero_throwsVe() {
     save("melancholy", fakeClock.nowUtc(), FULL, 0);
     IllegalArgumentException thrown =
@@ -84,7 +82,7 @@ public class RdeRevisionTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("object already created");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSaveRevision_objectExistsAtZero_newRevisionIsOne_nextRevIsTwo() {
     DateTime startOfDay = fakeClock.nowUtc().withTimeAtStartOfDay();
     save("melancholy", startOfDay, FULL, 0);
@@ -93,7 +91,7 @@ public class RdeRevisionTest extends EntityTestCase {
     tm().transact(() -> assertThat(getNextRevision("melancholy", startOfDay, FULL)).isEqualTo(2));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSaveRevision_objectExistsAtZero_newRevisionIsTwo_throwsVe() {
     save("melancholy", fakeClock.nowUtc(), FULL, 0);
     IllegalArgumentException thrown =
@@ -105,7 +103,7 @@ public class RdeRevisionTest extends EntityTestCase {
         .contains("RDE revision object should be at revision 1 but was");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSaveRevision_negativeRevision_throwsIae() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -114,7 +112,7 @@ public class RdeRevisionTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("Negative revision");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSaveRevision_callerNotInTransaction_throwsIse() {
     IllegalStateException thrown =
         assertThrows(

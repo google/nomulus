@@ -30,23 +30,21 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.BillingVKey.BillingEventVKey;
 import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import javax.persistence.Transient;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit test for {@link BillingVKey}. */
-@DualDatabaseTest
 class BillingVKeyTest {
   @RegisterExtension
   final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withOfyTestEntities(BillingVKeyTestEntity.class)
           .withJpaUnitTestEntities(BillingVKeyTestEntity.class)
           .build();
 
-  @TestOfyAndSql
+  @Test
   void testRestoreSymmetricVKey() {
     Key<HistoryEntry> domainHistoryKey =
         Key.create(Key.create(DomainBase.class, "domainRepoId"), HistoryEntry.class, 10L);
@@ -70,7 +68,7 @@ class BillingVKeyTest {
     assertThat(persisted.getBillingRecurrenceVKey()).isEqualTo(recurringVKey);
   }
 
-  @TestOfyAndSql
+  @Test
   void testHandleNullVKeyCorrectly() {
     BillingVKeyTestEntity original = new BillingVKeyTestEntity(null, null);
     tm().transact(() -> tm().insert(original));

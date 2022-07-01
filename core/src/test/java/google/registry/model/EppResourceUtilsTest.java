@@ -25,28 +25,22 @@ import static org.joda.time.DateTimeZone.UTC;
 import google.registry.model.host.HostResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link EppResourceUtils}. */
-@DualDatabaseTest
 class EppResourceUtilsTest {
 
   private final FakeClock clock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(clock)
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
@@ -56,7 +50,7 @@ class EppResourceUtilsTest {
     inject.setStaticField(Ofy.class, "clock", clock);
   }
 
-  @TestOfyAndSql
+  @Test
   void testLoadAtPointInTime_beforeCreated_returnsNull() {
     clock.advanceOneMilli();
     // Don't save a commit log, we shouldn't need one.
@@ -67,7 +61,7 @@ class EppResourceUtilsTest {
     assertThat(loadAtPointInTime(host, clock.nowUtc().minus(Duration.millis(1)))).isNull();
   }
 
-  @TestOfyAndSql
+  @Test
   void testLoadAtPointInTime_atOrAfterLastAutoUpdateTime_returnsResource() {
     clock.advanceOneMilli();
     // Don't save a commit log, we shouldn't need one.

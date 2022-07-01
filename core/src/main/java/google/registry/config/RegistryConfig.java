@@ -1331,19 +1331,7 @@ public final class RegistryConfig {
   }
 
   /**
-   * Returns the Google Cloud Storage bucket for storing Datastore backups.
-   *
-   * @see google.registry.export.BackupDatastoreAction
-   */
-  public static String getDatastoreBackupsBucket() {
-    return "gs://" + getProjectId() + "-datastore-backups";
-  }
-
-  /**
-   * Returns the length of time before commit logs should be deleted from Datastore.
-   *
-   * <p>The only reason you'll want to retain this commit logs in Datastore is for performing
-   * point-in-time restoration queries for subsystems like RDE.
+   * Returns the length of time before commit logs should be deleted from the database.
    *
    * @see google.registry.tools.server.GenerateZoneFilesAction
    */

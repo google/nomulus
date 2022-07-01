@@ -35,10 +35,7 @@ public class VKeyTranslatorFactoryTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withOfyTestEntities(TestObject.class)
-          .build();
+      AppEngineExtension.builder().withCloudSql().withOfyTestEntities(TestObject.class).build();
 
   VKeyTranslatorFactoryTest() {}
 

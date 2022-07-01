@@ -32,12 +32,10 @@ import google.registry.flows.contact.ContactFlowUtils.DeclineContactDisclosureFi
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.model.contact.ContactResource;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactCreateFlow}. */
-@DualDatabaseTest
 class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, ContactResource> {
 
   ContactCreateFlowTest() {
@@ -55,31 +53,31 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     assertLastHistoryContainsResource(contact);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun() throws Exception {
     dryRunFlowAssertResponse(loadFile("contact_create_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_neverExisted() throws Exception {
     doSuccessfulTest();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_existedButWasDeleted() throws Exception {
     persistDeletedContact(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     clock.advanceOneMilli();
     doSuccessfulTest();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_alreadyExists() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     ResourceAlreadyExistsForThisClientException thrown =
@@ -91,7 +89,7 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_resourceContention() throws Exception {
     String targetId = getUniqueIdFromCommand();
     persistResource(
@@ -107,13 +105,13 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_nonAsciiInLocAddress() throws Exception {
     setEppInput("contact_create_hebrew_loc.xml");
     doSuccessfulTest();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonAsciiInIntAddress() {
     setEppInput("contact_create_hebrew_int.xml");
     EppException thrown =
@@ -121,7 +119,7 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_declineDisclosure() {
     setEppInput("contact_create_decline_disclosure.xml");
     EppException thrown =
@@ -129,7 +127,7 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-create");

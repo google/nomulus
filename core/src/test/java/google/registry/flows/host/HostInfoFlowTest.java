@@ -37,14 +37,12 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostInfoFlow}. */
-@DualDatabaseTest
 class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> {
 
   @BeforeEach
@@ -74,14 +72,14 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
             .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess() throws Exception {
     persistHostResource();
     assertTransactionalFlow(false);
@@ -94,7 +92,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
     assertNoBillingEvents();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_linked() throws Exception {
     persistHostResource();
     persistResource(
@@ -142,31 +140,31 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
     assertNoBillingEvents();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_withSuperordinateDomain_hostMovedAfterDomainTransfer() throws Exception {
     runTest_superordinateDomain(
         DateTime.parse("2000-01-08T09:00:00.0Z"), DateTime.parse("2000-03-01T01:00:00.0Z"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_withSuperordinateDomain_hostMovedBeforeDomainTransfer() throws Exception {
     runTest_superordinateDomain(
         DateTime.parse("2000-04-08T09:00:00.0Z"), DateTime.parse("2000-02-08T09:00:00.0Z"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_withSuperordinateDomain() throws Exception {
     runTest_superordinateDomain(DateTime.parse("2000-04-08T09:00:00.0Z"), null);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_existedButWasDeleted() throws Exception {
     persistResource(
         persistHostResource().asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
@@ -175,14 +173,14 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonLowerCaseHostname() {
     setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "NS1.EXAMPLE.NET"));
     EppException thrown = assertThrows(HostNameNotLowerCaseException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonPunyCodedHostname() {
     setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "ns1.çauçalito.tld"));
     HostNameNotPunyCodedException thrown =
@@ -190,14 +188,14 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
     assertThat(thrown).hasMessageThat().contains("expected ns1.xn--aualito-txac.tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonCanonicalHostname() {
     setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld."));
     EppException thrown = assertThrows(HostNameNotNormalizedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     persistHostResource();
     runFlow();

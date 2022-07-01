@@ -17,7 +17,6 @@ package google.registry.model.registrar;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2;
@@ -39,7 +38,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
 import google.registry.model.EntityTestCase;
 import google.registry.model.registrar.Registrar.State;
@@ -47,19 +45,15 @@ import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.tld.Registries;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.SerializeUtils;
 import java.math.BigDecimal;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Registrar}. */
-@DualDatabaseTest
 class RegistrarTest extends EntityTestCase {
 
   private Registrar registrar;
@@ -150,23 +144,18 @@ class RegistrarTest extends EntityTestCase {
                 .build()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testPersistence() {
     assertThat(tm().transact(() -> tm().loadByKey(registrar.createVKey()))).isEqualTo(registrar);
   }
 
-  @TestSqlOnly
+  @Test
   void testSerializable() {
     Registrar persisted = tm().transact(() -> tm().loadByKey(registrar.createVKey()));
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
-  @TestOfyOnly
-  void testIndexing() throws Exception {
-    verifyDatastoreIndexing(registrar, "registrarName", "ianaIdentifier");
-  }
-
-  @TestOfyAndSql
+  @Test
   void testFailure_passwordNull() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -174,7 +163,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("Password must be 6-16 characters long.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_passwordTooShort() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -182,7 +171,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("Password must be 6-16 characters long.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_passwordTooLong() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -191,7 +180,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("Password must be 6-16 characters long.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_clientId_bounds() {
     registrar = registrar.asBuilder().setRegistrarId("abc").build();
     assertThat(registrar.getRegistrarId()).isEqualTo("abc");
@@ -199,20 +188,20 @@ class RegistrarTest extends EntityTestCase {
     assertThat(registrar.getRegistrarId()).isEqualTo("abcdefghijklmnop");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientId_tooShort() {
     assertThrows(
         IllegalArgumentException.class, () -> new Registrar.Builder().setRegistrarId("ab"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientId_tooLong() {
     assertThrows(
         IllegalArgumentException.class,
         () -> new Registrar.Builder().setRegistrarId("abcdefghijklmnopq"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetCertificateHash_alsoSetsHash() {
     registrar = registrar.asBuilder().setClientCertificate(null, fakeClock.nowUtc()).build();
     fakeClock.advanceOneMilli();
@@ -222,7 +211,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(registrar.getClientCertificateHash()).hasValue(SAMPLE_CERT_HASH);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeleteCertificateHash_alsoDeletesHash() {
     assertThat(registrar.getClientCertificateHash()).isPresent();
     fakeClock.advanceOneMilli();
@@ -232,7 +221,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(registrar.getClientCertificateHash()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSetFailoverCertificateHash_alsoSetsHash() {
     fakeClock.advanceOneMilli();
     registrar =
@@ -245,7 +234,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(registrar.getFailoverClientCertificateHash()).hasValue(SAMPLE_CERT2_HASH);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeleteFailoverCertificateHash_alsoDeletesHash() {
     registrar =
         registrar.asBuilder().setFailoverClientCertificate(SAMPLE_CERT, fakeClock.nowUtc()).build();
@@ -258,7 +247,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(registrar.getFailoverClientCertificateHash()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_clearingIanaId() {
     registrar
         .asBuilder()
@@ -267,7 +256,7 @@ class RegistrarTest extends EntityTestCase {
         .build();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_clearingBillingAccountMapAndAllowedTlds() {
     registrar =
         registrar.asBuilder().setAllowedTlds(ImmutableSet.of()).setBillingAccountMap(null).build();
@@ -275,24 +264,24 @@ class RegistrarTest extends EntityTestCase {
     assertThat(registrar.getBillingAccountMap()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_ianaIdForInternal() {
     registrar.asBuilder().setType(Type.INTERNAL).setIanaIdentifier(9998L).build();
     registrar.asBuilder().setType(Type.INTERNAL).setIanaIdentifier(9999L).build();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_ianaIdForPdt() {
     registrar.asBuilder().setType(Type.PDT).setIanaIdentifier(9995L).build();
     registrar.asBuilder().setType(Type.PDT).setIanaIdentifier(9996L).build();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_ianaIdForExternalMonitoring() {
     registrar.asBuilder().setType(Type.EXTERNAL_MONITORING).setIanaIdentifier(9997L).build();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_emptyContactTypesAllowed() {
     persistSimpleResource(
         new RegistrarPoc.Builder()
@@ -308,7 +297,7 @@ class RegistrarTest extends EntityTestCase {
     }
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_getContactsByType() {
     RegistrarPoc newTechContact =
         persistSimpleResource(
@@ -342,7 +331,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(abuseContacts).containsExactly(newTechAbuseContact, abuseAdminContact).inOrder();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingRegistrarType() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -351,7 +340,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("Registrar type cannot be null");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingRegistrarName() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -364,7 +353,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("Registrar name cannot be null");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingAddress() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -380,21 +369,21 @@ class RegistrarTest extends EntityTestCase {
         .contains("Must specify at least one of localized or internationalized address");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badIanaIdForInternal() {
     assertThrows(
         IllegalArgumentException.class,
         () -> new Registrar.Builder().setType(Type.INTERNAL).setIanaIdentifier(8L).build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badIanaIdForPdt() {
     assertThrows(
         IllegalArgumentException.class,
         () -> new Registrar.Builder().setType(Type.PDT).setIanaIdentifier(8L).build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badIanaIdForExternalMonitoring() {
     assertThrows(
         IllegalArgumentException.class,
@@ -402,62 +391,62 @@ class RegistrarTest extends EntityTestCase {
             registrar.asBuilder().setType(Type.EXTERNAL_MONITORING).setIanaIdentifier(8L).build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingIanaIdForReal() {
     assertThrows(
         IllegalArgumentException.class, () -> new Registrar.Builder().setType(Type.REAL).build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingIanaIdForInternal() {
     assertThrows(
         IllegalArgumentException.class,
         () -> new Registrar.Builder().setType(Type.INTERNAL).build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingIanaIdForPdt() {
     assertThrows(
         IllegalArgumentException.class, () -> new Registrar.Builder().setType(Type.PDT).build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingIanaIdForExternalMonitoring() {
     assertThrows(
         IllegalArgumentException.class,
         () -> new Registrar.Builder().setType(Type.EXTERNAL_MONITORING).build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_phonePasscodeTooShort() {
     assertThrows(
         IllegalArgumentException.class, () -> new Registrar.Builder().setPhonePasscode("0123"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_phonePasscodeTooLong() {
     assertThrows(
         IllegalArgumentException.class, () -> new Registrar.Builder().setPhonePasscode("012345"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_phonePasscodeInvalidCharacters() {
     assertThrows(
         IllegalArgumentException.class, () -> new Registrar.Builder().setPhonePasscode("code1"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_getLastExpiringCertNotificationSentDate_returnsInitialValue() {
     assertThat(registrar.getLastExpiringCertNotificationSentDate()).isEqualTo(START_OF_TIME);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_getLastExpiringFailoverCertNotificationSentDate_returnsInitialValue() {
     assertThat(registrar.getLastExpiringFailoverCertNotificationSentDate())
         .isEqualTo(START_OF_TIME);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_setLastExpiringCertNotificationSentDate() {
     assertThat(
             registrar
@@ -468,7 +457,7 @@ class RegistrarTest extends EntityTestCase {
         .isEqualTo(fakeClock.nowUtc());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_setLastExpiringCertNotificationSentDate_nullDate() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -479,7 +468,7 @@ class RegistrarTest extends EntityTestCase {
         .isEqualTo("Registrar lastExpiringCertNotificationSentDate cannot be null");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_setLastExpiringFailoverCertNotificationSentDate() {
     assertThat(
             registrar
@@ -490,7 +479,7 @@ class RegistrarTest extends EntityTestCase {
         .isEqualTo(fakeClock.nowUtc());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_setLastExpiringFailoverCertNotificationSentDate_nullDate() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -504,7 +493,7 @@ class RegistrarTest extends EntityTestCase {
         .isEqualTo("Registrar lastExpiringFailoverCertNotificationSentDate cannot be null");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_setAllowedTlds() {
     assertThat(
             registrar
@@ -515,7 +504,7 @@ class RegistrarTest extends EntityTestCase {
         .containsExactly("xn--q9jyb4c");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_setAllowedTldsUncached() {
     assertThat(
             registrar
@@ -526,21 +515,21 @@ class RegistrarTest extends EntityTestCase {
         .containsExactly("xn--q9jyb4c");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_setAllowedTlds_nonexistentTld() {
     assertThrows(
         IllegalArgumentException.class,
         () -> registrar.asBuilder().setAllowedTlds(ImmutableSet.of("bad")));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_setAllowedTldsUncached_nonexistentTld() {
     assertThrows(
         IllegalArgumentException.class,
         () -> registrar.asBuilder().setAllowedTldsUncached(ImmutableSet.of("bad")));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_driveFolderId_asFullUrl() {
     String driveFolderId =
         "https://drive.google.com/drive/folders/1j3v7RZkU25DjbTx2-Q93H04zKOBau89M";
@@ -551,14 +540,14 @@ class RegistrarTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Drive folder ID must not be a full URL");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nullEmail() {
     NullPointerException thrown =
         assertThrows(NullPointerException.class, () -> registrar.asBuilder().setEmailAddress(null));
     assertThat(thrown).hasMessageThat().isEqualTo("Provided email was null");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidEmail() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -568,7 +557,7 @@ class RegistrarTest extends EntityTestCase {
         .isEqualTo("Provided email lolcat is not a valid email address");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_emptyEmail() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -576,7 +565,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Provided email  is not a valid email address");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nullIcannReferralEmail() {
     NullPointerException thrown =
         assertThrows(
@@ -584,7 +573,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Provided email was null");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidIcannReferralEmail() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -595,7 +584,7 @@ class RegistrarTest extends EntityTestCase {
         .isEqualTo("Provided email lolcat is not a valid email address");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_emptyIcannReferralEmail() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -603,7 +592,7 @@ class RegistrarTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().isEqualTo("Provided email  is not a valid email address");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_setAllowedTldsUncached_newTldNotInCache() {
     int origSingletonCacheRefreshSeconds =
         RegistryConfig.CONFIG_SETTINGS.get().caching.singletonCacheRefreshSeconds;
@@ -652,52 +641,35 @@ class RegistrarTest extends EntityTestCase {
     }
   }
 
-  @TestOfyOnly
-  void testLoadByClientIdCached_isTransactionless() {
-    tm().transact(
-            () -> {
-              assertThat(Registrar.loadByRegistrarIdCached("registrar")).isPresent();
-              // Load something as a control to make sure we are seeing loaded keys in the
-              // session cache.
-              auditedOfy().load().entity(abuseAdminContact).now();
-              assertThat(auditedOfy().getSessionKeys()).contains(Key.create(abuseAdminContact));
-              assertThat(auditedOfy().getSessionKeys()).doesNotContain(Key.create(registrar));
-            });
-    tm().clearSessionCache();
-    // Conversely, loads outside of a transaction should end up in the session cache.
-    assertThat(Registrar.loadByRegistrarIdCached("registrar")).isPresent();
-    assertThat(auditedOfy().getSessionKeys()).contains(Key.create(registrar));
-  }
-
-  @TestOfyAndSql
+  @Test
   void testFailure_loadByClientId_clientIdIsNull() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Registrar.loadByRegistrarId(null));
     assertThat(thrown).hasMessageThat().contains("registrarId must be specified");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_loadByClientId_clientIdIsEmpty() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Registrar.loadByRegistrarId(""));
     assertThat(thrown).hasMessageThat().contains("registrarId must be specified");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_loadByClientIdCached_clientIdIsNull() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Registrar.loadByRegistrarIdCached(null));
     assertThat(thrown).hasMessageThat().contains("registrarId must be specified");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_loadByClientIdCached_clientIdIsEmpty() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Registrar.loadByRegistrarIdCached(""));
     assertThat(thrown).hasMessageThat().contains("registrarId must be specified");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingCurrenciesFromBillingMap() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -713,7 +685,7 @@ class RegistrarTest extends EntityTestCase {
         .contains("their currency is missing from the billing account map: [tld, xn--q9jyb4c]");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_missingCurrencyFromBillingMap() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -729,7 +701,7 @@ class RegistrarTest extends EntityTestCase {
         .contains("their currency is missing from the billing account map: [xn--q9jyb4c]");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_nonRealTldDoesntNeedEntryInBillingMap() {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setTldType(TldType.TEST).build());
     // xn--q9jyb4c bills in JPY and we don't have a JPY entry in this billing account map, but it

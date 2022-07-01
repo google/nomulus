@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.LTE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import google.registry.model.poll.PollMessage;
@@ -31,13 +30,13 @@ public final class PollFlowUtils {
 
   /** Returns the number of poll messages for the given registrar that are not in the future. */
   public static int getPollMessageCount(String registrarId, DateTime now) {
-    return transactIfJpaTm(() -> createPollMessageQuery(registrarId, now).count()).intValue();
+    return tm().transact(() -> createPollMessageQuery(registrarId, now).count()).intValue();
   }
 
   /** Returns the first (by event time) poll message not in the future for this registrar. */
   public static Optional<PollMessage> getFirstPollMessage(String registrarId, DateTime now) {
-    return transactIfJpaTm(
-        () -> createPollMessageQuery(registrarId, now).orderBy("eventTime").first());
+    return tm().transact(
+            () -> createPollMessageQuery(registrarId, now).orderBy("eventTime").first());
   }
 
   /**

@@ -29,33 +29,27 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.util.Clock;
 import java.util.List;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for tools that affect EPP lifecycle. */
-@DualDatabaseTest
 class EppLifecycleToolsTest extends EppTestCase {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withClock(clock)
-          .withDatastoreAndCloudSql()
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withClock(clock).withCloudSql().withTaskQueue().build();
 
   @BeforeEach
   void beforeEach() {
     createTlds("example", "tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_renewDomainThenUnrenew() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));

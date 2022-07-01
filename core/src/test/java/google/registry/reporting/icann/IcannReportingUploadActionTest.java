@@ -37,12 +37,10 @@ import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Registry;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
 import google.registry.util.SendEmailService;
@@ -52,15 +50,14 @@ import java.util.logging.Logger;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.icann.IcannReportingUploadAction} */
-@DualDatabaseTest
 class IcannReportingUploadActionTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private static final byte[] PAYLOAD_SUCCESS = "test,csv\n13,37".getBytes(UTF_8);
   private static final byte[] PAYLOAD_FAIL = "ahah,csv\n12,34".getBytes(UTF_8);
@@ -119,7 +116,7 @@ class IcannReportingUploadActionTest {
     loggerToIntercept.addHandler(logHandler);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess() throws Exception {
     IcannReportingUploadAction action = createAction();
     action.run();
@@ -142,7 +139,7 @@ class IcannReportingUploadActionTest {
                 new InternetAddress("sender@example.com")));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_january() throws Exception {
     clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
     persistResource(
@@ -175,7 +172,7 @@ class IcannReportingUploadActionTest {
                 new InternetAddress("sender@example.com")));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_advancesCursor() throws Exception {
     gcsUtils.createFromBytes(
         BlobId.of("basin/icann/monthly/2006-06", "tld-activity-200606.csv"), PAYLOAD_SUCCESS);
@@ -188,7 +185,7 @@ class IcannReportingUploadActionTest {
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_noUploadsNeeded() throws Exception {
     clock.setTo(DateTime.parse("2006-5-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
@@ -198,7 +195,7 @@ class IcannReportingUploadActionTest {
     verifyNoMoreInteractions(emailService);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_withRetry() throws Exception {
     IcannReportingUploadAction action = createAction();
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv"))
@@ -223,7 +220,7 @@ class IcannReportingUploadActionTest {
                 new InternetAddress("sender@example.com")));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_quicklySkipsOverNonRetryableUploadException() throws Exception {
     runTest_nonRetryableException(
         new IOException(
@@ -231,13 +228,13 @@ class IcannReportingUploadActionTest {
                 + " passed.</msg>"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_quicklySkipsOverIpAllowListException() throws Exception {
     runTest_nonRetryableException(
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_cursorIsNotAdvancedForward() throws Exception {
     runTest_nonRetryableException(
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
@@ -247,7 +244,7 @@ class IcannReportingUploadActionTest {
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotRunIfCursorDateIsAfterToday() throws Exception {
     clock.setTo(DateTime.parse("2006-05-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
@@ -285,7 +282,7 @@ class IcannReportingUploadActionTest {
                 new InternetAddress("sender@example.com")));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFail_fileNotFound() throws Exception {
     clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
     persistResource(
@@ -302,7 +299,7 @@ class IcannReportingUploadActionTest {
                 + " bucket basin) did not exist.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testWarning_fileNotStagedYet() throws Exception {
     persistResource(
         Cursor.createScoped(
@@ -319,7 +316,7 @@ class IcannReportingUploadActionTest {
                 + " bucket basin) did not exist. This report may not have been staged yet.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_lockIsntAvailable() throws Exception {
     IcannReportingUploadAction action = createAction();
     action.lockHandler = new FakeLockHandler(false);
@@ -330,7 +327,7 @@ class IcannReportingUploadActionTest {
         .contains("Lock for IcannReportingUploadAction already in use");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_nullCursorsInitiatedToFirstOfNextMonth() throws Exception {
     createTlds("new");
 

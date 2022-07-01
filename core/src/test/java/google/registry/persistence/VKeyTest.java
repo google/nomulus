@@ -37,10 +37,7 @@ class VKeyTest {
 
   @RegisterExtension
   final AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withOfyTestEntities(TestObject.class)
-          .build();
+      AppEngineExtension.builder().withCloudSql().withOfyTestEntities(TestObject.class).build();
 
   @BeforeAll
   static void beforeAll() {

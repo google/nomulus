@@ -26,7 +26,6 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.dns.writer.clouddns.CloudDnsWriterModule;
 import google.registry.dns.writer.dnsupdate.DnsUpdateWriterModule;
-import google.registry.export.datastore.DatastoreAdminModule;
 import google.registry.keyring.KeyringModule;
 import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.keyring.api.KeyModule;
@@ -37,7 +36,6 @@ import google.registry.persistence.PersistenceModule.ReadOnlyReplicaJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.rde.RdeModule;
-import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.Jackson2Module;
 import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.Modules.UrlFetchServiceModule;
@@ -45,7 +43,6 @@ import google.registry.request.Modules.UserServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
 import google.registry.tools.javascrap.BackfillRegistrarBillingAccountsCommand;
 import google.registry.tools.javascrap.CompareEscrowDepositsCommand;
-import google.registry.tools.javascrap.HardDeleteHostCommand;
 import google.registry.util.UtilsModule;
 import google.registry.whois.NonCachingWhoisModule;
 import javax.annotation.Nullable;
@@ -67,8 +64,6 @@ import javax.inject.Singleton;
       ConfigModule.class,
       CloudDnsWriterModule.class,
       CloudTasksUtilsModule.class,
-      DatastoreAdminModule.class,
-      DatastoreServiceModule.class,
       DummyKeyringModule.class,
       DnsUpdateWriterModule.class,
       Jackson2Module.class,
@@ -125,21 +120,11 @@ interface RegistryToolComponent {
 
   void inject(GetKeyringSecretCommand command);
 
-  void inject(GetOperationStatusCommand command);
-
   void inject(GetSqlCredentialCommand command);
 
   void inject(GhostrydeCommand command);
 
-  void inject(HardDeleteHostCommand command);
-
-  void inject(ImportDatastoreCommand command);
-
   void inject(ListCursorsCommand command);
-
-  void inject(ListDatastoreOperationsCommand command);
-
-  void inject(LoadSnapshotCommand command);
 
   void inject(LockDomainCommand command);
 

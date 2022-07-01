@@ -43,8 +43,7 @@ import org.mockito.quality.Strictness;
 final class LegacyAuthenticationMechanismTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Mock private UserService userService;
   @Mock private HttpServletRequest req;

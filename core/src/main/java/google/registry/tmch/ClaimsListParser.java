@@ -36,7 +36,7 @@ public class ClaimsListParser {
   /**
    * Converts the lines from the DNL CSV file into a {@link ClaimsList} object.
    *
-   * <p>Please note that this does <b>not</b> insert the object into Datastore.
+   * <p>Please note that this does <b>not</b> insert the object into the DB.
    */
   public static ClaimsList parse(List<String> lines) {
     ImmutableMap.Builder<String, String> builder = new ImmutableMap.Builder<>();

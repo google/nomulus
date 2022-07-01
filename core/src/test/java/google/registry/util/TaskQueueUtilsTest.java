@@ -45,7 +45,7 @@ public final class TaskQueueUtilsTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private int origBatchSize;
 

@@ -22,14 +22,12 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntr
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.Period;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetClaimsListCommand}. */
-@DualDatabaseTest
 class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesCommand> {
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01T00:00:00Z"));
@@ -42,7 +40,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
     domain = persistActiveDomain("example.tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_works() throws Exception {
     persistResource(
         makeHistoryEntry(
@@ -62,7 +60,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             + "\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_nothingBefore() throws Exception {
     persistResource(
         makeHistoryEntry(
@@ -75,7 +73,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
     assertStdoutIs("");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_nothingAfter() throws Exception {
     persistResource(
         makeHistoryEntry(
@@ -88,7 +86,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
     assertStdoutIs("");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_withinRange() throws Exception {
     persistResource(
         makeHistoryEntry(
@@ -112,7 +110,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             + "\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_noTrid() throws Exception {
     persistResource(
         makeHistoryEntry(

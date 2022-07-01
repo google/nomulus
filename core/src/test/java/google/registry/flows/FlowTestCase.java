@@ -21,7 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.stripBillingEventId;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -69,7 +68,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  */
 public abstract class FlowTestCase<F extends Flow> {
 
-  /** Whether to actually write to Datastore or just simulate. */
+  /** Whether to actually write to the database or just simulate. */
   public enum CommitMode {
     LIVE,
     DRY_RUN
@@ -99,11 +98,7 @@ public abstract class FlowTestCase<F extends Flow> {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withClock(clock)
-          .withDatastoreAndCloudSql()
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withClock(clock).withCloudSql().withTaskQueue().build();
 
   @BeforeEach
   public void beforeEachFlowTestCase() {
@@ -202,12 +197,12 @@ public abstract class FlowTestCase<F extends Flow> {
     assertWithMessage("Billing event is present for grace period: " + gracePeriod)
         .that(gracePeriod.hasBillingEvent())
         .isTrue();
-    return transactIfJpaTm(
-        () ->
-            tm().loadByKey(
-                    firstNonNull(
-                        gracePeriod.getOneTimeBillingEvent(),
-                        gracePeriod.getRecurringBillingEvent())));
+    return tm().transact(
+            () ->
+                tm().loadByKey(
+                        firstNonNull(
+                            gracePeriod.getOneTimeBillingEvent(),
+                            gracePeriod.getRecurringBillingEvent())));
   }
 
   /**

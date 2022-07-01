@@ -41,12 +41,11 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
@@ -56,12 +55,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link SyncRegistrarsSheet}. */
 @ExtendWith(MockitoExtension.class)
-@DualDatabaseTest
 public class SyncRegistrarsSheetTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
@@ -91,12 +88,12 @@ public class SyncRegistrarsSheetTest {
     Registrar.loadAll().forEach(DatabaseHelper::deleteResource);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_wereRegistrarsModified_noRegistrars_returnsFalse() {
     assertThat(newSyncRegistrarsSheet().wereRegistrarsModified()).isFalse();
   }
 
-  @TestOfyAndSql
+  @Test
   void test_wereRegistrarsModified_atDifferentCursorTimes() {
     persistNewRegistrar("SomeRegistrar", "Some Registrar Inc.", Registrar.Type.REAL, 8L);
     persistResource(Cursor.createGlobal(SYNC_REGISTRAR_SHEET, clock.nowUtc().minusHours(1)));
@@ -105,7 +102,7 @@ public class SyncRegistrarsSheetTest {
     assertThat(newSyncRegistrarsSheet().wereRegistrarsModified()).isFalse();
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun() throws Exception {
     persistResource(
         new Registrar.Builder()
@@ -333,7 +330,7 @@ public class SyncRegistrarsSheetTest {
     assertThat(cursor.getCursorTime()).isGreaterThan(registrarCreationTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_missingValues_stillWorks() throws Exception {
     persistResource(
         persistNewRegistrar("SomeRegistrar", "Some Registrar", Registrar.Type.REAL, 8L)

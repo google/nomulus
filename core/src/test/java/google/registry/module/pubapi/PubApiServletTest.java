@@ -29,7 +29,7 @@ class PubApiServletTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withLocalModules().build();
+      AppEngineExtension.builder().withCloudSql().withLocalModules().build();
 
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);

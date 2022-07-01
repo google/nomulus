@@ -29,8 +29,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class PremiumListUtilsTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void parseInputToPremiumList_works() {

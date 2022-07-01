@@ -42,7 +42,6 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
-import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Inject;
@@ -111,7 +110,6 @@ public class DeleteProberDataAction implements Runnable {
   @Config("registryAdminClientId")
   String registryAdminRegistrarId;
 
-  @Inject Response response;
   @Inject DeleteProberDataAction() {}
 
   @Override

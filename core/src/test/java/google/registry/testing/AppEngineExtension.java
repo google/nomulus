@@ -17,10 +17,7 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertSimpleResources;
-import static google.registry.testing.DualDatabaseTestInvocationContextProvider.injectTmForDualDatabaseTest;
-import static google.registry.testing.DualDatabaseTestInvocationContextProvider.restoreTmAfterDualDatabaseTest;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -28,7 +25,6 @@ import static java.nio.file.Files.walk;
 import static java.util.Comparator.reverseOrder;
 import static org.json.XML.toJSONObject;
 
-import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
@@ -129,7 +125,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
 
   private JpaUnitTestExtension jpaUnitTestExtension;
 
-  private boolean withDatastore;
   private boolean withoutCannedData;
   private boolean withCloudSql;
   private boolean enableJpaEntityCoverageCheck;
@@ -158,17 +153,9 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     private ImmutableList.Builder<Class<?>> ofyTestEntities = new ImmutableList.Builder<>();
     private ImmutableList.Builder<Class<?>> jpaTestEntities = new ImmutableList.Builder<>();
 
-    /** Turn on the Datastore service and the Cloud SQL service. */
-    public Builder withDatastoreAndCloudSql() {
-      extension.withDatastore = true;
-      extension.withCloudSql = true;
-      return this;
-    }
-
     /** Turns on Cloud SQL only, for use by test data generators. */
     public Builder withCloudSql() {
       extension.withCloudSql = true;
-      extension.withDatastore = false;
       return this;
     }
 
@@ -392,11 +379,8 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
         jpaIntegrationTestExtension.beforeEach(context);
       }
     }
-    if (isWithDatastoreAndCloudSql()) {
-      injectTmForDualDatabaseTest(context);
-    }
-    if (withDatastore || withCloudSql) {
-      if (!withoutCannedData && (tm().isOfy() || (withCloudSql && !withJpaUnitTest))) {
+    if (withCloudSql) {
+      if (!withoutCannedData && !withJpaUnitTest) {
         loadInitialData();
       }
     }
@@ -417,17 +401,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     if (withUrlFetch) {
       configs.add(new LocalURLFetchServiceTestConfig());
     }
-    if (withDatastore) {
-      configs.add(
-          new LocalDatastoreServiceTestConfig()
-              // We need to set this to allow cross entity group transactions.
-              .setApplyAllHighRepJobPolicy()
-              // This causes unit tests to write a file containing any indexes the test required. We
-              // can use that file below to make sure we have the right indexes in our prod code.
-              .setNoIndexAutoGen(false));
-      // This forces App Engine to write the generated indexes to a usable location.
-      System.setProperty("appengine.generated.dir", tmpDir.getAbsolutePath());
-    }
+
     if (withLocalModules) {
       configs.add(
           new LocalModulesServiceTestConfig()
@@ -463,37 +437,28 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     if (withLocalModules) {
       helper.setEnvInstance("0");
     }
-
     helper.setUp();
 
-    if (withDatastore) {
-      ObjectifyService.initOfy();
-      // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
-      IdService.resetSelfAllocatedId();
-      this.ofyTestEntities.forEach(AppEngineExtension::register);
-    }
+    ObjectifyService.initOfy();
+    // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
+    IdService.resetSelfAllocatedId();
+    this.ofyTestEntities.forEach(AppEngineExtension::register);
   }
 
   /** Called after each test method. */
   @Override
   public void afterEach(ExtensionContext context) throws Exception {
     checkArgumentNotNull(context, "The ExtensionContext must not be null");
-    try {
-      if (withCloudSql) {
-        if (enableJpaEntityCoverageCheck) {
-          jpaIntegrationWithCoverageExtension.afterEach(context);
-        } else if (withJpaUnitTest) {
-          jpaUnitTestExtension.afterEach(context);
-        } else {
-          jpaIntegrationTestExtension.afterEach(context);
-        }
-      }
-      tearDown();
-    } finally {
-      if (isWithDatastoreAndCloudSql()) {
-        restoreTmAfterDualDatabaseTest(context);
+    if (withCloudSql) {
+      if (enableJpaEntityCoverageCheck) {
+        jpaIntegrationWithCoverageExtension.afterEach(context);
+      } else if (withJpaUnitTest) {
+        jpaUnitTestExtension.afterEach(context);
+      } else {
+        jpaIntegrationTestExtension.afterEach(context);
       }
     }
+    tearDown();
   }
 
   /**
@@ -629,7 +594,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
             makeRegistrarContact3()));
   }
 
-  boolean isWithDatastoreAndCloudSql() {
-    return withDatastore && withCloudSql;
+  boolean isWithCloudSql() {
+    return withCloudSql;
   }
 }

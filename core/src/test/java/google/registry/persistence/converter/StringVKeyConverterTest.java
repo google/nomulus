@@ -33,7 +33,7 @@ public class StringVKeyConverterTest {
   @RegisterExtension
   public final AppEngineExtension appEngineExtension =
       new AppEngineExtension.Builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withoutCannedData()
           .withJpaUnitTestEntities(
               TestStringEntity.class,

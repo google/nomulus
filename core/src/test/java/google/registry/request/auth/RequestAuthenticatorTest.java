@@ -44,8 +44,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class RequestAuthenticatorTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private static final AuthSettings AUTH_NONE =
       AuthSettings.create(

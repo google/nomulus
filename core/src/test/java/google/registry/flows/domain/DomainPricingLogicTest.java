@@ -48,27 +48,24 @@ import google.registry.model.domain.fee.Fee;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.util.Clock;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
 
 /** Unit tests for {@link DomainPricingLogic}. */
-@DualDatabaseTest
 public class DomainPricingLogicTest {
   DomainPricingLogic domainPricingLogic;
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Inject Clock clock = new FakeClock(DateTime.now(UTC));
   @Mock EppInput eppInput;
@@ -130,7 +127,7 @@ public class DomainPricingLogicTest {
     return recurring;
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_oneYear_standardDomain_noBilling_isStandardPrice()
       throws EppException {
     assertThat(
@@ -142,7 +139,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_multiYear_standardDomain_noBilling_isStandardPrice()
       throws EppException {
     assertThat(
@@ -154,7 +151,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_oneYear_premiumDomain_noBilling_isPremiumPrice()
       throws EppException {
     assertThat(
@@ -166,7 +163,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_multiYear_premiumDomain_noBilling_isPremiumPrice()
       throws EppException {
     assertThat(
@@ -178,7 +175,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_oneYear_premiumDomain_default_isPremiumPrice() throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
@@ -195,7 +192,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_multiYear_premiumDomain_default_isPremiumCost() throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
@@ -212,7 +209,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_oneYear_standardDomain_default_isNonPremiumPrice()
       throws EppException {
     assertThat(
@@ -230,7 +227,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_multiYear_standardDomain_default_isNonPremiumCost()
       throws EppException {
     assertThat(
@@ -248,7 +245,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_oneYear_premiumDomain_anchorTenant_isNonPremiumPrice()
       throws EppException {
     assertThat(
@@ -266,7 +263,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_multiYear_premiumDomain_anchorTenant_isNonPremiumCost()
       throws EppException {
     assertThat(
@@ -284,7 +281,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_oneYear_standardDomain_anchorTenant_isNonPremiumPrice()
       throws EppException {
     assertThat(
@@ -302,7 +299,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_multiYear_standardDomain_anchorTenant_isNonPremiumCost()
       throws EppException {
     assertThat(
@@ -320,7 +317,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_oneYear_standardDomain_internalRegistration_isSpecifiedPrice()
       throws EppException {
     assertThat(
@@ -338,7 +335,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_multiYear_standardDomain_internalRegistration_isSpecifiedPrice()
       throws EppException {
     assertThat(
@@ -356,7 +353,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_oneYear_premiumDomain_internalRegistration_isSpecifiedPrice()
       throws EppException {
     assertThat(
@@ -374,7 +371,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_multiYear_premiumDomain_internalRegistration_isSpecifiedPrice()
       throws EppException {
     assertThat(
@@ -392,7 +389,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainRenewPrice_negativeYear_throwsException() throws EppException {
     IllegalArgumentException thrown =
         assertThrows(

@@ -21,7 +21,6 @@ import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DE
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.StringGenerator.DEFAULT_PASSWORD_LENGTH;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -278,7 +277,7 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
     if (dryRun) {
       savedTokens = tokens;
     } else {
-      transactIfJpaTm(() -> tm().transact(() -> tm().putAll(tokens)));
+      tm().transact(() -> tm().transact(() -> tm().putAll(tokens)));
       savedTokens = tm().transact(() -> tm().loadByEntities(tokens));
     }
     savedTokens.forEach(
@@ -307,10 +306,10 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
         candidates.stream()
             .map(input -> VKey.create(AllocationToken.class, input))
             .collect(toImmutableSet());
-    return transactIfJpaTm(
-        () ->
-            tm().loadByKeysIfPresent(existingTokenKeys).values().stream()
-                .map(AllocationToken::getToken)
-                .collect(toImmutableSet()));
+    return tm().transact(
+            () ->
+                tm().loadByKeysIfPresent(existingTokenKeys).values().stream()
+                    .map(AllocationToken::getToken)
+                    .collect(toImmutableSet()));
   }
 }

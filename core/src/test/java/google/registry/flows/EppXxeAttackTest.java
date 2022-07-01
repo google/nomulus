@@ -23,8 +23,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EppXxeAttackTest extends EppTestCase {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void testRemoteXmlExternalEntity() throws Exception {
