@@ -39,7 +39,6 @@ import google.registry.model.replay.ReplayGap;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
-import google.registry.model.tld.Registry;
 import google.registry.testing.TestObject;
 import org.junit.jupiter.api.Test;
 
@@ -72,7 +71,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("GaeUserIdConverter")).isEqualTo(GaeUserIdConverter.class);
     assertThat(ClassPathManager.getClass("EppResourceIndexBucket"))
         .isEqualTo(EppResourceIndexBucket.class);
-    assertThat(ClassPathManager.getClass("Registry")).isEqualTo(Registry.class);
     assertThat(ClassPathManager.getClass("EntityGroupRoot")).isEqualTo(EntityGroupRoot.class);
     assertThat(ClassPathManager.getClass("Lock")).isEqualTo(Lock.class);
     assertThat(ClassPathManager.getClass("DomainBase")).isEqualTo(DomainBase.class);
@@ -132,7 +130,6 @@ public class ClassPathManagerTest {
         .isEqualTo("GaeUserIdConverter");
     assertThat(ClassPathManager.getClassName(EppResourceIndexBucket.class))
         .isEqualTo("EppResourceIndexBucket");
-    assertThat(ClassPathManager.getClassName(Registry.class)).isEqualTo("Registry");
     assertThat(ClassPathManager.getClassName(EntityGroupRoot.class)).isEqualTo("EntityGroupRoot");
     assertThat(ClassPathManager.getClassName(Lock.class)).isEqualTo("Lock");
     assertThat(ClassPathManager.getClassName(DomainBase.class)).isEqualTo("DomainBase");

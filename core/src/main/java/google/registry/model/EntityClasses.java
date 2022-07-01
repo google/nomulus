@@ -37,7 +37,6 @@ import google.registry.model.replay.ReplayGap;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
-import google.registry.model.tld.Registry;
 
 /** Sets of classes of the Objectify-registered entities in use throughout the model. */
 @DeleteAfterMigration
@@ -72,7 +71,6 @@ public final class EntityClasses {
           PollMessage.OneTime.class,
           RdeRevision.class,
           Registrar.class,
-          Registry.class,
           ReplayGap.class,
           ServerSecret.class);
 

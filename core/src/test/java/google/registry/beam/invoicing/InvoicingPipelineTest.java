@@ -371,7 +371,7 @@ class InvoicingPipelineTest {
                 + "SELECT b, r FROM BillingEvent b\n"
                 + "JOIN Registrar r ON b.clientId = r.clientIdentifier\n"
                 + "JOIN Domain d ON b.domainRepoId = d.repoId\n"
-                + "JOIN Tld t ON t.tldStrId = d.tld\n"
+                + "JOIN Tld t ON t.tldStr = d.tld\n"
                 + "LEFT JOIN BillingCancellation c ON b.id = c.refOneTime.billingId\n"
                 + "LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent ="
                 + " cr.refRecurring.billingId\n"

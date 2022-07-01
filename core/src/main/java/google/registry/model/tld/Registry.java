@@ -16,12 +16,9 @@ package google.registry.model.tld;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Predicates.equalTo;
-import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.toMap;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -29,34 +26,22 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.money.CurrencyUnit.USD;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.net.InternetDomainName;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Embed;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Mapify;
-import com.googlecode.objectify.annotation.OnSave;
-import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
-import google.registry.model.CacheUtils.AppEngineEnvironmentCacheLoader;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
-import google.registry.model.annotations.DeleteAfterMigration;
-import google.registry.model.annotations.InCrossTld;
-import google.registry.model.annotations.ReportedOn;
-import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.domain.fee.BaseFee.FeeType;
@@ -71,12 +56,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.PostLoad;
-import javax.persistence.Transient;
+import javax.persistence.Id;
+import javax.persistence.PostPersist;
 import org.hibernate.annotations.Columns;
 import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
@@ -85,35 +72,16 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /** Persisted per-TLD configuration data. */
-@ReportedOn
-@Entity
-@javax.persistence.Entity(name = "Tld")
-@InCrossTld
+@Entity(name = "Tld")
 public class Registry extends ImmutableObject implements Buildable, UnsafeSerializable {
-
-  @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();
 
   /**
    * The canonical string representation of the TLD associated with this {@link Registry}, which is
    * the standard ASCII for regular TLDs and punycoded ASCII for IDN TLDs.
    */
   @Id
-  @javax.persistence.Id
   @Column(name = "tld_name", nullable = false)
-  String tldStrId;
-
-  /**
-   * A duplicate of {@link #tldStrId}, to simplify BigQuery reporting since the id field becomes
-   * {@code __key__.name} rather than being exported as a named field.
-   */
-  @Transient String tldStr;
-
-  /** Sets the Datastore specific field, tldStr, when the entity is loaded from Cloud SQL */
-  @PostLoad
-  @DeleteAfterMigration
-  void postLoad() {
-    tldStr = tldStrId;
-  }
+  String tldStr;
 
   /** The suffix that identifies roids as belonging to this specific tld, e.g. -HOW for .how. */
   String roidSuffix;
@@ -190,8 +158,8 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    * A transition to a TLD state at a specific time, for use in a TimedTransitionProperty. Public
    * because App Engine's security manager requires this for instantiation via reflection.
    */
-  @Embed
   public static class TldStateTransition extends TimedTransition<TldState> {
+
     /** The TLD state. */
     private TldState tldState;
 
@@ -211,8 +179,8 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    *
    * <p>Public because App Engine's security manager requires this for instantiation via reflection.
    */
-  @Embed
   public static class BillingCostTransition extends TimedTransition<Money> {
+
     /** The billing cost value. */
     private Money billingCost;
 
@@ -229,23 +197,24 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
 
   /** Returns the registry for a given TLD, throwing if none exists. */
   public static Registry get(String tld) {
-    Registry registry = CACHE.get(tld).orElse(null);
-    if (registry == null) {
+    Registry maybeRegistry = CACHE.get(tld);
+    if (maybeRegistry == null) {
       throw new RegistryNotFoundException(tld);
+    } else {
+      return maybeRegistry;
     }
-    return registry;
   }
 
   /** Returns the registry entities for the given TLD strings, throwing if any don't exist. */
   public static ImmutableSet<Registry> get(Set<String> tlds) {
-    Map<String, Optional<Registry>> registries = CACHE.getAll(tlds);
+    Map<String, Registry> registries = CACHE.getAll(tlds);
     ImmutableSet<String> missingRegistries =
         registries.entrySet().stream()
-            .filter(e -> !e.getValue().isPresent())
+            .filter(e -> e.getValue() == null)
             .map(Map.Entry::getKey)
             .collect(toImmutableSet());
     if (missingRegistries.isEmpty()) {
-      return registries.values().stream().map(Optional::get).collect(toImmutableSet());
+      return registries.values().stream().collect(toImmutableSet());
     } else {
       throw new RegistryNotFoundException(missingRegistries);
     }
@@ -257,45 +226,38 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    * <p>This is called automatically when the registry is saved. One should also call it when a
    * registry is deleted.
    */
-  @OnSave
+  @PostPersist
   public void invalidateInCache() {
     CACHE.invalidate(tldStr);
   }
 
   /** A cache that loads the {@link Registry} for a given tld. */
-  private static final LoadingCache<String, Optional<Registry>> CACHE =
+  private static final LoadingCache<String, Registry> CACHE =
       CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
-              new AppEngineEnvironmentCacheLoader<String, Optional<Registry>>() {
+              new CacheLoader<String, Registry>() {
                 @Override
-                public Optional<Registry> load(final String tld) {
-                  // Enter a transaction-less context briefly; we don't want to enroll every TLD in
-                  // a transaction that might be wrapping this call.
-                  return tm().doTransactionless(() -> tm().loadByKeyIfPresent(createVKey(tld)));
+                public Registry load(final String tld) {
+                  return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(tld))).orElse(null);
                 }
 
                 @Override
-                public Map<String, Optional<Registry>> loadAll(Iterable<? extends String> tlds) {
+                public Map<String, Registry> loadAll(Iterable<? extends String> tlds) {
                   ImmutableMap<String, VKey<Registry>> keysMap =
                       toMap(ImmutableSet.copyOf(tlds), Registry::createVKey);
                   Map<VKey<? extends Registry>, Registry> entities =
-                      tm().doTransactionless(() -> tm().loadByKeys(keysMap.values()));
-                  return Maps.transformEntries(
-                      keysMap, (k, v) -> Optional.ofNullable(entities.getOrDefault(v, null)));
+                      tm().transact(() -> tm().loadByKeysIfPresent(keysMap.values()));
+                  return Maps.transformEntries(keysMap, (k, v) -> entities.getOrDefault(v, null));
                 }
               });
 
   public static VKey<Registry> createVKey(String tld) {
-    return VKey.create(Registry.class, tld, Key.create(getCrossTldKey(), Registry.class, tld));
-  }
-
-  public static VKey<Registry> createVKey(Key<Registry> key) {
-    return createVKey(key.getName());
+    return VKey.createSql(Registry.class, tld);
   }
 
   @Override
   public VKey<Registry> createVKey() {
-    return VKey.createSql(Registry.class, this.tldStrId);
+    return VKey.createSql(Registry.class, tldStr);
   }
 
   /**
@@ -305,7 +267,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    * Map<String, PricingEngine>}.
    *
    * <p>Note that it used to be the canonical class name, hence the name of this field, but this
-   * restriction has since been relaxed and it may now be any unique string.
+   * restriction has since been relaxed, and it may now be any unique string.
    */
   String pricingEngineClassName;
 
@@ -323,7 +285,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   /**
    * The number of locks we allow at once for {@link google.registry.dns.PublishDnsUpdatesAction}.
    *
-   * <p>This should always be a positive integer- use 1 for TLD-wide locks. All {@link Registry}
+   * <p>This should always be a positive integer -- use 1 for TLD-wide locks. All {@link Registry}
    * objects have this value default to 1.
    *
    * <p>WARNING: changing this parameter changes the lock name for subsequent DNS updates, and thus
@@ -361,7 +323,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   String tldUnicode;
 
   /**
-   * Id of the folder in drive used to public (export) information for this TLD.
+   * ID of the folder in drive used to public (export) information for this TLD.
    *
    * <p>This is optional; if not configured, then information won't be exported for this TLD.
    */
@@ -379,14 +341,13 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    * TLD. This applies to {@link TldType#TEST} TLDs as well.
    */
   @Column(nullable = false)
-  boolean invoicingEnabled = false;
+  boolean invoicingEnabled;
 
   /**
-   * A property that transitions to different TldStates at different times. Stored as a list of
-   * TldStateTransition embedded objects using the @Mapify annotation.
+   * A property that transitions to different {@link TldState}s at different times. Stored as a list
+   * of {@link TldStateTransition} embedded objects using the @Mapify annotation.
    */
   @Column(nullable = false)
-  @Mapify(TimedTransitionProperty.TimeMapper.class)
   TimedTransitionProperty<TldState, TldStateTransition> tldStateTransitions =
       TimedTransitionProperty.forMapify(DEFAULT_TLD_STATE, TldStateTransition.class);
 
@@ -418,7 +379,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    * registry, the database should be queried for the entity with this name that has the largest
    * revision ID.
    */
-  @Column(name = "premium_list_name", nullable = true)
+  @Column(name = "premium_list_name")
   String premiumListName;
 
   /** Should RDE upload a nightly escrow deposit for this TLD? */
@@ -442,7 +403,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   @Column(nullable = false)
   Duration anchorTenantAddGracePeriodLength = DEFAULT_ANCHOR_TENANT_ADD_GRACE_PERIOD;
 
-  /** The length of the auto renew grace period for this TLD. */
+  /** The length of the autorenew grace period for this TLD. */
   @Column(nullable = false)
   Duration autoRenewGracePeriodLength = DEFAULT_AUTO_RENEW_GRACE_PERIOD;
 
@@ -515,13 +476,11 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    * renewal to ensure transfers have a cost.
    */
   @Column(nullable = false)
-  @Mapify(TimedTransitionProperty.TimeMapper.class)
   TimedTransitionProperty<Money, BillingCostTransition> renewBillingCostTransitions =
       TimedTransitionProperty.forMapify(DEFAULT_RENEW_BILLING_COST, BillingCostTransition.class);
 
   /** A property that tracks the EAP fee schedule (if any) for the TLD. */
   @Column(nullable = false)
-  @Mapify(TimedTransitionProperty.TimeMapper.class)
   TimedTransitionProperty<Money, BillingCostTransition> eapFeeSchedule =
       TimedTransitionProperty.forMapify(DEFAULT_EAP_BILLING_COST, BillingCostTransition.class);
 
@@ -532,10 +491,10 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   @Column(nullable = false)
   DateTime claimsPeriodEnd = END_OF_TIME;
 
-  /** An allow list of clients allowed to be used on domains on this TLD (ignored if empty). */
+  /** An allowlist of clients allowed to be used on domains on this TLD (ignored if empty). */
   @Nullable Set<String> allowedRegistrantContactIds;
 
-  /** An allow list of hosts allowed to be used on domains on this TLD (ignored if empty). */
+  /** An allowlist of hosts allowed to be used on domains on this TLD (ignored if empty). */
   @Nullable Set<String> allowedFullyQualifiedHostNames;
 
   public String getTldStr() {
@@ -583,6 +542,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     return dnsPaused;
   }
 
+  @Nullable
   public String getDriveFolderId() {
     return driveFolderId;
   }
@@ -628,7 +588,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   }
 
   /**
-   * Use <code>PricingEngineProxy.getDomainCreateCost</code> instead of this to find the cost for a
+   * Use {@code PricingEngineProxy.getDomainCreateCost} instead of this to find the cost for a
    * domain create.
    */
   @VisibleForTesting
@@ -645,8 +605,8 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   }
 
   /**
-   * Use <code>PricingEngineProxy.getDomainRenewCost</code> instead of this to find the cost for a
-   * domain renewal, and all derived costs (i.e. autorenews, transfers, and the per-domain part of a
+   * Use {@code PricingEngineProxy.getDomainRenewCost} instead of this to find the cost for a domain
+   * renewal, and all derived costs (i.e. autorenews, transfers, and the per-domain part of a
    * restore cost).
    */
   public Money getStandardRenewCost(DateTime now) {
@@ -756,7 +716,9 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
       checkArgument(
           Ordering.natural()
               .isStrictlyOrdered(
-                  Iterables.filter(tldStatesMap.values(), not(equalTo(TldState.QUIET_PERIOD)))),
+                  tldStatesMap.values().stream()
+                      .filter(state -> !TldState.QUIET_PERIOD.equals(state))
+                      .collect(Collectors.toList())),
           "The TLD states are chronologically out of order");
       getInstance().tldStateTransitions =
           TimedTransitionProperty.fromValueMap(tldStatesMap, TldStateTransition.class);
@@ -900,7 +862,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     }
 
     public Builder setPremiumList(@Nullable PremiumList premiumList) {
-      getInstance().premiumListName = (premiumList == null) ? null : premiumList.getName();
+      getInstance().premiumListName = premiumList == null ? null : premiumList.getName();
       return this;
     }
 
@@ -940,7 +902,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
       return this;
     }
 
-    private static final Pattern ROID_SUFFIX_PATTERN = Pattern.compile("^[A-Z0-9_]{1,8}$");
+    private static final Pattern ROID_SUFFIX_PATTERN = Pattern.compile("^[A-Z\\d_]{1,8}$");
 
     public Builder setRoidSuffix(String roidSuffix) {
       checkArgument(
@@ -1037,7 +999,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
       checkArgument(
           instance.numDnsPublishLocks > 0,
           "Number of DNS publish locks must be positive. Use 1 for TLD-wide locks.");
-      instance.tldStrId = tldName;
+      instance.tldStr = tldName;
       instance.tldUnicode = Idn.toUnicode(tldName);
       return super.build();
     }
@@ -1045,6 +1007,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
 
   /** Exception to throw when no Registry entity is found for given TLD string(s). */
   public static class RegistryNotFoundException extends RuntimeException {
+
     RegistryNotFoundException(ImmutableSet<String> tlds) {
       super("No registry object(s) found for " + Joiner.on(", ").join(tlds));
     }

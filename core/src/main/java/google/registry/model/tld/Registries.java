@@ -79,7 +79,7 @@ public final class Registries {
                         EntityManager entityManager = jpaTm().getEntityManager();
                         Stream<?> resultStream =
                             entityManager
-                                .createQuery("SELECT tldStrId, tldType FROM Tld")
+                                .createQuery("SELECT tldStr, tldType FROM Tld")
                                 .getResultStream();
                         return resultStream
                             .map(e -> ((Object[]) e))

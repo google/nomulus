@@ -13,4 +13,3 @@ OneTime
 PollMessage
 Recurring
 Registrar
-Registry
