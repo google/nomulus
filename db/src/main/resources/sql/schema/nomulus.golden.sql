@@ -52,7 +52,8 @@ CREATE TABLE public."AllocationToken" (
     token_status_transitions public.hstore,
     token_type text,
     redemption_domain_history_id bigint,
-    renewal_price_behavior text DEFAULT 'DEFAULT'::text NOT NULL
+    renewal_price_behavior text DEFAULT 'DEFAULT'::text NOT NULL,
+    registration_behavior text DEFAULT 'DEFAULT'::text NOT NULL
 );
 
 
