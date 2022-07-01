@@ -43,6 +43,7 @@ import google.registry.util.RequestStatusChecker;
 import google.registry.util.RequestStatusCheckerImpl;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -251,13 +252,13 @@ public final class RequestModule {
 
   @Provides
   @Header(APP_ENGINE_RETRY_HEADER)
-  static int provideAppEngineRetryCount(HttpServletRequest req) {
-    return extractOptionalHeader(req, APP_ENGINE_RETRY_HEADER).map(Integer::parseInt).orElse(0);
+  static Optional<String> provideAppEngineRetryCount(HttpServletRequest req) {
+    return extractOptionalHeader(req, APP_ENGINE_RETRY_HEADER);
   }
 
   @Provides
   @Header(CLOUD_TASKS_RETRY_HEADER)
-  static int provideCloudTasksRetryCount(HttpServletRequest req) {
-    return extractOptionalHeader(req, CLOUD_TASKS_RETRY_HEADER).map(Integer::parseInt).orElse(0);
+  static Optional<String> provideCloudTasksRetryCount(HttpServletRequest req) {
+    return extractOptionalHeader(req, CLOUD_TASKS_RETRY_HEADER);
   }
 }

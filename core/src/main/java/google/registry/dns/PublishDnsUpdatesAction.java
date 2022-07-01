@@ -25,7 +25,7 @@ import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_CREATED;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.util.CollectionUtils.nullToEmpty;
-import static java.lang.Math.max;
+import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -43,11 +43,13 @@ import google.registry.request.Action.Service;
 import google.registry.request.Header;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.Parameter;
+import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import google.registry.util.CloudTasksUtils;
 import google.registry.util.DomainNameUtils;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.inject.Inject;
@@ -77,8 +79,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   private final DnsWriterProxy dnsWriterProxy;
   private final DnsMetrics dnsMetrics;
   private final Duration timeout;
-  private final int appEngineRetryCount;
-  private final int cloudTasksRetryCount;
+  private final int retryCount;
 
   /**
    * The DNS writer to use for this batch.
@@ -100,6 +101,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   private final LockHandler lockHandler;
   private final Clock clock;
   private final CloudTasksUtils cloudTasksUtils;
+  private final Response response;
 
   @Inject
   public PublishDnsUpdatesAction(
@@ -112,20 +114,21 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       @Parameter(PARAM_HOSTS) Set<String> hosts,
       @Parameter(PARAM_TLD) String tld,
       @Config("publishDnsUpdatesLockDuration") Duration timeout,
-      @Header(APP_ENGINE_RETRY_HEADER) int appEngineRetryCount,
-      @Header(CLOUD_TASKS_RETRY_HEADER) int cloudTasksRetryCount,
+      @Header(APP_ENGINE_RETRY_HEADER) Optional<String> appEngineRetryCount,
+      @Header(CLOUD_TASKS_RETRY_HEADER) Optional<String> cloudTasksRetryCount,
       DnsQueue dnsQueue,
       DnsWriterProxy dnsWriterProxy,
       DnsMetrics dnsMetrics,
       LockHandler lockHandler,
       Clock clock,
-      CloudTasksUtils cloudTasksUtils) {
+      CloudTasksUtils cloudTasksUtils,
+      Response response) {
     this.dnsQueue = dnsQueue;
     this.dnsWriterProxy = dnsWriterProxy;
     this.dnsMetrics = dnsMetrics;
     this.timeout = timeout;
-    this.appEngineRetryCount = appEngineRetryCount;
-    this.cloudTasksRetryCount = cloudTasksRetryCount;
+    this.retryCount =
+        Integer.parseInt(cloudTasksRetryCount.orElse(appEngineRetryCount.orElse("0")));
     this.dnsWriter = dnsWriter;
     this.enqueuedTime = enqueuedTime;
     this.itemsCreateTime = itemsCreateTime;
@@ -137,6 +140,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     this.lockHandler = lockHandler;
     this.clock = clock;
     this.cloudTasksUtils = cloudTasksUtils;
+    this.response = response;
   }
 
   private void recordActionResult(ActionStatus status) {
@@ -189,7 +193,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       processBatch();
     } catch (Throwable e) {
       // Retry the batch 3 times
-      if (max(appEngineRetryCount, cloudTasksRetryCount) < 3) {
+      if (retryCount < 3) {
         throw e;
       }
       // After 3 retries, split the batch
@@ -202,13 +206,14 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
         enqueue(ImmutableList.of(), ImmutableList.copyOf(hosts));
       }
       // If the batch only contains 1 name, allow it more retries
-      else if (max(appEngineRetryCount, cloudTasksRetryCount) < RETRIES_BEFORE_PERMANENT_FAILURE) {
+      else if (retryCount < RETRIES_BEFORE_PERMANENT_FAILURE) {
         throw e;
       }
       // If we get here, we should terminate this task as it is likely a perpetually failing task.
       // TODO(b/237302821): Send an email notifying partner the dns update failed
       recordActionResult(ActionStatus.TIMED_OUT);
-      logger.atSevere().log("Terminated task after too many retries");
+      response.setStatus(SC_ACCEPTED);
+      logger.atSevere().withCause(e).log("Terminated task after too many retries");
     }
     return null;
   }

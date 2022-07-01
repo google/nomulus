@@ -27,6 +27,8 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -53,11 +55,13 @@ import google.registry.request.lock.LockHandler;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
+import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.InjectExtension;
 import google.registry.util.CloudTasksUtils;
 import google.registry.util.CloudTasksUtils.SerializableCloudTasksClient;
 import google.registry.util.Retrier;
+import java.util.Optional;
 import java.util.Set;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -74,6 +78,7 @@ public class PublishDnsUpdatesActionTest {
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
   private final FakeClock clock = new FakeClock(DateTime.parse("1971-01-01TZ"));
+  private final FakeResponse response = new FakeResponse();
   private final FakeLockHandler lockHandler = new FakeLockHandler(true);
   private final DnsWriter dnsWriter = mock(DnsWriter.class);
   private final DnsMetrics dnsMetrics = mock(DnsMetrics.class);
@@ -149,14 +154,15 @@ public class PublishDnsUpdatesActionTest {
         hosts,
         tld,
         Duration.standardSeconds(10),
-        retryCount,
-        0,
+        Optional.of(Integer.toString(retryCount)),
+        Optional.empty(),
         dnsQueue,
         new DnsWriterProxy(ImmutableMap.of("correctWriter", dnsWriter)),
         dnsMetrics,
         lockHandler,
         clock,
-        spyCloudTasksUtils);
+        spyCloudTasksUtils,
+        response);
   }
 
   @Test
@@ -184,6 +190,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     verifyNoMoreInteractions(dnsQueue);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -210,6 +217,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     verifyNoMoreInteractions(dnsQueue);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -407,10 +415,11 @@ public class PublishDnsUpdatesActionTest {
   void testTaskFailsAfterTenRetries_DoesNotRetry() {
     action =
         createAction(
-            "xn--q9jyb4c", ImmutableSet.of(), ImmutableSet.of("ns1.example.xn--q9jyb4c"), 9);
+            "xn--q9jyb4c", ImmutableSet.of(), ImmutableSet.of("ns1.example.xn--q9jyb4c"), 10);
     doThrow(new RuntimeException()).when(dnsWriter).commit();
-    assertThrows(RuntimeException.class, action::run);
+    action.run();
     verifyNoMoreInteractions(spyCloudTasksUtils);
+    assertThat(response.getStatus()).isEqualTo(SC_ACCEPTED);
   }
 
   @Test
