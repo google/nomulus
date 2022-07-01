@@ -869,7 +869,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
         true);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFeeExtension_renewCommandPremium_anchorTenant() throws Exception {
     createTld("tld");
     persistResource(
@@ -890,7 +890,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
         true);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFeeExtension_renewCommandPremium_internalRegistration() throws Exception {
     createTld("tld");
     persistResource(
@@ -911,7 +911,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
         true);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFeeExtension_renewCommandPremium_anchorTenant_multiYear() throws Exception {
     createTld("tld");
     persistResource(
@@ -932,7 +932,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
         true);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFeeExtension_renewCommandPremium_internalRegistration_multiYear() throws Exception {
     createTld("tld");
     persistResource(
@@ -953,7 +953,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
         true);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFeeExtension_renewCommandStandard_internalRegistration() throws Exception {
     createTld("tld");
     setEppInput(
