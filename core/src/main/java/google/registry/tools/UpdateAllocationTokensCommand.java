@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.tools.params.TransitionListParameter.TokenStatusTransitions;
 import java.util.List;
@@ -100,6 +101,15 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   @Nullable
   private RenewalPriceBehavior renewalPriceBehavior;
 
+  @Parameter(
+      names = {"--registration_behavior"},
+      description =
+          "Any special registration behavior, including DEFAULT (no special behavior),"
+              + " BYPASS_TLD_STATE (allow registrations during e.g. QUIET_PERIOD), and"
+              + " ANCHOR_TENANT (used for anchor tenant registrations")
+  @Nullable
+  private RegistrationBehavior registrationBehavior;
+
   private static final int BATCH_SIZE = 20;
   private static final Joiner JOINER = Joiner.on(", ");
 
@@ -156,8 +166,8 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     Optional.ofNullable(discountPremiums).ifPresent(builder::setDiscountPremiums);
     Optional.ofNullable(discountYears).ifPresent(builder::setDiscountYears);
     Optional.ofNullable(tokenStatusTransitions).ifPresent(builder::setTokenStatusTransitions);
-    Optional.ofNullable(renewalPriceBehavior)
-        .ifPresent(behavior -> builder.setRenewalPriceBehavior(renewalPriceBehavior));
+    Optional.ofNullable(renewalPriceBehavior).ifPresent(builder::setRenewalPriceBehavior);
+    Optional.ofNullable(registrationBehavior).ifPresent(builder::setRegistrationBehavior);
     return builder.build();
   }
 

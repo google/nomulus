@@ -24,6 +24,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
@@ -33,6 +34,7 @@ import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -188,6 +190,67 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .isEqualTo(
             "Invalid value for --renewal_price_behavior parameter. Allowed values:[DEFAULT,"
                 + " NONPREMIUM, SPECIFIED]");
+  }
+
+  @Test
+  void testSuccess_registrationBehavior_same() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo()
+                .setRegistrationBehavior(AllocationToken.RegistrationBehavior.BYPASS_TLD_STATE)
+                .build());
+    assertThat(token.getRegistrationBehavior())
+        .isEqualTo(AllocationToken.RegistrationBehavior.BYPASS_TLD_STATE);
+    runCommandForced("--tokens", "token", "--registration_behavior", "BYPASS_TLD_STATE");
+    assertThat(loadByEntity(token).getRegistrationBehavior())
+        .isEqualTo(AllocationToken.RegistrationBehavior.BYPASS_TLD_STATE);
+  }
+
+  @Test
+  void testSuccess_registrationBehavior_different() throws Exception {
+    AllocationToken token = persistResource(builderWithPromo().build());
+    assertThat(token.getRegistrationBehavior())
+        .isEqualTo(AllocationToken.RegistrationBehavior.DEFAULT);
+    runCommandForced("--tokens", "token", "--registration_behavior", "BYPASS_TLD_STATE");
+    assertThat(loadByEntity(token).getRegistrationBehavior())
+        .isEqualTo(RegistrationBehavior.BYPASS_TLD_STATE);
+  }
+
+  @Test
+  void testFailure_registrationBehavior_enforcesAnchorTenantRestriction() throws Exception {
+    AllocationToken token = persistResource(builderWithPromo().build());
+    assertThat(token.getRegistrationBehavior())
+        .isEqualTo(AllocationToken.RegistrationBehavior.DEFAULT);
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--tokens", "token", "--registration_behavior", "ANCHOR_TENANT")))
+        .hasMessageThat()
+        .isEqualTo("ANCHOR_TENANT tokens must be tied to a domain");
+  }
+
+  @Test
+  void testFailure_registrationBehavior_invalid() throws Exception {
+    assertThat(
+            assertThrows(
+                ParameterException.class,
+                () -> runCommand("--tokens", "foobar", "--registration_behavior")))
+        .hasMessageThat()
+        .contains("Expected a value after parameter --registration_behavior");
+    assertThat(
+            assertThrows(
+                ParameterException.class,
+                () -> runCommand("--tokens", "foobar", "--registration_behavior", "bad")))
+        .hasMessageThat()
+        .contains("Invalid value for --registration_behavior");
+    assertThat(
+            assertThrows(
+                ParameterException.class,
+                () -> runCommand("--tokens", "foobar", "--registration_behavior", "")))
+        .hasMessageThat()
+        .contains("Invalid value for --registration_behavior");
   }
 
   @Test

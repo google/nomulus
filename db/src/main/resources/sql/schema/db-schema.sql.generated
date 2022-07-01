@@ -24,6 +24,7 @@
         domain_name text,
         redemption_domain_history_id int8,
         redemption_domain_repo_id text,
+        registration_behavior text not null,
         renewal_price_behavior text not null,
         token_status_transitions hstore,
         token_type text,

@@ -36,6 +36,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
@@ -447,6 +448,34 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Discount years can only be specified along with a discount fraction");
+  }
+
+  @Test
+  void testBuild_registrationBehaviors() {
+    createTld("tld");
+    // BYPASS_TLD_STATE doesn't require a domain
+    AllocationToken token =
+        new AllocationToken.Builder()
+            .setToken("abc")
+            .setTokenType(SINGLE_USE)
+            .setRegistrationBehavior(RegistrationBehavior.BYPASS_TLD_STATE)
+            .build();
+    // ANCHOR_TENANT does
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    token
+                        .asBuilder()
+                        .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+                        .build()))
+        .hasMessageThat()
+        .isEqualTo("ANCHOR_TENANT tokens must be tied to a domain");
+    token
+        .asBuilder()
+        .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+        .setDomainName("example.tld")
+        .build();
   }
 
   private void assertBadInitialTransition(TokenStatus status) {

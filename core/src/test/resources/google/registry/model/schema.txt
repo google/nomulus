@@ -338,12 +338,18 @@ class google.registry.model.domain.token.AllocationToken {
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.billing.BillingEvent$RenewalPriceBehavior renewalPriceBehavior;
   google.registry.model.common.TimedTransitionProperty<google.registry.model.domain.token.AllocationToken$TokenStatus> tokenStatusTransitions;
+  google.registry.model.domain.token.AllocationToken$RegistrationBehavior registrationBehavior;
   google.registry.model.domain.token.AllocationToken$TokenType tokenType;
   google.registry.persistence.DomainHistoryVKey redemptionHistoryEntry;
   int discountYears;
   java.lang.String domainName;
   java.util.Set<java.lang.String> allowedClientIds;
   java.util.Set<java.lang.String> allowedTlds;
+}
+enum google.registry.model.domain.token.AllocationToken$RegistrationBehavior {
+  ANCHOR_TENANT;
+  BYPASS_TLD_STATE;
+  DEFAULT;
 }
 enum google.registry.model.domain.token.AllocationToken$TokenStatus {
   CANCELLED;
