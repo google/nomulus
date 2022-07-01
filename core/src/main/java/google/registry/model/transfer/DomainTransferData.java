@@ -122,16 +122,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     return super.copyConstantFieldsToBuilder().setTransferPeriod(this.transferPeriod);
   }
 
-  /**
-   * Fix the VKey "kind" for the PollMessage keys.
-   *
-   * <p>For use by DomainBase/DomainHistory OnLoad methods ONLY.
-   */
-  public void convertVKeys() {
-    serverApproveAutorenewPollMessage =
-        PollMessage.Autorenew.convertVKey(serverApproveAutorenewPollMessage);
-  }
-
   public Period getTransferPeriod() {
     return transferPeriod;
   }
