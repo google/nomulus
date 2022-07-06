@@ -1002,16 +1002,6 @@ ALTER SEQUENCE public."SignedMarkRevocationList_revision_id_seq" OWNED BY public
 
 
 --
--- Name: SqlReplayCheckpoint; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."SqlReplayCheckpoint" (
-    id bigint NOT NULL,
-    last_replay_time timestamp with time zone NOT NULL
-);
-
-
---
 -- Name: Tld; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1070,35 +1060,6 @@ CREATE TABLE public."TmchCrl" (
 
 
 --
--- Name: Transaction; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."Transaction" (
-    id bigint NOT NULL,
-    contents bytea
-);
-
-
---
--- Name: Transaction_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."Transaction_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: Transaction_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public."Transaction_id_seq" OWNED BY public."Transaction".id;
-
-
---
 -- Name: ClaimsList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1145,13 +1106,6 @@ ALTER TABLE ONLY public."SignedMarkRevocationList" ALTER COLUMN revision_id SET 
 --
 
 ALTER TABLE ONLY public."Spec11ThreatMatch" ALTER COLUMN id SET DEFAULT nextval('public."SafeBrowsingThreat_id_seq"'::regclass);
-
-
---
--- Name: Transaction id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Transaction" ALTER COLUMN id SET DEFAULT nextval('public."Transaction_id_seq"'::regclass);
 
 
 --
@@ -1419,14 +1373,6 @@ ALTER TABLE ONLY public."SignedMarkRevocationList"
 
 
 --
--- Name: SqlReplayCheckpoint SqlReplayCheckpoint_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."SqlReplayCheckpoint"
-    ADD CONSTRAINT "SqlReplayCheckpoint_pkey" PRIMARY KEY (id);
-
-
---
 -- Name: Tld Tld_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1440,14 +1386,6 @@ ALTER TABLE ONLY public."Tld"
 
 ALTER TABLE ONLY public."TmchCrl"
     ADD CONSTRAINT "TmchCrl_pkey" PRIMARY KEY (id);
-
-
---
--- Name: Transaction Transaction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Transaction"
-    ADD CONSTRAINT "Transaction_pkey" PRIMARY KEY (id);
 
 
 --
