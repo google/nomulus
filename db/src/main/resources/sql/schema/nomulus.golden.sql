@@ -52,7 +52,8 @@ CREATE TABLE public."AllocationToken" (
     token_status_transitions public.hstore,
     token_type text,
     redemption_domain_history_id bigint,
-    renewal_price_behavior text DEFAULT 'DEFAULT'::text NOT NULL
+    renewal_price_behavior text DEFAULT 'DEFAULT'::text NOT NULL,
+    registration_behavior text DEFAULT 'DEFAULT'::text NOT NULL
 );
 
 
@@ -317,6 +318,16 @@ CREATE TABLE public."Cursor" (
     type text NOT NULL,
     cursor_time timestamp with time zone NOT NULL,
     last_update_time timestamp with time zone NOT NULL
+);
+
+
+--
+-- Name: DatabaseMigrationStateSchedule; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DatabaseMigrationStateSchedule" (
+    id bigint NOT NULL,
+    migration_transitions public.hstore
 );
 
 
@@ -1216,6 +1227,14 @@ ALTER TABLE ONLY public."Cursor"
 
 
 --
+-- Name: DatabaseMigrationStateSchedule DatabaseMigrationStateSchedule_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DatabaseMigrationStateSchedule"
+    ADD CONSTRAINT "DatabaseMigrationStateSchedule_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: DelegationSignerData DelegationSignerData_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1460,6 +1479,13 @@ ALTER TABLE ONLY public."DomainHistoryHost"
 --
 
 CREATE INDEX allocation_token_domain_name_idx ON public."AllocationToken" USING btree (domain_name);
+
+
+--
+-- Name: database_migration_state_schedule_singleton; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX database_migration_state_schedule_singleton ON public."DatabaseMigrationStateSchedule" USING btree ((true));
 
 
 --

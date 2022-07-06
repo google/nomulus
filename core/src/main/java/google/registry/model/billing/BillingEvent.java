@@ -32,7 +32,6 @@ import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.Parent;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.Buildable;
@@ -203,12 +202,6 @@ public abstract class BillingEvent extends ImmutableObject
             Key.create(DomainBase.class, domainRepoId),
             DomainHistory.class,
             domainHistoryRevisionId);
-  }
-
-  @OnLoad
-  void onLoad() {
-    domainHistoryRevisionId = parent.getId();
-    domainRepoId = parent.getParent().getName();
   }
 
   public String getRegistrarId() {
@@ -438,15 +431,6 @@ public abstract class BillingEvent extends ImmutableObject
     }
 
     @Override
-    void onLoad() {
-      super.onLoad();
-      if (cancellationMatchingBillingEvent != null) {
-        recurringEventHistoryRevisionId =
-            cancellationMatchingBillingEvent.getOfyKey().getParent().getId();
-      }
-    }
-
-    @Override
     void postLoad() {
       super.postLoad();
       if (cancellationMatchingBillingEvent != null) {
@@ -493,6 +477,7 @@ public abstract class BillingEvent extends ImmutableObject
       public Builder setCancellationMatchingBillingEvent(
           VKey<Recurring> cancellationMatchingBillingEvent) {
         getInstance().cancellationMatchingBillingEvent = cancellationMatchingBillingEvent;
+        // getOfyKey() here is safe, recurring billing event VKeys have a valid ofy key.
         getInstance().recurringEventHistoryRevisionId =
             cancellationMatchingBillingEvent.getOfyKey().getParent().getId();
         return this;
@@ -526,6 +511,7 @@ public abstract class BillingEvent extends ImmutableObject
                 == (instance.cancellationMatchingBillingEvent != null),
             "Cancellation matching billing event must be set if and only if the SYNTHETIC flag "
                 + "is set.");
+        // getOfyKey() here is safe, billing event VKeys have a valid ofy key.
         checkState(
             !instance.getFlags().contains(Flag.SYNTHETIC)
                 || (instance.cancellationMatchingBillingEvent.getOfyKey().getParent().getId()
