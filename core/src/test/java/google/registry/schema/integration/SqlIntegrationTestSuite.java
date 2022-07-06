@@ -26,7 +26,6 @@ import google.registry.model.history.DomainHistoryTest;
 import google.registry.model.history.HostHistoryTest;
 import google.registry.model.poll.PollMessageTest;
 import google.registry.model.rde.RdeRevisionTest;
-import google.registry.model.replay.SqlReplayCheckpointTest;
 import google.registry.model.reporting.Spec11ThreatMatchTest;
 import google.registry.model.server.LockTest;
 import google.registry.model.server.ServerSecretTest;
@@ -99,7 +98,6 @@ import org.junit.runner.RunWith;
   ServerSecretTest.class,
   SignedMarkRevocationListDaoTest.class,
   Spec11ThreatMatchTest.class,
-  SqlReplayCheckpointTest.class,
   TmchCrlTest.class,
   // AfterSuiteTest must be the last entry. See class javadoc for details.
   AfterSuiteTest.class
