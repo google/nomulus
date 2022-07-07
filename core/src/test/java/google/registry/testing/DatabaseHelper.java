@@ -69,6 +69,8 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
@@ -328,6 +330,35 @@ public class DatabaseHelper {
     tm().transactNew(() -> LordnTaskUtils.enqueueDomainBaseTask(persistedDomain));
     maybeAdvanceClock();
     return persistedDomain;
+  }
+
+  /** Persists a {@link Recurring} and {@link HistoryEntry} for a domain that already exists. */
+  public static DomainBase persistBillingRecurrenceForDomain(
+      DomainBase domain, RenewalPriceBehavior renewalPriceBehavior, @Nullable Money renewalPrice) {
+    DomainHistory historyEntry =
+        persistResource(
+            new DomainHistory.Builder()
+                .setRegistrarId(domain.getCreationRegistrarId())
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setModificationTime(domain.getCreationTime())
+                .setDomain(domain)
+                .build());
+    Recurring recurring =
+        persistResource(
+            new BillingEvent.Recurring.Builder()
+                .setParent(historyEntry)
+                .setRenewalPrice(renewalPrice)
+                .setRenewalPriceBehavior(renewalPriceBehavior)
+                .setRegistrarId(domain.getCreationRegistrarId())
+                .setEventTime(domain.getCreationTime())
+                .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                .setId(2L)
+                .setReason(Reason.RENEW)
+                .setRecurrenceEndTime(END_OF_TIME)
+                .setTargetId(domain.getDomainName())
+                .build());
+    return persistResource(
+        domain.asBuilder().setAutorenewBillingEvent(recurring.createVKey()).build());
   }
 
   public static ReservedList persistReservedList(String listName, String... lines) {

@@ -163,7 +163,8 @@ public final class DomainInfoFlow implements Flow {
           now,
           pricingLogic,
           Optional.empty(),
-          false);
+          false,
+          tm().transact(() -> tm().loadByKey(domain.getAutorenewBillingEvent())));
       extensions.add(builder.build());
     }
     return extensions.build();

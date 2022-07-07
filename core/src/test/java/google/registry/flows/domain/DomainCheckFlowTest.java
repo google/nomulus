@@ -14,6 +14,9 @@
 
 package google.registry.flows.domain;
 
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.eppoutput.CheckData.DomainCheck.create;
@@ -24,6 +27,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistBillingRecurrenceForDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
@@ -66,7 +70,11 @@ import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.flows.domain.DomainFlowUtils.TransfersAreAlwaysForOneYearException;
 import google.registry.flows.domain.DomainFlowUtils.UnknownFeeCommandException;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
+import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingEvent.Flag;
+import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.eppcommon.StatusValue;
@@ -75,6 +83,7 @@ import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.testing.SetClockExtension;
+import java.math.BigDecimal;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -807,6 +816,29 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
+  void testFeeExtension_existingPremiumDomain_withNonPremiumRenewalBehavior() throws Exception {
+    createTld("example");
+    persistBillingRecurrenceForDomain(persistActiveDomain("rich.example"), NONPREMIUM, null);
+    setEppInput("domain_check_fee_premium_v06.xml");
+    runFlowAssertResponse(
+        loadFile(
+            "domain_check_fee_response_domain_exists_v06.xml",
+            ImmutableMap.of("RENEWPRICE", "11.00")));
+  }
+
+  @Test
+  void testFeeExtension_existingPremiumDomain_withSpecifiedRenewalBehavior() throws Exception {
+    createTld("example");
+    persistBillingRecurrenceForDomain(
+        persistActiveDomain("rich.example"), SPECIFIED, Money.of(USD, new BigDecimal("15.55")));
+    setEppInput("domain_check_fee_premium_v06.xml");
+    runFlowAssertResponse(
+        loadFile(
+            "domain_check_fee_response_domain_exists_v06.xml",
+            ImmutableMap.of("RENEWPRICE", "15.55")));
+  }
+
+  @Test
   void testFeeExtension_premium_eap_v06() throws Exception {
     createTld("example");
     setEppInput("domain_check_fee_premium_v06.xml");
@@ -829,21 +861,28 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_premium_eap_v06_withRenewalOnRestore() throws Exception {
     createTld("example");
-    setEppInput("domain_check_fee_premium_v06.xml");
-    clock.setTo(DateTime.parse("2010-01-01T10:00:00Z"));
+    DateTime startTime = DateTime.parse("2010-01-01T10:00:00Z");
+    clock.setTo(startTime);
+    persistResource(
+        persistActiveDomain("rich.example")
+            .asBuilder()
+            .setDeletionTime(clock.nowUtc().plusDays(25))
+            .setRegistrationExpirationTime(clock.nowUtc().minusDays(1))
+            .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
+            .build());
     persistPendingDeleteDomain("rich.example");
+    setEppInput("domain_check_fee_premium_v06.xml");
     persistResource(
         Registry.get("example")
             .asBuilder()
             .setEapFeeSchedule(
                 new ImmutableSortedMap.Builder<DateTime, Money>(Ordering.natural())
                     .put(START_OF_TIME, Money.of(USD, 0))
-                    .put(clock.nowUtc().minusDays(1), Money.of(USD, 100))
-                    .put(clock.nowUtc().plusDays(1), Money.of(USD, 50))
-                    .put(clock.nowUtc().plusDays(2), Money.of(USD, 0))
+                    .put(startTime.minusDays(1), Money.of(USD, 100))
+                    .put(startTime.plusDays(1), Money.of(USD, 50))
+                    .put(startTime.plusDays(2), Money.of(USD, 0))
                     .build())
             .build());
-
     runFlowAssertResponse(loadFile("domain_check_fee_premium_eap_response_v06_with_renewal.xml"));
   }
 
@@ -942,7 +981,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     // The domain needs to exist in order for it to be loaded to check for restore fee.
-    persistActiveDomain("allowedinsunrise.tld");
+    persistBillingRecurrenceForDomain(persistActiveDomain("allowedinsunrise.tld"), DEFAULT, null);
     setEppInput("domain_check_fee_reserved_dupes_v06.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_response_dupes_v06.xml"));
   }
@@ -1034,8 +1073,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     // The domain needs to exist in order for it to be loaded to check for restore fee.
-    persistActiveDomain("allowedinsunrise.tld");
     setEppInput("domain_check_fee_reserved_dupes_v12.xml");
+    persistBillingRecurrenceForDomain(persistActiveDomain("allowedinsunrise.tld"), DEFAULT, null);
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_dupes_response_v12.xml"));
   }
 
@@ -1375,13 +1414,35 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     assertTldsFieldLogged("com", "net", "org");
   }
 
-  private void persistPendingDeleteDomain(String domainName) {
-    persistResource(
-        newDomainBase(domainName)
-            .asBuilder()
-            .setDeletionTime(clock.nowUtc().plusDays(25))
-            .setRegistrationExpirationTime(clock.nowUtc().minusDays(1))
-            .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
-            .build());
+  private DomainBase persistPendingDeleteDomain(String domainName) {
+    DomainBase existingDomain =
+        persistResource(
+            newDomainBase(domainName)
+                .asBuilder()
+                .setDeletionTime(clock.nowUtc().plusDays(25))
+                .setRegistrationExpirationTime(clock.nowUtc().minusDays(1))
+                .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
+                .build());
+    DomainHistory historyEntry =
+        persistResource(
+            new DomainHistory.Builder()
+                .setDomain(existingDomain)
+                .setType(HistoryEntry.Type.DOMAIN_DELETE)
+                .setModificationTime(existingDomain.getCreationTime())
+                .setRegistrarId(existingDomain.getCreationRegistrarId())
+                .build());
+    BillingEvent.Recurring renewEvent =
+        persistResource(
+            new BillingEvent.Recurring.Builder()
+                .setReason(Reason.RENEW)
+                .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                .setTargetId(existingDomain.getDomainName())
+                .setRegistrarId("TheRegistrar")
+                .setEventTime(existingDomain.getCreationTime())
+                .setRecurrenceEndTime(clock.nowUtc())
+                .setParent(historyEntry)
+                .build());
+    return persistResource(
+        existingDomain.asBuilder().setAutorenewBillingEvent(renewEvent.createVKey()).build());
   }
 }

@@ -16,17 +16,23 @@ package google.registry.flows.domain;
 
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistBillingRecurrenceForDomain;
+import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.TestDataHelper.updateSubstitutions;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -46,6 +52,7 @@ import google.registry.flows.domain.DomainFlowUtils.TransfersAreAlwaysForOneYear
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
@@ -64,6 +71,8 @@ import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.SetClockExtension;
+import javax.annotation.Nullable;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -175,12 +184,6 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
     }
   }
 
-  private void doSuccessfulTest(
-      String expectedXmlFilename, boolean inactive, ImmutableMap<String, String> substitutions)
-      throws Exception {
-    doSuccessfulTest(expectedXmlFilename, inactive, substitutions, false);
-  }
-
   private void doSuccessfulTest(String expectedXmlFilename, boolean inactive) throws Exception {
     doSuccessfulTest(expectedXmlFilename, inactive, ImmutableMap.of(), false);
   }
@@ -193,6 +196,16 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
   private void doSuccessfulTestNoNameservers(String expectedXmlFilename) throws Exception {
     persistTestEntities(true);
     doSuccessfulTest(expectedXmlFilename, true);
+  }
+
+  /** sets up a sample recurring billing event as part of the domain creation process. */
+  private void setUpBillingEventForExistingDomain() {
+    setUpBillingEventForExistingDomain(DEFAULT, null);
+  }
+
+  private void setUpBillingEventForExistingDomain(
+      RenewalPriceBehavior renewalPriceBehavior, @Nullable Money renewalPrice) {
+    domain = persistBillingRecurrenceForDomain(domain, renewalPriceBehavior, renewalPrice);
   }
 
   @Test
@@ -685,6 +698,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "create",
             "PERIOD", "2"));
     persistTestEntities(false);
+    setUpBillingEventForExistingDomain();
     doSuccessfulTest(
         "domain_info_fee_response.xml",
         false,
@@ -692,7 +706,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "create",
             "DESCRIPTION", "create",
             "PERIOD", "2",
-            "FEE", "26.00"));
+            "FEE", "26.00"),
+        true);
   }
 
   /** Test renew command. */
@@ -705,6 +720,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "renew",
             "PERIOD", "2"));
     persistTestEntities(false);
+    setUpBillingEventForExistingDomain();
     doSuccessfulTest(
         "domain_info_fee_response.xml",
         false,
@@ -712,7 +728,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "renew",
             "DESCRIPTION", "renew",
             "PERIOD", "2",
-            "FEE", "22.00"));
+            "FEE", "22.00"),
+        true);
   }
 
   /** Test transfer command. */
@@ -725,6 +742,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "transfer",
             "PERIOD", "1"));
     persistTestEntities(false);
+    setUpBillingEventForExistingDomain();
     doSuccessfulTest(
         "domain_info_fee_response.xml",
         false,
@@ -732,7 +750,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "transfer",
             "DESCRIPTION", "renew",
             "PERIOD", "1",
-            "FEE", "11.00"));
+            "FEE", "11.00"),
+        true);
   }
 
   /** Test restore command. */
@@ -745,7 +764,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "restore",
             "PERIOD", "1"));
     persistTestEntities(false);
-    doSuccessfulTest("domain_info_fee_restore_response.xml", false);
+    setUpBillingEventForExistingDomain();
+    doSuccessfulTest("domain_info_fee_restore_response.xml", false, ImmutableMap.of(), true);
   }
 
   @Test
@@ -754,13 +774,15 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
         "domain_info_fee.xml",
         updateSubstitutions(SUBSTITUTION_BASE, "COMMAND", "restore", "PERIOD", "1"));
     persistTestEntities(false);
+    setUpBillingEventForExistingDomain();
     persistResource(
         domain
             .asBuilder()
             .setDeletionTime(clock.nowUtc().plusDays(25))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .build());
-    doSuccessfulTest("domain_info_fee_restore_response_no_renewal.xml", false);
+    doSuccessfulTest(
+        "domain_info_fee_restore_response_no_renewal.xml", false, ImmutableMap.of(), true);
   }
 
   @Test
@@ -771,6 +793,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
         updateSubstitutions(
             SUBSTITUTION_BASE, "NAME", "rich.example", "COMMAND", "restore", "PERIOD", "1"));
     persistTestEntities("rich.example", false);
+    setUpBillingEventForExistingDomain();
     persistResource(
         domain
             .asBuilder()
@@ -778,7 +801,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             .setRegistrationExpirationTime(clock.nowUtc().minusDays(1))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .build());
-    doSuccessfulTest("domain_info_fee_restore_response_with_renewal.xml", false);
+    doSuccessfulTest(
+        "domain_info_fee_restore_response_with_renewal.xml", false, ImmutableMap.of(), true);
   }
 
   /** Test create command on a premium label. */
@@ -793,10 +817,12 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "create",
             "PERIOD", "1"));
     persistTestEntities("rich.example", false);
+    setUpBillingEventForExistingDomain();
     doSuccessfulTest(
         "domain_info_fee_premium_response.xml",
         false,
-        ImmutableMap.of("COMMAND", "create", "DESCRIPTION", "create"));
+        ImmutableMap.of("COMMAND", "create", "DESCRIPTION", "create"),
+        true);
   }
 
   /** Test renew command on a premium label. */
@@ -811,10 +837,107 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "renew",
             "PERIOD", "1"));
     persistTestEntities("rich.example", false);
+    setUpBillingEventForExistingDomain();
     doSuccessfulTest(
         "domain_info_fee_premium_response.xml",
         false,
-        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew"));
+        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew"),
+        true);
+  }
+
+  @Test
+  void testFeeExtension_renewCommandPremium_anchorTenant() throws Exception {
+    createTld("tld");
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld", USD, "example,USD 70"))
+            .build());
+    setEppInput(
+        "domain_info_fee.xml",
+        updateSubstitutions(SUBSTITUTION_BASE, "COMMAND", "renew", "PERIOD", "1"));
+    persistTestEntities("example.tld", false);
+    setUpBillingEventForExistingDomain(NONPREMIUM, null);
+    doSuccessfulTest(
+        "domain_info_fee_response.xml",
+        false,
+        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "11.0", "PERIOD", "1"),
+        true);
+  }
+
+  @Test
+  void testFeeExtension_renewCommandPremium_internalRegistration() throws Exception {
+    createTld("tld");
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld", USD, "example,USD 70"))
+            .build());
+    setEppInput(
+        "domain_info_fee.xml",
+        updateSubstitutions(SUBSTITUTION_BASE, "COMMAND", "renew", "PERIOD", "1"));
+    persistTestEntities("example.tld", false);
+    setUpBillingEventForExistingDomain(SPECIFIED, Money.of(USD, 3));
+    doSuccessfulTest(
+        "domain_info_fee_response.xml",
+        false,
+        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "3.0", "PERIOD", "1"),
+        true);
+  }
+
+  @Test
+  void testFeeExtension_renewCommandPremium_anchorTenant_multiYear() throws Exception {
+    createTld("tld");
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld", USD, "example,USD 70"))
+            .build());
+    setEppInput(
+        "domain_info_fee.xml",
+        updateSubstitutions(SUBSTITUTION_BASE, "COMMAND", "renew", "PERIOD", "3"));
+    persistTestEntities("example.tld", false);
+    setUpBillingEventForExistingDomain(NONPREMIUM, null);
+    doSuccessfulTest(
+        "domain_info_fee_response.xml",
+        false,
+        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "33.0", "PERIOD", "3"),
+        true);
+  }
+
+  @Test
+  void testFeeExtension_renewCommandPremium_internalRegistration_multiYear() throws Exception {
+    createTld("tld");
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld", USD, "example,USD 70"))
+            .build());
+    setEppInput(
+        "domain_info_fee.xml",
+        updateSubstitutions(SUBSTITUTION_BASE, "COMMAND", "renew", "PERIOD", "3"));
+    persistTestEntities("example.tld", false);
+    setUpBillingEventForExistingDomain(SPECIFIED, Money.of(USD, 3));
+    doSuccessfulTest(
+        "domain_info_fee_response.xml",
+        false,
+        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "9.0", "PERIOD", "3"),
+        true);
+  }
+
+  @Test
+  void testFeeExtension_renewCommandStandard_internalRegistration() throws Exception {
+    createTld("tld");
+    setEppInput(
+        "domain_info_fee.xml",
+        updateSubstitutions(SUBSTITUTION_BASE, "COMMAND", "renew", "PERIOD", "1"));
+    persistTestEntities("example.tld", false);
+    setUpBillingEventForExistingDomain(SPECIFIED, Money.of(USD, 3));
+    doSuccessfulTest(
+        "domain_info_fee_response.xml",
+        false,
+        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "3.0", "PERIOD", "1"),
+        true);
   }
 
   /** Test transfer command on a premium label. */
@@ -829,10 +952,12 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "transfer",
             "PERIOD", "1"));
     persistTestEntities("rich.example", false);
+    setUpBillingEventForExistingDomain();
     doSuccessfulTest(
         "domain_info_fee_premium_response.xml",
         false,
-        ImmutableMap.of("COMMAND", "transfer", "DESCRIPTION", "renew"));
+        ImmutableMap.of("COMMAND", "transfer", "DESCRIPTION", "renew"),
+        true);
   }
 
   /** Test restore command on a premium label. */
@@ -847,7 +972,9 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "restore",
             "PERIOD", "1"));
     persistTestEntities("rich.example", false);
-    doSuccessfulTest("domain_info_fee_restore_premium_response.xml", false);
+    setUpBillingEventForExistingDomain();
+    doSuccessfulTest(
+        "domain_info_fee_restore_premium_response.xml", false, ImmutableMap.of(), true);
   }
 
   /** Test setting the currency explicitly to a wrong value. */
@@ -861,6 +988,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "CURRENCY", "EUR",
             "PERIOD", "1"));
     persistTestEntities(false);
+    setUpBillingEventForExistingDomain();
     EppException thrown = assertThrows(CurrencyUnitMismatchException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -889,6 +1017,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "PERIOD", "2",
             "UNIT", "m"));
     persistTestEntities(false);
+    setUpBillingEventForExistingDomain();
     EppException thrown = assertThrows(BadPeriodUnitException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -898,6 +1027,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
   void testFeeExtension_commandPhase() {
     setEppInput("domain_info_fee_command_phase.xml");
     persistTestEntities(false);
+    setUpBillingEventForExistingDomain();
     EppException thrown = assertThrows(FeeChecksDontSupportPhasesException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -907,6 +1037,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
   void testFeeExtension_commandSubphase() {
     setEppInput("domain_info_fee_command_subphase.xml");
     persistTestEntities(false);
+    setUpBillingEventForExistingDomain();
     EppException thrown = assertThrows(FeeChecksDontSupportPhasesException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -921,6 +1052,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "restore",
             "PERIOD", "2"));
     persistTestEntities(false);
+    setUpBillingEventForExistingDomain();
     EppException thrown = assertThrows(RestoresAreAlwaysForOneYearException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -935,6 +1067,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             "COMMAND", "transfer",
             "PERIOD", "2"));
     persistTestEntities(false);
+    setUpBillingEventForExistingDomain();
     EppException thrown = assertThrows(TransfersAreAlwaysForOneYearException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
