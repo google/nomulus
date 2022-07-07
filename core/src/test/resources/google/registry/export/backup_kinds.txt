@@ -9,7 +9,6 @@ ForeignKeyDomainIndex
 ForeignKeyHostIndex
 HistoryEntry
 HostResource
-LastSqlTransaction
 Modification
 OneTime
 PollMessage

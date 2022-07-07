@@ -97,7 +97,6 @@ public final class RegistryTool {
           .put("save_sql_credential", SaveSqlCredentialCommand.class)
           .put("send_escrow_report_to_icann", SendEscrowReportToIcannCommand.class)
           .put("set_num_instances", SetNumInstancesCommand.class)
-          .put("set_sql_replay_checkpoint", SetSqlReplayCheckpointCommand.class)
           .put("setup_ote", SetupOteCommand.class)
           .put("uniform_rapid_suspension", UniformRapidSuspensionCommand.class)
           .put("unlock_domain", UnlockDomainCommand.class)

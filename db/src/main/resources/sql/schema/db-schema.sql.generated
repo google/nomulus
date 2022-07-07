@@ -682,12 +682,6 @@
         primary key (id)
     );
 
-    create table "SqlReplayCheckpoint" (
-       id int8 not null,
-        last_replay_time timestamptz not null,
-        primary key (id)
-    );
-
     create table "Tld" (
        tld_name text not null,
         add_grace_period_length interval not null,
@@ -735,12 +729,6 @@
         certificate_revocations text not null,
         update_timestamp timestamptz not null,
         url text not null,
-        primary key (id)
-    );
-
-    create table "Transaction" (
-       id  bigserial not null,
-        contents bytea,
         primary key (id)
     );
 create index allocation_token_domain_name_idx on "AllocationToken" (domain_name);
