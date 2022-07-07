@@ -14,6 +14,7 @@
 
 package google.registry.flows.domain;
 
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
@@ -23,7 +24,6 @@ import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
 import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -33,7 +33,6 @@ import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
@@ -74,7 +73,6 @@ import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
@@ -121,31 +119,6 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         "premiumcollision,NAME_COLLISION",
         "reserved,FULLY_BLOCKED",
         "specificuse,RESERVED_FOR_SPECIFIC_USE");
-  }
-
-  private void setUpBillingEventForExistingDomain(DomainBase domain) {
-    DomainBase existingDomain = loadByEntity(domain);
-    DomainHistory historyEntry =
-        persistResource(
-            new DomainHistory.Builder()
-                .setDomain(domain)
-                .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                .setModificationTime(domain.getCreationTime())
-                .setRegistrarId(domain.getCreationRegistrarId())
-                .build());
-    BillingEvent.Recurring renewEvent =
-        persistResource(
-            new BillingEvent.Recurring.Builder()
-                .setReason(Reason.RENEW)
-                .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-                .setTargetId(domain.getDomainName())
-                .setRegistrarId("TheRegistrar")
-                .setEventTime(domain.getCreationTime())
-                .setRecurrenceEndTime(END_OF_TIME)
-                .setParent(historyEntry)
-                .build());
-    persistResource(
-        existingDomain.asBuilder().setAutorenewBillingEvent(renewEvent.createVKey()).build());
   }
 
   @BeforeEach
@@ -845,19 +818,24 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_existingPremiumDomain_withNonPremiumRenewalBehavior() throws Exception {
     createTld("example");
-    DomainBase domain = persistActiveDomain("rich.example");
-    domain = persistBillingRecurrenceForDomain(domain, NONPREMIUM, null);
+    persistBillingRecurrenceForDomain(persistActiveDomain("rich.example"), NONPREMIUM, null);
     setEppInput("domain_check_fee_premium_v06.xml");
-    runFlowAssertResponse(loadFile("domain_check_fee_response_domain_exists_v06.xml", ImmutableMap.of("RENEWPRICE", "11.00")));
+    runFlowAssertResponse(
+        loadFile(
+            "domain_check_fee_response_domain_exists_v06.xml",
+            ImmutableMap.of("RENEWPRICE", "11.00")));
   }
 
   @Test
   void testFeeExtension_existingPremiumDomain_withSpecifiedRenewalBehavior() throws Exception {
     createTld("example");
-    DomainBase domain = persistActiveDomain("rich.example");
-    domain = persistBillingRecurrenceForDomain(domain, SPECIFIED, Money.of(USD, new BigDecimal("15.55")));
+    persistBillingRecurrenceForDomain(
+        persistActiveDomain("rich.example"), SPECIFIED, Money.of(USD, new BigDecimal("15.55")));
     setEppInput("domain_check_fee_premium_v06.xml");
-    runFlowAssertResponse(loadFile("domain_check_fee_response_domain_exists_v06.xml", ImmutableMap.of("RENEWPRICE", "15.55")));
+    runFlowAssertResponse(
+        loadFile(
+            "domain_check_fee_response_domain_exists_v06.xml",
+            ImmutableMap.of("RENEWPRICE", "15.55")));
   }
 
   @Test
@@ -1003,7 +981,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     // The domain needs to exist in order for it to be loaded to check for restore fee.
-    setUpBillingEventForExistingDomain(persistActiveDomain("allowedinsunrise.tld"));
+    persistBillingRecurrenceForDomain(persistActiveDomain("allowedinsunrise.tld"), DEFAULT, null);
     setEppInput("domain_check_fee_reserved_dupes_v06.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_response_dupes_v06.xml"));
   }
@@ -1096,7 +1074,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .build());
     // The domain needs to exist in order for it to be loaded to check for restore fee.
     setEppInput("domain_check_fee_reserved_dupes_v12.xml");
-    setUpBillingEventForExistingDomain(persistActiveDomain("allowedinsunrise.tld"));
+    persistBillingRecurrenceForDomain(persistActiveDomain("allowedinsunrise.tld"), DEFAULT, null);
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_dupes_response_v12.xml"));
   }
 

@@ -357,9 +357,8 @@ public class DatabaseHelper {
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setTargetId(domain.getDomainName())
                 .build());
-    return
-        persistResource(
-            domain.asBuilder().setAutorenewBillingEvent(recurring.createVKey()).build());
+    return persistResource(
+        domain.asBuilder().setAutorenewBillingEvent(recurring.createVKey()).build());
   }
 
   public static ReservedList persistReservedList(String listName, String... lines) {
