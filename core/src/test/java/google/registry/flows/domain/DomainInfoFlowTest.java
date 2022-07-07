@@ -25,6 +25,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistBillingRecurrenceForDomain;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
@@ -51,7 +52,6 @@ import google.registry.flows.domain.DomainFlowUtils.TransfersAreAlwaysForOneYear
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactResource;
@@ -204,32 +204,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
   }
 
   private void setUpBillingEventForExistingDomain(
-      @Nullable RenewalPriceBehavior renewalPriceBehavior, @Nullable Money renwealPrice) {
-    DomainHistory historyEntry =
-        persistResource(
-            new DomainHistory.Builder()
-                .setRegistrarId(domain.getCreationRegistrarId())
-                .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                .setModificationTime(domain.getCreationTime())
-                .setDomain(domain)
-                .build());
-    Recurring recurring =
-        persistResource(
-            new BillingEvent.Recurring.Builder()
-                .setParent(historyEntry)
-                .setRenewalPrice(renwealPrice)
-                .setRenewalPriceBehavior(renewalPriceBehavior)
-                .setRegistrarId(domain.getCreationRegistrarId())
-                .setEventTime(domain.getCreationTime())
-                .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-                .setId(2L)
-                .setReason(Reason.RENEW)
-                .setRecurrenceEndTime(END_OF_TIME)
-                .setTargetId(domain.getDomainName())
-                .build());
-    domain =
-        persistResource(
-            domain.asBuilder().setAutorenewBillingEvent(recurring.createVKey()).build());
+      RenewalPriceBehavior renewalPriceBehavior, @Nullable Money renewalPrice) {
+    domain = persistBillingRecurrenceForDomain(domain, renewalPriceBehavior, renewalPrice);
   }
 
   @Test

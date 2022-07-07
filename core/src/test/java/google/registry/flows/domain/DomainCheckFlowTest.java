@@ -14,6 +14,8 @@
 
 package google.registry.flows.domain;
 
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
+import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.eppoutput.CheckData.DomainCheck.create;
@@ -25,6 +27,7 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistBillingRecurrenceForDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
@@ -71,6 +74,7 @@ import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
@@ -81,6 +85,7 @@ import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.testing.SetClockExtension;
+import java.math.BigDecimal;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -835,6 +840,24 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     createTld("example");
     setEppInput("domain_check_fee_premium_v06.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_premium_response_v06.xml"));
+  }
+
+  @Test
+  void testFeeExtension_existingPremiumDomain_withNonPremiumRenewalBehavior() throws Exception {
+    createTld("example");
+    DomainBase domain = persistActiveDomain("rich.example");
+    domain = persistBillingRecurrenceForDomain(domain, NONPREMIUM, null);
+    setEppInput("domain_check_fee_premium_v06.xml");
+    runFlowAssertResponse(loadFile("domain_check_fee_response_domain_exists_v06.xml", ImmutableMap.of("RENEWPRICE", "11.00")));
+  }
+
+  @Test
+  void testFeeExtension_existingPremiumDomain_withSpecifiedRenewalBehavior() throws Exception {
+    createTld("example");
+    DomainBase domain = persistActiveDomain("rich.example");
+    domain = persistBillingRecurrenceForDomain(domain, SPECIFIED, Money.of(USD, new BigDecimal("15.55")));
+    setEppInput("domain_check_fee_premium_v06.xml");
+    runFlowAssertResponse(loadFile("domain_check_fee_response_domain_exists_v06.xml", ImmutableMap.of("RENEWPRICE", "15.55")));
   }
 
   @Test
