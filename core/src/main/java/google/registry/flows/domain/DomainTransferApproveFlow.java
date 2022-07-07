@@ -166,6 +166,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setTargetId(targetId)
             .setRegistrarId(gainingRegistrarId)
             .setEventTime(newExpirationTime)
+            // TODO: Set renewal behavior here.
             .setRecurrenceEndTime(END_OF_TIME)
             .setParent(domainHistoryKey)
             .build();

@@ -132,6 +132,7 @@ public final class DomainTransferUtils {
         cost ->
             builder.add(
                 createTransferBillingEvent(
+                    // TODO: Use pricing behavior from recurring here.
                     automaticTransferTime,
                     domainHistoryKey,
                     targetId,
@@ -244,6 +245,7 @@ public final class DomainTransferUtils {
       String targetId,
       String gainingRegistrarId) {
     return new BillingEvent.Recurring.Builder()
+        // TODO: Set renewal behavior here.
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(targetId)

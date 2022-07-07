@@ -400,7 +400,7 @@ public class DomainPricingLogicTest {
     assertThat(thrown).hasMessageThat().isEqualTo("Number of years must be positive");
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainTransferPrice_standardDomain_default_noBilling_defaultRenewalPrice()
       throws EppException {
     assertThat(
@@ -412,7 +412,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainTransferPrice_premiumDomain_default_noBilling_premiumRenewalPrice()
       throws EppException {
     assertThat(
@@ -424,7 +424,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainTransferPrice_standardDomain_default_defaultRenewalPrice() throws EppException {
     assertThat(
             domainPricingLogic.getTransferPrice(
@@ -440,7 +440,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainTransferPrice_premiumDomain_default_premiumRenewalPrice() throws EppException {
     assertThat(
             domainPricingLogic.getTransferPrice(
@@ -456,7 +456,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainTransferPrice_standardDomain_nonPremium_nonPremiumRenewalPrice()
       throws EppException {
     assertThat(
@@ -473,7 +473,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainTransferPrice_premiumDomain_nonPremium_nonPremiumRenewalPrice()
       throws EppException {
     assertThat(
@@ -490,7 +490,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainTransferPrice_standardDomain_specified_specifiedRenewalPrice()
       throws EppException {
     assertThat(
@@ -507,7 +507,7 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetDomainTransferPrice_premiumDomain_specified_specifiedRenewalPrice()
       throws EppException {
     assertThat(
