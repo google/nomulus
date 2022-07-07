@@ -46,7 +46,7 @@ public class DnsMetrics {
     LOCK_FAILURE,
     BAD_WRITER,
     BAD_LOCK_INDEX,
-    PERMANENT_FAILURE
+    MAX_RETRIES_EXCEEDED
   }
 
   private static final ImmutableSet<LabelDescriptor> LABEL_DESCRIPTORS_FOR_PUBLISH_REQUESTS =
