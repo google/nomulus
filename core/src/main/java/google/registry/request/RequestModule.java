@@ -252,13 +252,17 @@ public final class RequestModule {
 
   @Provides
   @Header(APP_ENGINE_RETRY_HEADER)
-  static Optional<String> provideAppEngineRetryCount(HttpServletRequest req) {
-    return extractOptionalHeader(req, APP_ENGINE_RETRY_HEADER);
+  static Optional<Integer> provideAppEngineRetryCount(HttpServletRequest req) {
+    return extractOptionalHeader(req, APP_ENGINE_RETRY_HEADER)
+        .map(s -> Optional.of(Integer.parseInt(s)))
+        .orElse(Optional.empty());
   }
 
   @Provides
   @Header(CLOUD_TASKS_RETRY_HEADER)
-  static Optional<String> provideCloudTasksRetryCount(HttpServletRequest req) {
-    return extractOptionalHeader(req, CLOUD_TASKS_RETRY_HEADER);
+  static Optional<Integer> provideCloudTasksRetryCount(HttpServletRequest req) {
+    return extractOptionalHeader(req, CLOUD_TASKS_RETRY_HEADER)
+        .map(s -> Optional.of(Integer.parseInt(s)))
+        .orElse(Optional.empty());
   }
 }

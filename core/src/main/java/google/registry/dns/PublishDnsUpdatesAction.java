@@ -114,8 +114,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       @Parameter(PARAM_HOSTS) Set<String> hosts,
       @Parameter(PARAM_TLD) String tld,
       @Config("publishDnsUpdatesLockDuration") Duration timeout,
-      @Header(APP_ENGINE_RETRY_HEADER) Optional<String> appEngineRetryCount,
-      @Header(CLOUD_TASKS_RETRY_HEADER) Optional<String> cloudTasksRetryCount,
+      @Header(APP_ENGINE_RETRY_HEADER) Optional<Integer> appEngineRetryCount,
+      @Header(CLOUD_TASKS_RETRY_HEADER) Optional<Integer> cloudTasksRetryCount,
       DnsQueue dnsQueue,
       DnsWriterProxy dnsWriterProxy,
       DnsMetrics dnsMetrics,
@@ -128,7 +128,9 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     this.dnsMetrics = dnsMetrics;
     this.timeout = timeout;
     this.retryCount =
-        Integer.parseInt(cloudTasksRetryCount.orElse(appEngineRetryCount.orElse("0")));
+        cloudTasksRetryCount.orElse(
+            appEngineRetryCount.orElseThrow(
+                () -> new IllegalStateException("Missing a valid retry count header")));
     this.dnsWriter = dnsWriter;
     this.enqueuedTime = enqueuedTime;
     this.itemsCreateTime = itemsCreateTime;
@@ -211,7 +213,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       }
       // If we get here, we should terminate this task as it is likely a perpetually failing task.
       // TODO(b/237302821): Send an email notifying partner the dns update failed
-      recordActionResult(ActionStatus.TIMED_OUT);
+      recordActionResult(ActionStatus.PERMANENT_FAILURE);
       response.setStatus(SC_ACCEPTED);
       logger.atSevere().withCause(e).log("Terminated task after too many retries");
     }

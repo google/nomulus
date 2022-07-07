@@ -115,7 +115,7 @@ public class PublishDnsUpdatesActionTest {
   }
 
   private PublishDnsUpdatesAction createAction(
-      String tld, Set<String> domains, Set<String> hosts, int retryCount) {
+      String tld, Set<String> domains, Set<String> hosts, Integer retryCount) {
     return createAction(tld, domains, hosts, retryCount, "correctWriter", 1, 1, lockHandler);
   }
 
@@ -139,7 +139,7 @@ public class PublishDnsUpdatesActionTest {
       String tld,
       Set<String> domains,
       Set<String> hosts,
-      int retryCount,
+      Integer retryCount,
       String dnsWriterString,
       int lockIndex,
       int numPublishLocks,
@@ -154,7 +154,7 @@ public class PublishDnsUpdatesActionTest {
         hosts,
         tld,
         Duration.standardSeconds(10),
-        Optional.of(Integer.toString(retryCount)),
+        Optional.ofNullable(retryCount),
         Optional.empty(),
         dnsQueue,
         new DnsWriterProxy(ImmutableMap.of("correctWriter", dnsWriter)),
@@ -412,7 +412,7 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
-  void testTaskFailsAfterTenRetries_DoesNotRetry() {
+  void testTaskFailsAfterTenRetries_doesNotRetry() {
     action =
         createAction(
             "xn--q9jyb4c", ImmutableSet.of(), ImmutableSet.of("ns1.example.xn--q9jyb4c"), 10);
@@ -420,6 +420,20 @@ public class PublishDnsUpdatesActionTest {
     action.run();
     verifyNoMoreInteractions(spyCloudTasksUtils);
     assertThat(response.getStatus()).isEqualTo(SC_ACCEPTED);
+  }
+
+  @Test
+  void testTaskMissingRetryHeaders_throwsException() {
+    IllegalStateException thrown =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                createAction(
+                    "xn--q9jyb4c",
+                    ImmutableSet.of(),
+                    ImmutableSet.of("ns1.example.xn--q9jyb4c"),
+                    null));
+    assertThat(thrown).hasMessageThat().contains("Missing a valid retry count header");
   }
 
   @Test
