@@ -16,6 +16,7 @@ package google.registry.tmch;
 
 import static google.registry.request.Action.Method.POST;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.smd.SignedMarkRevocationList;
@@ -23,7 +24,6 @@ import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.bouncycastle.openpgp.PGPException;
@@ -48,13 +48,14 @@ public final class TmchSmdrlAction implements Runnable {
   /** Synchronously fetches latest signed mark revocation list and saves it to the database. */
   @Override
   public void run() {
-    List<String> lines;
+    SignedMarkRevocationList smdrl;
     try {
-      lines = marksdb.fetchSignedCsv(marksdbSmdrlLoginAndPassword, SMDRL_CSV_PATH, SMDRL_SIG_PATH);
+      ImmutableList<String> lines =
+          marksdb.fetchSignedCsv(marksdbSmdrlLoginAndPassword, SMDRL_CSV_PATH, SMDRL_SIG_PATH);
+      smdrl = SmdrlCsvParser.parse(lines);
     } catch (GeneralSecurityException | IOException | PGPException e) {
       throw new RuntimeException(e);
     }
-    SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(lines);
     smdrl.save();
     logger.atInfo().log(
         "Inserted %,d smd revocations into the database, created at %s.",
