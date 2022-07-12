@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
+import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.tld.Registry.TldState;
 import org.joda.money.Money;
@@ -70,6 +71,14 @@ public abstract class TransitionListParameter<V> extends KeyValueMapParameter<Da
     @Override
     protected TokenStatus parseValue(String value) {
       return TokenStatus.valueOf(value);
+    }
+  }
+
+  /** Converter-validator for states of the Registry 3.0 database migration. */
+  public static class MigrationStateTransitions extends TransitionListParameter<MigrationState> {
+    @Override
+    protected MigrationState parseValue(String value) {
+      return MigrationState.valueOf(value);
     }
   }
 }
