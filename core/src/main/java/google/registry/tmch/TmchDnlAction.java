@@ -16,6 +16,7 @@ package google.registry.tmch;
 
 import static google.registry.request.Action.Method.POST;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.tmch.ClaimsList;
@@ -24,7 +25,6 @@ import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.bouncycastle.openpgp.PGPException;
@@ -49,13 +49,14 @@ public final class TmchDnlAction implements Runnable {
   /** Synchronously fetches latest domain name list and saves it to Cloud SQL. */
   @Override
   public void run() {
-    List<String> lines;
+    ClaimsList claims;
     try {
-      lines = marksdb.fetchSignedCsv(marksdbDnlLoginAndPassword, DNL_CSV_PATH, DNL_SIG_PATH);
+      ImmutableList<String> lines =
+          marksdb.fetchSignedCsv(marksdbDnlLoginAndPassword, DNL_CSV_PATH, DNL_SIG_PATH);
+      claims = ClaimsListParser.parse(lines);
     } catch (GeneralSecurityException | IOException | PGPException e) {
       throw new RuntimeException(e);
     }
-    ClaimsList claims = ClaimsListParser.parse(lines);
     ClaimsListDao.save(claims);
     logger.atInfo().log(
         "Inserted %,d claims into the DB(s), created at %s.",

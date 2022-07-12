@@ -36,7 +36,6 @@ import java.security.GeneralSecurityException;
 import java.security.Security;
 import java.security.SignatureException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import javax.annotation.Tainted;
 import javax.inject.Inject;
@@ -125,7 +124,8 @@ public final class Marksdb {
     }
   }
 
-  List<String> fetchSignedCsv(Optional<String> loginAndPassword, String csvPath, String sigPath)
+  ImmutableList<String> fetchSignedCsv(
+      Optional<String> loginAndPassword, String csvPath, String sigPath)
       throws IOException, GeneralSecurityException, PGPException {
     checkArgument(
         loginAndPassword.isPresent(), "Cannot fetch from MarksDB without login credentials");

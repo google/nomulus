@@ -79,7 +79,7 @@ class SmdrlCsvParserTest {
   }
 
   @Test
-  void testOneRow() {
+  void testOneRow() throws Exception {
     SignedMarkRevocationList smdrl =
         SmdrlCsvParser.parse(
             ImmutableList.of(
@@ -93,7 +93,7 @@ class SmdrlCsvParserTest {
   }
 
   @Test
-  void testEmpty() {
+  void testEmpty() throws Exception {
     SignedMarkRevocationList smdrl =
         SmdrlCsvParser.parse(
             ImmutableList.of("1,2014-11-24T23:30:04.3Z", "smd-id,insertion-datetime"));
@@ -128,7 +128,9 @@ class SmdrlCsvParserTest {
                         "1,2013-11-24T23:30:04.3Z",
                         "lol,cat",
                         "0000001681375789102250-65535,2013-08-09T12:00:00.0Z")));
-    assertThat(thrown).hasMessageThat().contains("header");
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Mapping for smd-id not found, expected one of [lol, cat]");
   }
 
   @Test
@@ -142,6 +144,6 @@ class SmdrlCsvParserTest {
                         "1,2013-11-24T23:30:04.3Z",
                         "smd-id,insertion-datetime",
                         "0000001681375789102250-65535,haha,2013-08-09T12:00:00.0Z")));
-    assertThat(thrown).hasMessageThat().contains("elements");
+    assertThat(thrown).hasMessageThat().isEqualTo("Invalid format: \"haha\"");
   }
 }
