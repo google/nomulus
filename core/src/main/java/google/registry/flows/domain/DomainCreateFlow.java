@@ -97,6 +97,7 @@ import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.SecDnsCreateExtension;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.eppcommon.StatusValue;
@@ -117,6 +118,8 @@ import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.model.tld.label.ReservationType;
+import google.registry.model.tmch.ClaimsList;
+import google.registry.model.tmch.ClaimsListDao;
 import google.registry.tmch.LordnTaskUtils;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -274,7 +277,16 @@ public final class DomainCreateFlow implements TransactionalFlow {
       checkAllowedAccessToTld(registrarId, registry.getTldStr());
       checkHasBillingAccount(registrarId, registry.getTldStr());
       boolean isValidReservedCreate = isValidReservedCreate(domainName, allocationToken);
-      verifyIsGaOrIsSpecialCase(tldState, isAnchorTenant, isValidReservedCreate, hasSignedMarks);
+      ClaimsList claimsList = ClaimsListDao.get();
+      verifyIsGaOrSpecialCase(
+          registry,
+          claimsList,
+          now,
+          domainLabel,
+          allocationToken,
+          isAnchorTenant,
+          isValidReservedCreate,
+          hasSignedMarks);
       if (launchCreate.isPresent()) {
         verifyLaunchPhaseMatchesRegistryPhase(registry, launchCreate.get(), now);
       }
@@ -285,7 +297,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
         verifyClaimsPeriodNotEnded(registry, now);
       }
       if (now.isBefore(registry.getClaimsPeriodEnd())) {
-        verifyClaimsNoticeIfAndOnlyIfNeeded(domainName, hasSignedMarks, hasClaimsNotice);
+        verifyClaimsNoticeIfAndOnlyIfNeeded(
+            domainName, claimsList, hasSignedMarks, hasClaimsNotice);
       }
       verifyPremiumNameIsNotBlocked(targetId, now, registrarId);
       verifySignedMarkOnlyInSunrise(hasSignedMarks, tldState);
@@ -442,45 +455,71 @@ public final class DomainCreateFlow implements TransactionalFlow {
   }
 
   /**
-   * Prohibit registrations unless QLP, General Availability or Start Date Sunrise.
+   * Prohibit registrations unless they're in GA or a special case.
    *
-   * <p>During Start-Date Sunrise, we need a signed mark for registrations.
+   * <p>Non-trademarked names can be registered at any point with a special allocation token
+   * registration behavior.
+   *
+   * <p>Trademarked names require signed marks in sunrise no matter what, and can be registered with
+   * a special allocation token behavior in any quiet period that is post-sunrise.
    *
    * <p>Note that "superuser" status isn't tested here - this should only be called for
    * non-superusers.
    */
-  private void verifyIsGaOrIsSpecialCase(
-      TldState tldState,
+  private void verifyIsGaOrSpecialCase(
+      Registry registry,
+      ClaimsList claimsList,
+      DateTime now,
+      String domainLabel,
+      Optional<AllocationToken> allocationToken,
       boolean isAnchorTenant,
       boolean isValidReservedCreate,
       boolean hasSignedMarks)
       throws NoGeneralRegistrationsInCurrentPhaseException,
           MustHaveSignedMarksInCurrentPhaseException {
-    // Anchor Tenant overrides any other consideration to allow registration.
-    if (isAnchorTenant) {
-      return;
-    }
-
     // We allow general registration during GA.
-    if (GENERAL_AVAILABILITY.equals(tldState)) {
+    TldState currentState = registry.getTldState(now);
+    if (currentState.equals(GENERAL_AVAILABILITY)) {
       return;
     }
 
-    // During START_DATE_SUNRISE, only allow registration with signed marks.
-    if (START_DATE_SUNRISE.equals(tldState)) {
+    // Determine if there should be any behavior dictated by the allocation token
+    RegistrationBehavior behavior =
+        allocationToken
+            .map(AllocationToken::getRegistrationBehavior)
+            .orElse(RegistrationBehavior.DEFAULT);
+    // Bypass most TLD state checks if that behavior is specified by the token
+    if (behavior.equals(RegistrationBehavior.BYPASS_TLD_STATE)
+        || behavior.equals(RegistrationBehavior.ANCHOR_TENANT)) {
+      // If bypassing TLD state checks, a post-sunrise state is always fine
+      if (!currentState.equals(START_DATE_SUNRISE)
+          && registry.getTldStateTransitions().headMap(now).containsValue(START_DATE_SUNRISE)) {
+        return;
+      }
+      // Non-trademarked names with the state check bypassed are always available
+      if (!claimsList.getClaimKey(domainLabel).isPresent()) {
+        return;
+      }
+    }
+    // Otherwise, signed marks are necessary and sufficient in the sunrise period
+    if (currentState.equals(START_DATE_SUNRISE)) {
       if (!hasSignedMarks) {
         throw new MustHaveSignedMarksInCurrentPhaseException();
       }
       return;
     }
 
-    // We allow creates of specifically reserved domain names during quiet periods.
-    if (QUIET_PERIOD.equals(tldState)) {
+    // Anchor tenant overrides any remaining considerations to allow registration
+    if (isAnchorTenant) {
+      return;
+    }
+
+    // We allow creates of specifically reserved domain names during quiet periods
+    if (currentState.equals(QUIET_PERIOD)) {
       if (isValidReservedCreate) {
         return;
       }
     }
-
     // All other phases do not allow registration
     throw new NoGeneralRegistrationsInCurrentPhaseException();
   }

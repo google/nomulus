@@ -160,6 +160,7 @@ import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
@@ -219,7 +220,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     "badcrash,NAME_COLLISION"),
                 persistReservedList("global-list", "resdom,FULLY_BLOCKED"))
             .build());
-    persistClaimsList(ImmutableMap.of("example-one", CLAIMS_KEY));
+    persistClaimsList(ImmutableMap.of("example-one", CLAIMS_KEY, "test-validate", CLAIMS_KEY));
   }
 
   /**
@@ -1230,10 +1231,24 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_anchor_tenant_sunrise_metadata_extension.xml");
     eppRequestSource = EppRequestSource.TOOL; // Only tools can pass in metadata.
     persistContactsAndHosts();
+    // Even for anchor tenants, require signed marks in sunrise
+    EppException exception =
+        assertThrows(MustHaveSignedMarksInCurrentPhaseException.class, this::runFlow);
+    assertAboutEppExceptions().that(exception).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_anchorTenantInSunrise_withMetadataExtension_andSignedMark() throws Exception {
+    createTld("tld", START_DATE_SUNRISE);
+    setEppInput("domain_create_anchor_tenant_sunrise_metadata_extension_signed_mark.xml");
+    eppRequestSource = EppRequestSource.TOOL; // Only tools can pass in metadata.
+    persistContactsAndHosts();
+    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
     runFlowAssertResponse(
-        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT));
-    assertNoLordn();
+        loadFile(
+            "domain_create_response_encoded_signed_mark_name.xml",
+            ImmutableMap.of("DOMAIN", "test-validate.tld")));
+    assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE, ANCHOR_TENANT));
   }
 
   @Test
@@ -2717,5 +2732,117 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .isEqualTo(
             "No enum constant"
                 + " google.registry.model.billing.BillingEvent.RenewalPriceBehavior.INVALID");
+  }
+
+  @Test
+  void testSuccess_quietPeriod_skipTldCheckWithToken() throws Exception {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setRegistrationBehavior(RegistrationBehavior.BYPASS_TLD_STATE)
+                .build());
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
+            .build());
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(), token);
+  }
+
+  @Test
+  void testSuccess_sunrise_skipTldCheckWithToken() throws Exception {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setRegistrationBehavior(RegistrationBehavior.BYPASS_TLD_STATE)
+                .build());
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
+            .build());
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(), token);
+  }
+
+  @Test
+  void testFailure_quietPeriod_defaultTokenPresent() throws Exception {
+    persistResource(
+        new AllocationToken.Builder().setToken("abc123").setTokenType(SINGLE_USE).build());
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
+            .build());
+    assertThrows(NoGeneralRegistrationsInCurrentPhaseException.class, this::runFlow);
+  }
+
+  @Test
+  void testFailure_quietPeriodBeforeSunrise_trademarkedDomain() throws Exception {
+    allocationToken =
+        persistResource(
+            allocationToken
+                .asBuilder()
+                .setRegistrationBehavior(RegistrationBehavior.BYPASS_TLD_STATE)
+                .setDomainName(null)
+                .build());
+    // Trademarked domains using a bypass-tld-state token should fail if we're in a quiet period
+    // before the sunrise period
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setTldStateTransitions(
+                ImmutableSortedMap.of(
+                    START_OF_TIME, QUIET_PERIOD, clock.nowUtc().plusYears(1), START_DATE_SUNRISE))
+            .build());
+    persistContactsAndHosts();
+    setEppInput("domain_create_allocationtoken_claims.xml");
+    assertThrows(NoGeneralRegistrationsInCurrentPhaseException.class, this::runFlow);
+  }
+
+  @Test
+  void testSuccess_quietPeriodAfterSunrise_trademarkedDomain() throws Exception {
+    allocationToken =
+        persistResource(
+            allocationToken
+                .asBuilder()
+                .setRegistrationBehavior(RegistrationBehavior.BYPASS_TLD_STATE)
+                .setDomainName(null)
+                .build());
+    // Trademarked domains using a bypass-tld-state token should succeed if we're in a quiet period
+    // after the sunrise period
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setTldStateTransitions(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    QUIET_PERIOD,
+                    clock.nowUtc().minusYears(1),
+                    START_DATE_SUNRISE,
+                    clock.nowUtc().minusMonths(1),
+                    QUIET_PERIOD))
+            .build());
+    persistContactsAndHosts();
+    setEppInput("domain_create_allocationtoken_claims.xml");
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(), allocationToken);
   }
 }
