@@ -99,6 +99,8 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     CSVParser csv;
     try {
       HttpRequest request = httpTransport.createRequestFactory().buildGetRequest(RDAP_IDS_URL);
+      // AppEngine might insert accept-encodings for us if we use the default gzip, so remove it
+      request.getHeaders().setAcceptEncoding(null);
       HttpResponse response = request.execute();
       String csvString = new String(ByteStreams.toByteArray(response.getContent()), UTF_8);
       csv =

@@ -98,6 +98,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
   private void assertCorrectRequestSent() {
     assertThat(httpTransport.getRequestSent().getUrl())
         .isEqualTo("https://www.iana.org/assignments/registrar-ids/registrar-ids-1.csv");
+    assertThat(httpTransport.getRequestSent().getHeaders().get("accept-encoding")).isNull();
   }
 
   private static void persistRegistrar(
