@@ -20,6 +20,7 @@ import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DE
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
+import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertPollMessages;
@@ -47,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.FlowUtils.NotLoggedInException;
@@ -65,7 +67,11 @@ import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException
 import google.registry.flows.domain.DomainFlowUtils.RegistrarMustBeActiveForThisOperationException;
 import google.registry.flows.domain.DomainFlowUtils.UnsupportedFeeAttributeException;
 import google.registry.flows.domain.DomainRenewFlow.IncorrectCurrentExpirationDateException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.model.billing.BillingEvent;
@@ -77,6 +83,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
@@ -594,16 +601,45 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
     setEppInput(
         "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistDomain();
-    persistResource(
-        new AllocationToken.Builder()
-            .setToken("abc123")
-            .setTokenType(SINGLE_USE)
-            .setDomainName("example.tld")
-            .build());
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("example.tld")
+                .build());
     runFlowAssertResponse(
         loadFile(
             "domain_renew_response.xml",
             ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+    assertThat(
+            tm().transact(() -> tm().loadByEntity(allocationToken))
+                .getRedemptionHistoryEntry()
+                .isPresent())
+        .isTrue();
+  }
+
+  @Test
+  void testSuccess_allocationTokenMultiUse() throws Exception {
+    setEppInput(
+        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistDomain();
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder().setToken("abc123").setTokenType(UNLIMITED_USE).build());
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+    clock.advanceOneMilli();
+    setEppInput(
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "other-example.tld", "YEARS", "2"));
+    persistDomain();
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "other-example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
   }
 
   @Test
@@ -631,6 +667,93 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
         assertThrows(AllocationTokenNotValidForDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
     assertAllocationTokenWasNotRedeemed("abc123");
+  }
+
+  @Test
+  void testFailure_promotionNotActive() throws Exception {
+    setEppInput(
+        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistDomain();
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
+            .setDiscountFraction(0.5)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(60), TokenStatus.ENDED)
+                    .build())
+            .build());
+    assertAboutEppExceptions()
+        .that(assertThrows(AllocationTokenNotInPromotionException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_promoTokenNotValidForRegistrar() throws Exception {
+    setEppInput(
+        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistDomain();
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
+            .setAllowedRegistrarIds(ImmutableSet.of("someClientId"))
+            .setDiscountFraction(0.5)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    assertAboutEppExceptions()
+        .that(assertThrows(AllocationTokenNotValidForRegistrarException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_promoTokenNotValidForTld() throws Exception {
+    setEppInput(
+        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistDomain();
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
+            .setAllowedTlds(ImmutableSet.of("example"))
+            .setDiscountFraction(0.5)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    assertAboutEppExceptions()
+        .that(assertThrows(AllocationTokenNotValidForTldException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_alreadyRedemeedAllocationToken() throws Exception {
+    setEppInput(
+        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistDomain();
+    DomainBase domain = persistActiveDomain("foo.tld");
+    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 505L);
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
+            .build());
+    clock.advanceOneMilli();
+    EppException thrown =
+        assertThrows(AlreadyRedeemedAllocationTokenException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test

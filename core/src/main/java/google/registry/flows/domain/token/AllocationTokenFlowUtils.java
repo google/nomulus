@@ -31,6 +31,7 @@ import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
+import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
@@ -50,44 +51,67 @@ public class AllocationTokenFlowUtils {
   }
 
   /**
-   * Loads an allocation token given a string and verifies that the token is valid for the domain
-   * create request.
+   * Loads an allocation token given a string and verifies that the token is valid for the request.
    *
    * @return the loaded {@link AllocationToken} for that string.
    * @throws EppException if the token doesn't exist, is already redeemed, or is otherwise invalid
    *     for this request.
    */
-  public AllocationToken loadTokenAndValidateDomainCreate(
+  public AllocationToken loadTokenAndValidateDomain(
       DomainCommand.Create command,
       String token,
       Registry registry,
       String registrarId,
       DateTime now)
       throws EppException {
-    AllocationToken tokenEntity = loadToken(token);
-    validateToken(
-        InternetDomainName.from(command.getFullyQualifiedDomainName()),
-        tokenEntity,
-        registrarId,
-        now);
-    return tokenCustomLogic.validateToken(command, tokenEntity, registry, registrarId, now);
+    return loadTokenAndValidateDomain(
+        Optional.of(command), Optional.empty(), token, registry, registrarId, now);
   }
 
   /**
-   * Loads an allocation token given a string and verifies that the token is valid for the domain
-   * renew request.
+   * Loads an allocation token given a string and verifies that the token is valid for the request.
    *
    * @return the loaded {@link AllocationToken} for that string.
    * @throws EppException if the token doesn't exist, is already redeemed, or is otherwise invalid
    *     for this request.
    */
-  public AllocationToken loadTokenAndValidateDomainRenew(
+  public AllocationToken loadTokenAndValidateDomain(
       DomainBase existingDomain, String token, Registry registry, String registrarId, DateTime now)
       throws EppException {
+    return loadTokenAndValidateDomain(
+        Optional.empty(), Optional.of(existingDomain), token, registry, registrarId, now);
+  }
+
+  private AllocationToken loadTokenAndValidateDomain(
+      Optional<DomainCommand.Create> command,
+      Optional<DomainBase> existingDomain,
+      String token,
+      Registry registry,
+      String registrarId,
+      DateTime now)
+      throws EppException {
+    if (!command.isPresent() && !existingDomain.isPresent()) {
+      throw new IllegalArgumentException(
+          "A DomainBase object or create command must be used to validate a token");
+    }
+    if (command.isPresent() && existingDomain.isPresent()) {
+      throw new IllegalArgumentException(
+          "A command can only be used to validate a token on a Create");
+    }
     AllocationToken tokenEntity = loadToken(token);
     validateToken(
-        InternetDomainName.from(existingDomain.getDomainName()), tokenEntity, registrarId, now);
-    return tokenCustomLogic.validateToken(existingDomain, tokenEntity, registry, registrarId, now);
+        InternetDomainName.from(
+            command.isPresent()
+                ? command.get().getFullyQualifiedDomainName()
+                : existingDomain.get().getDomainName()),
+        tokenEntity,
+        registrarId,
+        now);
+    if (command.isPresent()) {
+      return tokenCustomLogic.validateToken(command.get(), tokenEntity, registry, registrarId, now);
+    }
+    return tokenCustomLogic.validateToken(
+        existingDomain.get(), tokenEntity, registry, registrarId, now);
   }
 
   /**
@@ -186,6 +210,46 @@ public class AllocationTokenFlowUtils {
       throw new AlreadyRedeemedAllocationTokenException();
     }
     return maybeTokenEntity.get();
+  }
+
+  /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
+  public Optional<AllocationToken> verifyAllocationTokenCreateIfPresent(
+      DomainCommand.Create command,
+      Registry registry,
+      String registrarId,
+      DateTime now,
+      Optional<AllocationTokenExtension> extension)
+      throws EppException {
+    return Optional.ofNullable(
+        extension.isPresent()
+            ? loadTokenAndValidateDomain(
+                Optional.of(command),
+                Optional.empty(),
+                extension.get().getAllocationToken(),
+                registry,
+                registrarId,
+                now)
+            : null);
+  }
+
+  /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
+  public Optional<AllocationToken> verifyAllocationTokenIfPresent(
+      DomainBase existingDomain,
+      Registry registry,
+      String registrarId,
+      DateTime now,
+      Optional<AllocationTokenExtension> extension)
+      throws EppException {
+    return Optional.ofNullable(
+        extension.isPresent()
+            ? loadTokenAndValidateDomain(
+                Optional.empty(),
+                Optional.of(existingDomain),
+                extension.get().getAllocationToken(),
+                registry,
+                registrarId,
+                now)
+            : null);
   }
 
   // Note: exception messages should be <= 32 characters long for domain check results

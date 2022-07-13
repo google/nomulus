@@ -76,7 +76,7 @@ class AllocationTokenFlowUtilsTest {
         persistResource(
             new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
     assertThat(
-            flowUtils.loadTokenAndValidateDomainCreate(
+            flowUtils.loadTokenAndValidateDomain(
                 createCommand("blah.tld"),
                 "tokeN",
                 Registry.get("tld"),
@@ -96,7 +96,7 @@ class AllocationTokenFlowUtilsTest {
         persistResource(
             new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
     assertThat(
-            flowUtils.loadTokenAndValidateDomainRenew(
+            flowUtils.loadTokenAndValidateDomain(
                 newDomainBase("blah.tld"),
                 "tokeN",
                 Registry.get("tld"),
@@ -122,7 +122,7 @@ class AllocationTokenFlowUtilsTest {
             assertThrows(
                 InvalidAllocationTokenException.class,
                 () ->
-                    flowUtils.loadTokenAndValidateDomainCreate(
+                    flowUtils.loadTokenAndValidateDomain(
                         createCommand("blah.tld"),
                         null,
                         Registry.get("tld"),
@@ -138,7 +138,7 @@ class AllocationTokenFlowUtilsTest {
             assertThrows(
                 InvalidAllocationTokenException.class,
                 () ->
-                    flowUtils.loadTokenAndValidateDomainRenew(
+                    flowUtils.loadTokenAndValidateDomain(
                         newDomainBase("blah.tld"),
                         null,
                         Registry.get("tld"),
@@ -157,7 +157,7 @@ class AllocationTokenFlowUtilsTest {
         assertThrows(
             IllegalStateException.class,
             () ->
-                failingFlowUtils.loadTokenAndValidateDomainCreate(
+                failingFlowUtils.loadTokenAndValidateDomain(
                     createCommand("blah.tld"),
                     "tokeN",
                     Registry.get("tld"),
@@ -176,7 +176,7 @@ class AllocationTokenFlowUtilsTest {
         assertThrows(
             IllegalStateException.class,
             () ->
-                failingFlowUtils.loadTokenAndValidateDomainRenew(
+                failingFlowUtils.loadTokenAndValidateDomain(
                     newDomainBase("blah.tld"),
                     "tokeN",
                     Registry.get("tld"),
@@ -371,7 +371,7 @@ class AllocationTokenFlowUtilsTest {
             assertThrows(
                 clazz,
                 () ->
-                    flowUtils.loadTokenAndValidateDomainCreate(
+                    flowUtils.loadTokenAndValidateDomain(
                         createCommand("blah.tld"),
                         "tokeN",
                         Registry.get("tld"),
@@ -386,7 +386,7 @@ class AllocationTokenFlowUtilsTest {
             assertThrows(
                 clazz,
                 () ->
-                    flowUtils.loadTokenAndValidateDomainRenew(
+                    flowUtils.loadTokenAndValidateDomain(
                         newDomainBase("blah.tld"),
                         "tokeN",
                         Registry.get("tld"),

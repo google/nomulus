@@ -44,7 +44,7 @@ public class AllocationTokenCustomLogic {
     return token;
   }
 
-  /** Performs additional custom logic for validating a token on a domain renew. */
+  /** Performs additional custom logic for validating a token on an existing domain. */
   public AllocationToken validateToken(
       DomainBase domain, AllocationToken token, Registry registry, String registrarId, DateTime now)
       throws EppException {

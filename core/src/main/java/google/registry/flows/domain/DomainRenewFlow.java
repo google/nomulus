@@ -122,6 +122,14 @@ import org.joda.time.Duration;
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_RENEW)
 public final class DomainRenewFlow implements TransactionalFlow {
@@ -160,8 +168,12 @@ public final class DomainRenewFlow implements TransactionalFlow {
     // Loads the target resource if it exists
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
     Optional<AllocationToken> allocationToken =
-        verifyAllocationTokenIfPresent(
-            existingDomain, Registry.get(existingDomain.getTld()), registrarId, now);
+        allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
+            existingDomain,
+            Registry.get(existingDomain.getTld()),
+            registrarId,
+            now,
+            eppInput.getSingleExtension(AllocationTokenExtension.class));
     verifyRenewAllowed(authInfo, existingDomain, command);
     int years = command.getPeriod().getValue();
     DateTime newExpirationTime =
@@ -302,19 +314,6 @@ public final class DomainRenewFlow implements TransactionalFlow {
         existingDomain.getRegistrationExpirationTime().toLocalDate())) {
       throw new IncorrectCurrentExpirationDateException();
     }
-  }
-
-  /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
-  private Optional<AllocationToken> verifyAllocationTokenIfPresent(
-      DomainBase existingDomain, Registry registry, String registrarId, DateTime now)
-      throws EppException {
-    Optional<AllocationTokenExtension> extension =
-        eppInput.getSingleExtension(AllocationTokenExtension.class);
-    return Optional.ofNullable(
-        extension.isPresent()
-            ? allocationTokenFlowUtils.loadTokenAndValidateDomainRenew(
-                existingDomain, extension.get().getAllocationToken(), registry, registrarId, now)
-            : null);
   }
 
   private OneTime createRenewBillingEvent(
