@@ -395,16 +395,11 @@ CREATE TABLE public."Domain" (
     autorenew_poll_message_id bigint,
     deletion_poll_message_id bigint,
     autorenew_end_time timestamp with time zone,
-    billing_recurrence_history_id bigint,
     autorenew_poll_message_history_id bigint,
-    deletion_poll_message_history_id bigint,
-    transfer_billing_recurrence_history_id bigint,
     transfer_autorenew_poll_message_history_id bigint,
-    transfer_billing_event_history_id bigint,
     transfer_history_entry_id bigint,
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
-    transfer_billing_cancellation_history_id bigint,
     dns_refresh_request_time timestamp with time zone
 );
 
@@ -488,16 +483,11 @@ CREATE TABLE public."DomainHistory" (
     history_other_registrar_id text,
     history_period_unit text,
     history_period_value integer,
-    billing_recurrence_history_id bigint,
     autorenew_poll_message_history_id bigint,
-    deletion_poll_message_history_id bigint,
-    transfer_billing_recurrence_history_id bigint,
     transfer_autorenew_poll_message_history_id bigint,
-    transfer_billing_event_history_id bigint,
     transfer_history_entry_id bigint,
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
-    transfer_billing_cancellation_history_id bigint,
     dns_refresh_request_time timestamp with time zone
 );
 
@@ -568,11 +558,7 @@ CREATE TABLE public."GracePeriod" (
     registrar_id text NOT NULL,
     domain_repo_id text NOT NULL,
     expiration_time timestamp with time zone NOT NULL,
-    type text NOT NULL,
-    billing_event_history_id bigint,
-    billing_recurrence_history_id bigint,
-    billing_event_domain_repo_id text,
-    billing_recurrence_domain_repo_id text
+    type text NOT NULL
 );
 
 
@@ -583,17 +569,13 @@ CREATE TABLE public."GracePeriod" (
 CREATE TABLE public."GracePeriodHistory" (
     grace_period_history_revision_id bigint NOT NULL,
     billing_event_id bigint,
-    billing_event_history_id bigint,
     billing_recurrence_id bigint,
-    billing_recurrence_history_id bigint,
     registrar_id text NOT NULL,
     domain_repo_id text NOT NULL,
     expiration_time timestamp with time zone NOT NULL,
     type text NOT NULL,
     domain_history_revision_id bigint,
-    grace_period_id bigint NOT NULL,
-    billing_event_domain_repo_id text,
-    billing_recurrence_domain_repo_id text
+    grace_period_id bigint NOT NULL
 );
 
 
