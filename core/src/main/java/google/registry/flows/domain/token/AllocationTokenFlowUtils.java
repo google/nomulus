@@ -51,7 +51,8 @@ public class AllocationTokenFlowUtils {
   }
 
   /**
-   * Loads an allocation token given a string and verifies that the token is valid for the request.
+   * Loads an allocation token given a string and verifies that the token is valid for the domain
+   * create request.
    *
    * @return the loaded {@link AllocationToken} for that string.
    * @throws EppException if the token doesn't exist, is already redeemed, or is otherwise invalid

@@ -494,8 +494,12 @@ comes in at the exact millisecond that the domain would have expired.
     *   Resource with this id does not exist.
 *   2304
     *   Resource status prohibits this operation.
+    *   The allocation token is not currently valid.
 *   2305
     *   The allocation token is not valid for this domain.
+    *   The allocation token is not valid for this registrar.
+    *   The allocation token is not valid for this TLD.
+    *   The allocation token was already redeemed.
 *   2306
     *   Periods for domain registrations must be specified in years.
     *   The requested fees cannot be provided in the requested currency.

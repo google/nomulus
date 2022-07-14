@@ -712,6 +712,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
     assertAboutEppExceptions()
         .that(assertThrows(AllocationTokenNotValidForRegistrarException.class, this::runFlow))
         .marshalsToXml();
+    assertAllocationTokenWasNotRedeemed("abc123");
   }
 
   @Test
@@ -735,6 +736,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
     assertAboutEppExceptions()
         .that(assertThrows(AllocationTokenNotValidForTldException.class, this::runFlow))
         .marshalsToXml();
+    assertAllocationTokenWasNotRedeemed("abc123");
   }
 
   @Test
