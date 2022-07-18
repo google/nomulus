@@ -48,9 +48,11 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
+import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
+import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,6 +67,9 @@ class AllocationTokenFlowUtilsTest {
   @RegisterExtension
   final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
+  private final AllocationTokenExtension allocationTokenExtension =
+      mock(AllocationTokenExtension.class);
+
   @BeforeEach
   void beforeEach() {
     createTld("tld");
@@ -75,13 +80,16 @@ class AllocationTokenFlowUtilsTest {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
+    when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     assertThat(
-            flowUtils.loadTokenAndValidateDomain(
-                createCommand("blah.tld"),
-                "tokeN",
-                Registry.get("tld"),
-                "TheRegistrar",
-                DateTime.now(UTC)))
+            flowUtils
+                .verifyAllocationTokenCreateIfPresent(
+                    createCommand("blah.tld"),
+                    Registry.get("tld"),
+                    "TheRegistrar",
+                    DateTime.now(UTC),
+                    Optional.of(allocationTokenExtension))
+                .get())
         .isEqualTo(token);
   }
 
@@ -90,13 +98,16 @@ class AllocationTokenFlowUtilsTest {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
+    when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     assertThat(
-            flowUtils.loadTokenAndValidateDomain(
-                newDomainBase("blah.tld"),
-                "tokeN",
-                Registry.get("tld"),
-                "TheRegistrar",
-                DateTime.now(UTC)))
+            flowUtils
+                .verifyAllocationTokenIfPresent(
+                    newDomainBase("blah.tld"),
+                    Registry.get("tld"),
+                    "TheRegistrar",
+                    DateTime.now(UTC),
+                    Optional.of(allocationTokenExtension))
+                .get())
         .isEqualTo(token);
   }
 
@@ -117,12 +128,12 @@ class AllocationTokenFlowUtilsTest {
             assertThrows(
                 InvalidAllocationTokenException.class,
                 () ->
-                    flowUtils.loadTokenAndValidateDomain(
+                    flowUtils.verifyAllocationTokenCreateIfPresent(
                         createCommand("blah.tld"),
-                        null,
                         Registry.get("tld"),
                         "TheRegistrar",
-                        DateTime.now(UTC))))
+                        DateTime.now(UTC),
+                        Optional.of(allocationTokenExtension))))
         .marshalsToXml();
   }
 
@@ -133,12 +144,12 @@ class AllocationTokenFlowUtilsTest {
             assertThrows(
                 InvalidAllocationTokenException.class,
                 () ->
-                    flowUtils.loadTokenAndValidateDomain(
+                    flowUtils.verifyAllocationTokenIfPresent(
                         newDomainBase("blah.tld"),
-                        null,
                         Registry.get("tld"),
                         "TheRegistrar",
-                        DateTime.now(UTC))))
+                        DateTime.now(UTC),
+                        Optional.of(allocationTokenExtension))))
         .marshalsToXml();
   }
 
@@ -148,16 +159,17 @@ class AllocationTokenFlowUtilsTest {
         new AllocationTokenFlowUtils(new FailingAllocationTokenCustomLogic());
     persistResource(
         new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
+    when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     Exception thrown =
         assertThrows(
             IllegalStateException.class,
             () ->
-                failingFlowUtils.loadTokenAndValidateDomain(
+                failingFlowUtils.verifyAllocationTokenCreateIfPresent(
                     createCommand("blah.tld"),
-                    "tokeN",
                     Registry.get("tld"),
                     "TheRegistrar",
-                    DateTime.now(UTC)));
+                    DateTime.now(UTC),
+                    Optional.of(allocationTokenExtension)));
     assertThat(thrown).hasMessageThat().isEqualTo("failed for tests");
   }
 
@@ -167,16 +179,17 @@ class AllocationTokenFlowUtilsTest {
         new AllocationTokenFlowUtils(new FailingAllocationTokenCustomLogic());
     persistResource(
         new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
+    when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     Exception thrown =
         assertThrows(
             IllegalStateException.class,
             () ->
-                failingFlowUtils.loadTokenAndValidateDomain(
+                failingFlowUtils.verifyAllocationTokenIfPresent(
                     newDomainBase("blah.tld"),
-                    "tokeN",
                     Registry.get("tld"),
                     "TheRegistrar",
-                    DateTime.now(UTC)));
+                    DateTime.now(UTC),
+                    Optional.of(allocationTokenExtension)));
     assertThat(thrown).hasMessageThat().isEqualTo("failed for tests");
   }
 
@@ -367,12 +380,12 @@ class AllocationTokenFlowUtilsTest {
             assertThrows(
                 clazz,
                 () ->
-                    flowUtils.loadTokenAndValidateDomain(
+                    flowUtils.verifyAllocationTokenCreateIfPresent(
                         createCommand("blah.tld"),
-                        "tokeN",
                         Registry.get("tld"),
                         "TheRegistrar",
-                        DateTime.now(UTC))))
+                        DateTime.now(UTC),
+                        Optional.of(allocationTokenExtension))))
         .marshalsToXml();
   }
 
@@ -382,12 +395,12 @@ class AllocationTokenFlowUtilsTest {
             assertThrows(
                 clazz,
                 () ->
-                    flowUtils.loadTokenAndValidateDomain(
+                    flowUtils.verifyAllocationTokenIfPresent(
                         newDomainBase("blah.tld"),
-                        "tokeN",
                         Registry.get("tld"),
                         "TheRegistrar",
-                        DateTime.now(UTC))))
+                        DateTime.now(UTC),
+                        Optional.of(allocationTokenExtension))))
         .marshalsToXml();
   }
 
@@ -397,7 +410,8 @@ class AllocationTokenFlowUtilsTest {
     return command;
   }
 
-  private static AllocationToken.Builder createOneMonthPromoTokenBuilder(DateTime promoStart) {
+  private AllocationToken.Builder createOneMonthPromoTokenBuilder(DateTime promoStart) {
+    when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     return new AllocationToken.Builder()
         .setToken("tokeN")
         .setTokenType(UNLIMITED_USE)

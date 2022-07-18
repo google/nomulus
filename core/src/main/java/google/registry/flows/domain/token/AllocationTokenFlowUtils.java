@@ -51,71 +51,6 @@ public class AllocationTokenFlowUtils {
   }
 
   /**
-   * Loads an allocation token given a string and verifies that the token is valid for the domain
-   * create request.
-   *
-   * @return the loaded {@link AllocationToken} for that string.
-   * @throws EppException if the token doesn't exist, is already redeemed, or is otherwise invalid
-   *     for this request.
-   */
-  public AllocationToken loadTokenAndValidateDomain(
-      DomainCommand.Create command,
-      String token,
-      Registry registry,
-      String registrarId,
-      DateTime now)
-      throws EppException {
-    return loadTokenAndValidateDomain(
-        Optional.of(command), Optional.empty(), token, registry, registrarId, now);
-  }
-
-  /**
-   * Loads an allocation token given a string and verifies that the token is valid for the request.
-   *
-   * @return the loaded {@link AllocationToken} for that string.
-   * @throws EppException if the token doesn't exist, is already redeemed, or is otherwise invalid
-   *     for this request.
-   */
-  public AllocationToken loadTokenAndValidateDomain(
-      DomainBase existingDomain, String token, Registry registry, String registrarId, DateTime now)
-      throws EppException {
-    return loadTokenAndValidateDomain(
-        Optional.empty(), Optional.of(existingDomain), token, registry, registrarId, now);
-  }
-
-  private AllocationToken loadTokenAndValidateDomain(
-      Optional<DomainCommand.Create> command,
-      Optional<DomainBase> existingDomain,
-      String token,
-      Registry registry,
-      String registrarId,
-      DateTime now)
-      throws EppException {
-    if (!command.isPresent() && !existingDomain.isPresent()) {
-      throw new IllegalArgumentException(
-          "A DomainBase object or create command must be used to validate a token");
-    }
-    if (command.isPresent() && existingDomain.isPresent()) {
-      throw new IllegalArgumentException(
-          "A command can only be used to validate a token on a Create");
-    }
-    AllocationToken tokenEntity = loadToken(token);
-    validateToken(
-        InternetDomainName.from(
-            command.isPresent()
-                ? command.get().getFullyQualifiedDomainName()
-                : existingDomain.get().getDomainName()),
-        tokenEntity,
-        registrarId,
-        now);
-    if (command.isPresent()) {
-      return tokenCustomLogic.validateToken(command.get(), tokenEntity, registry, registrarId, now);
-    }
-    return tokenCustomLogic.validateToken(
-        existingDomain.get(), tokenEntity, registry, registrarId, now);
-  }
-
-  /**
    * Checks if the allocation token applies to the given domain names, used for domain checks.
    *
    * @return A map of domain names to domain check error response messages. If a message is present
@@ -221,16 +156,17 @@ public class AllocationTokenFlowUtils {
       DateTime now,
       Optional<AllocationTokenExtension> extension)
       throws EppException {
-    return Optional.ofNullable(
-        extension.isPresent()
-            ? loadTokenAndValidateDomain(
-                Optional.of(command),
-                Optional.empty(),
-                extension.get().getAllocationToken(),
-                registry,
-                registrarId,
-                now)
-            : null);
+    if (!extension.isPresent()) {
+      return Optional.ofNullable(null);
+    }
+    AllocationToken tokenEntity = loadToken(extension.get().getAllocationToken());
+    validateToken(
+        InternetDomainName.from(command.getFullyQualifiedDomainName()),
+        tokenEntity,
+        registrarId,
+        now);
+    return Optional.of(
+        tokenCustomLogic.validateToken(command, tokenEntity, registry, registrarId, now));
   }
 
   /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
@@ -241,16 +177,14 @@ public class AllocationTokenFlowUtils {
       DateTime now,
       Optional<AllocationTokenExtension> extension)
       throws EppException {
-    return Optional.ofNullable(
-        extension.isPresent()
-            ? loadTokenAndValidateDomain(
-                Optional.empty(),
-                Optional.of(existingDomain),
-                extension.get().getAllocationToken(),
-                registry,
-                registrarId,
-                now)
-            : null);
+    if (!extension.isPresent()) {
+      return Optional.ofNullable(null);
+    }
+    AllocationToken tokenEntity = loadToken(extension.get().getAllocationToken());
+    validateToken(
+        InternetDomainName.from(existingDomain.getDomainName()), tokenEntity, registrarId, now);
+    return Optional.of(
+        tokenCustomLogic.validateToken(existingDomain, tokenEntity, registry, registrarId, now));
   }
 
   // Note: exception messages should be <= 32 characters long for domain check results

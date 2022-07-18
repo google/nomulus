@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.truth.Truth8;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppRequestSource;
@@ -93,6 +94,7 @@ import google.registry.model.reporting.DomainTransactionRecord.TransactionReport
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.SetClockExtension;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -612,11 +614,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
         loadFile(
             "domain_renew_response.xml",
             ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
-    assertThat(
-            tm().transact(() -> tm().loadByEntity(allocationToken))
-                .getRedemptionHistoryEntry()
-                .isPresent())
-        .isTrue();
+    Truth8.assertThat(DatabaseHelper.loadByEntity(allocationToken).getRedemptionHistoryEntry())
+        .isPresent();
   }
 
   @Test
