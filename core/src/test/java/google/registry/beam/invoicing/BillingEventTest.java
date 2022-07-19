@@ -23,12 +23,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -86,10 +85,8 @@ class BillingEventTest {
   void testParseBillingEventFromRecord_success() {
     BillingEvent event = BillingEvent.parseFromRecord(schemaAndRecord);
     assertThat(event.id()).isEqualTo(1);
-    assertThat(event.billingTime())
-        .isEqualTo(ZonedDateTime.of(2017, 10, 24, 9, 6, 3, 0, ZoneId.of("UTC")));
-    assertThat(event.eventTime())
-        .isEqualTo(ZonedDateTime.of(2017, 1, 19, 23, 59, 43, 0, ZoneId.of("UTC")));
+    assertThat(event.billingTime()).isEqualTo(DateTime.parse("2017-10-24T09:06:03Z"));
+    assertThat(event.eventTime()).isEqualTo(DateTime.parse("2017-01-19T23:59:43Z"));
     assertThat(event.registrarId()).isEqualTo("myRegistrar");
     assertThat(event.billingId()).isEqualTo("12345-CRRHELLO");
     assertThat(event.poNumber()).isEmpty();

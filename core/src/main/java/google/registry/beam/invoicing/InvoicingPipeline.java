@@ -27,14 +27,12 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.reporting.billing.BillingModule;
-import google.registry.util.DateTimeUtils;
 import google.registry.util.DomainNameUtils;
 import google.registry.util.SqlTemplate;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.Optional;
@@ -123,8 +121,8 @@ public class InvoicingPipeline implements Serializable {
     return Optional.of(
         BillingEvent.create(
             oneTime.getId(),
-            DateTimeUtils.toZonedDateTime(oneTime.getBillingTime(), ZoneId.of("UTC")),
-            DateTimeUtils.toZonedDateTime(oneTime.getEventTime(), ZoneId.of("UTC")),
+            oneTime.getBillingTime(),
+            oneTime.getEventTime(),
             registrar.getRegistrarId(),
             registrar.getBillingAccountMap().get(currency),
             registrar.getPoNumber().orElse(""),

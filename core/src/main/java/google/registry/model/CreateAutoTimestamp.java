@@ -16,9 +16,6 @@ package google.registry.model;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import google.registry.util.DateTimeUtils;
-import java.time.ZonedDateTime;
-import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -31,26 +28,25 @@ import org.joda.time.DateTime;
 public class CreateAutoTimestamp extends ImmutableObject implements UnsafeSerializable {
 
   @Column(nullable = false)
-  ZonedDateTime creationTime;
+  DateTime creationTime;
 
   @PrePersist
   @PreUpdate
   void setTimestamp() {
     if (creationTime == null) {
-      creationTime = DateTimeUtils.toZonedDateTime(jpaTm().getTransactionTime());
+      creationTime = jpaTm().getTransactionTime();
     }
   }
 
   /** Returns the timestamp. */
   @Nullable
   public DateTime getTimestamp() {
-    return Optional.ofNullable(creationTime).map(DateTimeUtils::toJodaDateTime).orElse(null);
+    return creationTime;
   }
 
-  public static CreateAutoTimestamp create(@Nullable DateTime timestamp) {
+  public static CreateAutoTimestamp create(@Nullable DateTime creationTime) {
     CreateAutoTimestamp instance = new CreateAutoTimestamp();
-    instance.creationTime =
-        Optional.ofNullable(timestamp).map(DateTimeUtils::toZonedDateTime).orElse(null);
+    instance.creationTime = creationTime;
     return instance;
   }
 }

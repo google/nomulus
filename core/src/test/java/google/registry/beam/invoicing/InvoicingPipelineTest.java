@@ -55,8 +55,6 @@ import google.registry.util.ResourceUtils;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -104,8 +102,8 @@ class InvoicingPipelineTest {
       ImmutableList.of(
           BillingEvent.create(
               1,
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -119,8 +117,8 @@ class InvoicingPipelineTest {
               ""),
           BillingEvent.create(
               2,
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -134,8 +132,8 @@ class InvoicingPipelineTest {
               ""),
           BillingEvent.create(
               3,
-              ZonedDateTime.of(2017, 10, 2, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 9, 29, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-02T00:00:00Z"),
+              DateTime.parse("2017-09-29T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -149,8 +147,8 @@ class InvoicingPipelineTest {
               ""),
           BillingEvent.create(
               4,
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
               "bestdomains",
               "456",
               "116688",
@@ -164,8 +162,8 @@ class InvoicingPipelineTest {
               ""),
           BillingEvent.create(
               5,
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
               "anotherRegistrar",
               "789",
               "",
@@ -179,8 +177,8 @@ class InvoicingPipelineTest {
               "SUNRISE ANCHOR_TENANT"),
           BillingEvent.create(
               6,
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -194,8 +192,8 @@ class InvoicingPipelineTest {
               ""),
           BillingEvent.create(
               7,
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
               "theRegistrar",
               "234",
               "",

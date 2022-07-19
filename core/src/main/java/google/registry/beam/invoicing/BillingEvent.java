@@ -28,16 +28,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.text.DecimalFormat;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.coders.AtomicCoder;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 /**
  * A POJO representing a single billable event, parsed from a {@code SchemaAndRecord}.
@@ -51,7 +51,7 @@ import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord;
 public abstract class BillingEvent implements Serializable {
 
   private static final DateTimeFormatter DATE_TIME_FORMATTER =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss zzz");
+      DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss zzz");
 
   /** The amount we multiply the price for sunrise creates. This is currently a 15% discount. */
   private static final double SUNRISE_DISCOUNT_PRICE_MODIFIER = 0.85;
@@ -77,10 +77,10 @@ public abstract class BillingEvent implements Serializable {
   abstract long id();
 
   /** Returns the UTC DateTime this event becomes billable. */
-  abstract ZonedDateTime billingTime();
+  abstract DateTime billingTime();
 
   /** Returns the UTC DateTime this event was generated. */
-  abstract ZonedDateTime eventTime();
+  abstract DateTime eventTime();
 
   /** Returns the billed registrar's name. */
   abstract String registrarId();
@@ -132,10 +132,8 @@ public abstract class BillingEvent implements Serializable {
         // Objects, which contain a string representation of their underlying types.
         Long.parseLong(extractField(record, "id")),
         // Bigquery provides UNIX timestamps with microsecond precision.
-        Instant.ofEpochMilli(Long.parseLong(extractField(record, "billingTime")) / 1000)
-            .atZone(ZoneId.of("UTC")),
-        Instant.ofEpochMilli(Long.parseLong(extractField(record, "eventTime")) / 1000)
-            .atZone(ZoneId.of("UTC")),
+        new DateTime(Long.parseLong(extractField(record, "billingTime")) / 1000, DateTimeZone.UTC),
+        new DateTime(Long.parseLong(extractField(record, "eventTime")) / 1000, DateTimeZone.UTC),
         extractField(record, "registrarId"),
         extractField(record, "billingId"),
         extractField(record, "poNumber"),
@@ -180,8 +178,8 @@ public abstract class BillingEvent implements Serializable {
   @VisibleForTesting
   static BillingEvent create(
       long id,
-      ZonedDateTime billingTime,
-      ZonedDateTime eventTime,
+      DateTime billingTime,
+      DateTime eventTime,
       String registrarId,
       String billingId,
       String poNumber,
@@ -231,8 +229,8 @@ public abstract class BillingEvent implements Serializable {
         .join(
             ImmutableList.of(
                 id(),
-                DATE_TIME_FORMATTER.format(billingTime()),
-                DATE_TIME_FORMATTER.format(eventTime()),
+                DATE_TIME_FORMATTER.print(billingTime()),
+                DATE_TIME_FORMATTER.print(eventTime()),
                 registrarId(),
                 billingId(),
                 poNumber(),

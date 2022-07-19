@@ -19,15 +19,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.TimeZone;
+import java.sql.Date;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 
 /** Utilities methods and constants related to Joda {@link DateTime} objects. */
-public class DateTimeUtils {
+public abstract class DateTimeUtils {
 
   /** The start of the epoch, in a convenient constant. */
   public static final DateTime START_OF_TIME = new DateTime(0, DateTimeZone.UTC);
@@ -91,39 +89,11 @@ public class DateTimeUtils {
     return years == 0 ? now : now.minusYears(1).minusYears(years - 1);
   }
 
-  /**
-   * Converts a Joda {@link DateTime} object to an equivalent java.time {@link ZonedDateTime}
-   * object.
-   */
-  public static ZonedDateTime toZonedDateTime(DateTime dateTime) {
-    java.time.Instant instant = java.time.Instant.ofEpochMilli(dateTime.getMillis());
-    return ZonedDateTime.ofInstant(instant, ZoneId.of(dateTime.getZone().getID()).normalized());
+  public static Date toSqlDate(LocalDate localDate) {
+    return new Date(localDate.toDateTimeAtStartOfDay().getMillis());
   }
 
-  /**
-   * Converts a Joda {@link DateTime} object to an equivalent java.time {@link ZonedDateTime}
-   * object.
-   */
-  public static ZonedDateTime toZonedDateTime(DateTime dateTime, ZoneId zoneId) {
-    java.time.Instant instant = java.time.Instant.ofEpochMilli(dateTime.getMillis());
-    return ZonedDateTime.ofInstant(instant, zoneId);
-  }
-
-  /**
-   * Converts a java.time {@link ZonedDateTime} object to an equivalent Joda {@link DateTime}
-   * object.
-   */
-  public static DateTime toJodaDateTime(ZonedDateTime zonedDateTime) {
-    return new DateTime(
-        zonedDateTime.toInstant().toEpochMilli(),
-        DateTimeZone.forTimeZone(TimeZone.getTimeZone(zonedDateTime.getZone())));
-  }
-
-  public static java.sql.Date toSqlDate(LocalDate localDate) {
-    return new java.sql.Date(localDate.toDateTimeAtStartOfDay().getMillis());
-  }
-
-  public static LocalDate toLocalDate(java.sql.Date date) {
+  public static LocalDate toLocalDate(Date date) {
     return new LocalDate(date.getTime(), DateTimeZone.UTC);
   }
 }
