@@ -23,7 +23,6 @@ import static org.joda.money.CurrencyUnit.USD;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
-import google.registry.model.tld.Registry.BillingCostTransition;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import javax.persistence.Entity;
@@ -49,8 +48,8 @@ public class BillingCostTransitionConverterTest {
 
   @Test
   void roundTripConversion_returnsSameTimedTransitionProperty() {
-    TimedTransitionProperty<Money, BillingCostTransition> timedTransitionProperty =
-        TimedTransitionProperty.fromValueMap(values, BillingCostTransition.class);
+    TimedTransitionProperty<Money> timedTransitionProperty =
+        TimedTransitionProperty.fromValueMap(values);
     TestEntity testEntity = new TestEntity(timedTransitionProperty);
     insertInDb(testEntity);
     TestEntity persisted =
@@ -63,12 +62,11 @@ public class BillingCostTransitionConverterTest {
 
     @Id String name = "id";
 
-    TimedTransitionProperty<Money, BillingCostTransition> timedTransitionProperty;
+    TimedTransitionProperty<Money> timedTransitionProperty;
 
     private TestEntity() {}
 
-    private TestEntity(
-        TimedTransitionProperty<Money, BillingCostTransition> timedTransitionProperty) {
+    private TestEntity(TimedTransitionProperty<Money> timedTransitionProperty) {
       this.timedTransitionProperty = timedTransitionProperty;
     }
   }

@@ -18,7 +18,6 @@ import com.beust.jcommander.Parameters;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
-import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationStateTransition;
 import google.registry.model.common.TimedTransitionProperty;
 
 /** A command to check the current Registry 3.0 migration state of the database. */
@@ -28,9 +27,8 @@ public class GetDatabaseMigrationStateCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() throws Exception {
-    TimedTransitionProperty<MigrationState, MigrationStateTransition> migrationSchedule =
+    TimedTransitionProperty<MigrationState> migrationSchedule =
         DatabaseMigrationStateSchedule.get();
-    System.out.println(
-        String.format("Current migration schedule: %s", migrationSchedule.toValueMap()));
+    System.out.printf("Current migration schedule: %s%n", migrationSchedule.toValueMap());
   }
 }

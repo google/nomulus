@@ -20,11 +20,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
-import static com.google.common.collect.Ordering.natural;
 import static com.google.common.collect.Sets.immutableEnumSet;
 import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.config.RegistryConfig.getDefaultRegistrarWhoisServer;
@@ -51,6 +48,7 @@ import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
@@ -58,15 +56,12 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.re2j.Pattern;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.annotation.Parent;
 import com.googlecode.objectify.condition.IfNull;
-import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
@@ -77,7 +72,6 @@ import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
-import google.registry.model.registrar.Registrar.BillingAccountEntry.CurrencyMapper;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.persistence.VKey;
@@ -394,42 +388,7 @@ public class Registrar extends ImmutableObject
    * accessed by {@link #getBillingAccountMap}, a sorted map is returned to guarantee deterministic
    * behavior when serializing the map, for display purpose for instance.
    */
-  @Nullable
-  @Mapify(CurrencyMapper.class)
-  Map<CurrencyUnit, BillingAccountEntry> billingAccountMap;
-
-  /** A billing account entry for this registrar, consisting of a currency and an account Id. */
-  @Embed
-  public static class BillingAccountEntry extends ImmutableObject implements UnsafeSerializable {
-
-    CurrencyUnit currency;
-    String accountId;
-
-    BillingAccountEntry() {}
-
-    public BillingAccountEntry(CurrencyUnit currency, String accountId) {
-      this.accountId = accountId;
-      this.currency = currency;
-    }
-
-    BillingAccountEntry(Map.Entry<CurrencyUnit, String> entry) {
-      this.accountId = entry.getValue();
-      this.currency = entry.getKey();
-    }
-
-    /** Mapper to use for {@code @Mapify}. */
-    static class CurrencyMapper implements Mapper<CurrencyUnit, BillingAccountEntry> {
-      @Override
-      public CurrencyUnit getKey(BillingAccountEntry billingAccountEntry) {
-        return billingAccountEntry.currency;
-      }
-    }
-
-    /** Returns the account id of this entry. */
-    public String getAccountId() {
-      return accountId;
-    }
-  }
+  @Nullable Map<CurrencyUnit, String> billingAccountMap;
 
   /** URL of registrar's website. */
   String url;
@@ -493,12 +452,10 @@ public class Registrar extends ImmutableObject
     return Optional.ofNullable(poNumber);
   }
 
-  public ImmutableMap<CurrencyUnit, String> getBillingAccountMap() {
-    if (billingAccountMap == null) {
-      return ImmutableMap.of();
-    }
-    return billingAccountMap.entrySet().stream()
-        .collect(toImmutableSortedMap(natural(), Map.Entry::getKey, v -> v.getValue().accountId));
+  public ImmutableSortedMap<CurrencyUnit, String> getBillingAccountMap() {
+    return billingAccountMap == null
+        ? ImmutableSortedMap.of()
+        : ImmutableSortedMap.copyOf(billingAccountMap);
   }
 
   public DateTime getLastUpdateTime() {
@@ -776,9 +733,7 @@ public class Registrar extends ImmutableObject
     }
 
     public Builder setBillingAccountMap(@Nullable Map<CurrencyUnit, String> billingAccountMap) {
-      getInstance().billingAccountMap =
-          nullToEmptyImmutableCopy(billingAccountMap).entrySet().stream()
-              .collect(toImmutableMap(Map.Entry::getKey, BillingAccountEntry::new));
+      getInstance().billingAccountMap = nullToEmptyImmutableCopy(billingAccountMap);
       return this;
     }
 

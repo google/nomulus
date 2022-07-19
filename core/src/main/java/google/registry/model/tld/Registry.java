@@ -43,7 +43,6 @@ import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.common.TimedTransitionProperty;
-import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.tld.label.PremiumList;
@@ -152,47 +151,6 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
 
     /** A "fake" state for use in predelegation testing. Acts like {@link #GENERAL_AVAILABILITY}. */
     PDT
-  }
-
-  /**
-   * A transition to a TLD state at a specific time, for use in a TimedTransitionProperty. Public
-   * because App Engine's security manager requires this for instantiation via reflection.
-   */
-  public static class TldStateTransition extends TimedTransition<TldState> {
-
-    /** The TLD state. */
-    private TldState tldState;
-
-    @Override
-    public TldState getValue() {
-      return tldState;
-    }
-
-    @Override
-    protected void setValue(TldState tldState) {
-      this.tldState = tldState;
-    }
-  }
-
-  /**
-   * A transition to a given billing cost at a specific time, for use in a TimedTransitionProperty.
-   *
-   * <p>Public because App Engine's security manager requires this for instantiation via reflection.
-   */
-  public static class BillingCostTransition extends TimedTransition<Money> {
-
-    /** The billing cost value. */
-    private Money billingCost;
-
-    @Override
-    public Money getValue() {
-      return billingCost;
-    }
-
-    @Override
-    protected void setValue(Money billingCost) {
-      this.billingCost = billingCost;
-    }
   }
 
   /** Returns the registry for a given TLD, throwing if none exists. */
@@ -343,13 +301,10 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   @Column(nullable = false)
   boolean invoicingEnabled;
 
-  /**
-   * A property that transitions to different {@link TldState}s at different times. Stored as a list
-   * of {@link TldStateTransition} embedded objects using the @Mapify annotation.
-   */
+  /** A property that transitions to different {@link TldState}s at different times. */
   @Column(nullable = false)
-  TimedTransitionProperty<TldState, TldStateTransition> tldStateTransitions =
-      TimedTransitionProperty.forMapify(DEFAULT_TLD_STATE, TldStateTransition.class);
+  TimedTransitionProperty<TldState> tldStateTransitions =
+      TimedTransitionProperty.withInitialValue(DEFAULT_TLD_STATE);
 
   /** An automatically managed creation timestamp. */
   @Column(nullable = false)
@@ -468,21 +423,20 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   Money registryLockOrUnlockBillingCost = DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST;
 
   /**
-   * A property that transitions to different renew billing costs at different times. Stored as a
-   * list of BillingCostTransition embedded objects using the @Mapify annotation.
+   * A property that transitions to different renew billing costs at different times.
    *
    * <p>A given value of this property represents the per-year billing cost for renewing a domain
    * name. This cost is also used to compute costs for transfers, since each transfer includes a
    * renewal to ensure transfers have a cost.
    */
   @Column(nullable = false)
-  TimedTransitionProperty<Money, BillingCostTransition> renewBillingCostTransitions =
-      TimedTransitionProperty.forMapify(DEFAULT_RENEW_BILLING_COST, BillingCostTransition.class);
+  TimedTransitionProperty<Money> renewBillingCostTransitions =
+      TimedTransitionProperty.withInitialValue(DEFAULT_RENEW_BILLING_COST);
 
   /** A property that tracks the EAP fee schedule (if any) for the TLD. */
   @Column(nullable = false)
-  TimedTransitionProperty<Money, BillingCostTransition> eapFeeSchedule =
-      TimedTransitionProperty.forMapify(DEFAULT_EAP_BILLING_COST, BillingCostTransition.class);
+  TimedTransitionProperty<Money> eapFeeSchedule =
+      TimedTransitionProperty.withInitialValue(DEFAULT_EAP_BILLING_COST);
 
   /** Marksdb LORDN service username (password is stored in Keyring) */
   String lordnUsername;
@@ -720,8 +674,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
                       .filter(state -> !TldState.QUIET_PERIOD.equals(state))
                       .collect(Collectors.toList())),
           "The TLD states are chronologically out of order");
-      getInstance().tldStateTransitions =
-          TimedTransitionProperty.fromValueMap(tldStatesMap, TldStateTransition.class);
+      getInstance().tldStateTransitions = TimedTransitionProperty.fromValueMap(tldStatesMap);
       return this;
     }
 
@@ -887,7 +840,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
           renewCostsMap.values().stream().allMatch(Money::isPositiveOrZero),
           "Renew billing cost cannot be negative");
       getInstance().renewBillingCostTransitions =
-          TimedTransitionProperty.fromValueMap(renewCostsMap, BillingCostTransition.class);
+          TimedTransitionProperty.fromValueMap(renewCostsMap);
       return this;
     }
 
@@ -897,8 +850,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
       checkArgument(
           eapFeeSchedule.values().stream().allMatch(Money::isPositiveOrZero),
           "EAP fee cannot be negative");
-      getInstance().eapFeeSchedule =
-          TimedTransitionProperty.fromValueMap(eapFeeSchedule, BillingCostTransition.class);
+      getInstance().eapFeeSchedule = TimedTransitionProperty.fromValueMap(eapFeeSchedule);
       return this;
     }
 

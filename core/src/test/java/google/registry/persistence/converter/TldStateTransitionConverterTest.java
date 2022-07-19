@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.tld.Registry.TldState;
-import google.registry.model.tld.Registry.TldStateTransition;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import javax.persistence.Entity;
@@ -52,8 +51,8 @@ class TldStateTransitionConverterTest {
 
   @Test
   void roundTripConversion_returnsSameTimedTransitionProperty() {
-    TimedTransitionProperty<TldState, TldStateTransition> timedTransitionProperty =
-        TimedTransitionProperty.fromValueMap(values, TldStateTransition.class);
+    TimedTransitionProperty<TldState> timedTransitionProperty =
+        TimedTransitionProperty.fromValueMap(values);
     TestEntity testEntity = new TestEntity(timedTransitionProperty);
     insertInDb(testEntity);
     TestEntity persisted =
@@ -66,12 +65,11 @@ class TldStateTransitionConverterTest {
 
     @Id String name = "id";
 
-    TimedTransitionProperty<TldState, TldStateTransition> timedTransitionProperty;
+    TimedTransitionProperty<TldState> timedTransitionProperty;
 
     private TestEntity() {}
 
-    private TestEntity(
-        TimedTransitionProperty<TldState, TldStateTransition> timedTransitionProperty) {
+    private TestEntity(TimedTransitionProperty<TldState> timedTransitionProperty) {
       this.timedTransitionProperty = timedTransitionProperty;
     }
   }
