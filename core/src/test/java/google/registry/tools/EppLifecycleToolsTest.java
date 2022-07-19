@@ -150,7 +150,8 @@ class EppLifecycleToolsTest extends EppTestCase {
             .setPeriodYears(4)
             .setEventTime(DateTime.parse("2000-06-07T00:00:00Z"))
             .setBillingTime(DateTime.parse("2000-06-12T00:00:00Z"))
-            .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class))
+            .setDomainHistory(
+                getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class))
             .build();
 
     assertBillingEventsForResource(

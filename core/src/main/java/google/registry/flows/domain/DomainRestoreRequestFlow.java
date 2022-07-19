@@ -150,6 +150,8 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     verifyRestoreAllowed(command, existingDomain, feeUpdate, feesAndCredits, now);
     Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
     historyBuilder.setId(domainHistoryKey.getId());
+    DomainHistoryId domainHistoryId =
+        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId());
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
 
     DateTime newExpirationTime =
@@ -158,17 +160,17 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     // a year and bill for it immediately, with no grace period.
     if (isExpired) {
       entitiesToSave.add(
-          createRenewBillingEvent(domainHistoryKey, feesAndCredits.getRenewCost(), now));
+          createRenewBillingEvent(domainHistoryId, feesAndCredits.getRenewCost(), now));
     }
     // Always bill for the restore itself.
     entitiesToSave.add(
-        createRestoreBillingEvent(domainHistoryKey, feesAndCredits.getRestoreCost(), now));
+        createRestoreBillingEvent(domainHistoryId, feesAndCredits.getRestoreCost(), now));
 
     BillingEvent.Recurring autorenewEvent =
         newAutorenewBillingEvent(existingDomain)
             .setEventTime(newExpirationTime)
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(domainHistoryKey)
+            .setDomainHistoryId(domainHistoryId)
             .build();
     PollMessage.Autorenew autorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
@@ -259,19 +261,17 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
   }
 
   private OneTime createRenewBillingEvent(
-      Key<DomainHistory> domainHistoryKey, Money renewCost, DateTime now) {
-    return prepareBillingEvent(domainHistoryKey, renewCost, now).setReason(Reason.RENEW).build();
+      DomainHistoryId domainHistoryId, Money renewCost, DateTime now) {
+    return prepareBillingEvent(domainHistoryId, renewCost, now).setReason(Reason.RENEW).build();
   }
 
   private BillingEvent.OneTime createRestoreBillingEvent(
-      Key<DomainHistory> domainHistoryKey, Money restoreCost, DateTime now) {
-    return prepareBillingEvent(domainHistoryKey, restoreCost, now)
-        .setReason(Reason.RESTORE)
-        .build();
+      DomainHistoryId domainHistoryId, Money restoreCost, DateTime now) {
+    return prepareBillingEvent(domainHistoryId, restoreCost, now).setReason(Reason.RESTORE).build();
   }
 
   private OneTime.Builder prepareBillingEvent(
-      Key<DomainHistory> domainHistoryKey, Money cost, DateTime now) {
+      DomainHistoryId domainHistoryId, Money cost, DateTime now) {
     return new BillingEvent.OneTime.Builder()
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
@@ -279,7 +279,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
         .setBillingTime(now)
         .setPeriodYears(1)
         .setCost(cost)
-        .setParent(domainHistoryKey);
+        .setDomainHistoryId(domainHistoryId);
   }
 
   private static ImmutableList<FeeTransformResponseExtension> createResponseExtensions(

@@ -14,47 +14,38 @@
 
 package google.registry.beam.invoicing;
 
-import static google.registry.beam.BeamUtils.checkFieldsNotNull;
-import static google.registry.beam.BeamUtils.extractField;
-
 import com.google.auto.value.AutoValue;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.reporting.billing.BillingModule;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.text.DecimalFormat;
-import java.util.stream.Collectors;
-import org.apache.avro.generic.GenericRecord;
+import java.util.regex.Pattern;
 import org.apache.beam.sdk.coders.AtomicCoder;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
-import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 /**
  * A POJO representing a single billable event, parsed from a {@code SchemaAndRecord}.
  *
- * <p>This is a trivially serializable class that allows Beam to transform the results of a Bigquery
- * query into a standard Java representation, giving us the type guarantees and ease of manipulation
- * Bigquery lacks, while localizing any Bigquery-side failures to the {@link #parseFromRecord}
- * function.
+ * <p>This is a trivially serializable class that allows Beam to transform the results of a Cloud
+ * SQL query into a standard Java representation, giving us the type guarantees and ease of
+ * manipulation Cloud SQL lacks.
  */
 @AutoValue
 public abstract class BillingEvent implements Serializable {
 
+  private static final long serialVersionUID = -3593088371541450077L;
+
   private static final DateTimeFormatter DATE_TIME_FORMATTER =
       DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss zzz");
 
-  /** The amount we multiply the price for sunrise creates. This is currently a 15% discount. */
-  private static final double SUNRISE_DISCOUNT_PRICE_MODIFIER = 0.85;
+  private static final Pattern SYNTHETIC_REGEX = Pattern.compile("SYNTHETIC", Pattern.LITERAL);
 
   private static final ImmutableList<String> FIELD_NAMES =
       ImmutableList.of(
@@ -115,67 +106,7 @@ public abstract class BillingEvent implements Serializable {
   /** Returns a list of space-delimited flags associated with the event. */
   abstract String flags();
 
-  /**
-   * Constructs a {@code BillingEvent} from a {@code SchemaAndRecord}.
-   *
-   * @see <a
-   *     href=http://avro.apache.org/docs/1.7.7/api/java/org/apache/avro/generic/GenericData.Record.html>
-   *     Apache AVRO GenericRecord</a>
-   */
-  static BillingEvent parseFromRecord(SchemaAndRecord schemaAndRecord) {
-    checkFieldsNotNull(FIELD_NAMES, schemaAndRecord);
-    GenericRecord record = schemaAndRecord.getRecord();
-    String flags = extractField(record, "flags");
-    double amount = getDiscountedAmount(Double.parseDouble(extractField(record, "amount")), flags);
-    return create(
-        // We need to chain parsers off extractField because GenericRecord only returns
-        // Objects, which contain a string representation of their underlying types.
-        Long.parseLong(extractField(record, "id")),
-        // Bigquery provides UNIX timestamps with microsecond precision.
-        new DateTime(Long.parseLong(extractField(record, "billingTime")) / 1000, DateTimeZone.UTC),
-        new DateTime(Long.parseLong(extractField(record, "eventTime")) / 1000, DateTimeZone.UTC),
-        extractField(record, "registrarId"),
-        extractField(record, "billingId"),
-        extractField(record, "poNumber"),
-        extractField(record, "tld"),
-        extractField(record, "action"),
-        extractField(record, "domain"),
-        extractField(record, "repositoryId"),
-        Integer.parseInt(extractField(record, "years")),
-        extractField(record, "currency"),
-        amount,
-        flags);
-  }
-
-  /**
-   * Applies a discount to sunrise creates and anchor tenant creates if applicable.
-   *
-   * Currently sunrise creates are discounted 15% and anchor tenant creates are free for 2 years.
-   * All anchor tenant creates are enforced to be 2 years in
-   * {@link google.registry.flows.domain.DomainCreateFlow#verifyAnchorTenantValidPeriod}.
-   */
-  private static double getDiscountedAmount(double amount, String flags) {
-    // Apply a configurable discount to sunrise creates.
-    if (flags.contains(Flag.SUNRISE.name())) {
-      amount =
-          Double.parseDouble(
-              new DecimalFormat("#.##").format(amount * SUNRISE_DISCOUNT_PRICE_MODIFIER));
-    }
-    // Anchor tenant creates are free for the initial create. This is enforced to be a 2 year period
-    // upon domain create.
-    if (flags.contains(Flag.ANCHOR_TENANT.name())) {
-      amount = 0;
-    }
-    return amount;
-  }
-
-  /**
-   * Creates a concrete {@code BillingEvent}.
-   *
-   * <p>This should only be used outside this class for testing- instances of {@code BillingEvent}
-   * should otherwise come from {@link #parseFromRecord}.
-   */
-  @VisibleForTesting
+  /** Creates a concrete {@link BillingEvent}. */
   static BillingEvent create(
       long id,
       DateTime billingTime,
@@ -209,7 +140,7 @@ public abstract class BillingEvent implements Serializable {
   }
 
   static String getHeader() {
-    return FIELD_NAMES.stream().collect(Collectors.joining(","));
+    return String.join(",", FIELD_NAMES);
   }
 
   /**
@@ -242,7 +173,7 @@ public abstract class BillingEvent implements Serializable {
                 currency(),
                 String.format("%.2f", amount()),
                 // Strip out the 'synthetic' flag, which is internal only.
-                flags().replace("SYNTHETIC", "").trim()));
+                SYNTHETIC_REGEX.matcher(flags()).replaceAll("").trim()));
   }
 
   /** Returns the grouping key for this {@code BillingEvent}, to generate the overall invoice. */
@@ -273,6 +204,8 @@ public abstract class BillingEvent implements Serializable {
   /** Key for each {@code BillingEvent}, when aggregating for the overall invoice. */
   @AutoValue
   abstract static class InvoiceGroupingKey implements Serializable {
+
+    private static final long serialVersionUID = -151561764235256205L;
 
     private static final ImmutableList<String> INVOICE_HEADERS =
         ImmutableList.of(
@@ -344,6 +277,8 @@ public abstract class BillingEvent implements Serializable {
 
     /** Coder that provides deterministic (de)serialization for {@code InvoiceGroupingKey}. */
     static class InvoiceGroupingKeyCoder extends AtomicCoder<InvoiceGroupingKey> {
+
+      private static final long serialVersionUID = 6680701524304107547L;
 
       @Override
       public void encode(InvoiceGroupingKey value, OutputStream outStream) throws IOException {

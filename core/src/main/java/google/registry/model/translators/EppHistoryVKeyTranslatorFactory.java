@@ -21,8 +21,6 @@ import com.google.appengine.api.datastore.Key;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import google.registry.persistence.BillingVKey.BillingEventVKey;
-import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.persistence.DomainHistoryVKey;
 import google.registry.persistence.EppHistoryVKey;
 import java.lang.reflect.Constructor;
@@ -45,8 +43,7 @@ public class EppHistoryVKeyTranslatorFactory
   // key, e.g. the map key for ContactPollMessageVKey is "ContactResource/HistoryEntry/PollMessage".
   @VisibleForTesting
   static final ImmutableMap<String, Class<? extends EppHistoryVKey>> kindPathToVKeyClass =
-      ImmutableSet.of(DomainHistoryVKey.class, BillingEventVKey.class, BillingRecurrenceVKey.class)
-          .stream()
+      ImmutableSet.of(DomainHistoryVKey.class).stream()
           .collect(toImmutableMap(EppHistoryVKeyTranslatorFactory::getKindPath, identity()));
 
   /**

@@ -253,9 +253,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
     final ImmutableSet<DateTime> billingTimes =
         getBillingTimesInScope(eventTimes, cursorTime, executeTime, tld);
 
-    VKey<DomainBase> domainKey =
-        VKey.create(
-            DomainBase.class, recurring.getDomainRepoId(), recurring.getParentKey().getParent());
+    VKey<DomainBase> domainKey = VKey.createSql(DomainBase.class, recurring.getDomainRepoId());
     Iterable<OneTime> oneTimesForDomain;
     oneTimesForDomain =
         tm().createQueryComposer(OneTime.class)
@@ -311,11 +309,11 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                       .getRenewCost())
               .setEventTime(eventTime)
               .setFlags(union(recurring.getFlags(), Flag.SYNTHETIC))
-              .setParent(historyEntry)
+              .setDomainHistory(historyEntry)
               .setPeriodYears(1)
               .setReason(recurring.getReason())
               .setSyntheticCreationTime(executeTime)
-              .setCancellationMatchingBillingEvent(recurring.createVKey())
+              .setCancellationMatchingBillingEvent(recurring)
               .setTargetId(recurring.getTargetId())
               .build());
     }

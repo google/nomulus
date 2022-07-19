@@ -210,7 +210,9 @@ public final class DomainRenewFlow implements TransactionalFlow {
             .setEventTime(newExpirationTime)
             .setRenewalPrice(existingRecurringBillingEvent.getRenewalPrice().orElse(null))
             .setRenewalPriceBehavior(existingRecurringBillingEvent.getRenewalPriceBehavior())
-            .setParent(domainHistoryKey)
+            .setDomainHistoryId(
+                new DomainHistoryId(
+                    domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
@@ -332,7 +334,8 @@ public final class DomainRenewFlow implements TransactionalFlow {
         .setEventTime(now)
         .setAllocationToken(allocationToken.map(AllocationToken::createVKey).orElse(null))
         .setBillingTime(now.plus(Registry.get(tld).getRenewGracePeriodLength()))
-        .setParent(domainHistoryKey)
+        .setDomainHistoryId(
+            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
         .build();
   }
 

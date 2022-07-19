@@ -333,9 +333,9 @@ public final class DomainCreateFlow implements TransactionalFlow {
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
     DateTime registrationExpirationTime = leapSafeAddYears(now, years);
     String repoId = createDomainRepoId(allocateId(), registry.getTldStr());
-    Key<DomainHistory> domainHistoryKey =
-        Key.create(Key.create(DomainBase.class, repoId), DomainHistory.class, allocateId());
-    historyBuilder.setId(domainHistoryKey.getId());
+    long historyRevisionId = allocateId();
+    DomainHistoryId domainHistoryId = new DomainHistoryId(repoId, historyRevisionId);
+    historyBuilder.setId(historyRevisionId);
     // Bill for the create.
     BillingEvent.OneTime createBillingEvent =
         createOneTimeBillingEvent(
@@ -345,17 +345,17 @@ public final class DomainCreateFlow implements TransactionalFlow {
             isReserved(domainName, isSunriseCreate),
             years,
             feesAndCredits,
-            domainHistoryKey,
+            domainHistoryId,
             allocationToken,
             now);
     // Create a new autorenew billing event and poll message starting at the expiration time.
     BillingEvent.Recurring autorenewBillingEvent =
         createAutorenewBillingEvent(
-            domainHistoryKey,
+            domainHistoryId,
             registrationExpirationTime,
             getRenewalPriceInfo(isAnchorTenant, allocationToken, feesAndCredits));
     PollMessage.Autorenew autorenewPollMessage =
-        createAutorenewPollMessage(domainHistoryKey, registrationExpirationTime);
+        createAutorenewPollMessage(domainHistoryId, registrationExpirationTime);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
     entitiesToSave.add(createBillingEvent, autorenewBillingEvent, autorenewPollMessage);
     // Bill for EAP cost, if any.
@@ -552,7 +552,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
       boolean isReserved,
       int years,
       FeesAndCredits feesAndCredits,
-      Key<DomainHistory> domainHistoryKey,
+      DomainHistoryId domainHistoryId,
       Optional<AllocationToken> allocationToken,
       DateTime now) {
     ImmutableSet.Builder<Flag> flagsBuilder = new ImmutableSet.Builder<>();
@@ -581,12 +581,12 @@ public final class DomainCreateFlow implements TransactionalFlow {
                     ? registry.getAnchorTenantAddGracePeriodLength()
                     : registry.getAddGracePeriodLength()))
         .setFlags(flagsBuilder.build())
-        .setParent(domainHistoryKey)
+        .setDomainHistoryId(domainHistoryId)
         .build();
   }
 
   private Recurring createAutorenewBillingEvent(
-      Key<DomainHistory> domainHistoryKey,
+      DomainHistoryId domainHistoryId,
       DateTime registrationExpirationTime,
       RenewalPriceInfo renewalpriceInfo) {
     return new BillingEvent.Recurring.Builder()
@@ -596,21 +596,20 @@ public final class DomainCreateFlow implements TransactionalFlow {
         .setRegistrarId(registrarId)
         .setEventTime(registrationExpirationTime)
         .setRecurrenceEndTime(END_OF_TIME)
-        .setParent(domainHistoryKey)
+        .setDomainHistoryId(domainHistoryId)
         .setRenewalPriceBehavior(renewalpriceInfo.renewalPriceBehavior())
         .setRenewalPrice(renewalpriceInfo.renewalPrice())
         .build();
   }
 
   private Autorenew createAutorenewPollMessage(
-      Key<DomainHistory> domainHistoryKey, DateTime registrationExpirationTime) {
+      DomainHistoryId domainHistoryId, DateTime registrationExpirationTime) {
     return new PollMessage.Autorenew.Builder()
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
         .setEventTime(registrationExpirationTime)
         .setMsg("Domain was auto-renewed.")
-        .setDomainHistoryId(
-            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
+        .setDomainHistoryId(domainHistoryId)
         .build();
   }
 
@@ -625,7 +624,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
         .setEventTime(createBillingEvent.getEventTime())
         .setBillingTime(createBillingEvent.getBillingTime())
         .setFlags(createBillingEvent.getFlags())
-        .setParent(createBillingEvent.getParentKey())
+        .setDomainHistoryId(createBillingEvent.getDomainHistoryId())
         .build();
   }
 

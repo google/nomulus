@@ -143,7 +143,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .setRegistrarId("TheRegistrar")
         .setEventTime(REGISTRATION_EXPIRATION_TIME)
         .setRecurrenceEndTime(TRANSFER_EXPIRATION_TIME)
-        .setParent(historyEntryDomainCreate)
+        .setDomainHistory(historyEntryDomainCreate)
         .build();
   }
 
@@ -156,7 +156,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .setRegistrarId("NewRegistrar")
         .setEventTime(EXTENDED_REGISTRATION_EXPIRATION_TIME)
         .setRecurrenceEndTime(END_OF_TIME)
-        .setParent(
+        .setDomainHistory(
             getOnlyHistoryEntryOfType(
                 domain, HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST, DomainHistory.class))
         .build();

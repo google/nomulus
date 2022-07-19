@@ -17,10 +17,6 @@ package google.registry.model.common;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.model.billing.BillingEvent.Cancellation;
-import google.registry.model.billing.BillingEvent.Modification;
-import google.registry.model.billing.BillingEvent.OneTime;
-import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
@@ -44,7 +40,7 @@ import org.junit.jupiter.api.Test;
 public class ClassPathManagerTest {
   @Test
   void getClass_classInClassRegistry_returnsClass() throws ClassNotFoundException {
-    /**
+    /*
      * Class names are used in stringified vkeys, which can be present in task queues. Class name is
      * required to create a vkey. Changing these names could break task queue entries that are
      * present during a rollout. If you want to change the names of any of the classses supported in
@@ -55,15 +51,11 @@ public class ClassPathManagerTest {
      */
     assertThat(ClassPathManager.getClass("ForeignKeyContactIndex"))
         .isEqualTo(ForeignKeyContactIndex.class);
-    assertThat(ClassPathManager.getClass("Modification")).isEqualTo(Modification.class);
     assertThat(ClassPathManager.getClass("AllocationToken")).isEqualTo(AllocationToken.class);
-    assertThat(ClassPathManager.getClass("OneTime")).isEqualTo(OneTime.class);
     assertThat(ClassPathManager.getClass("RdeRevision")).isEqualTo(RdeRevision.class);
     assertThat(ClassPathManager.getClass("HostResource")).isEqualTo(HostResource.class);
-    assertThat(ClassPathManager.getClass("Recurring")).isEqualTo(Recurring.class);
     assertThat(ClassPathManager.getClass("Registrar")).isEqualTo(Registrar.class);
     assertThat(ClassPathManager.getClass("ContactResource")).isEqualTo(ContactResource.class);
-    assertThat(ClassPathManager.getClass("Cancellation")).isEqualTo(Cancellation.class);
     assertThat(ClassPathManager.getClass("GaeUserIdConverter")).isEqualTo(GaeUserIdConverter.class);
     assertThat(ClassPathManager.getClass("EppResourceIndexBucket"))
         .isEqualTo(EppResourceIndexBucket.class);
@@ -85,7 +77,7 @@ public class ClassPathManagerTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> ClassPathManager.getClass("DomainHistory"));
-    assertThat(thrown).hasMessageThat().contains("Class not found in class registry");
+    assertThat(thrown).hasMessageThat().contains("Class DomainHistory not found in class registry");
   }
 
   @Test
@@ -94,12 +86,14 @@ public class ClassPathManagerTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> ClassPathManager.getClassName(DomainHistory.class));
-    assertThat(thrown).hasMessageThat().contains("Class not found in class name registry");
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Class DomainHistory not found in class name registry");
   }
 
   @Test
   void getClassName() {
-    /**
+    /*
      * Class names are used in stringified vkeys, which can be present in task queues. Class name is
      * required to create a vkey. Changing these names could break task queue entries that are
      * present during a rollout. If you want to change the names of any of the classses supported in
@@ -110,15 +104,11 @@ public class ClassPathManagerTest {
      */
     assertThat(ClassPathManager.getClassName(ForeignKeyContactIndex.class))
         .isEqualTo("ForeignKeyContactIndex");
-    assertThat(ClassPathManager.getClassName(Modification.class)).isEqualTo("Modification");
     assertThat(ClassPathManager.getClassName(AllocationToken.class)).isEqualTo("AllocationToken");
-    assertThat(ClassPathManager.getClassName(OneTime.class)).isEqualTo("OneTime");
     assertThat(ClassPathManager.getClassName(RdeRevision.class)).isEqualTo("RdeRevision");
     assertThat(ClassPathManager.getClassName(HostResource.class)).isEqualTo("HostResource");
-    assertThat(ClassPathManager.getClassName(Recurring.class)).isEqualTo("Recurring");
     assertThat(ClassPathManager.getClassName(Registrar.class)).isEqualTo("Registrar");
     assertThat(ClassPathManager.getClassName(ContactResource.class)).isEqualTo("ContactResource");
-    assertThat(ClassPathManager.getClassName(Cancellation.class)).isEqualTo("Cancellation");
     assertThat(ClassPathManager.getClassName(GaeUserIdConverter.class))
         .isEqualTo("GaeUserIdConverter");
     assertThat(ClassPathManager.getClassName(EppResourceIndexBucket.class))

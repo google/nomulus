@@ -50,7 +50,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestDataHelper;
 import google.registry.util.ResourceUtils;
 import java.io.File;
 import java.nio.file.Files;
@@ -67,7 +66,6 @@ import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.TypeDescriptor;
-import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,8 +79,7 @@ class InvoicingPipelineTest {
 
   @RegisterExtension
   @Order(Order.DEFAULT - 1)
-  final transient DatastoreEntityExtension datastore =
-      new DatastoreEntityExtension().allThreads(true);
+  final DatastoreEntityExtension datastore = new DatastoreEntityExtension().allThreads(true);
 
   @RegisterExtension
   final TestPipelineExtension pipeline =
@@ -264,15 +261,6 @@ class InvoicingPipelineTest {
   }
 
   @Test
-  void testSuccess_makeQuery() {
-    String query = InvoicingPipeline.makeQuery("2017-10", "my-project-id");
-    assertThat(query)
-        .isEqualTo(TestDataHelper.loadFile(this.getClass(), "billing_events_test.sql"));
-    // This is necessary because the TestPipelineExtension verifies that the pipeline is run.
-    pipeline.run();
-  }
-
-  @Test
   void testSuccess_fullSqlPipeline() throws Exception {
     setupCloudSql();
     InvoicingPipeline invoicingPipeline = new InvoicingPipeline(options);
@@ -365,14 +353,14 @@ class InvoicingPipelineTest {
     // Test that comments are removed from the .sql file correctly
     assertThat(InvoicingPipeline.makeCloudSqlQuery("2017-10"))
         .isEqualTo(
-            "\n"
+            '\n'
                 + "SELECT b, r FROM BillingEvent b\n"
                 + "JOIN Registrar r ON b.clientId = r.clientIdentifier\n"
                 + "JOIN Domain d ON b.domainRepoId = d.repoId\n"
                 + "JOIN Tld t ON t.tldStr = d.tld\n"
-                + "LEFT JOIN BillingCancellation c ON b.id = c.refOneTime.billingId\n"
+                + "LEFT JOIN BillingCancellation c ON b.id = c.refOneTime\n"
                 + "LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent ="
-                + " cr.refRecurring.billingId\n"
+                + " cr.refRecurring\n"
                 + "WHERE r.billingAccountMap IS NOT NULL\n"
                 + "AND r.type = 'REAL'\n"
                 + "AND t.invoicingEnabled IS TRUE\n"
@@ -386,13 +374,12 @@ class InvoicingPipelineTest {
   private ImmutableList<String> resultFileContents(String filename) throws Exception {
     File resultFile =
         new File(
-            String.format(
-                "%s/invoices/2017-10/%s", billingBucketUrl.getAbsolutePath().toString(), filename));
+            String.format("%s/invoices/2017-10/%s", billingBucketUrl.getAbsolutePath(), filename));
     return ImmutableList.copyOf(
         ResourceUtils.readResourceUtf8(resultFile.toURI().toURL()).split("\n"));
   }
 
-  private void setupCloudSql() {
+  private static void setupCloudSql() {
     // Populate billing events in Cloud SQL to match existing test data for Datastore
     persistNewRegistrar("NewRegistrar");
     persistNewRegistrar("TheRegistrar");
@@ -444,7 +431,7 @@ class InvoicingPipelineTest {
         registrar1,
         Reason.CREATE,
         5,
-        Money.ofMajor(CurrencyUnit.JPY, 70),
+        Money.ofMajor(JPY, 70),
         DateTime.parse("2017-09-29T00:00:00.0Z"),
         DateTime.parse("2017-10-02T00:00:00.0Z"));
     persistOneTimeBillingEvent(4, domain4, registrar2, Reason.RENEW, 1, Money.of(USD, 20.5));
@@ -495,7 +482,7 @@ class InvoicingPipelineTest {
         registrar1,
         Reason.CREATE,
         5,
-        Money.ofMajor(CurrencyUnit.JPY, 70),
+        Money.ofMajor(JPY, 70),
         DateTime.parse("2017-06-29T00:00:00.0Z"),
         DateTime.parse("2017-07-02T00:00:00.0Z"));
 
@@ -510,13 +497,12 @@ class InvoicingPipelineTest {
             .asBuilder()
             .setId(1)
             .setRegistrarId(registrar1.getRegistrarId())
-            .setDomainHistoryRevisionId(domainHistory.getId())
             .setEventTime(DateTime.parse("2017-10-05T00:00:00.0Z"))
             .setBillingTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
             .setOneTimeEventKey(oneTime.createVKey())
             .setTargetId(domain12.getDomainName())
             .setReason(Reason.RENEW)
-            .setParent(domainHistory)
+            .setDomainHistory(domainHistory)
             .build();
     persistResource(cancellation);
 
@@ -530,7 +516,7 @@ class InvoicingPipelineTest {
             .setRegistrarId(registrar1.getRegistrarId())
             .setRecurrenceEndTime(END_OF_TIME)
             .setId(1)
-            .setParent(domainHistoryRecurring)
+            .setDomainHistory(domainHistoryRecurring)
             .setTargetId(domain13.getDomainName())
             .setEventTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
             .setReason(Reason.RENEW)
@@ -541,7 +527,7 @@ class InvoicingPipelineTest {
     oneTimeRecurring =
         oneTimeRecurring
             .asBuilder()
-            .setCancellationMatchingBillingEvent(recurring.createVKey())
+            .setCancellationMatchingBillingEvent(recurring)
             .setFlags(ImmutableSet.of(Flag.SYNTHETIC))
             .setSyntheticCreationTime(DateTime.parse("2017-10-03T00:00:00.0Z"))
             .build();
@@ -552,18 +538,17 @@ class InvoicingPipelineTest {
             .asBuilder()
             .setId(2)
             .setRegistrarId(registrar1.getRegistrarId())
-            .setDomainHistoryRevisionId(domainHistoryRecurring.getId())
             .setEventTime(DateTime.parse("2017-10-05T00:00:00.0Z"))
             .setBillingTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
             .setRecurringEventKey(recurring.createVKey())
             .setTargetId(domain13.getDomainName())
             .setReason(Reason.RENEW)
-            .setParent(domainHistoryRecurring)
+            .setDomainHistory(domainHistoryRecurring)
             .build();
     persistResource(cancellationRecurring);
   }
 
-  private DomainHistory persistDomainHistory(DomainBase domainBase, Registrar registrar) {
+  private static DomainHistory persistDomainHistory(DomainBase domainBase, Registrar registrar) {
     DomainHistory domainHistory =
         new DomainHistory.Builder()
             .setType(HistoryEntry.Type.DOMAIN_RENEW)
@@ -574,7 +559,7 @@ class InvoicingPipelineTest {
     return persistResource(domainHistory);
   }
 
-  private OneTime persistOneTimeBillingEvent(
+  private static OneTime persistOneTimeBillingEvent(
       int id, DomainBase domainBase, Registrar registrar, Reason reason, int years, Money money) {
     return persistOneTimeBillingEvent(
         id,
@@ -587,7 +572,7 @@ class InvoicingPipelineTest {
         DateTime.parse("2017-10-04T00:00:00.0Z"));
   }
 
-  private OneTime persistOneTimeBillingEvent(
+  private static OneTime persistOneTimeBillingEvent(
       int id,
       DomainBase domainBase,
       Registrar registrar,
@@ -597,7 +582,7 @@ class InvoicingPipelineTest {
       DateTime eventTime,
       DateTime billingTime,
       Flag... flags) {
-    google.registry.model.billing.BillingEvent.OneTime.Builder billingEventBuilder =
+    OneTime.Builder billingEventBuilder =
         new OneTime()
             .asBuilder()
             .setId(id)
@@ -606,10 +591,9 @@ class InvoicingPipelineTest {
             .setRegistrarId(registrar.getRegistrarId())
             .setReason(reason)
             .setTargetId(domainBase.getDomainName())
-            .setDomainRepoId("REPO-ID")
             .setCost(money)
             .setFlags(Arrays.stream(flags).collect(toImmutableSet()))
-            .setParent(persistDomainHistory(domainBase, registrar));
+            .setDomainHistory(persistDomainHistory(domainBase, registrar));
 
     if (years > 0) {
       billingEventBuilder.setPeriodYears(years);
@@ -620,6 +604,9 @@ class InvoicingPipelineTest {
 
   private static class ChangeDomainRepo
       extends PTransform<PCollection<BillingEvent>, PCollection<BillingEvent>> {
+
+    private static final long serialVersionUID = 2695033474967615250L;
+
     @Override
     public PCollection<BillingEvent> expand(PCollection<BillingEvent> input) {
       return input.apply(

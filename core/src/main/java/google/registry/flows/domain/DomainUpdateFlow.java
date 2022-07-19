@@ -320,7 +320,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
                   .setCost(Registry.get(existingDomain.getTld()).getServerStatusChangeCost())
                   .setEventTime(now)
                   .setBillingTime(now)
-                  .setParent(historyEntry)
+                  .setDomainHistory(historyEntry)
                   .build());
         }
       }

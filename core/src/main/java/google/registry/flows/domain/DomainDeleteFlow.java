@@ -233,7 +233,12 @@ public final class DomainDeleteFlow implements TransactionalFlow {
       // No cancellation is written if the grace period was not for a billable event.
       if (gracePeriod.hasBillingEvent()) {
         entitiesToSave.add(
-            BillingEvent.Cancellation.forGracePeriod(gracePeriod, now, domainHistoryKey, targetId));
+            BillingEvent.Cancellation.forGracePeriod(
+                gracePeriod,
+                now,
+                new DomainHistoryId(
+                    domainHistoryKey.getParent().getName(), domainHistoryKey.getId()),
+                targetId));
         if (gracePeriod.getOneTimeBillingEvent() != null) {
           // Take the amount of amount of registration time being refunded off the expiration time.
           // This can be either add grace periods or renew grace periods.

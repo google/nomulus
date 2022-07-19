@@ -265,13 +265,13 @@ class DomainTransferApproveFlowTest
             .setRegistrarId("NewRegistrar")
             .setCost(Money.of(USD, 11).multipliedBy(expectedYearsToCharge))
             .setPeriodYears(expectedYearsToCharge)
-            .setParent(historyEntryTransferApproved)
+            .setDomainHistory(historyEntryTransferApproved)
             .build();
     assertBillingEventsForResource(
         domain,
         Streams.concat(
                 Arrays.stream(expectedCancellationBillingEvents)
-                    .map(builder -> builder.setParent(historyEntryTransferApproved).build()),
+                    .map(builder -> builder.setDomainHistory(historyEntryTransferApproved).build()),
                 Stream.of(
                     transferBillingEvent,
                     getLosingClientAutorenewEvent()
@@ -281,7 +281,7 @@ class DomainTransferApproveFlowTest
                     getGainingClientAutorenewEvent()
                         .asBuilder()
                         .setEventTime(domain.getRegistrationExpirationTime())
-                        .setParent(historyEntryTransferApproved)
+                        .setDomainHistory(historyEntryTransferApproved)
                         .build()))
             .toArray(BillingEvent[]::new));
     // There should be a grace period for the new transfer billing event.
@@ -308,7 +308,7 @@ class DomainTransferApproveFlowTest
         domain,
         Streams.concat(
                 Arrays.stream(expectedCancellationBillingEvents)
-                    .map(builder -> builder.setParent(historyEntryTransferApproved).build()),
+                    .map(builder -> builder.setDomainHistory(historyEntryTransferApproved).build()),
                 Stream.of(
                     getLosingClientAutorenewEvent()
                         .asBuilder()
@@ -317,7 +317,7 @@ class DomainTransferApproveFlowTest
                     getGainingClientAutorenewEvent()
                         .asBuilder()
                         .setEventTime(domain.getRegistrationExpirationTime())
-                        .setParent(historyEntryTransferApproved)
+                        .setDomainHistory(historyEntryTransferApproved)
                         .build()))
             .toArray(BillingEvent[]::new));
     // There should be no grace period.

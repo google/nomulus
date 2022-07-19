@@ -349,7 +349,7 @@ public class DatabaseHelper {
     Recurring recurring =
         persistResource(
             new BillingEvent.Recurring.Builder()
-                .setParent(historyEntry)
+                .setDomainHistory(historyEntry)
                 .setRenewalPrice(renewalPrice)
                 .setRenewalPriceBehavior(renewalPriceBehavior)
                 .setRegistrarId(domain.getCreationRegistrarId())
@@ -557,7 +557,7 @@ public class DatabaseHelper {
         .setRegistrarId("NewRegistrar")
         .setPeriodYears(1)
         .setCost(getDomainRenewCost(domain.getDomainName(), costLookupTime, 1))
-        .setParent(historyEntry)
+        .setDomainHistory(historyEntry)
         .build();
   }
 
@@ -654,7 +654,7 @@ public class DatabaseHelper {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(expirationTime)
                 .setRecurrenceEndTime(END_OF_TIME)
-                .setParent(historyEntryDomainCreate)
+                .setDomainHistory(historyEntryDomainCreate)
                 .build());
     PollMessage.Autorenew autorenewPollMessage =
         persistResource(
@@ -701,7 +701,7 @@ public class DatabaseHelper {
                 .setRegistrarId("NewRegistrar")
                 .setEventTime(extendedRegistrationExpirationTime)
                 .setRecurrenceEndTime(END_OF_TIME)
-                .setParent(historyEntryDomainTransfer)
+                .setDomainHistory(historyEntryDomainTransfer)
                 .build());
     PollMessage.Autorenew gainingClientAutorenewPollMessage =
         persistResource(

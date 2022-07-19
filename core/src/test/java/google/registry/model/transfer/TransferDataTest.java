@@ -20,6 +20,9 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingEvent.Cancellation;
+import google.registry.model.billing.BillingEvent.OneTime;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
@@ -50,21 +53,9 @@ public class TransferDataTest {
   void beforeEach() {
     Key<HistoryEntry> historyEntryKey =
         Key.create(Key.create(DomainBase.class, "4-TLD"), HistoryEntry.class, 1356L);
-    transferBillingEventKey =
-        VKey.create(
-            BillingEvent.OneTime.class,
-            12345L,
-            Key.create(historyEntryKey, BillingEvent.OneTime.class, 12345L));
-    otherServerApproveBillingEventKey =
-        VKey.create(
-            BillingEvent.Cancellation.class,
-            2468L,
-            Key.create(historyEntryKey, BillingEvent.Cancellation.class, 2468L));
-    recurringBillingEventKey =
-        VKey.create(
-            BillingEvent.Recurring.class,
-            13579L,
-            Key.create(historyEntryKey, BillingEvent.Recurring.class, 13579L));
+    transferBillingEventKey = OneTime.createVKey(12345L);
+    otherServerApproveBillingEventKey = Cancellation.createVKey(2468L);
+    recurringBillingEventKey = Recurring.createVKey(13579L);
     autorenewPollMessageKey =
         VKey.create(
             PollMessage.Autorenew.class,

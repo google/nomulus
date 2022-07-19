@@ -206,6 +206,7 @@ public class DomainContent extends EppResource
    * should be created, and this field should be updated to point to the new one.
    */
   @Column(name = "billing_recurrence_id")
+  @Ignore
   VKey<BillingEvent.Recurring> autorenewBillingEvent;
 
   /**

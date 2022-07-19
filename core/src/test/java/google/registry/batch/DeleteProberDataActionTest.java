@@ -296,7 +296,7 @@ class DeleteProberDataActionTest {
     BillingEvent.OneTime billingEvent =
         persistSimpleResource(
             new BillingEvent.OneTime.Builder()
-                .setParent(historyEntry)
+                .setDomainHistory(historyEntry)
                 .setBillingTime(DELETION_TIME.plusYears(1))
                 .setCost(Money.parse("USD 10"))
                 .setPeriodYears(1)

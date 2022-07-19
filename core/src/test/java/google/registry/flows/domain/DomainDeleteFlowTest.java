@@ -240,7 +240,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setEventTime(eventTime)
             .setBillingTime(TIME_BEFORE_FLOW.plusDays(1))
             .setOneTimeEventKey(graceBillingEvent.createVKey())
-            .setParent(historyEntryDomainDelete)
+            .setDomainHistory(historyEntryDomainDelete)
             .build());
   }
 
@@ -260,7 +260,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .setPeriodYears(2)
         .setEventTime(TIME_BEFORE_FLOW.minusDays(4))
         .setBillingTime(TIME_BEFORE_FLOW.plusDays(1))
-        .setParent(earlierHistoryEntry)
+        .setDomainHistory(earlierHistoryEntry)
         .build();
   }
 
@@ -272,7 +272,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .setRegistrarId(registrarId)
         .setEventTime(A_MONTH_FROM_NOW)
         .setRecurrenceEndTime(END_OF_TIME)
-        .setParent(earlierHistoryEntry);
+        .setDomainHistory(earlierHistoryEntry);
   }
 
   private PollMessage.Autorenew.Builder createAutorenewPollMessage(String registrarId) {
