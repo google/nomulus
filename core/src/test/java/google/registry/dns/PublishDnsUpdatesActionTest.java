@@ -53,14 +53,12 @@ import google.registry.request.Action.Service;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.FakeSleeper;
 import google.registry.testing.InjectExtension;
 import google.registry.util.CloudTasksUtils;
-import google.registry.util.CloudTasksUtils.SerializableCloudTasksClient;
-import google.registry.util.Retrier;
 import java.util.Optional;
 import java.util.Set;
 import org.joda.time.DateTime;
@@ -83,13 +81,7 @@ public class PublishDnsUpdatesActionTest {
   private final DnsWriter dnsWriter = mock(DnsWriter.class);
   private final DnsMetrics dnsMetrics = mock(DnsMetrics.class);
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
-  private final CloudTasksUtils cloudTasksUtils =
-      new CloudTasksUtils(
-          new Retrier(new FakeSleeper(clock), 1),
-          clock,
-          "project",
-          "location",
-          mock(SerializableCloudTasksClient.class));
+  private final CloudTasksUtils cloudTasksUtils = new CloudTasksHelper().getTestCloudTasksUtils();
   private final CloudTasksUtils spyCloudTasksUtils = spy(cloudTasksUtils);
   private PublishDnsUpdatesAction action;
 
