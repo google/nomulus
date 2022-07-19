@@ -58,6 +58,7 @@ import com.google.re2j.Pattern;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
@@ -407,10 +408,10 @@ public class Registrar extends ImmutableObject
   // Metadata.
 
   /** The time when this registrar was created. */
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  @Ignore CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** An automatically managed last-saved timestamp. */
-  UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
+  @Ignore UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
 
   /** The time that the certificate was last updated. */
   DateTime lastCertificateUpdateTime;

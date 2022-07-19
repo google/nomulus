@@ -32,6 +32,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.config.RegistryConfig;
 import google.registry.model.CacheUtils.AppEngineEnvironmentCacheLoader;
@@ -111,7 +112,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * resource fields.
    */
   @AttributeOverrides(@AttributeOverride(name = "creationTime", column = @Column))
-  @Index
+  @Ignore
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /**

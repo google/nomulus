@@ -33,6 +33,7 @@ import com.google.common.collect.Range;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.OnLoad;
 import google.registry.flows.EppException;
@@ -122,7 +123,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
   @Nullable @Index String domainName;
 
   /** When this token was created. */
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  @Ignore CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** Allowed registrar client IDs for this token, or null if all registrars are allowed. */
   @Column(name = "allowedRegistrarIds")

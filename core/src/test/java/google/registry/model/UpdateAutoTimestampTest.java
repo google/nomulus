@@ -16,59 +16,42 @@ package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdateAutoTimestamp}. */
 public class UpdateAutoTimestampTest {
 
-  FakeClock clock = new FakeClock();
+  private final FakeClock clock = new FakeClock();
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .withJpaUnitTestEntities(UpdateAutoTimestampTestObject.class)
-          .withOfyTestEntities(UpdateAutoTimestampTestObject.class)
+  public final JpaUnitTestExtension jpaUnitTestExtension =
+      new JpaTestExtensions.Builder()
           .withClock(clock)
-          .build();
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
-  @BeforeEach
-  void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
-  }
+          .withEntityClass(UpdateAutoTimestampTestObject.class)
+          .buildUnitTestExtension();
 
   /** Timestamped class. */
-  @Entity(name = "UatTestEntity")
-  @javax.persistence.Entity
+  @Entity
   public static class UpdateAutoTimestampTestObject extends CrossTldSingleton {
-    @Ignore @javax.persistence.Id long id = SINGLETON_ID;
+    @Id long id = SINGLETON_ID;
     UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create(null);
   }
 
-  private UpdateAutoTimestampTestObject reload() {
+  private static UpdateAutoTimestampTestObject reload() {
     return tm().transact(
-            () ->
-                tm().loadByKey(
-                        VKey.create(
-                            UpdateAutoTimestampTestObject.class,
-                            1L,
-                            Key.create(new UpdateAutoTimestampTestObject()))));
+            () -> tm().loadByKey(VKey.createSql(UpdateAutoTimestampTestObject.class, 1L)));
   }
 
   @Test
@@ -78,12 +61,12 @@ public class UpdateAutoTimestampTest {
                 () -> {
                   clock.advanceOneMilli();
                   UpdateAutoTimestampTestObject object = new UpdateAutoTimestampTestObject();
-                  assertThat(object.updateTime.timestamp).isNull();
+                  assertThat(object.updateTime.getTimestamp()).isEqualTo(START_OF_TIME);
                   tm().insert(object);
                   return tm().getTransactionTime();
                 });
     tm().clearSessionCache();
-    assertThat(reload().updateTime.timestamp).isEqualTo(transactionTime);
+    assertThat(reload().updateTime.getTimestamp()).isEqualTo(transactionTime);
   }
 
   @Test
@@ -99,7 +82,7 @@ public class UpdateAutoTimestampTest {
     UpdateAutoTimestampTestObject object = reload();
     clock.advanceOneMilli();
 
-    try (UpdateAutoTimestamp.DisableAutoUpdateResource disabler =
+    try (UpdateAutoTimestamp.DisableAutoUpdateResource ignoredDisabler =
         new UpdateAutoTimestamp.DisableAutoUpdateResource()) {
       DateTime secondTransactionTime =
           tm().transact(
@@ -109,7 +92,7 @@ public class UpdateAutoTimestampTest {
                   });
       assertThat(secondTransactionTime).isGreaterThan(initialTime);
     }
-    assertThat(reload().updateTime.timestamp).isEqualTo(initialTime);
+    assertThat(reload().updateTime.getTimestamp()).isEqualTo(initialTime);
   }
 
   @Test
@@ -124,7 +107,7 @@ public class UpdateAutoTimestampTest {
                   return tm().getTransactionTime();
                 });
     tm().clearSessionCache();
-    assertThat(reload().updateTime.timestamp).isEqualTo(transactionTime);
+    assertThat(reload().updateTime.getTimestamp()).isEqualTo(transactionTime);
   }
 
   @Test

@@ -59,8 +59,7 @@ public final class SchemaVersion {
    * types (for classes), or else a list of all possible values (for enums).
    */
   public static String getSchema() {
-    return getAllPersistedTypes()
-        .stream()
+    return getAllPersistedTypes().stream()
         .filter(or(subtypeOf(Enum.class), subtypeOf(ImmutableObject.class)))
         .map(ModelUtils::getSchema)
         .collect(joining("\n"));

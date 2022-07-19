@@ -1,9 +1,3 @@
-class google.registry.model.CreateAutoTimestamp {
-  org.joda.time.DateTime timestamp;
-}
-class google.registry.model.UpdateAutoTimestamp {
-  org.joda.time.DateTime timestamp;
-}
 class google.registry.model.billing.BillingEvent$Cancellation {
   @Id java.lang.Long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.domain.DomainHistory> parent;
@@ -81,7 +75,6 @@ enum google.registry.model.billing.BillingEvent$RenewalPriceBehavior {
 }
 class google.registry.model.common.EntityGroupRoot {
   @Id java.lang.String id;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
 }
 class google.registry.model.common.GaeUserIdConverter {
   @Id long id;
@@ -102,8 +95,6 @@ class google.registry.model.contact.ContactAuthInfo {
 }
 class google.registry.model.contact.ContactBase {
   @Id java.lang.String repoId;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.contact.ContactAuthInfo authInfo;
   google.registry.model.contact.ContactPhoneNumber fax;
   google.registry.model.contact.ContactPhoneNumber voice;
@@ -144,8 +135,6 @@ class google.registry.model.contact.ContactPhoneNumber {
 }
 class google.registry.model.contact.ContactResource {
   @Id java.lang.String repoId;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.contact.ContactAuthInfo authInfo;
   google.registry.model.contact.ContactPhoneNumber fax;
   google.registry.model.contact.ContactPhoneNumber voice;
@@ -191,8 +180,6 @@ class google.registry.model.domain.DomainAuthInfo {
 }
 class google.registry.model.domain.DomainBase {
   @Id java.lang.String repoId;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.domain.DomainAuthInfo authInfo;
   google.registry.model.domain.launch.LaunchNotice launchNotice;
   google.registry.model.transfer.DomainTransferData transferData;
@@ -223,8 +210,6 @@ class google.registry.model.domain.DomainBase {
 }
 class google.registry.model.domain.DomainContent {
   @Id java.lang.String repoId;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.domain.DomainAuthInfo authInfo;
   google.registry.model.domain.launch.LaunchNotice launchNotice;
   google.registry.model.transfer.DomainTransferData transferData;
@@ -334,8 +319,6 @@ class google.registry.model.domain.token.AllocationToken {
   @Id java.lang.String token;
   boolean discountPremiums;
   double discountFraction;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.billing.BillingEvent$RenewalPriceBehavior renewalPriceBehavior;
   google.registry.model.common.TimedTransitionProperty<google.registry.model.domain.token.AllocationToken$TokenStatus> tokenStatusTransitions;
   google.registry.model.domain.token.AllocationToken$TokenType tokenType;
@@ -387,8 +370,6 @@ class google.registry.model.eppcommon.Trid {
 }
 class google.registry.model.host.HostBase {
   @Id java.lang.String repoId;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.persistence.VKey<google.registry.model.domain.DomainBase> superordinateDomain;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
@@ -419,8 +400,6 @@ class google.registry.model.host.HostHistory {
 }
 class google.registry.model.host.HostResource {
   @Id java.lang.String repoId;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.persistence.VKey<google.registry.model.domain.DomainBase> superordinateDomain;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
@@ -437,7 +416,6 @@ class google.registry.model.index.EppResourceIndex {
   @Id java.lang.String id;
   @Parent com.googlecode.objectify.Key<google.registry.model.index.EppResourceIndexBucket> bucket;
   com.googlecode.objectify.Key<? extends google.registry.model.EppResource> reference;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   java.lang.String kind;
 }
 class google.registry.model.index.EppResourceIndexBucket {
@@ -445,19 +423,16 @@ class google.registry.model.index.EppResourceIndexBucket {
 }
 class google.registry.model.index.ForeignKeyIndex$ForeignKeyContactIndex {
   @Id java.lang.String foreignKey;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
 }
 class google.registry.model.index.ForeignKeyIndex$ForeignKeyDomainIndex {
   @Id java.lang.String foreignKey;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
 }
 class google.registry.model.index.ForeignKeyIndex$ForeignKeyHostIndex {
   @Id java.lang.String foreignKey;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
 }
@@ -483,7 +458,6 @@ class google.registry.model.poll.PollMessage$OneTime {
 }
 class google.registry.model.rde.RdeRevision {
   @Id java.lang.String id;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   int revision;
 }
 class google.registry.model.registrar.Registrar {
@@ -492,8 +466,6 @@ class google.registry.model.registrar.Registrar {
   boolean blockPremiumNames;
   boolean contactsRequireSyncing;
   boolean registryLockAllowed;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp lastUpdateTime;
   google.registry.model.registrar.Registrar$State state;
   google.registry.model.registrar.Registrar$Type type;
   google.registry.model.registrar.RegistrarAddress internationalizedAddress;
