@@ -157,7 +157,7 @@ public class AllocationTokenFlowUtils {
       Optional<AllocationTokenExtension> extension)
       throws EppException {
     if (!extension.isPresent()) {
-      return Optional.ofNullable(null);
+      return Optional.empty();
     }
     AllocationToken tokenEntity = loadToken(extension.get().getAllocationToken());
     validateToken(
@@ -178,7 +178,7 @@ public class AllocationTokenFlowUtils {
       Optional<AllocationTokenExtension> extension)
       throws EppException {
     if (!extension.isPresent()) {
-      return Optional.ofNullable(null);
+      return Optional.empty();
     }
     AllocationToken tokenEntity = loadToken(extension.get().getAllocationToken());
     validateToken(

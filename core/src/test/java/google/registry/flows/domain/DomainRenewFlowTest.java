@@ -15,6 +15,7 @@
 package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.flows.domain.DomainTransferFlowTestCase.persistWithPendingTransfer;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
@@ -48,7 +49,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.truth.Truth8;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppRequestSource;
@@ -614,7 +614,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
         loadFile(
             "domain_renew_response.xml",
             ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
-    Truth8.assertThat(DatabaseHelper.loadByEntity(allocationToken).getRedemptionHistoryEntry())
+    assertThat(DatabaseHelper.loadByEntity(allocationToken).getRedemptionHistoryEntry())
         .isPresent();
   }
 
