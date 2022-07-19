@@ -623,9 +623,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
     setEppInput(
         "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistDomain();
-    AllocationToken allocationToken =
-        persistResource(
-            new AllocationToken.Builder().setToken("abc123").setTokenType(UNLIMITED_USE).build());
+    persistResource(
+        new AllocationToken.Builder().setToken("abc123").setTokenType(UNLIMITED_USE).build());
     runFlowAssertResponse(
         loadFile(
             "domain_renew_response.xml",
