@@ -39,6 +39,7 @@ import com.google.common.collect.Streams;
 import com.google.common.io.Files;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.persistence.VKey;
@@ -153,6 +154,14 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
   private RenewalPriceBehavior renewalPriceBehavior = DEFAULT;
 
   @Parameter(
+      names = {"--registration_behavior"},
+      description =
+          "Any special registration behavior, including DEFAULT (no special behavior),"
+              + " BYPASS_TLD_STATE (allow registrations during e.g. QUIET_PERIOD), and"
+              + " ANCHOR_TENANT (used for anchor tenant registrations")
+  private RegistrationBehavior registrationBehavior = RegistrationBehavior.DEFAULT;
+
+  @Parameter(
       names = {"--dry_run"},
       description = "Do not actually persist the tokens; defaults to false")
   boolean dryRun;
@@ -196,6 +205,7 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
                         new AllocationToken.Builder()
                             .setToken(t)
                             .setRenewalPriceBehavior(renewalPriceBehavior)
+                            .setRegistrationBehavior(registrationBehavior)
                             .setTokenType(tokenType == null ? SINGLE_USE : tokenType)
                             .setAllowedRegistrarIds(
                                 ImmutableSet.copyOf(nullToEmpty(allowedClientIds)))

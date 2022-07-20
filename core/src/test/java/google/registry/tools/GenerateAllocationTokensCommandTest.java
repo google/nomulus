@@ -14,6 +14,7 @@
 
 package google.registry.tools;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
@@ -258,6 +259,64 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         .isEqualTo(
             "Invalid value for --renewal_price_behavior parameter. Allowed values:[DEFAULT,"
                 + " NONPREMIUM, SPECIFIED]");
+  }
+
+  @Test
+  void testSuccess_defaultRegistrationBehavior() throws Exception {
+    runCommand("--tokens", "foobar,blah");
+    assertThat(
+            loadAllOf(AllocationToken.class).stream()
+                .map(AllocationToken::getRegistrationBehavior)
+                .collect(toImmutableList()))
+        .containsExactly(
+            AllocationToken.RegistrationBehavior.DEFAULT,
+            AllocationToken.RegistrationBehavior.DEFAULT);
+  }
+
+  @Test
+  void testSuccess_defaultRegistrationBehavior_specified() throws Exception {
+    runCommand("--tokens", "foobar,blah", "--registration_behavior", "DEFAULT");
+    assertThat(
+            loadAllOf(AllocationToken.class).stream()
+                .map(AllocationToken::getRegistrationBehavior)
+                .collect(toImmutableList()))
+        .containsExactly(
+            AllocationToken.RegistrationBehavior.DEFAULT,
+            AllocationToken.RegistrationBehavior.DEFAULT);
+  }
+
+  @Test
+  void testSuccess_specifiedRegistrationBehavior() throws Exception {
+    runCommand("--tokens", "foobar,blah", "--registration_behavior", "BYPASS_TLD_STATE");
+    assertThat(
+            loadAllOf(AllocationToken.class).stream()
+                .map(AllocationToken::getRegistrationBehavior)
+                .collect(toImmutableList()))
+        .containsExactly(
+            AllocationToken.RegistrationBehavior.BYPASS_TLD_STATE,
+            AllocationToken.RegistrationBehavior.BYPASS_TLD_STATE);
+  }
+
+  @Test
+  void testFailure_invalidRegistrationBehaviors() throws Exception {
+    assertThat(
+            assertThrows(
+                ParameterException.class,
+                () -> runCommand("--tokens", "foobar", "--registration_behavior")))
+        .hasMessageThat()
+        .contains("Expected a value after parameter --registration_behavior");
+    assertThat(
+            assertThrows(
+                ParameterException.class,
+                () -> runCommand("--tokens", "foobar", "--registration_behavior", "bad")))
+        .hasMessageThat()
+        .contains("Invalid value for --registration_behavior");
+    assertThat(
+            assertThrows(
+                ParameterException.class,
+                () -> runCommand("--tokens", "foobar", "--registration_behavior", "")))
+        .hasMessageThat()
+        .contains("Invalid value for --registration_behavior");
   }
 
   @Test

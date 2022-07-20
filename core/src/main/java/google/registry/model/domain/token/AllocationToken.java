@@ -86,6 +86,22 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
           .putAll(VALID, ENDED, CANCELLED)
           .build();
 
+  /** Any special behavior that should be used when registering domains using this token. */
+  public enum RegistrationBehavior {
+    /** No special behavior */
+    DEFAULT,
+    /**
+     * Bypasses the TLD state check, e.g. allowing registration during QUIET_PERIOD.
+     *
+     * <p>NB: while this means that, for instance, one can register non-trademarked domains in the
+     * sunrise period, any trademarked-domain registrations in the sunrise period must still include
+     * the proper signed marks. In other words, this only bypasses the TLD state check.
+     */
+    BYPASS_TLD_STATE,
+    /** Bypasses most checks and creates the domain as an anchor tenant, with all that implies. */
+    ANCHOR_TENANT
+  }
+
   /** Single-use tokens are invalid after use. Infinite-use tokens, predictably, are not. */
   public enum TokenType {
     SINGLE_USE,
@@ -152,6 +168,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
   @Enumerated(EnumType.STRING)
   @Column(name = "renewalPriceBehavior", nullable = false)
   RenewalPriceBehavior renewalPriceBehavior = RenewalPriceBehavior.DEFAULT;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  RegistrationBehavior registrationBehavior = RegistrationBehavior.DEFAULT;
 
   // TODO: Remove onLoad once all allocation tokens are migrated to have a discountYears of 1.
   @OnLoad
@@ -225,6 +245,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
     return renewalPriceBehavior;
   }
 
+  public RegistrationBehavior getRegistrationBehavior() {
+    return registrationBehavior;
+  }
+
   @Override
   public VKey<AllocationToken> createVKey() {
     return VKey.create(AllocationToken.class, getToken(), Key.create(this));
@@ -261,6 +285,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
       checkArgument(
           getInstance().discountFraction > 0 || getInstance().discountYears == 1,
           "Discount years can only be specified along with a discount fraction");
+      if (getInstance().registrationBehavior.equals(RegistrationBehavior.ANCHOR_TENANT)) {
+        checkArgumentNotNull(
+            getInstance().domainName, "ANCHOR_TENANT tokens must be tied to a domain");
+      }
       if (getInstance().domainName != null) {
         try {
           DomainFlowUtils.validateDomainName(getInstance().domainName);
@@ -350,6 +378,11 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
 
     public Builder setRenewalPriceBehavior(RenewalPriceBehavior renewalPriceBehavior) {
       getInstance().renewalPriceBehavior = renewalPriceBehavior;
+      return this;
+    }
+
+    public Builder setRegistrationBehavior(RegistrationBehavior registrationBehavior) {
+      getInstance().registrationBehavior = registrationBehavior;
       return this;
     }
   }
