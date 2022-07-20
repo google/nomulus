@@ -36,7 +36,7 @@ JOIN
     tld,
     current_sponsor_registrar_id,
     domain_name
-  FROM "Domain" AS d;''')
+  FROM "Domain" AS d WHERE d.deletion_time > now();''')
 ON
   current_sponsor_registrar_id = registrar_id
 GROUP BY tld, registrar_name

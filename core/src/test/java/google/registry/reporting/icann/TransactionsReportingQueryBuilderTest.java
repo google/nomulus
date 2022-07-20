@@ -62,7 +62,6 @@ class TransactionsReportingQueryBuilderTest {
 
     TransactionsReportingQueryBuilder queryBuilder =
         createQueryBuilder("cloud_sql_icann_reporting");
-    ;
     ImmutableMap<String, String> actualQueries = queryBuilder.getViewQueryMap(yearMonth);
     for (String queryName : expectedQueryNames) {
       String actualTableName = String.format("%s_201709", queryName);
