@@ -19,12 +19,12 @@ configurations {
 dependencies {
     def deps = rootProject.dependencyMap
 
-    testCompile deps['com.google.guava:guava']
-    testCompile deps['com.google.truth:truth']
-    testCompile deps['org.junit.jupiter:junit-jupiter-api']
-    testCompile deps['org.junit.jupiter:junit-jupiter-engine']
-    testCompile deps['org.junit.jupiter:junit-jupiter-params']
-    testRuntime project(path: ':core', configuration: 'deploy_jar')
+    testImplementation deps['com.google.guava:guava']
+    testImplementation deps['com.google.truth:truth']
+    testImplementation deps['org.junit.jupiter:junit-jupiter-api']
+    testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
+    testImplementation deps['org.junit.jupiter:junit-jupiter-params']
+    testRuntimeOnly project(path: ':core', configuration: 'deploy_jar')
 
     // Collection of jars that get deployed to Appengine. Please refer to
     // ../appengine_war.gradle for more information.

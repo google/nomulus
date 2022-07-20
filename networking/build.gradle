@@ -15,35 +15,35 @@
 dependencies {
   def deps = rootProject.dependencyMap
 
-  compile deps['com.google.dagger:dagger']
-  compile deps['com.google.flogger:flogger']
-  compile deps['com.google.guava:guava']
-  compile deps['io.netty:netty-buffer']
-  compile deps['io.netty:netty-codec']
-  compile deps['io.netty:netty-codec-http']
-  compile deps['io.netty:netty-common']
-  compile deps['io.netty:netty-handler']
-  compile deps['io.netty:netty-transport']
-  compile deps['javax.inject:javax.inject']
-  compile deps['org.bouncycastle:bcpkix-jdk15on']
-  compile deps['org.bouncycastle:bcprov-jdk15on']
-  compile project(':util')
-  compile project(':common')
+  implementation deps['com.google.dagger:dagger']
+  implementation deps['com.google.flogger:flogger']
+  implementation deps['com.google.guava:guava']
+  implementation deps['io.netty:netty-buffer']
+  implementation deps['io.netty:netty-codec']
+  implementation deps['io.netty:netty-codec-http']
+  implementation deps['io.netty:netty-common']
+  implementation deps['io.netty:netty-handler']
+  implementation deps['io.netty:netty-transport']
+  implementation deps['javax.inject:javax.inject']
+  implementation deps['org.bouncycastle:bcpkix-jdk15on']
+  implementation deps['org.bouncycastle:bcprov-jdk15on']
+  implementation project(':util')
+  implementation project(':common')
 
-  runtime deps['com.google.flogger:flogger-system-backend']
-  runtime deps['io.netty:netty-tcnative-boringssl-static']
+  runtimeOnly deps['com.google.flogger:flogger-system-backend']
+  runtimeOnly deps['io.netty:netty-tcnative-boringssl-static']
 
-  testCompile deps['com.google.truth:truth']
-  testCompile deps['junit:junit']
-  testCompile deps['org.bouncycastle:bcpkix-jdk15on']
-  testCompile deps['org.bouncycastle:bcprov-jdk15on']
-  testCompile deps['org.junit.jupiter:junit-jupiter-api']
-  testCompile deps['org.junit.jupiter:junit-jupiter-engine']
-  testCompile deps['org.junit.jupiter:junit-jupiter-params']
-  testCompile deps['org.junit.platform:junit-platform-runner']
-  testCompile deps['org.junit.platform:junit-platform-suite-api']
-  testCompile deps['org.testcontainers:junit-jupiter']
-  testCompile project(path: ':common', configuration: 'testing')
+  testImplementation deps['com.google.truth:truth']
+  testImplementation deps['junit:junit']
+  testImplementation deps['org.bouncycastle:bcpkix-jdk15on']
+  testImplementation deps['org.bouncycastle:bcprov-jdk15on']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-api']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-params']
+  testImplementation deps['org.junit.platform:junit-platform-runner']
+  testImplementation deps['org.junit.platform:junit-platform-suite-api']
+  testImplementation deps['org.testcontainers:junit-jupiter']
+  testImplementation project(path: ':common', configuration: 'testing')
 
   annotationProcessor deps['com.google.dagger:dagger-compiler']
   testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
@@ -60,5 +60,11 @@ task testJar(type: Jar) {
 }
 
 artifacts {
-  testRuntime testJar
+  testRuntimeOnly testJar
+}
+
+configurations {
+  testRuntimeOnly {
+    canBeConsumed = true
+  }
 }

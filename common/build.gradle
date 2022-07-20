@@ -28,15 +28,17 @@ sourceSets {
 }
 
 configurations {
-  testingCompile.extendsFrom compile
-  testingRuntime.extendsFrom runtime
+  // For reasons I don't understand, testingCompileOnly is the configuration
+  // used for compiling the classes in the "testing" jar.
+  testingCompileOnly.extendsFrom implementation
+  testingRuntimeOnly.extendsFrom runtimeOnly
 
-  testCompile.extendsFrom testingCompile
-  testRuntime.extendsFrom testingRuntime
+  testImplementation.extendsFrom testingCompile
+  testRuntimeOnly.extendsFrom testingRuntime
 
   // All testing util classes. Other projects may declare dependency as:
-  // testCompile project(path: 'common', configuration: 'testing')
-  testing
+  // testImplementation project(path: 'common', configuration: 'testing')
+  testing.extendsFrom testingCompileOnly
 }
 
 task testingJar(type: Jar) {
@@ -51,17 +53,25 @@ artifacts {
 dependencies {
   def deps = rootProject.dependencyMap
 
-  compile deps['com.github.ben-manes.caffeine:caffeine']
-  compile deps['com.google.code.findbugs:jsr305']
-  compile deps['com.google.guava:guava']
-  compile deps['javax.inject:javax.inject']
-  compile deps['joda-time:joda-time']
+  implementation deps['com.github.ben-manes.caffeine:caffeine']
+  implementation deps['com.google.code.findbugs:jsr305']
+  implementation deps['com.google.guava:guava']
+  implementation deps['javax.inject:javax.inject']
+  implementation deps['joda-time:joda-time']
+  implementation deps['com.google.flogger:flogger']
+  implementation deps['io.github.java-diff-utils:java-diff-utils']
+  implementation deps['com.google.truth:truth']
 
-  testingCompile deps['com.google.flogger:flogger']
-  testingRuntime deps['com.google.flogger:flogger-system-backend']
-  testingCompile deps['com.google.truth:truth']
-  testingCompile deps['io.github.java-diff-utils:java-diff-utils']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-api']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
 
-  testCompile deps['org.junit.jupiter:junit-jupiter-api']
-  testCompile deps['org.junit.jupiter:junit-jupiter-engine']
+  configurations.each {
+    println "configuration " + it.name + ":"
+    it.allArtifacts.each {
+      println "  artifact " + it
+    }
+    it.allDependencies.each {
+      println "  dependency " + it
+    }
+  }
 }
