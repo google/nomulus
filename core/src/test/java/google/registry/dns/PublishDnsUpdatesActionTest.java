@@ -15,6 +15,7 @@
 package google.registry.dns;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.dns.DnsConstants.DNS_PUBLISH_PUSH_QUEUE_NAME;
 import static google.registry.dns.DnsModule.PARAM_DNS_WRITER;
 import static google.registry.dns.DnsModule.PARAM_DOMAINS;
 import static google.registry.dns.DnsModule.PARAM_HOSTS;
@@ -33,14 +34,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.dns.DnsMetrics.ActionStatus;
 import google.registry.dns.DnsMetrics.CommitStatus;
@@ -49,16 +47,15 @@ import google.registry.dns.writer.DnsWriter;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
-import google.registry.request.Action.Service;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
-import google.registry.util.CloudTasksUtils;
 import java.util.Optional;
 import java.util.Set;
 import org.joda.time.DateTime;
@@ -81,8 +78,7 @@ public class PublishDnsUpdatesActionTest {
   private final DnsWriter dnsWriter = mock(DnsWriter.class);
   private final DnsMetrics dnsMetrics = mock(DnsMetrics.class);
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
-  private final CloudTasksUtils cloudTasksUtils = new CloudTasksHelper().getTestCloudTasksUtils();
-  private final CloudTasksUtils spyCloudTasksUtils = spy(cloudTasksUtils);
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
   private PublishDnsUpdatesAction action;
 
   @BeforeEach
@@ -153,7 +149,7 @@ public class PublishDnsUpdatesActionTest {
         dnsMetrics,
         lockHandler,
         clock,
-        spyCloudTasksUtils,
+        cloudTasksHelper.getTestCloudTasksUtils(),
         response);
   }
 
@@ -276,38 +272,30 @@ public class PublishDnsUpdatesActionTest {
     doThrow(new RuntimeException()).when(dnsWriter).commit();
     action.run();
 
-    Task task1 =
-        cloudTasksUtils.createPostTask(
-            PublishDnsUpdatesAction.PATH,
-            Service.BACKEND.toString(),
-            ImmutableMultimap.<String, String>builder()
-                .put(PARAM_TLD, "xn--q9jyb4c")
-                .put(PARAM_DNS_WRITER, "correctWriter")
-                .put(PARAM_LOCK_INDEX, "1")
-                .put(PARAM_NUM_PUBLISH_LOCKS, "1")
-                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-                .put(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
-                .put(PARAM_DOMAINS, "example1.xn--q9jyb4c,example2.xn--q9jyb4c")
-                .put(PARAM_HOSTS, "")
-                .build());
-
-    Task task2 =
-        cloudTasksUtils.createPostTask(
-            PublishDnsUpdatesAction.PATH,
-            Service.BACKEND.toString(),
-            ImmutableMultimap.<String, String>builder()
-                .put(PARAM_TLD, "xn--q9jyb4c")
-                .put(PARAM_DNS_WRITER, "correctWriter")
-                .put(PARAM_LOCK_INDEX, "1")
-                .put(PARAM_NUM_PUBLISH_LOCKS, "1")
-                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-                .put(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
-                .put(PARAM_DOMAINS, "example3.xn--q9jyb4c,example4.xn--q9jyb4c")
-                .put(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
-                .build());
-
-    verify(spyCloudTasksUtils).enqueue("dns-publish", task1);
-    verify(spyCloudTasksUtils).enqueue("dns-publish", task2);
+    cloudTasksHelper.assertTasksEnqueued(
+        DNS_PUBLISH_PUSH_QUEUE_NAME,
+        new TaskMatcher()
+            .url(PublishDnsUpdatesAction.PATH)
+            .param(PARAM_TLD, "xn--q9jyb4c")
+            .param(PARAM_DNS_WRITER, "correctWriter")
+            .param(PARAM_LOCK_INDEX, "1")
+            .param(PARAM_NUM_PUBLISH_LOCKS, "1")
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+            .param(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_DOMAINS, "example1.xn--q9jyb4c,example2.xn--q9jyb4c")
+            .param(PARAM_HOSTS, "")
+            .header("content-type", "application/x-www-form-urlencoded"),
+        new TaskMatcher()
+            .url(PublishDnsUpdatesAction.PATH)
+            .param(PARAM_TLD, "xn--q9jyb4c")
+            .param(PARAM_DNS_WRITER, "correctWriter")
+            .param(PARAM_LOCK_INDEX, "1")
+            .param(PARAM_NUM_PUBLISH_LOCKS, "1")
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+            .param(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_DOMAINS, "example3.xn--q9jyb4c,example4.xn--q9jyb4c")
+            .param(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
+            .header("content-type", "application/x-www-form-urlencoded"));
   }
 
   @Test
@@ -323,39 +311,30 @@ public class PublishDnsUpdatesActionTest {
     doThrow(new RuntimeException()).when(dnsWriter).commit();
     action.run();
 
-    Task task1 =
-        cloudTasksUtils.createPostTask(
-            PublishDnsUpdatesAction.PATH,
-            Service.BACKEND.toString(),
-            ImmutableMultimap.<String, String>builder()
-                .put(PARAM_TLD, "xn--q9jyb4c")
-                .put(PARAM_DNS_WRITER, "correctWriter")
-                .put(PARAM_LOCK_INDEX, "1")
-                .put(PARAM_NUM_PUBLISH_LOCKS, "1")
-                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-                .put(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
-                .put(PARAM_DOMAINS, "example1.xn--q9jyb4c,example2.xn--q9jyb4c")
-                .put(PARAM_HOSTS, "")
-                .build());
-
-    Task task2 =
-        cloudTasksUtils.createPostTask(
-            PublishDnsUpdatesAction.PATH,
-            Service.BACKEND.toString(),
-            ImmutableMultimap.<String, String>builder()
-                .put(PARAM_TLD, "xn--q9jyb4c")
-                .put(PARAM_DNS_WRITER, "correctWriter")
-                .put(PARAM_LOCK_INDEX, "1")
-                .put(PARAM_NUM_PUBLISH_LOCKS, "1")
-                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-                .put(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
-                .put(
-                    PARAM_DOMAINS, "example3.xn--q9jyb4c,example4.xn--q9jyb4c,example5.xn--q9jyb4c")
-                .put(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
-                .build());
-
-    verify(spyCloudTasksUtils).enqueue("dns-publish", task1);
-    verify(spyCloudTasksUtils).enqueue("dns-publish", task2);
+    cloudTasksHelper.assertTasksEnqueued(
+        DNS_PUBLISH_PUSH_QUEUE_NAME,
+        new TaskMatcher()
+            .url(PublishDnsUpdatesAction.PATH)
+            .param(PARAM_TLD, "xn--q9jyb4c")
+            .param(PARAM_DNS_WRITER, "correctWriter")
+            .param(PARAM_LOCK_INDEX, "1")
+            .param(PARAM_NUM_PUBLISH_LOCKS, "1")
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+            .param(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_DOMAINS, "example1.xn--q9jyb4c,example2.xn--q9jyb4c")
+            .param(PARAM_HOSTS, "")
+            .header("content-type", "application/x-www-form-urlencoded"),
+        new TaskMatcher()
+            .url(PublishDnsUpdatesAction.PATH)
+            .param(PARAM_TLD, "xn--q9jyb4c")
+            .param(PARAM_DNS_WRITER, "correctWriter")
+            .param(PARAM_LOCK_INDEX, "1")
+            .param(PARAM_NUM_PUBLISH_LOCKS, "1")
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+            .param(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_DOMAINS, "example3.xn--q9jyb4c,example4.xn--q9jyb4c,example5.xn--q9jyb4c")
+            .param(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
+            .header("content-type", "application/x-www-form-urlencoded"));
   }
 
   @Test
@@ -369,38 +348,30 @@ public class PublishDnsUpdatesActionTest {
     doThrow(new RuntimeException()).when(dnsWriter).commit();
     action.run();
 
-    Task task1 =
-        cloudTasksUtils.createPostTask(
-            PublishDnsUpdatesAction.PATH,
-            Service.BACKEND.toString(),
-            ImmutableMultimap.<String, String>builder()
-                .put(PARAM_TLD, "xn--q9jyb4c")
-                .put(PARAM_DNS_WRITER, "correctWriter")
-                .put(PARAM_LOCK_INDEX, "1")
-                .put(PARAM_NUM_PUBLISH_LOCKS, "1")
-                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-                .put(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
-                .put(PARAM_DOMAINS, "example1.xn--q9jyb4c")
-                .put(PARAM_HOSTS, "")
-                .build());
-
-    Task task2 =
-        cloudTasksUtils.createPostTask(
-            PublishDnsUpdatesAction.PATH,
-            Service.BACKEND.toString(),
-            ImmutableMultimap.<String, String>builder()
-                .put(PARAM_TLD, "xn--q9jyb4c")
-                .put(PARAM_DNS_WRITER, "correctWriter")
-                .put(PARAM_LOCK_INDEX, "1")
-                .put(PARAM_NUM_PUBLISH_LOCKS, "1")
-                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-                .put(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
-                .put(PARAM_DOMAINS, "")
-                .put(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
-                .build());
-
-    verify(spyCloudTasksUtils).enqueue("dns-publish", task1);
-    verify(spyCloudTasksUtils).enqueue("dns-publish", task2);
+    cloudTasksHelper.assertTasksEnqueued(
+        DNS_PUBLISH_PUSH_QUEUE_NAME,
+        new TaskMatcher()
+            .url(PublishDnsUpdatesAction.PATH)
+            .param(PARAM_TLD, "xn--q9jyb4c")
+            .param(PARAM_DNS_WRITER, "correctWriter")
+            .param(PARAM_LOCK_INDEX, "1")
+            .param(PARAM_NUM_PUBLISH_LOCKS, "1")
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+            .param(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_DOMAINS, "example1.xn--q9jyb4c")
+            .param(PARAM_HOSTS, "")
+            .header("content-type", "application/x-www-form-urlencoded"),
+        new TaskMatcher()
+            .url(PublishDnsUpdatesAction.PATH)
+            .param(PARAM_TLD, "xn--q9jyb4c")
+            .param(PARAM_DNS_WRITER, "correctWriter")
+            .param(PARAM_LOCK_INDEX, "1")
+            .param(PARAM_NUM_PUBLISH_LOCKS, "1")
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+            .param(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_DOMAINS, "")
+            .param(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
+            .header("content-type", "application/x-www-form-urlencoded"));
   }
 
   @Test
@@ -410,7 +381,7 @@ public class PublishDnsUpdatesActionTest {
             "xn--q9jyb4c", ImmutableSet.of(), ImmutableSet.of("ns1.example.xn--q9jyb4c"), 10);
     doThrow(new RuntimeException()).when(dnsWriter).commit();
     action.run();
-    verifyNoMoreInteractions(spyCloudTasksUtils);
+    cloudTasksHelper.assertNoTasksEnqueued(DNS_PUBLISH_PUSH_QUEUE_NAME);
     assertThat(response.getStatus()).isEqualTo(SC_ACCEPTED);
   }
 
