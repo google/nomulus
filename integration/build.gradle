@@ -69,7 +69,7 @@ task extractSqlIntegrationTestSuite (type: Copy) {
   }
   outputs.dir unpackedTestDir
   from zipTree(
-      configurations.testRuntimeOnly
+      configurations.testRuntimeClasspath
           .filter { it.name == testUberJarName}
           .singleFile).matching {
     include 'google/registry/**/SqlIntegrationTestSuite.class'
@@ -83,7 +83,7 @@ task sqlIntegrationTest(type: Test) {
   // Explicitly choose JUnit 4 for test suites. See :core:sqlIntegrationTest for details.
   useJUnit()
   testClassesDirs = files(unpackedTestDir)
-  classpath = configurations.testRuntimeOnly
+  classpath = configurations.testRuntimeClasspath
   include 'google/registry/schema/integration/SqlIntegrationTestSuite.*'
 
   dependsOn extractSqlIntegrationTestSuite

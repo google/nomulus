@@ -14,13 +14,18 @@
 
 import java.io.PrintStream;
 
+val enableDependencyLocking: String by project
+
 buildscript {
-  // if (project.enableDependencyLocking.toBoolean()) {
-    // Lock buildscript dependencies.
-    configurations.classpath {
-      resolutionStrategy.activateDependencyLocking()
+  // We need to do this again within "buildscript" because setting it in the
+  // main script doesn't affect build dependencies.
+  val enableDependencyLocking: String by project
+  if (enableDependencyLocking.toBoolean()) {
+    // Lock application dependencies.
+    dependencyLocking {
+      lockAllConfigurations()
     }
-  // }
+  }
 }
 
 plugins {
@@ -35,12 +40,13 @@ checkstyle {
     configDirectory.set(file("../config/checkstyle"))
 }
 
-// if (rootProject.enableDependencyLocking.toBoolean()) {
+println("enableDependencyLocking is $enableDependencyLocking")
+if (enableDependencyLocking.toBoolean()) {
   // Lock application dependencies.
   dependencyLocking {
     lockAllConfigurations()
   }
-// }
+}
 
 repositories {
   val mavenUrl = (project.ext.properties.get("mavenUrl") ?: "") as String

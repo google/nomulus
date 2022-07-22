@@ -64,14 +64,4 @@ dependencies {
 
   testImplementation deps['org.junit.jupiter:junit-jupiter-api']
   testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
-
-  configurations.each {
-    println "configuration " + it.name + ":"
-    it.allArtifacts.each {
-      println "  artifact " + it
-    }
-    it.allDependencies.each {
-      println "  dependency " + it
-    }
-  }
 }

@@ -96,6 +96,8 @@ explodeWar.doLast {
 
 rootProject.deploy.dependsOn appengineDeployAll
 rootProject.stage.dependsOn appengineStage
+tasks['war'].dependsOn ':core:compileProdJS'
+tasks['war'].dependsOn ':core:processResources'
 
 // Impose verification for all of the deployment tasks.  We haven't found a
 // better way to do this other than to apply to each of them independently.
