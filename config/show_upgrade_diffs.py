@@ -58,7 +58,10 @@ def parse_lockfile(filename: str) -> PackageMap:
         if line.startswith(b'#'):
             continue
         line = line.rstrip()
-        package = cast(Tuple[bytes, bytes, bytes], tuple(line.split(b':')))
+        package = line.split(b'=')[0]
+        if package == 'empty':
+            continue
+        package = cast(Tuple[bytes, bytes, bytes], tuple(package.split(b':')))
         result.setdefault(package[:-1], set()).add(package[-1])
     return result
 
