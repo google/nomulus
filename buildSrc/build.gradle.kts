@@ -15,6 +15,8 @@
 import java.io.PrintStream;
 
 val enableDependencyLocking: String by project
+val allowInsecureProtocol: String by project
+val allowInsecure = allowInsecureProtocol
 
 buildscript {
   // We need to do this again within "buildscript" because setting it in the
@@ -58,6 +60,7 @@ repositories {
     maven {
       println("Java dependencies: Using repo ${mavenUrl}...")
       url = uri(mavenUrl)
+      isAllowInsecureProtocol = allowInsecureProtocol == "true"
     }
   }
 }

@@ -176,6 +176,9 @@ rootProject.ext.verifyDeploymentConfig = {
 
 // Subproject configuration.
 
+// Alias this since it collides with the closure variable name
+def allowInsecure = allowInsecureProtocol
+
 allprojects {
   // Skip no-op project
   if (project.name == 'services') return
@@ -185,6 +188,7 @@ allprojects {
       maven {
         println "Java dependencies: Using repo ${mavenUrl}..."
         url mavenUrl
+        allowInsecureProtocol = allowInsecure == "true"
       }
     } else {
       println "Java dependencies: Using Maven Central..."
