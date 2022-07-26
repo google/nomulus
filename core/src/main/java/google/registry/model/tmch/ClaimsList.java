@@ -23,7 +23,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
-import google.registry.model.tld.label.ReservedList.ReservedListEntry;
 import java.util.Map;
 import java.util.Optional;
 import javax.persistence.AttributeOverride;
@@ -94,8 +93,8 @@ public class ClaimsList extends ImmutableObject {
   }
 
   /**
-   * Hibernate hook called on the insert of a new ReservedList. Stores the associated {@link
-   * ReservedListEntry}'s.
+   * Hibernate hook called on the insert of a new ClaimsList. Stores the associated {@link
+   * ClaimsEntry}'s.
    *
    * <p>We need to persist the list entries, but only on the initial insert (not on update) since
    * the entries themselves never get changed, so we only annotate it with {@link PostPersist}, not
@@ -104,10 +103,9 @@ public class ClaimsList extends ImmutableObject {
   @PostPersist
   void postPersist() {
     if (labelsToKeys != null) {
-      labelsToKeys.entrySet().stream()
-          .forEach(
-              entry ->
-                  jpaTm().insert(new ClaimsEntry(revisionId, entry.getKey(), entry.getValue())));
+      labelsToKeys.forEach(
+          (domainLabel, claimKey) ->
+              jpaTm().insert(new ClaimsEntry(revisionId, domainLabel, claimKey)));
     }
   }
 
