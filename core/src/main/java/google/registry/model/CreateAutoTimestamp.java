@@ -10,73 +10,43 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the Licenseschema..
 
 package google.registry.model;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.OnLoad;
-import google.registry.model.translators.CreateAutoTimestampTranslatorFactory;
-import google.registry.util.DateTimeUtils;
-import java.time.ZonedDateTime;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
-import javax.persistence.PostLoad;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
-import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
-/**
- * A timestamp that auto-updates when first saved to Datastore.
- *
- * @see CreateAutoTimestampTranslatorFactory
- */
+/** A timestamp that auto-updates when first saved to Datastore. */
 @Embeddable
 public class CreateAutoTimestamp extends ImmutableObject implements UnsafeSerializable {
 
-  @Transient DateTime timestamp;
-
   @Column(nullable = false)
-  @Ignore
-  ZonedDateTime creationTime;
+  DateTime creationTime;
 
   @PrePersist
   @PreUpdate
   void setTimestamp() {
     if (creationTime == null) {
-      timestamp = jpaTm().getTransactionTime();
-      creationTime = DateTimeUtils.toZonedDateTime(timestamp);
-    }
-  }
-
-  @OnLoad
-  void onLoad() {
-    if (timestamp != null) {
-      creationTime = DateTimeUtils.toZonedDateTime(timestamp);
-    }
-  }
-
-  @PostLoad
-  void postLoad() {
-    if (creationTime != null) {
-      timestamp = DateTimeUtils.toJodaDateTime(creationTime);
+      creationTime = jpaTm().getTransactionTime();
     }
   }
 
   /** Returns the timestamp. */
   @Nullable
   public DateTime getTimestamp() {
-    return timestamp;
+    return creationTime;
   }
 
-  public static CreateAutoTimestamp create(@Nullable DateTime timestamp) {
+  public static CreateAutoTimestamp create(@Nullable DateTime creationTime) {
     CreateAutoTimestamp instance = new CreateAutoTimestamp();
-    instance.timestamp = timestamp;
-    instance.creationTime = (timestamp == null) ? null : DateTimeUtils.toZonedDateTime(timestamp);
+    instance.creationTime = creationTime;
     return instance;
   }
 }

@@ -96,7 +96,6 @@
     <class>google.registry.persistence.converter.StringSetConverter</class>
     <class>google.registry.persistence.converter.TldStateTransitionConverter</class>
     <class>google.registry.persistence.converter.TransferServerApproveEntitySetConverter</class>
-    <class>google.registry.persistence.converter.ZonedDateTimeConverter</class>
 
     <!-- Generated converters for VKey -->
     <class>google.registry.model.billing.VKeyConverter_Cancellation</class>

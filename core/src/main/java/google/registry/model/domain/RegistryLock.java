@@ -16,15 +16,12 @@ package google.registry.model.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
-import static google.registry.util.DateTimeUtils.toZonedDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
-import google.registry.util.DateTimeUtils;
-import java.time.ZonedDateTime;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
@@ -109,19 +106,19 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   private CreateAutoTimestamp lockRequestTime = CreateAutoTimestamp.create(null);
 
   /** When the unlock is first requested. */
-  private ZonedDateTime unlockRequestTime;
+  private DateTime unlockRequestTime;
 
   /**
    * When the user has verified the lock. If this field is null, it means the lock has not been
    * verified yet (and thus not been put into effect).
    */
-  private ZonedDateTime lockCompletionTime;
+  private DateTime lockCompletionTime;
 
   /**
    * When the user has verified the unlock of this lock. If this field is null, it means the unlock
    * action has not been verified yet (and has not been put into effect).
    */
-  private ZonedDateTime unlockCompletionTime;
+  private DateTime unlockCompletionTime;
 
   /** The user must provide the random verification code in order to complete the action. */
   @Column(nullable = false)
@@ -168,19 +165,19 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
 
   /** Returns the unlock request timestamp or null if an unlock has not been requested yet. */
   public Optional<DateTime> getUnlockRequestTime() {
-    return Optional.ofNullable(unlockRequestTime).map(DateTimeUtils::toJodaDateTime);
+    return Optional.ofNullable(unlockRequestTime);
   }
 
   /** Returns the completion timestamp, or empty if this lock has not been completed yet. */
   public Optional<DateTime> getLockCompletionTime() {
-    return Optional.ofNullable(lockCompletionTime).map(DateTimeUtils::toJodaDateTime);
+    return Optional.ofNullable(lockCompletionTime);
   }
 
   /**
    * Returns the unlock completion timestamp, or empty if this unlock has not been completed yet.
    */
   public Optional<DateTime> getUnlockCompletionTime() {
-    return Optional.ofNullable(unlockCompletionTime).map(DateTimeUtils::toJodaDateTime);
+    return Optional.ofNullable(unlockCompletionTime);
   }
 
   public String getVerificationCode() {
@@ -278,17 +275,17 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     }
 
     public Builder setUnlockRequestTime(DateTime unlockRequestTime) {
-      getInstance().unlockRequestTime = toZonedDateTime(unlockRequestTime);
+      getInstance().unlockRequestTime = unlockRequestTime;
       return this;
     }
 
     public Builder setLockCompletionTime(DateTime lockCompletionTime) {
-      getInstance().lockCompletionTime = toZonedDateTime(lockCompletionTime);
+      getInstance().lockCompletionTime = lockCompletionTime;
       return this;
     }
 
     public Builder setUnlockCompletionTime(DateTime unlockCompletionTime) {
-      getInstance().unlockCompletionTime = toZonedDateTime(unlockCompletionTime);
+      getInstance().unlockCompletionTime = unlockCompletionTime;
       return this;
     }
 

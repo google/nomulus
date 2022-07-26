@@ -38,7 +38,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.translators.BloomFilterOfStringTranslatorFactory;
 import google.registry.model.translators.CidrAddressBlockTranslatorFactory;
-import google.registry.model.translators.CreateAutoTimestampTranslatorFactory;
 import google.registry.model.translators.CurrencyUnitTranslatorFactory;
 import google.registry.model.translators.DurationTranslatorFactory;
 import google.registry.model.translators.EppHistoryVKeyTranslatorFactory;
@@ -122,7 +121,6 @@ public class ObjectifyService {
         ImmutableList.of(
             new BloomFilterOfStringTranslatorFactory(),
             new CidrAddressBlockTranslatorFactory(),
-            new CreateAutoTimestampTranslatorFactory(),
             new CurrencyUnitTranslatorFactory(),
             new DurationTranslatorFactory(),
             new EppHistoryVKeyTranslatorFactory(),

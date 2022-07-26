@@ -14,6 +14,7 @@
 
 package google.registry.model;
 
+import com.googlecode.objectify.annotation.Ignore;
 import google.registry.util.PreconditionsUtils;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -44,6 +45,7 @@ public abstract class BackupGroupRoot extends ImmutableObject implements UnsafeS
   // require an unnecessary non-private setter method.
   @Access(AccessType.FIELD)
   @AttributeOverride(name = "lastUpdateTime", column = @Column(name = "updateTimestamp"))
+  @Ignore
   UpdateAutoTimestamp updateTimestamp = UpdateAutoTimestamp.create(null);
 
   /** Get the {@link UpdateAutoTimestamp} for this entity. */
