@@ -26,10 +26,12 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
+import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
@@ -46,30 +48,6 @@ public class AllocationTokenFlowUtils {
   @Inject
   AllocationTokenFlowUtils(AllocationTokenCustomLogic tokenCustomLogic) {
     this.tokenCustomLogic = tokenCustomLogic;
-  }
-
-  /**
-   * Loads an allocation token given a string and verifies that the token is valid for the domain
-   * create request.
-   *
-   * @return the loaded {@link AllocationToken} for that string.
-   * @throws EppException if the token doesn't exist, is already redeemed, or is otherwise invalid
-   *     for this request.
-   */
-  public AllocationToken loadTokenAndValidateDomainCreate(
-      DomainCommand.Create command,
-      String token,
-      Registry registry,
-      String registrarId,
-      DateTime now)
-      throws EppException {
-    AllocationToken tokenEntity = loadToken(token);
-    validateToken(
-        InternetDomainName.from(command.getFullyQualifiedDomainName()),
-        tokenEntity,
-        registrarId,
-        now);
-    return tokenCustomLogic.validateToken(command, tokenEntity, registry, registrarId, now);
   }
 
   /**
@@ -168,6 +146,45 @@ public class AllocationTokenFlowUtils {
       throw new AlreadyRedeemedAllocationTokenException();
     }
     return maybeTokenEntity.get();
+  }
+
+  /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
+  public Optional<AllocationToken> verifyAllocationTokenCreateIfPresent(
+      DomainCommand.Create command,
+      Registry registry,
+      String registrarId,
+      DateTime now,
+      Optional<AllocationTokenExtension> extension)
+      throws EppException {
+    if (!extension.isPresent()) {
+      return Optional.empty();
+    }
+    AllocationToken tokenEntity = loadToken(extension.get().getAllocationToken());
+    validateToken(
+        InternetDomainName.from(command.getFullyQualifiedDomainName()),
+        tokenEntity,
+        registrarId,
+        now);
+    return Optional.of(
+        tokenCustomLogic.validateToken(command, tokenEntity, registry, registrarId, now));
+  }
+
+  /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
+  public Optional<AllocationToken> verifyAllocationTokenIfPresent(
+      DomainBase existingDomain,
+      Registry registry,
+      String registrarId,
+      DateTime now,
+      Optional<AllocationTokenExtension> extension)
+      throws EppException {
+    if (!extension.isPresent()) {
+      return Optional.empty();
+    }
+    AllocationToken tokenEntity = loadToken(extension.get().getAllocationToken());
+    validateToken(
+        InternetDomainName.from(existingDomain.getDomainName()), tokenEntity, registrarId, now);
+    return Optional.of(
+        tokenCustomLogic.validateToken(existingDomain, tokenEntity, registry, registrarId, now));
   }
 
   // Note: exception messages should be <= 32 characters long for domain check results

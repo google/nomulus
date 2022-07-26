@@ -262,7 +262,12 @@ public final class DomainCreateFlow implements TransactionalFlow {
     }
     boolean isSunriseCreate = hasSignedMarks && (tldState == START_DATE_SUNRISE);
     Optional<AllocationToken> allocationToken =
-        verifyAllocationTokenIfPresent(command, registry, registrarId, now);
+        allocationTokenFlowUtils.verifyAllocationTokenCreateIfPresent(
+            command,
+            registry,
+            registrarId,
+            now,
+            eppInput.getSingleExtension(AllocationTokenExtension.class));
     boolean isAnchorTenant =
         isAnchorTenant(
             domainName, allocationToken, eppInput.getSingleExtension(MetadataExtension.class));
@@ -483,19 +488,6 @@ public final class DomainCreateFlow implements TransactionalFlow {
 
     // All other phases do not allow registration
     throw new NoGeneralRegistrationsInCurrentPhaseException();
-  }
-
-  /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
-  private Optional<AllocationToken> verifyAllocationTokenIfPresent(
-      DomainCommand.Create command, Registry registry, String registrarId, DateTime now)
-      throws EppException {
-    Optional<AllocationTokenExtension> extension =
-        eppInput.getSingleExtension(AllocationTokenExtension.class);
-    return Optional.ofNullable(
-        extension.isPresent()
-            ? allocationTokenFlowUtils.loadTokenAndValidateDomainCreate(
-                command, extension.get().getAllocationToken(), registry, registrarId, now)
-            : null);
   }
 
   private DomainHistory buildDomainHistory(
