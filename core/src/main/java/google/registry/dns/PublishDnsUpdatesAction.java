@@ -206,9 +206,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
         // Enqueue the single domain and single host separately
         enqueue(ImmutableList.copyOf(domains), ImmutableList.of());
         enqueue(ImmutableList.of(), ImmutableList.copyOf(hosts));
-      }
-      // If the batch only contains 1 name, allow it more retries
-      else if (retryCount < RETRIES_BEFORE_PERMANENT_FAILURE) {
+      } else if (retryCount < RETRIES_BEFORE_PERMANENT_FAILURE) {
+        // If the batch only contains 1 name, allow it more retries
         throw e;
       }
       // If we get here, we should terminate this task as it is likely a perpetually failing task.
