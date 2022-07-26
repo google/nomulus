@@ -19,45 +19,45 @@ createUberJar('deployJar', 'prober', 'google.registry.monitoring.blackbox.Prober
 dependencies {
   def deps = rootProject.dependencyMap
 
-  compile deps['com.google.auto.value:auto-value-annotations']
-  compile deps['com.google.code.findbugs:jsr305']
-  compile deps['com.google.code.gson:gson']
-  compile deps['com.google.dagger:dagger']
-  compile deps['com.google.flogger:flogger']
-  compile deps['com.google.guava:guava']
-  compile deps['com.google.monitoring-client:metrics']
-  compile deps['io.netty:netty-buffer']
-  compile deps['io.netty:netty-codec']
-  compile deps['io.netty:netty-codec-http']
-  compile deps['io.netty:netty-common']
-  compile deps['io.netty:netty-handler']
-  compile deps['io.netty:netty-transport']
-  compile deps['javax.inject:javax.inject']
-  compile deps['joda-time:joda-time']
-  compile deps['org.bouncycastle:bcpkix-jdk15on']
-  compile deps['org.bouncycastle:bcprov-jdk15on']
-  compile deps['xerces:xmlParserAPIs']
-  compile deps['xpp3:xpp3']
-  compile project(':common')
-  compile project(':util')
-  compile project(':networking')
+  implementation deps['com.google.auto.value:auto-value-annotations']
+  implementation deps['com.google.code.findbugs:jsr305']
+  implementation deps['com.google.code.gson:gson']
+  implementation deps['com.google.dagger:dagger']
+  implementation deps['com.google.flogger:flogger']
+  implementation deps['com.google.guava:guava']
+  implementation deps['com.google.monitoring-client:metrics']
+  implementation deps['io.netty:netty-buffer']
+  implementation deps['io.netty:netty-codec']
+  implementation deps['io.netty:netty-codec-http']
+  implementation deps['io.netty:netty-common']
+  implementation deps['io.netty:netty-handler']
+  implementation deps['io.netty:netty-transport']
+  implementation deps['javax.inject:javax.inject']
+  implementation deps['joda-time:joda-time']
+  implementation deps['org.bouncycastle:bcpkix-jdk15on']
+  implementation deps['org.bouncycastle:bcprov-jdk15on']
+  implementation deps['xerces:xmlParserAPIs']
+  implementation deps['xpp3:xpp3']
+  implementation project(':common')
+  implementation project(':util')
+  implementation project(':networking')
 
-  runtime deps['com.google.flogger:flogger-system-backend']
-  runtime deps['com.google.auto.value:auto-value']
-  runtime deps['io.netty:netty-tcnative-boringssl-static']
+  runtimeOnly deps['com.google.flogger:flogger-system-backend']
+  runtimeOnly deps['com.google.auto.value:auto-value']
+  runtimeOnly deps['io.netty:netty-tcnative-boringssl-static']
 
-  testCompile deps['com.google.monitoring-client:contrib']
-  testCompile deps['com.google.truth:truth']
-  testCompile deps['junit:junit']
-  testCompile deps['org.junit.jupiter:junit-jupiter-api']
-  testCompile deps['org.junit.jupiter:junit-jupiter-engine']
-  testCompile deps['org.junit.jupiter:junit-jupiter-params']
-  testCompile deps['org.junit.platform:junit-platform-runner']
-  testCompile deps['org.junit.platform:junit-platform-suite-api']
-  testCompile deps['org.mockito:mockito-core']
-  testCompile deps['org.testcontainers:junit-jupiter']
-  testCompile project(path: ':common', configuration: 'testing')
-  testCompile project(path: ':networking', configuration: 'testRuntime')
+  testImplementation deps['com.google.monitoring-client:contrib']
+  testImplementation deps['com.google.truth:truth']
+  testImplementation deps['junit:junit']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-api']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-params']
+  testImplementation deps['org.junit.platform:junit-platform-runner']
+  testImplementation deps['org.junit.platform:junit-platform-suite-api']
+  testImplementation deps['org.mockito:mockito-core']
+  testImplementation deps['org.testcontainers:junit-jupiter']
+  testImplementation project(path: ':common', configuration: 'testing')
+  testImplementation project(path: ':networking', configuration: 'testRuntimeOnly')
 
   // Include auto-value in compile until nebula-lint understands
   // annotationProcessor

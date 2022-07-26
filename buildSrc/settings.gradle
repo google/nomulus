@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Alias this since it collides with the closure variable name.
+// Alias this since it collides with the closure variable name
 def allowInsecure = allowInsecureProtocol
 
 if (!pluginsUrl.isEmpty()) {
-  println "Plugins: Using repo $pluginsUrl..."
   pluginManagement {
     repositories {
       maven {
@@ -28,21 +27,3 @@ if (!pluginsUrl.isEmpty()) {
 } else {
   println "Plugins: Using default repo..."
 }
-
-rootProject.name = 'nomulus'
-
-include 'common'
-include 'core'
-include 'db'
-include 'docs'
-include 'integration'
-include 'networking'
-include 'processor'
-include 'prober'
-include 'proxy'
-include 'util'
-include 'services:default'
-include 'services:backend'
-include 'services:tools'
-include 'services:pubapi'
-include 'java8compatibility'

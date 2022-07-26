@@ -97,24 +97,24 @@ task schemaJar(type: Jar) {
   }
 }
 
-// Expose NomulusPostgreSql class to ':core' for compile, without leaking
-// unnecessary dependencies to the release artifacts through ':core'.
-// Jar is put in the 'compileApi' configuration.
-task compileApiJar(type: Jar) {
-  archiveBaseName = 'compile'
+// Expose NomulusPostgreSql class to ':core' for implementation, without
+// leaking unnecessary dependencies to the release artifacts through ':core'.
+// Jar is put in the 'implementationApi' configuration.
+task implementationApiJar(type: Jar) {
+  archiveBaseName = 'implementation'
   from(sourceSets.main.output) {
     include 'google/registry/persistence/NomulusPostgreSql**'
   }
 }
 
 configurations {
-  compileApi
+  implementationApi
   schema
   integration
 }
 
 artifacts {
-  compileApi compileApiJar
+  implementationApi implementationApiJar
   schema schemaJar
 }
 
@@ -159,23 +159,23 @@ flyway {
 dependencies {
   def deps = rootProject.dependencyMap
 
-  compile deps['org.flywaydb:flyway-core']
+  implementation deps['org.flywaydb:flyway-core']
 
   runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
   runtimeOnly deps['org.postgresql:postgresql']
 
-  testCompile deps['com.google.flogger:flogger']
-  testRuntime deps['com.google.flogger:flogger-system-backend']
-  testCompile deps['com.google.guava:guava']
-  testCompile deps['com.google.truth:truth']
-  testRuntime deps['io.github.java-diff-utils:java-diff-utils']
-  testCompile deps['org.junit.jupiter:junit-jupiter-api']
-  testCompile deps['org.junit.jupiter:junit-jupiter-engine']
-  testCompile deps['org.testcontainers:postgresql']
-  testCompile deps['org.testcontainers:testcontainers']
-  testCompile deps['org.testcontainers:junit-jupiter']
-  testCompile deps['org.testcontainers:postgresql']
-  testCompile project(path: ':common', configuration: 'testing')
+  testImplementation deps['com.google.flogger:flogger']
+  testRuntimeOnly deps['com.google.flogger:flogger-system-backend']
+  testImplementation deps['com.google.guava:guava']
+  testImplementation deps['com.google.truth:truth']
+  testRuntimeOnly deps['io.github.java-diff-utils:java-diff-utils']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-api']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
+  testImplementation deps['org.testcontainers:postgresql']
+  testImplementation deps['org.testcontainers:testcontainers']
+  testImplementation deps['org.testcontainers:junit-jupiter']
+  testImplementation deps['org.testcontainers:postgresql']
+  testImplementation project(path: ':common', configuration: 'testing')
 }
 
 task generateFlywayIndex {

@@ -29,7 +29,7 @@ buildscript {
 
   dependencies {
     classpath 'com.google.cloud.tools:appengine-gradle-plugin:2.4.1'
-    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.6.1'
+    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:2.0.2'
     classpath 'org.sonatype.aether:aether-api:1.13.1'
     classpath 'org.sonatype.aether:aether-impl:1.13.1'
   }
@@ -39,7 +39,7 @@ plugins {
   // Java static analysis plugins. Keep versions consistent with
   // ./buildSrc/build.gradle
   id 'nebula.lint' version '16.0.2'
-  id 'net.ltgt.errorprone' version '0.6.1'
+  id 'net.ltgt.errorprone' version '2.0.2'
   id 'checkstyle'
   id 'com.github.johnrengelman.shadow' version '5.1.0'
 
@@ -51,6 +51,10 @@ plugins {
 
   id 'jacoco'
   id 'com.dorongold.task-tree' version '2.1.0'
+}
+
+dependencyLocking {
+    lockAllConfigurations()
 }
 
 node {
@@ -172,6 +176,9 @@ rootProject.ext.verifyDeploymentConfig = {
 
 // Subproject configuration.
 
+// Alias this since it collides with the closure variable name
+def allowInsecure = allowInsecureProtocol
+
 allprojects {
   // Skip no-op project
   if (project.name == 'services') return
@@ -181,6 +188,7 @@ allprojects {
       maven {
         println "Java dependencies: Using repo ${mavenUrl}..."
         url mavenUrl
+        allowInsecureProtocol = allowInsecure == "true"
       }
     } else {
       println "Java dependencies: Using Maven Central..."
@@ -278,6 +286,11 @@ subprojects {
       // see https://discuss.gradle.org/t/signing-a-custom-gradle-plugin-thats-downloaded-by-the-build-system-from-github/1365
       exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
       exclude excludes
+
+      // We do seem to get duplicates when constructing uber-jars, either
+      // this is a product of something in gradle 7 or a product of gradle 7
+      // now giving an error about them when it didn't previously.
+      duplicatesStrategy DuplicatesStrategy.WARN
     }
   }
 
@@ -297,7 +310,7 @@ subprojects {
       // The ':integration' project runs server/schema integration tests using
       // dynamically specified jars with no transitive dependency. Therefore
       // dependency-locking does not make sense. Furthermore, during
-      // evaluation it resolves the 'testRuntime' configuration, making it
+      // evaluation it resolves the 'testRuntimeOnly' configuration, making it
       // immutable. Locking activation would trigger an invalid operation
       // exception.
       //
