@@ -163,7 +163,7 @@ def verifyDeploymentParams() {
         System.err.println('-----------------------------------------------------------------')
         throw new GradleException('Aborting. See prominent error above.')
     } else if (gcpProject == null) {
-        def error = 'You must specify -P environment={alpha,crash,qa}'
+        def error = 'You must specify -Penvironment={alpha,crash,qa}'
         System.err.println("\033[33;1m${error}\033[0m")
         throw GradleException("Aborting:  ${error}")
     }
