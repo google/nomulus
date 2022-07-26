@@ -106,6 +106,7 @@ class google.registry.model.domain.Domain {
   google.registry.persistence.VKey<google.registry.model.contact.ContactResource> billingContact;
   google.registry.persistence.VKey<google.registry.model.contact.ContactResource> registrantContact;
   google.registry.persistence.VKey<google.registry.model.contact.ContactResource> techContact;
+  google.registry.persistence.VKey<google.registry.model.domain.token.AllocationToken> currentPackageToken;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
   java.lang.String creationClientId;
@@ -138,6 +139,7 @@ class google.registry.model.domain.DomainBase {
   google.registry.persistence.VKey<google.registry.model.contact.ContactResource> billingContact;
   google.registry.persistence.VKey<google.registry.model.contact.ContactResource> registrantContact;
   google.registry.persistence.VKey<google.registry.model.contact.ContactResource> techContact;
+  google.registry.persistence.VKey<google.registry.model.domain.token.AllocationToken> currentPackageToken;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
   java.lang.String creationClientId;
