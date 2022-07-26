@@ -51,12 +51,11 @@ ext {
       // xml elements' names have changed.
       'com.sun.xml.bind:jaxb-xjc:2.3.3',
 
-      // appengine-api-1.0-sdk has breaking changes.
-      'com.google.appengine:appengine-api-1.0-sdk:1.9.86',
+      'com.google.appengine:appengine-api-1.0-sdk:2.0.5',
       // Pin-breakers for appengine-api-1.0-sdk
-      'com.google.appengine.tools:appengine-gcs-client:0.8.1',
+      'com.google.appengine.tools:appengine-gcs-client:0.8.3',
       'com.google.appengine.tools:appengine-pipeline:0.2.13',
-      'com.google.appengine:appengine-testing:1.9.86',
+      'com.google.appengine:appengine-testing:2.0.5',
 
       // Pinned for gwt-user.
       'com.google.javascript:closure-compiler:v20210505',
