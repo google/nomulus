@@ -400,7 +400,8 @@ CREATE TABLE public."Domain" (
     transfer_history_entry_id bigint,
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
-    dns_refresh_request_time timestamp with time zone
+    dns_refresh_request_time timestamp with time zone,
+    allocation_token text
 );
 
 
@@ -488,7 +489,8 @@ CREATE TABLE public."DomainHistory" (
     transfer_history_entry_id bigint,
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
-    dns_refresh_request_time timestamp with time zone
+    dns_refresh_request_time timestamp with time zone,
+    allocation_token text
 );
 
 
@@ -2144,6 +2146,14 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT fk_domain_admin_contact FOREIGN KEY (admin_contact) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: Domain fk_domain_allocation_token; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_allocation_token FOREIGN KEY (allocation_token) REFERENCES public."AllocationToken"(token) DEFERRABLE INITIALLY DEFERRED;
 
 
 --

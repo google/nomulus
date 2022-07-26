@@ -119,3 +119,4 @@ V118__drop_billing_identifier_column_from_registrar.sql
 V119__token_registration_behavior.sql
 V120__remove_ofy_key_fields.sql
 V121__drop_sql_checkpoint_and_txn.sql
+V122__add_allocation_token_to_domain.sql
