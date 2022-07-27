@@ -59,10 +59,8 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
-import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
@@ -315,7 +313,7 @@ public class Registrar extends ImmutableObject
    * Localized {@link RegistrarAddress} for this registrar. Contents can be represented in
    * unrestricted UTF-8.
    */
-  @IgnoreSave(IfNull.class)
+  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(
@@ -340,7 +338,7 @@ public class Registrar extends ImmutableObject
    * Internationalized {@link RegistrarAddress} for this registrar. All contained values must be
    * representable in the 7-bit US-ASCII character set.
    */
-  @IgnoreSave(IfNull.class)
+  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "streetLine1", column = @Column(name = "i18n_address_street_line1")),

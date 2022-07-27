@@ -14,7 +14,6 @@
 
 package google.registry.model.contact;
 
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.eppcommon.Address;
 import javax.persistence.Embeddable;
 
@@ -30,7 +29,6 @@ import javax.persistence.Embeddable;
  *
  * @see PostalInfo
  */
-@Embed
 @Embeddable
 public class ContactAddress extends Address {
 
