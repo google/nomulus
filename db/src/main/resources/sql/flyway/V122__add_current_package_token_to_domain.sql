@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-alter table "Domain" add column allocation_token text;
-alter table "DomainHistory" add column allocation_token text;
+alter table "Domain" add column current_package_token text;
+alter table "DomainHistory" add column current_package_token text;
 
-ALTER TABLE "Domain" ADD CONSTRAINT fk_domain_allocation_token FOREIGN KEY (allocation_token) REFERENCES "AllocationToken"(token) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE "Domain" ADD CONSTRAINT fk_domain_current_package_token FOREIGN KEY (current_package_token) REFERENCES "AllocationToken"(token) DEFERRABLE INITIALLY DEFERRED;

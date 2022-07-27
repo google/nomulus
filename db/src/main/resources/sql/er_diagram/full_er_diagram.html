@@ -261,7 +261,7 @@ td.section {
     </tr>
     <tr>
      <td class="property_name">generated on</td>
-     <td class="property_value">2022-07-26 21:08:11.421869</td>
+     <td class="property_value">2022-07-27 20:16:20.559864</td>
     </tr>
     <tr>
      <td class="property_name">last flyway file</td>
@@ -284,7 +284,7 @@ td.section {
      generated on
     </text>
     <text text-anchor="start" x="4755.52" y="-10.8" font-family="Helvetica,sans-Serif" font-size="14.00">
-     2022-07-26 21:08:11.421869
+     2022-07-27 20:16:20.559864
     </text>
     <polygon fill="none" stroke="#888888" points="4668.02,-4 4668.02,-44 4933.02,-44 4933.02,-4 4668.02,-4" /> <!-- allocationtoken_a08ccbef -->
     <g id="node1" class="node">
@@ -1240,7 +1240,7 @@ td.section {
       timestamptz
      </text>
      <text text-anchor="start" x="2266" y="-2481.66" font-family="Helvetica,sans-Serif" font-size="14.00">
-      allocation_token
+      current_package_token
      </text>
      <text text-anchor="start" x="2544" y="-2481.66" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text>
@@ -2121,7 +2121,7 @@ td.section {
       timestamptz
      </text>
      <text text-anchor="start" x="1455" y="-1601.66" font-family="Helvetica,sans-Serif" font-size="14.00">
-      allocation_token
+      current_package_token
      </text>
      <text text-anchor="start" x="1733" y="-1601.66" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text>
@@ -2139,8 +2139,8 @@ td.section {
      <polyline fill="none" stroke="black" points="1106.5,-2592.86 1111.4,-2591.88 " />
      <polygon fill="black" stroke="black" points="1113.36,-2596.59 1111.41,-2586.78 1113.37,-2586.4 1115.32,-2596.2 1113.36,-2596.59" />
      <polyline fill="none" stroke="black" points="1111.4,-2591.88 1116.31,-2590.91 " />
-     <text text-anchor="start" x="1213.5" y="-2169.66" font-family="Helvetica,sans-Serif" font-size="14.00">
-      fk_domain_allocation_token
+     <text text-anchor="start" x="1192" y="-2169.66" font-family="Helvetica,sans-Serif" font-size="14.00">
+      fk_domain_current_package_token
      </text> 
     </g> <!-- domain_6c51cffa&#45;&gt;billingevent_a57d1815 -->
     <g id="edge5" class="edge">
@@ -6555,12 +6555,12 @@ td.section {
      <td colspan="3"></td>
     </tr>
     <tr>
-     <td colspan="2" class="name">fk_domain_allocation_token</td>
+     <td colspan="2" class="name">fk_domain_current_package_token</td>
      <td class="description right">[foreign key, with no action]</td>
     </tr>
     <tr>
      <td class="spacer"></td>
-     <td class="minwidth">token ←(0..many) <a href="#domain_6c51cffa">public.Domain.allocation_token</a></td>
+     <td class="minwidth">token ←(0..many) <a href="#domain_6c51cffa">public.Domain.current_package_token</a></td>
      <td class="minwidth"></td>
     </tr>
     <tr>
@@ -9208,7 +9208,7 @@ td.section {
     </tr>
     <tr>
      <td class="spacer"></td>
-     <td class="minwidth">allocation_token</td>
+     <td class="minwidth">current_package_token</td>
      <td class="minwidth">text</td>
     </tr>
     <tr>
@@ -9239,12 +9239,12 @@ td.section {
      <td colspan="3"></td>
     </tr>
     <tr>
-     <td colspan="2" class="name">fk_domain_allocation_token</td>
+     <td colspan="2" class="name">fk_domain_current_package_token</td>
      <td class="description right">[foreign key, with no action]</td>
     </tr>
     <tr>
      <td class="spacer"></td>
-     <td class="minwidth">allocation_token (0..many)→ <a href="#allocationtoken_a08ccbef">public.AllocationToken.token</a></td>
+     <td class="minwidth">current_package_token (0..many)→ <a href="#allocationtoken_a08ccbef">public.AllocationToken.token</a></td>
      <td class="minwidth"></td>
     </tr>
     <tr>
@@ -10125,7 +10125,7 @@ td.section {
     </tr>
     <tr>
      <td class="spacer"></td>
-     <td class="minwidth">allocation_token</td>
+     <td class="minwidth">current_package_token</td>
      <td class="minwidth">text</td>
     </tr>
     <tr>
