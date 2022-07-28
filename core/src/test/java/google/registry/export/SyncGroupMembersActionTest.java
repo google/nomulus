@@ -130,8 +130,7 @@ public class SyncGroupMembersActionTest {
   void test_doPost_removesAllContactsFromGroup() throws Exception {
     when(connection.getMembersOfGroup("newregistrar-primary-contacts@domain-registry.example"))
         .thenReturn(ImmutableSet.of("defunct@example.com", "janedoe@theregistrar.com"));
-    tm().transact(
-            () -> loadRegistrar("NewRegistrar").getContacts().forEach(tm()::deleteWithoutBackup));
+    tm().transact(() -> loadRegistrar("NewRegistrar").getContacts().forEach(tm()::delete));
     runAction();
     verify(connection).removeMemberFromGroup(
         "newregistrar-primary-contacts@domain-registry.example", "defunct@example.com");
