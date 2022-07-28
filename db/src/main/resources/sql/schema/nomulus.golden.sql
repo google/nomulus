@@ -2173,6 +2173,14 @@ ALTER TABLE ONLY public."Domain"
 
 
 --
+-- Name: DomainHistory fk_domain_history_current_package_token; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainHistory"
+    ADD CONSTRAINT fk_domain_history_current_package_token FOREIGN KEY (current_package_token) REFERENCES public."AllocationToken"(token) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
 -- Name: DomainHistory fk_domain_history_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

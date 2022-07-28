@@ -16,3 +16,4 @@ alter table "Domain" add column current_package_token text;
 alter table "DomainHistory" add column current_package_token text;
 
 ALTER TABLE "Domain" ADD CONSTRAINT fk_domain_current_package_token FOREIGN KEY (current_package_token) REFERENCES "AllocationToken"(token) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE "DomainHistory" ADD CONSTRAINT fk_domain_history_current_package_token FOREIGN KEY (current_package_token) REFERENCES "AllocationToken"(token) DEFERRABLE INITIALLY DEFERRED;
