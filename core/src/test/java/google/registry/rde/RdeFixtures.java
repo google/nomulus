@@ -18,7 +18,6 @@ import static com.google.common.io.BaseEncoding.base16;
 import static google.registry.testing.DatabaseHelper.generateNewContactHostRoid;
 import static google.registry.testing.DatabaseHelper.generateNewDomainRoid;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistResourceWithBackup;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
@@ -76,7 +75,7 @@ final class RdeFixtures {
                 .build());
     clock.advanceOneMilli();
     BillingEvent.OneTime billingEvent =
-        persistResourceWithBackup(
+        persistResource(
             new BillingEvent.OneTime.Builder()
                 .setReason(Reason.CREATE)
                 .setTargetId("example." + tld)
@@ -219,13 +218,13 @@ final class RdeFixtures {
                     .build())
             .build();
     clock.advanceOneMilli();
-    return persistResourceWithBackup(domain);
+    return persistResource(domain);
   }
 
   static ContactResource makeContactResource(
       FakeClock clock, String id, String name, String email) {
     clock.advanceOneMilli();
-    return persistResourceWithBackup(
+    return persistResource(
         new ContactResource.Builder()
             .setContactId(id)
             .setRepoId(generateNewContactHostRoid())
@@ -256,7 +255,7 @@ final class RdeFixtures {
 
   static HostResource makeHostResource(FakeClock clock, String fqhn, String ip) {
     clock.advanceOneMilli();
-    return persistResourceWithBackup(
+    return persistResource(
         new HostResource.Builder()
             .setRepoId(generateNewContactHostRoid())
             .setCreationRegistrarId("LawyerCat")

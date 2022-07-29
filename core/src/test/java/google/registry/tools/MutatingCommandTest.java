@@ -122,7 +122,7 @@ public class MutatingCommandTest {
         Arrays.asList(host1, host2, registrar1, registrar2).stream()
             .map(entity -> VKey.from(Key.create(entity)))
             .collect(toImmutableList());
-    tm().transact(() -> tm().deleteWithoutBackup(keys));
+    tm().transact(() -> tm().delete(keys));
     MutatingCommand command = new MutatingCommand() {
       @Override
       protected void init() {

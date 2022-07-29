@@ -999,31 +999,9 @@ public class DatabaseHelper {
     return createRepoId(allocateId(), getContactAndHostRoidSuffix());
   }
 
-  /**
-   * Persists a test resource to Datastore and returns it.
-   *
-   * <p>Tests should always use this method (or the shortcut persist methods in this class) to
-   * persist test data, to avoid potentially subtle bugs related to race conditions and a stale ofy
-   * session cache. Specifically, this method calls .now() on the save to force the write to
-   * actually get sent to Datastore (although it does not force it to be applied) and clears the
-   * session cache. If necessary, this method also updates the relevant {@link EppResourceIndex},
-   * {@link ForeignKeyIndex}.
-   *
-   * <p><b>Note:</b> Your resource will not be enrolled in a commit log. If you want backups, use
-   * {@link #persistResourceWithBackup(Object)}.
-   */
-  public static <R extends ImmutableObject> R persistResource(final R resource) {
-    return persistResource(resource, false);
-  }
-
-  /** Same as {@link #persistResource(Object)} with backups enabled. */
-  public static <R extends ImmutableObject> R persistResourceWithBackup(final R resource) {
-    return persistResource(resource, true);
-  }
-
-  private static <R extends ImmutableObject> void saveResource(R resource, boolean wantBackup) {
+  private static <R extends ImmutableObject> void saveResource(R resource) {
     if (tm().isOfy()) {
-      Consumer<ImmutableObject> saver = wantBackup ? tm()::put : tm()::putWithoutBackup;
+      Consumer<ImmutableObject> saver = tm()::put;
       saver.accept(resource);
       if (resource instanceof EppResource) {
         EppResource eppResource = (EppResource) resource;
@@ -1046,12 +1024,12 @@ public class DatabaseHelper {
     }
   }
 
-  private static <R extends ImmutableObject> R persistResource(
-      final R resource, final boolean wantBackup) {
+  /** Persists an object in the DB for tests. */
+  public static <R extends ImmutableObject> R persistResource(final R resource) {
     assertWithMessage("Attempting to persist a Builder is almost certainly an error in test code")
         .that(resource)
         .isNotInstanceOf(Buildable.Builder.class);
-    tm().transact(() -> saveResource(resource, wantBackup));
+    tm().transact(() -> saveResource(resource));
     maybeAdvanceClock();
     // Force the session cache to be cleared so that when we read the resource back, we read from
     // Datastore and not from the session cache. This is needed to trigger Objectify's load process
@@ -1080,12 +1058,8 @@ public class DatabaseHelper {
     return tm().transact(() -> tm().loadByEntity(resource));
   }
 
+  /** Persists the specified resources to the DB. */
   public static <R extends ImmutableObject> void persistResources(final Iterable<R> resources) {
-    persistResources(resources, false);
-  }
-
-  private static <R extends ImmutableObject> void persistResources(
-      final Iterable<R> resources, final boolean wantBackup) {
     for (R resource : resources) {
       assertWithMessage("Attempting to persist a Builder is almost certainly an error in test code")
           .that(resource)
@@ -1093,7 +1067,7 @@ public class DatabaseHelper {
     }
     // Persist domains ten at a time, to avoid exceeding the entity group limit.
     for (final List<R> chunk : Iterables.partition(resources, 10)) {
-      tm().transact(() -> chunk.forEach(resource -> saveResource(resource, wantBackup)));
+      tm().transact(() -> chunk.forEach(DatabaseHelper::saveResource));
       maybeAdvanceClock();
     }
     // Force the session to be cleared so that when we read it back, we read from Datastore
@@ -1248,7 +1222,7 @@ public class DatabaseHelper {
    * entities.
    */
   public static <R> void insertSimpleResources(final Iterable<R> resources) {
-    tm().transact(() -> tm().putAllWithoutBackup(ImmutableList.copyOf(resources)));
+    tm().transact(() -> tm().putAll(ImmutableList.copyOf(resources)));
     maybeAdvanceClock();
     // Force the session to be cleared so that when we read it back, we read from Datastore
     // and not from the transaction's session cache.
@@ -1256,7 +1230,7 @@ public class DatabaseHelper {
   }
 
   public static void deleteResource(final Object resource) {
-    tm().transact(() -> tm().deleteWithoutBackup(resource));
+    tm().transact(() -> tm().delete(resource));
     // Force the session to be cleared so that when we read it back, we read from Datastore and
     // not from the transaction's session cache.
     tm().clearSessionCache();

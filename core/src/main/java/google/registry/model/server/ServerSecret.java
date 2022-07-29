@@ -66,7 +66,7 @@ public class ServerSecret extends CrossTldSingleton {
               Optional<ServerSecret> secret = tm().loadSingleton(ServerSecret.class);
               if (!secret.isPresent()) {
                 secret = Optional.of(create(UUID.randomUUID()));
-                tm().insertWithoutBackup(secret.get());
+                tm().insert(secret.get());
               }
               return secret.get();
             });

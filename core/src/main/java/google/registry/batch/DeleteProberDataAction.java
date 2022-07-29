@@ -266,7 +266,7 @@ public class DeleteProberDataAction implements Runnable {
     // Note that we don't bother handling grace periods, billing events, pending transfers, poll
     // messages, or auto-renews because those will all be hard-deleted the next time the job runs
     // anyway.
-    tm().putAllWithoutBackup(ImmutableList.of(deletedDomain, historyEntry));
+    tm().putAll(ImmutableList.of(deletedDomain, historyEntry));
     // updating foreign keys is a no-op in SQL
     updateForeignKeyIndexDeletionTime(deletedDomain);
     dnsQueue.addDomainRefreshTask(deletedDomain.getDomainName());

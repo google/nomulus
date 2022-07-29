@@ -197,7 +197,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
             MigrationState.DATASTORE_ONLY,
             "migrationTransitionMap must start with DATASTORE_ONLY");
     validateTransitionAtCurrentTime(transitions);
-    jpaTm().putWithoutBackup(new DatabaseMigrationStateSchedule(transitions));
+    jpaTm().put(new DatabaseMigrationStateSchedule(transitions));
     CACHE.invalidateAll();
   }
 

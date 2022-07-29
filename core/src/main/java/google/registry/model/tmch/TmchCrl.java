@@ -56,7 +56,7 @@ public final class TmchCrl extends CrossTldSingleton {
               tmchCrl.updated = jpaTm().getTransactionTime();
               tmchCrl.crl = checkNotNull(crl, "crl");
               tmchCrl.url = checkNotNull(url, "url");
-              jpaTm().transactNew(() -> jpaTm().putWithoutBackup(tmchCrl));
+              jpaTm().put(tmchCrl);
             });
   }
 

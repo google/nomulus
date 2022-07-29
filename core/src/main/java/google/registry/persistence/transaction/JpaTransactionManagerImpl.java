@@ -294,16 +294,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void insertWithoutBackup(ImmutableObject entity) {
-    insert(entity);
-  }
-
-  @Override
-  public void insertAllWithoutBackup(ImmutableCollection<?> entities) {
-    insertAll(entities);
-  }
-
-  @Override
   public void put(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     if (isEntityOfIgnoredClass(entity)) {
@@ -330,16 +320,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void putWithoutBackup(ImmutableObject entity) {
-    put(entity);
-  }
-
-  @Override
-  public void putAllWithoutBackup(ImmutableCollection<?> entities) {
-    putAll(entities);
-  }
-
-  @Override
   public void update(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     if (isEntityOfIgnoredClass(entity)) {
@@ -360,16 +340,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public void updateAll(ImmutableObject... entities) {
     updateAll(ImmutableList.copyOf(entities));
-  }
-
-  @Override
-  public void updateWithoutBackup(ImmutableObject entity) {
-    update(entity);
-  }
-
-  @Override
-  public void updateAllWithoutBackup(ImmutableCollection<?> entities) {
-    updateAll(entities);
   }
 
   @Override
@@ -547,21 +517,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
     getEntityManager().remove(managedEntity);
     return managedEntity;
-  }
-
-  @Override
-  public void deleteWithoutBackup(VKey<?> key) {
-    delete(key);
-  }
-
-  @Override
-  public void deleteWithoutBackup(Iterable<? extends VKey<?>> keys) {
-    delete(keys);
-  }
-
-  @Override
-  public void deleteWithoutBackup(Object entity) {
-    delete(entity);
   }
 
   @Override
