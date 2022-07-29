@@ -15,13 +15,14 @@
 package google.registry.model.bulkquery;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.bulkquery.BulkQueryHelper.loadAndAssembleDomain;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.common.truth.Truth8;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import java.util.Set;
@@ -33,8 +34,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for reading {@link DomainBaseLite}. */
-class DomainBaseLiteTest {
+/** Unit tests for reading {@link DomainLite}. */
+class DomainLiteTest {
 
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
@@ -65,53 +66,46 @@ class DomainBaseLiteTest {
   }
 
   @Test
-  void domainBaseLiteAttributes_versusDomainBase() {
-    Set<String> domainBaseAttributes =
+  void domainLiteAttributes_versusDomain() {
+    Set<String> domainAttributes =
         jpaTm()
             .transact(
                 () ->
-                    jpaTm()
-                        .getEntityManager()
-                        .getMetamodel()
-                        .entity(DomainBase.class)
-                        .getAttributes())
+                    jpaTm().getEntityManager().getMetamodel().entity(Domain.class).getAttributes())
             .stream()
             .map(Attribute::getName)
             .collect(Collectors.toSet());
     setupHelper.setupBulkQueryJpaTm(appEngine);
-    Set<String> domainBaseLiteAttributes =
+    Set<String> domainLiteAttributes =
         jpaTm()
             .transact(
                 () ->
                     jpaTm()
                         .getEntityManager()
                         .getMetamodel()
-                        .entity(DomainBaseLite.class)
+                        .entity(DomainLite.class)
                         .getAttributes())
             .stream()
             .map(Attribute::getName)
             .collect(Collectors.toSet());
 
-    assertThat(domainBaseAttributes).containsAtLeastElementsIn(domainBaseLiteAttributes);
+    assertThat(domainAttributes).containsAtLeastElementsIn(domainLiteAttributes);
 
-    SetView<?> excludedFromDomainBase =
-        Sets.difference(domainBaseAttributes, domainBaseLiteAttributes);
-    assertThat(excludedFromDomainBase)
+    SetView<?> excludedFromDomain = Sets.difference(domainAttributes, domainLiteAttributes);
+    assertThat(excludedFromDomain)
         .containsExactly("internalDelegationSignerData", "internalGracePeriods", "nsHosts");
   }
 
   @Test
-  void readDomainBaseLite_simple() {
+  void readDomainLite_simple() {
     setupHelper.setupBulkQueryJpaTm(appEngine);
-    assertThat(BulkQueryHelper.loadAndAssembleDomainBase(TestSetupHelper.DOMAIN_REPO_ID))
-        .isEqualTo(setupHelper.domain);
+    assertThat(loadAndAssembleDomain(TestSetupHelper.DOMAIN_REPO_ID)).isEqualTo(setupHelper.domain);
   }
 
   @Test
-  void readDomainBaseLite_full() {
+  void readDomainLite_full() {
     setupHelper.applyChangeToDomainAndHistory();
     setupHelper.setupBulkQueryJpaTm(appEngine);
-    assertThat(BulkQueryHelper.loadAndAssembleDomainBase(TestSetupHelper.DOMAIN_REPO_ID))
-        .isEqualTo(setupHelper.domain);
+    assertThat(loadAndAssembleDomain(TestSetupHelper.DOMAIN_REPO_ID)).isEqualTo(setupHelper.domain);
   }
 }

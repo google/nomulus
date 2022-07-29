@@ -24,7 +24,7 @@ SELECT
   'TOTAL_DOMAINS' as metricName,
   COUNT(fullyQualifiedDomainName) as metricValue
 FROM
-  `domain-registry-alpha.latest_datastore_export.DomainBase`
+  `domain-registry-alpha.latest_datastore_export.Domain`
       AS domain_table
 JOIN
    `domain-registry-alpha.latest_datastore_export.Registrar`

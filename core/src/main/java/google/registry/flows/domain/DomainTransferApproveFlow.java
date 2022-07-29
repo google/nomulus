@@ -49,7 +49,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
@@ -100,7 +100,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
 
   /**
    * The logic in this flow, which handles client approvals, very closely parallels the logic in
-   * {@link DomainBase#cloneProjectedAtTime} which handles implicit server approvals.
+   * {@link Domain#cloneProjectedAtTime} which handles implicit server approvals.
    */
   @Override
   public EppResponse run() throws EppException {
@@ -108,7 +108,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
-    DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
+    Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, existingDomain);
     verifyHasPendingTransfer(existingDomain);
     verifyResourceOwnership(registrarId, existingDomain);
@@ -182,9 +182,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
             .build();
     // Construct the post-transfer domain.
-    DomainBase partiallyApprovedDomain =
+    Domain partiallyApprovedDomain =
         approvePendingTransfer(existingDomain, TransferStatus.CLIENT_APPROVED, now);
-    DomainBase newDomain =
+    Domain newDomain =
         partiallyApprovedDomain
             .asBuilder()
             // Update the transferredRegistrationExpirationTime here since approvePendingTransfer()
@@ -238,7 +238,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
   }
 
   private DomainHistory buildDomainHistory(
-      DomainBase newDomain, Registry registry, DateTime now, String gainingRegistrarId) {
+      Domain newDomain, Registry registry, DateTime now, String gainingRegistrarId) {
     ImmutableSet<DomainTransactionRecord> cancelingRecords =
         createCancelingRecords(
             newDomain,

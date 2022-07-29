@@ -19,7 +19,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByKey;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -27,13 +26,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PendingActionNotificationResponse.HostPendingActionNotificationResponse;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.testing.DatabaseHelper;
 import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link PollMessage}. */
 public class PollMessageTest extends EntityTestCase {
 
-  private DomainBase domain;
+  private Domain domain;
   private HistoryEntry historyEntry;
   private PollMessage.OneTime oneTime;
   private PollMessage.Autorenew autoRenew;
@@ -54,7 +54,7 @@ public class PollMessageTest extends EntityTestCase {
   void setUp() {
     createTld("foobar");
     ContactResource contact = persistActiveContact("contact1234");
-    domain = persistResource(newDomainBase("foo.foobar", contact));
+    domain = persistResource(DatabaseHelper.newDomain("foo.foobar", contact));
     historyEntry =
         persistResource(
             new DomainHistory.Builder()

@@ -48,7 +48,7 @@ import google.registry.model.EppResource;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
@@ -75,10 +75,10 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   @Entity
   public static class ForeignKeyContactIndex extends ForeignKeyIndex<ContactResource> {}
 
-  /** The {@link ForeignKeyIndex} type for {@link DomainBase} entities. */
+  /** The {@link ForeignKeyIndex} type for {@link Domain} entities. */
   @ReportedOn
   @Entity
-  public static class ForeignKeyDomainIndex extends ForeignKeyIndex<DomainBase> {}
+  public static class ForeignKeyDomainIndex extends ForeignKeyIndex<Domain> {}
 
   /** The {@link ForeignKeyIndex} type for {@link HostResource} entities. */
   @ReportedOn
@@ -90,14 +90,14 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
       RESOURCE_CLASS_TO_FKI_CLASS =
           ImmutableBiMap.of(
               ContactResource.class, ForeignKeyContactIndex.class,
-              DomainBase.class, ForeignKeyDomainIndex.class,
+              Domain.class, ForeignKeyDomainIndex.class,
               HostResource.class, ForeignKeyHostIndex.class);
 
   private static final ImmutableMap<Class<? extends EppResource>, String>
       RESOURCE_CLASS_TO_FKI_PROPERTY =
           ImmutableMap.of(
               ContactResource.class, "contactId",
-              DomainBase.class, "fullyQualifiedDomainName",
+              Domain.class, "fullyQualifiedDomainName",
               HostResource.class, "fullyQualifiedHostName");
 
   @Id String foreignKey;

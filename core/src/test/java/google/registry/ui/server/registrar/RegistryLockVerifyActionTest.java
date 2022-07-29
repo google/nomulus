@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
@@ -35,7 +34,7 @@ import com.google.appengine.api.users.UserServiceFactory;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.host.HostResource;
@@ -82,7 +81,7 @@ final class RegistryLockVerifyActionTest {
       new DeterministicStringGenerator(Alphabets.BASE_58);
 
   private FakeResponse response;
-  private DomainBase domain;
+  private Domain domain;
   private AuthResult authResult;
   private RegistryLockVerifyAction action;
   private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(fakeClock);
@@ -91,7 +90,7 @@ final class RegistryLockVerifyActionTest {
   void beforeEach() {
     createTlds("tld", "net");
     HostResource host = persistActiveHost("ns1.example.net");
-    domain = persistResource(newDomainBase("example.tld", host));
+    domain = persistResource(DatabaseHelper.newDomain("example.tld", host));
     when(request.getRequestURI()).thenReturn("https://registry.example/registry-lock-verification");
     action = createAction(lockId, true);
   }
@@ -303,7 +302,7 @@ final class RegistryLockVerifyActionTest {
         .build();
   }
 
-  private DomainBase reloadDomain() {
+  private Domain reloadDomain() {
     return loadByEntity(domain);
   }
 

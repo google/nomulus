@@ -46,7 +46,7 @@ import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.rde.RdeMode;
@@ -83,7 +83,7 @@ import org.joda.time.Duration;
  * account for things like pending transfer.
  *
  * <p>Only {@link ContactResource}s and {@link HostResource}s that are referenced by an included
- * {@link DomainBase} will be included in the corresponding pending deposit.
+ * {@link Domain} will be included in the corresponding pending deposit.
  *
  * <p>{@link Registrar} entities, both active and inactive, are included in all deposits. They are
  * not rewinded point-in-time.

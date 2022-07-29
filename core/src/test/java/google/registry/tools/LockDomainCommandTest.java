@@ -17,7 +17,6 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIBITED;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -26,9 +25,10 @@ import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STAT
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.ArrayList;
@@ -54,7 +54,7 @@ class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
 
   @Test
   void testSuccess_locksDomain() throws Exception {
-    DomainBase domain = persistActiveDomain("example.tld");
+    Domain domain = persistActiveDomain("example.tld");
     runCommandForced("--client=TheRegistrar", "example.tld");
     assertThat(reloadResource(domain).getStatusValues())
         .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
@@ -62,9 +62,9 @@ class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
 
   @Test
   void testSuccess_partiallyUpdatesStatuses() throws Exception {
-    DomainBase domain =
+    Domain domain =
         persistResource(
-            newDomainBase("example.tld")
+            DatabaseHelper.newDomain("example.tld")
                 .asBuilder()
                 .addStatusValue(SERVER_TRANSFER_PROHIBITED)
                 .build());
@@ -77,7 +77,7 @@ class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   void testSuccess_manyDomains() throws Exception {
     // Create 26 domains -- one more than the number of entity groups allowed in a transaction (in
     // case that was going to be the failure point).
-    List<DomainBase> domains = new ArrayList<>();
+    List<Domain> domains = new ArrayList<>();
     for (int n = 0; n < 26; n++) {
       String domain = String.format("domain%d.tld", n);
       domains.add(persistActiveDomain(domain));
@@ -85,9 +85,9 @@ class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
     runCommandForced(
         ImmutableList.<String>builder()
             .add("--client=TheRegistrar")
-            .addAll(domains.stream().map(DomainBase::getDomainName).collect(Collectors.toList()))
+            .addAll(domains.stream().map(Domain::getDomainName).collect(Collectors.toList()))
             .build());
-    for (DomainBase domain : domains) {
+    for (Domain domain : domains) {
       assertThat(reloadResource(domain).getStatusValues())
           .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
     }
@@ -101,9 +101,9 @@ class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
 
   @Test
   void testSuccess_alreadyLockedDomain_performsNoAction() throws Exception {
-    DomainBase domain =
+    Domain domain =
         persistResource(
-            newDomainBase("example.tld")
+            DatabaseHelper.newDomain("example.tld")
                 .asBuilder()
                 .addStatusValues(REGISTRY_LOCK_STATUSES)
                 .build());
@@ -113,7 +113,7 @@ class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
 
   @Test
   void testSuccess_defaultsToAdminRegistrar_ifUnspecified() throws Exception {
-    DomainBase domain = persistActiveDomain("example.tld");
+    Domain domain = persistActiveDomain("example.tld");
     runCommandForced("example.tld");
     assertThat(getMostRecentRegistryLockByRepoId(domain.getRepoId()).get().getRegistrarId())
         .isEqualTo("adminreg");

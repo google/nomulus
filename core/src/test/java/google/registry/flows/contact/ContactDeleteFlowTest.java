@@ -22,7 +22,6 @@ import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.newContactResource;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistContactWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistDeletedContact;
@@ -51,6 +50,7 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.DatabaseHelper;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -205,7 +205,8 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
   @Test
   void testFailure_failfastWhenLinkedToDomain() throws Exception {
     createTld("tld");
-    persistResource(newDomainBase("example.tld", persistActiveContact(getUniqueIdFromCommand())));
+    persistResource(
+        DatabaseHelper.newDomain("example.tld", persistActiveContact(getUniqueIdFromCommand())));
     EppException thrown = assertThrows(ResourceToDeleteIsReferencedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }

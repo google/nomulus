@@ -40,7 +40,6 @@ FROM (
     SPLIT(cost, ' ')[OFFSET(1)] AS amount,
     -- Extract everything after the first dot in the domain as the TLD
     REGEXP_EXTRACT(targetId, r'[.](.+)') AS tld,
-    -- __key__.path looks like '"DomainBase", "<repoId>", ...'
     REGEXP_REPLACE(SPLIT(__key__.path, ', ')[OFFSET(1)], '"', '')
         AS domainRepoId,
     COALESCE(cancellationMatchingBillingEvent.path,

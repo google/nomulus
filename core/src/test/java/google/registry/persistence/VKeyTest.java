@@ -15,7 +15,7 @@ package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -23,7 +23,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.common.ClassPathManager;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.testing.AppEngineExtension;
@@ -127,10 +127,10 @@ class VKeyTest {
     // Creating an objectify key instead of a datastore key as this should get a correctly formatted
     // key path.  We have to one of our actual model object classes for this, TestObject can not be
     // reconstructed by the VKeyTranslatorFactory.
-    DomainBase domain = newDomainBase("example.com", "ROID-1", persistActiveContact("contact-1"));
-    Key<DomainBase> key = Key.create(domain);
-    VKey<DomainBase> vkey = VKey.fromWebsafeKey(key.getString());
-    assertThat(vkey.getKind()).isEqualTo(DomainBase.class);
+    Domain domain = newDomain("example.com", "ROID-1", persistActiveContact("contact-1"));
+    Key<Domain> key = Key.create(domain);
+    VKey<Domain> vkey = VKey.fromWebsafeKey(key.getString());
+    assertThat(vkey.getKind()).isEqualTo(Domain.class);
     assertThat(vkey.getOfyKey()).isEqualTo(key);
     assertThat(vkey.getSqlKey()).isEqualTo("ROID-1");
   }
@@ -150,14 +150,12 @@ class VKeyTest {
 
   @Test
   void testStringify_vkeyFromWebsafeKey() {
-    DomainBase domain = newDomainBase("example.com", "ROID-1", persistActiveContact("contact-1"));
-    Key<DomainBase> key = Key.create(domain);
-    VKey<DomainBase> vkey = VKey.fromWebsafeKey(key.getString());
+    Domain domain = newDomain("example.com", "ROID-1", persistActiveContact("contact-1"));
+    Key<Domain> key = Key.create(domain);
+    VKey<Domain> vkey = VKey.fromWebsafeKey(key.getString());
     assertThat(vkey.stringify())
         .isEqualTo(
-            "kind:DomainBase"
-                + "@sql:rO0ABXQABlJPSUQtMQ"
-                + "@ofy:agR0ZXN0chYLEgpEb21haW5CYXNlIgZST0lELTEM");
+            "kind:Domain" + "@sql:rO0ABXQABlJPSUQtMQ" + "@ofy:agR0ZXN0chILEgZEb21haW4iBlJPSUQtMQw");
   }
 
   @Test
@@ -236,19 +234,18 @@ class VKeyTest {
   void testCreate_stringifyVkey_fromWebsafeKey() {
     assertThat(
             VKey.create(
-                "kind:DomainBase@sql:rO0ABXQABlJPSUQtMQ"
+                "kind:Domain@sql:rO0ABXQABlJPSUQtMQ"
                     + "@ofy:agR0ZXN0chYLEgpEb21haW5CYXNlIgZST0lELTEM"))
         .isEqualTo(
             VKey.fromWebsafeKey(
-                Key.create(
-                        newDomainBase("example.com", "ROID-1", persistActiveContact("contact-1")))
+                Key.create(newDomain("example.com", "ROID-1", persistActiveContact("contact-1")))
                     .getString()));
   }
 
   @Test
   void testCreate_stringifedVKey_websafeKey() {
-    assertThat(VKey.create("agR0ZXN0chYLEgpEb21haW5CYXNlIgZST0lELTEM"))
-        .isEqualTo(VKey.fromWebsafeKey("agR0ZXN0chYLEgpEb21haW5CYXNlIgZST0lELTEM"));
+    assertThat(VKey.create("agR0ZXN0chkLEgZEb21haW4iDUdBU0RHSDQyMkQtSUQM"))
+        .isEqualTo(VKey.fromWebsafeKey("agR0ZXN0chkLEgZEb21haW4iDUdBU0RHSDQyMkQtSUQM"));
   }
 
   @Test
@@ -286,7 +283,7 @@ class VKeyTest {
   @Test
   void testCreate_createFromExistingOfyKey_success() {
     String keyString =
-        Key.create(newDomainBase("example.com", "ROID-1", persistActiveContact("contact-1")))
+        Key.create(newDomain("example.com", "ROID-1", persistActiveContact("contact-1")))
             .getString();
     assertThat(VKey.fromWebsafeKey(keyString)).isEqualTo(VKey.create(keyString));
   }

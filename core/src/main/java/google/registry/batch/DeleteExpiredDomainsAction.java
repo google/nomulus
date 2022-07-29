@@ -32,7 +32,7 @@ import google.registry.flows.EppController;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.flows.StatelessRequestSessionMetadata;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
@@ -128,10 +128,10 @@ public class DeleteExpiredDomainsAction implements Runnable {
     logger.atInfo().log(
         "Deleting non-renewing domains with autorenew end times up through %s.", runTime);
 
-    ImmutableList<DomainBase> domainsToDelete =
+    ImmutableList<Domain> domainsToDelete =
         tm().transact(
                 () ->
-                    tm().createQueryComposer(DomainBase.class)
+                    tm().createQueryComposer(Domain.class)
                         .where("autorenewEndTime", Comparator.LTE, runTime)
                         .where("deletionTime", Comparator.EQ, END_OF_TIME)
                         .list());
@@ -145,10 +145,9 @@ public class DeleteExpiredDomainsAction implements Runnable {
         "Found %d domains to delete: %s.",
         domainsToDelete.size(),
         String.join(
-            ", ",
-            domainsToDelete.stream().map(DomainBase::getDomainName).collect(toImmutableList())));
+            ", ", domainsToDelete.stream().map(Domain::getDomainName).collect(toImmutableList())));
     int successes = 0;
-    for (DomainBase domain : domainsToDelete) {
+    for (Domain domain : domainsToDelete) {
       if (runDomainDeleteFlow(domain)) {
         successes++;
       }
@@ -163,7 +162,7 @@ public class DeleteExpiredDomainsAction implements Runnable {
   }
 
   /** Runs the actual domain delete flow and returns whether the deletion was successful. */
-  private boolean runDomainDeleteFlow(DomainBase domain) {
+  private boolean runDomainDeleteFlow(Domain domain) {
     logger.atInfo().log("Attempting to delete domain '%s'.", domain.getDomainName());
     // Create a new transaction that the flow's execution will be enlisted in that loads the domain
     // transactionally. This way we can ensure that nothing else has modified the domain in question
@@ -171,7 +170,7 @@ public class DeleteExpiredDomainsAction implements Runnable {
     Optional<EppOutput> eppOutput =
         tm().transact(
                 () -> {
-                  DomainBase transDomain = tm().loadByKey(domain.createVKey());
+                  Domain transDomain = tm().loadByKey(domain.createVKey());
                   if (!domain.getAutorenewEndTime().isPresent()
                       || domain.getAutorenewEndTime().get().isAfter(tm().getTransactionTime())) {
                     logger.atSevere().log(

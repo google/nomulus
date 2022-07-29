@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registrar.Registrar;
@@ -125,7 +125,7 @@ public class RelockDomainAction implements Runnable {
 
   private void relockDomain() {
     RegistryLock oldLock = null;
-    DomainBase domain;
+    Domain domain;
     try {
       oldLock =
           RegistryLockDao.getByRevisionId(oldUnlockRevisionId)
@@ -134,7 +134,7 @@ public class RelockDomainAction implements Runnable {
                       new IllegalArgumentException(
                           String.format("Unknown revision ID %d", oldUnlockRevisionId)));
       domain =
-          tm().loadByKey(VKey.create(DomainBase.class, oldLock.getRepoId()))
+          tm().loadByKey(VKey.create(Domain.class, oldLock.getRepoId()))
               .cloneProjectedAtTime(tm().getTransactionTime());
     } catch (Throwable t) {
       handleTransientFailure(Optional.ofNullable(oldLock), t);
@@ -180,7 +180,7 @@ public class RelockDomainAction implements Runnable {
     }
   }
 
-  private void verifyDomainAndLockState(RegistryLock oldLock, DomainBase domain) {
+  private void verifyDomainAndLockState(RegistryLock oldLock, Domain domain) {
     // Domain shouldn't be deleted or have a pending transfer/delete
     String domainName = domain.getDomainName();
     ImmutableSet<StatusValue> statusValues = domain.getStatusValues();

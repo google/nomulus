@@ -28,7 +28,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registrar.Registrar;
@@ -54,7 +54,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
       "For more information on Whois status codes, please visit https://icann.org/epp\r\n";
 
   /** Domain which was the target of this WHOIS command. */
-  private final DomainBase domain;
+  private final Domain domain;
 
   /** Whether the full WHOIS output is to be displayed. */
   private final boolean fullOutput;
@@ -62,9 +62,9 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
   /** When fullOutput is false, the text to display for the registrant's email fields. */
   private final String whoisRedactedEmailText;
 
- /** Creates new WHOIS domain response on the given domain. */
+  /** Creates new WHOIS domain response on the given domain. */
   DomainWhoisResponse(
-      DomainBase domain, boolean fullOutput, String whoisRedactedEmailText, DateTime timestamp) {
+      Domain domain, boolean fullOutput, String whoisRedactedEmailText, DateTime timestamp) {
     super(timestamp);
     this.domain = checkNotNull(domain, "domain");
     this.fullOutput = fullOutput;

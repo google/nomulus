@@ -20,7 +20,7 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
@@ -49,7 +49,7 @@ public class TransferDataTest {
   @BeforeEach
   void beforeEach() {
     Key<HistoryEntry> historyEntryKey =
-        Key.create(Key.create(DomainBase.class, "4-TLD"), HistoryEntry.class, 1356L);
+        Key.create(Key.create(Domain.class, "4-TLD"), HistoryEntry.class, 1356L);
     transferBillingEventKey =
         VKey.create(
             BillingEvent.OneTime.class,

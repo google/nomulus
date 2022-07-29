@@ -25,7 +25,7 @@ import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntr
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
@@ -39,7 +39,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
 
   @RegisterExtension final InjectExtension inject = new InjectExtension();
 
-  private DomainBase domain;
+  private Domain domain;
 
   @BeforeEach
   void beforeEach() {

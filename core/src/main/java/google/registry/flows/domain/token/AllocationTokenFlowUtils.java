@@ -26,7 +26,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -171,7 +171,7 @@ public class AllocationTokenFlowUtils {
 
   /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
   public Optional<AllocationToken> verifyAllocationTokenIfPresent(
-      DomainBase existingDomain,
+      Domain existingDomain,
       Registry registry,
       String registrarId,
       DateTime now,

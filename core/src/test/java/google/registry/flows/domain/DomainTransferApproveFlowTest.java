@@ -30,7 +30,7 @@ import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -54,8 +54,8 @@ import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.contact.ContactAuthInfo;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -83,7 +83,7 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainTransferApproveFlow}. */
 class DomainTransferApproveFlowTest
-    extends DomainTransferFlowTestCase<DomainTransferApproveFlow, DomainBase> {
+    extends DomainTransferFlowTestCase<DomainTransferApproveFlow, Domain> {
 
   @BeforeEach
   void beforeEach() {
@@ -110,7 +110,7 @@ class DomainTransferApproveFlowTest
     clock.advanceOneMilli();
   }
 
-  private void assertTransferApproved(DomainBase domain, DomainTransferData oldTransferData) {
+  private void assertTransferApproved(Domain domain, DomainTransferData oldTransferData) {
     assertAboutDomains()
         .that(domain)
         .hasCurrentSponsorRegistrarId("NewRegistrar")
@@ -643,7 +643,7 @@ class DomainTransferApproveFlowTest
 
   @Test
   void testSuccess_superuserExtension_transferPeriodZero_autorenewGraceActive() throws Exception {
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     VKey<Recurring> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to have auto-renewed just before the transfer request, so that it will have an
     // active autorenew grace period spanning the entire transfer window.

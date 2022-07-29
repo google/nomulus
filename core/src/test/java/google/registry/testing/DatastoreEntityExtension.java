@@ -16,6 +16,7 @@ package google.registry.testing;
 
 import google.registry.model.AppEngineEnvironment;
 import google.registry.model.annotations.DeleteAfterMigration;
+import google.registry.model.domain.DomainSqlTest;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -31,8 +32,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * <p>When used together with {@code JpaIntegrationWithCoverageExtension} or @{@code
  * TestPipelineExtension}, this extension must be registered first. For consistency's sake, it is
  * recommended that the field for this extension be annotated with
- * {@code @org.junit.jupiter.api.Order(value = 1)}. Please refer to {@link
- * google.registry.model.domain.DomainBaseSqlTest} for example, and to <a
+ * {@code @org.junit.jupiter.api.Order(value = 1)}. Please refer to {@link DomainSqlTest} for
+ * example, and to <a
  * href="https://junit.org/junit5/docs/current/user-guide/#extensions-registration-programmatic">
  * JUnit 5 User Guide</a> for details of extension ordering.
  *

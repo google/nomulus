@@ -175,10 +175,7 @@ enum google.registry.model.contact.PostalInfo$Type {
   INTERNATIONALIZED;
   LOCALIZED;
 }
-class google.registry.model.domain.DomainAuthInfo {
-  google.registry.model.eppcommon.AuthInfo$PasswordAuth pw;
-}
-class google.registry.model.domain.DomainBase {
+class google.registry.model.domain.Domain {
   @Id java.lang.String repoId;
   google.registry.model.domain.DomainAuthInfo authInfo;
   google.registry.model.domain.launch.LaunchNotice launchNotice;
@@ -207,6 +204,9 @@ class google.registry.model.domain.DomainBase {
   org.joda.time.DateTime lastEppUpdateTime;
   org.joda.time.DateTime lastTransferTime;
   org.joda.time.DateTime registrationExpirationTime;
+}
+class google.registry.model.domain.DomainAuthInfo {
+  google.registry.model.eppcommon.AuthInfo$PasswordAuth pw;
 }
 class google.registry.model.domain.DomainContent {
   @Id java.lang.String repoId;
@@ -376,7 +376,7 @@ class google.registry.model.eppcommon.Trid {
 }
 class google.registry.model.host.HostBase {
   @Id java.lang.String repoId;
-  google.registry.persistence.VKey<google.registry.model.domain.DomainBase> superordinateDomain;
+  google.registry.persistence.VKey<google.registry.model.domain.Domain> superordinateDomain;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
   java.lang.String fullyQualifiedHostName;
@@ -406,7 +406,7 @@ class google.registry.model.host.HostHistory {
 }
 class google.registry.model.host.HostResource {
   @Id java.lang.String repoId;
-  google.registry.persistence.VKey<google.registry.model.domain.DomainBase> superordinateDomain;
+  google.registry.persistence.VKey<google.registry.model.domain.Domain> superordinateDomain;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
   java.lang.String fullyQualifiedHostName;

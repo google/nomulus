@@ -22,7 +22,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.SimpleSubjectBuilder;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo;
@@ -30,90 +30,89 @@ import google.registry.testing.TruthChainer.And;
 import java.util.Set;
 import org.joda.time.DateTime;
 
-/** Truth subject for asserting things about {@link DomainBase} instances. */
-public final class DomainBaseSubject
-    extends AbstractEppResourceSubject<DomainBase, DomainBaseSubject> {
+/** Truth subject for asserting things about {@link Domain} instances. */
+public final class DomainSubject extends AbstractEppResourceSubject<Domain, DomainSubject> {
 
-  private final DomainBase actual;
+  private final Domain actual;
 
-  public DomainBaseSubject(FailureMetadata failureMetadata, DomainBase subject) {
+  public DomainSubject(FailureMetadata failureMetadata, Domain subject) {
     super(failureMetadata, checkNotNull(subject));
     this.actual = subject;
   }
 
-  public And<DomainBaseSubject> hasFullyQualifiedDomainName(String fullyQualifiedDomainName) {
+  public And<DomainSubject> hasFullyQualifiedDomainName(String fullyQualifiedDomainName) {
     return hasValue(
         fullyQualifiedDomainName, actual.getDomainName(), "has fullyQualifiedDomainName");
   }
 
-  public And<DomainBaseSubject> hasExactlyDsData(DelegationSignerData... dsData) {
+  public And<DomainSubject> hasExactlyDsData(DelegationSignerData... dsData) {
     return hasExactlyDsData(ImmutableSet.copyOf(dsData));
   }
 
-  public And<DomainBaseSubject> hasExactlyDsData(Set<DelegationSignerData> dsData) {
+  public And<DomainSubject> hasExactlyDsData(Set<DelegationSignerData> dsData) {
     return hasValue(dsData, actual.getDsData(), "has dsData");
   }
 
-  public And<DomainBaseSubject> hasNumDsData(int num) {
+  public And<DomainSubject> hasNumDsData(int num) {
     return hasValue(num, actual.getDsData().size(), "has num dsData");
   }
 
-  public And<DomainBaseSubject> hasLaunchNotice(LaunchNotice launchNotice) {
+  public And<DomainSubject> hasLaunchNotice(LaunchNotice launchNotice) {
     return hasValue(launchNotice, actual.getLaunchNotice(), "has launchNotice");
   }
 
-  public And<DomainBaseSubject> hasAuthInfoPwd(String pw) {
+  public And<DomainSubject> hasAuthInfoPwd(String pw) {
     AuthInfo authInfo = actual.getAuthInfo();
     return hasValue(pw, authInfo == null ? null : authInfo.getPw().getValue(), "has auth info pw");
   }
 
-  public And<DomainBaseSubject> hasCurrentSponsorRegistrarId(String registrarId) {
+  public And<DomainSubject> hasCurrentSponsorRegistrarId(String registrarId) {
     return hasValue(
         registrarId, actual.getCurrentSponsorRegistrarId(), "has currentSponsorRegistrarId");
   }
 
-  public And<DomainBaseSubject> hasRegistrationExpirationTime(DateTime expiration) {
+  public And<DomainSubject> hasRegistrationExpirationTime(DateTime expiration) {
     return hasValue(
         expiration, actual.getRegistrationExpirationTime(), "getRegistrationExpirationTime()");
   }
 
-  public And<DomainBaseSubject> hasLastTransferTime(DateTime lastTransferTime) {
+  public And<DomainSubject> hasLastTransferTime(DateTime lastTransferTime) {
     return hasValue(lastTransferTime, actual.getLastTransferTime(), "getLastTransferTime()");
   }
 
-  public And<DomainBaseSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
+  public And<DomainSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
     return doesNotHaveValue(
         lastTransferTime, actual.getLastTransferTime(), "getLastTransferTime()");
   }
 
-  public And<DomainBaseSubject> hasDeletePollMessage() {
+  public And<DomainSubject> hasDeletePollMessage() {
     if (actual.getDeletePollMessage() == null) {
       failWithActual(simpleFact("expected to have a delete poll message"));
     }
     return andChainer();
   }
 
-  public And<DomainBaseSubject> hasNoDeletePollMessage() {
+  public And<DomainSubject> hasNoDeletePollMessage() {
     if (actual.getDeletePollMessage() != null) {
       failWithActual(simpleFact("expected to have no delete poll message"));
     }
     return andChainer();
   }
 
-  public And<DomainBaseSubject> hasSmdId(String smdId) {
+  public And<DomainSubject> hasSmdId(String smdId) {
     return hasValue(smdId, actual.getSmdId(), "getSmdId()");
   }
 
-  public And<DomainBaseSubject> hasAutorenewEndTime(DateTime autorenewEndTime) {
+  public And<DomainSubject> hasAutorenewEndTime(DateTime autorenewEndTime) {
     checkArgumentNotNull(autorenewEndTime, "Use hasNoAutorenewEndTime() instead");
     return hasValue(autorenewEndTime, actual.getAutorenewEndTime(), "getAutorenewEndTime()");
   }
 
-  public And<DomainBaseSubject> hasNoAutorenewEndTime() {
+  public And<DomainSubject> hasNoAutorenewEndTime() {
     return hasNoValue(actual.getAutorenewEndTime(), "getAutorenewEndTime()");
   }
 
-  public static SimpleSubjectBuilder<DomainBaseSubject, DomainBase> assertAboutDomains() {
-    return assertAbout(DomainBaseSubject::new);
+  public static SimpleSubjectBuilder<DomainSubject, Domain> assertAboutDomains() {
+    return assertAbout(DomainSubject::new);
   }
 }

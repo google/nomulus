@@ -25,7 +25,7 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.EntityGroupRoot;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.BillingVKey.BillingEventVKey;
 import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
@@ -47,7 +47,7 @@ class BillingVKeyTest {
   @Test
   void testRestoreSymmetricVKey() {
     Key<HistoryEntry> domainHistoryKey =
-        Key.create(Key.create(DomainBase.class, "domainRepoId"), HistoryEntry.class, 10L);
+        Key.create(Key.create(Domain.class, "domainRepoId"), HistoryEntry.class, 10L);
 
     Key<BillingEvent.OneTime> oneTimeOfyKey =
         Key.create(domainHistoryKey, BillingEvent.OneTime.class, 100L);

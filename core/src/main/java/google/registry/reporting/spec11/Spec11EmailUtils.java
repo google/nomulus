@@ -31,7 +31,7 @@ import com.google.template.soy.tofu.SoyTofu;
 import com.google.template.soy.tofu.SoyTofu.Renderer;
 import google.registry.beam.spec11.ThreatMatch;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
@@ -136,13 +136,13 @@ public class Spec11EmailUtils {
                       .filter(
                           threatMatch ->
                               tm()
-                                  .createQueryComposer(DomainBase.class)
+                                  .createQueryComposer(Domain.class)
                                   .where(
                                       "fullyQualifiedDomainName",
                                       Comparator.EQ,
                                       threatMatch.fullyQualifiedDomainName())
                                   .stream()
-                                  .anyMatch(DomainBase::shouldPublishToDns))
+                                  .anyMatch(Domain::shouldPublishToDns))
                       .collect(toImmutableList());
                 });
     return RegistrarThreatMatches.create(registrarThreatMatches.clientId(), filteredMatches);

@@ -19,7 +19,6 @@ import static google.registry.model.ImmutableObjectSubject.immutableObjectCorres
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.HostResourceSubject.assertAboutHosts;
@@ -30,11 +29,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.model.EntityTestCase;
 import google.registry.model.ImmutableObjectSubject;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.DatabaseHelper;
 import google.registry.util.SerializeUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +47,7 @@ class HostResourceTest extends EntityTestCase {
   private final DateTime day2 = day3.minusDays(1);
   private final DateTime day1 = day2.minusDays(1);
 
-  private DomainBase domain;
+  private Domain domain;
   private HostResource host;
 
   @BeforeEach
@@ -57,7 +57,7 @@ class HostResourceTest extends EntityTestCase {
     // Set up a new persisted registrar entity.
     domain =
         persistResource(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setRepoId("1-COM")
                 .setTransferData(

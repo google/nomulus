@@ -38,7 +38,7 @@ import static google.registry.testing.DatabaseHelper.loadByKeys;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.HostResourceSubject.assertAboutHosts;
@@ -84,8 +84,8 @@ import google.registry.flows.exceptions.TransferPeriodZeroAndFeeTransferExtensio
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactAuthInfo;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -117,7 +117,7 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainTransferRequestFlow}. */
 class DomainTransferRequestFlowTest
-    extends DomainTransferFlowTestCase<DomainTransferRequestFlow, DomainBase> {
+    extends DomainTransferFlowTestCase<DomainTransferRequestFlow, Domain> {
 
   private static final ImmutableMap<String, String> BASE_FEE_MAP =
       new ImmutableMap.Builder<String, String>()
@@ -161,7 +161,7 @@ class DomainTransferRequestFlowTest
   }
 
   private void assertTransferRequested(
-      DomainBase domain,
+      Domain domain,
       DateTime automaticTransferTime,
       Period expectedPeriod,
       DateTime expectedExpirationTime)
@@ -201,8 +201,7 @@ class DomainTransferRequestFlowTest
   }
 
   private void assertTransferApproved(
-      DomainBase domain, DateTime automaticTransferTime, Period expectedPeriod)
-      throws Exception {
+      Domain domain, DateTime automaticTransferTime, Period expectedPeriod) throws Exception {
     assertAboutDomains()
         .that(domain)
         .hasCurrentSponsorRegistrarId("NewRegistrar")
@@ -320,7 +319,7 @@ class DomainTransferRequestFlowTest
     assertThat(domain.getGracePeriods()).containsExactlyElementsIn(originalGracePeriods);
     // If we fast forward AUTOMATIC_TRANSFER_DAYS, the transfer should have cleared out all other
     // grace periods, but expect a transfer grace period (if there was a transfer billing event).
-    DomainBase domainAfterAutomaticTransfer = domain.cloneProjectedAtTime(implicitTransferTime);
+    Domain domainAfterAutomaticTransfer = domain.cloneProjectedAtTime(implicitTransferTime);
     if (expectTransferBillingEvent) {
       assertGracePeriods(
           domainAfterAutomaticTransfer.getGracePeriods(),
@@ -424,7 +423,7 @@ class DomainTransferRequestFlowTest
       DateTime expectedExpirationTime, DateTime implicitTransferTime, Period expectedPeriod)
       throws Exception {
     Registry registry = Registry.get(domain.getTld());
-    DomainBase domainAfterAutomaticTransfer = domain.cloneProjectedAtTime(implicitTransferTime);
+    Domain domainAfterAutomaticTransfer = domain.cloneProjectedAtTime(implicitTransferTime);
     assertTransferApproved(domainAfterAutomaticTransfer, implicitTransferTime, expectedPeriod);
     assertAboutDomains()
         .that(domainAfterAutomaticTransfer)
@@ -436,7 +435,7 @@ class DomainTransferRequestFlowTest
     assertThat(loadByKey(domainAfterAutomaticTransfer.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(expectedExpirationTime);
     // And after the expected grace time, the grace period should be gone.
-    DomainBase afterGracePeriod =
+    Domain afterGracePeriod =
         domain.cloneProjectedAtTime(
             clock
                 .nowUtc()
@@ -575,7 +574,7 @@ class DomainTransferRequestFlowTest
     if (expectedAutomaticTransferLength.equals(Duration.ZERO)) {
       // The transfer is going to happen immediately. To observe the domain in the pending transfer
       // state, grab it directly from the database.
-      domain = Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(DomainBase.class)));
+      domain = Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(Domain.class)));
       assertThat(domain.getDomainName()).isEqualTo("example.tld");
     } else {
       // Transfer should have been requested.

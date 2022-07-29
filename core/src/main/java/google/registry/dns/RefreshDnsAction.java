@@ -20,7 +20,7 @@ import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.request.Action;
 import google.registry.request.HttpException.BadRequestException;
@@ -62,7 +62,7 @@ public final class RefreshDnsAction implements Runnable {
     }
     switch (type) {
       case DOMAIN:
-        loadAndVerifyExistence(DomainBase.class, domainOrHostName);
+        loadAndVerifyExistence(Domain.class, domainOrHostName);
         dnsQueue.addDomainRefreshTask(domainOrHostName);
         break;
       case HOST:

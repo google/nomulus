@@ -18,7 +18,7 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 
 import com.google.common.net.InternetDomainName;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -42,10 +42,10 @@ public class DomainLookupCommand extends DomainOrHostLookupCommand {
 
   @Override
   protected Optional<WhoisResponse> getResponse(InternetDomainName domainName, DateTime now) {
-    Optional<DomainBase> domainResource =
+    Optional<Domain> domainResource =
         cached
-            ? loadByForeignKeyCached(DomainBase.class, domainName.toString(), now)
-            : loadByForeignKey(DomainBase.class, domainName.toString(), now);
+            ? loadByForeignKeyCached(Domain.class, domainName.toString(), now)
+            : loadByForeignKey(Domain.class, domainName.toString(), now);
     return domainResource.map(
         domain -> new DomainWhoisResponse(domain, fullOutput, whoisRedactedEmailText, now));
   }

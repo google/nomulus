@@ -52,7 +52,7 @@ import google.registry.flows.exceptions.InvalidTransferPeriodValueException;
 import google.registry.flows.exceptions.ObjectAlreadySponsoredException;
 import google.registry.flows.exceptions.TransferPeriodMustBeOneYearException;
 import google.registry.flows.exceptions.TransferPeriodZeroAndFeeTransferExtensionException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Transfer;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
@@ -149,7 +149,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     verifyRegistrarIsActive(gainingClientId);
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
-    DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
+    Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     Optional<DomainTransferRequestSuperuserExtension> superuserExtension =
         eppInput.getSingleExtension(DomainTransferRequestSuperuserExtension.class);
     Period period =
@@ -190,7 +190,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     //
     // See b/19430703#comment17 and https://www.icann.org/news/advisory-2002-06-06-en for the
     // policy documentation for transfers subsuming autorenews within the autorenew grace period.
-    DomainBase domainAtTransferTime = existingDomain.cloneProjectedAtTime(automaticTransferTime);
+    Domain domainAtTransferTime = existingDomain.cloneProjectedAtTime(automaticTransferTime);
     // The new expiration time if there is a server approval.
     DateTime serverApproveNewExpirationTime =
         computeExDateForApprovalTime(domainAtTransferTime, automaticTransferTime, period);
@@ -231,7 +231,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     // cloneProjectedAtTime() will replace these old autorenew entities with the server approve ones
     // that we've created in this flow and stored in pendingTransferData.
     updateAutorenewRecurrenceEndTime(existingDomain, automaticTransferTime);
-    DomainBase newDomain =
+    Domain newDomain =
         existingDomain
             .asBuilder()
             .setTransferData(pendingTransferData)
@@ -255,7 +255,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   }
 
   private void verifyTransferAllowed(
-      DomainBase existingDomain,
+      Domain existingDomain,
       Period period,
       DateTime now,
       Optional<DomainTransferRequestSuperuserExtension> superuserExtension)
@@ -320,7 +320,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   }
 
   private DomainHistory buildDomainHistory(
-      DomainBase newDomain, Registry registry, DateTime now, Period period) {
+      Domain newDomain, Registry registry, DateTime now, Period period) {
     return historyBuilder
         .setType(DOMAIN_TRANSFER_REQUEST)
         .setPeriod(period)
@@ -337,7 +337,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   }
 
   private DomainTransferResponse createResponse(
-      Period period, DomainBase existingDomain, DomainBase newDomain, DateTime now) {
+      Period period, Domain existingDomain, Domain newDomain, DateTime now) {
     // If the registration were approved this instant, this is what the new expiration would be,
     // because we cap at 10 years from the moment of approval. This is different than the server
     // approval new expiration time, which is capped at 10 years from the server approve time.

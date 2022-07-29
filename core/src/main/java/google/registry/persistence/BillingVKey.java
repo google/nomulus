@@ -19,7 +19,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.reporting.HistoryEntry;
 import java.io.Serializable;
 import javax.annotation.Nullable;
@@ -31,7 +31,7 @@ import javax.persistence.MappedSuperclass;
 
 /** Base class for {@link BillingEvent}'s {@link VKey}. */
 @MappedSuperclass
-public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
+public abstract class BillingVKey<K> extends EppHistoryVKey<K, Domain> {
   Long billingId;
 
   // Hibernate requires a default constructor.
@@ -43,7 +43,7 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
   }
 
   Key<HistoryEntry> createHistoryEntryKey() {
-    return Key.create(Key.create(DomainBase.class, repoId), HistoryEntry.class, historyRevisionId);
+    return Key.create(Key.create(Domain.class, repoId), HistoryEntry.class, historyRevisionId);
   }
 
   @Override
@@ -51,7 +51,7 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
     return billingId;
   }
 
-  /** VKey class for {@link BillingEvent.OneTime} that belongs to a {@link DomainBase} entity. */
+  /** VKey class for {@link BillingEvent.OneTime} that belongs to a {@link Domain} entity. */
   @Embeddable
   @AttributeOverrides({
     @AttributeOverride(name = "repoId", column = @Column(name = "billing_event_domain_repo_id")),
@@ -86,7 +86,7 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
     }
   }
 
-  /** VKey class for {@link BillingEvent.Recurring} that belongs to a {@link DomainBase} entity. */
+  /** VKey class for {@link BillingEvent.Recurring} that belongs to a {@link Domain} entity. */
   @Embeddable
   @AttributeOverrides({
     @AttributeOverride(

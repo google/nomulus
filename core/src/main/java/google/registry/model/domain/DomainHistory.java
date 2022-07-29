@@ -80,7 +80,7 @@ import org.hibernate.Hibernate;
 @IdClass(DomainHistoryId.class)
 public class DomainHistory extends HistoryEntry {
 
-  // Store DomainContent instead of DomainBase so we don't pick up its @Id
+  // Store DomainContent instead of Domain so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
   @DoNotCompare @Nullable DomainContent domainContent;
 
@@ -95,7 +95,7 @@ public class DomainHistory extends HistoryEntry {
   /** This method is private because it is only used by Hibernate. */
   @SuppressWarnings("unused")
   private void setDomainRepoId(String domainRepoId) {
-    parent = Key.create(DomainBase.class, domainRepoId);
+    parent = Key.create(Domain.class, domainRepoId);
   }
 
   // We could have reused domainContent.nsHosts here, but Hibernate throws a weird exception after
@@ -241,9 +241,9 @@ public class DomainHistory extends HistoryEntry {
     return Optional.ofNullable(domainContent);
   }
 
-  /** The key to the {@link DomainBase} this is based off of. */
-  public VKey<DomainBase> getParentVKey() {
-    return VKey.create(DomainBase.class, getDomainRepoId());
+  /** The key to the {@link Domain} this is based off of. */
+  public VKey<Domain> getParentVKey() {
+    return VKey.create(Domain.class, getDomainRepoId());
   }
 
   public Set<GracePeriodHistory> getGracePeriodHistories() {
@@ -260,7 +260,7 @@ public class DomainHistory extends HistoryEntry {
   @Override
   public Optional<? extends EppResource> getResourceAtPointInTime() {
     return getDomainContent()
-        .map(domainContent -> new DomainBase.Builder().copyFrom(domainContent).build());
+        .map(domainContent -> new Domain.Builder().copyFrom(domainContent).build());
   }
 
   @PostLoad
@@ -377,20 +377,20 @@ public class DomainHistory extends HistoryEntry {
       if (domainContent == null) {
         return this;
       }
-      // TODO(b/203609982): if actual type of domainContent is DomainBase, convert to DomainContent
-      // Note: a DomainHistory fetched by JPA has DomainContent in this field. Allowing DomainBase
+      // TODO(b/203609982): if actual type of domainContent is Domain, convert to DomainContent
+      // Note: a DomainHistory fetched by JPA has DomainContent in this field. Allowing Domain
       // in the setter makes equality checks messy.
       getInstance().domainContent = domainContent;
-      if (domainContent instanceof DomainBase) {
+      if (domainContent instanceof Domain) {
         super.setParent(domainContent);
       } else {
-        super.setParent(Key.create(DomainBase.class, domainContent.getRepoId()));
+        super.setParent(Key.create(Domain.class, domainContent.getRepoId()));
       }
       return this;
     }
 
     public Builder setDomainRepoId(String domainRepoId) {
-      getInstance().parent = Key.create(DomainBase.class, domainRepoId);
+      getInstance().parent = Key.create(Domain.class, domainRepoId);
       return this;
     }
 

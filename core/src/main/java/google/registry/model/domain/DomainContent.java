@@ -91,11 +91,6 @@ import org.joda.time.Interval;
  * foreign-keyed fields can refer to the proper parent entity's ID, whether we're storing this in
  * the DB itself or as part of another entity.
  *
- * <p>For historical reasons, the name of this class is "DomainContent". Ideally it would be
- * "DomainBase" for parallelism with the other {@link EppResource} entity classes, but because that
- * name is already taken by {@link DomainBase} (also for historical reasons), we can't use it. Once
- * we are no longer on Datastore, we can rename the classes.
- *
  * @see <a href="https://tools.ietf.org/html/rfc5731">RFC 5731</a>
  */
 @MappedSuperclass
@@ -293,7 +288,7 @@ public class DomainContent extends EppResource
     return Optional.ofNullable(dnsRefreshRequestTime);
   }
 
-  public static <T> VKey<T> restoreOfyFrom(Key<DomainBase> domainKey, VKey<T> key, Long historyId) {
+  public static <T> VKey<T> restoreOfyFrom(Key<Domain> domainKey, VKey<T> key, Long historyId) {
     if (historyId == null) {
       // This is a legacy key (or a null key, in which case this works too)
       return VKey.restoreOfyFrom(key, EntityGroupRoot.class, "per-tld");
@@ -706,10 +701,10 @@ public class DomainContent extends EppResource
   }
 
   @Override
-  public VKey<DomainBase> createVKey() {
+  public VKey<Domain> createVKey() {
     throw new UnsupportedOperationException(
         "DomainContent is not an actual persisted entity you can create a key to;"
-            + " use DomainBase instead");
+            + " use Domain instead");
   }
 
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */
@@ -722,7 +717,7 @@ public class DomainContent extends EppResource
     return new Builder<>(clone(this));
   }
 
-  /** A builder for constructing {@link DomainBase}, since it is immutable. */
+  /** A builder for constructing {@link Domain}, since it is immutable. */
   public static class Builder<T extends DomainContent, B extends Builder<T, B>>
       extends EppResource.Builder<T, B> implements BuilderWithTransferData<DomainTransferData, B> {
 
@@ -739,7 +734,7 @@ public class DomainContent extends EppResource
       if (DomainTransferData.EMPTY.equals(getInstance().transferData)) {
         setTransferData(null);
       }
-      // A DomainBase has status INACTIVE if there are no nameservers.
+      // A Domain has status INACTIVE if there are no nameservers.
       if (getInstance().getNameservers().isEmpty()) {
         addStatusValue(StatusValue.INACTIVE);
       } else { // There are nameservers, so make sure INACTIVE isn't there.

@@ -20,7 +20,7 @@ import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainUpdateFlow;
 import google.registry.model.ImmutableObject;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.reporting.HistoryEntry;
 
@@ -65,7 +65,7 @@ public class DomainUpdateFlowCustomLogic extends BaseFlowCustomLogic {
   @AutoValue
   public abstract static class AfterValidationParameters extends ImmutableObject {
 
-    public abstract DomainBase existingDomain();
+    public abstract Domain existingDomain();
 
     public static Builder newBuilder() {
       return new AutoValue_DomainUpdateFlowCustomLogic_AfterValidationParameters.Builder();
@@ -75,7 +75,7 @@ public class DomainUpdateFlowCustomLogic extends BaseFlowCustomLogic {
     @AutoValue.Builder
     public abstract static class Builder {
 
-      public abstract Builder setExistingDomain(DomainBase existingDomain);
+      public abstract Builder setExistingDomain(Domain existingDomain);
 
       public abstract AfterValidationParameters build();
     }
@@ -91,9 +91,9 @@ public class DomainUpdateFlowCustomLogic extends BaseFlowCustomLogic {
   @AutoValue
   public abstract static class BeforeSaveParameters extends ImmutableObject {
 
-    public abstract DomainBase existingDomain();
+    public abstract Domain existingDomain();
 
-    public abstract DomainBase newDomain();
+    public abstract Domain newDomain();
 
     public abstract HistoryEntry historyEntry();
 
@@ -107,9 +107,9 @@ public class DomainUpdateFlowCustomLogic extends BaseFlowCustomLogic {
     @AutoValue.Builder
     public abstract static class Builder {
 
-      public abstract Builder setExistingDomain(DomainBase existingDomain);
+      public abstract Builder setExistingDomain(Domain existingDomain);
 
-      public abstract Builder setNewDomain(DomainBase newDomain);
+      public abstract Builder setNewDomain(Domain newDomain);
 
       public abstract Builder setHistoryEntry(HistoryEntry historyEntry);
 

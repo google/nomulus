@@ -39,7 +39,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.TimeOfYear;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -199,9 +199,7 @@ public abstract class BillingEvent extends ImmutableObject
   void postLoad() {
     parent =
         Key.create(
-            Key.create(DomainBase.class, domainRepoId),
-            DomainHistory.class,
-            domainHistoryRevisionId);
+            Key.create(Domain.class, domainRepoId), DomainHistory.class, domainHistoryRevisionId);
   }
 
   public String getRegistrarId() {
@@ -436,10 +434,7 @@ public abstract class BillingEvent extends ImmutableObject
       if (cancellationMatchingBillingEvent != null) {
         cancellationMatchingBillingEvent =
             cancellationMatchingBillingEvent.restoreOfy(
-                DomainBase.class,
-                domainRepoId,
-                DomainHistory.class,
-                recurringEventHistoryRevisionId);
+                Domain.class, domainRepoId, DomainHistory.class, recurringEventHistoryRevisionId);
       }
     }
 

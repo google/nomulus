@@ -29,13 +29,13 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
-import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.TestDataHelper.updateSubstitutions;
@@ -79,7 +79,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -107,7 +107,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainRenewFlow}. */
-class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBase> {
+class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> {
 
   private static final ImmutableMap<String, String> FEE_BASE_MAP =
       ImmutableMap.of(
@@ -151,7 +151,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
       @Nullable Money renewalPrice,
       StatusValue... statusValues)
       throws Exception {
-    DomainBase domain = newDomainBase(getUniqueIdFromCommand());
+    Domain domain = DatabaseHelper.newDomain(getUniqueIdFromCommand());
     tm().transact(
             () -> {
               try {
@@ -183,7 +183,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
                         .setMsg("Domain was auto-renewed.")
                         .setHistoryEntry(historyEntryDomainCreate)
                         .build();
-                DomainBase newDomain =
+                Domain newDomain =
                     domain
                         .asBuilder()
                         .setRegistrationExpirationTime(expirationTime)
@@ -256,7 +256,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
     DateTime newExpiration = currentExpiration.plusYears(renewalYears);
     runFlowAssertResponse(
         CommitMode.LIVE, userPrivileges, loadFile(responseFilename, substitutions));
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     assertLastHistoryContainsResource(domain);
     DomainHistory historyEntryDomainRenew =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RENEW, DomainHistory.class);
@@ -742,7 +742,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
     setEppInput(
         "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistDomain();
-    DomainBase domain = persistActiveDomain("foo.tld");
+    Domain domain = persistActiveDomain("foo.tld");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 505L);
     persistResource(
         new AllocationToken.Builder()
@@ -858,7 +858,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             "false"));
     persistDomain();
     runFlow();
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     assertAboutDomains()
         .that(domain)
         .hasOneHistoryEntryEachOfTypes(
@@ -877,7 +877,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
 
     persistDomain();
     runFlow();
-    DomainBase domain1 = reloadResourceByForeignKey();
+    Domain domain1 = reloadResourceByForeignKey();
     assertAboutDomains()
         .that(domain1)
         .hasOneHistoryEntryEachOfTypes(
@@ -923,7 +923,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
   @Test
   void testFailure_pendingDelete() throws Exception {
     persistResource(
-        newDomainBase(getUniqueIdFromCommand())
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
             .setRegistrationExpirationTime(expirationTime)
             .setDeletionTime(clock.nowUtc().plusDays(1))
@@ -1185,7 +1185,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .setRenewGracePeriodLength(Duration.standardMinutes(9))
             .build());
     runFlow();
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RENEW);
     assertThat(historyEntry.getDomainTransactionRecords())
         .containsExactly(

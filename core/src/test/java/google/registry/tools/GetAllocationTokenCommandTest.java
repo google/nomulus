@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.reporting.HistoryEntry;
 import org.joda.time.DateTime;
@@ -76,8 +76,7 @@ class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocationTokenCo
   @Test
   void testSuccess_redeemedToken() throws Exception {
     createTld("tld");
-    DomainBase domain =
-        persistActiveDomain("fqqdn.tld", DateTime.parse("2016-04-07T22:19:17.044Z"));
+    Domain domain = persistActiveDomain("fqqdn.tld", DateTime.parse("2016-04-07T22:19:17.044Z"));
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()

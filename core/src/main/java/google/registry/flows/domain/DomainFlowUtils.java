@@ -25,7 +25,7 @@ import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
-import static google.registry.model.domain.DomainBase.MAX_REGISTRATION_YEARS;
+import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
 import static google.registry.model.tld.Registries.findTldForName;
 import static google.registry.model.tld.Registries.getTlds;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
@@ -82,7 +82,7 @@ import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Create;
 import google.registry.model.domain.DomainCommand.CreateOrUpdate;
 import google.registry.model.domain.DomainCommand.InvalidReferencesException;
@@ -553,7 +553,7 @@ public class DomainFlowUtils {
    * Fills in a builder with the data needed for an autorenew billing event for this domain. This
    * does not copy over the id of the current autorenew billing event.
    */
-  public static BillingEvent.Recurring.Builder newAutorenewBillingEvent(DomainBase domain) {
+  public static BillingEvent.Recurring.Builder newAutorenewBillingEvent(Domain domain) {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -566,7 +566,7 @@ public class DomainFlowUtils {
    * Fills in a builder with the data needed for an autorenew poll message for this domain. This
    * does not copy over the id of the current autorenew poll message.
    */
-  public static PollMessage.Autorenew.Builder newAutorenewPollMessage(DomainBase domain) {
+  public static PollMessage.Autorenew.Builder newAutorenewPollMessage(Domain domain) {
     return new PollMessage.Autorenew.Builder()
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
@@ -583,7 +583,7 @@ public class DomainFlowUtils {
    *
    * <p>Returns the new autorenew recurring billing event.
    */
-  public static Recurring updateAutorenewRecurrenceEndTime(DomainBase domain, DateTime newEndTime) {
+  public static Recurring updateAutorenewRecurrenceEndTime(Domain domain, DateTime newEndTime) {
     Optional<PollMessage.Autorenew> autorenewPollMessage =
         tm().loadByKeyIfPresent(domain.getAutorenewPollMessage());
 
@@ -628,7 +628,7 @@ public class DomainFlowUtils {
       FeeQueryCommandExtensionItem feeRequest,
       FeeQueryResponseExtensionItem.Builder<?, ?> builder,
       InternetDomainName domainName,
-      Optional<DomainBase> domain,
+      Optional<Domain> domain,
       @Nullable CurrencyUnit topLevelCurrency,
       DateTime currentDate,
       DomainPricingLogic pricingLogic,
@@ -878,7 +878,7 @@ public class DomainFlowUtils {
 
   /**
    * Check whether a new expiration time (via a renew) does not extend beyond a maximum number of
-   * years (e.g. {@link DomainBase#MAX_REGISTRATION_YEARS}) from "now".
+   * years (e.g. {@link Domain#MAX_REGISTRATION_YEARS}) from "now".
    *
    * @throws ExceedsMaxRegistrationYearsException if the new registration period is too long
    */
@@ -891,7 +891,7 @@ public class DomainFlowUtils {
 
   /**
    * Check that a new registration period (via a create) does not extend beyond a maximum number of
-   * years (e.g. {@link DomainBase#MAX_REGISTRATION_YEARS}).
+   * years (e.g. {@link Domain#MAX_REGISTRATION_YEARS}).
    *
    * @throws ExceedsMaxRegistrationYearsException if the new registration period is too long
    */
@@ -947,7 +947,7 @@ public class DomainFlowUtils {
   }
 
   /** If a domain "clientUpdateProhibited" set, updates must clear it or fail. */
-  static void verifyClientUpdateNotProhibited(Update command, DomainBase existingResource)
+  static void verifyClientUpdateNotProhibited(Update command, Domain existingResource)
       throws ResourceHasClientUpdateProhibitedException {
     if (existingResource.getStatusValues().contains(StatusValue.CLIENT_UPDATE_PROHIBITED)
         && !command
@@ -1120,13 +1120,13 @@ public class DomainFlowUtils {
    * the most recent HistoryEntry that fits the above criteria, with negated reportAmounts.
    */
   static ImmutableSet<DomainTransactionRecord> createCancelingRecords(
-      DomainBase domainBase,
+      Domain domain,
       final DateTime now,
       Duration maxSearchPeriod,
       final ImmutableSet<TransactionReportField> cancelableFields) {
 
     List<? extends HistoryEntry> recentHistoryEntries =
-        findRecentHistoryEntries(domainBase, now, maxSearchPeriod);
+        findRecentHistoryEntries(domain, now, maxSearchPeriod);
     Optional<? extends HistoryEntry> entryToCancel =
         Streams.findLast(
             recentHistoryEntries.stream()
@@ -1165,14 +1165,14 @@ public class DomainFlowUtils {
   }
 
   private static List<? extends HistoryEntry> findRecentHistoryEntries(
-      DomainBase domainBase, DateTime now, Duration maxSearchPeriod) {
+      Domain domain, DateTime now, Duration maxSearchPeriod) {
     return jpaTm()
         .query(
             "FROM DomainHistory WHERE modificationTime >= :beginning AND domainRepoId = "
                 + ":repoId ORDER BY modificationTime ASC",
             DomainHistory.class)
         .setParameter("beginning", now.minus(maxSearchPeriod))
-        .setParameter("repoId", domainBase.getRepoId())
+        .setParameter("repoId", domain.getRepoId())
         .getResultList();
   }
 

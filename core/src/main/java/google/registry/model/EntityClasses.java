@@ -21,7 +21,7 @@ import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.host.HostHistory;
@@ -50,7 +50,7 @@ public final class EntityClasses {
           BillingEvent.Recurring.class,
           ContactHistory.class,
           ContactResource.class,
-          DomainBase.class,
+          Domain.class,
           DomainHistory.class,
           EntityGroupRoot.class,
           EppResourceIndex.class,

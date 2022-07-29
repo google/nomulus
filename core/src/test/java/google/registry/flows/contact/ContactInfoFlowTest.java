@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.isDeleted;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -40,6 +39,7 @@ import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.testing.DatabaseHelper;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
@@ -121,7 +121,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
   @Test
   void testSuccess_linked() throws Exception {
     createTld("foobar");
-    persistResource(newDomainBase("example.foobar", persistContactResource(true)));
+    persistResource(DatabaseHelper.newDomain("example.foobar", persistContactResource(true)));
     // Check that the persisted contact info was returned.
     assertTransactionalFlow(false);
     runFlowAssertResponse(

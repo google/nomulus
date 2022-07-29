@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.StatusValue.SERVER_DELETE_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -28,10 +27,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.ArrayList;
@@ -55,8 +55,8 @@ class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
             new CloudTasksHelper(fakeClock).getTestCloudTasksUtils());
   }
 
-  private DomainBase persistLockedDomain(String domainName, String registrarId) {
-    DomainBase domain = persistResource(newDomainBase(domainName));
+  private Domain persistLockedDomain(String domainName, String registrarId) {
+    Domain domain = persistResource(DatabaseHelper.newDomain(domainName));
     RegistryLock lock =
         command.domainLockUtils.saveNewRegistryLockRequest(domainName, registrarId, null, true);
     command.domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true);
@@ -65,14 +65,14 @@ class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
 
   @Test
   void testSuccess_unlocksDomain() throws Exception {
-    DomainBase domain = persistLockedDomain("example.tld", "TheRegistrar");
+    Domain domain = persistLockedDomain("example.tld", "TheRegistrar");
     runCommandForced("--client=TheRegistrar", "example.tld");
     assertThat(reloadResource(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
   }
 
   @Test
   void testSuccess_partiallyUpdatesStatuses() throws Exception {
-    DomainBase domain = persistLockedDomain("example.tld", "TheRegistrar");
+    Domain domain = persistLockedDomain("example.tld", "TheRegistrar");
     domain =
         persistResource(
             domain
@@ -88,7 +88,7 @@ class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
   void testSuccess_manyDomains() throws Exception {
     // Create 26 domains -- one more than the number of entity groups allowed in a transaction (in
     // case that was going to be the failure point).
-    List<DomainBase> domains = new ArrayList<>();
+    List<Domain> domains = new ArrayList<>();
     for (int n = 0; n < 26; n++) {
       String domain = String.format("domain%d.tld", n);
       domains.add(persistLockedDomain(domain, "TheRegistrar"));
@@ -96,9 +96,9 @@ class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
     runCommandForced(
         ImmutableList.<String>builder()
             .add("--client=TheRegistrar")
-            .addAll(domains.stream().map(DomainBase::getDomainName).collect(Collectors.toList()))
+            .addAll(domains.stream().map(Domain::getDomainName).collect(Collectors.toList()))
             .build());
-    for (DomainBase domain : domains) {
+    for (Domain domain : domains) {
       assertThat(reloadResource(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
     }
   }
@@ -111,14 +111,14 @@ class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
 
   @Test
   void testSuccess_alreadyUnlockedDomain_staysUnlocked() throws Exception {
-    DomainBase domain = persistActiveDomain("example.tld");
+    Domain domain = persistActiveDomain("example.tld");
     runCommandForced("--client=TheRegistrar", "example.tld");
     assertThat(reloadResource(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
   }
 
   @Test
   void testSuccess_defaultsToAdminRegistrar_ifUnspecified() throws Exception {
-    DomainBase domain = persistLockedDomain("example.tld", "TheRegistrar");
+    Domain domain = persistLockedDomain("example.tld", "TheRegistrar");
     runCommandForced("example.tld");
     assertThat(getMostRecentRegistryLockByRepoId(domain.getRepoId()).get().getRegistrarId())
         .isEqualTo("adminreg");

@@ -64,7 +64,7 @@ import google.registry.flows.custom.DomainDeleteFlowCustomLogic.BeforeSaveParame
 import google.registry.flows.custom.EntityChanges;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
@@ -146,13 +146,13 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     // Loads the target resource if it exists
-    DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
+    Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     Registry registry = Registry.get(existingDomain.getTld());
     verifyDeleteAllowed(existingDomain, registry, now);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setExistingDomain(existingDomain).build());
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
-    DomainBase.Builder builder;
+    Domain.Builder builder;
     if (existingDomain.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       builder =
           denyPendingTransfer(existingDomain, TransferStatus.SERVER_CANCELLED, now, registrarId)
@@ -248,7 +248,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     }
     builder.setRegistrationExpirationTime(newExpirationTime);
 
-    DomainBase newDomain = builder.build();
+    Domain newDomain = builder.build();
     DomainHistory domainHistory =
         buildDomainHistory(newDomain, registry, now, durationUntilDelete, inAddGracePeriod);
     updateForeignKeyIndexDeletionTime(newDomain);
@@ -289,7 +289,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
         .build();
   }
 
-  private void verifyDeleteAllowed(DomainBase existingDomain, Registry registry, DateTime now)
+  private void verifyDeleteAllowed(Domain existingDomain, Registry registry, DateTime now)
       throws EppException {
     verifyNoDisallowedStatuses(existingDomain, DISALLOWED_STATUSES);
     verifyOptionalAuthInfo(authInfo, existingDomain);
@@ -304,7 +304,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
   }
 
   private DomainHistory buildDomainHistory(
-      DomainBase domain,
+      Domain domain,
       Registry registry,
       DateTime now,
       Duration durationUntilDelete,
@@ -337,7 +337,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
   }
 
   private PollMessage.OneTime createDeletePollMessage(
-      DomainBase existingDomain, Key<DomainHistory> domainHistoryKey, DateTime deletionTime) {
+      Domain existingDomain, Key<DomainHistory> domainHistoryKey, DateTime deletionTime) {
     Optional<MetadataExtension> metadataExtension =
         eppInput.getSingleExtension(MetadataExtension.class);
     boolean hasMetadataMessage =
@@ -362,7 +362,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
   }
 
   private PollMessage.OneTime createImmediateDeletePollMessage(
-      DomainBase existingDomain,
+      Domain existingDomain,
       Key<DomainHistory> domainHistoryKey,
       DateTime now,
       DateTime deletionTime) {
@@ -384,7 +384,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
 
   @Nullable
   private ImmutableList<FeeTransformResponseExtension> getResponseExtensions(
-      BillingEvent.Recurring recurringBillingEvent, DomainBase existingDomain, DateTime now) {
+      BillingEvent.Recurring recurringBillingEvent, Domain existingDomain, DateTime now) {
     FeeTransformResponseExtension.Builder feeResponseBuilder = getDeleteResponseBuilder();
     if (feeResponseBuilder == null) {
       return ImmutableList.of();

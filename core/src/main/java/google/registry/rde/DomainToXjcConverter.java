@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
@@ -46,18 +46,18 @@ import google.registry.xjc.rgp.XjcRgpStatusValueType;
 import google.registry.xjc.secdns.XjcSecdnsDsDataType;
 import google.registry.xjc.secdns.XjcSecdnsDsOrKeyType;
 
-/** Utility class that turns {@link DomainBase} as {@link XjcRdeDomainElement}. */
-final class DomainBaseToXjcConverter {
+/** Utility class that turns {@link Domain} as {@link XjcRdeDomainElement}. */
+final class DomainToXjcConverter {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /** Converts {@link DomainBase} to {@link XjcRdeDomainElement}. */
-  static XjcRdeDomainElement convert(DomainBase domain, RdeMode mode) {
+  /** Converts {@link Domain} to {@link XjcRdeDomainElement}. */
+  static XjcRdeDomainElement convert(Domain domain, RdeMode mode) {
     return new XjcRdeDomainElement(convertDomain(domain, mode));
   }
 
-  /** Converts {@link DomainBase} to {@link XjcRdeDomain}. */
-  static XjcRdeDomain convertDomain(DomainBase model, RdeMode mode) {
+  /** Converts {@link Domain} to {@link XjcRdeDomain}. */
+  static XjcRdeDomain convertDomain(Domain model, RdeMode mode) {
     XjcRdeDomain bean = new XjcRdeDomain();
 
     // o  A <name> element that contains the fully qualified name of the
@@ -252,7 +252,7 @@ final class DomainBaseToXjcConverter {
     return bean;
   }
 
-  private static boolean hasGainingAndLosingRegistrars(DomainBase model) {
+  private static boolean hasGainingAndLosingRegistrars(Domain model) {
     return !Strings.isNullOrEmpty(model.getTransferData().getGainingRegistrarId())
         && !Strings.isNullOrEmpty(model.getTransferData().getLosingRegistrarId());
   }
@@ -315,5 +315,5 @@ final class DomainBaseToXjcConverter {
     return bean;
   }
 
-  private DomainBaseToXjcConverter() {}
+  private DomainToXjcConverter() {}
 }

@@ -26,7 +26,7 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
@@ -44,7 +44,7 @@ class HistoryEntryTest extends EntityTestCase {
   @BeforeEach
   void setUp() {
     createTld("foobar");
-    DomainBase domain = persistActiveDomain("foo.foobar");
+    Domain domain = persistActiveDomain("foo.foobar");
     DomainTransactionRecord transactionRecord =
         new DomainTransactionRecord.Builder()
             .setTld("foobar")

@@ -27,7 +27,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppMetricSubject.assertThat;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
@@ -41,7 +41,7 @@ import com.google.re2j.Pattern;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.tld.Registry;
@@ -334,9 +334,8 @@ class EppLifecycleDomainTest extends EppTestCase {
                 // This is the time of the renew.
                 "UPDATE", "2000-06-03T00:00:00Z"));
 
-    DomainBase domain =
-        loadByForeignKey(DomainBase.class, "example.tld", DateTime.parse("2000-06-03T04:00:00Z"))
-            .get();
+    Domain domain =
+        loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2000-06-03T04:00:00Z")).get();
 
     DateTime deleteTime = DateTime.parse("2000-06-04T00:00:00Z");
     // Delete domain example.tld during both grace periods.
@@ -376,7 +375,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     // entire cost of registration was refunded. We have to do this through the DB instead of EPP
     // because domains deleted during the add grace period vanish immediately as far as the world
     // outside our system is concerned.
-    DomainBase deletedDomain = loadByEntity(domain);
+    Domain deletedDomain = loadByEntity(domain);
     assertAboutDomains().that(deletedDomain).hasRegistrationExpirationTime(createTime);
 
     assertThatLogoutSucceeds();
@@ -399,8 +398,7 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "CRDATE", "2000-06-01T00:02:00.0Z",
                 "EXDATE", "2002-06-01T00:02:00.0Z"));
 
-    DomainBase domain =
-        loadByForeignKey(DomainBase.class, "example.tld", createTime.plusHours(1)).get();
+    Domain domain = loadByForeignKey(Domain.class, "example.tld", createTime.plusHours(1)).get();
 
     // Delete domain example.tld within the add grace period.
     DateTime deleteTime = createTime.plusDays(1);
@@ -432,7 +430,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     // entire cost of registration was refunded. We have to do this through the DB instead of EPP
     // because domains deleted during the add grace period vanish immediately as far as the world
     // outside our system is concerned.
-    DomainBase deletedDomain = loadByEntity(domain);
+    Domain deletedDomain = loadByEntity(domain);
     assertAboutDomains().that(deletedDomain).hasRegistrationExpirationTime(createTime);
 
     assertThatLogoutSucceeds();
@@ -482,10 +480,8 @@ class EppLifecycleDomainTest extends EppTestCase {
             ImmutableMap.of(
                 "CODE", "2303", "MSG", "The domain with given ID (example.tld) doesn't exist."));
 
-    DomainBase domain =
-        loadByForeignKey(
-                DomainBase.class, "example.tld", DateTime.parse("2000-08-01T00:02:00Z"))
-            .get();
+    Domain domain =
+        loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2000-08-01T00:02:00Z")).get();
     // Verify that the autorenew was ended and that the one-time billing event is not canceled.
     assertBillingEventsForResource(
         domain,
@@ -495,7 +491,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
 
     // Make sure that in the future, the domain expiration is unchanged after deletion
-    DomainBase clonedDomain = domain.cloneProjectedAtTime(deleteTime.plusYears(5));
+    Domain clonedDomain = domain.cloneProjectedAtTime(deleteTime.plusYears(5));
     Truth.assertThat(clonedDomain.getRegistrationExpirationTime())
         .isEqualTo(createTime.plusYears(2));
   }
@@ -522,10 +518,8 @@ class EppLifecycleDomainTest extends EppTestCase {
         .atTime(createTime)
         .hasResponse("domain_create_response_eap_fee.xml");
 
-    DomainBase domain =
-        loadByForeignKey(
-                DomainBase.class, "example.tld", DateTime.parse("2000-06-01T00:03:00Z"))
-            .get();
+    Domain domain =
+        loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2000-06-01T00:03:00Z")).get();
 
     // Delete domain example.tld within the add grade period.
     DateTime deleteTime = createTime.plusDays(1);

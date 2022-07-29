@@ -42,7 +42,7 @@ JOIN (
     tld,
     hosts.name AS referencedHostName
   FROM
-    `domain-registry-alpha.latest_datastore_export.DomainBase`,
+    `domain-registry-alpha.latest_datastore_export.Domain`,
     UNNEST(nsHosts) AS hosts
   WHERE creationTime <= TIMESTAMP("2017-09-30 23:59:59.999")
   AND deletionTime > TIMESTAMP("2017-09-30 23:59:59.999") ) AS domain_table

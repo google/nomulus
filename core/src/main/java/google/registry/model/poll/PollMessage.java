@@ -35,7 +35,7 @@ import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.DomainRenewData;
@@ -103,7 +103,7 @@ public abstract class PollMessage extends ImmutableObject
 
   /** Indicates the type of entity the poll message is for. */
   public enum Type {
-    DOMAIN(1L, DomainBase.class),
+    DOMAIN(1L, Domain.class),
     CONTACT(2L, ContactResource.class),
     HOST(3L, HostResource.class);
 

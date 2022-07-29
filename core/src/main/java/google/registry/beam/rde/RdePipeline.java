@@ -47,7 +47,7 @@ import google.registry.gcs.GcsUtils;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
@@ -132,7 +132,7 @@ import org.joda.time.DateTime;
  * that are soft-deleted by watermark. The history is emitted as pairs of (resource repo ID: history
  * revision ID) from the SQL query.
  *
- * <h3>{@link DomainBase}</h3>
+ * <h3>{@link Domain}</h3>
  *
  * After the most recent (live) domain resources are loaded from the corresponding history objects,
  * we marshall them to deposit fragments and emit the (pending deposit: deposit fragment) pairs for
@@ -477,8 +477,8 @@ public class RdePipeline implements Serializable {
                   public void processElement(
                       @Element KV<String, Long> kv, MultiOutputReceiver receiver) {
                     activeDomainCounter.inc();
-                    DomainBase domain =
-                        (DomainBase)
+                    Domain domain =
+                        (Domain)
                             loadResourceByHistoryEntryId(
                                 DomainHistory.class, kv.getKey(), kv.getValue());
                     pendingDeposits.stream()
@@ -654,8 +654,8 @@ public class RdePipeline implements Serializable {
                         TypeDescriptor.of(DepositFragment.class)))
                 .via(
                     (KV<String, CoGbkResult> kv) -> {
-                      DomainBase superordinateDomain =
-                          (DomainBase)
+                      Domain superordinateDomain =
+                          (Domain)
                               loadResourceByHistoryEntryId(
                                   DomainHistory.class,
                                   kv.getKey(),

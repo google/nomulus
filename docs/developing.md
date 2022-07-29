@@ -80,7 +80,7 @@ as follows:
 6.  Delete the old fields, their indexes, and the `@OnSave` method.
 7.  Deploy the new version of the app. The schema migration is now complete.
 
-The migration away from using a wrapper class around Keys on `DomainBase`
+The migration away from using a wrapper class around Keys on `Domain`
 objects is instructive as an example:
 
 *   [Step

@@ -54,7 +54,7 @@ import google.registry.flows.domain.token.AllocationTokenDomainCheckResults;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Check;
 import google.registry.model.domain.fee.FeeCheckCommandExtension;
 import google.registry.model.domain.fee.FeeCheckCommandExtensionItem;
@@ -169,8 +169,8 @@ public final class DomainCheckFlow implements Flow {
             // TODO: Use as of date from fee extension v0.12 instead of now, if specified.
             .setAsOfDate(now)
             .build());
-    ImmutableMap<String, ForeignKeyIndex<DomainBase>> existingDomains =
-        ForeignKeyIndex.load(DomainBase.class, domainNames, now);
+    ImmutableMap<String, ForeignKeyIndex<Domain>> existingDomains =
+        ForeignKeyIndex.load(Domain.class, domainNames, now);
     Optional<AllocationTokenExtension> allocationTokenExtension =
         eppInput.getSingleExtension(AllocationTokenExtension.class);
     Optional<AllocationTokenDomainCheckResults> tokenDomainCheckResults =
@@ -227,7 +227,7 @@ public final class DomainCheckFlow implements Flow {
 
   private Optional<String> getMessageForCheck(
       InternetDomainName domainName,
-      ImmutableMap<String, ForeignKeyIndex<DomainBase>> existingDomains,
+      ImmutableMap<String, ForeignKeyIndex<Domain>> existingDomains,
       ImmutableMap<InternetDomainName, String> tokenCheckResults,
       ImmutableMap<String, TldState> tldStates,
       Optional<AllocationToken> allocationToken) {
@@ -251,7 +251,7 @@ public final class DomainCheckFlow implements Flow {
   /** Handle the fee check extension. */
   private ImmutableList<? extends ResponseExtension> getResponseExtensions(
       ImmutableMap<String, InternetDomainName> domainNames,
-      ImmutableMap<String, ForeignKeyIndex<DomainBase>> existingDomains,
+      ImmutableMap<String, ForeignKeyIndex<Domain>> existingDomains,
       ImmutableSet<String> availableDomains,
       DateTime now,
       Optional<AllocationToken> allocationToken)
@@ -264,7 +264,7 @@ public final class DomainCheckFlow implements Flow {
     FeeCheckCommandExtension<?, ?> feeCheck = feeCheckOpt.get();
     ImmutableList.Builder<FeeCheckResponseExtensionItem> responseItems =
         new ImmutableList.Builder<>();
-    ImmutableMap<String, DomainBase> domainObjs =
+    ImmutableMap<String, Domain> domainObjs =
         loadDomainsForRestoreChecks(feeCheck, domainNames, existingDomains);
     ImmutableMap<String, BillingEvent.Recurring> recurrences =
         loadRecurrencesForDomains(domainObjs);
@@ -272,12 +272,12 @@ public final class DomainCheckFlow implements Flow {
     for (FeeCheckCommandExtensionItem feeCheckItem : feeCheck.getItems()) {
       for (String domainName : getDomainNamesToCheckForFee(feeCheckItem, domainNames.keySet())) {
         FeeCheckResponseExtensionItem.Builder<?> builder = feeCheckItem.createResponseBuilder();
-        Optional<DomainBase> domainBase = Optional.ofNullable(domainObjs.get(domainName));
+        Optional<Domain> domain = Optional.ofNullable(domainObjs.get(domainName));
         handleFeeRequest(
             feeCheckItem,
             builder,
             domainNames.get(domainName),
-            domainBase,
+            domain,
             feeCheck.getCurrency(),
             now,
             pricingLogic,
@@ -301,10 +301,10 @@ public final class DomainCheckFlow implements Flow {
    * nicer in Cloud SQL when we can SELECT just the fields we want rather than having to load the
    * entire entity.
    */
-  private ImmutableMap<String, DomainBase> loadDomainsForRestoreChecks(
+  private ImmutableMap<String, Domain> loadDomainsForRestoreChecks(
       FeeCheckCommandExtension<?, ?> feeCheck,
       ImmutableMap<String, InternetDomainName> domainNames,
-      ImmutableMap<String, ForeignKeyIndex<DomainBase>> existingDomains) {
+      ImmutableMap<String, ForeignKeyIndex<Domain>> existingDomains) {
     ImmutableList<String> restoreCheckDomains;
     if (feeCheck instanceof FeeCheckCommandExtensionV06) {
       // The V06 fee extension supports specifying the command fees to check on a per-domain basis.
@@ -326,25 +326,25 @@ public final class DomainCheckFlow implements Flow {
     }
 
     // Filter down to just domains we know exist and then use the EppResource cache to load them.
-    ImmutableMap<String, VKey<DomainBase>> existingDomainsToLoad =
+    ImmutableMap<String, VKey<Domain>> existingDomainsToLoad =
         restoreCheckDomains.stream()
             .filter(existingDomains::containsKey)
             .collect(toImmutableMap(d -> d, d -> existingDomains.get(d).getResourceKey()));
     ImmutableMap<VKey<? extends EppResource>, EppResource> loadedDomains =
         EppResource.loadCached(ImmutableList.copyOf(existingDomainsToLoad.values()));
     return ImmutableMap.copyOf(
-        Maps.transformEntries(existingDomainsToLoad, (k, v) -> (DomainBase) loadedDomains.get(v)));
+        Maps.transformEntries(existingDomainsToLoad, (k, v) -> (Domain) loadedDomains.get(v)));
   }
 
   private ImmutableMap<String, BillingEvent.Recurring> loadRecurrencesForDomains(
-      ImmutableMap<String, DomainBase> domainObjs) {
+      ImmutableMap<String, Domain> domainObjs) {
     return tm().transact(
             () -> {
               ImmutableMap<VKey<? extends BillingEvent.Recurring>, BillingEvent.Recurring>
                   recurrences =
                       tm().loadByKeys(
                               domainObjs.values().stream()
-                                  .map(DomainBase::getAutorenewBillingEvent)
+                                  .map(Domain::getAutorenewBillingEvent)
                                   .collect(toImmutableSet()));
               return ImmutableMap.copyOf(
                   Maps.transformValues(

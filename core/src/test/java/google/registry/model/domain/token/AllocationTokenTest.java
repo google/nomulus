@@ -35,7 +35,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
@@ -79,7 +79,7 @@ public class AllocationTokenTest extends EntityTestCase {
                 .build());
     assertThat(loadByEntity(unlimitedUseToken)).isEqualTo(unlimitedUseToken);
 
-    DomainBase domain = persistActiveDomain("example.foo");
+    Domain domain = persistActiveDomain("example.foo");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
     AllocationToken singleUseToken =
         persistResource(
@@ -116,7 +116,7 @@ public class AllocationTokenTest extends EntityTestCase {
     AllocationToken persisted = loadByEntity(unlimitedUseToken);
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
 
-    DomainBase domain = persistActiveDomain("example.foo");
+    Domain domain = persistActiveDomain("example.foo");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
     AllocationToken singleUseToken =
         persistResource(
@@ -264,7 +264,7 @@ public class AllocationTokenTest extends EntityTestCase {
 
   @Test
   void testBuild_redemptionHistoryEntryOnlyInSingleUse() {
-    DomainBase domain = persistActiveDomain("blahdomain.foo");
+    Domain domain = persistActiveDomain("blahdomain.foo");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
     AllocationToken.Builder builder =
         new AllocationToken.Builder()

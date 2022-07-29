@@ -29,7 +29,7 @@ import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -44,8 +44,8 @@ import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
 import google.registry.flows.exceptions.NotPendingTransferException;
 import google.registry.model.contact.ContactAuthInfo;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
@@ -65,7 +65,7 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainTransferRejectFlow}. */
 class DomainTransferRejectFlowTest
-    extends DomainTransferFlowTestCase<DomainTransferRejectFlow, DomainBase> {
+    extends DomainTransferFlowTestCase<DomainTransferRejectFlow, Domain> {
 
   @BeforeEach
   void beforeEach() {

@@ -37,7 +37,7 @@ import google.registry.flows.domain.DomainFlowUtils.LeadingDashException;
 import google.registry.flows.domain.DomainFlowUtils.MissingBillingAccountMapException;
 import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.testing.AppEngineExtension;
 import org.joda.money.Money;
@@ -45,7 +45,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainFlowUtils}. */
-class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase> {
+class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
 
   @BeforeEach
   void setup() {

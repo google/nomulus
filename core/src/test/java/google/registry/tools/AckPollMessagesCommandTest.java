@@ -19,11 +19,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKeys;
 import static google.registry.testing.DatabaseHelper.loadByKeysIfPresent;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.ofy.Ofy;
@@ -32,6 +31,7 @@ import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
@@ -53,7 +53,8 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     inject.setStaticField(Ofy.class, "clock", clock);
     command.clock = clock;
     createTld("tld");
-    DomainBase domain = newDomainBase("example.tld").asBuilder().setRepoId("FSDGS-TLD").build();
+    Domain domain =
+        DatabaseHelper.newDomain("example.tld").asBuilder().setRepoId("FSDGS-TLD").build();
     persistResource(domain);
     domainHistory =
         persistResource(

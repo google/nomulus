@@ -27,7 +27,7 @@ import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.writer.BaseDnsWriter;
 import google.registry.dns.writer.DnsWriterZone;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.host.HostResource;
 import google.registry.model.tld.Registries;
@@ -127,12 +127,11 @@ public class DnsUpdateWriter extends BaseDnsWriter {
    *     this domain refresh request
    */
   private void publishDomain(String domainName, String requestingHostName) {
-    Optional<DomainBase> domainOptional =
-        loadByForeignKey(DomainBase.class, domainName, clock.nowUtc());
+    Optional<Domain> domainOptional = loadByForeignKey(Domain.class, domainName, clock.nowUtc());
     update.delete(toAbsoluteName(domainName), Type.ANY);
     // If the domain is now deleted, then don't update DNS for it.
     if (domainOptional.isPresent()) {
-      DomainBase domain = domainOptional.get();
+      Domain domain = domainOptional.get();
       // As long as the domain exists, orphan glues should be cleaned.
       deleteSubordinateHostAddressSet(domain, requestingHostName, update);
       if (domain.shouldPublishToDns()) {
@@ -184,7 +183,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
     }
   }
 
-  private RRset makeDelegationSignerSet(DomainBase domain) {
+  private RRset makeDelegationSignerSet(Domain domain) {
     RRset signerSet = new RRset();
     for (DelegationSignerData signerData : domain.getDsData()) {
       DSRecord dsRecord =
@@ -202,7 +201,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
   }
 
   private void deleteSubordinateHostAddressSet(
-      DomainBase domain, String additionalHost, Update update) {
+      Domain domain, String additionalHost, Update update) {
     for (String hostName :
         union(
             domain.getSubordinateHosts(),
@@ -213,7 +212,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
     }
   }
 
-  private void addInBailiwickNameServerSet(DomainBase domain, Update update) {
+  private void addInBailiwickNameServerSet(Domain domain, Update update) {
     for (String hostName :
         intersection(domain.loadNameserverHostNames(), domain.getSubordinateHosts())) {
       Optional<HostResource> host = loadByForeignKey(HostResource.class, hostName, clock.nowUtc());
@@ -223,7 +222,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
     }
   }
 
-  private RRset makeNameServerSet(DomainBase domain) {
+  private RRset makeNameServerSet(Domain domain) {
     RRset nameServerSet = new RRset();
     for (String hostName : domain.loadNameserverHostNames()) {
       NSRecord record =

@@ -17,15 +17,15 @@ package google.registry.model.index;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.EntityTestCase;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.TestCacheExtension;
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,8 +46,8 @@ class ForeignKeyIndexTest extends EntityTestCase {
 
   @Test
   void testModifyForeignKeyIndex_notThrowExceptionInSql() {
-    DomainBase domainBase = newDomainBase("test.com");
-    ForeignKeyIndex<DomainBase> fki = ForeignKeyIndex.create(domainBase, fakeClock.nowUtc());
+    Domain domain = DatabaseHelper.newDomain("test.com");
+    ForeignKeyIndex<Domain> fki = ForeignKeyIndex.create(domain, fakeClock.nowUtc());
     tm().transact(() -> tm().insert(fki));
     tm().transact(() -> tm().put(fki));
     tm().transact(() -> tm().delete(fki));

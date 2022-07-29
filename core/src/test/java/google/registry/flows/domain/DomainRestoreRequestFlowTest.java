@@ -23,12 +23,11 @@ import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -63,7 +62,7 @@ import google.registry.flows.domain.DomainRestoreRequestFlow.RestoreCommandInclu
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -75,6 +74,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
+import google.registry.testing.DatabaseHelper;
 import java.util.Map;
 import java.util.Optional;
 import org.joda.money.Money;
@@ -83,8 +83,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainRestoreRequestFlow}. */
-class DomainRestoreRequestFlowTest
-    extends ResourceFlowTestCase<DomainRestoreRequestFlow, DomainBase> {
+class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreRequestFlow, Domain> {
 
   private static final ImmutableMap<String, String> FEE_06_MAP =
       ImmutableMap.of("FEE_VERSION", "0.6", "FEE_NS", "fee", "CURRENCY", "USD");
@@ -110,7 +109,7 @@ class DomainRestoreRequestFlowTest
   }
 
   void persistPendingDeleteDomain(DateTime expirationTime) throws Exception {
-    DomainBase domain = persistResource(newDomainBase(getUniqueIdFromCommand()));
+    Domain domain = persistResource(DatabaseHelper.newDomain(getUniqueIdFromCommand()));
     HistoryEntry historyEntry =
         persistResource(
             new DomainHistory.Builder()
@@ -167,7 +166,7 @@ class DomainRestoreRequestFlowTest
     // Double check that we see a poll message in the future for when the delete happens.
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     DomainHistory historyEntryDomainRestore =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE, DomainHistory.class);
     assertLastHistoryContainsResource(domain);
@@ -236,7 +235,7 @@ class DomainRestoreRequestFlowTest
     // Double check that we see a poll message in the future for when the delete happens.
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     DomainHistory historyEntryDomainRestore =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE, DomainHistory.class);
     assertLastHistoryContainsResource(domain);
@@ -617,7 +616,7 @@ class DomainRestoreRequestFlowTest
   @Test
   void testFailure_notInRedemptionPeriod() throws Exception {
     persistResource(
-        newDomainBase(getUniqueIdFromCommand())
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
             .setDeletionTime(clock.nowUtc().plusDays(4))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
@@ -773,7 +772,7 @@ class DomainRestoreRequestFlowTest
   void testIcannTransactionReportField_getsStored() throws Exception {
     persistPendingDeleteDomain();
     runFlow();
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     HistoryEntry historyEntryDomainRestore =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE);
     assertThat(historyEntryDomainRestore.getDomainTransactionRecords())

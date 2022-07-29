@@ -21,7 +21,6 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -33,13 +32,14 @@ import google.registry.flows.EppTestComponent.FakesAndMocksModule;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
@@ -82,21 +82,21 @@ class DeleteExpiredDomainsActionTest {
   @Test
   void test_deletesOnlyExpiredDomain() {
     // A normal, active autorenewing domain that shouldn't be touched.
-    DomainBase activeDomain = persistActiveDomain("foo.tld");
+    Domain activeDomain = persistActiveDomain("foo.tld");
 
     // A non-autorenewing domain that is already pending delete and shouldn't be touched.
-    DomainBase alreadyDeletedDomain =
+    Domain alreadyDeletedDomain =
         persistResource(
-            newDomainBase("bar.tld")
+            DatabaseHelper.newDomain("bar.tld")
                 .asBuilder()
                 .setAutorenewEndTime(Optional.of(clock.nowUtc().minusDays(10)))
                 .setDeletionTime(clock.nowUtc().plusDays(17))
                 .build());
 
     // A non-autorenewing domain that hasn't reached its expiration time and shouldn't be touched.
-    DomainBase notYetExpiredDomain =
+    Domain notYetExpiredDomain =
         persistResource(
-            newDomainBase("baz.tld")
+            DatabaseHelper.newDomain("baz.tld")
                 .asBuilder()
                 .setAutorenewEndTime(Optional.of(clock.nowUtc().plusDays(15)))
                 .build());
@@ -104,7 +104,7 @@ class DeleteExpiredDomainsActionTest {
     // A non-autorenewing domain that is past its expiration time and should be deleted.
     // (This is the only one that needs a full set of subsidiary resources, for the delete flow to
     // to operate on.)
-    DomainBase pendingExpirationDomain = persistNonAutorenewingDomain("fizz.tld");
+    Domain pendingExpirationDomain = persistNonAutorenewingDomain("fizz.tld");
 
     assertThat(loadByEntity(pendingExpirationDomain).getStatusValues())
         .doesNotContain(PENDING_DELETE);
@@ -114,21 +114,21 @@ class DeleteExpiredDomainsActionTest {
     clock.advanceOneMilli();
     action.run();
 
-    DomainBase reloadedActiveDomain = loadByEntity(activeDomain);
+    Domain reloadedActiveDomain = loadByEntity(activeDomain);
     assertThat(reloadedActiveDomain).isEqualTo(activeDomain);
     assertThat(reloadedActiveDomain.getStatusValues()).doesNotContain(PENDING_DELETE);
     assertThat(loadByEntity(alreadyDeletedDomain)).isEqualTo(alreadyDeletedDomain);
     assertThat(loadByEntity(notYetExpiredDomain)).isEqualTo(notYetExpiredDomain);
-    DomainBase reloadedExpiredDomain = loadByEntity(pendingExpirationDomain);
+    Domain reloadedExpiredDomain = loadByEntity(pendingExpirationDomain);
     assertThat(reloadedExpiredDomain.getStatusValues()).contains(PENDING_DELETE);
     assertThat(reloadedExpiredDomain.getDeletionTime()).isEqualTo(clock.nowUtc().plusDays(35));
   }
 
   @Test
   void test_deletesThreeDomainsInOneRun() throws Exception {
-    DomainBase domain1 = persistNonAutorenewingDomain("ecck1.tld");
-    DomainBase domain2 = persistNonAutorenewingDomain("veee2.tld");
-    DomainBase domain3 = persistNonAutorenewingDomain("tarm3.tld");
+    Domain domain1 = persistNonAutorenewingDomain("ecck1.tld");
+    Domain domain2 = persistNonAutorenewingDomain("veee2.tld");
+    Domain domain3 = persistNonAutorenewingDomain("tarm3.tld");
 
     // action.run() executes an ancestor-less query which is subject to eventual consistency (it
     // uses an index that is updated asynchronously). For a deterministic test outcome, we busy
@@ -139,10 +139,10 @@ class DeleteExpiredDomainsActionTest {
           tm().transact(
                   () ->
                       tm()
-                          .createQueryComposer(DomainBase.class)
+                          .createQueryComposer(Domain.class)
                           .where("autorenewEndTime", Comparator.LTE, clock.nowUtc())
                           .stream()
-                          .map(DomainBase::getDomainName)
+                          .map(Domain::getDomainName)
                           .collect(toImmutableSet()));
       if (matchingDomains.containsAll(ImmutableSet.of("ecck1.tld", "veee2.tld", "tarm3.tld"))) {
         break;
@@ -164,8 +164,8 @@ class DeleteExpiredDomainsActionTest {
     assertThat(loadByEntity(domain3).getStatusValues()).contains(PENDING_DELETE);
   }
 
-  private DomainBase persistNonAutorenewingDomain(String domainName) {
-    DomainBase pendingExpirationDomain = persistActiveDomain(domainName);
+  private Domain persistNonAutorenewingDomain(String domainName) {
+    Domain pendingExpirationDomain = persistActiveDomain(domainName);
     DomainHistory createHistoryEntry =
         persistResource(
             new DomainHistory.Builder()

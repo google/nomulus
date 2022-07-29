@@ -42,7 +42,7 @@ JOIN (
     tld,
     hosts.name AS referencedHostName
   FROM
-    `%PROJECT_ID%.%DATASTORE_EXPORT_DATA_SET%.%DOMAINBASE_TABLE%`,
+    `%PROJECT_ID%.%DATASTORE_EXPORT_DATA_SET%.%DOMAIN_TABLE%`,
     UNNEST(nsHosts) AS hosts
   WHERE creationTime <= TIMESTAMP("%LATEST_REPORT_TIME%")
   AND deletionTime > TIMESTAMP("%LATEST_REPORT_TIME%") ) AS domain_table

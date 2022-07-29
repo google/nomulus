@@ -18,7 +18,7 @@
     "kinds": [
       "Registry",
       "Registrar",
-      "DomainBase"
+      "Domain"
     ]
   },
   "outputUrlPrefix": "gs://domain-registry-alpha-datastore-export-test/2018-10-29T16:01:04_99364"

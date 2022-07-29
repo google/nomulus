@@ -20,7 +20,6 @@ import static google.registry.model.domain.DesignatedContact.Type.TECH;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newContactResource;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -34,6 +33,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.ofy.Ofy;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import java.io.IOException;
@@ -123,7 +123,7 @@ public enum Fixture {
             .build());
 
       persistResource(
-          newDomainBase("love.xn--q9jyb4c", justine)
+          DatabaseHelper.newDomain("love.xn--q9jyb4c", justine)
               .asBuilder()
               .setContacts(
                   ImmutableSet.of(
@@ -137,7 +137,7 @@ public enum Fixture {
               .build());
 
       persistResource(
-          newDomainBase("moogle.example", justine)
+          DatabaseHelper.newDomain("moogle.example", justine)
               .asBuilder()
               .setContacts(
                   ImmutableSet.of(
