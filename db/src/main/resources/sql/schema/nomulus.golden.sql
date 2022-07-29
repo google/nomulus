@@ -400,7 +400,8 @@ CREATE TABLE public."Domain" (
     transfer_history_entry_id bigint,
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
-    dns_refresh_request_time timestamp with time zone
+    dns_refresh_request_time timestamp with time zone,
+    current_package_token text
 );
 
 
@@ -488,7 +489,8 @@ CREATE TABLE public."DomainHistory" (
     transfer_history_entry_id bigint,
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
-    dns_refresh_request_time timestamp with time zone
+    dns_refresh_request_time timestamp with time zone,
+    current_package_token text
 );
 
 
@@ -2160,6 +2162,22 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT fk_domain_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: Domain fk_domain_current_package_token; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_current_package_token FOREIGN KEY (current_package_token) REFERENCES public."AllocationToken"(token) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: DomainHistory fk_domain_history_current_package_token; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainHistory"
+    ADD CONSTRAINT fk_domain_history_current_package_token FOREIGN KEY (current_package_token) REFERENCES public."AllocationToken"(token) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
