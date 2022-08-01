@@ -220,7 +220,8 @@ public final class DomainRenewFlow implements TransactionalFlow {
                     domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
             .build();
     // End the old autorenew billing event and poll message now. This may delete the poll message.
-    updateAutorenewRecurrenceEndTime(existingDomain, now);
+    Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
+    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, now);
     DomainBase newDomain =
         existingDomain
             .asBuilder()

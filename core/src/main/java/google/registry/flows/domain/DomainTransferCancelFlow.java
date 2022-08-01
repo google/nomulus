@@ -40,6 +40,7 @@ import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.metadata.MetadataExtension;
@@ -114,7 +115,8 @@ public final class DomainTransferCancelFlow implements TransactionalFlow {
                 targetId, newDomain.getTransferData(), null, domainHistoryKey));
     // Reopen the autorenew event and poll message that we closed for the implicit transfer. This
     // may recreate the autorenew poll message if it was deleted when the transfer request was made.
-    updateAutorenewRecurrenceEndTime(existingDomain, END_OF_TIME);
+    Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
+    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, END_OF_TIME);
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
     tm().delete(existingDomain.getTransferData().getServerApproveEntities());

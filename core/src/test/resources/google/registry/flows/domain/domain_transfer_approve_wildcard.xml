@@ -3,7 +3,7 @@
     <transfer op="approve">
       <domain:transfer
        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
-        <domain:name>example.extra</domain:name>
+        <domain:name>%DOMAIN%</domain:name>
       </domain:transfer>
     </transfer>
     <clTRID>ABC-12345</clTRID>

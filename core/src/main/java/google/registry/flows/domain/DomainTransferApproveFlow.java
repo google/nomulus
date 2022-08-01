@@ -31,7 +31,6 @@ import static google.registry.model.ResourceTransferUtils.approvePendingTransfer
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
@@ -49,6 +48,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
@@ -96,6 +96,8 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
+  @Inject DomainPricingLogic pricingLogic;
+
   @Inject DomainTransferApproveFlow() {}
 
   /**
@@ -120,6 +122,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     String gainingRegistrarId = transferData.getGainingRegistrarId();
     // Create a transfer billing event for 1 year, unless the superuser extension was used to set
     // the transfer period to zero. There is not a transfer cost if the transfer period is zero.
+    Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
     historyBuilder.setId(domainHistoryKey.getId());
     Optional<BillingEvent.OneTime> billingEvent =
@@ -131,7 +134,14 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .setTargetId(targetId)
                     .setRegistrarId(gainingRegistrarId)
                     .setPeriodYears(1)
-                    .setCost(getDomainRenewCost(targetId, transferData.getTransferRequestTime(), 1))
+                    .setCost(
+                        pricingLogic
+                            .getTransferPrice(
+                                Registry.get(tld),
+                                targetId,
+                                transferData.getTransferRequestTime(),
+                                existingRecurring)
+                            .getRenewCost())
                     .setEventTime(now)
                     .setBillingTime(now.plus(Registry.get(tld).getTransferGracePeriodLength()))
                     .setParent(domainHistoryKey)
@@ -155,7 +165,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     }
     // Close the old autorenew event and poll message at the transfer time (aka now). This may end
     // up deleting the poll message.
-    updateAutorenewRecurrenceEndTime(existingDomain, now);
+    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, now);
     DateTime newExpirationTime =
         computeExDateForApprovalTime(existingDomain, now, transferData.getTransferPeriod());
     // Create a new autorenew event starting at the expiration time.
@@ -166,7 +176,8 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setTargetId(targetId)
             .setRegistrarId(gainingRegistrarId)
             .setEventTime(newExpirationTime)
-            // TODO: Set renewal behavior here.
+            .setRenewalPriceBehavior(existingRecurring.getRenewalPriceBehavior())
+            .setRenewalPrice(existingRecurring.getRenewalPrice().orElse(null))
             .setRecurrenceEndTime(END_OF_TIME)
             .setParent(domainHistoryKey)
             .build();

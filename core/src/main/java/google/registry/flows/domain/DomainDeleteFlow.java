@@ -64,6 +64,7 @@ import google.registry.flows.custom.DomainDeleteFlowCustomLogic.BeforeSaveParame
 import google.registry.flows.custom.EntityChanges;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
@@ -255,8 +256,9 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     handlePendingTransferOnDelete(existingDomain, newDomain, now, domainHistory);
     // Close the autorenew billing event and poll message. This may delete the poll message.  Store
     // the updated recurring billing event, we'll need it later and can't reload it.
+    Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     BillingEvent.Recurring recurringBillingEvent =
-        updateAutorenewRecurrenceEndTime(existingDomain, now);
+        updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, now);
     // If there's a pending transfer, the gaining client's autorenew billing
     // event and poll message will already have been deleted in
     // ResourceDeleteFlow since it's listed in serverApproveEntities.

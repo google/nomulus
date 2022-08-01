@@ -583,7 +583,8 @@ public class DomainFlowUtils {
    *
    * <p>Returns the new autorenew recurring billing event.
    */
-  public static Recurring updateAutorenewRecurrenceEndTime(DomainBase domain, DateTime newEndTime) {
+  public static Recurring updateAutorenewRecurrenceEndTime(
+      DomainBase domain, Recurring existingRecurring, DateTime newEndTime) {
     Optional<PollMessage.Autorenew> autorenewPollMessage =
         tm().loadByKeyIfPresent(domain.getAutorenewPollMessage());
 
@@ -611,13 +612,9 @@ public class DomainFlowUtils {
       tm().put(updatedAutorenewPollMessage);
     }
 
-    Recurring recurring =
-        tm().loadByKey(domain.getAutorenewBillingEvent())
-            .asBuilder()
-            .setRecurrenceEndTime(newEndTime)
-            .build();
-    tm().put(recurring);
-    return recurring;
+    Recurring newRecurring = existingRecurring.asBuilder().setRecurrenceEndTime(newEndTime).build();
+    tm().put(newRecurring);
+    return newRecurring;
   }
 
   /**

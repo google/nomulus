@@ -24,6 +24,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
@@ -110,6 +111,7 @@ public final class DomainTransferUtils {
       DateTime serverApproveNewExpirationTime,
       Key<DomainHistory> domainHistoryKey,
       DomainBase existingDomain,
+      Recurring existingRecurring,
       Trid trid,
       String gainingRegistrarId,
       Optional<Money> transferCost,
@@ -132,7 +134,6 @@ public final class DomainTransferUtils {
         cost ->
             builder.add(
                 createTransferBillingEvent(
-                    // TODO: Use pricing behavior from recurring here.
                     automaticTransferTime,
                     domainHistoryKey,
                     targetId,
@@ -145,7 +146,11 @@ public final class DomainTransferUtils {
     return builder
         .add(
             createGainingClientAutorenewEvent(
-                serverApproveNewExpirationTime, domainHistoryKey, targetId, gainingRegistrarId))
+                existingRecurring,
+                serverApproveNewExpirationTime,
+                domainHistoryKey,
+                targetId,
+                gainingRegistrarId))
         .add(
             createGainingClientAutorenewPollMessage(
                 serverApproveNewExpirationTime, domainHistoryKey, targetId, gainingRegistrarId))
@@ -240,18 +245,20 @@ public final class DomainTransferUtils {
   }
 
   private static BillingEvent.Recurring createGainingClientAutorenewEvent(
+      Recurring existingRecurring,
       DateTime serverApproveNewExpirationTime,
       Key<DomainHistory> domainHistoryKey,
       String targetId,
       String gainingRegistrarId) {
     return new BillingEvent.Recurring.Builder()
-        // TODO: Set renewal behavior here.
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(targetId)
         .setRegistrarId(gainingRegistrarId)
         .setEventTime(serverApproveNewExpirationTime)
         .setRecurrenceEndTime(END_OF_TIME)
+        .setRenewalPriceBehavior(existingRecurring.getRenewalPriceBehavior())
+        .setRenewalPrice(existingRecurring.getRenewalPrice().orElse(null))
         .setParent(domainHistoryKey)
         .build();
   }

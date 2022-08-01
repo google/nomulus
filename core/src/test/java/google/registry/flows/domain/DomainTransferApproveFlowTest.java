@@ -27,6 +27,7 @@ import static google.registry.testing.DatabaseHelper.deleteTestDomain;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.getOnlyPollMessage;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -53,6 +54,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
@@ -69,10 +71,13 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.stream.Stream;
 import org.joda.money.Money;
@@ -413,6 +418,57 @@ class DomainTransferApproveFlowTest
             .setBillingTime(
                 oldExpirationTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
             .setRecurringEventKey(domain.getAutorenewBillingEvent()));
+  }
+
+  @Test
+  void testSuccess_specifiedPriceRenewalBehavior_carriesOver() throws Exception {
+    PremiumList pl =
+        PremiumListDao.save(
+            new PremiumList.Builder()
+                .setCurrency(USD)
+                .setName("tld")
+                .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
+                .build());
+    persistResource(Registry.get("tld").asBuilder().setPremiumList(pl).build());
+    setupDomainWithPendingTransfer("example", "tld");
+    domain = loadByEntity(domain);
+    persistResource(
+        loadByKey(domain.getAutorenewBillingEvent())
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, new BigDecimal("43.10")))
+            .build());
+    setEppInput("domain_transfer_approve_wildcard.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    DateTime now = clock.nowUtc();
+    runFlowAssertResponse(loadFile("domain_transfer_approve_response.xml"));
+    domain = reloadResourceByForeignKey();
+    DomainHistory acceptHistory =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE, DomainHistory.class);
+    assertBillingEventsForResource(
+        domain,
+        new BillingEvent.OneTime.Builder()
+            .setBillingTime(now.plusDays(5))
+            .setEventTime(now)
+            .setRegistrarId("NewRegistrar")
+            .setCost(Money.of(USD, new BigDecimal("43.10")))
+            .setDomainRepoId(domain.getRepoId())
+            .setParent(acceptHistory)
+            .setReason(Reason.TRANSFER)
+            .setPeriodYears(1)
+            .setTargetId("example.tld")
+            .build(),
+        getGainingClientAutorenewEvent()
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, new BigDecimal("43.10")))
+            .setParent(acceptHistory)
+            .build(),
+        getLosingClientAutorenewEvent()
+            .asBuilder()
+            .setRecurrenceEndTime(now)
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, new BigDecimal("43.10")))
+            .build());
   }
 
   @Test
