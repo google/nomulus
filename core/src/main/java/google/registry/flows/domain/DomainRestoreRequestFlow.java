@@ -50,7 +50,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
@@ -140,7 +140,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     extensionManager.validate();
     Update command = (Update) resourceCommand;
     DateTime now = tm().getTransactionTime();
-    DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
+    Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     boolean isExpired = existingDomain.getRegistrationExpirationTime().isBefore(now);
     FeesAndCredits feesAndCredits =
         pricingLogic.getRestorePrice(
@@ -180,7 +180,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
                 new DomainHistoryId(
                     domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
             .build();
-    DomainBase newDomain =
+    Domain newDomain =
         performRestore(
             existingDomain,
             newExpirationTime,
@@ -199,7 +199,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
         .build();
   }
 
-  private DomainHistory buildDomainHistory(DomainBase newDomain, DateTime now) {
+  private DomainHistory buildDomainHistory(Domain newDomain, DateTime now) {
     return historyBuilder
         .setType(DOMAIN_RESTORE)
         .setDomain(newDomain)
@@ -212,10 +212,11 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
 
   private void verifyRestoreAllowed(
       Update command,
-      DomainBase existingDomain,
+      Domain existingDomain,
       Optional<FeeUpdateCommandExtension> feeUpdate,
       FeesAndCredits feesAndCredits,
-      DateTime now) throws EppException {
+      DateTime now)
+      throws EppException {
     verifyOptionalAuthInfo(authInfo, existingDomain);
     if (!isSuperuser) {
       verifyResourceOwnership(registrarId, existingDomain);
@@ -235,8 +236,8 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     validateFeeChallenge(targetId, now, feeUpdate, feesAndCredits);
   }
 
-  private static DomainBase performRestore(
-      DomainBase existingDomain,
+  private static Domain performRestore(
+      Domain existingDomain,
       DateTime newExpirationTime,
       BillingEvent.Recurring autorenewEvent,
       PollMessage.Autorenew autorenewPollMessage,

@@ -22,7 +22,7 @@ import static google.registry.testing.DatabaseHelper.persistDomainAndEnqueueLord
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar.Type;
@@ -53,8 +53,8 @@ public class LordnTaskUtilsTest {
     inject.setStaticField(Ofy.class, "clock", clock);
   }
 
-  private DomainBase.Builder newDomainBuilder() {
-    return new DomainBase.Builder()
+  private Domain.Builder newDomainBuilder() {
+    return new Domain.Builder()
         .setDomainName("fleece.example")
         .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .setCreationRegistrarId("TheRegistrar")
@@ -64,7 +64,7 @@ public class LordnTaskUtilsTest {
   }
 
   @Test
-  void test_enqueueDomainBaseTask_sunrise() {
+  void test_enqueueDomainTask_sunrise() {
     persistDomainAndEnqueueLordn(newDomainBuilder().setRepoId("A-EXAMPLE").build());
     String expectedPayload =
         "A-EXAMPLE,fleece.example,smdzzzz,1,2010-05-01T10:11:12.000Z";
@@ -73,8 +73,8 @@ public class LordnTaskUtilsTest {
   }
 
   @Test
-  void test_enqueueDomainBaseTask_claims() {
-    DomainBase domain =
+  void test_enqueueDomainTask_claims() {
+    Domain domain =
         newDomainBuilder()
             .setRepoId("11-EXAMPLE")
             .setLaunchNotice(
@@ -104,9 +104,9 @@ public class LordnTaskUtilsTest {
   }
 
   @Test
-  void test_enqueueDomainBaseTask_throwsNpeOnNullDomain() {
+  void test_enqueueDomainTask_throwsNpeOnNullDomain() {
     assertThrows(
         NullPointerException.class,
-        () -> tm().transactNew(() -> LordnTaskUtils.enqueueDomainBaseTask(null)));
+        () -> tm().transactNew(() -> LordnTaskUtils.enqueueDomainTask(null)));
   }
 }

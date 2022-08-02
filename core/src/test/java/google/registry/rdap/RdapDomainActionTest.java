@@ -21,7 +21,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistContactResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHostResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeDomainBase;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarContacts;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.verify;
 
 import com.google.gson.JsonObject;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
@@ -90,7 +90,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     HostResource host2 = makeAndPersistHostResource(
         "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
     persistResource(
-        makeDomainBase(
+        makeDomain(
                 "cat.lol",
                 registrantLol,
                 adminContactLol,
@@ -106,9 +106,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     // deleted domain in lol
     HostResource hostDodo2 = makeAndPersistHostResource(
         "ns2.dodo.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
-    DomainBase domainDeleted =
+    Domain domainDeleted =
         persistResource(
-            makeDomainBase(
+            makeDomain(
                     "dodo.lol",
                     makeAndPersistContactResource(
                         "5372808-ERL",
@@ -163,7 +163,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
             clock.nowUtc().minusYears(3),
             registrarIdn);
     persistResource(
-        makeDomainBase(
+        makeDomain(
                 "cat.みんな",
                 registrantIdn,
                 adminContactIdn,
@@ -203,7 +203,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
             clock.nowUtc().minusYears(3),
             registrar1Tld);
     persistResource(
-        makeDomainBase(
+        makeDomain(
                 "cat.1.tld",
                 registrant1Tld,
                 adminContact1Tld,

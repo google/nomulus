@@ -18,7 +18,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -39,12 +38,13 @@ import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.RateLimiter;
 import google.registry.dns.writer.clouddns.CloudDnsWriter.ZoneStateException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.util.Retrier;
 import google.registry.util.SystemClock;
 import google.registry.util.SystemSleeper;
@@ -282,7 +282,7 @@ public class CloudDnsWriterTest {
   }
 
   /** Returns a domain to be persisted in Datastore. */
-  private static DomainBase fakeDomain(
+  private static Domain fakeDomain(
       String domainName, ImmutableSet<HostResource> nameservers, int numDsRecords) {
     ImmutableSet.Builder<DelegationSignerData> dsDataBuilder = new ImmutableSet.Builder<>();
 
@@ -295,7 +295,7 @@ public class CloudDnsWriterTest {
       hostResourceRefBuilder.add(nameserver.createVKey());
     }
 
-    return newDomainBase(domainName)
+    return DatabaseHelper.newDomain(domainName)
         .asBuilder()
         .setNameservers(hostResourceRefBuilder.build())
         .setDsData(dsDataBuilder.build())

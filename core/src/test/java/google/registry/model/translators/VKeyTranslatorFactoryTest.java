@@ -15,12 +15,12 @@
 package google.registry.model.translators;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.common.ClassPathManager;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.reporting.HistoryEntry;
@@ -49,17 +49,17 @@ public class VKeyTranslatorFactoryTest {
   void testEntityWithFlatKey() {
     // Creating an objectify key instead of a datastore key as this should get a correctly formatted
     // key path.
-    DomainBase domain = newDomainBase("example.com", "ROID-1", persistActiveContact("contact-1"));
-    Key<DomainBase> key = Key.create(domain);
-    VKey<DomainBase> vkey = VKeyTranslatorFactory.createVKey(key);
-    assertThat(vkey.getKind()).isEqualTo(DomainBase.class);
+    Domain domain = newDomain("example.com", "ROID-1", persistActiveContact("contact-1"));
+    Key<Domain> key = Key.create(domain);
+    VKey<Domain> vkey = VKeyTranslatorFactory.createVKey(key);
+    assertThat(vkey.getKind()).isEqualTo(Domain.class);
     assertThat(vkey.getOfyKey()).isEqualTo(key);
     assertThat(vkey.getSqlKey()).isEqualTo("ROID-1");
   }
 
   @Test
   void testEntityWithAncestor() {
-    Key<DomainBase> domainKey = Key.create(DomainBase.class, "ROID-1");
+    Key<Domain> domainKey = Key.create(Domain.class, "ROID-1");
     Key<HistoryEntry> historyEntryKey = Key.create(domainKey, HistoryEntry.class, 10L);
 
     VKey<HistoryEntry> vkey = VKeyTranslatorFactory.createVKey(historyEntryKey);

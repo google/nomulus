@@ -19,7 +19,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.FakeClock;
@@ -32,7 +32,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01T00:00:00Z"));
 
-  private DomainBase domain;
+  private Domain domain;
 
   @BeforeEach
   void beforeEach() {

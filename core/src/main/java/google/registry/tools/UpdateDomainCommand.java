@@ -32,7 +32,7 @@ import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.model.domain.DesignatedContact;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriodBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.tools.params.NameserversParameter;
@@ -183,21 +183,21 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
 
     ImmutableSet.Builder<String> autorenewGracePeriodWarningDomains = new ImmutableSet.Builder<>();
     DateTime now = clock.nowUtc();
-    for (String domain : domains) {
-      Optional<DomainBase> domainOptional = loadByForeignKey(DomainBase.class, domain, now);
-      checkArgumentPresent(domainOptional, "Domain '%s' does not exist or is deleted", domain);
-      DomainBase domainBase = domainOptional.get();
+    for (String domainName : domains) {
+      Optional<Domain> domainOptional = loadByForeignKey(Domain.class, domainName, now);
+      checkArgumentPresent(domainOptional, "Domain '%s' does not exist or is deleted", domainName);
+      Domain domain = domainOptional.get();
       checkArgument(
-          !domainBase.getStatusValues().contains(SERVER_UPDATE_PROHIBITED),
+          !domain.getStatusValues().contains(SERVER_UPDATE_PROHIBITED),
           "The domain '%s' has status SERVER_UPDATE_PROHIBITED. Verify that you are allowed "
               + "to make updates, and if so, use the domain_unlock command to enable updates.",
-          domain);
+          domainName);
       checkArgument(
-          !domainBase.getStatusValues().contains(PENDING_DELETE) || forceInPendingDelete,
+          !domain.getStatusValues().contains(PENDING_DELETE) || forceInPendingDelete,
           "The domain '%s' has status PENDING_DELETE. Verify that you really are intending to "
               + "update a domain in pending delete (this is uncommon), and if so, pass the "
               + "--force_in_pending_delete parameter to allow this update.",
-          domain);
+          domainName);
 
       // Use TreeSets so that the results are always in the same order (this makes testing easier).
       Set<String> addAdminsThisDomain = new TreeSet<>(addAdmins);
@@ -211,7 +211,7 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
 
       if (!nameservers.isEmpty() || !admins.isEmpty() || !techs.isEmpty() || !statuses.isEmpty()) {
         if (!nameservers.isEmpty()) {
-          ImmutableSortedSet<String> existingNameservers = domainBase.loadNameserverHostNames();
+          ImmutableSortedSet<String> existingNameservers = domain.loadNameserverHostNames();
           populateAddRemoveLists(
               ImmutableSet.copyOf(nameservers),
               existingNameservers,
@@ -224,13 +224,13 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
           checkArgument(
               numNameservers <= 13,
               "The resulting nameservers count for domain %s would be more than 13",
-              domain);
+              domainName);
         }
         if (!admins.isEmpty() || !techs.isEmpty()) {
           ImmutableSet<String> existingAdmins =
-              getContactsOfType(domainBase, DesignatedContact.Type.ADMIN);
+              getContactsOfType(domain, DesignatedContact.Type.ADMIN);
           ImmutableSet<String> existingTechs =
-              getContactsOfType(domainBase, DesignatedContact.Type.TECH);
+              getContactsOfType(domain, DesignatedContact.Type.TECH);
 
           if (!admins.isEmpty()) {
             populateAddRemoveLists(
@@ -249,7 +249,7 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
         }
         if (!statuses.isEmpty()) {
           Set<String> currentStatusValues = new HashSet<>();
-          for (StatusValue statusValue : domainBase.getStatusValues()) {
+          for (StatusValue statusValue : domain.getStatusValues()) {
             currentStatusValues.add(statusValue.getXmlName());
           }
           populateAddRemoveLists(
@@ -280,24 +280,24 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
               || clearDsRecords);
 
       if (!add && !remove && !change && !secDns && autorenews == null) {
-        logger.atInfo().log("No changes need to be made to domain '%s'.", domain);
+        logger.atInfo().log("No changes need to be made to domain '%s'.", domainName);
         continue;
       }
 
       // If autorenew is being turned off and this domain is already in the autorenew grace period,
       // then we want to warn the user that they might want to delete it instead.
       if (Boolean.FALSE.equals(autorenews)) {
-        if (domainBase.getGracePeriods().stream()
+        if (domain.getGracePeriods().stream()
             .map(GracePeriodBase::getType)
             .anyMatch(isEqual(AUTO_RENEW))) {
-          autorenewGracePeriodWarningDomains.add(domain);
+          autorenewGracePeriodWarningDomains.add(domainName);
         }
       }
 
       setSoyTemplate(DomainUpdateSoyInfo.getInstance(), DomainUpdateSoyInfo.DOMAINUPDATE);
       SoyMapData soyMapData =
           new SoyMapData(
-              "domain", domain,
+              "domain", domainName,
               "add", add,
               "addNameservers", addNameserversThisDomain,
               "addAdmins", addAdminsThisDomain,
@@ -341,11 +341,10 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
     removeSet.addAll(Sets.difference(oldSet, targetSet));
   }
 
-  ImmutableSet<String> getContactsOfType(
-      DomainBase domainBase, final DesignatedContact.Type contactType) {
+  ImmutableSet<String> getContactsOfType(Domain domain, final DesignatedContact.Type contactType) {
     return tm().transact(
             () ->
-                domainBase.getContacts().stream()
+                domain.getContacts().stream()
                     .filter(contact -> contact.getType().equals(contactType))
                     .map(contact -> tm().loadByKey(contact.getContactKey()).getContactId())
                     .collect(toImmutableSet()));

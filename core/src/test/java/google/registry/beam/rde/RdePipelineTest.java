@@ -31,7 +31,6 @@ import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.AppEngineExtension.makeRegistrar2;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertSimpleResources;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
@@ -58,7 +57,7 @@ import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
@@ -84,6 +83,7 @@ import google.registry.rde.PendingDeposit;
 import google.registry.rde.RdeResourceType;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
@@ -274,9 +274,9 @@ public class RdePipelineTest {
     persistHostHistory(persistActiveHost("ns0.domain.tld"));
     HostResource host1 = persistActiveHost("ns1.external.tld");
     persistHostHistory(host1);
-    DomainBase helloDomain =
+    Domain helloDomain =
         persistEppResource(
-            newDomainBase("hello.soy", contact1)
+            DatabaseHelper.newDomain("hello.soy", contact1)
                 .asBuilder()
                 .addNameserver(host1.createVKey())
                 .build());
@@ -284,17 +284,17 @@ public class RdePipelineTest {
     persistHostHistory(persistActiveHost("not-used-subordinate.hello.soy"));
     HostResource host2 = persistActiveHost("ns1.hello.soy");
     persistHostHistory(host2);
-    DomainBase kittyDomain =
+    Domain kittyDomain =
         persistEppResource(
-            newDomainBase("kitty.fun", contact2)
+            DatabaseHelper.newDomain("kitty.fun", contact2)
                 .asBuilder()
                 .addNameservers(ImmutableSet.of(host1.createVKey(), host2.createVKey()))
                 .build());
     persistDomainHistory(kittyDomain);
     // Should not appear because the TLD is not included in a pending deposit.
-    persistDomainHistory(persistEppResource(newDomainBase("lol.cat", contact1)));
+    persistDomainHistory(persistEppResource(DatabaseHelper.newDomain("lol.cat", contact1)));
     // To be deleted.
-    DomainBase deletedDomain = persistActiveDomain("deleted.soy");
+    Domain deletedDomain = persistActiveDomain("deleted.soy");
     persistDomainHistory(deletedDomain);
 
     // Advance time
@@ -335,7 +335,7 @@ public class RdePipelineTest {
     persistHostHistory(futureHost);
     persistDomainHistory(
         persistEppResource(
-            newDomainBase("future.soy", futureContact)
+            DatabaseHelper.newDomain("future.soy", futureContact)
                 .asBuilder()
                 .setNameservers(futureHost.createVKey())
                 .build()));

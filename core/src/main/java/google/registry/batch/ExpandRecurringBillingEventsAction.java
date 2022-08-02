@@ -43,7 +43,7 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.common.Cursor;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.reporting.DomainTransactionRecord;
@@ -253,7 +253,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
     final ImmutableSet<DateTime> billingTimes =
         getBillingTimesInScope(eventTimes, cursorTime, executeTime, tld);
 
-    VKey<DomainBase> domainKey = VKey.createSql(DomainBase.class, recurring.getDomainRepoId());
+    VKey<Domain> domainKey = VKey.createSql(Domain.class, recurring.getDomainRepoId());
     Iterable<OneTime> oneTimesForDomain;
     oneTimesForDomain =
         tm().createQueryComposer(OneTime.class)

@@ -30,7 +30,7 @@ import google.registry.flows.poll.PollFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
@@ -129,7 +129,7 @@ public class DeleteLoadTestDataAction implements Runnable {
     }
     VKey<HostResource> hostVKey = host.createVKey();
     // We can remove hosts from linked domains, so we should do so then delete the hosts
-    ImmutableSet<VKey<DomainBase>> linkedDomains =
+    ImmutableSet<VKey<Domain>> linkedDomains =
         EppResourceUtils.getLinkedDomainKeys(hostVKey, clock.nowUtc(), null);
     tm().loadByKeys(linkedDomains)
         .values()

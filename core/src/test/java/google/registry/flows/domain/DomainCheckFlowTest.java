@@ -25,7 +25,6 @@ import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistBillingRecurrenceForDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
@@ -73,7 +72,7 @@ import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -82,6 +81,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.label.ReservedList;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.SetClockExtension;
 import java.math.BigDecimal;
 import org.joda.money.CurrencyUnit;
@@ -94,7 +94,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainCheckFlow}. */
-class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, DomainBase> {
+class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Domain> {
 
   @Order(value = Order.DEFAULT - 3)
   @RegisterExtension
@@ -199,7 +199,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_oneExists_allocationTokenIsRedeemed() throws Exception {
     setEppInput("domain_check_allocationtoken.xml");
-    DomainBase domain = persistActiveDomain("example1.tld");
+    Domain domain = persistActiveDomain("example1.tld");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1L);
     persistResource(
         new AllocationToken.Builder()
@@ -779,7 +779,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_thirtyDomains_restoreFees() throws Exception {
     // Note that 30 is more than 25, which is the maximum # of entity groups you can enlist in a
-    // single Datastore transaction (each DomainBase entity is in a separate entity group).
+    // single Datastore transaction (each Domain entity is in a separate entity group).
     // It's also pretty common for registrars to send large domain checks.
     setEppInput("domain_check_fee_thirty_domains.xml");
     // example-00.tld won't exist and thus will not have a renew fee like the others.
@@ -1414,10 +1414,10 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     assertTldsFieldLogged("com", "net", "org");
   }
 
-  private DomainBase persistPendingDeleteDomain(String domainName) {
-    DomainBase existingDomain =
+  private Domain persistPendingDeleteDomain(String domainName) {
+    Domain existingDomain =
         persistResource(
-            newDomainBase(domainName)
+            DatabaseHelper.newDomain(domainName)
                 .asBuilder()
                 .setDeletionTime(clock.nowUtc().plusDays(25))
                 .setRegistrationExpirationTime(clock.nowUtc().minusDays(1))

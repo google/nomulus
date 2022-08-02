@@ -23,7 +23,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Cancellation;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
@@ -52,7 +52,7 @@ public class TransferDataTest {
   @BeforeEach
   void beforeEach() {
     Key<HistoryEntry> historyEntryKey =
-        Key.create(Key.create(DomainBase.class, "4-TLD"), HistoryEntry.class, 1356L);
+        Key.create(Key.create(Domain.class, "4-TLD"), HistoryEntry.class, 1356L);
     transferBillingEventKey = OneTime.createVKey(12345L);
     otherServerApproveBillingEventKey = Cancellation.createVKey(2468L);
     recurringBillingEventKey = Recurring.createVKey(13579L);

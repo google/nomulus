@@ -1,7 +1,7 @@
 AllocationToken
 Cancellation
 ContactResource
-DomainBase
+Domain
 EntityGroupRoot
 EppResourceIndex
 ForeignKeyContactIndex

@@ -33,7 +33,7 @@ import static org.mockito.Mockito.verify;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -106,7 +106,7 @@ public class ResaveAllEppResourcesPipelineTest {
   void testPipeline_fulfilledDomainTransfer() {
     options.setFast(true);
     DateTime now = fakeClock.nowUtc();
-    DomainBase domain =
+    Domain domain =
         persistDomainWithPendingTransfer(
             persistDomainWithDependentResources(
                 "domain",
@@ -122,7 +122,7 @@ public class ResaveAllEppResourcesPipelineTest {
     assertThat(domain.getUpdateTimestamp().getTimestamp()).isEqualTo(now);
     fakeClock.advanceOneMilli();
     runPipeline();
-    DomainBase postPipeline = loadByEntity(domain);
+    Domain postPipeline = loadByEntity(domain);
     assertThat(postPipeline.getStatusValues()).doesNotContain(StatusValue.PENDING_TRANSFER);
     assertThat(postPipeline.getUpdateTimestamp().getTimestamp()).isEqualTo(fakeClock.nowUtc());
   }
@@ -130,13 +130,13 @@ public class ResaveAllEppResourcesPipelineTest {
   @Test
   void testPipeline_autorenewedDomain() {
     DateTime now = fakeClock.nowUtc();
-    DomainBase domain =
+    Domain domain =
         persistDomainWithDependentResources(
             "domain", "tld", persistActiveContact("jd1234"), now, now, now.plusYears(1));
     assertThat(domain.getRegistrationExpirationTime()).isEqualTo(now.plusYears(1));
     fakeClock.advanceBy(Duration.standardDays(500));
     runPipeline();
-    DomainBase postPipeline = loadByEntity(domain);
+    Domain postPipeline = loadByEntity(domain);
     assertThat(postPipeline.getRegistrationExpirationTime()).isEqualTo(now.plusYears(2));
   }
 
@@ -160,7 +160,7 @@ public class ResaveAllEppResourcesPipelineTest {
     // Spy the transaction manager so we can be sure we're only saving the renewed domain
     JpaTransactionManager spy = spy(jpaTm());
     TransactionManagerFactory.setJpaTm(() -> spy);
-    ArgumentCaptor<DomainBase> domainPutCaptor = ArgumentCaptor.forClass(DomainBase.class);
+    ArgumentCaptor<Domain> domainPutCaptor = ArgumentCaptor.forClass(Domain.class);
     runPipeline();
     // We should only be attempting to put the one changed domain into the DB
     verify(spy).put(domainPutCaptor.capture());
@@ -172,9 +172,9 @@ public class ResaveAllEppResourcesPipelineTest {
     options.setFast(false);
     DateTime now = fakeClock.nowUtc();
     ContactResource contact = persistActiveContact("jd1234");
-    DomainBase renewed =
+    Domain renewed =
         persistDomainWithDependentResources("renewed", "tld", contact, now, now, now.plusYears(1));
-    DomainBase nonRenewed =
+    Domain nonRenewed =
         persistDomainWithDependentResources(
             "nonrenewed", "tld", contact, now, now, now.plusYears(20));
     // Spy the transaction manager so we can be sure we're attempting to save everything

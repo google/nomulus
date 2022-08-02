@@ -20,6 +20,7 @@ import dagger.Lazy;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
+import google.registry.model.domain.Domain;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.BeamBulkQueryJpaTm;
 import google.registry.persistence.PersistenceModule.BeamJpaTm;
@@ -53,8 +54,7 @@ public interface RegistryPipelineComponent {
 
   /**
    * Returns a {@link JpaTransactionManager} optimized for bulk loading multi-level JPA entities
-   * ({@link google.registry.model.domain.DomainBase} and {@link
-   * google.registry.model.domain.DomainHistory}). Please refer to {@link
+   * ({@link Domain} and {@link google.registry.model.domain.DomainHistory}). Please refer to {@link
    * google.registry.model.bulkquery.BulkQueryEntities} for more information.
    */
   @BeamBulkQueryJpaTm

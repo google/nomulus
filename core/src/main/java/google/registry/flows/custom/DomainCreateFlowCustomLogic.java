@@ -22,7 +22,7 @@ import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainCreateFlow;
 import google.registry.model.ImmutableObject;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
@@ -125,10 +125,9 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
   public abstract static class BeforeSaveParameters extends ImmutableObject {
 
     /**
-     * The new {@link DomainBase} entity that is going to be persisted at the end of the
-     * transaction.
+     * The new {@link Domain} entity that is going to be persisted at the end of the transaction.
      */
-    public abstract DomainBase newDomain();
+    public abstract Domain newDomain();
 
     /**
      * The new {@link HistoryEntry} entity for the domain's creation that is going to be persisted
@@ -162,7 +161,7 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
     @AutoValue.Builder
     public abstract static class Builder {
 
-      public abstract Builder setNewDomain(DomainBase newDomain);
+      public abstract Builder setNewDomain(Domain newDomain);
 
       public abstract Builder setHistoryEntry(HistoryEntry historyEntry);
 

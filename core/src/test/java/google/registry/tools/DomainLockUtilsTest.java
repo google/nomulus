@@ -22,7 +22,6 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.getHistoryEntriesOfType;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getRegistryLockByRevisionId;
@@ -38,7 +37,7 @@ import com.google.common.collect.ImmutableList;
 import google.registry.batch.RelockDomainAction;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.host.HostResource;
@@ -83,13 +82,13 @@ public final class DomainLockUtilsTest {
           .withUserService(UserInfo.create(POC_ID, "12345"))
           .build();
 
-  private DomainBase domain;
+  private Domain domain;
 
   @BeforeEach
   void setup() {
     createTlds("tld", "net");
     HostResource host = persistActiveHost("ns1.example.net");
-    domain = persistResource(newDomainBase(DOMAIN_NAME, host));
+    domain = persistResource(DatabaseHelper.newDomain(DOMAIN_NAME, host));
 
     domainLockUtils =
         new DomainLockUtils(

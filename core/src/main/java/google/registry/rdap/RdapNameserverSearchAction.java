@@ -27,7 +27,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Booleans;
 import com.googlecode.objectify.cmd.Query;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
@@ -176,9 +176,9 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
   /** Searches for nameservers by name using the superordinate domain as a suffix. */
   private NameserverSearchResponse searchByNameUsingSuperordinateDomain(
       RdapSearchPattern partialStringQuery) {
-    Optional<DomainBase> domainBase =
-        loadByForeignKey(DomainBase.class, partialStringQuery.getSuffix(), getRequestTime());
-    if (!domainBase.isPresent()) {
+    Optional<Domain> domain =
+        loadByForeignKey(Domain.class, partialStringQuery.getSuffix(), getRequestTime());
+    if (!domain.isPresent()) {
       // Don't allow wildcards with suffixes which are not domains we manage. That would risk a
       // table scan in many easily foreseeable cases. The user might ask for ns*.zombo.com,
       // forcing us to query for all hosts beginning with ns, then filter for those ending in
@@ -188,7 +188,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
           "A suffix after a wildcard in a nameserver lookup must be an in-bailiwick domain");
     }
     List<HostResource> hostList = new ArrayList<>();
-    for (String fqhn : ImmutableSortedSet.copyOf(domainBase.get().getSubordinateHosts())) {
+    for (String fqhn : ImmutableSortedSet.copyOf(domain.get().getSubordinateHosts())) {
       if (cursorString.isPresent() && (fqhn.compareTo(cursorString.get()) <= 0)) {
         continue;
       }
@@ -208,7 +208,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
     return makeSearchResults(
         hostList,
         IncompletenessWarningType.COMPLETE,
-        domainBase.get().getSubordinateHosts().size(),
+        domain.get().getSubordinateHosts().size(),
         CursorType.NAME);
   }
 

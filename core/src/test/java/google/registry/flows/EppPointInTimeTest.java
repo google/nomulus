@@ -30,7 +30,7 @@ import static org.joda.time.Duration.standardDays;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.ofy.Ofy;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.testing.AppEngineExtension;
@@ -100,7 +100,7 @@ class EppPointInTimeTest {
     eppLoader = new EppLoader(this, "domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlow();
     tm().clearSessionCache();
-    DomainBase domainAfterCreate = Iterables.getOnlyElement(loadAllOf(DomainBase.class));
+    Domain domainAfterCreate = Iterables.getOnlyElement(loadAllOf(Domain.class));
     assertThat(domainAfterCreate.getDomainName()).isEqualTo("example.tld");
 
     clock.advanceBy(standardDays(2));
@@ -109,7 +109,7 @@ class EppPointInTimeTest {
     runFlow();
     tm().clearSessionCache();
 
-    DomainBase domainAfterFirstUpdate = loadByEntity(domainAfterCreate);
+    Domain domainAfterFirstUpdate = loadByEntity(domainAfterCreate);
     assertThat(domainAfterCreate).isNotEqualTo(domainAfterFirstUpdate);
 
     clock.advanceOneMilli(); // same day as first update
@@ -117,7 +117,7 @@ class EppPointInTimeTest {
     eppLoader = new EppLoader(this, "domain_update_dsdata_rem.xml");
     runFlow();
     tm().clearSessionCache();
-    DomainBase domainAfterSecondUpdate = loadByEntity(domainAfterCreate);
+    Domain domainAfterSecondUpdate = loadByEntity(domainAfterCreate);
 
     clock.advanceBy(standardDays(2));
     DateTime timeAtDelete = clock.nowUtc(); // before 'add' grace period ends
@@ -128,7 +128,7 @@ class EppPointInTimeTest {
     assertThat(domainAfterFirstUpdate).isNotEqualTo(domainAfterSecondUpdate);
 
     // Point-in-time can only rewind an object from the current version, not roll forward.
-    DomainBase latest = loadByEntity(domainAfterCreate);
+    Domain latest = loadByEntity(domainAfterCreate);
 
     // Creation time has millisecond granularity due to isActive() check.
     tm().clearSessionCache();

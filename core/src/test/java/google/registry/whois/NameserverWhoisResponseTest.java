@@ -17,7 +17,6 @@ package google.registry.whois;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.whois.WhoisTestData.loadFile;
@@ -25,10 +24,11 @@ import static google.registry.whois.WhoisTestData.loadFile;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.whois.WhoisResponse.WhoisResponseResults;
 import org.joda.time.DateTime;
@@ -53,7 +53,7 @@ class NameserverWhoisResponseTest {
     persistNewRegistrar("example", "Hänsel & Gretel Registrar, Inc.", Registrar.Type.REAL, 8L);
     persistResource(loadRegistrar("example").asBuilder().setUrl("http://my.fake.url").build());
     createTld("tld");
-    DomainBase domain = persistResource(newDomainBase("zobo.tld"));
+    Domain domain = persistResource(DatabaseHelper.newDomain("zobo.tld"));
 
     hostResource1 =
         new HostResource.Builder()

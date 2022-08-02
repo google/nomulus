@@ -33,7 +33,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.EppXmlTransformer;
 import google.registry.model.ofy.Ofy;
@@ -317,7 +317,7 @@ public class EppTestCase {
 
   /** Makes a one-time billing event corresponding to the given domain's creation. */
   protected static BillingEvent.OneTime makeOneTimeCreateBillingEvent(
-      DomainBase domain, DateTime createTime) {
+      Domain domain, DateTime createTime) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.CREATE)
         .setTargetId(domain.getDomainName())
@@ -332,7 +332,7 @@ public class EppTestCase {
   }
 
   /** Makes a one-time billing event corresponding to the given domain's renewal. */
-  static BillingEvent.OneTime makeOneTimeRenewBillingEvent(DomainBase domain, DateTime renewTime) {
+  static BillingEvent.OneTime makeOneTimeRenewBillingEvent(Domain domain, DateTime renewTime) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.RENEW)
         .setTargetId(domain.getDomainName())
@@ -347,7 +347,7 @@ public class EppTestCase {
 
   /** Makes a recurring billing event corresponding to the given domain's creation. */
   static BillingEvent.Recurring makeRecurringCreateBillingEvent(
-      DomainBase domain, DateTime eventTime, DateTime endTime) {
+      Domain domain, DateTime eventTime, DateTime endTime) {
     return makeRecurringBillingEvent(
         domain,
         getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class),
@@ -357,7 +357,7 @@ public class EppTestCase {
 
   /** Makes a recurring billing event corresponding to the given domain's renewal. */
   static BillingEvent.Recurring makeRecurringRenewBillingEvent(
-      DomainBase domain, DateTime eventTime, DateTime endTime) {
+      Domain domain, DateTime eventTime, DateTime endTime) {
     return makeRecurringBillingEvent(
         domain,
         getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class),
@@ -367,7 +367,7 @@ public class EppTestCase {
 
   /** Makes a recurring billing event corresponding to the given history entry. */
   protected static BillingEvent.Recurring makeRecurringBillingEvent(
-      DomainBase domain, DomainHistory historyEntry, DateTime eventTime, DateTime endTime) {
+      Domain domain, DomainHistory historyEntry, DateTime eventTime, DateTime endTime) {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -381,7 +381,7 @@ public class EppTestCase {
 
   /** Makes a cancellation billing event cancelling out the given domain create billing event. */
   static BillingEvent.Cancellation makeCancellationBillingEventForCreate(
-      DomainBase domain, OneTime billingEventToCancel, DateTime createTime, DateTime deleteTime) {
+      Domain domain, OneTime billingEventToCancel, DateTime createTime, DateTime deleteTime) {
     return new BillingEvent.Cancellation.Builder()
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
@@ -396,7 +396,7 @@ public class EppTestCase {
 
   /** Makes a cancellation billing event cancelling out the given domain renew billing event. */
   static BillingEvent.Cancellation makeCancellationBillingEventForRenew(
-      DomainBase domain, OneTime billingEventToCancel, DateTime renewTime, DateTime deleteTime) {
+      Domain domain, OneTime billingEventToCancel, DateTime renewTime, DateTime deleteTime) {
     return new BillingEvent.Cancellation.Builder()
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())

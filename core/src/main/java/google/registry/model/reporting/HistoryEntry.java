@@ -38,7 +38,7 @@ import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
@@ -386,7 +386,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
     String parentKind = getParent().getKind();
     final HistoryEntry resultEntity;
     // can't use a switch statement since we're calling getKind()
-    if (parentKind.equals(getKind(DomainBase.class))) {
+    if (parentKind.equals(getKind(Domain.class))) {
       resultEntity =
           new DomainHistory.Builder().copyFrom(this).setDomainRepoId(parent.getName()).build();
     } else if (parentKind.equals(getKind(HostResource.class))) {
@@ -408,7 +408,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
     long id = key.getId();
     Key<EppResource> parent = key.getParent();
     String parentKind = parent.getKind();
-    if (parentKind.equals(getKind(DomainBase.class))) {
+    if (parentKind.equals(getKind(Domain.class))) {
       return VKey.create(
           DomainHistory.class,
           new DomainHistoryId(repoId, id),

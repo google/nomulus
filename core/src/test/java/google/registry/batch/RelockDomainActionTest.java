@@ -21,7 +21,6 @@ import static google.registry.model.eppcommon.StatusValue.PENDING_TRANSFER;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.deleteTestDomain;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -36,12 +35,13 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.host.HostResource;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -87,7 +87,7 @@ public class RelockDomainActionTest {
           .withUserService(UserInfo.create(POC_ID, "12345"))
           .build();
 
-  private DomainBase domain;
+  private Domain domain;
   private RegistryLock oldLock;
   @Mock private SendEmailService sendEmailService;
   private RelockDomainAction action;
@@ -96,7 +96,7 @@ public class RelockDomainActionTest {
   void beforeEach() throws Exception {
     createTlds("tld", "net");
     HostResource host = persistActiveHost("ns1.example.net");
-    domain = persistResource(newDomainBase(DOMAIN_NAME, host));
+    domain = persistResource(DatabaseHelper.newDomain(DOMAIN_NAME, host));
 
     oldLock = domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, CLIENT_ID, POC_ID, false);
     assertThat(loadByEntity(domain).getStatusValues())

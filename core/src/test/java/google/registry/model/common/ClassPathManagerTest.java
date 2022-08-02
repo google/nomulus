@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.host.HostResource;
@@ -61,7 +61,7 @@ public class ClassPathManagerTest {
         .isEqualTo(EppResourceIndexBucket.class);
     assertThat(ClassPathManager.getClass("EntityGroupRoot")).isEqualTo(EntityGroupRoot.class);
     assertThat(ClassPathManager.getClass("Lock")).isEqualTo(Lock.class);
-    assertThat(ClassPathManager.getClass("DomainBase")).isEqualTo(DomainBase.class);
+    assertThat(ClassPathManager.getClass("Domain")).isEqualTo(Domain.class);
     assertThat(ClassPathManager.getClass("HistoryEntry")).isEqualTo(HistoryEntry.class);
     assertThat(ClassPathManager.getClass("PollMessage")).isEqualTo(PollMessage.class);
     assertThat(ClassPathManager.getClass("ForeignKeyHostIndex"))
@@ -115,7 +115,7 @@ public class ClassPathManagerTest {
         .isEqualTo("EppResourceIndexBucket");
     assertThat(ClassPathManager.getClassName(EntityGroupRoot.class)).isEqualTo("EntityGroupRoot");
     assertThat(ClassPathManager.getClassName(Lock.class)).isEqualTo("Lock");
-    assertThat(ClassPathManager.getClassName(DomainBase.class)).isEqualTo("DomainBase");
+    assertThat(ClassPathManager.getClassName(Domain.class)).isEqualTo("Domain");
     assertThat(ClassPathManager.getClassName(HistoryEntry.class)).isEqualTo("HistoryEntry");
     assertThat(ClassPathManager.getClassName(PollMessage.class)).isEqualTo("PollMessage");
     assertThat(ClassPathManager.getClassName(ForeignKeyHostIndex.class))

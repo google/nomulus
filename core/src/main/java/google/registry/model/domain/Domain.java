@@ -43,15 +43,11 @@ import org.joda.time.DateTime;
 /**
  * A persistable domain resource including mutable and non-mutable fields.
  *
- * <p>For historical reasons, the name of this entity is "DomainBase". Ideally it would be
- * "DomainResource" for linguistic parallelism with the other {@link EppResource} entity classes,
- * but that would necessitate a complex data migration which isn't worth it.
- *
  * @see <a href="https://tools.ietf.org/html/rfc5731">RFC 5731</a>
  */
 @ReportedOn
 @com.googlecode.objectify.annotation.Entity
-@Entity(name = "Domain")
+@Entity
 @Table(
     name = "Domain",
     indexes = {
@@ -73,7 +69,7 @@ import org.joda.time.DateTime;
 @WithStringVKey
 @ExternalMessagingName("domain")
 @Access(AccessType.FIELD)
-public class DomainBase extends DomainContent implements ForeignKeyedEppResource {
+public class Domain extends DomainContent implements ForeignKeyedEppResource {
 
   @Override
   @javax.persistence.Id
@@ -157,17 +153,17 @@ public class DomainBase extends DomainContent implements ForeignKeyedEppResource
   }
 
   @Override
-  public VKey<DomainBase> createVKey() {
-    return VKey.create(DomainBase.class, getRepoId(), Key.create(this));
+  public VKey<Domain> createVKey() {
+    return VKey.create(Domain.class, getRepoId(), Key.create(this));
   }
 
   @Override
-  public DomainBase cloneProjectedAtTime(final DateTime now) {
+  public Domain cloneProjectedAtTime(final DateTime now) {
     return cloneDomainProjectedAtTime(this, now);
   }
 
-  public static VKey<DomainBase> createVKey(Key<DomainBase> key) {
-    return VKey.create(DomainBase.class, key.getName(), key);
+  public static VKey<Domain> createVKey(Key<Domain> key) {
+    return VKey.create(Domain.class, key.getName(), key);
   }
 
   /** An override of {@link EppResource#asBuilder} with tighter typing. */
@@ -176,12 +172,12 @@ public class DomainBase extends DomainContent implements ForeignKeyedEppResource
     return new Builder(clone(this));
   }
 
-  /** A builder for constructing {@link DomainBase}, since it is immutable. */
-  public static class Builder extends DomainContent.Builder<DomainBase, Builder> {
+  /** A builder for constructing {@link Domain}, since it is immutable. */
+  public static class Builder extends DomainContent.Builder<Domain, Builder> {
 
     public Builder() {}
 
-    Builder(DomainBase instance) {
+    Builder(Domain instance) {
       super(instance);
     }
 

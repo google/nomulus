@@ -15,9 +15,11 @@
 package google.registry.model.bulkquery;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.model.bulkquery.BulkQueryEntities.assembleDomain;
+import static google.registry.model.bulkquery.BulkQueryEntities.assembleDomainHistory;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
@@ -28,17 +30,17 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.persistence.VKey;
 
 /**
- * Helpers for bulk-loading {@link google.registry.model.domain.DomainBase} and {@link
- * google.registry.model.domain.DomainHistory} entities in <em>tests</em>.
+ * Helpers for bulk-loading {@link Domain} and {@link google.registry.model.domain.DomainHistory}
+ * entities in <em>tests</em>.
  */
 public class BulkQueryHelper {
 
-  static DomainBase loadAndAssembleDomainBase(String domainRepoId) {
+  static Domain loadAndAssembleDomain(String domainRepoId) {
     return jpaTm()
         .transact(
             () ->
-                BulkQueryEntities.assembleDomainBase(
-                    jpaTm().loadByKey(DomainBaseLite.createVKey(domainRepoId)),
+                assembleDomain(
+                    jpaTm().loadByKey(DomainLite.createVKey(domainRepoId)),
                     jpaTm()
                         .loadAllOfStream(GracePeriod.class)
                         .filter(gracePeriod -> gracePeriod.getDomainRepoId().equals(domainRepoId))
@@ -58,7 +60,7 @@ public class BulkQueryHelper {
     return jpaTm()
         .transact(
             () ->
-                BulkQueryEntities.assembleDomainHistory(
+                assembleDomainHistory(
                     jpaTm().loadByKey(VKey.createSql(DomainHistoryLite.class, domainHistoryId)),
                     jpaTm()
                         .loadAllOfStream(DomainDsDataHistory.class)

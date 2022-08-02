@@ -41,7 +41,7 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
@@ -303,7 +303,7 @@ class InvoicingPipelineTest {
             .setInvoicingEnabled(true)
             .build();
     persistResource(test);
-    DomainBase domain = persistActiveDomain("mycanadiandomain.test");
+    Domain domain = persistActiveDomain("mycanadiandomain.test");
 
     persistOneTimeBillingEvent(25, domain, registrar, Reason.RENEW, 3, Money.of(CAD, 20.5));
     PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
@@ -415,13 +415,13 @@ class InvoicingPipelineTest {
             .build();
     persistResource(hello);
 
-    DomainBase domain1 = persistActiveDomain("mydomain.test");
-    DomainBase domain2 = persistActiveDomain("mydomain2.test");
-    DomainBase domain3 = persistActiveDomain("mydomain3.hello");
-    DomainBase domain4 = persistActiveDomain("mydomain4.test");
-    DomainBase domain5 = persistActiveDomain("mydomain5.test");
-    DomainBase domain6 = persistActiveDomain("locked.test");
-    DomainBase domain7 = persistActiveDomain("update-prohibited.test");
+    Domain domain1 = persistActiveDomain("mydomain.test");
+    Domain domain2 = persistActiveDomain("mydomain2.test");
+    Domain domain3 = persistActiveDomain("mydomain3.hello");
+    Domain domain4 = persistActiveDomain("mydomain4.test");
+    Domain domain5 = persistActiveDomain("mydomain5.test");
+    Domain domain6 = persistActiveDomain("locked.test");
+    Domain domain7 = persistActiveDomain("update-prohibited.test");
 
     persistOneTimeBillingEvent(1, domain1, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
     persistOneTimeBillingEvent(2, domain2, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
@@ -453,7 +453,7 @@ class InvoicingPipelineTest {
     Registrar registrar4 = persistNewRegistrar("noBillRegistrar");
     registrar4 = registrar4.asBuilder().setBillingAccountMap(null).build();
     persistResource(registrar4);
-    DomainBase domain8 = persistActiveDomain("non-billable.test");
+    Domain domain8 = persistActiveDomain("non-billable.test");
     persistOneTimeBillingEvent(8, domain8, registrar4, Reason.RENEW, 3, Money.of(USD, 20.5));
 
     // Add billing event for a non-real registrar
@@ -466,16 +466,16 @@ class InvoicingPipelineTest {
             .setType(Registrar.Type.OTE)
             .build();
     persistResource(registrar5);
-    DomainBase domain9 = persistActiveDomain("not-real.test");
+    Domain domain9 = persistActiveDomain("not-real.test");
     persistOneTimeBillingEvent(9, domain9, registrar5, Reason.RENEW, 3, Money.of(USD, 20.5));
 
     // Add billing event for a non-invoicing TLD
     createTld("nobill");
-    DomainBase domain10 = persistActiveDomain("test.nobill");
+    Domain domain10 = persistActiveDomain("test.nobill");
     persistOneTimeBillingEvent(10, domain10, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
 
     // Add billing event before October 2017
-    DomainBase domain11 = persistActiveDomain("july.test");
+    Domain domain11 = persistActiveDomain("july.test");
     persistOneTimeBillingEvent(
         11,
         domain11,
@@ -487,7 +487,7 @@ class InvoicingPipelineTest {
         DateTime.parse("2017-07-02T00:00:00.0Z"));
 
     // Add a billing event with a corresponding cancellation
-    DomainBase domain12 = persistActiveDomain("cancel.test");
+    Domain domain12 = persistActiveDomain("cancel.test");
     OneTime oneTime =
         persistOneTimeBillingEvent(12, domain12, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
     DomainHistory domainHistory = persistDomainHistory(domain12, registrar1);
@@ -507,7 +507,7 @@ class InvoicingPipelineTest {
     persistResource(cancellation);
 
     // Add billing event with a corresponding recurring billing event and cancellation
-    DomainBase domain13 = persistActiveDomain("cancel-recurring.test");
+    Domain domain13 = persistActiveDomain("cancel-recurring.test");
     DomainHistory domainHistoryRecurring = persistDomainHistory(domain13, registrar1);
 
     Recurring recurring =
@@ -548,22 +548,22 @@ class InvoicingPipelineTest {
     persistResource(cancellationRecurring);
   }
 
-  private static DomainHistory persistDomainHistory(DomainBase domainBase, Registrar registrar) {
+  private static DomainHistory persistDomainHistory(Domain domain, Registrar registrar) {
     DomainHistory domainHistory =
         new DomainHistory.Builder()
             .setType(HistoryEntry.Type.DOMAIN_RENEW)
             .setModificationTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
-            .setDomain(domainBase)
+            .setDomain(domain)
             .setRegistrarId(registrar.getRegistrarId())
             .build();
     return persistResource(domainHistory);
   }
 
   private static OneTime persistOneTimeBillingEvent(
-      int id, DomainBase domainBase, Registrar registrar, Reason reason, int years, Money money) {
+      int id, Domain domain, Registrar registrar, Reason reason, int years, Money money) {
     return persistOneTimeBillingEvent(
         id,
-        domainBase,
+        domain,
         registrar,
         reason,
         years,
@@ -574,7 +574,7 @@ class InvoicingPipelineTest {
 
   private static OneTime persistOneTimeBillingEvent(
       int id,
-      DomainBase domainBase,
+      Domain domain,
       Registrar registrar,
       Reason reason,
       int years,
@@ -590,10 +590,10 @@ class InvoicingPipelineTest {
             .setEventTime(eventTime)
             .setRegistrarId(registrar.getRegistrarId())
             .setReason(reason)
-            .setTargetId(domainBase.getDomainName())
+            .setTargetId(domain.getDomainName())
             .setCost(money)
             .setFlags(Arrays.stream(flags).collect(toImmutableSet()))
-            .setDomainHistory(persistDomainHistory(domainBase, registrar));
+            .setDomainHistory(persistDomainHistory(domain, registrar));
 
     if (years > 0) {
       billingEventBuilder.setPeriodYears(years);

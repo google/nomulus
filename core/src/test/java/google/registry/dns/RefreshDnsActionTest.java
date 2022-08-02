@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import google.registry.dns.DnsConstants.TargetType;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.testing.AppEngineExtension;
@@ -55,7 +55,7 @@ public class RefreshDnsActionTest {
 
   @Test
   void testSuccess_host() {
-    DomainBase domain = persistActiveDomain("example.xn--q9jyb4c");
+    Domain domain = persistActiveDomain("example.xn--q9jyb4c");
     persistActiveSubordinateHost("ns1.example.xn--q9jyb4c", domain);
     run(TargetType.HOST, "ns1.example.xn--q9jyb4c");
     verify(dnsQueue).addHostRefreshTask("ns1.example.xn--q9jyb4c");

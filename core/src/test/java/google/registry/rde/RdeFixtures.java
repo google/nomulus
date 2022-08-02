@@ -33,8 +33,8 @@ import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -56,9 +56,9 @@ import org.joda.time.DateTime;
 /** Utility class for creating {@code EppResource} entities that'll successfully marshal. */
 final class RdeFixtures {
 
-  static DomainBase makeDomainBase(FakeClock clock, String tld) {
-    DomainBase domain =
-        new DomainBase.Builder()
+  static Domain makeDomain(FakeClock clock, String tld) {
+    Domain domain =
+        new Domain.Builder()
             .setDomainName("example." + tld)
             .setRepoId(generateNewDomainRoid(tld))
             .setRegistrant(

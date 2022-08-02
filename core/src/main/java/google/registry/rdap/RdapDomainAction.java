@@ -21,7 +21,7 @@ import static google.registry.request.Action.Method.HEAD;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import google.registry.flows.EppException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapObjectClasses.RdapDomain;
@@ -59,12 +59,12 @@ public class RdapDomainAction extends RdapActionBase {
               pathSearchString, getHumanReadableObjectTypeName(), e.getMessage()));
     }
     // The query string is not used; the RDAP syntax is /rdap/domain/mydomain.com.
-    Optional<DomainBase> domainBase =
+    Optional<Domain> domain =
         loadByForeignKey(
-            DomainBase.class,
+            Domain.class,
             pathSearchString,
             shouldIncludeDeleted() ? START_OF_TIME : rdapJsonFormatter.getRequestTime());
-    if (!domainBase.isPresent() || !isAuthorized(domainBase.get())) {
+    if (!domain.isPresent() || !isAuthorized(domain.get())) {
       // RFC7480 5.3 - if the server wishes to respond that it doesn't have data satisfying the
       // query, it MUST reply with 404 response code.
       //
@@ -72,6 +72,6 @@ public class RdapDomainAction extends RdapActionBase {
       // exists but we don't want to show it to you", because we DON'T wish to say that.
       throw new NotFoundException(pathSearchString + " not found");
     }
-    return rdapJsonFormatter.createRdapDomain(domainBase.get(), OutputDataType.FULL);
+    return rdapJsonFormatter.createRdapDomain(domain.get(), OutputDataType.FULL);
   }
 }

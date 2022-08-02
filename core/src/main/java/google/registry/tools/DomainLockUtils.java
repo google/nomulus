@@ -28,7 +28,7 @@ import google.registry.batch.RelockDomainAction;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.reporting.HistoryEntry;
@@ -252,11 +252,11 @@ public final class DomainLockUtils {
   private RegistryLock.Builder createLockBuilder(
       String domainName, String registrarId, @Nullable String registrarPocId, boolean isAdmin) {
     DateTime now = jpaTm().getTransactionTime();
-    DomainBase domainBase = getDomain(domainName, registrarId, now);
-    verifyDomainNotLocked(domainBase, isAdmin);
+    Domain domain = getDomain(domainName, registrarId, now);
+    verifyDomainNotLocked(domain, isAdmin);
 
     // Multiple pending actions are not allowed for non-admins
-    RegistryLockDao.getMostRecentByRepoId(domainBase.getRepoId())
+    RegistryLockDao.getMostRecentByRepoId(domain.getRepoId())
         .ifPresent(
             previousLock ->
                 checkArgument(
@@ -268,7 +268,7 @@ public final class DomainLockUtils {
     return new RegistryLock.Builder()
         .setVerificationCode(stringGenerator.createString(VERIFICATION_CODE_LENGTH))
         .setDomainName(domainName)
-        .setRepoId(domainBase.getRepoId())
+        .setRepoId(domain.getRepoId())
         .setRegistrarId(registrarId)
         .setRegistrarPocId(registrarPocId)
         .isSuperuser(isAdmin);
@@ -277,11 +277,11 @@ public final class DomainLockUtils {
   private RegistryLock.Builder createUnlockBuilder(
       String domainName, String registrarId, boolean isAdmin, Optional<Duration> relockDuration) {
     DateTime now = jpaTm().getTransactionTime();
-    DomainBase domainBase = getDomain(domainName, registrarId, now);
+    Domain domain = getDomain(domainName, registrarId, now);
     Optional<RegistryLock> lockOptional =
-        RegistryLockDao.getMostRecentVerifiedLockByRepoId(domainBase.getRepoId());
+        RegistryLockDao.getMostRecentVerifiedLockByRepoId(domain.getRepoId());
 
-    verifyDomainLocked(domainBase, isAdmin);
+    verifyDomainLocked(domain, isAdmin);
 
     RegistryLock.Builder newLockBuilder;
     if (isAdmin) {
@@ -293,7 +293,7 @@ public final class DomainLockUtils {
               .map(RegistryLock::asBuilder)
               .orElse(
                   new RegistryLock.Builder()
-                      .setRepoId(domainBase.getRepoId())
+                      .setRepoId(domain.getRepoId())
                       .setDomainName(domainName)
                       .setLockCompletionTime(now)
                       .setRegistrarId(registrarId));
@@ -325,24 +325,23 @@ public final class DomainLockUtils {
         .setRegistrarId(registrarId);
   }
 
-  private static void verifyDomainNotLocked(DomainBase domainBase, boolean isAdmin) {
+  private static void verifyDomainNotLocked(Domain domain, boolean isAdmin) {
     checkArgument(
-        isAdmin || !domainBase.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES),
+        isAdmin || !domain.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES),
         "Domain %s is already locked",
-        domainBase.getDomainName());
+        domain.getDomainName());
   }
 
-  private static void verifyDomainLocked(DomainBase domainBase, boolean isAdmin) {
+  private static void verifyDomainLocked(Domain domain, boolean isAdmin) {
     checkArgument(
-        isAdmin
-            || !Sets.intersection(domainBase.getStatusValues(), REGISTRY_LOCK_STATUSES).isEmpty(),
+        isAdmin || !Sets.intersection(domain.getStatusValues(), REGISTRY_LOCK_STATUSES).isEmpty(),
         "Domain %s is already unlocked",
-        domainBase.getDomainName());
+        domain.getDomainName());
   }
 
-  private DomainBase getDomain(String domainName, String registrarId, DateTime now) {
-    DomainBase domain =
-        loadByForeignKeyCached(DomainBase.class, domainName, now)
+  private Domain getDomain(String domainName, String registrarId, DateTime now) {
+    Domain domain =
+        loadByForeignKeyCached(Domain.class, domainName, now)
             .orElseThrow(() -> new IllegalArgumentException("Domain doesn't exist"));
     // The user must have specified either the correct registrar ID or the admin registrar ID
     checkArgument(
@@ -363,10 +362,10 @@ public final class DomainLockUtils {
   }
 
   private void applyLockStatuses(RegistryLock lock, DateTime lockTime, boolean isAdmin) {
-    DomainBase domain = getDomain(lock.getDomainName(), lock.getRegistrarId(), lockTime);
+    Domain domain = getDomain(lock.getDomainName(), lock.getRegistrarId(), lockTime);
     verifyDomainNotLocked(domain, isAdmin);
 
-    DomainBase newDomain =
+    Domain newDomain =
         domain
             .asBuilder()
             .setStatusValues(
@@ -376,10 +375,10 @@ public final class DomainLockUtils {
   }
 
   private void removeLockStatuses(RegistryLock lock, boolean isAdmin, DateTime unlockTime) {
-    DomainBase domain = getDomain(lock.getDomainName(), lock.getRegistrarId(), unlockTime);
+    Domain domain = getDomain(lock.getDomainName(), lock.getRegistrarId(), unlockTime);
     verifyDomainLocked(domain, isAdmin);
 
-    DomainBase newDomain =
+    Domain newDomain =
         domain
             .asBuilder()
             .setStatusValues(
@@ -389,8 +388,7 @@ public final class DomainLockUtils {
     saveEntities(newDomain, lock, unlockTime, false);
   }
 
-  private static void saveEntities(
-      DomainBase domain, RegistryLock lock, DateTime now, boolean isLock) {
+  private static void saveEntities(Domain domain, RegistryLock lock, DateTime now, boolean isLock) {
     String reason =
         String.format(
             "%s of a domain through a RegistryLock operation", isLock ? "Lock" : "Unlock");

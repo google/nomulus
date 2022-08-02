@@ -44,7 +44,7 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.flows.domain.DomainFlowUtils.BadCommandForRegistryPhaseException;
 import google.registry.flows.domain.DomainFlowUtils.InvalidIdnDomainLabelException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.ReservationType;
@@ -156,8 +156,7 @@ public class CheckApiAction implements Runnable {
   }
 
   private boolean checkExists(String domainString, DateTime now) {
-    return !ForeignKeyIndex.loadCached(DomainBase.class, ImmutableList.of(domainString), now)
-        .isEmpty();
+    return !ForeignKeyIndex.loadCached(Domain.class, ImmutableList.of(domainString), now).isEmpty();
   }
 
   private Optional<String> checkReserved(InternetDomainName domainName) {

@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assert_;
 import google.registry.model.billing.BillingEventTest;
 import google.registry.model.common.CursorTest;
 import google.registry.model.contact.ContactResourceTest;
-import google.registry.model.domain.DomainBaseSqlTest;
+import google.registry.model.domain.DomainSqlTest;
 import google.registry.model.domain.token.AllocationTokenTest;
 import google.registry.model.history.ContactHistoryTest;
 import google.registry.model.history.DomainHistoryTest;
@@ -84,7 +84,7 @@ import org.junit.runner.RunWith;
   ContactHistoryTest.class,
   ContactResourceTest.class,
   CursorTest.class,
-  DomainBaseSqlTest.class,
+  DomainSqlTest.class,
   DomainHistoryTest.class,
   HostHistoryTest.class,
   LockTest.class,

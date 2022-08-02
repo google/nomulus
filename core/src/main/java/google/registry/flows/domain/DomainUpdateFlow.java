@@ -67,7 +67,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DesignatedContact;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainCommand.Update.AddRemove;
 import google.registry.model.domain.DomainCommand.Update.Change;
@@ -173,11 +173,11 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     Update command = cloneAndLinkReferences((Update) resourceCommand, now);
-    DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
+    Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     verifyUpdateAllowed(command, existingDomain, now);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setExistingDomain(existingDomain).build());
-    DomainBase newDomain = performUpdate(command, existingDomain, now);
+    Domain newDomain = performUpdate(command, existingDomain, now);
     DomainHistory domainHistory =
         historyBuilder.setType(DOMAIN_UPDATE).setDomain(newDomain).build();
     validateNewState(newDomain);
@@ -204,7 +204,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
   }
 
   /** Fail if the object doesn't exist or was deleted. */
-  private void verifyUpdateAllowed(Update command, DomainBase existingDomain, DateTime now)
+  private void verifyUpdateAllowed(Update command, Domain existingDomain, DateTime now)
       throws EppException {
     verifyOptionalAuthInfo(authInfo, existingDomain);
     AddRemove add = command.getInnerAdd();
@@ -233,8 +233,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
         tld, add.getNameserverFullyQualifiedHostNames());
   }
 
-  private DomainBase performUpdate(Update command, DomainBase domain, DateTime now)
-      throws EppException {
+  private Domain performUpdate(Update command, Domain domain, DateTime now) throws EppException {
     AddRemove add = command.getInnerAdd();
     AddRemove remove = command.getInnerRemove();
     checkSameValuesNotAddedAndRemoved(add.getNameservers(), remove.getNameservers());
@@ -251,7 +250,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
         Sets.union(Sets.difference(domain.getContacts(), remove.getContacts()), add.getContacts());
     validateNoDuplicateContacts(newContacts);
 
-    DomainBase.Builder domainBuilder =
+    Domain.Builder domainBuilder =
         domain
             .asBuilder()
             // Handle the secDNS extension. As dsData in secDnsUpdate is read from EPP input and
@@ -293,7 +292,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     }
   }
 
-  private void validateNewState(DomainBase newDomain) throws EppException {
+  private void validateNewState(Domain newDomain) throws EppException {
     validateRequiredContactsPresent(newDomain.getRegistrant(), newDomain.getContacts());
     validateDsData(newDomain.getDsData());
     validateNameserversCountForTld(
@@ -304,7 +303,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
 
   /** Some status updates cost money. Bill only once no matter how many of them are changed. */
   private Optional<BillingEvent.OneTime> createBillingEventForStatusUpdates(
-      DomainBase existingDomain, DomainBase newDomain, DomainHistory historyEntry, DateTime now) {
+      Domain existingDomain, Domain newDomain, DomainHistory historyEntry, DateTime now) {
     Optional<MetadataExtension> metadataExtension =
         eppInput.getSingleExtension(MetadataExtension.class);
     if (metadataExtension.isPresent() && metadataExtension.get().getRequestedByRegistrar()) {
@@ -330,7 +329,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
 
   /** Enqueues a poll message iff a superuser is adding/removing server statuses. */
   private Optional<PollMessage.OneTime> createPollMessageForServerStatusUpdates(
-      DomainBase existingDomain, DomainBase newDomain, DomainHistory historyEntry, DateTime now) {
+      Domain existingDomain, Domain newDomain, DomainHistory historyEntry, DateTime now) {
     if (registrarId.equals(existingDomain.getPersistedCurrentSponsorRegistrarId())) {
       // Don't send a poll message when a superuser registrar is updating its own domain.
       return Optional.empty();

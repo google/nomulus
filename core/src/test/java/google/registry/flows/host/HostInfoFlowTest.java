@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.deleteResource;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
@@ -34,9 +33,10 @@ import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotLowerCaseException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.testing.DatabaseHelper;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -96,7 +96,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
   void testSuccess_linked() throws Exception {
     persistHostResource();
     persistResource(
-        newDomainBase("example.foobar")
+        DatabaseHelper.newDomain("example.foobar")
             .asBuilder()
             .addNameserver(persistHostResource().createVKey())
             .build());
@@ -113,9 +113,9 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
   private void runTest_superordinateDomain(
       DateTime domainTransferTime, @Nullable DateTime lastSuperordinateChange) throws Exception {
     persistNewRegistrar("superclientid");
-    DomainBase domain =
+    Domain domain =
         persistResource(
-            newDomainBase("parent.foobar")
+            DatabaseHelper.newDomain("parent.foobar")
                 .asBuilder()
                 .setRepoId("BEEF-FOOBAR")
                 .setLastTransferTime(domainTransferTime)

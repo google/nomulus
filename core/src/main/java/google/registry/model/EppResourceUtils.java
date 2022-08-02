@@ -33,7 +33,7 @@ import google.registry.model.EppResource.BuilderWithTransferData;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
@@ -342,7 +342,7 @@ public final class EppResourceUtils {
    * @param now the logical time of the check
    * @param limit the maximum number of returned keys, unlimited if null
    */
-  public static ImmutableSet<VKey<DomainBase>> getLinkedDomainKeys(
+  public static ImmutableSet<VKey<Domain>> getLinkedDomainKeys(
       VKey<? extends EppResource> key, DateTime now, @Nullable Integer limit) {
     checkArgument(
         key.getKind().equals(ContactResource.class) || key.getKind().equals(HostResource.class),
@@ -350,16 +350,16 @@ public final class EppResourceUtils {
         key);
     boolean isContactKey = key.getKind().equals(ContactResource.class);
     if (tm().isOfy()) {
-      com.googlecode.objectify.cmd.Query<DomainBase> query =
+      com.googlecode.objectify.cmd.Query<Domain> query =
           auditedOfy()
               .load()
-              .type(DomainBase.class)
+              .type(Domain.class)
               .filter(isContactKey ? "allContacts.contact" : "nsHosts", key.getOfyKey())
               .filter("deletionTime >", now);
       if (limit != null) {
         query.limit(limit);
       }
-      return query.keys().list().stream().map(DomainBase::createVKey).collect(toImmutableSet());
+      return query.keys().list().stream().map(Domain::createVKey).collect(toImmutableSet());
     } else {
       return tm().transact(
               () -> {
@@ -382,16 +382,15 @@ public final class EppResourceUtils {
                   query.setMaxResults(limit);
                 }
                 @SuppressWarnings("unchecked")
-                ImmutableSet<VKey<DomainBase>> domainBaseKeySet =
-                    (ImmutableSet<VKey<DomainBase>>)
+                ImmutableSet<VKey<Domain>> domainKeySet =
+                    (ImmutableSet<VKey<Domain>>)
                         query
                             .getResultStream()
                             .map(
                                 repoId ->
-                                    DomainBase.createVKey(
-                                        Key.create(DomainBase.class, (String) repoId)))
+                                    Domain.createVKey(Key.create(Domain.class, (String) repoId)))
                             .collect(toImmutableSet());
-                return domainBaseKeySet;
+                return domainKeySet;
               });
     }
   }

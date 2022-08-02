@@ -24,7 +24,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
@@ -109,7 +109,7 @@ public final class DomainTransferUtils {
       DateTime automaticTransferTime,
       DateTime serverApproveNewExpirationTime,
       Key<DomainHistory> domainHistoryKey,
-      DomainBase existingDomain,
+      Domain existingDomain,
       Trid trid,
       String gainingRegistrarId,
       Optional<Money> transferCost,
@@ -276,10 +276,9 @@ public final class DomainTransferUtils {
       DateTime now,
       Key<DomainHistory> domainHistoryKey,
       String targetId,
-      DomainBase existingDomain,
+      Domain existingDomain,
       Optional<Money> transferCost) {
-    DomainBase domainAtTransferTime =
-        existingDomain.cloneProjectedAtTime(automaticTransferTime);
+    Domain domainAtTransferTime = existingDomain.cloneProjectedAtTime(automaticTransferTime);
     GracePeriod autorenewGracePeriod =
         getOnlyElement(
             domainAtTransferTime.getGracePeriodsOfType(GracePeriodStatus.AUTO_RENEW), null);

@@ -23,7 +23,7 @@ import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
@@ -51,7 +51,7 @@ import org.joda.time.DateTime;
 public class ResaveAllEppResourcesPipeline implements Serializable {
 
   private static final ImmutableSet<Class<? extends EppResource>> EPP_RESOURCE_CLASSES =
-      ImmutableSet.of(ContactResource.class, DomainBase.class, HostResource.class);
+      ImmutableSet.of(ContactResource.class, Domain.class, HostResource.class);
 
   /**
    * There exist three possible situations where we know we'll want to project domains to the
@@ -114,13 +114,13 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
    * google.registry.model.domain.DomainContent#cloneProjectedAtTime(DateTime)}.
    */
   private void fastResaveDomains(Pipeline pipeline) {
-    Read<DomainBase, DomainBase> read =
+    Read<Domain, Domain> read =
         RegistryJpaIO.read(
             DOMAINS_TO_PROJECT_QUERY,
             ImmutableMap.of("END_OF_TIME", DateTimeUtils.END_OF_TIME),
-            DomainBase.class,
+            Domain.class,
             d -> d);
-    projectAndResaveResources(pipeline, DomainBase.class, read);
+    projectAndResaveResources(pipeline, Domain.class, read);
   }
 
   /** Projects all resources to the current time and saves them. */

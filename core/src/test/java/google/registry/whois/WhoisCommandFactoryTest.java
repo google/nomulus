@@ -16,7 +16,6 @@ package google.registry.whois;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
@@ -25,10 +24,11 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestCacheExtension;
 import java.net.InetAddress;
@@ -52,7 +52,7 @@ class WhoisCommandFactoryTest {
 
   WhoisCommandFactory noncachedFactory = WhoisCommandFactory.createNonCached();
   WhoisCommandFactory cachedFactory = WhoisCommandFactory.createCached();
-  DomainBase domain;
+  Domain domain;
   HostResource host;
   Registrar otherRegistrar;
 
@@ -67,7 +67,7 @@ class WhoisCommandFactoryTest {
             .setInetAddresses(ImmutableSet.of(InetAddress.getByName("1.2.3.4")))
             .build();
     persistResource(host);
-    domain = newDomainBase("example.tld", host);
+    domain = DatabaseHelper.newDomain("example.tld", host);
     persistResource(domain);
     otherRegistrar = persistNewRegistrar("OtherRegistrar");
     otherRegistrar =

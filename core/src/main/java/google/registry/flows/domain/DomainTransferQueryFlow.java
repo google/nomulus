@@ -28,7 +28,7 @@ import google.registry.flows.ResourceFlowUtils;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.NoTransferHistoryToQueryException;
 import google.registry.flows.exceptions.NotAuthorizedToViewTransferException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
@@ -71,7 +71,7 @@ public final class DomainTransferQueryFlow implements Flow {
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate(); // There are no legal extensions for this flow.
     DateTime now = clock.nowUtc();
-    DomainBase domain = loadAndVerifyExistence(DomainBase.class, targetId, now);
+    Domain domain = loadAndVerifyExistence(Domain.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, domain);
     // Most of the fields on the transfer response are required, so there's no way to return valid
     // XML if the object has never been transferred (and hence the fields aren't populated).

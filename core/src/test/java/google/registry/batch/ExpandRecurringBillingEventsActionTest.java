@@ -26,7 +26,6 @@ import static google.registry.testing.DatabaseHelper.assertBillingEventsForResou
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getHistoryEntriesOfType;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -46,7 +45,7 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.common.Cursor;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.reporting.DomainTransactionRecord;
@@ -54,6 +53,7 @@ import google.registry.model.reporting.DomainTransactionRecord.TransactionReport
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import java.util.ArrayList;
@@ -76,7 +76,7 @@ public class ExpandRecurringBillingEventsActionTest {
   private final FakeClock clock = new FakeClock(currentTestTime);
 
   private ExpandRecurringBillingEventsAction action;
-  private DomainBase domain;
+  private Domain domain;
   private DomainHistory historyEntry;
   private BillingEvent.Recurring recurring;
 
@@ -91,7 +91,7 @@ public class ExpandRecurringBillingEventsActionTest {
     createTld("tld");
     domain =
         persistResource(
-            newDomainBase("example.tld")
+            DatabaseHelper.newDomain("example.tld")
                 .asBuilder()
                 .setCreationTimeForTest(DateTime.parse("1999-01-05T00:00:00Z"))
                 .build());
@@ -138,7 +138,7 @@ public class ExpandRecurringBillingEventsActionTest {
   }
 
   private void assertHistoryEntryMatches(
-      DomainBase domain,
+      Domain domain,
       HistoryEntry actual,
       String registrarId,
       DateTime billingTime,
@@ -193,7 +193,7 @@ public class ExpandRecurringBillingEventsActionTest {
   @Test
   void testSuccess_expandSingleEvent_deletedDomain() throws Exception {
     DateTime deletionTime = DateTime.parse("2000-08-01T00:00:00Z");
-    DomainBase deletedDomain = persistDeletedDomain("deleted.tld", deletionTime);
+    Domain deletedDomain = persistDeletedDomain("deleted.tld", deletionTime);
     historyEntry =
         persistResource(
             new DomainHistory.Builder()
@@ -641,9 +641,9 @@ public class ExpandRecurringBillingEventsActionTest {
   @Test
   void testSuccess_expandMultipleEvents() throws Exception {
     persistResource(recurring);
-    DomainBase domain2 =
+    Domain domain2 =
         persistResource(
-            newDomainBase("example2.tld")
+            DatabaseHelper.newDomain("example2.tld")
                 .asBuilder()
                 .setCreationTimeForTest(DateTime.parse("1999-04-05T00:00:00Z"))
                 .build());
@@ -666,9 +666,9 @@ public class ExpandRecurringBillingEventsActionTest {
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setTargetId(domain2.getDomainName())
                 .build());
-    DomainBase domain3 =
+    Domain domain3 =
         persistResource(
-            newDomainBase("example3.tld")
+            DatabaseHelper.newDomain("example3.tld")
                 .asBuilder()
                 .setCreationTimeForTest(DateTime.parse("1999-06-05T00:00:00Z"))
                 .build());

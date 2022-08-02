@@ -24,8 +24,8 @@ import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -73,7 +73,7 @@ public final class TestSetupHelper {
   public Registry registry;
   public Registrar registrar;
   public ContactResource contact;
-  public DomainBase domain;
+  public Domain domain;
   public DomainHistory domainHistory;
   public HostResource host;
 
@@ -127,16 +127,15 @@ public final class TestSetupHelper {
         .build();
   }
 
-  static DomainBase createSimpleDomain(ContactResource contact) {
-    return DatabaseHelper.newDomainBase(DOMAIN_NAME, DOMAIN_REPO_ID, contact)
+  static Domain createSimpleDomain(ContactResource contact) {
+    return DatabaseHelper.newDomain(DOMAIN_NAME, DOMAIN_REPO_ID, contact)
         .asBuilder()
         .setCreationRegistrarId(REGISTRAR_ID)
         .setPersistedCurrentSponsorRegistrarId(REGISTRAR_ID)
         .build();
   }
 
-  static DomainBase createFullDomain(
-      ContactResource contact, HostResource host, FakeClock fakeClock) {
+  static Domain createFullDomain(ContactResource contact, HostResource host, FakeClock fakeClock) {
     return createSimpleDomain(contact)
         .asBuilder()
         .setDomainName(DOMAIN_NAME)
@@ -188,7 +187,7 @@ public final class TestSetupHelper {
         .build();
   }
 
-  static DomainHistory createHistoryWithoutContent(DomainBase domain, FakeClock fakeClock) {
+  static DomainHistory createHistoryWithoutContent(Domain domain, FakeClock fakeClock) {
     return new DomainHistory.Builder()
         .setType(HistoryEntry.Type.DOMAIN_CREATE)
         .setXmlBytes("<xml></xml>".getBytes(UTF_8))
@@ -204,7 +203,7 @@ public final class TestSetupHelper {
         .build();
   }
 
-  static DomainHistory createFullHistory(DomainBase domain, FakeClock fakeClock) {
+  static DomainHistory createFullHistory(Domain domain, FakeClock fakeClock) {
     return createHistoryWithoutContent(domain, fakeClock)
         .asBuilder()
         .setType(HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE)

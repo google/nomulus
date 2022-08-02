@@ -335,7 +335,7 @@ registry codebase:
     exported.
 *   `DomainApplicationIndex` -- These hold domain applications received during
     the sunrise period.
-*   `DomainBase` -- These hold the ICANN domain information.
+*   `Domain` -- These hold the ICANN domain information.
 *   `DomainRecord` -- These are used during the DNS update process.
 *   `EntityGroupRoot` -- There is only one EntityGroupRoot entity, which serves
     as the Datastore parent of many other entities.

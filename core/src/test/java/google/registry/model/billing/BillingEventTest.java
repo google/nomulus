@@ -34,7 +34,7 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -59,7 +59,7 @@ public class BillingEventTest extends EntityTestCase {
 
   private DomainHistory domainHistory;
   private DomainHistory domainHistory2;
-  private DomainBase domain;
+  private Domain domain;
   private BillingEvent.OneTime oneTime;
   private BillingEvent.OneTime oneTimeSynthetic;
   private BillingEvent.Recurring recurring;
