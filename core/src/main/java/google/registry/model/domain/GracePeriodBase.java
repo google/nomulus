@@ -65,6 +65,7 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Access(AccessType.FIELD)
   @Column(name = "billing_event_id")
+  @Ignore
   VKey<BillingEvent.OneTime> billingEventOneTime = null;
 
   /**
@@ -74,6 +75,7 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Access(AccessType.FIELD)
   @Column(name = "billing_recurrence_id")
+  @Ignore
   VKey<BillingEvent.Recurring> billingEventRecurring = null;
 
   public long getGracePeriodId() {

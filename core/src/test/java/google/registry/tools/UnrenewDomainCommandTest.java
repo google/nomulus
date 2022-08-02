@@ -134,7 +134,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertBillingEventsEqual(
         loadByKey(domain.getAutorenewBillingEvent()),
         new BillingEvent.Recurring.Builder()
-            .setParent(synthetic)
+            .setDomainHistory(synthetic)
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(domain.getDomainName())

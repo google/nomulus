@@ -542,7 +542,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // We must break the query up into chunks, because the in operator is limited to 30 subqueries.
     // Since it is possible for the same domain to show up more than once in our result list (if
     // we do a wildcard nameserver search that returns multiple nameservers used by the same
-    // domain), we must create a set of resulting {@link DomainBase} objects. Use a sorted set,
+    // domain), we must create a set of resulting {@link Domain} objects. Use a sorted set,
     // and fetch all domains, to make sure that we can return the first domains in alphabetical
     // order.
     ImmutableSortedSet.Builder<Domain> domainSetBuilder =

@@ -237,7 +237,7 @@ public class DomainToXjcConverterTest {
                 .setPeriodYears(2)
                 .setEventTime(DateTime.parse("1910-01-01T00:00:00Z"))
                 .setBillingTime(DateTime.parse("1910-01-01T00:00:00Z"))
-                .setParent(domainHistory)
+                .setDomainHistory(domainHistory)
                 .build());
     domain =
         domain
@@ -298,7 +298,7 @@ public class DomainToXjcConverterTest {
                                 .setPeriodYears(2)
                                 .setEventTime(DateTime.parse("1920-01-01T00:00:00Z"))
                                 .setBillingTime(DateTime.parse("1920-01-01T00:00:00Z"))
-                                .setParent(domainHistory)
+                                .setDomainHistory(domainHistory)
                                 .build())),
                     GracePeriod.create(
                         GracePeriodStatus.TRANSFER,
@@ -322,7 +322,7 @@ public class DomainToXjcConverterTest {
                             .setRegistrarId("TheRegistrar")
                             .setEventTime(END_OF_TIME)
                             .setRecurrenceEndTime(END_OF_TIME)
-                            .setParent(domainHistory)
+                            .setDomainHistory(domainHistory)
                             .build())
                     .createVKey())
             .setAutorenewPollMessage(
@@ -352,7 +352,7 @@ public class DomainToXjcConverterTest {
                                     .setRegistrarId("TheRegistrar")
                                     .setEventTime(END_OF_TIME)
                                     .setRecurrenceEndTime(END_OF_TIME)
-                                    .setParent(domainHistory)
+                                    .setDomainHistory(domainHistory)
                                     .build())
                             .createVKey())
                     .setServerApproveAutorenewPollMessage(

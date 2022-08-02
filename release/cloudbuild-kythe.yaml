@@ -31,6 +31,10 @@ steps:
   - -c
   - |
     export REAL_JAVAC=$(which javac)
+    export REAL_JAVA_HOME=$${PWD}/java_home
+    cp -r $(dirname $(dirname $(readlink -f $(which javac)))) $${REAL_JAVA_HOME}
+    rm $${REAL_JAVA_HOME}/bin/javac
+    cp ./kythe/extractors/javac-wrapper.sh $${REAL_JAVA_HOME}/bin/javac
     export JAVAC_EXTRACTOR_JAR="$${PWD}/kythe/extractors/javac_extractor.jar"
     export KYTHE_VNAMES="$${PWD}/vnames.json"
     export KYTHE_ROOT_DIRECTORY="$${PWD}"

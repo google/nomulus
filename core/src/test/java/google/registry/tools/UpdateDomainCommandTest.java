@@ -345,7 +345,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 .setRegistrarId("NewRegistrar")
                 .setEventTime(fakeClock.nowUtc().minusDays(5))
                 .setRecurrenceEndTime(END_OF_TIME)
-                .setParent(createHistoryEntry)
+                .setDomainHistory(createHistoryEntry)
                 .build());
     persistResource(
         domain

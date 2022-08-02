@@ -123,7 +123,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
     historyBuilder.setId(domainHistoryKey.getId());
     Optional<BillingEvent.OneTime> billingEvent =
-        (transferData.getTransferPeriod().getValue() == 0)
+        transferData.getTransferPeriod().getValue() == 0
             ? Optional.empty()
             : Optional.of(
                 new BillingEvent.OneTime.Builder()
@@ -134,7 +134,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .setCost(getDomainRenewCost(targetId, transferData.getTransferRequestTime(), 1))
                     .setEventTime(now)
                     .setBillingTime(now.plus(Registry.get(tld).getTransferGracePeriodLength()))
-                    .setParent(domainHistoryKey)
+                    .setDomainHistoryId(
+                        new DomainHistoryId(
+                            domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
                     .build());
     ImmutableList.Builder<ImmutableObject> entitiesToSave = new ImmutableList.Builder<>();
     // If we are within an autorenew grace period, cancel the autorenew billing event and don't
@@ -150,7 +152,11 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
       if (billingEvent.isPresent()) {
         entitiesToSave.add(
             BillingEvent.Cancellation.forGracePeriod(
-                autorenewGrace, now, domainHistoryKey, targetId));
+                autorenewGrace,
+                now,
+                new DomainHistoryId(
+                    domainHistoryKey.getParent().getName(), domainHistoryKey.getId()),
+                targetId));
       }
     }
     // Close the old autorenew event and poll message at the transfer time (aka now). This may end
@@ -167,7 +173,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setRegistrarId(gainingRegistrarId)
             .setEventTime(newExpirationTime)
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(domainHistoryKey)
+            .setDomainHistoryId(
+                new DomainHistoryId(
+                    domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
             .build();
     // Create a new autorenew poll message.
     PollMessage.Autorenew gainingClientAutorenewPollMessage =

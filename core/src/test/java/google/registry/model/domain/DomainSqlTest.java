@@ -36,6 +36,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -407,11 +408,9 @@ public class DomainSqlTest {
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId("example.com")
             .setRegistrarId("registrar1")
-            .setDomainRepoId("4-COM")
-            .setDomainHistoryRevisionId(1L)
             .setEventTime(DateTime.now(UTC).plusYears(1))
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .build();
     PollMessage.Autorenew autorenewPollMessage =
         new PollMessage.Autorenew.Builder()
@@ -434,11 +433,10 @@ public class DomainSqlTest {
             .setReason(Reason.SERVER_STATUS)
             .setTargetId("example.com")
             .setRegistrarId("registrar1")
-            .setDomainRepoId("4-COM")
             .setBillingTime(DateTime.now(UTC))
             .setCost(Money.of(USD, 100))
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .build();
     DomainTransferData transferData =
         new DomainTransferData.Builder()
@@ -534,11 +532,9 @@ public class DomainSqlTest {
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId("example.com")
             .setRegistrarId("registrar1")
-            .setDomainRepoId("4-COM")
-            .setDomainHistoryRevisionId(1L)
             .setEventTime(DateTime.now(UTC).plusYears(1))
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .build();
     PollMessage.Autorenew autorenewPollMessage =
         new PollMessage.Autorenew.Builder()
@@ -561,11 +557,10 @@ public class DomainSqlTest {
             .setReason(Reason.SERVER_STATUS)
             .setTargetId("example.com")
             .setRegistrarId("registrar1")
-            .setDomainRepoId("4-COM")
             .setBillingTime(DateTime.now(UTC))
             .setCost(Money.of(USD, 100))
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .build();
     DomainTransferData transferData =
         createPendingTransferData(
@@ -597,8 +592,7 @@ public class DomainSqlTest {
     domain =
         domain
             .asBuilder()
-            .setAutorenewBillingEvent(
-                createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId()))
+            .setAutorenewBillingEvent(Recurring.createVKey(billEvent.getId()))
             .setAutorenewPollMessage(
                 createLegacyVKey(PollMessage.Autorenew.class, autorenewPollMessage.getId()),
                 autorenewPollMessage.getHistoryRevisionId())

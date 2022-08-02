@@ -413,7 +413,7 @@ public final class DomainLockUtils {
               .setCost(Registry.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
               .setEventTime(now)
               .setBillingTime(now)
-              .setParent(domainHistory)
+              .setDomainHistory(domainHistory)
               .build();
       tm().insert(oneTime);
     }

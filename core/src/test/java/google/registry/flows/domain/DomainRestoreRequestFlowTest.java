@@ -211,7 +211,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setRegistrarId("TheRegistrar")
             .setEventTime(expirationTime)
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(historyEntryDomainRestore)
+            .setDomainHistory(historyEntryDomainRestore)
             .build(),
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.RESTORE)
@@ -221,7 +221,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setPeriodYears(1)
             .setEventTime(clock.nowUtc())
             .setBillingTime(clock.nowUtc())
-            .setParent(historyEntryDomainRestore)
+            .setDomainHistory(historyEntryDomainRestore)
             .build());
   }
 
@@ -280,7 +280,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setRegistrarId("TheRegistrar")
             .setEventTime(newExpirationTime)
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(historyEntryDomainRestore)
+            .setDomainHistory(historyEntryDomainRestore)
             .build(),
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.RESTORE)
@@ -290,7 +290,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setPeriodYears(1)
             .setEventTime(clock.nowUtc())
             .setBillingTime(clock.nowUtc())
-            .setParent(historyEntryDomainRestore)
+            .setDomainHistory(historyEntryDomainRestore)
             .build(),
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.RENEW)
@@ -300,7 +300,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setPeriodYears(1)
             .setEventTime(clock.nowUtc())
             .setBillingTime(clock.nowUtc())
-            .setParent(historyEntryDomainRestore)
+            .setDomainHistory(historyEntryDomainRestore)
             .build());
   }
 

@@ -319,7 +319,7 @@ final class RegistryLockVerifyActionTest {
             .setCost(Registry.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
             .setEventTime(fakeClock.nowUtc())
             .setBillingTime(fakeClock.nowUtc())
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .build());
   }
 

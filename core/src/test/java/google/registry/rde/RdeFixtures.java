@@ -84,7 +84,7 @@ final class RdeFixtures {
                 .setPeriodYears(2)
                 .setEventTime(DateTime.parse("1990-01-01T00:00:00Z"))
                 .setBillingTime(DateTime.parse("1990-01-01T00:00:00Z"))
-                .setParent(historyEntry)
+                .setDomainHistory(historyEntry)
                 .build());
     domain =
         domain
@@ -138,7 +138,7 @@ final class RdeFixtures {
                                 .setPeriodYears(2)
                                 .setEventTime(DateTime.parse("1992-01-01T00:00:00Z"))
                                 .setBillingTime(DateTime.parse("1992-01-01T00:00:00Z"))
-                                .setParent(historyEntry)
+                                .setDomainHistory(historyEntry)
                                 .build())),
                     GracePeriod.create(
                         GracePeriodStatus.TRANSFER,
@@ -162,7 +162,7 @@ final class RdeFixtures {
                             .setRegistrarId("TheRegistrar")
                             .setEventTime(END_OF_TIME)
                             .setRecurrenceEndTime(END_OF_TIME)
-                            .setParent(historyEntry)
+                            .setDomainHistory(historyEntry)
                             .build())
                     .createVKey())
             .setAutorenewPollMessage(
@@ -192,7 +192,7 @@ final class RdeFixtures {
                                     .setRegistrarId("TheRegistrar")
                                     .setEventTime(END_OF_TIME)
                                     .setRecurrenceEndTime(END_OF_TIME)
-                                    .setParent(historyEntry)
+                                    .setDomainHistory(historyEntry)
                                     .build())
                             .createVKey())
                     .setServerApproveAutorenewPollMessage(
