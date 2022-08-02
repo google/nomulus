@@ -168,6 +168,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "renewalPriceBehavior", nullable = false)
+  @Ignore
   RenewalPriceBehavior renewalPriceBehavior = RenewalPriceBehavior.DEFAULT;
 
   @Enumerated(EnumType.STRING)

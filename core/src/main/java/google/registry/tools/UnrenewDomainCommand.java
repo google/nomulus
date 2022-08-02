@@ -208,7 +208,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
     BillingEvent.Recurring newAutorenewEvent =
         newAutorenewBillingEvent(domain)
             .setEventTime(newExpirationTime)
-            .setParent(domainHistory)
+            .setDomainHistory(domainHistory)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(domain)

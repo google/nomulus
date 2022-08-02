@@ -575,7 +575,7 @@ public final class DomainLockUtilsTest {
                         .setCost(Registry.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
                         .setEventTime(clock.nowUtc())
                         .setBillingTime(clock.nowUtc())
-                        .setParent(entry)
+                        .setDomainHistory(entry)
                         .build())
             .collect(Collectors.toSet());
     DatabaseHelper.assertBillingEvents(expectedEvents);

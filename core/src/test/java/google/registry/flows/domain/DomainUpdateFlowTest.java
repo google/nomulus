@@ -815,7 +815,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
               .setCost(Money.of(USD, 19))
               .setEventTime(clock.nowUtc())
               .setBillingTime(clock.nowUtc())
-              .setParent(
+              .setDomainHistory(
                   getOnlyHistoryEntryOfType(
                       reloadResourceByForeignKey(), DOMAIN_UPDATE, DomainHistory.class))
               .build());

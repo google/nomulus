@@ -388,7 +388,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setRecurrenceEndTime(END_OF_TIME)
-                .setParent(historyEntry)
+                .setDomainHistory(historyEntry)
                 .build());
     VKey<BillingEvent.Recurring> recurringVKey = renewEvent.createVKey();
     // Add an AUTO_RENEW grace period to the saved resource.

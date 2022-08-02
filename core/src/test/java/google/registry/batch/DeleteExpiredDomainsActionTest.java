@@ -200,7 +200,7 @@ class DeleteExpiredDomainsActionTest {
         .setRegistrarId("TheRegistrar")
         .setEventTime(clock.nowUtc().plusYears(1))
         .setRecurrenceEndTime(END_OF_TIME)
-        .setParent(createHistoryEntry);
+        .setDomainHistory(createHistoryEntry);
   }
 
   private PollMessage.Autorenew.Builder createAutorenewPollMessage(

@@ -16,7 +16,6 @@ package google.registry.model;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.annotations.DeleteAfterMigration;
-import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.contact.ContactHistory;
@@ -44,10 +43,6 @@ public final class EntityClasses {
   public static final ImmutableSet<Class<? extends ImmutableObject>> ALL_CLASSES =
       ImmutableSet.of(
           AllocationToken.class,
-          BillingEvent.Cancellation.class,
-          BillingEvent.Modification.class,
-          BillingEvent.OneTime.class,
-          BillingEvent.Recurring.class,
           ContactHistory.class,
           ContactResource.class,
           DomainBase.class,

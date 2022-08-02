@@ -112,7 +112,7 @@ public class DomainPricingLogicTest {
     Recurring recurring =
         persistResource(
             new BillingEvent.Recurring.Builder()
-                .setParent(historyEntry)
+                .setDomainHistory(historyEntry)
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .setEventTime(DateTime.parse("1999-01-05T00:00:00Z"))
                 .setFlags(ImmutableSet.of(AUTO_RENEW))

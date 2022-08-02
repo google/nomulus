@@ -53,12 +53,16 @@ public class ClassPathManager {
   }
 
   public static <T> Class<T> getClass(String className) {
-    checkArgument(CLASS_REGISTRY.containsKey(className), "Class not found in class registry");
+    checkArgument(
+        CLASS_REGISTRY.containsKey(className), "Class %s not found in class registry", className);
     return (Class<T>) CLASS_REGISTRY.get(className);
   }
 
   public static <T> String getClassName(Class<T> clazz) {
-    checkArgument(CLASS_NAME_REGISTRY.containsKey(clazz), "Class not found in class name registry");
+    checkArgument(
+        CLASS_NAME_REGISTRY.containsKey(clazz),
+        "Class %s not found in class name registry",
+        clazz.getSimpleName());
     return CLASS_NAME_REGISTRY.get(clazz);
   }
 }

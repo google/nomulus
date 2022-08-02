@@ -1440,7 +1440,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(existingDomain.getCreationTime())
                 .setRecurrenceEndTime(clock.nowUtc())
-                .setParent(historyEntry)
+                .setDomainHistory(historyEntry)
                 .build());
     return persistResource(
         existingDomain.asBuilder().setAutorenewBillingEvent(renewEvent.createVKey()).build());

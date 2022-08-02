@@ -19,9 +19,10 @@ import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 
 import com.googlecode.objectify.Key;
-import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.ClassPathManager;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
@@ -60,14 +61,12 @@ public class VKeyTranslatorFactoryTest {
   void testEntityWithAncestor() {
     Key<DomainBase> domainKey = Key.create(DomainBase.class, "ROID-1");
     Key<HistoryEntry> historyEntryKey = Key.create(domainKey, HistoryEntry.class, 10L);
-    Key<BillingEvent.OneTime> oneTimeKey =
-        Key.create(historyEntryKey, BillingEvent.OneTime.class, 200L);
 
-    VKey<BillingEvent.OneTime> vkey = VKeyTranslatorFactory.createVKey(oneTimeKey);
+    VKey<HistoryEntry> vkey = VKeyTranslatorFactory.createVKey(historyEntryKey);
 
-    assertThat(vkey.getKind()).isEqualTo(BillingEvent.OneTime.class);
-    assertThat(vkey.getOfyKey()).isEqualTo(oneTimeKey);
-    assertThat(vkey.getSqlKey()).isEqualTo(200L);
+    assertThat(vkey.getKind()).isEqualTo(DomainHistory.class);
+    assertThat(vkey.getOfyKey()).isEqualTo(historyEntryKey);
+    assertThat(vkey.getSqlKey()).isEqualTo(new DomainHistoryId("ROID-1", 10L));
   }
 
   @Test

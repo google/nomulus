@@ -301,7 +301,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setEventTime(clock.nowUtc())
             .setBillingTime(billingTime)
             .setFlags(expectedBillingFlags)
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .setAllocationToken(allocationToken == null ? null : allocationToken.createVKey())
             .build();
 
@@ -313,7 +313,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .setRenewalPriceBehavior(renewalPriceInfo.renewalPriceBehavior())
             .setRenewalPrice(renewalPriceInfo.renewalPrice())
             .build();
@@ -334,7 +334,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
               .setEventTime(clock.nowUtc())
               .setBillingTime(billingTime)
               .setFlags(expectedBillingFlags)
-              .setParent(historyEntry)
+              .setDomainHistory(historyEntry)
               .build();
       expectedBillingEvents.add(eapBillingEvent);
     }

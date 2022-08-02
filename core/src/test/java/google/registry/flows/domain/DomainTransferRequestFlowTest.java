@@ -262,7 +262,7 @@ class DomainTransferRequestFlowTest
                   .setRegistrarId("NewRegistrar")
                   .setCost(transferCost.orElse(Money.of(USD, 11)))
                   .setPeriodYears(1)
-                  .setParent(historyEntryTransferRequest)
+                  .setDomainHistory(historyEntryTransferRequest)
                   .build());
     } else {
       // Superuser transfers with no bundled renewal have no transfer billing event.
@@ -282,7 +282,7 @@ class DomainTransferRequestFlowTest
     // Construct extra billing events expected by the specific test.
     ImmutableSet<BillingEvent> extraBillingEvents =
         Stream.of(extraExpectedBillingEvents)
-            .map(builder -> builder.setParent(historyEntryTransferRequest).build())
+            .map(builder -> builder.setDomainHistory(historyEntryTransferRequest).build())
             .collect(toImmutableSet());
     // Assert that the billing events we constructed above actually exist in Datastore.
     ImmutableSet<BillingEvent> expectedBillingEvents =
