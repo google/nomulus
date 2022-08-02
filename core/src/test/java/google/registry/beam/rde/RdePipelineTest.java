@@ -58,7 +58,7 @@ import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.DomainContent;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
@@ -187,7 +187,7 @@ public class RdePipelineTest {
             .build());
   }
 
-  private DomainHistory persistDomainHistory(DomainContent domain) {
+  private DomainHistory persistDomainHistory(DomainBase domain) {
     DomainTransactionRecord transactionRecord =
         new DomainTransactionRecord.Builder()
             .setTld("soy")

@@ -80,7 +80,7 @@ import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainContent;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -906,7 +906,7 @@ public class DatabaseHelper {
     assertPollMessagesEqual(getPollMessages(), asList(expected));
   }
 
-  public static void assertPollMessagesForResource(DomainContent domain, PollMessage... expected) {
+  public static void assertPollMessagesForResource(DomainBase domain, PollMessage... expected) {
     assertPollMessagesEqual(getPollMessages(domain), asList(expected));
   }
 
@@ -922,7 +922,7 @@ public class DatabaseHelper {
                     .collect(toImmutableList()));
   }
 
-  public static ImmutableList<PollMessage> getPollMessages(DomainContent domain) {
+  public static ImmutableList<PollMessage> getPollMessages(DomainBase domain) {
     return tm().transact(
             () ->
                 tm().loadAllOf(PollMessage.class).stream()
@@ -973,10 +973,7 @@ public class DatabaseHelper {
   }
 
   public static PollMessage getOnlyPollMessage(
-      DomainContent domain,
-      String registrarId,
-      DateTime now,
-      Class<? extends PollMessage> subType) {
+      DomainBase domain, String registrarId, DateTime now, Class<? extends PollMessage> subType) {
     return getPollMessages(domain, registrarId, now).stream()
         .filter(subType::isInstance)
         .map(subType::cast)

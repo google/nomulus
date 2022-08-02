@@ -24,6 +24,7 @@ import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
@@ -111,7 +112,7 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
    * transfers, grace periods).
    *
    * <p>The logic of what might have changed is paraphrased from {@link
-   * google.registry.model.domain.DomainContent#cloneProjectedAtTime(DateTime)}.
+   * DomainBase#cloneProjectedAtTime(DateTime)}.
    */
   private void fastResaveDomains(Pipeline pipeline) {
     Read<Domain, Domain> read =

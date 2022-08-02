@@ -489,16 +489,16 @@ public class DomainSqlTest {
     // reason is showing up as different.
     assertEqualDomainExcept(persisted, "creationTime", "dsData", "gracePeriods");
 
-    // Verify that the DomainContent object from the history record sets the fields correctly.
+    // Verify that the DomainBase object from the history record sets the fields correctly.
     DomainHistory persistedHistoryEntry = loadByKey(historyEntry.createVKey());
-    assertThat(persistedHistoryEntry.getDomainContent().get().getAutorenewPollMessage())
+    assertThat(persistedHistoryEntry.getDomainBase().get().getAutorenewPollMessage())
         .isEqualTo(domain.getAutorenewPollMessage());
-    assertThat(persistedHistoryEntry.getDomainContent().get().getAutorenewBillingEvent())
+    assertThat(persistedHistoryEntry.getDomainBase().get().getAutorenewBillingEvent())
         .isEqualTo(domain.getAutorenewBillingEvent());
-    assertThat(persistedHistoryEntry.getDomainContent().get().getDeletePollMessage())
+    assertThat(persistedHistoryEntry.getDomainBase().get().getDeletePollMessage())
         .isEqualTo(domain.getDeletePollMessage());
     DomainTransferData persistedTransferData =
-        persistedHistoryEntry.getDomainContent().get().getTransferData();
+        persistedHistoryEntry.getDomainBase().get().getTransferData();
     DomainTransferData originalTransferData = domain.getTransferData();
     assertThat(persistedTransferData.getServerApproveBillingEvent())
         .isEqualTo(originalTransferData.getServerApproveBillingEvent());
@@ -621,16 +621,16 @@ public class DomainSqlTest {
     // reason is showing up as different.
     assertEqualDomainExcept(persisted, "creationTime", "dsData", "gracePeriods");
 
-    // Verify that the DomainContent object from the history record sets the fields correctly.
+    // Verify that the DomainBase object from the history record sets the fields correctly.
     DomainHistory persistedHistoryEntry = loadByKey(historyEntry.createVKey());
-    assertThat(persistedHistoryEntry.getDomainContent().get().getAutorenewPollMessage())
+    assertThat(persistedHistoryEntry.getDomainBase().get().getAutorenewPollMessage())
         .isEqualTo(domain.getAutorenewPollMessage());
-    assertThat(persistedHistoryEntry.getDomainContent().get().getAutorenewBillingEvent())
+    assertThat(persistedHistoryEntry.getDomainBase().get().getAutorenewBillingEvent())
         .isEqualTo(domain.getAutorenewBillingEvent());
-    assertThat(persistedHistoryEntry.getDomainContent().get().getDeletePollMessage())
+    assertThat(persistedHistoryEntry.getDomainBase().get().getDeletePollMessage())
         .isEqualTo(domain.getDeletePollMessage());
     DomainTransferData persistedTransferData =
-        persistedHistoryEntry.getDomainContent().get().getTransferData();
+        persistedHistoryEntry.getDomainBase().get().getTransferData();
     DomainTransferData originalTransferData = domain.getTransferData();
     assertThat(persistedTransferData.getServerApproveBillingEvent())
         .isEqualTo(originalTransferData.getServerApproveBillingEvent());

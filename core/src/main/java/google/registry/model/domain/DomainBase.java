@@ -96,7 +96,7 @@ import org.joda.time.Interval;
 @MappedSuperclass
 @Embeddable
 @Access(AccessType.FIELD)
-public class DomainContent extends EppResource
+public class DomainBase extends EppResource
     implements ResourceWithTransferData<DomainTransferData> {
 
   /** The max number of years that a domain can be registered for, as set by ICANN policy. */
@@ -454,7 +454,7 @@ public class DomainContent extends EppResource
   }
 
   @Override
-  public DomainContent cloneProjectedAtTime(final DateTime now) {
+  public DomainBase cloneProjectedAtTime(final DateTime now) {
     return cloneDomainProjectedAtTime(this, now);
   }
 
@@ -463,7 +463,7 @@ public class DomainContent extends EppResource
    * parallels the logic in {@code DomainTransferApproveFlow} which handles explicit client
    * approvals.
    */
-  static <T extends DomainContent> T cloneDomainProjectedAtTime(T domain, DateTime now) {
+  static <T extends DomainBase> T cloneDomainProjectedAtTime(T domain, DateTime now) {
     DomainTransferData transferData = domain.getTransferData();
     DateTime transferExpirationTime = transferData.getPendingTransferExpirationTime();
 
@@ -704,8 +704,7 @@ public class DomainContent extends EppResource
   @Override
   public VKey<Domain> createVKey() {
     throw new UnsupportedOperationException(
-        "DomainContent is not an actual persisted entity you can create a key to;"
-            + " use Domain instead");
+        "DomainBase is not an actual persisted entity you can create a key to; use Domain instead");
   }
 
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */
@@ -714,12 +713,12 @@ public class DomainContent extends EppResource
 
   /** An override of {@link EppResource#asBuilder} with tighter typing. */
   @Override
-  public Builder<? extends DomainContent, ?> asBuilder() {
+  public Builder<? extends DomainBase, ?> asBuilder() {
     return new Builder<>(clone(this));
   }
 
   /** A builder for constructing {@link Domain}, since it is immutable. */
-  public static class Builder<T extends DomainContent, B extends Builder<T, B>>
+  public static class Builder<T extends DomainBase, B extends Builder<T, B>>
       extends EppResource.Builder<T, B> implements BuilderWithTransferData<DomainTransferData, B> {
 
     public Builder() {}
