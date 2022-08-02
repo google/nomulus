@@ -25,7 +25,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.template.soy.data.SoyMapData;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.util.Clock;
 import java.util.List;
@@ -77,11 +77,10 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
     checkArgument(period < 10, "Cannot renew domains for 10 or more years");
     DateTime now = clock.nowUtc();
     for (String domainName : mainParameters) {
-      Optional<DomainBase> domainOptional =
-          loadByForeignKey(DomainBase.class, domainName, now);
+      Optional<Domain> domainOptional = loadByForeignKey(Domain.class, domainName, now);
       checkArgumentPresent(domainOptional, "Domain '%s' does not exist or is deleted", domainName);
       setSoyTemplate(DomainRenewSoyInfo.getInstance(), DomainRenewSoyInfo.RENEWDOMAIN);
-      DomainBase domain = domainOptional.get();
+      Domain domain = domainOptional.get();
 
       SoyMapData soyMapData =
           new SoyMapData(

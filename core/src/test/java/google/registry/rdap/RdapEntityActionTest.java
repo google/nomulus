@@ -22,7 +22,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistContactResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistDeletedContactResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeDomainBase;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHostResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarContacts;
@@ -89,13 +89,8 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
         persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
     HostResource host2 =
         persistResource(makeHostResource("ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef"));
-    persistResource(makeDomainBase("cat.lol",
-        registrant,
-        adminContact,
-        techContact,
-        host1,
-        host2,
-        registrarLol));
+    persistResource(
+        makeDomain("cat.lol", registrant, adminContact, techContact, host1, host2, registrarLol));
     // xn--q9jyb4c
     createTld("xn--q9jyb4c");
     Registrar registrarIdn = persistResource(

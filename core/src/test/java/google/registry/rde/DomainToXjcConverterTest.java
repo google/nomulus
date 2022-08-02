@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -39,8 +38,8 @@ import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -56,6 +55,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.util.Idn;
 import google.registry.xjc.domain.XjcDomainStatusType;
@@ -76,12 +76,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
- * Unit tests for {@link DomainBaseToXjcConverter}.
+ * Unit tests for {@link DomainToXjcConverter}.
  *
- * <p>This tests the mapping between {@link DomainBase} and {@link XjcRdeDomain} as well as some
+ * <p>This tests the mapping between {@link Domain} and {@link XjcRdeDomain} as well as some
  * exceptional conditions.
  */
-public class DomainBaseToXjcConverterTest {
+public class DomainToXjcConverterTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
@@ -96,7 +96,7 @@ public class DomainBaseToXjcConverterTest {
 
   @Test
   void testConvertThick() {
-    XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.FULL);
+    XjcRdeDomain bean = DomainToXjcConverter.convertDomain(makeDomain(clock), RdeMode.FULL);
 
     assertThat(bean.getClID()).isEqualTo("TheRegistrar");
 
@@ -177,7 +177,7 @@ public class DomainBaseToXjcConverterTest {
 
   @Test
   void testConvertThin() {
-    XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.THIN);
+    XjcRdeDomain bean = DomainToXjcConverter.convertDomain(makeDomain(clock), RdeMode.THIN);
     assertThat(bean.getRegistrant()).isNull();
     assertThat(bean.getContacts()).isEmpty();
     assertThat(bean.getSecDNS()).isNull();
@@ -185,13 +185,13 @@ public class DomainBaseToXjcConverterTest {
 
   @Test
   void testMarshalThick() throws Exception {
-    XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.FULL);
+    XjcRdeDomain bean = DomainToXjcConverter.convertDomain(makeDomain(clock), RdeMode.FULL);
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
   }
 
   @Test
   void testMarshalThin() throws Exception {
-    XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.THIN);
+    XjcRdeDomain bean = DomainToXjcConverter.convertDomain(makeDomain(clock), RdeMode.THIN);
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
   }
 
@@ -212,10 +212,13 @@ public class DomainBaseToXjcConverterTest {
     return deposit;
   }
 
-  static DomainBase makeDomainBase(FakeClock clock) {
-    DomainBase domain =
+  static Domain makeDomain(FakeClock clock) {
+    Domain domain =
         persistResource(
-            newDomainBase("example.xn--q9jyb4c").asBuilder().setRepoId("2-Q9JYB4C").build());
+            DatabaseHelper.newDomain("example.xn--q9jyb4c")
+                .asBuilder()
+                .setRepoId("2-Q9JYB4C")
+                .build());
     DomainHistory domainHistory =
         persistResource(
             new DomainHistory.Builder()
@@ -234,7 +237,7 @@ public class DomainBaseToXjcConverterTest {
                 .setPeriodYears(2)
                 .setEventTime(DateTime.parse("1910-01-01T00:00:00Z"))
                 .setBillingTime(DateTime.parse("1910-01-01T00:00:00Z"))
-                .setParent(domainHistory)
+                .setDomainHistory(domainHistory)
                 .build());
     domain =
         domain
@@ -295,7 +298,7 @@ public class DomainBaseToXjcConverterTest {
                                 .setPeriodYears(2)
                                 .setEventTime(DateTime.parse("1920-01-01T00:00:00Z"))
                                 .setBillingTime(DateTime.parse("1920-01-01T00:00:00Z"))
-                                .setParent(domainHistory)
+                                .setDomainHistory(domainHistory)
                                 .build())),
                     GracePeriod.create(
                         GracePeriodStatus.TRANSFER,
@@ -319,7 +322,7 @@ public class DomainBaseToXjcConverterTest {
                             .setRegistrarId("TheRegistrar")
                             .setEventTime(END_OF_TIME)
                             .setRecurrenceEndTime(END_OF_TIME)
-                            .setParent(domainHistory)
+                            .setDomainHistory(domainHistory)
                             .build())
                     .createVKey())
             .setAutorenewPollMessage(
@@ -349,7 +352,7 @@ public class DomainBaseToXjcConverterTest {
                                     .setRegistrarId("TheRegistrar")
                                     .setEventTime(END_OF_TIME)
                                     .setRecurrenceEndTime(END_OF_TIME)
-                                    .setParent(domainHistory)
+                                    .setDomainHistory(domainHistory)
                                     .build())
                             .createVKey())
                     .setServerApproveAutorenewPollMessage(

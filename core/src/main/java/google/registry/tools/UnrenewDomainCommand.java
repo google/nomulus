@@ -33,7 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
@@ -88,11 +88,11 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
         new ImmutableMap.Builder<>();
 
     for (String domainName : mainParameters) {
-      if (ForeignKeyIndex.load(DomainBase.class, domainName, START_OF_TIME) == null) {
+      if (ForeignKeyIndex.load(Domain.class, domainName, START_OF_TIME) == null) {
         domainsNonexistentBuilder.add(domainName);
         continue;
       }
-      Optional<DomainBase> domain = loadByForeignKey(DomainBase.class, domainName, now);
+      Optional<Domain> domain = loadByForeignKey(Domain.class, domainName, now);
       if (!domain.isPresent()
           || domain.get().getStatusValues().contains(StatusValue.PENDING_DELETE)) {
         domainsDeletingBuilder.add(domainName);
@@ -140,7 +140,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
     StringBuilder resultBuilder = new StringBuilder();
     DateTime now = clock.nowUtc();
     for (String domainName : mainParameters) {
-      DomainBase domain = loadByForeignKey(DomainBase.class, domainName, now).get();
+      Domain domain = loadByForeignKey(Domain.class, domainName, now).get();
       DateTime previousTime = domain.getRegistrationExpirationTime();
       DateTime newTime = leapSafeSubtractYears(previousTime, period);
       resultBuilder.append(
@@ -163,8 +163,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
   private void unrenewDomain(String domainName) {
     tm().assertInTransaction();
     DateTime now = tm().getTransactionTime();
-    Optional<DomainBase> domainOptional =
-        loadByForeignKey(DomainBase.class, domainName, now);
+    Optional<Domain> domainOptional = loadByForeignKey(Domain.class, domainName, now);
     // Transactional sanity checks on the off chance that something changed between init() running
     // and here.
     checkState(
@@ -172,7 +171,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
             && !domainOptional.get().getStatusValues().contains(StatusValue.PENDING_DELETE),
         "Domain %s was deleted or is pending deletion",
         domainName);
-    DomainBase domain = domainOptional.get();
+    Domain domain = domainOptional.get();
     checkState(
         Sets.intersection(domain.getStatusValues(), DISALLOWED_STATUSES).isEmpty(),
         "Domain %s has prohibited status values",
@@ -209,7 +208,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
     BillingEvent.Recurring newAutorenewEvent =
         newAutorenewBillingEvent(domain)
             .setEventTime(newExpirationTime)
-            .setParent(domainHistory)
+            .setDomainHistory(domainHistory)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(domain)
@@ -219,7 +218,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
     // End the old autorenew billing event and poll message now.
     Recurring existingRecurring = tm().loadByKey(domain.getAutorenewBillingEvent());
     updateAutorenewRecurrenceEndTime(domain, existingRecurring, now);
-    DomainBase newDomain =
+    Domain newDomain =
         domain
             .asBuilder()
             .setRegistrationExpirationTime(newExpirationTime)

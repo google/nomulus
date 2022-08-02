@@ -24,16 +24,14 @@ import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
 import google.registry.model.billing.BillingEvent.Flag;
+import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.reporting.billing.BillingModule;
 import google.registry.util.DomainNameUtils;
 import google.registry.util.SqlTemplate;
 import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -66,8 +64,7 @@ import org.joda.money.CurrencyUnit;
  */
 public class InvoicingPipeline implements Serializable {
 
-  private static final DateTimeFormatter TIMESTAMP_FORMATTER =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
+  private static final long serialVersionUID = 5386330443625580081L;
 
   private static final Pattern SQL_COMMENT_REGEX =
       Pattern.compile("^\\s*--.*\\n", Pattern.MULTILINE);
@@ -107,8 +104,7 @@ public class InvoicingPipeline implements Serializable {
   }
 
   private static Optional<BillingEvent> parseRow(Object[] row) {
-    google.registry.model.billing.BillingEvent.OneTime oneTime =
-        (google.registry.model.billing.BillingEvent.OneTime) row[0];
+    OneTime oneTime = (OneTime) row[0];
     Registrar registrar = (Registrar) row[1];
     CurrencyUnit currency = oneTime.getCost().getCurrencyUnit();
     if (!registrar.getBillingAccountMap().containsKey(currency)) {
@@ -140,6 +136,9 @@ public class InvoicingPipeline implements Serializable {
   /** Transform that converts a {@code BillingEvent} into an invoice CSV row. */
   private static class GenerateInvoiceRows
       extends PTransform<PCollection<BillingEvent>, PCollection<String>> {
+
+    private static final long serialVersionUID = -8090619008258393728L;
+
     @Override
     public PCollection<String> expand(PCollection<BillingEvent> input) {
       return input
@@ -203,32 +202,13 @@ public class InvoicingPipeline implements Serializable {
                 TextIO.sink().withHeader(BillingEvent.getHeader())));
   }
 
-  /** Create the Bigquery query for a given project and yearMonth at runtime. */
-  static String makeQuery(String yearMonth, String projectId) {
-    // Get the timestamp endpoints capturing the entire month with microsecond precision
-    YearMonth reportingMonth = YearMonth.parse(yearMonth);
-    LocalDateTime firstMoment = reportingMonth.atDay(1).atTime(LocalTime.MIDNIGHT);
-    LocalDateTime lastMoment = reportingMonth.atEndOfMonth().atTime(LocalTime.MAX);
-    // Construct the month's query by filling in the billing_events.sql template
-    return SqlTemplate.create(getQueryFromFile(InvoicingPipeline.class, "billing_events.sql"))
-        .put("FIRST_TIMESTAMP_OF_MONTH", firstMoment.format(TIMESTAMP_FORMATTER))
-        .put("LAST_TIMESTAMP_OF_MONTH", lastMoment.format(TIMESTAMP_FORMATTER))
-        .put("PROJECT_ID", projectId)
-        .put("DATASTORE_EXPORT_DATA_SET", "latest_datastore_export")
-        .put("ONETIME_TABLE", "OneTime")
-        .put("REGISTRY_TABLE", "Registry")
-        .put("REGISTRAR_TABLE", "Registrar")
-        .put("CANCELLATION_TABLE", "Cancellation")
-        .build();
-  }
-
   /** Create the Cloud SQL query for a given yearMonth at runtime. */
   static String makeCloudSqlQuery(String yearMonth) {
     YearMonth endMonth = YearMonth.parse(yearMonth).plusMonths(1);
     String queryWithComments =
         SqlTemplate.create(
                 getQueryFromFile(InvoicingPipeline.class, "cloud_sql_billing_events.sql"))
-            .put("FIRST_TIMESTAMP_OF_MONTH", yearMonth.concat("-01"))
+            .put("FIRST_TIMESTAMP_OF_MONTH", yearMonth + "-01")
             .put(
                 "LAST_TIMESTAMP_OF_MONTH",
                 String.format("%d-%d-01", endMonth.getYear(), endMonth.getMonthValue()))

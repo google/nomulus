@@ -21,14 +21,14 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.api.taskqueue.TaskOptions.Method;
 import com.google.common.base.Joiner;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.registrar.Registrar;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
 /**
  * Helper methods for creating tasks containing CSV line data in the lordn-sunrise and lordn-claims
- * queues based on DomainBase changes.
+ * queues based on {@link Domain} changes.
  *
  * <p>Note that, per the <a href="https://tools.ietf.org/html/draft-ietf-regext-tmch-func-spec-04">
  * TMCH RFC</a>, while the application-datetime data is optional (which we never send because there
@@ -43,12 +43,10 @@ public final class LordnTaskUtils {
   public static final String COLUMNS_SUNRISE = "roid,domain-name,SMD-id,registrar-id,"
       + "registration-datetime,application-datetime";
 
-  /**
-   * Enqueues a task in the LORDN queue representing a line of CSV for LORDN export.
-   */
-  public static void enqueueDomainBaseTask(DomainBase domain) {
+  /** Enqueues a task in the LORDN queue representing a line of CSV for LORDN export. */
+  public static void enqueueDomainTask(Domain domain) {
     tm().assertInTransaction();
-    // This method needs to use ofy transactionTime as the DomainBase's creationTime because
+    // This method needs to use ofy transactionTime as the Domain's creationTime because
     // CreationTime isn't yet populated when this method is called during the resource flow.
     String tld = domain.getTld();
     if (domain.getLaunchNotice() == null) {
@@ -65,7 +63,7 @@ public final class LordnTaskUtils {
   }
 
   /** Returns the corresponding CSV LORDN line for a sunrise domain. */
-  public static String getCsvLineForSunriseDomain(DomainBase domain, DateTime transactionTime) {
+  public static String getCsvLineForSunriseDomain(Domain domain, DateTime transactionTime) {
     return Joiner.on(',')
         .join(
             domain.getRepoId(),
@@ -76,7 +74,7 @@ public final class LordnTaskUtils {
   }
 
   /** Returns the corresponding CSV LORDN line for a claims domain. */
-  public static String getCsvLineForClaimsDomain(DomainBase domain, DateTime transactionTime) {
+  public static String getCsvLineForClaimsDomain(Domain domain, DateTime transactionTime) {
     return Joiner.on(',')
         .join(
             domain.getRepoId(),

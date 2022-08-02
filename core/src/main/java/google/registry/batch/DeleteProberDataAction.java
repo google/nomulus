@@ -37,7 +37,7 @@ import google.registry.config.RegistryEnvironment;
 import google.registry.dns.DnsQueue;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.EppResourceUtils;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.request.Action;
@@ -53,8 +53,8 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
- * Deletes all prober DomainBases and their subordinate history entries, poll messages, and billing
- * events, along with their ForeignKeyDomainIndex and EppResourceIndex entities.
+ * Deletes all prober {@link Domain}s and their subordinate history entries, poll messages, and
+ * billing events, along with their ForeignKeyDomainIndex and EppResourceIndex entities.
  */
 @Action(
     service = Action.Service.BACKEND,
@@ -154,7 +154,7 @@ public class DeleteProberDataAction implements Runnable {
     // keeping track of which domains to hard-delete (there can be many, so we batch them up)
     ScrollableResults scrollableResult =
         jpaTm()
-            .query(DOMAIN_QUERY_STRING, DomainBase.class)
+            .query(DOMAIN_QUERY_STRING, Domain.class)
             .setParameter("tlds", deletableTlds)
             .setParameter(
                 "creationTimeCutoff", CreateAutoTimestamp.create(now.minus(DOMAIN_USED_DURATION)))
@@ -166,7 +166,7 @@ public class DeleteProberDataAction implements Runnable {
     ImmutableList.Builder<String> domainRepoIdsToHardDelete = new ImmutableList.Builder<>();
     ImmutableList.Builder<String> hostNamesToHardDelete = new ImmutableList.Builder<>();
     for (int i = 1; scrollableResult.next(); i = (i + 1) % BATCH_SIZE) {
-      DomainBase domain = (DomainBase) scrollableResult.get(0);
+      Domain domain = (Domain) scrollableResult.get(0);
       processDomain(
           domain,
           domainRepoIdsToHardDelete,
@@ -187,7 +187,7 @@ public class DeleteProberDataAction implements Runnable {
   }
 
   private void processDomain(
-      DomainBase domain,
+      Domain domain,
       ImmutableList.Builder<String> domainRepoIdsToHardDelete,
       ImmutableList.Builder<String> hostNamesToHardDelete,
       AtomicInteger softDeletedDomains,
@@ -251,8 +251,8 @@ public class DeleteProberDataAction implements Runnable {
   }
 
   // Take a DNS queue + admin registrar id as input so that it can be called from the mapper as well
-  private void softDeleteDomain(DomainBase domain) {
-    DomainBase deletedDomain =
+  private void softDeleteDomain(Domain domain) {
+    Domain deletedDomain =
         domain.asBuilder().setDeletionTime(tm().getTransactionTime()).setStatusValues(null).build();
     DomainHistory historyEntry =
         new DomainHistory.Builder()

@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
@@ -34,7 +33,7 @@ import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonResponse;
@@ -46,6 +45,7 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.tools.DomainLockUtils;
@@ -90,7 +90,7 @@ final class RegistryLockPostActionTest {
   private User userWithLockPermission;
 
   private InternetAddress outgoingAddress;
-  private DomainBase domain;
+  private Domain domain;
   private RegistryLockPostAction action;
 
   @Mock SendEmailService emailService;
@@ -102,7 +102,7 @@ final class RegistryLockPostActionTest {
     userWithLockPermission = userFromRegistrarPoc(AppEngineExtension.makeRegistrarContact3());
     userWithoutPermission = userFromRegistrarPoc(AppEngineExtension.makeRegistrarContact2());
     createTld("tld");
-    domain = persistResource(newDomainBase("example.tld"));
+    domain = persistResource(DatabaseHelper.newDomain("example.tld"));
 
     outgoingAddress = new InternetAddress("domain-registry@example.com");
 
@@ -414,7 +414,7 @@ final class RegistryLockPostActionTest {
   }
 
   private RegistryLock createLock() {
-    DomainBase domain = loadByForeignKey(DomainBase.class, "example.tld", clock.nowUtc()).get();
+    Domain domain = loadByForeignKey(Domain.class, "example.tld", clock.nowUtc()).get();
     return new RegistryLock.Builder()
         .setDomainName("example.tld")
         .isSuperuser(false)

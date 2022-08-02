@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Registry;
@@ -46,7 +46,7 @@ public class AllocationTokenCustomLogic {
 
   /** Performs additional custom logic for validating a token on an existing domain. */
   public AllocationToken validateToken(
-      DomainBase domain, AllocationToken token, Registry registry, String registrarId, DateTime now)
+      Domain domain, AllocationToken token, Registry registry, String registrarId, DateTime now)
       throws EppException {
     // Do nothing.
     return token;

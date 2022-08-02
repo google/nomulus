@@ -21,7 +21,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.model.rde.RdeMode;
 import java.util.HashMap;
@@ -62,8 +62,8 @@ public class RdeFragmenter {
       return result;
     }
     resourcesFound++;
-    if (resource instanceof DomainBase) {
-      result = Optional.of(marshaller.marshalDomain((DomainBase) resource, mode));
+    if (resource instanceof Domain) {
+      result = Optional.of(marshaller.marshalDomain((Domain) resource, mode));
       cache.put(WatermarkModePair.create(watermark, mode), result);
       return result;
     } else if (resource instanceof ContactResource) {

@@ -23,7 +23,7 @@ import javax.lang.model.SourceVersion;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class LongVKeyProcessor extends AbstractVKeyProcessor {
 
-  private static final String ANNOTATION_SIMPLE_NAME = "WithStringVKey";
+  private static final String ANNOTATION_SIMPLE_NAME = "WithLongVKey";
 
   @Override
   Class<?> getSqlColumnType() {

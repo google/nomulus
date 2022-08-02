@@ -85,8 +85,8 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
    * <p>This field should be null if there is not currently a pending transfer or if the object
    * being transferred is not a domain.
    */
-  @IgnoreSave(IfNull.class)
   @Column(name = "transfer_billing_event_id")
+  @Ignore
   VKey<BillingEvent.OneTime> serverApproveBillingEvent;
 
   /**
@@ -95,8 +95,8 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
    * <p>This field should be null if there is not currently a pending transfer or if the object
    * being transferred is not a domain.
    */
-  @IgnoreSave(IfNull.class)
   @Column(name = "transfer_billing_recurrence_id")
+  @Ignore
   VKey<BillingEvent.Recurring> serverApproveAutorenewEvent;
 
   /**

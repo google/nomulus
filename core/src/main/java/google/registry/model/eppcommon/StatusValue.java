@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainContent;
 import google.registry.model.host.HostBase;
 import google.registry.model.host.HostResource;
@@ -133,11 +133,11 @@ public enum StatusValue implements EppEnum {
         ContactBase.class,
         ContactResource.class,
         DomainContent.class,
-        DomainBase.class,
+        Domain.class,
         HostBase.class,
         HostResource.class),
     NONE,
-    DOMAINS(DomainContent.class, DomainBase.class);
+    DOMAINS(DomainContent.class, Domain.class);
 
     private final ImmutableSet<Class<? extends EppResource>> classes;
 

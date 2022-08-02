@@ -142,7 +142,7 @@ encapsulate related values together.
 The classes that extend `EppResource` (along with the RFCs that define them) are
 as follows:
 
-*   `DomainBase` ([RFC 5731](https://tools.ietf.org/html/rfc5731)), further
+*   `Domain` ([RFC 5731](https://tools.ietf.org/html/rfc5731)), further
     broken down into:
     *   `DomainApplication`, an application for a domain submitted during (e.g.)
         sunrise or landrush

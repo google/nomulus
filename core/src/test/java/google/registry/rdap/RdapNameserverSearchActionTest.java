@@ -25,7 +25,7 @@ import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHostResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeContactResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeDomainBase;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHostResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarContacts;
@@ -36,7 +36,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
 import google.registry.rdap.RdapMetrics.EndpointType;
@@ -56,7 +56,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     super(RdapNameserverSearchAction.class);
   }
 
-  private DomainBase domainCatLol;
+  private Domain domainCatLol;
   private HostResource hostNs1CatLol;
   private HostResource hostNs2CatLol;
 
@@ -130,7 +130,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     // create a domain so that we can use it as a test nameserver search string suffix
     domainCatLol =
         persistResource(
-            makeDomainBase(
+            makeDomain(
                     "cat.lol",
                     persistResource(
                         makeContactResource(

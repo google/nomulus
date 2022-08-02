@@ -22,7 +22,6 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.VAL
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
@@ -44,7 +43,7 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTok
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -52,6 +51,7 @@ import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -102,7 +102,7 @@ class AllocationTokenFlowUtilsTest {
     assertThat(
             flowUtils
                 .verifyAllocationTokenIfPresent(
-                    newDomainBase("blah.tld"),
+                    DatabaseHelper.newDomain("blah.tld"),
                     Registry.get("tld"),
                     "TheRegistrar",
                     DateTime.now(UTC),
@@ -145,7 +145,7 @@ class AllocationTokenFlowUtilsTest {
                 InvalidAllocationTokenException.class,
                 () ->
                     flowUtils.verifyAllocationTokenIfPresent(
-                        newDomainBase("blah.tld"),
+                        DatabaseHelper.newDomain("blah.tld"),
                         Registry.get("tld"),
                         "TheRegistrar",
                         DateTime.now(UTC),
@@ -185,7 +185,7 @@ class AllocationTokenFlowUtilsTest {
             IllegalStateException.class,
             () ->
                 failingFlowUtils.verifyAllocationTokenIfPresent(
-                    newDomainBase("blah.tld"),
+                    DatabaseHelper.newDomain("blah.tld"),
                     Registry.get("tld"),
                     "TheRegistrar",
                     DateTime.now(UTC),
@@ -305,7 +305,7 @@ class AllocationTokenFlowUtilsTest {
 
   @Test
   void test_checkDomainsWithToken_showsFailureMessageForRedeemedToken() {
-    DomainBase domain = persistActiveDomain("example.tld");
+    Domain domain = persistActiveDomain("example.tld");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1051L);
     persistResource(
         new AllocationToken.Builder()
@@ -396,7 +396,7 @@ class AllocationTokenFlowUtilsTest {
                 clazz,
                 () ->
                     flowUtils.verifyAllocationTokenIfPresent(
-                        newDomainBase("blah.tld"),
+                        DatabaseHelper.newDomain("blah.tld"),
                         Registry.get("tld"),
                         "TheRegistrar",
                         DateTime.now(UTC),
@@ -438,11 +438,7 @@ class AllocationTokenFlowUtilsTest {
 
     @Override
     public AllocationToken validateToken(
-        DomainBase domain,
-        AllocationToken token,
-        Registry registry,
-        String registrarId,
-        DateTime now) {
+        Domain domain, AllocationToken token, Registry registry, String registrarId, DateTime now) {
       throw new IllegalStateException("failed for tests");
     }
 

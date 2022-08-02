@@ -16,17 +16,17 @@ package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.xjc.XjcXmlTransformer.marshalStrict;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.xjc.host.XjcHostStatusType;
 import google.registry.xjc.host.XjcHostStatusValueType;
 import google.registry.xjc.rdehost.XjcRdeHost;
@@ -55,8 +55,8 @@ public class HostResourceToXjcConverterTest {
 
   @Test
   void testConvertSubordinateHost() {
-    DomainBase domain =
-        newDomainBase("love.foobar")
+    Domain domain =
+        DatabaseHelper.newDomain("love.foobar")
             .asBuilder()
             .setPersistedCurrentSponsorRegistrarId("LeisureDog")
             .setLastTransferTime(DateTime.parse("2010-01-01T00:00:00Z"))

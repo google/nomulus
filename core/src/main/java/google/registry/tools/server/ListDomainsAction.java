@@ -31,7 +31,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import google.registry.model.EppResource;
 import google.registry.model.EppResourceUtils;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
@@ -47,7 +47,7 @@ import org.joda.time.DateTime;
     path = ListDomainsAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
-public final class ListDomainsAction extends ListObjectsAction<DomainBase> {
+public final class ListDomainsAction extends ListObjectsAction<Domain> {
 
   /** An App Engine limitation on how many subqueries can be used in a single query. */
   @VisibleForTesting @NonFinalForTesting static int maxNumSubqueries = 30;
@@ -73,22 +73,22 @@ public final class ListDomainsAction extends ListObjectsAction<DomainBase> {
   }
 
   @Override
-  public ImmutableSet<DomainBase> loadObjects() {
+  public ImmutableSet<Domain> loadObjects() {
     checkArgument(!tlds.isEmpty(), "Must specify TLDs to query");
     assertTldsExist(tlds);
-    ImmutableList<DomainBase> domains = tm().isOfy() ? loadDomainsOfy() : loadDomainsSql();
+    ImmutableList<Domain> domains = tm().isOfy() ? loadDomainsOfy() : loadDomainsSql();
     return ImmutableSet.copyOf(domains.reverse());
   }
 
-  private ImmutableList<DomainBase> loadDomainsOfy() {
+  private ImmutableList<Domain> loadDomainsOfy() {
     DateTime now = clock.nowUtc();
-    ImmutableList.Builder<DomainBase> domainsBuilder = new ImmutableList.Builder<>();
+    ImmutableList.Builder<Domain> domainsBuilder = new ImmutableList.Builder<>();
     // Combine the batches together by sorting all domains together with newest first, applying the
     // limit, and then reversing for display order.
     for (List<String> tldsBatch : Lists.partition(tlds.asList(), maxNumSubqueries)) {
       auditedOfy()
           .load()
-          .type(DomainBase.class)
+          .type(Domain.class)
           .filter("tld in", tldsBatch)
           // Get the N most recently created domains (requires ordering in descending order).
           .order("-creationTime")
@@ -107,7 +107,7 @@ public final class ListDomainsAction extends ListObjectsAction<DomainBase> {
         .collect(toImmutableList());
   }
 
-  private ImmutableList<DomainBase> loadDomainsSql() {
+  private ImmutableList<Domain> loadDomainsSql() {
     return jpaTm()
         .transact(
             () ->
@@ -115,7 +115,7 @@ public final class ListDomainsAction extends ListObjectsAction<DomainBase> {
                     .query(
                         "FROM Domain WHERE tld IN (:tlds) AND deletionTime > "
                             + "current_timestamp() ORDER BY creationTime DESC",
-                        DomainBase.class)
+                        Domain.class)
                     .setParameter("tlds", tlds)
                     .setMaxResults(limit)
                     .getResultStream()

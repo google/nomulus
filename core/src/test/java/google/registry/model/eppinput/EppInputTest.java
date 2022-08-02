@@ -21,7 +21,7 @@ import static google.registry.testing.TestDataHelper.loadBytes;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.contact.ContactResourceTest;
-import google.registry.model.domain.DomainBaseTest;
+import google.registry.model.domain.DomainTest;
 import google.registry.model.eppinput.EppInput.InnerCommand;
 import google.registry.model.eppinput.EppInput.Login;
 import google.registry.xml.XmlException;
@@ -44,7 +44,7 @@ class EppInputTest {
   @Test
   void testUnmarshalling_domainCheck() throws Exception {
     EppInput input =
-        unmarshal(EppInput.class, loadBytes(DomainBaseTest.class, "domain_check.xml").read());
+        unmarshal(EppInput.class, loadBytes(DomainTest.class, "domain_check.xml").read());
     assertThat(input.getCommandWrapper().getClTrid()).hasValue("ABC-12345");
     assertThat(input.getCommandType()).isEqualTo("check");
     assertThat(input.getResourceType()).hasValue("domain");

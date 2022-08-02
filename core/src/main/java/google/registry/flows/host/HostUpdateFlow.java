@@ -47,7 +47,7 @@ import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppinput.ResourceCommand;
@@ -137,12 +137,12 @@ public final class HostUpdateFlow implements TransactionalFlow {
     boolean isHostRename = suppliedNewHostName != null;
     String oldHostName = targetId;
     String newHostName = firstNonNull(suppliedNewHostName, oldHostName);
-    DomainBase oldSuperordinateDomain =
+    Domain oldSuperordinateDomain =
         existingHost.isSubordinate()
             ? tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now)
             : null;
     // Note that lookupSuperordinateDomain calls cloneProjectedAtTime on the domain for us.
-    Optional<DomainBase> newSuperordinateDomain =
+    Optional<Domain> newSuperordinateDomain =
         lookupSuperordinateDomain(validateHostName(newHostName), now);
     verifySuperordinateDomainNotInPendingDelete(newSuperordinateDomain.orElse(null));
     EppResource owningResource = firstNonNull(oldSuperordinateDomain, existingHost);
@@ -155,8 +155,8 @@ public final class HostUpdateFlow implements TransactionalFlow {
     AddRemove remove = command.getInnerRemove();
     checkSameValuesNotAddedAndRemoved(add.getStatusValues(), remove.getStatusValues());
     checkSameValuesNotAddedAndRemoved(add.getInetAddresses(), remove.getInetAddresses());
-    VKey<DomainBase> newSuperordinateDomainKey =
-        newSuperordinateDomain.map(DomainBase::createVKey).orElse(null);
+    VKey<Domain> newSuperordinateDomainKey =
+        newSuperordinateDomain.map(Domain::createVKey).orElse(null);
     // If the superordinateDomain field is changing, set the lastSuperordinateChange to now.
     DateTime lastSuperordinateChange =
         Objects.equals(newSuperordinateDomainKey, existingHost.getSuperordinateDomain())
@@ -211,10 +211,10 @@ public final class HostUpdateFlow implements TransactionalFlow {
   private void verifyUpdateAllowed(
       Update command,
       HostResource existingHost,
-      DomainBase newSuperordinateDomain,
+      Domain newSuperordinateDomain,
       EppResource owningResource,
       boolean isHostRename)
-          throws EppException {
+      throws EppException {
     if (!isSuperuser) {
       // Verify that the host belongs to this registrar, either directly or because it is currently
       // subordinate to a domain owned by this registrar.

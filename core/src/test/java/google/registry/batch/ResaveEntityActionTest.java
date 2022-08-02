@@ -20,7 +20,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verify;
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.StatusValue;
@@ -40,6 +40,7 @@ import google.registry.request.Response;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
@@ -88,7 +89,7 @@ public class ResaveEntityActionTest {
   @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
   void test_domainPendingTransfer_isResavedAndTransferCompleted() {
-    DomainBase domain =
+    Domain domain =
         persistDomainWithPendingTransfer(
             persistDomainWithDependentResources(
                 "domain",
@@ -106,15 +107,15 @@ public class ResaveEntityActionTest {
         domain.createVKey().getOfyKey().getString(),
         DateTime.parse("2016-02-06T10:00:01Z"),
         ImmutableSortedSet.of());
-    DomainBase resavedDomain = loadByEntity(domain);
+    Domain resavedDomain = loadByEntity(domain);
     assertThat(resavedDomain.getCurrentSponsorRegistrarId()).isEqualTo("NewRegistrar");
     verify(response).setPayload("Entity re-saved.");
   }
 
   @Test
   void test_domainPendingDeletion_isResavedAndReenqueued() {
-    DomainBase newDomain = newDomainBase("domain.tld");
-    DomainBase domain =
+    Domain newDomain = DatabaseHelper.newDomain("domain.tld");
+    Domain domain =
         persistResource(
             newDomain
                 .asBuilder()
@@ -136,7 +137,7 @@ public class ResaveEntityActionTest {
         domain.createVKey().getOfyKey().getString(),
         requestedTime,
         ImmutableSortedSet.of(requestedTime.plusDays(5)));
-    DomainBase resavedDomain = loadByEntity(domain);
+    Domain resavedDomain = loadByEntity(domain);
     assertThat(resavedDomain.getGracePeriods()).isEmpty();
 
     cloudTasksHelper.assertTasksEnqueued(

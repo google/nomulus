@@ -36,6 +36,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -63,8 +64,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
-/** Verify that we can store/retrieve DomainBase objects from a SQL database. */
-public class DomainBaseSqlTest {
+/** Verify that we can store/retrieve Domain objects from a SQL database. */
+public class DomainSqlTest {
 
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
@@ -76,7 +77,7 @@ public class DomainBaseSqlTest {
           .withClock(fakeClock)
           .build();
 
-  private DomainBase domain;
+  private Domain domain;
   private DomainHistory historyEntry;
   private VKey<ContactResource> contactKey;
   private VKey<ContactResource> contact2Key;
@@ -97,7 +98,7 @@ public class DomainBaseSqlTest {
     host1VKey = createKey(HostResource.class, "host1");
 
     domain =
-        new DomainBase.Builder()
+        new Domain.Builder()
             .setDomainName("example.com")
             .setRepoId("4-COM")
             .setCreationRegistrarId("registrar1")
@@ -140,7 +141,7 @@ public class DomainBaseSqlTest {
   }
 
   @Test
-  void testDomainBasePersistence() {
+  void testDomainPersistence() {
     persistDomain();
     assertEqualDomainExcept(loadByKey(domain.createVKey()));
   }
@@ -163,7 +164,7 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
               jpaTm().put(persisted.asBuilder().build());
             });
     // Load the domain in its entirety.
@@ -176,16 +177,15 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
-              DomainBase modified =
-                  persisted.asBuilder().setGracePeriods(ImmutableSet.of()).build();
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain modified = persisted.asBuilder().setGracePeriods(ImmutableSet.of()).build();
               jpaTm().put(modified);
             });
 
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
               assertThat(persisted.getGracePeriods()).isEmpty();
             });
   }
@@ -196,15 +196,15 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
-              DomainBase modified = persisted.asBuilder().setGracePeriods(null).build();
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain modified = persisted.asBuilder().setGracePeriods(null).build();
               jpaTm().put(modified);
             });
 
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
               assertThat(persisted.getGracePeriods()).isEmpty();
             });
   }
@@ -215,8 +215,8 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
-              DomainBase modified =
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain modified =
                   persisted
                       .asBuilder()
                       .addGracePeriod(
@@ -234,7 +234,7 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
               assertThat(persisted.getGracePeriods())
                   .containsExactly(
                       GracePeriod.create(
@@ -247,8 +247,8 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
-              DomainBase.Builder builder = persisted.asBuilder();
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain.Builder builder = persisted.asBuilder();
               for (GracePeriod gracePeriod : persisted.getGracePeriods()) {
                 if (gracePeriod.getType() == GracePeriodStatus.RENEW) {
                   builder.removeGracePeriod(gracePeriod);
@@ -260,7 +260,7 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
               assertEqualDomainExcept(persisted);
             });
   }
@@ -271,18 +271,17 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
-              DomainBase modified =
-                  persisted.asBuilder().setGracePeriods(ImmutableSet.of()).build();
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain modified = persisted.asBuilder().setGracePeriods(ImmutableSet.of()).build();
               jpaTm().put(modified);
             });
 
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
               assertThat(persisted.getGracePeriods()).isEmpty();
-              DomainBase modified =
+              Domain modified =
                   persisted
                       .asBuilder()
                       .addGracePeriod(
@@ -300,7 +299,7 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
               assertThat(persisted.getGracePeriods())
                   .containsExactly(
                       GracePeriod.create(
@@ -321,9 +320,9 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
               assertThat(persisted.getDsData()).containsExactlyElementsIn(domain.getDsData());
-              DomainBase modified = persisted.asBuilder().setDsData(unionDsData).build();
+              Domain modified = persisted.asBuilder().setDsData(unionDsData).build();
               jpaTm().put(modified);
             });
 
@@ -331,7 +330,7 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
               assertThat(persisted.getDsData()).containsExactlyElementsIn(unionDsData);
               assertEqualDomainExcept(persisted, "dsData");
             });
@@ -340,7 +339,7 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
               jpaTm().put(persisted.asBuilder().setDsData(domain.getDsData()).build());
             });
 
@@ -348,7 +347,7 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = jpaTm().loadByKey(domain.createVKey());
               assertEqualDomainExcept(persisted);
             });
   }
@@ -357,7 +356,7 @@ public class DomainBaseSqlTest {
   void testSerializable() {
     createTld("com");
     insertInDb(contact, contact2, domain, host);
-    DomainBase persisted = jpaTm().transact(() -> jpaTm().loadByEntity(domain));
+    Domain persisted = jpaTm().transact(() -> jpaTm().loadByEntity(domain));
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
@@ -409,11 +408,9 @@ public class DomainBaseSqlTest {
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId("example.com")
             .setRegistrarId("registrar1")
-            .setDomainRepoId("4-COM")
-            .setDomainHistoryRevisionId(1L)
             .setEventTime(DateTime.now(UTC).plusYears(1))
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .build();
     PollMessage.Autorenew autorenewPollMessage =
         new PollMessage.Autorenew.Builder()
@@ -436,11 +433,10 @@ public class DomainBaseSqlTest {
             .setReason(Reason.SERVER_STATUS)
             .setTargetId("example.com")
             .setRegistrarId("registrar1")
-            .setDomainRepoId("4-COM")
             .setBillingTime(DateTime.now(UTC))
             .setCost(Money.of(USD, 100))
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .build();
     DomainTransferData transferData =
         new DomainTransferData.Builder()
@@ -486,7 +482,7 @@ public class DomainBaseSqlTest {
         domain);
 
     // Store the existing BillingRecurrence VKey.  This happens after the event has been persisted.
-    DomainBase persisted = loadByKey(domain.createVKey());
+    Domain persisted = loadByKey(domain.createVKey());
 
     // Verify that the domain data has been persisted.
     // dsData still isn't persisted.  gracePeriods appears to have the same values but for some
@@ -536,11 +532,9 @@ public class DomainBaseSqlTest {
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId("example.com")
             .setRegistrarId("registrar1")
-            .setDomainRepoId("4-COM")
-            .setDomainHistoryRevisionId(1L)
             .setEventTime(DateTime.now(UTC).plusYears(1))
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .build();
     PollMessage.Autorenew autorenewPollMessage =
         new PollMessage.Autorenew.Builder()
@@ -563,11 +557,10 @@ public class DomainBaseSqlTest {
             .setReason(Reason.SERVER_STATUS)
             .setTargetId("example.com")
             .setRegistrarId("registrar1")
-            .setDomainRepoId("4-COM")
             .setBillingTime(DateTime.now(UTC))
             .setCost(Money.of(USD, 100))
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .build();
     DomainTransferData transferData =
         createPendingTransferData(
@@ -599,8 +592,7 @@ public class DomainBaseSqlTest {
     domain =
         domain
             .asBuilder()
-            .setAutorenewBillingEvent(
-                createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId()))
+            .setAutorenewBillingEvent(Recurring.createVKey(billEvent.getId()))
             .setAutorenewPollMessage(
                 createLegacyVKey(PollMessage.Autorenew.class, autorenewPollMessage.getId()),
                 autorenewPollMessage.getHistoryRevisionId())
@@ -622,7 +614,7 @@ public class DomainBaseSqlTest {
         domain);
 
     // Store the existing BillingRecurrence VKey.  This happens after the event has been persisted.
-    DomainBase persisted = loadByKey(domain.createVKey());
+    Domain persisted = loadByKey(domain.createVKey());
 
     // Verify that the domain data has been persisted.
     // dsData still isn't persisted.  gracePeriods appears to have the same values but for some
@@ -658,7 +650,7 @@ public class DomainBaseSqlTest {
         clazz, id, Key.create(Key.create(EntityGroupRoot.class, "per-tld"), clazz, id));
   }
 
-  private void assertEqualDomainExcept(DomainBase thatDomain, String... excepts) {
+  private void assertEqualDomainExcept(Domain thatDomain, String... excepts) {
     ImmutableList<String> moreExcepts =
         new ImmutableList.Builder<String>()
             .addAll(Arrays.asList(excepts))
@@ -677,7 +669,7 @@ public class DomainBaseSqlTest {
   @Test
   void testUpdateTimeAfterNameserverUpdate() {
     persistDomain();
-    DomainBase persisted = loadByKey(domain.createVKey());
+    Domain persisted = loadByKey(domain.createVKey());
     DateTime originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
     DateTime transactionTime =
@@ -704,7 +696,7 @@ public class DomainBaseSqlTest {
   @Test
   void testUpdateTimeAfterDsDataUpdate() {
     persistDomain();
-    DomainBase persisted = loadByKey(domain.createVKey());
+    Domain persisted = loadByKey(domain.createVKey());
     DateTime originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
     DateTime transactionTime =

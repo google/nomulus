@@ -19,7 +19,6 @@ import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedHost;
@@ -43,13 +42,14 @@ import google.registry.flows.exceptions.ResourceToDeleteIsReferencedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotLowerCaseException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.DatabaseHelper;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -159,9 +159,9 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
   void testSuccess_authorizedClientReadFromSuperordinate() throws Exception {
     sessionMetadata.setRegistrarId("TheRegistrar");
     createTld("tld");
-    DomainBase domain =
+    Domain domain =
         persistResource(
-            newDomainBase("example.tld")
+            DatabaseHelper.newDomain("example.tld")
                 .asBuilder()
                 .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
                 .build());
@@ -180,9 +180,9 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
   void testFailure_unauthorizedClientReadFromSuperordinate() {
     sessionMetadata.setRegistrarId("TheRegistrar");
     createTld("tld");
-    DomainBase domain =
+    Domain domain =
         persistResource(
-            newDomainBase("example.tld")
+            DatabaseHelper.newDomain("example.tld")
                 .asBuilder()
                 .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                 .build());
@@ -204,9 +204,9 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     DateTime now = clock.nowUtc();
     DateTime requestTime = now.minusDays(1).minus(Registry.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
     DateTime transferExpirationTime = now.minusDays(1);
-    DomainBase domain =
+    Domain domain =
         persistResource(
-            newDomainBase("example.tld")
+            DatabaseHelper.newDomain("example.tld")
                 .asBuilder()
                 .setPersistedCurrentSponsorRegistrarId("NewRegistrar") // Shouldn't hurt.
                 .addStatusValue(StatusValue.PENDING_TRANSFER)
@@ -238,9 +238,9 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     DateTime now = clock.nowUtc();
     DateTime requestTime = now.minusDays(1).minus(Registry.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
     DateTime transferExpirationTime = now.minusDays(1);
-    DomainBase domain =
+    Domain domain =
         persistResource(
-            newDomainBase("example.tld")
+            DatabaseHelper.newDomain("example.tld")
                 .asBuilder()
                 .setPersistedCurrentSponsorRegistrarId("NewRegistrar") // Shouldn't help.
                 .addStatusValue(StatusValue.PENDING_TRANSFER)
@@ -267,7 +267,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
   void testFailure_failfastWhenLinkedToDomain() {
     createTld("tld");
     persistResource(
-        newDomainBase("example.tld")
+        DatabaseHelper.newDomain("example.tld")
             .asBuilder()
             .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
             .build());

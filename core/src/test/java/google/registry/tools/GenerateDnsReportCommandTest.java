@@ -17,7 +17,6 @@ package google.registry.tools;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
@@ -32,10 +31,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.net.InetAddresses;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.io.IOException;
 import java.io.Reader;
@@ -65,7 +65,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
   private HostResource nameserver2;
   private HostResource nameserver3;
   private HostResource nameserver4;
-  private DomainBase domain1;
+  private Domain domain1;
 
   private static final ImmutableList<?> DS_DATA_OUTPUT = ImmutableList.of(
       ImmutableMap.of(
@@ -139,7 +139,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
     nameserver4 = persistActiveHost("ns2.google.com");
     domain1 =
         persistResource(
-            newDomainBase("example.xn--q9jyb4c")
+            DatabaseHelper.newDomain("example.xn--q9jyb4c")
                 .asBuilder()
                 .setNameservers(ImmutableSet.of(nameserver1.createVKey(), nameserver2.createVKey()))
                 .setDsData(
@@ -150,7 +150,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
                             56789, 2, 4, base16().decode("69FD46E6C4A45C55D4AC"))))
                 .build());
     persistResource(
-        newDomainBase("foobar.xn--q9jyb4c")
+        DatabaseHelper.newDomain("foobar.xn--q9jyb4c")
             .asBuilder()
             .setNameservers(ImmutableSet.of(nameserver3.createVKey(), nameserver4.createVKey()))
             .build());

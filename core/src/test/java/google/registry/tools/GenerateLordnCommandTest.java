@@ -16,12 +16,12 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import google.registry.model.domain.launch.LaunchNotice;
+import google.registry.testing.DatabaseHelper;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.joda.time.DateTime;
@@ -42,10 +42,10 @@ class GenerateLordnCommandTest extends CommandTestCase<GenerateLordnCommand> {
   @Test
   void testExample() throws Exception {
     createTld("tld");
-    persistResource(newDomainBase("sneezy.tld").asBuilder().setSmdId("smd1").build());
-    persistResource(newDomainBase("wheezy.tld").asBuilder().setSmdId("smd2").build());
+    persistResource(DatabaseHelper.newDomain("sneezy.tld").asBuilder().setSmdId("smd1").build());
+    persistResource(DatabaseHelper.newDomain("wheezy.tld").asBuilder().setSmdId("smd2").build());
     persistResource(
-        newDomainBase("fleecey.tld")
+        DatabaseHelper.newDomain("fleecey.tld")
             .asBuilder()
             .setLaunchNotice(LaunchNotice.create("smd3", "validator", START_OF_TIME, START_OF_TIME))
             .setSmdId("smd3")

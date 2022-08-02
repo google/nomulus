@@ -21,7 +21,7 @@ import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainInfoFlow;
 import google.registry.model.ImmutableObject;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainInfoData;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
@@ -53,8 +53,8 @@ public class DomainInfoFlowCustomLogic extends BaseFlowCustomLogic {
   /**
    * A hook that runs before the response is returned.
    *
-   * <p>This takes the {@link DomainBase} and {@link ResponseExtension}s as input and returns
-   * them, potentially with modifications.
+   * <p>This takes the {@link Domain} and {@link ResponseExtension}s as input and returns them,
+   * potentially with modifications.
    */
   @SuppressWarnings("unused")
   public BeforeResponseReturnData beforeResponse(BeforeResponseParameters parameters)
@@ -69,7 +69,7 @@ public class DomainInfoFlowCustomLogic extends BaseFlowCustomLogic {
   @AutoValue
   public abstract static class AfterValidationParameters extends ImmutableObject {
 
-    public abstract DomainBase domain();
+    public abstract Domain domain();
 
     public static Builder newBuilder() {
       return new AutoValue_DomainInfoFlowCustomLogic_AfterValidationParameters.Builder();
@@ -79,7 +79,7 @@ public class DomainInfoFlowCustomLogic extends BaseFlowCustomLogic {
     @AutoValue.Builder
     public abstract static class Builder {
 
-      public abstract Builder setDomain(DomainBase domain);
+      public abstract Builder setDomain(Domain domain);
 
       public abstract AfterValidationParameters build();
     }
@@ -89,7 +89,7 @@ public class DomainInfoFlowCustomLogic extends BaseFlowCustomLogic {
   @AutoValue
   public abstract static class BeforeResponseParameters extends ImmutableObject {
 
-    public abstract DomainBase domain();
+    public abstract Domain domain();
 
     public abstract DomainInfoData resData();
 
@@ -103,7 +103,7 @@ public class DomainInfoFlowCustomLogic extends BaseFlowCustomLogic {
     @AutoValue.Builder
     public abstract static class Builder {
 
-      public abstract Builder setDomain(DomainBase domain);
+      public abstract Builder setDomain(Domain domain);
 
       public abstract Builder setResData(DomainInfoData resData);
 

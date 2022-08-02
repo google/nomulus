@@ -54,7 +54,7 @@ import javax.xml.bind.annotation.XmlValue;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
-/** A collection of {@link DomainBase} commands. */
+/** A collection of {@link Domain} commands. */
 public class DomainCommand {
 
   /** The default validity period (if not specified) is 1 year for all operations. */
@@ -72,7 +72,7 @@ public class DomainCommand {
 
   /** The fields on "chgType" from <a href="http://tools.ietf.org/html/rfc5731">RFC5731</a>. */
   @XmlTransient
-  public static class DomainCreateOrChange<B extends DomainBase.Builder> extends ImmutableObject
+  public static class DomainCreateOrChange<B extends Domain.Builder> extends ImmutableObject
       implements ResourceCreateOrChange<B> {
 
     /** The contactId of the registrant who registered this domain. */
@@ -100,7 +100,7 @@ public class DomainCommand {
   }
 
   /**
-   * A create command for a {@link DomainBase}, mapping "createType" from <a
+   * A create command for a {@link Domain}, mapping "createType" from <a
    * href="http://tools.ietf.org/html/rfc5731">RFC5731</a>.
    */
   @XmlRootElement
@@ -113,7 +113,7 @@ public class DomainCommand {
         "foreignKeyedDesignatedContacts",
         "authInfo"
       })
-  public static class Create extends DomainCreateOrChange<DomainBase.Builder>
+  public static class Create extends DomainCreateOrChange<Domain.Builder>
       implements CreateOrUpdate<Create> {
 
     /** Fully qualified domain name, which serves as a unique identifier for this domain. */
@@ -196,11 +196,11 @@ public class DomainCommand {
     }
   }
 
-  /** A delete command for a {@link DomainBase}. */
+  /** A delete command for a {@link Domain}. */
   @XmlRootElement
   public static class Delete extends AbstractSingleResourceCommand {}
 
-  /** An info request for a {@link DomainBase}. */
+  /** An info request for a {@link Domain}. */
   @XmlRootElement
   public static class Info extends ImmutableObject implements SingleResourceCommand {
 
@@ -259,11 +259,11 @@ public class DomainCommand {
     }
   }
 
-  /** A check request for {@link DomainBase}. */
+  /** A check request for {@link Domain}. */
   @XmlRootElement
   public static class Check extends ResourceCheck {}
 
-  /** A renew command for a {@link DomainBase}. */
+  /** A renew command for a {@link Domain}. */
   @XmlRootElement
   public static class Renew extends AbstractSingleResourceCommand {
     @XmlElement(name = "curExpDate")
@@ -281,7 +281,7 @@ public class DomainCommand {
     }
   }
 
-  /** A transfer operation for a {@link DomainBase}. */
+  /** A transfer operation for a {@link Domain}. */
   @XmlRootElement
   public static class Transfer extends AbstractSingleResourceCommand {
     /** The period to extend this domain's registration upon completion of the transfer. */
@@ -300,11 +300,10 @@ public class DomainCommand {
     }
   }
 
-  /** An update to a {@link DomainBase}. */
+  /** An update to a {@link Domain}. */
   @XmlRootElement
   @XmlType(propOrder = {"targetId", "innerAdd", "innerRemove", "innerChange"})
-  public static class Update
-      extends ResourceUpdate<Update.AddRemove, DomainBase.Builder, Update.Change>
+  public static class Update extends ResourceUpdate<Update.AddRemove, Domain.Builder, Update.Change>
       implements CreateOrUpdate<Update> {
 
     @XmlElement(name = "chg")
@@ -383,7 +382,7 @@ public class DomainCommand {
 
     /** The inner change type on a domain update command. */
     @XmlType(propOrder = {"registrantContactId", "authInfo"})
-    public static class Change extends DomainCreateOrChange<DomainBase.Builder> {
+    public static class Change extends DomainCreateOrChange<Domain.Builder> {
       /** Creates a copy of this {@link Change} with hard links to hosts and contacts. */
       Change cloneAndLinkReferences(DateTime now) throws InvalidReferencesException {
         Change clone = clone(this);

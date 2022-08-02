@@ -19,7 +19,6 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
@@ -50,10 +49,11 @@ import google.registry.flows.host.HostFlowUtils.HostNameTooShallowException;
 import google.registry.flows.host.HostFlowUtils.InvalidHostNameException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainDoesNotExistException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainInPendingDeleteException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.testing.DatabaseHelper;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
@@ -125,8 +125,8 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
   void testSuccess_internalNeverExisted() throws Exception {
     doSuccessfulInternalTest("tld");
     HostResource host = reloadResourceByForeignKey();
-    DomainBase superordinateDomain =
-        loadByForeignKey(DomainBase.class, "example.tld", clock.nowUtc()).get();
+    Domain superordinateDomain =
+        loadByForeignKey(Domain.class, "example.tld", clock.nowUtc()).get();
     assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
     assertDnsTasksEnqueued("ns1.example.tld");
@@ -154,8 +154,8 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     persistDeletedHost(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     doSuccessfulInternalTest("tld");
     HostResource host = reloadResourceByForeignKey();
-    DomainBase superordinateDomain =
-        loadByForeignKey(DomainBase.class, "example.tld", clock.nowUtc()).get();
+    Domain superordinateDomain =
+        loadByForeignKey(Domain.class, "example.tld", clock.nowUtc()).get();
     assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
     assertDnsTasksEnqueued("ns1.example.tld");
@@ -193,7 +193,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     setEppHostCreateInputWithIps("ns1.example.tld");
     createTld("tld");
     persistResource(
-        newDomainBase("example.tld")
+        DatabaseHelper.newDomain("example.tld")
             .asBuilder()
             .setDeletionTime(clock.nowUtc().plusDays(35))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))

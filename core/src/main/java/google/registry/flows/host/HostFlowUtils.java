@@ -29,7 +29,7 @@ import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.flows.EppException.ParameterValueRangeErrorException;
 import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.util.Idn;
 import java.util.Optional;
@@ -77,8 +77,8 @@ public class HostFlowUtils {
     }
   }
 
-  /** Return the {@link DomainBase} this host is subordinate to, or null for external hosts. */
-  public static Optional<DomainBase> lookupSuperordinateDomain(
+  /** Return the {@link Domain} this host is subordinate to, or null for external hosts. */
+  public static Optional<Domain> lookupSuperordinateDomain(
       InternetDomainName hostName, DateTime now) throws EppException {
     Optional<InternetDomainName> tld = findTldForName(hostName);
     if (!tld.isPresent()) {
@@ -90,8 +90,7 @@ public class HostFlowUtils {
         hostName.parts().stream()
             .skip(hostName.parts().size() - (tld.get().parts().size() + 1))
             .collect(joining("."));
-    Optional<DomainBase> superordinateDomain =
-        loadByForeignKey(DomainBase.class, domainName, now);
+    Optional<Domain> superordinateDomain = loadByForeignKey(Domain.class, domainName, now);
     if (!superordinateDomain.isPresent() || !isActive(superordinateDomain.get(), now)) {
       throw new SuperordinateDomainDoesNotExistException(domainName);
     }
@@ -101,12 +100,12 @@ public class HostFlowUtils {
   /** Superordinate domain for this hostname does not exist. */
   static class SuperordinateDomainDoesNotExistException extends ObjectDoesNotExistException {
     public SuperordinateDomainDoesNotExistException(String domainName) {
-      super(DomainBase.class, domainName);
+      super(Domain.class, domainName);
     }
   }
 
   /** Ensure that the superordinate domain is sponsored by the provided registrar ID. */
-  static void verifySuperordinateDomainOwnership(String registrarId, DomainBase superordinateDomain)
+  static void verifySuperordinateDomainOwnership(String registrarId, Domain superordinateDomain)
       throws EppException {
     if (superordinateDomain != null
         && !registrarId.equals(superordinateDomain.getCurrentSponsorRegistrarId())) {
@@ -122,7 +121,7 @@ public class HostFlowUtils {
   }
 
   /** Ensure that the superordinate domain is not in pending delete. */
-  static void verifySuperordinateDomainNotInPendingDelete(DomainBase superordinateDomain)
+  static void verifySuperordinateDomainNotInPendingDelete(Domain superordinateDomain)
       throws EppException {
     if ((superordinateDomain != null)
         && superordinateDomain.getStatusValues().contains(StatusValue.PENDING_DELETE)) {

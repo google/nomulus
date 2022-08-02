@@ -25,7 +25,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
@@ -110,7 +110,7 @@ public final class DomainTransferUtils {
       DateTime automaticTransferTime,
       DateTime serverApproveNewExpirationTime,
       Key<DomainHistory> domainHistoryKey,
-      DomainBase existingDomain,
+      Domain existingDomain,
       Recurring existingRecurring,
       Trid trid,
       String gainingRegistrarId,
@@ -259,7 +259,8 @@ public final class DomainTransferUtils {
         .setRecurrenceEndTime(END_OF_TIME)
         .setRenewalPriceBehavior(existingRecurring.getRenewalPriceBehavior())
         .setRenewalPrice(existingRecurring.getRenewalPrice().orElse(null))
-        .setParent(domainHistoryKey)
+        .setDomainHistoryId(
+            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
         .build();
   }
 
@@ -284,17 +285,20 @@ public final class DomainTransferUtils {
       DateTime now,
       Key<DomainHistory> domainHistoryKey,
       String targetId,
-      DomainBase existingDomain,
+      Domain existingDomain,
       Optional<Money> transferCost) {
-    DomainBase domainAtTransferTime =
-        existingDomain.cloneProjectedAtTime(automaticTransferTime);
+    Domain domainAtTransferTime = existingDomain.cloneProjectedAtTime(automaticTransferTime);
     GracePeriod autorenewGracePeriod =
         getOnlyElement(
             domainAtTransferTime.getGracePeriodsOfType(GracePeriodStatus.AUTO_RENEW), null);
     if (autorenewGracePeriod != null && transferCost.isPresent()) {
       return Optional.of(
           BillingEvent.Cancellation.forGracePeriod(
-                  autorenewGracePeriod, now, domainHistoryKey, targetId)
+                  autorenewGracePeriod,
+                  now,
+                  new DomainHistoryId(
+                      domainHistoryKey.getParent().getName(), domainHistoryKey.getId()),
+                  targetId)
               .asBuilder()
               .setEventTime(automaticTransferTime)
               .build());
@@ -317,7 +321,8 @@ public final class DomainTransferUtils {
         .setPeriodYears(1)
         .setEventTime(automaticTransferTime)
         .setBillingTime(automaticTransferTime.plus(registry.getTransferGracePeriodLength()))
-        .setParent(domainHistoryKey)
+        .setDomainHistoryId(
+            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
         .build();
   }
 

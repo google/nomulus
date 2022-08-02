@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
@@ -44,7 +44,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
   private static final LocalDate DATE = LocalDate.parse("2020-06-10", ISODateTimeFormat.date());
 
   private Spec11ThreatMatch threat;
-  private DomainBase domain;
+  private Domain domain;
   private HostResource host;
   private ContactResource registrantContact;
 
@@ -60,9 +60,9 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
     String domainRepoId = "4-TLD";
     createTld("tld");
 
-    /** Create a domain for the purpose of testing a foreign key reference in the Threat table. */
+    // Create a domain for the purpose of testing a foreign key reference in the Threat table.
     domain =
-        new DomainBase()
+        new Domain()
             .asBuilder()
             .setCreationRegistrarId(REGISTRAR_ID)
             .setPersistedCurrentSponsorRegistrarId(REGISTRAR_ID)
@@ -73,7 +73,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
             .setContacts(ImmutableSet.of())
             .build();
 
-    /** Create a contact for the purpose of testing a foreign key reference in the Domain table. */
+    // Create a contact for the purpose of testing a foreign key reference in the Domain table.
     registrantContact =
         new ContactResource.Builder()
             .setRepoId("contact_id")
@@ -82,7 +82,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
             .setPersistedCurrentSponsorRegistrarId(REGISTRAR_ID)
             .build();
 
-    /** Create a host for the purpose of testing a foreign key reference in the Domain table. */
+    // Create a host for the purpose of testing a foreign key reference in the Domain table. */
     host =
         new HostResource.Builder()
             .setRepoId("host")

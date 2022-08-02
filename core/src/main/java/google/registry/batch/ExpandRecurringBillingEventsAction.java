@@ -43,7 +43,7 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.common.Cursor;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.reporting.DomainTransactionRecord;
@@ -253,9 +253,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
     final ImmutableSet<DateTime> billingTimes =
         getBillingTimesInScope(eventTimes, cursorTime, executeTime, tld);
 
-    VKey<DomainBase> domainKey =
-        VKey.create(
-            DomainBase.class, recurring.getDomainRepoId(), recurring.getParentKey().getParent());
+    VKey<Domain> domainKey = VKey.createSql(Domain.class, recurring.getDomainRepoId());
     Iterable<OneTime> oneTimesForDomain;
     oneTimesForDomain =
         tm().createQueryComposer(OneTime.class)
@@ -311,11 +309,11 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                       .getRenewCost())
               .setEventTime(eventTime)
               .setFlags(union(recurring.getFlags(), Flag.SYNTHETIC))
-              .setParent(historyEntry)
+              .setDomainHistory(historyEntry)
               .setPeriodYears(1)
               .setReason(recurring.getReason())
               .setSyntheticCreationTime(executeTime)
-              .setCancellationMatchingBillingEvent(recurring.createVKey())
+              .setCancellationMatchingBillingEvent(recurring)
               .setTargetId(recurring.getTargetId())
               .build());
     }

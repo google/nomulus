@@ -16,7 +16,6 @@ package google.registry.flows.poll;
 
 import static google.registry.testing.DatabaseHelper.createHistoryEntryForEppResource;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
@@ -30,7 +29,7 @@ import google.registry.flows.FlowTestCase;
 import google.registry.flows.poll.PollRequestFlow.UnexpectedMessageIdException;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
@@ -40,6 +39,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.SetClockExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -53,7 +53,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   @RegisterExtension
   final SetClockExtension setClockExtension = new SetClockExtension(clock, "2011-01-02T01:01:01Z");
 
-  private DomainBase domain;
+  private Domain domain;
   private ContactResource contact;
   private HostResource host;
 
@@ -64,7 +64,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     createTld("example");
     persistNewRegistrar("BadRegistrar");
     contact = persistActiveContact("jd1234");
-    domain = persistResource(newDomainBase("test.example", contact));
+    domain = persistResource(DatabaseHelper.newDomain("test.example", contact));
     host = persistActiveHost("ns1.test.example");
   }
 

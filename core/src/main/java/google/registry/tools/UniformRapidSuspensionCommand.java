@@ -32,7 +32,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.template.soy.data.SoyListData;
 import com.google.template.soy.data.SoyMapData;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
@@ -126,9 +126,9 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     ImmutableList<String> newCanonicalHosts =
         newHosts.stream().map(DomainNameUtils::canonicalizeHostname).collect(toImmutableList());
     ImmutableSet<String> newHostsSet = ImmutableSet.copyOf(newCanonicalHosts);
-    Optional<DomainBase> domainOpt = loadByForeignKey(DomainBase.class, domainName, now);
+    Optional<Domain> domainOpt = loadByForeignKey(Domain.class, domainName, now);
     checkArgumentPresent(domainOpt, "Domain '%s' does not exist or is deleted", domainName);
-    DomainBase domain = domainOpt.get();
+    Domain domain = domainOpt.get();
     Set<String> missingHosts =
         difference(newHostsSet, checkResourcesExist(HostResource.class, newCanonicalHosts, now));
     checkArgument(missingHosts.isEmpty(), "Hosts do not exist: %s", missingHosts);
@@ -202,7 +202,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
             Boolean.toString(undo)));
   }
 
-  private ImmutableSortedSet<String> getExistingNameservers(DomainBase domain) {
+  private ImmutableSortedSet<String> getExistingNameservers(Domain domain) {
     ImmutableSortedSet.Builder<String> nameservers = ImmutableSortedSet.naturalOrder();
     for (HostResource host :
         tm().transact(() -> tm().loadByKeys(domain.getNameservers()).values())) {
@@ -211,7 +211,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     return nameservers.build();
   }
 
-  private ImmutableSortedSet<String> getExistingLocks(DomainBase domain) {
+  private ImmutableSortedSet<String> getExistingLocks(Domain domain) {
     ImmutableSortedSet.Builder<String> locks = ImmutableSortedSet.naturalOrder();
     for (StatusValue lock : domain.getStatusValues()) {
       if (URS_LOCKS.contains(lock.getXmlName())) {
@@ -221,7 +221,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     return locks.build();
   }
 
-  private boolean hasClientHold(DomainBase domain) {
+  private boolean hasClientHold(Domain domain) {
     for (StatusValue status : domain.getStatusValues()) {
       if (status == StatusValue.CLIENT_HOLD) {
         return true;
@@ -230,7 +230,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     return false;
   }
 
-  private ImmutableList<ImmutableMap<String, Object>> getExistingDsData(DomainBase domain) {
+  private ImmutableList<ImmutableMap<String, Object>> getExistingDsData(Domain domain) {
     ImmutableList.Builder<ImmutableMap<String, Object>> dsDataJsons = new ImmutableList.Builder();
     HexBinaryAdapter hexBinaryAdapter = new HexBinaryAdapter();
     for (DelegationSignerData dsData : domain.getDsData()) {

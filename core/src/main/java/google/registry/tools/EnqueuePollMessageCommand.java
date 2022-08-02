@@ -25,7 +25,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
@@ -85,11 +85,11 @@ class EnqueuePollMessageCommand extends MutatingCommand {
         !sendToAll || isNullOrEmpty(clientIds), "Cannot specify both --all and --clients");
     tm().transact(
             () -> {
-              Optional<DomainBase> domainOpt =
-                  loadByForeignKey(DomainBase.class, domainName, tm().getTransactionTime());
+              Optional<Domain> domainOpt =
+                  loadByForeignKey(Domain.class, domainName, tm().getTransactionTime());
               checkArgument(
                   domainOpt.isPresent(), "Domain %s doesn't exist or isn't active", domainName);
-              DomainBase domain = domainOpt.get();
+              Domain domain = domainOpt.get();
               ImmutableList<String> registrarIds;
               if (sendToAll) {
                 registrarIds =

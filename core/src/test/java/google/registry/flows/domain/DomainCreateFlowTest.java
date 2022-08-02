@@ -43,14 +43,13 @@ import static google.registry.testing.DatabaseHelper.deleteTld;
 import static google.registry.testing.DatabaseHelper.getHistoryEntries;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newContactResource;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
@@ -151,7 +150,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.fee.BaseFee.FeeType;
@@ -174,6 +173,7 @@ import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.VKey;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.math.BigDecimal;
 import java.util.Map;
@@ -186,7 +186,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainCreateFlow}. */
-class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, DomainBase> {
+class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain> {
 
   private static final String CLAIMS_KEY = "2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001";
 
@@ -251,7 +251,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
       ImmutableSet<BillingEvent.Flag> expectedBillingFlags,
       @Nullable AllocationToken allocationToken)
       throws Exception {
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
 
     boolean isAnchorTenant = expectedBillingFlags.contains(ANCHOR_TENANT);
     // Set up the creation cost.
@@ -301,7 +301,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setEventTime(clock.nowUtc())
             .setBillingTime(billingTime)
             .setFlags(expectedBillingFlags)
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .setAllocationToken(allocationToken == null ? null : allocationToken.createVKey())
             .build();
 
@@ -313,7 +313,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .setRenewalPriceBehavior(renewalPriceInfo.renewalPriceBehavior())
             .setRenewalPrice(renewalPriceInfo.renewalPrice())
             .build();
@@ -334,7 +334,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
               .setEventTime(clock.nowUtc())
               .setBillingTime(billingTime)
               .setFlags(expectedBillingFlags)
-              .setParent(historyEntry)
+              .setDomainHistory(historyEntry)
               .build();
       expectedBillingEvents.add(eapBillingEvent);
     }
@@ -525,7 +525,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistContactsAndHosts();
-    DomainBase domain = persistActiveDomain("foo.tld");
+    Domain domain = persistActiveDomain("foo.tld");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 505L);
     persistResource(
         new AllocationToken.Builder()
@@ -852,7 +852,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_dsdata_no_maxsiglife.xml");
     persistContactsAndHosts("tld"); // For some reason this sample uses "tld".
     doSuccessfulTest("tld");
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     assertAboutDomains()
         .that(domain)
         .hasExactlyDsData(
@@ -1118,7 +1118,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     String targetId = getUniqueIdFromCommand();
     persistResource(
-        newDomainBase(targetId)
+        DatabaseHelper.newDomain(targetId)
             .asBuilder()
             .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
             .build());
@@ -1637,7 +1637,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
     // Check for SERVER_HOLD status, no DNS tasks enqueued, and collision poll message.
     assertNoDnsTasksEnqueued();
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     assertThat(domain.getStatusValues()).contains(SERVER_HOLD);
     assertPollMessagesWithCollisionOneTime(domain);
   }
@@ -1654,12 +1654,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
     // Check for SERVER_HOLD status, no DNS tasks enqueued, and collision poll message.
     assertNoDnsTasksEnqueued();
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     assertThat(domain.getStatusValues()).contains(SERVER_HOLD);
     assertPollMessagesWithCollisionOneTime(domain);
   }
 
-  private void assertPollMessagesWithCollisionOneTime(DomainBase domain) {
+  private void assertPollMessagesWithCollisionOneTime(Domain domain) {
     HistoryEntry historyEntry = getHistoryEntries(domain).get(0);
     assertPollMessagesForResource(
         domain,
@@ -1814,7 +1814,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         CommitMode.LIVE,
         UserPrivileges.NORMAL,
         loadFile("domain_create_response.xml", substitutions));
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     HistoryEntry historyEntry = getHistoryEntries(domain).get(0);
     assertPollMessagesForResource(
         domain,
@@ -2581,7 +2581,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setAddGracePeriodLength(Duration.standardMinutes(9))
             .build());
     runFlow();
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     HistoryEntry historyEntry = getHistoryEntries(domain).get(0);
     assertThat(historyEntry.getDomainTransactionRecords())
         .containsExactly(
@@ -2597,7 +2597,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     persistResource(Registry.get("tld").asBuilder().setTldType(TldType.TEST).build());
     runFlow();
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     HistoryEntry historyEntry = getHistoryEntries(domain).get(0);
     // No transaction records should be stored for test TLDs
     assertThat(historyEntry.getDomainTransactionRecords()).isEmpty();

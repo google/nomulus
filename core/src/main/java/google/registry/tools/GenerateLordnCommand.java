@@ -21,7 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.tmch.LordnTaskUtils;
 import google.registry.tools.params.PathParameter;
 import google.registry.util.Clock;
@@ -65,7 +65,7 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
     tm().transact(
             () ->
                 tm()
-                    .createQueryComposer(DomainBase.class)
+                    .createQueryComposer(Domain.class)
                     .where("tld", Comparator.EQ, tld)
                     .orderBy("repoId")
                     .stream()
@@ -91,7 +91,7 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
   private static void processDomain(
       ImmutableList.Builder<String> claimsCsv,
       ImmutableList.Builder<String> sunriseCsv,
-      DomainBase domain) {
+      Domain domain) {
     String status = " ";
     if (domain.getLaunchNotice() == null && domain.getSmdId() != null) {
       sunriseCsv.add(LordnTaskUtils.getCsvLineForSunriseDomain(domain, domain.getCreationTime()));

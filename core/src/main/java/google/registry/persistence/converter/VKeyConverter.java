@@ -20,11 +20,12 @@ import java.io.Serializable;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 
-/** Converts VKey to a string column. */
+/** Converts VKey to a string or long column. */
 public abstract class VKeyConverter<T, C extends Serializable>
     implements AttributeConverter<VKey<? extends T>, C> {
   @Override
   @Nullable
+  @SuppressWarnings("unchecked")
   public C convertToDatabaseColumn(@Nullable VKey<? extends T> attribute) {
     return attribute == null ? null : (C) attribute.getSqlKey();
   }
@@ -35,8 +36,8 @@ public abstract class VKeyConverter<T, C extends Serializable>
     if (dbData == null) {
       return null;
     }
-    Class<? extends T> clazz = getAttributeClass();
-    Key ofyKey = null;
+    Class<T> clazz = getAttributeClass();
+    Key<T> ofyKey;
     if (!hasCompositeOfyKey()) {
       // If this isn't a composite key, we can create the Ofy key from the SQL key.
       ofyKey =

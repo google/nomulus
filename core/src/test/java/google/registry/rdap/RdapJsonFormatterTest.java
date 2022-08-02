@@ -22,7 +22,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistContactResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHostResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeDomainBase;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.TestDataHelper.loadFile;
@@ -35,7 +35,7 @@ import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.ofy.Ofy;
@@ -70,8 +70,8 @@ class RdapJsonFormatterTest {
   private RdapJsonFormatter rdapJsonFormatter;
 
   private Registrar registrar;
-  private DomainBase domainBaseFull;
-  private DomainBase domainBaseNoNameserversNoTransfers;
+  private Domain domainFull;
+  private Domain domainNoNameserversNoTransfers;
   private HostResource hostResourceIpv4;
   private HostResource hostResourceIpv6;
   private HostResource hostResourceBoth;
@@ -158,7 +158,7 @@ class RdapJsonFormatterTest {
                 .asBuilder()
                 .setSuperordinateDomain(
                     persistResource(
-                            makeDomainBase(
+                            makeDomain(
                                     "dog.みんな",
                                     contactResourceRegistrant,
                                     contactResourceAdmin,
@@ -182,9 +182,9 @@ class RdapJsonFormatterTest {
                                 .build())
                         .createVKey())
                 .build());
-    domainBaseFull =
+    domainFull =
         persistResource(
-            makeDomainBase(
+            makeDomain(
                     "cat.みんな",
                     contactResourceRegistrant,
                     contactResourceAdmin,
@@ -196,9 +196,9 @@ class RdapJsonFormatterTest {
                 .setCreationTimeForTest(clock.nowUtc().minusMonths(4))
                 .setLastEppUpdateTime(clock.nowUtc().minusMonths(3))
                 .build());
-    domainBaseNoNameserversNoTransfers =
+    domainNoNameserversNoTransfers =
         persistResource(
-            makeDomainBase(
+            makeDomain(
                     "fish.みんな",
                     contactResourceRegistrant,
                     contactResourceRegistrant,
@@ -213,7 +213,7 @@ class RdapJsonFormatterTest {
     // Create an unused domain that references hostResourceBoth and hostResourceNoAddresses so that
     // they will have "associated" (ie, StatusValue.LINKED) status.
     persistResource(
-        makeDomainBase(
+        makeDomain(
             "dog.みんな",
             contactResourceRegistrant,
             contactResourceAdmin,
@@ -226,30 +226,30 @@ class RdapJsonFormatterTest {
     // We create 3 "transfer approved" entries, to make sure we only save the last one
     persistResource(
         makeHistoryEntry(
-            domainBaseFull,
+            domainFull,
             HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE,
             null,
             null,
             clock.nowUtc().minusMonths(3)));
     persistResource(
         makeHistoryEntry(
-            domainBaseFull,
+            domainFull,
             HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE,
             null,
             null,
             clock.nowUtc().minusMonths(1)));
     persistResource(
         makeHistoryEntry(
-            domainBaseFull,
+            domainFull,
             HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE,
             null,
             null,
             clock.nowUtc().minusMonths(2)));
-    // We create a "transfer approved" entry for domainBaseNoNameserversNoTransfers that happened
+    // We create a "transfer approved" entry for domainNoNameserversNoTransfers that happened
     // before the domain was created, to make sure we don't show it
     persistResource(
         makeHistoryEntry(
-            domainBaseNoNameserversNoTransfers,
+            domainNoNameserversNoTransfers,
             HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE,
             null,
             null,
@@ -472,13 +472,13 @@ class RdapJsonFormatterTest {
 
   @Test
   void testDomain_full() {
-    assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.FULL).toJson())
+    assertThat(rdapJsonFormatter.createRdapDomain(domainFull, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_domain_full.json"));
   }
 
   @Test
   void testDomain_summary() {
-    assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.SUMMARY).toJson())
+    assertThat(rdapJsonFormatter.createRdapDomain(domainFull, OutputDataType.SUMMARY).toJson())
         .isEqualTo(loadJson("rdapjson_domain_summary.json"));
   }
 
@@ -487,7 +487,7 @@ class RdapJsonFormatterTest {
     // Expected data are from "rdapjson_domain_summary.json"
     assertThat(
             Maps.transformValues(
-                rdapJsonFormatter.getLastHistoryEntryByType(domainBaseFull),
+                rdapJsonFormatter.getLastHistoryEntryByType(domainFull),
                 HistoryEntry::getModificationTime))
         .containsExactlyEntriesIn(
             ImmutableMap.of(TRANSFER, DateTime.parse("1999-12-01T00:00:00.000Z")));
@@ -496,7 +496,7 @@ class RdapJsonFormatterTest {
   @Test
   void testDomain_logged_out() {
     rdapJsonFormatter.rdapAuthorization = RdapAuthorization.PUBLIC_AUTHORIZATION;
-    assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.FULL).toJson())
+    assertThat(rdapJsonFormatter.createRdapDomain(domainFull, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_domain_logged_out.json"));
   }
 
@@ -504,7 +504,7 @@ class RdapJsonFormatterTest {
   void testDomain_noNameserversNoTransfersMultipleRoleContact() {
     assertThat(
             rdapJsonFormatter
-                .createRdapDomain(domainBaseNoNameserversNoTransfers, OutputDataType.FULL)
+                .createRdapDomain(domainNoNameserversNoTransfers, OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_domain_no_nameservers.json"));
   }

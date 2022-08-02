@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertAbout;
 
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.SimpleSubjectBuilder;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.testing.TruthChainer.And;
@@ -57,7 +57,7 @@ public final class HostResourceSubject
   }
 
   public And<HostResourceSubject> hasSuperordinateDomain(
-      @Nullable VKey<DomainBase> superordinateDomain) {
+      @Nullable VKey<Domain> superordinateDomain) {
     return hasValue(
         superordinateDomain, actual.getSuperordinateDomain(), "has superordinateDomain");
   }

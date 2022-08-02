@@ -18,12 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import org.joda.money.CurrencyUnit;
@@ -54,20 +53,12 @@ public class GracePeriodTest {
             .setBillingTime(now.plusDays(1))
             .setRegistrarId("TheRegistrar")
             .setCost(Money.of(CurrencyUnit.USD, 42))
-            .setParent(
-                Key.create(Key.create(DomainBase.class, "domain"), DomainHistory.class, 12345))
+            .setDomainHistoryId(new DomainHistoryId("domain", 12345))
             .setReason(Reason.CREATE)
             .setPeriodYears(1)
             .setTargetId("foo.google")
             .build();
-    recurringKey =
-        VKey.create(
-            Recurring.class,
-            12345L,
-            Key.create(
-                Key.create(Key.create(DomainBase.class, "1-TEST"), HistoryEntry.class, 343L),
-                Recurring.class,
-                12345L));
+    recurringKey = Recurring.createVKey(12345L);
   }
 
   @Test

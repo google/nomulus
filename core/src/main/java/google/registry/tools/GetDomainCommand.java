@@ -18,7 +18,7 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.util.DomainNameUtils;
 import java.util.List;
 
@@ -38,7 +38,7 @@ final class GetDomainCommand extends GetEppResourceCommand {
       printResource(
           "Domain",
           canonicalDomain,
-          loadByForeignKey(DomainBase.class, canonicalDomain, readTimestamp));
+          loadByForeignKey(Domain.class, canonicalDomain, readTimestamp));
     }
   }
 }

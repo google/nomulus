@@ -22,13 +22,12 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -64,6 +63,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
 import org.joda.money.Money;
@@ -72,9 +72,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for {@link DomainBase}. */
+/** Unit tests for {@link Domain}. */
 @SuppressWarnings("WeakerAccess") // Referred to by EppInputTest.
-public class DomainBaseTest {
+public class DomainTest {
 
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
@@ -86,7 +86,7 @@ public class DomainBaseTest {
           .withClock(fakeClock)
           .build();
 
-  private DomainBase domain;
+  private Domain domain;
   private VKey<BillingEvent.OneTime> oneTimeBillKey;
   private VKey<BillingEvent.Recurring> recurringBillKey;
   private DomainHistory domainHistory;
@@ -106,7 +106,7 @@ public class DomainBaseTest {
     domainHistory =
         persistResource(
             new DomainHistory.Builder()
-                .setDomainRepoId(domain.createVKey().getOfyKey().getName())
+                .setDomainRepoId(domain.getRepoId())
                 .setModificationTime(fakeClock.nowUtc())
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setRegistrarId("TheRegistrar")
@@ -118,11 +118,10 @@ public class DomainBaseTest {
                     .setReason(Reason.SERVER_STATUS)
                     .setTargetId(domain.getDomainName())
                     .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-                    .setDomainRepoId(domain.getRepoId())
                     .setBillingTime(DateTime.now(UTC))
                     .setCost(Money.of(USD, 100))
                     .setEventTime(DateTime.now(UTC).plusYears(1))
-                    .setParent(domainHistory)
+                    .setDomainHistory(domainHistory)
                     .build())
             .createVKey();
     DomainHistory historyEntry =
@@ -145,11 +144,10 @@ public class DomainBaseTest {
             .setReason(Reason.SERVER_STATUS)
             .setTargetId("example.com")
             .setRegistrarId("registrar1")
-            .setDomainRepoId("4-COM")
             .setBillingTime(DateTime.now(UTC))
             .setCost(Money.of(USD, 100))
             .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .build();
     oneTimeBillKey = oneTimeBill.createVKey();
     BillingEvent.Recurring recurringBill =
@@ -159,11 +157,9 @@ public class DomainBaseTest {
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(domain.getDomainName())
             .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-            .setDomainRepoId(domain.getRepoId())
-            .setDomainHistoryRevisionId(historyEntry.getId())
             .setEventTime(DateTime.now(UTC).plusYears(1))
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(historyEntry)
+            .setDomainHistory(historyEntry)
             .build();
     insertInDb(historyEntry, oneTimeBill, recurringBill);
     recurringBillKey = recurringBill.createVKey();
@@ -175,7 +171,7 @@ public class DomainBaseTest {
     domain =
         persistResource(
             cloneAndSetAutoTimestamps(
-                new DomainBase.Builder()
+                new Domain.Builder()
                     .setDomainName("example.com")
                     .setRepoId("4-COM")
                     .setCreationRegistrarId("TheRegistrar")
@@ -234,9 +230,9 @@ public class DomainBaseTest {
   }
 
   @Test
-  void testDomainContentToDomainBase() {
+  void testDomainContentToDomain() {
     ImmutableObjectSubject.assertAboutImmutableObjects()
-        .that(new DomainBase.Builder().copyFrom(domain).build())
+        .that(new Domain.Builder().copyFrom(domain).build())
         .isEqualExceptFields(domain, "updateTimestamp", "revisions");
   }
 
@@ -245,28 +241,28 @@ public class DomainBaseTest {
     // Note that this only verifies that the value stored under the foreign key is the same as that
     // stored under the primary key ("domain" is the domain loaded from the datastore, not the
     // original domain object).
-    assertThat(loadByForeignKey(DomainBase.class, domain.getForeignKey(), fakeClock.nowUtc()))
+    assertThat(loadByForeignKey(Domain.class, domain.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(domain);
   }
 
   @Test
   void testEmptyStringsBecomeNull() {
     assertThat(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setPersistedCurrentSponsorRegistrarId(null)
                 .build()
                 .getCurrentSponsorRegistrarId())
         .isNull();
     assertThat(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setPersistedCurrentSponsorRegistrarId("")
                 .build()
                 .getCurrentSponsorRegistrarId())
         .isNull();
     assertThat(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setPersistedCurrentSponsorRegistrarId(" ")
                 .build()
@@ -276,21 +272,21 @@ public class DomainBaseTest {
 
   void testEmptySetsAndArraysBecomeNull() {
     assertThat(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setNameservers(ImmutableSet.of())
                 .build()
                 .nsHosts)
         .isNull();
     assertThat(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setNameservers(ImmutableSet.of())
                 .build()
                 .nsHosts)
         .isNull();
     assertThat(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setNameservers(ImmutableSet.of(newHostResource("foo.example.tld").createVKey()))
                 .build()
@@ -298,7 +294,7 @@ public class DomainBaseTest {
         .isNotNull();
     // This behavior should also hold true for ImmutableObjects nested in collections.
     assertThat(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 1, 1, (byte[]) null)))
                 .build()
@@ -308,7 +304,7 @@ public class DomainBaseTest {
                 .getDigest())
         .isNull();
     assertThat(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 1, 1, new byte[] {})))
                 .build()
@@ -318,7 +314,7 @@ public class DomainBaseTest {
                 .getDigest())
         .isNull();
     assertThat(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 1, 1, new byte[] {1})))
                 .build()
@@ -331,8 +327,9 @@ public class DomainBaseTest {
 
   @Test
   void testEmptyTransferDataBecomesNull() {
-    DomainBase withNull = newDomainBase("example.com").asBuilder().setTransferData(null).build();
-    DomainBase withEmpty = withNull.asBuilder().setTransferData(DomainTransferData.EMPTY).build();
+    Domain withNull =
+        DatabaseHelper.newDomain("example.com").asBuilder().setTransferData(null).build();
+    Domain withEmpty = withNull.asBuilder().setTransferData(DomainTransferData.EMPTY).build();
     assertThat(withNull).isEqualTo(withEmpty);
     assertThat(withEmpty.transferData).isNull();
   }
@@ -344,13 +341,14 @@ public class DomainBaseTest {
     StatusValue[] statuses = {StatusValue.OK};
     // OK is implicit if there's no other statuses but there are nameservers.
     assertAboutDomains()
-        .that(newDomainBase("example.com").asBuilder().setNameservers(nameservers).build())
+        .that(
+            DatabaseHelper.newDomain("example.com").asBuilder().setNameservers(nameservers).build())
         .hasExactlyStatusValues(statuses);
     StatusValue[] statuses1 = {StatusValue.CLIENT_HOLD};
     // If there are other status values, OK should be suppressed. (Domains can't be LINKED.)
     assertAboutDomains()
         .that(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setNameservers(nameservers)
                 .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_HOLD))
@@ -360,7 +358,7 @@ public class DomainBaseTest {
     // When OK is suppressed, it should be removed even if it was originally there.
     assertAboutDomains()
         .that(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setNameservers(nameservers)
                 .setStatusValues(ImmutableSet.of(StatusValue.OK, StatusValue.CLIENT_HOLD))
@@ -369,13 +367,13 @@ public class DomainBaseTest {
     StatusValue[] statuses3 = {StatusValue.INACTIVE};
     // If there are no nameservers, INACTIVE should be added, which suppresses OK.
     assertAboutDomains()
-        .that(newDomainBase("example.com").asBuilder().build())
+        .that(DatabaseHelper.newDomain("example.com").asBuilder().build())
         .hasExactlyStatusValues(statuses3);
     StatusValue[] statuses4 = {StatusValue.CLIENT_HOLD, StatusValue.INACTIVE};
     // If there are no nameservers but there are status values, INACTIVE should still be added.
     assertAboutDomains()
         .that(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_HOLD))
                 .build())
@@ -384,7 +382,7 @@ public class DomainBaseTest {
     // If there are nameservers, INACTIVE should be removed even if it was originally there.
     assertAboutDomains()
         .that(
-            newDomainBase("example.com")
+            DatabaseHelper.newDomain("example.com")
                 .asBuilder()
                 .setNameservers(nameservers)
                 .setStatusValues(ImmutableSet.of(StatusValue.INACTIVE, StatusValue.CLIENT_HOLD))
@@ -393,9 +391,7 @@ public class DomainBaseTest {
   }
 
   private void assertTransferred(
-      DomainBase domain,
-      DateTime newExpirationTime,
-      VKey<BillingEvent.Recurring> newAutorenewEvent) {
+      Domain domain, DateTime newExpirationTime, VKey<BillingEvent.Recurring> newAutorenewEvent) {
     assertThat(domain.getTransferData().getTransferStatus())
         .isEqualTo(TransferStatus.SERVER_APPROVED);
     assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("TheRegistrar");
@@ -427,7 +423,7 @@ public class DomainBaseTest {
                         .plus(Registry.get("com").getTransferGracePeriodLength()))
                 .setCost(Money.of(USD, 11))
                 .setPeriodYears(1)
-                .setParent(historyEntry)
+                .setDomainHistory(historyEntry)
                 .build());
     domain =
         domain
@@ -457,7 +453,7 @@ public class DomainBaseTest {
                     "TheRegistrar",
                     oneTimeBillKey))
             .build();
-    DomainBase afterTransfer = domain.cloneProjectedAtTime(fakeClock.nowUtc().plusDays(1));
+    Domain afterTransfer = domain.cloneProjectedAtTime(fakeClock.nowUtc().plusDays(1));
     DateTime newExpirationTime = oldExpirationTime.plusYears(1);
     VKey<BillingEvent.Recurring> serverApproveAutorenewEvent =
         domain.getTransferData().getServerApproveAutorenewEvent();
@@ -475,7 +471,7 @@ public class DomainBaseTest {
                 transferBillingEvent.createVKey(),
                 afterTransfer.getGracePeriods().iterator().next().getGracePeriodId()));
     // If we project after the grace period expires all should be the same except the grace period.
-    DomainBase afterGracePeriod =
+    Domain afterGracePeriod =
         domain.cloneProjectedAtTime(
             fakeClock
                 .nowUtc()
@@ -525,13 +521,13 @@ public class DomainBaseTest {
     DateTime transferSuccessDateTime = now.plusDays(5);
     setupPendingTransferDomain(autorenewDateTime, transferRequestDateTime, transferSuccessDateTime);
 
-    DomainBase beforeAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.minusDays(1));
+    Domain beforeAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.minusDays(1));
     assertThat(beforeAutoRenew.getLastEppUpdateTime()).isEqualTo(transferRequestDateTime);
     assertThat(beforeAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");
 
     // If autorenew happens before transfer succeeds(before transfer grace period starts as well),
     // lastEppUpdateClientId should still be the current sponsor client id
-    DomainBase afterAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.plusDays(1));
+    Domain afterAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.plusDays(1));
     assertThat(afterAutoRenew.getLastEppUpdateTime()).isEqualTo(autorenewDateTime);
     assertThat(afterAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo("NewRegistrar");
   }
@@ -544,12 +540,11 @@ public class DomainBaseTest {
     DateTime transferSuccessDateTime = now.plusDays(5);
     setupPendingTransferDomain(autorenewDateTime, transferRequestDateTime, transferSuccessDateTime);
 
-    DomainBase beforeAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.minusDays(1));
+    Domain beforeAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.minusDays(1));
     assertThat(beforeAutoRenew.getLastEppUpdateTime()).isEqualTo(transferRequestDateTime);
     assertThat(beforeAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");
 
-    DomainBase afterTransferSuccess =
-        domain.cloneProjectedAtTime(transferSuccessDateTime.plusDays(1));
+    Domain afterTransferSuccess = domain.cloneProjectedAtTime(transferSuccessDateTime.plusDays(1));
     assertThat(afterTransferSuccess.getLastEppUpdateTime()).isEqualTo(transferSuccessDateTime);
     assertThat(afterTransferSuccess.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");
   }
@@ -572,11 +567,11 @@ public class DomainBaseTest {
     DateTime autorenewDateTime = now.plusDays(3);
     setupUnmodifiedDomain(autorenewDateTime);
 
-    DomainBase beforeAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.minusDays(1));
+    Domain beforeAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.minusDays(1));
     assertThat(beforeAutoRenew.getLastEppUpdateTime()).isEqualTo(null);
     assertThat(beforeAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo(null);
 
-    DomainBase afterAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.plusDays(1));
+    Domain afterAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.plusDays(1));
     assertThat(afterAutoRenew.getLastEppUpdateTime()).isEqualTo(autorenewDateTime);
     assertThat(afterAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo("NewRegistrar");
   }
@@ -654,7 +649,7 @@ public class DomainBaseTest {
 
   @Test
   void testRenewalsHappenAtExpiration() {
-    DomainBase renewed = domain.cloneProjectedAtTime(domain.getRegistrationExpirationTime());
+    Domain renewed = domain.cloneProjectedAtTime(domain.getRegistrationExpirationTime());
     assertThat(renewed.getRegistrationExpirationTime())
         .isEqualTo(domain.getRegistrationExpirationTime().plusYears(1));
     assertThat(renewed.getLastEppUpdateTime()).isEqualTo(domain.getRegistrationExpirationTime());
@@ -665,7 +660,7 @@ public class DomainBaseTest {
   @Test
   void testTldGetsSet() {
     createTld("tld");
-    domain = newDomainBase("foo.tld");
+    domain = DatabaseHelper.newDomain("foo.tld");
     assertThat(domain.getTld()).isEqualTo("tld");
   }
 
@@ -676,7 +671,7 @@ public class DomainBaseTest {
             .asBuilder()
             .setRegistrationExpirationTime(DateTime.parse("2004-02-29T22:00:00.0Z"))
             .build();
-    DomainBase renewed =
+    Domain renewed =
         domain.cloneProjectedAtTime(domain.getRegistrationExpirationTime().plusYears(4));
     assertThat(renewed.getRegistrationExpirationTime().getDayOfMonth()).isEqualTo(28);
   }
@@ -700,7 +695,7 @@ public class DomainBaseTest {
                     .put(oldExpirationTime.plusYears(2).plusMillis(1), Money.of(USD, 5))
                     .build())
             .build());
-    DomainBase renewedThreeTimes = domain.cloneProjectedAtTime(oldExpirationTime.plusYears(2));
+    Domain renewedThreeTimes = domain.cloneProjectedAtTime(oldExpirationTime.plusYears(2));
     assertThat(renewedThreeTimes.getRegistrationExpirationTime())
         .isEqualTo(oldExpirationTime.plusYears(3));
     assertThat(renewedThreeTimes.getLastEppUpdateTime()).isEqualTo(oldExpirationTime.plusYears(2));
@@ -885,7 +880,7 @@ public class DomainBaseTest {
                 .setTransferData(transferData)
                 .setAutorenewBillingEvent(recurringBillKey)
                 .build());
-    DomainBase clone = domain.cloneProjectedAtTime(now);
+    Domain clone = domain.cloneProjectedAtTime(now);
     assertThat(clone.getRegistrationExpirationTime())
         .isEqualTo(domain.getRegistrationExpirationTime().plusYears(1));
     // Transferring removes the AUTORENEW grace period and adds a TRANSFER grace period

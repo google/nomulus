@@ -33,8 +33,8 @@ import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -56,9 +56,9 @@ import org.joda.time.DateTime;
 /** Utility class for creating {@code EppResource} entities that'll successfully marshal. */
 final class RdeFixtures {
 
-  static DomainBase makeDomainBase(FakeClock clock, String tld) {
-    DomainBase domain =
-        new DomainBase.Builder()
+  static Domain makeDomain(FakeClock clock, String tld) {
+    Domain domain =
+        new Domain.Builder()
             .setDomainName("example." + tld)
             .setRepoId(generateNewDomainRoid(tld))
             .setRegistrant(
@@ -84,7 +84,7 @@ final class RdeFixtures {
                 .setPeriodYears(2)
                 .setEventTime(DateTime.parse("1990-01-01T00:00:00Z"))
                 .setBillingTime(DateTime.parse("1990-01-01T00:00:00Z"))
-                .setParent(historyEntry)
+                .setDomainHistory(historyEntry)
                 .build());
     domain =
         domain
@@ -138,7 +138,7 @@ final class RdeFixtures {
                                 .setPeriodYears(2)
                                 .setEventTime(DateTime.parse("1992-01-01T00:00:00Z"))
                                 .setBillingTime(DateTime.parse("1992-01-01T00:00:00Z"))
-                                .setParent(historyEntry)
+                                .setDomainHistory(historyEntry)
                                 .build())),
                     GracePeriod.create(
                         GracePeriodStatus.TRANSFER,
@@ -162,7 +162,7 @@ final class RdeFixtures {
                             .setRegistrarId("TheRegistrar")
                             .setEventTime(END_OF_TIME)
                             .setRecurrenceEndTime(END_OF_TIME)
-                            .setParent(historyEntry)
+                            .setDomainHistory(historyEntry)
                             .build())
                     .createVKey())
             .setAutorenewPollMessage(
@@ -192,7 +192,7 @@ final class RdeFixtures {
                                     .setRegistrarId("TheRegistrar")
                                     .setEventTime(END_OF_TIME)
                                     .setRecurrenceEndTime(END_OF_TIME)
-                                    .setParent(historyEntry)
+                                    .setDomainHistory(historyEntry)
                                     .build())
                             .createVKey())
                     .setServerApproveAutorenewPollMessage(

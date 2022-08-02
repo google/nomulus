@@ -26,7 +26,7 @@ import google.registry.model.EppResource.BuilderWithTransferData;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.index.ForeignKeyIndex;
@@ -101,7 +101,7 @@ public final class ResourceTransferUtils {
   }
 
   private static void assertIsContactOrDomain(EppResource eppResource) {
-    checkState(eppResource instanceof ContactResource || eppResource instanceof DomainBase);
+    checkState(eppResource instanceof ContactResource || eppResource instanceof Domain);
   }
 
   /** Update the relevant {@link ForeignKeyIndex} to cache the new deletion time. */

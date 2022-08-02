@@ -25,7 +25,7 @@ import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistContactResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHostResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeDomainBase;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarContacts;
@@ -38,7 +38,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
@@ -65,11 +65,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   }
 
   private Registrar registrar;
-  private DomainBase domainCatLol;
-  private DomainBase domainCatLol2;
-  private DomainBase domainCatExample;
-  private DomainBase domainIdn;
-  private DomainBase domainMultipart;
+  private Domain domainCatLol;
+  private Domain domainCatLol2;
+  private Domain domainCatExample;
+  private Domain domainIdn;
+  private Domain domainMultipart;
   private ContactResource contact1;
   private ContactResource contact2;
   private ContactResource contact3;
@@ -153,7 +153,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
                 "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2)));
     domainCatLol =
         persistResource(
-            makeDomainBase(
+            makeDomain(
                     "cat.lol",
                     contact1,
                     contact2,
@@ -173,7 +173,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
     domainCatLol2 =
         persistResource(
-            makeDomainBase(
+            makeDomain(
                     "cat2.lol",
                     makeAndPersistContactResource(
                         "6372808-ERL",
@@ -214,7 +214,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     persistSimpleResources(makeRegistrarContacts(registrar));
     domainCatExample =
         persistResource(
-            makeDomainBase(
+            makeDomain(
                     "cat.example",
                     makeAndPersistContactResource(
                         "7372808-ERL",
@@ -251,7 +251,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     persistSimpleResources(makeRegistrarContacts(registrar));
     domainIdn =
         persistResource(
-            makeDomainBase(
+            makeDomain(
                     "cat.みんな",
                     makeAndPersistContactResource(
                         "8372808-ERL",
@@ -290,7 +290,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     persistSimpleResources(makeRegistrarContacts(registrar));
     domainMultipart =
         persistResource(
-            makeDomainBase(
+            makeDomain(
                     "cat.1.test",
                     makeAndPersistContactResource(
                         "9372808-ERL",
@@ -415,11 +415,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     }
     ImmutableSet<VKey<HostResource>> hostKeys = hostKeysBuilder.build();
     // Create all the domains at once, then persist them in parallel, for increased efficiency.
-    ImmutableList.Builder<DomainBase> domainsBuilder = new ImmutableList.Builder<>();
+    ImmutableList.Builder<Domain> domainsBuilder = new ImmutableList.Builder<>();
     for (int i = numActiveDomains * numTotalDomainsPerActiveDomain; i >= 1; i--) {
       String domainName = String.format("domain%d.lol", i);
-      DomainBase.Builder builder =
-          makeDomainBase(domainName, contact1, contact2, contact3, null, null, registrar)
+      Domain.Builder builder =
+          makeDomain(domainName, contact1, contact2, contact3, null, null, registrar)
               .asBuilder()
               .setNameservers(hostKeys)
               .setCreationTimeForTest(clock.nowUtc().minusYears(3))

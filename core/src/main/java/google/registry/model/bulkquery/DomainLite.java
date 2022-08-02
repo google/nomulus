@@ -14,7 +14,7 @@
 
 package google.registry.model.bulkquery;
 
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainContent;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
@@ -23,17 +23,17 @@ import javax.persistence.AccessType;
 import javax.persistence.Entity;
 
 /**
- * A 'light' version of {@link DomainBase} with only base table ("Domain") attributes, which allows
- * fast bulk loading. They are used in in-memory assembly of {@code DomainBase} instances along with
+ * A 'light' version of {@link Domain} with only base table ("Domain") attributes, which allows fast
+ * bulk loading. They are used in in-memory assembly of {@code Domain} instances along with
  * bulk-loaded child entities ({@code GracePeriod} etc). The in-memory assembly achieves much higher
- * performance than loading {@code DomainBase} directly.
+ * performance than loading {@code Domain} directly.
  *
  * <p>Please refer to {@link BulkQueryEntities} for more information.
  */
 @Entity(name = "Domain")
 @WithStringVKey
 @Access(AccessType.FIELD)
-public class DomainBaseLite extends DomainContent {
+public class DomainLite extends DomainContent {
 
   @Override
   @javax.persistence.Id
@@ -42,7 +42,7 @@ public class DomainBaseLite extends DomainContent {
     return super.getRepoId();
   }
 
-  public static VKey<DomainBaseLite> createVKey(String repoId) {
-    return VKey.createSql(DomainBaseLite.class, repoId);
+  public static VKey<DomainLite> createVKey(String repoId) {
+    return VKey.createSql(DomainLite.class, repoId);
   }
 }

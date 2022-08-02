@@ -21,7 +21,6 @@ import static google.registry.testing.AppEngineExtension.makeRegistrar2;
 import static google.registry.testing.AppEngineExtension.makeRegistrarContact2;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
@@ -30,7 +29,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.ObjectifyFilter;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.ofy.OfyFilter;
 import google.registry.model.registrar.Registrar.State;
@@ -39,6 +38,7 @@ import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CertificateSamples;
+import google.registry.testing.DatabaseHelper;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -398,7 +398,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     server.runInAppEngineEnvironment(
         () -> {
           createTld("tld");
-          persistResource(newDomainBase("example.tld"));
+          persistResource(DatabaseHelper.newDomain("example.tld"));
           saveRegistryLock(
               new RegistryLock.Builder()
                   .setRegistrarPocId("johndoe@theregistrar.com")
@@ -461,19 +461,19 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         () -> {
           createTld("tld");
           // expired unlock request
-          DomainBase expiredUnlockRequestDomain = persistActiveDomain("expiredunlock.tld");
+          Domain expiredUnlockRequestDomain = persistActiveDomain("expiredunlock.tld");
           saveRegistryLock(
               createRegistryLock(expiredUnlockRequestDomain)
                   .asBuilder()
                   .setLockCompletionTime(START_OF_TIME.minusDays(1))
                   .setUnlockRequestTime(START_OF_TIME.minusDays(1))
                   .build());
-          DomainBase domain = persistActiveDomain("example.tld");
+          Domain domain = persistActiveDomain("example.tld");
           saveRegistryLock(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
-          DomainBase otherDomain = persistActiveDomain("otherexample.tld");
+          Domain otherDomain = persistActiveDomain("otherexample.tld");
           saveRegistryLock(createRegistryLock(otherDomain));
           // include one pending-lock domain
-          DomainBase pendingDomain = persistActiveDomain("pending.tld");
+          Domain pendingDomain = persistActiveDomain("pending.tld");
           saveRegistryLock(
               new RegistryLock.Builder()
                   .setVerificationCode(UUID.randomUUID().toString())
@@ -484,9 +484,9 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
                   .setRepoId(pendingDomain.getRepoId())
                   .build());
           // and one pending-unlock domain
-          DomainBase pendingUnlockDomain =
+          Domain pendingUnlockDomain =
               persistResource(
-                  newDomainBase("pendingunlock.tld")
+                  DatabaseHelper.newDomain("pendingunlock.tld")
                       .asBuilder()
                       .setStatusValues(REGISTRY_LOCK_STATUSES)
                       .build());
@@ -558,19 +558,19 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   private void createDomainAndSaveLock() {
     createTld("tld");
-    DomainBase domainBase = persistActiveDomain("example.tld");
-    saveRegistryLock(createRegistryLock(domainBase));
+    Domain domain = persistActiveDomain("example.tld");
+    saveRegistryLock(createRegistryLock(domain));
   }
 
-  private RegistryLock createRegistryLock(DomainBase domainBase) {
+  private RegistryLock createRegistryLock(Domain domain) {
     return new RegistryLock.Builder()
         .setVerificationCode(UUID.randomUUID().toString())
         .isSuperuser(false)
         .setRegistrarId("TheRegistrar")
         .setRegistrarPocId("Marla.Singer@crr.com")
         .setLockCompletionTime(START_OF_TIME)
-        .setDomainName(domainBase.getDomainName())
-        .setRepoId(domainBase.getRepoId())
+        .setDomainName(domain.getDomainName())
+        .setRepoId(domain.getRepoId())
         .build();
   }
 }

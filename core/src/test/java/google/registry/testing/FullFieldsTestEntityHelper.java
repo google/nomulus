@@ -29,7 +29,7 @@ import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
@@ -330,7 +330,7 @@ public final class FullFieldsTestEntityHelper {
     return contactResource;
   }
 
-  public static DomainBase makeDomainBase(
+  public static Domain makeDomain(
       String domain,
       @Nullable ContactResource registrant,
       @Nullable ContactResource admin,
@@ -338,8 +338,8 @@ public final class FullFieldsTestEntityHelper {
       @Nullable HostResource ns1,
       @Nullable HostResource ns2,
       Registrar registrar) {
-    DomainBase.Builder builder =
-        new DomainBase.Builder()
+    Domain.Builder builder =
+        new Domain.Builder()
             .setDomainName(Idn.toASCII(domain))
             .setRepoId(generateNewDomainRoid(getTldFromDomainName(Idn.toASCII(domain))))
             .setLastEppUpdateTime(DateTime.parse("2009-05-29T20:13:00Z"))

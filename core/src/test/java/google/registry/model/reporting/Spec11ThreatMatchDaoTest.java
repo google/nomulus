@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
@@ -26,8 +25,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
+import google.registry.testing.DatabaseHelper;
 import org.joda.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,19 +38,19 @@ class Spec11ThreatMatchDaoTest extends EntityTestCase {
   private static final LocalDate TODAY = new LocalDate(2020, 8, 4);
   private static final LocalDate YESTERDAY = new LocalDate(2020, 8, 3);
 
-  private DomainBase todayComDomain;
-  private DomainBase todayOrgDomain;
-  private DomainBase yesterdayComDomain;
-  private DomainBase yesterdayOrgDomain;
+  private Domain todayComDomain;
+  private Domain todayOrgDomain;
+  private Domain yesterdayComDomain;
+  private Domain yesterdayOrgDomain;
 
   @BeforeEach
   void setUp() {
     createTlds("com", "org");
     ContactResource contact = persistActiveContact("jd1234");
-    todayComDomain = persistResource(newDomainBase("today.com", contact));
-    todayOrgDomain = persistResource(newDomainBase("today.org", contact));
-    yesterdayComDomain = persistResource(newDomainBase("yesterday.com", contact));
-    yesterdayOrgDomain = persistResource(newDomainBase("yesterday.org", contact));
+    todayComDomain = persistResource(DatabaseHelper.newDomain("today.com", contact));
+    todayOrgDomain = persistResource(DatabaseHelper.newDomain("today.org", contact));
+    yesterdayComDomain = persistResource(DatabaseHelper.newDomain("yesterday.com", contact));
+    yesterdayOrgDomain = persistResource(DatabaseHelper.newDomain("yesterday.org", contact));
     jpaTm()
         .transact(
             () -> {

@@ -31,7 +31,7 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -56,8 +56,8 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.contact.ContactAuthInfo;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -88,7 +88,7 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainTransferApproveFlow}. */
 class DomainTransferApproveFlowTest
-    extends DomainTransferFlowTestCase<DomainTransferApproveFlow, DomainBase> {
+    extends DomainTransferFlowTestCase<DomainTransferApproveFlow, Domain> {
 
   @BeforeEach
   void beforeEach() {
@@ -115,7 +115,7 @@ class DomainTransferApproveFlowTest
     clock.advanceOneMilli();
   }
 
-  private void assertTransferApproved(DomainBase domain, DomainTransferData oldTransferData) {
+  private void assertTransferApproved(Domain domain, DomainTransferData oldTransferData) {
     assertAboutDomains()
         .that(domain)
         .hasCurrentSponsorRegistrarId("NewRegistrar")
@@ -270,13 +270,13 @@ class DomainTransferApproveFlowTest
             .setRegistrarId("NewRegistrar")
             .setCost(Money.of(USD, 11).multipliedBy(expectedYearsToCharge))
             .setPeriodYears(expectedYearsToCharge)
-            .setParent(historyEntryTransferApproved)
+            .setDomainHistory(historyEntryTransferApproved)
             .build();
     assertBillingEventsForResource(
         domain,
         Streams.concat(
                 Arrays.stream(expectedCancellationBillingEvents)
-                    .map(builder -> builder.setParent(historyEntryTransferApproved).build()),
+                    .map(builder -> builder.setDomainHistory(historyEntryTransferApproved).build()),
                 Stream.of(
                     transferBillingEvent,
                     getLosingClientAutorenewEvent()
@@ -286,7 +286,7 @@ class DomainTransferApproveFlowTest
                     getGainingClientAutorenewEvent()
                         .asBuilder()
                         .setEventTime(domain.getRegistrationExpirationTime())
-                        .setParent(historyEntryTransferApproved)
+                        .setDomainHistory(historyEntryTransferApproved)
                         .build()))
             .toArray(BillingEvent[]::new));
     // There should be a grace period for the new transfer billing event.
@@ -313,7 +313,7 @@ class DomainTransferApproveFlowTest
         domain,
         Streams.concat(
                 Arrays.stream(expectedCancellationBillingEvents)
-                    .map(builder -> builder.setParent(historyEntryTransferApproved).build()),
+                    .map(builder -> builder.setDomainHistory(historyEntryTransferApproved).build()),
                 Stream.of(
                     getLosingClientAutorenewEvent()
                         .asBuilder()
@@ -322,7 +322,7 @@ class DomainTransferApproveFlowTest
                     getGainingClientAutorenewEvent()
                         .asBuilder()
                         .setEventTime(domain.getRegistrationExpirationTime())
-                        .setParent(historyEntryTransferApproved)
+                        .setDomainHistory(historyEntryTransferApproved)
                         .build()))
             .toArray(BillingEvent[]::new));
     // There should be no grace period.
@@ -451,8 +451,7 @@ class DomainTransferApproveFlowTest
             .setEventTime(now)
             .setRegistrarId("NewRegistrar")
             .setCost(Money.of(USD, new BigDecimal("43.10")))
-            .setDomainRepoId(domain.getRepoId())
-            .setParent(acceptHistory)
+            .setDomainHistory(acceptHistory)
             .setReason(Reason.TRANSFER)
             .setPeriodYears(1)
             .setTargetId("example.tld")
@@ -461,7 +460,7 @@ class DomainTransferApproveFlowTest
             .asBuilder()
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(USD, new BigDecimal("43.10")))
-            .setParent(acceptHistory)
+            .setDomainHistory(acceptHistory)
             .build(),
         getLosingClientAutorenewEvent()
             .asBuilder()
@@ -699,7 +698,7 @@ class DomainTransferApproveFlowTest
 
   @Test
   void testSuccess_superuserExtension_transferPeriodZero_autorenewGraceActive() throws Exception {
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     VKey<Recurring> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to have auto-renewed just before the transfer request, so that it will have an
     // active autorenew grace period spanning the entire transfer window.

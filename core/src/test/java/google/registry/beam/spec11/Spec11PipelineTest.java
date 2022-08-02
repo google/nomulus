@@ -38,8 +38,8 @@ import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.beam.spec11.SafeBrowsingTransformsTest.HttpResponder;
 import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.Spec11ThreatMatch;
@@ -296,9 +296,9 @@ class Spec11PipelineTest {
             });
   }
 
-  private DomainBase createDomain(
+  private Domain createDomain(
       String domainName, String repoId, Registrar registrar, ContactResource contact) {
-    return new DomainBase.Builder()
+    return new Domain.Builder()
         .setDomainName(domainName)
         .setRepoId(repoId)
         .setCreationRegistrarId(registrar.getRegistrarId())
