@@ -59,8 +59,8 @@ import org.hibernate.Hibernate;
  * A persisted history entry representing an EPP modification to a domain.
  *
  * <p>In addition to the general history fields (e.g. action time, registrar ID) we also persist a
- * copy of the domain entity at this point in time. We persist a raw {@link DomainContent} so that
- * the foreign-keyed fields in that class can refer to this object.
+ * copy of the domain entity at this point in time. We persist a raw {@link DomainBase} so that the
+ * foreign-keyed fields in that class can refer to this object.
  *
  * <p>This class is only marked as a Datastore entity subclass and registered with Objectify so that
  * when building it its ID can be auto-populated by Objectify. It is converted to its superclass
@@ -80,9 +80,9 @@ import org.hibernate.Hibernate;
 @IdClass(DomainHistoryId.class)
 public class DomainHistory extends HistoryEntry {
 
-  // Store DomainContent instead of Domain so we don't pick up its @Id
+  // Store DomainBase instead of Domain so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
-  @DoNotCompare @Nullable DomainContent domainContent;
+  @DoNotCompare @Nullable DomainBase domainBase;
 
   @Id
   @Access(AccessType.PROPERTY)
@@ -98,9 +98,9 @@ public class DomainHistory extends HistoryEntry {
     parent = Key.create(Domain.class, domainRepoId);
   }
 
-  // We could have reused domainContent.nsHosts here, but Hibernate throws a weird exception after
+  // We could have reused domainBase.nsHosts here, but Hibernate throws a weird exception after
   // we change to use a composite primary key.
-  // TODO(b/166776754): Investigate if we can reuse domainContent.nsHosts for storing host keys.
+  // TODO(b/166776754): Investigate if we can reuse domainBase.nsHosts for storing host keys.
   @DoNotCompare
   @ElementCollection
   @JoinTable(
@@ -232,13 +232,13 @@ public class DomainHistory extends HistoryEntry {
   }
 
   /**
-   * The values of all the fields on the {@link DomainContent} object after the action represented
-   * by this history object was executed.
+   * The values of all the fields on the {@link DomainBase} object after the action represented by
+   * this history object was executed.
    *
    * <p>Will be absent for objects created prior to the Registry 3.0 SQL migration.
    */
-  public Optional<DomainContent> getDomainContent() {
-    return Optional.ofNullable(domainContent);
+  public Optional<DomainBase> getDomainBase() {
+    return Optional.ofNullable(domainBase);
   }
 
   /** The key to the {@link Domain} this is based off of. */
@@ -259,8 +259,7 @@ public class DomainHistory extends HistoryEntry {
 
   @Override
   public Optional<? extends EppResource> getResourceAtPointInTime() {
-    return getDomainContent()
-        .map(domainContent -> new Domain.Builder().copyFrom(domainContent).build());
+    return getDomainBase().map(domainBase -> new Domain.Builder().copyFrom(domainBase).build());
   }
 
   @PostLoad
@@ -271,39 +270,39 @@ public class DomainHistory extends HistoryEntry {
     Hibernate.initialize(dsDataHistories);
     Hibernate.initialize(gracePeriodHistories);
 
-    if (domainContent != null) {
-      domainContent.nsHosts = nullToEmptyImmutableCopy(nsHosts);
-      domainContent.gracePeriods =
+    if (domainBase != null) {
+      domainBase.nsHosts = nullToEmptyImmutableCopy(nsHosts);
+      domainBase.gracePeriods =
           gracePeriodHistories.stream()
               .map(GracePeriod::createFromHistory)
               .collect(toImmutableSet());
-      domainContent.dsData =
+      domainBase.dsData =
           dsDataHistories.stream().map(DelegationSignerData::create).collect(toImmutableSet());
       // Normally Hibernate would see that the domain fields are all null and would fill
-      // domainContent with a null object. Unfortunately, the updateTimestamp is never null in SQL.
-      if (domainContent.getDomainName() == null) {
-        domainContent = null;
+      // domainBase with a null object. Unfortunately, the updateTimestamp is never null in SQL.
+      if (domainBase.getDomainName() == null) {
+        domainBase = null;
       } else {
-        if (domainContent.getRepoId() == null) {
-          // domainContent still hasn't been fully constructed yet, so it's ok to go in and mutate
+        if (domainBase.getRepoId() == null) {
+          // domainBase still hasn't been fully constructed yet, so it's ok to go in and mutate
           // it.  In fact, we have to because going through the builder causes the hash codes of
           // contained objects to be calculated prematurely.
-          domainContent.setRepoId(parent.getName());
+          domainBase.setRepoId(parent.getName());
         }
       }
     }
   }
 
   private static void fillAuxiliaryFieldsFromDomain(DomainHistory domainHistory) {
-    if (domainHistory.domainContent != null) {
-      domainHistory.nsHosts = nullToEmptyImmutableCopy(domainHistory.domainContent.nsHosts);
+    if (domainHistory.domainBase != null) {
+      domainHistory.nsHosts = nullToEmptyImmutableCopy(domainHistory.domainBase.nsHosts);
       domainHistory.dsDataHistories =
-          nullToEmptyImmutableCopy(domainHistory.domainContent.getDsData()).stream()
+          nullToEmptyImmutableCopy(domainHistory.domainBase.getDsData()).stream()
               .filter(dsData -> dsData.getDigest() != null && dsData.getDigest().length > 0)
               .map(dsData -> DomainDsDataHistory.createFrom(domainHistory.id, dsData))
               .collect(toImmutableSet());
       domainHistory.gracePeriodHistories =
-          nullToEmptyImmutableCopy(domainHistory.domainContent.getGracePeriods()).stream()
+          nullToEmptyImmutableCopy(domainHistory.domainBase.getGracePeriods()).stream()
               .map(gracePeriod -> GracePeriodHistory.createFrom(domainHistory.id, gracePeriod))
               .collect(toImmutableSet());
     } else {
@@ -372,19 +371,19 @@ public class DomainHistory extends HistoryEntry {
       super(instance);
     }
 
-    public Builder setDomain(@Nullable DomainContent domainContent) {
+    public Builder setDomain(@Nullable DomainBase domainBase) {
       // Nullable for the sake of pre-Registry-3.0 history objects
-      if (domainContent == null) {
+      if (domainBase == null) {
         return this;
       }
-      // TODO(b/203609982): if actual type of domainContent is Domain, convert to DomainContent
-      // Note: a DomainHistory fetched by JPA has DomainContent in this field. Allowing Domain
+      // TODO(b/203609982): if actual type of domainBase is Domain, convert to DomainBase
+      // Note: a DomainHistory fetched by JPA has DomainBase in this field. Allowing Domain
       // in the setter makes equality checks messy.
-      getInstance().domainContent = domainContent;
-      if (domainContent instanceof Domain) {
-        super.setParent(domainContent);
+      getInstance().domainBase = domainBase;
+      if (domainBase instanceof Domain) {
+        super.setParent(domainBase);
       } else {
-        super.setParent(Key.create(Domain.class, domainContent.getRepoId()));
+        super.setParent(Key.create(Domain.class, domainBase.getRepoId()));
       }
       return this;
     }
@@ -397,10 +396,10 @@ public class DomainHistory extends HistoryEntry {
     @Override
     public DomainHistory build() {
       DomainHistory instance = super.build();
-      // TODO(b/171990736): Assert instance.domainContent is not null after database migration.
-      // Note that we cannot assert that instance.domainContent is not null here because this
+      // TODO(b/171990736): Assert instance.domainBase is not null after database migration.
+      // Note that we cannot assert that instance.domainBase is not null here because this
       // builder is also used to convert legacy HistoryEntry objects to DomainHistory, when
-      // domainContent is not available.
+      // domainBase is not available.
       fillAuxiliaryFieldsFromDomain(instance);
       return instance;
     }

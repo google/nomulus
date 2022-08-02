@@ -29,7 +29,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.DomainContent;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -134,13 +134,13 @@ public class DomainHistoryTest extends EntityTestCase {
   }
 
   static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {
-    assertAboutImmutableObjects().that(one).isEqualExceptFields(two, "domainContent");
+    assertAboutImmutableObjects().that(one).isEqualExceptFields(two, "domainBase");
     assertAboutImmutableObjects()
-        .that(one.getDomainContent().get())
-        .isEqualExceptFields(two.getDomainContent().get(), "updateTimestamp");
+        .that(one.getDomainBase().get())
+        .isEqualExceptFields(two.getDomainBase().get(), "updateTimestamp");
   }
 
-  private DomainHistory createDomainHistory(DomainContent domain) {
+  private DomainHistory createDomainHistory(DomainBase domain) {
     DomainTransactionRecord transactionRecord =
         new DomainTransactionRecord.Builder()
             .setTld("tld")

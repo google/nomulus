@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.DomainContent;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.GracePeriod.GracePeriodHistory;
@@ -87,11 +87,11 @@ public class BulkQueryEntities {
       ImmutableSet<DomainTransactionRecord> transactionRecords) {
     DomainHistory.Builder builder = new DomainHistory.Builder();
     builder.copyFrom(domainHistoryLite);
-    DomainContent rawDomainContent = domainHistoryLite.domainContent;
-    if (rawDomainContent != null) {
-      DomainContent newDomainContent =
+    DomainBase rawDomainBase = domainHistoryLite.domainBase;
+    if (rawDomainBase != null) {
+      DomainBase newDomainBase =
           domainHistoryLite
-              .domainContent
+              .domainBase
               .asBuilder()
               .setNameservers(domainHistoryHosts)
               .setGracePeriods(
@@ -104,9 +104,9 @@ public class BulkQueryEntities {
                       .collect(toImmutableSet()))
               // Restore the original update timestamp (this gets cleared when we set nameservers or
               // DS data).
-              .setUpdateTimestamp(domainHistoryLite.domainContent.getUpdateTimestamp())
+              .setUpdateTimestamp(domainHistoryLite.domainBase.getUpdateTimestamp())
               .build();
-      builder.setDomain(newDomainContent);
+      builder.setDomain(newDomainBase);
     }
     return builder.buildAndAssemble(
         dsDataHistories, domainHistoryHosts, gracePeriodHistories, transactionRecords);

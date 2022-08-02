@@ -39,7 +39,7 @@ import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.DomainContent;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
@@ -537,8 +537,8 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
 
   public static <E extends EppResource>
       HistoryEntry.Builder<? extends HistoryEntry, ?> createBuilderForResource(E parent) {
-    if (parent instanceof DomainContent) {
-      return new DomainHistory.Builder().setDomain((DomainContent) parent);
+    if (parent instanceof DomainBase) {
+      return new DomainHistory.Builder().setDomain((DomainBase) parent);
     } else if (parent instanceof ContactBase) {
       return new ContactHistory.Builder().setContact((ContactBase) parent);
     } else if (parent instanceof HostBase) {

@@ -28,7 +28,7 @@ import com.google.common.testing.TestLogHandler;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.domain.DomainContent;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
@@ -155,10 +155,10 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
       assertAboutImmutableObjects()
           .that(contactHistory.getContactBase().get())
           .hasFieldsEqualTo(resource);
-    } else if (resource instanceof DomainContent) {
+    } else if (resource instanceof DomainBase) {
       DomainHistory domainHistory = (DomainHistory) historyEntry;
       assertAboutImmutableObjects()
-          .that(domainHistory.getDomainContent().get())
+          .that(domainHistory.getDomainBase().get())
           .isEqualExceptFields(resource, "gracePeriods", "dsData", "nsHosts");
     } else if (resource instanceof HostBase) {
       HostHistory hostHistory = (HostHistory) historyEntry;

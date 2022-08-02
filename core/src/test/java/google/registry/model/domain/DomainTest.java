@@ -230,7 +230,7 @@ public class DomainTest {
   }
 
   @Test
-  void testDomainContentToDomain() {
+  void testDomainBaseToDomain() {
     ImmutableObjectSubject.assertAboutImmutableObjects()
         .that(new Domain.Builder().copyFrom(domain).build())
         .isEqualExceptFields(domain, "updateTimestamp", "revisions");
