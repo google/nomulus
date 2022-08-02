@@ -1427,6 +1427,11 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().caching.eppResourceMaxCachedEntries;
   }
 
+  /** Returns the amount of time that a particular claims list should be cached. */
+  public static java.time.Duration getClaimsListCacheDuration() {
+    return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.claimsListCachingSeconds);
+  }
+
   /** Returns the email address that outgoing emails from the app are sent from. */
   public static InternetAddress getGSuiteOutgoingEmailAddress() {
     return parseEmailAddress(CONFIG_SETTINGS.get().gSuite.outgoingEmailAddress);

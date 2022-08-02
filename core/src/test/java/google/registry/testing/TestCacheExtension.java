@@ -19,6 +19,7 @@ import com.google.common.collect.Maps;
 import google.registry.model.EppResource;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.tld.label.PremiumListDao;
+import google.registry.model.tmch.ClaimsListDao;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -72,6 +73,12 @@ public class TestCacheExtension implements BeforeEachCallback, AfterEachCallback
       cacheHandlerMap.put(
           "PremiumListSqlDao.premiumListCache",
           new TestCacheHandler(PremiumListDao::setPremiumListCacheForTest, expiry));
+      return this;
+    }
+
+    public Builder withClaimsListCache(Duration expiry) {
+      cacheHandlerMap.put(
+          "ClaimsListDao.CACHE", new TestCacheHandler(ClaimsListDao::setCacheForTest, expiry));
       return this;
     }
 

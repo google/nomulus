@@ -90,12 +90,13 @@ public final class ReservedList
    *
    * <p>We need to persist the list entries, but only on the initial insert (not on update) since
    * the entries themselves never get changed, so we only annotate it with {@link PostPersist}, not
-   * {@link PostUpdate}.
+   * PostUpdate.
    */
   @PostPersist
   void postPersist() {
     if (reservedListMap != null) {
-      reservedListMap.values().stream()
+      reservedListMap
+          .values()
           .forEach(
               entry -> {
                 // We can safely change the revision id since it's "Insignificant".

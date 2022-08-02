@@ -294,6 +294,10 @@ caching:
   # have to be very large to achieve the vast majority of possible gains.
   eppResourceMaxCachedEntries: 500
 
+  # Length of time that a claims list will be cached after retrieval. A fairly
+  # long duration is acceptable because claims lists don't change frequently.
+  claimsListCachingSeconds: 21600 # six hours
+
 oAuth:
   # OAuth scopes to detect on access tokens. Superset of requiredOauthScopes.
   availableOauthScopes:

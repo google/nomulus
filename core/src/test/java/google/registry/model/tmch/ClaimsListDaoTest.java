@@ -15,12 +15,16 @@
 package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.truth.Truth8;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TestCacheExtension;
+import java.time.Duration;
 import javax.persistence.PersistenceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -36,6 +40,11 @@ public class ClaimsListDaoTest {
           .withClock(fakeClock)
           .withoutCannedData()
           .buildIntegrationWithCoverageExtension();
+
+  // Set long persist times on the cache so it can be tested (cache times default to 0 in tests).
+  @RegisterExtension
+  public final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder().withClaimsListCache(Duration.ofHours(6)).build();
 
   @Test
   void save_insertsClaimsListSuccessfully() {
@@ -81,6 +90,40 @@ public class ClaimsListDaoTest {
     ClaimsListDao.save(oldClaimsList);
     ClaimsListDao.save(newClaimsList);
     assertClaimsListEquals(newClaimsList, ClaimsListDao.get());
+  }
+
+  @Test
+  void testDaoCaching_savesAndUpdates() {
+    assertThat(ClaimsListDao.CACHE.getIfPresent(ClaimsListDao.class)).isNull();
+    ClaimsList oldList =
+        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
+    ClaimsListDao.save(oldList);
+    assertThat(ClaimsListDao.CACHE.getIfPresent(ClaimsListDao.class)).isEqualTo(oldList);
+    ClaimsList newList =
+        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label3", "key3", "label4", "key4"));
+    ClaimsListDao.save(newList);
+    assertThat(ClaimsListDao.CACHE.getIfPresent(ClaimsListDao.class)).isEqualTo(newList);
+  }
+
+  @Test
+  void testEntryCaching_savesAndUpdates() {
+    ClaimsList claimsList =
+        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
+    // Bypass the DAO to avoid the cache
+    jpaTm().transact(() -> jpaTm().insert(claimsList));
+    ClaimsList fromDatabase = ClaimsListDao.get();
+    // At first, we haven't loaded any entries
+    assertThat(fromDatabase.claimKeyCache.getIfPresent("label1")).isNull();
+    Truth8.assertThat(fromDatabase.getClaimKey("label1")).hasValue("key1");
+    // After retrieval, the key exists
+    Truth8.assertThat(fromDatabase.claimKeyCache.getIfPresent("label1")).hasValue("key1");
+    assertThat(fromDatabase.claimKeyCache.getIfPresent("label2")).isNull();
+    // Loading labels-to-keys should still work
+    assertThat(fromDatabase.getLabelsToKeys()).containsExactly("label1", "key1", "label2", "key2");
+    // We should also cache nonexistent values
+    assertThat(fromDatabase.claimKeyCache.getIfPresent("nonexistent")).isNull();
+    Truth8.assertThat(fromDatabase.getClaimKey("nonexistent")).isEmpty();
+    Truth8.assertThat(fromDatabase.claimKeyCache.getIfPresent("nonexistent")).isEmpty();
   }
 
   private void assertClaimsListEquals(ClaimsList left, ClaimsList right) {
