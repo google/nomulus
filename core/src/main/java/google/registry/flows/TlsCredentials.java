@@ -114,7 +114,7 @@ public class TlsCredentials implements TransportCredentials {
         "Authentication error: IP address %s is not allow-listed for registrar %s; allow list is:"
             + " %s",
         clientInetAddr, registrar.getRegistrarId(), ipAddressAllowList);
-    throw new BadRegistrarIpAddressException();
+    throw new BadRegistrarIpAddressException(clientInetAddr);
   }
 
   @VisibleForTesting
@@ -216,8 +216,12 @@ public class TlsCredentials implements TransportCredentials {
 
   /** Registrar IP address is not in stored allow list. */
   public static class BadRegistrarIpAddressException extends AuthenticationErrorException {
-    BadRegistrarIpAddressException() {
-      super("Registrar IP address is not in stored allow list");
+    BadRegistrarIpAddressException(Optional<InetAddress> clientInetAddr) {
+      super(
+          clientInetAddr.isPresent()
+              ? String.format(
+                  "Registrar IP address %s is not in stored allow list", clientInetAddr.get())
+              : "Registrar IP address is not in stored allow list");
     }
   }
 
