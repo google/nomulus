@@ -421,6 +421,53 @@ class DomainTransferApproveFlowTest
   }
 
   @Test
+  void testSuccess_nonpremiumPriceRenewalBehavior_carriesOver() throws Exception {
+    PremiumList pl =
+        PremiumListDao.save(
+            new PremiumList.Builder()
+                .setCurrency(USD)
+                .setName("tld")
+                .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
+                .build());
+    persistResource(Registry.get("tld").asBuilder().setPremiumList(pl).build());
+    setupDomainWithPendingTransfer("example", "tld");
+    domain = loadByEntity(domain);
+    persistResource(
+        loadByKey(domain.getAutorenewBillingEvent())
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
+            .build());
+    setEppInput("domain_transfer_approve_wildcard.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    DateTime now = clock.nowUtc();
+    runFlowAssertResponse(loadFile("domain_transfer_approve_response.xml"));
+    domain = reloadResourceByForeignKey();
+    DomainHistory acceptHistory =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE, DomainHistory.class);
+    assertBillingEventsForResource(
+        domain,
+        new BillingEvent.OneTime.Builder()
+            .setBillingTime(now.plusDays(5))
+            .setEventTime(now)
+            .setRegistrarId("NewRegistrar")
+            .setCost(Money.of(USD, new BigDecimal("11.00")))
+            .setDomainHistory(acceptHistory)
+            .setReason(Reason.TRANSFER)
+            .setPeriodYears(1)
+            .setTargetId("example.tld")
+            .build(),
+        getGainingClientAutorenewEvent()
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
+            .setDomainHistory(acceptHistory)
+            .build(),
+        getLosingClientAutorenewEvent()
+            .asBuilder()
+            .setRecurrenceEndTime(now)
+            .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
+            .build());
+  }
+
+  @Test
   void testSuccess_specifiedPriceRenewalBehavior_carriesOver() throws Exception {
     PremiumList pl =
         PremiumListDao.save(

@@ -705,7 +705,10 @@ public class DomainFlowUtils {
           throw new TransfersAreAlwaysForOneYearException();
         }
         builder.setAvailIfSupported(true);
-        fees = pricingLogic.getTransferPrice(registry, domainNameString, now, null).getFees();
+        fees =
+            pricingLogic
+                .getTransferPrice(registry, domainNameString, now, recurringBillingEvent)
+                .getFees();
         break;
       case UPDATE:
         builder.setAvailIfSupported(true);
@@ -764,7 +767,7 @@ public class DomainFlowUtils {
       final Optional<? extends FeeTransformCommandExtension> feeCommand,
       FeesAndCredits feesAndCredits)
       throws EppException {
-    if (isDomainPremium(domainName, priceTime) && !feeCommand.isPresent()) {
+    if (feesAndCredits.hasAnyPremiumFees() && !feeCommand.isPresent()) {
       throw new FeesRequiredForPremiumNameException();
     }
     validateFeesAckedIfPresent(feeCommand, feesAndCredits);

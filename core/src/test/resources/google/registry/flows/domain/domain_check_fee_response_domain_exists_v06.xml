@@ -33,10 +33,7 @@
           <fee:currency>USD</fee:currency>
           <fee:command>transfer</fee:command>
           <fee:period unit="y">1</fee:period>
-          <!-- TODO(mcilwain): This should be non-premium once transfer flow
-               changes are made. -->
-          <fee:fee description="renew">100.00</fee:fee>
-          <fee:class>premium</fee:class>
+          <fee:fee description="renew">%RENEWPRICE%</fee:fee>
         </fee:cd>
         <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
           <fee:name>rich.example</fee:name>
