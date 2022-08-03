@@ -195,7 +195,7 @@ public class RdePipeline implements Serializable {
   private static final ImmutableMap<Class<? extends HistoryEntry>, String> EPP_RESOURCE_FIELD_NAME =
       ImmutableMap.of(
           DomainHistory.class,
-          "domainContent",
+          "domainBase",
           ContactHistory.class,
           "contactBase",
           HostHistory.class,

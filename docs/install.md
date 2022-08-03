@@ -6,12 +6,13 @@ This document covers the steps necessary to download, build, and deploy Nomulus.
 
 You will need the following programs installed on your local machine:
 
-*   A recent version of the [Java 11 JDK][java-jdk11].
-*   [Google App Engine SDK for Java][app-engine-sdk], and configure aliases to
-    to the `gcloud` and `appcfg.sh` utilities (you'll use them a lot).
-*   [Git](https://git-scm.com/) version control system.
-*   Python version 3.7 or newer.
-*   gnupg2 (e.g. in run `sudo apt install gnupg2` in Debian-like Linuxes)
+* A recent version of the [Java 11 JDK][java-jdk11].
+* [Google App Engine SDK for Java][app-engine-sdk], and configure aliases to to the `gcloud` and `appcfg.sh` utilities (
+  you'll use them a lot).
+* [Git](https://git-scm.com/) version control system.
+* Docker (confirm with `docker info` no permission issues, use `sudo groupadd docker` for sudoless docker).
+* Python version 3.7 or newer.
+* gnupg2 (e.g. in run `sudo apt install gnupg2` in Debian-like Linuxes)
 
 **Note:** App Engine does not yet support Java 9. Also, the instructions in this
 document have only been tested on Linux. They might work with some alterations

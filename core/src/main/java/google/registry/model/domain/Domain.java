@@ -69,7 +69,7 @@ import org.joda.time.DateTime;
 @WithStringVKey
 @ExternalMessagingName("domain")
 @Access(AccessType.FIELD)
-public class Domain extends DomainContent implements ForeignKeyedEppResource {
+public class Domain extends DomainBase implements ForeignKeyedEppResource {
 
   @Override
   @javax.persistence.Id
@@ -173,7 +173,7 @@ public class Domain extends DomainContent implements ForeignKeyedEppResource {
   }
 
   /** A builder for constructing {@link Domain}, since it is immutable. */
-  public static class Builder extends DomainContent.Builder<Domain, Builder> {
+  public static class Builder extends DomainBase.Builder<Domain, Builder> {
 
     public Builder() {}
 
@@ -181,38 +181,36 @@ public class Domain extends DomainContent implements ForeignKeyedEppResource {
       super(instance);
     }
 
-    public Builder copyFrom(DomainContent domainContent) {
-      this.getInstance().copyUpdateTimestamp(domainContent);
-      return this.setAuthInfo(domainContent.getAuthInfo())
+    public Builder copyFrom(DomainBase domainBase) {
+      this.getInstance().copyUpdateTimestamp(domainBase);
+      return this.setAuthInfo(domainBase.getAuthInfo())
           .setAutorenewPollMessage(
-              domainContent.getAutorenewPollMessage(),
-              domainContent.getAutorenewPollMessageHistoryId())
-          .setAutorenewBillingEvent(domainContent.getAutorenewBillingEvent())
-          .setAutorenewEndTime(domainContent.getAutorenewEndTime())
-          .setContacts(domainContent.getContacts())
-          .setCreationRegistrarId(domainContent.getCreationRegistrarId())
-          .setCreationTime(domainContent.getCreationTime())
-          .setDomainName(domainContent.getDomainName())
-          .setDeletePollMessage(domainContent.getDeletePollMessage())
-          .setDsData(domainContent.getDsData())
-          .setDeletionTime(domainContent.getDeletionTime())
-          .setGracePeriods(domainContent.getGracePeriods())
-          .setIdnTableName(domainContent.getIdnTableName())
-          .setLastTransferTime(domainContent.getLastTransferTime())
-          .setLaunchNotice(domainContent.getLaunchNotice())
-          .setLastEppUpdateRegistrarId(domainContent.getLastEppUpdateRegistrarId())
-          .setLastEppUpdateTime(domainContent.getLastEppUpdateTime())
-          .setNameservers(domainContent.getNameservers())
-          .setPersistedCurrentSponsorRegistrarId(
-              domainContent.getPersistedCurrentSponsorRegistrarId())
-          .setRegistrant(domainContent.getRegistrant())
-          .setRegistrationExpirationTime(domainContent.getRegistrationExpirationTime())
-          .setRepoId(domainContent.getRepoId())
-          .setSmdId(domainContent.getSmdId())
-          .setSubordinateHosts(domainContent.getSubordinateHosts())
-          .setStatusValues(domainContent.getStatusValues())
-          .setTransferData(domainContent.getTransferData())
-          .setDnsRefreshRequestTime(domainContent.getDnsRefreshRequestTime());
+              domainBase.getAutorenewPollMessage(), domainBase.getAutorenewPollMessageHistoryId())
+          .setAutorenewBillingEvent(domainBase.getAutorenewBillingEvent())
+          .setAutorenewEndTime(domainBase.getAutorenewEndTime())
+          .setContacts(domainBase.getContacts())
+          .setCreationRegistrarId(domainBase.getCreationRegistrarId())
+          .setCreationTime(domainBase.getCreationTime())
+          .setDomainName(domainBase.getDomainName())
+          .setDeletePollMessage(domainBase.getDeletePollMessage())
+          .setDsData(domainBase.getDsData())
+          .setDeletionTime(domainBase.getDeletionTime())
+          .setGracePeriods(domainBase.getGracePeriods())
+          .setIdnTableName(domainBase.getIdnTableName())
+          .setLastTransferTime(domainBase.getLastTransferTime())
+          .setLaunchNotice(domainBase.getLaunchNotice())
+          .setLastEppUpdateRegistrarId(domainBase.getLastEppUpdateRegistrarId())
+          .setLastEppUpdateTime(domainBase.getLastEppUpdateTime())
+          .setNameservers(domainBase.getNameservers())
+          .setPersistedCurrentSponsorRegistrarId(domainBase.getPersistedCurrentSponsorRegistrarId())
+          .setRegistrant(domainBase.getRegistrant())
+          .setRegistrationExpirationTime(domainBase.getRegistrationExpirationTime())
+          .setRepoId(domainBase.getRepoId())
+          .setSmdId(domainBase.getSmdId())
+          .setSubordinateHosts(domainBase.getSubordinateHosts())
+          .setStatusValues(domainBase.getStatusValues())
+          .setTransferData(domainBase.getTransferData())
+          .setDnsRefreshRequestTime(domainBase.getDnsRefreshRequestTime());
     }
   }
 }

@@ -129,7 +129,7 @@ class google.registry.model.domain.Domain {
 class google.registry.model.domain.DomainAuthInfo {
   google.registry.model.eppcommon.AuthInfo$PasswordAuth pw;
 }
-class google.registry.model.domain.DomainContent {
+class google.registry.model.domain.DomainBase {
   @Id java.lang.String repoId;
   google.registry.model.domain.DomainAuthInfo authInfo;
   google.registry.model.domain.launch.LaunchNotice launchNotice;
@@ -163,7 +163,7 @@ class google.registry.model.domain.DomainHistory {
   @Parent com.googlecode.objectify.Key<? extends google.registry.model.EppResource> parent;
   boolean bySuperuser;
   byte[] xmlBytes;
-  google.registry.model.domain.DomainContent domainContent;
+  google.registry.model.domain.DomainBase domainBase;
   google.registry.model.domain.Period period;
   google.registry.model.eppcommon.Trid trid;
   google.registry.model.reporting.HistoryEntry$Type type;

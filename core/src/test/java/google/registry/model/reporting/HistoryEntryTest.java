@@ -78,7 +78,7 @@ class HistoryEntryTest extends EntityTestCase {
               DomainHistory fromDatabase = tm().loadByEntity(domainHistory);
               assertAboutImmutableObjects()
                   .that(fromDatabase)
-                  .isEqualExceptFields(domainHistory, "domainContent");
+                  .isEqualExceptFields(domainHistory, "domainBase");
             });
   }
 

@@ -15,7 +15,7 @@
 package google.registry.model.bulkquery;
 
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.DomainContent;
+import google.registry.model.domain.DomainBase;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import javax.persistence.Access;
@@ -33,7 +33,7 @@ import javax.persistence.Entity;
 @Entity(name = "Domain")
 @WithStringVKey
 @Access(AccessType.FIELD)
-public class DomainLite extends DomainContent {
+public class DomainLite extends DomainBase {
 
   @Override
   @javax.persistence.Id
