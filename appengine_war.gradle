@@ -26,6 +26,7 @@ project.convention.plugins['war'].webAppDirName =
 apply plugin: 'com.google.cloud.tools.appengine'
 
 def coreResourcesDir = "${rootDir}/core/build/resources/main"
+def coreLibsDir = "${rootDir}/core/build/libs"
 
 // Get the web.xml file for the service.
 war {
@@ -37,6 +38,10 @@ war {
 war {
     from("${coreResourcesDir}/google/registry/ui/html") {
         include "*.html"
+    }
+    from("${coreLibsDir}") {
+        include "core.jar"
+        into("WEB-INF/lib")
     }
 }
 
@@ -98,6 +103,7 @@ rootProject.deploy.dependsOn appengineDeployAll
 rootProject.stage.dependsOn appengineStage
 tasks['war'].dependsOn ':core:compileProdJS'
 tasks['war'].dependsOn ':core:processResources'
+tasks['war'].dependsOn ':core:jar'
 
 // Impose verification for all of the deployment tasks.  We haven't found a
 // better way to do this other than to apply to each of them independently.
