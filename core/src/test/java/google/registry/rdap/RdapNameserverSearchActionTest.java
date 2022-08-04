@@ -23,10 +23,8 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHostResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeContactResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeHostResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarContacts;
 
@@ -37,13 +35,14 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import google.registry.model.domain.Domain;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.FullFieldsTestEntityHelper;
 import java.net.URLDecoder;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,8 +56,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   }
 
   private Domain domainCatLol;
-  private HostResource hostNs1CatLol;
-  private HostResource hostNs2CatLol;
+  private Host hostNs1CatLol;
+  private Host hostNs2CatLol;
 
   private JsonObject generateActualJsonWithName(String name) {
     return generateActualJsonWithName(name, null);
@@ -107,25 +106,29 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
             makeRegistrar("evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE));
     persistSimpleResources(makeRegistrarContacts(registrar));
     hostNs1CatLol =
-        makeAndPersistHostResource("ns1.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1));
+        FullFieldsTestEntityHelper.makeAndPersistHost(
+            "ns1.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1));
     hostNs2CatLol =
-        makeAndPersistHostResource(
+        FullFieldsTestEntityHelper.makeAndPersistHost(
             "ns2.cat.lol", "bad:f00d:cafe::15:beef", clock.nowUtc().minusYears(1));
-    makeAndPersistHostResource(
+    FullFieldsTestEntityHelper.makeAndPersistHost(
         "ns1.cat2.lol", "1.2.3.3", "bad:f00d:cafe::15:beef", clock.nowUtc().minusYears(1));
-    makeAndPersistHostResource("ns1.cat.external", null, null, clock.nowUtc().minusYears(1));
+    FullFieldsTestEntityHelper.makeAndPersistHost(
+        "ns1.cat.external", null, null, clock.nowUtc().minusYears(1));
 
     // cat.みんな
     createTld("xn--q9jyb4c");
     registrar = persistResource(makeRegistrar("unicoderegistrar", "みんな", Registrar.State.ACTIVE));
     persistSimpleResources(makeRegistrarContacts(registrar));
-    makeAndPersistHostResource("ns1.cat.みんな", "1.2.3.5", clock.nowUtc().minusYears(1));
+    FullFieldsTestEntityHelper.makeAndPersistHost(
+        "ns1.cat.みんな", "1.2.3.5", clock.nowUtc().minusYears(1));
 
     // cat.1.test
     createTld("1.test");
     registrar = persistResource(makeRegistrar("multiregistrar", "1.test", Registrar.State.ACTIVE));
     persistSimpleResources(makeRegistrarContacts(registrar));
-    makeAndPersistHostResource("ns1.cat.1.test", "1.2.3.6", clock.nowUtc().minusYears(1));
+    FullFieldsTestEntityHelper.makeAndPersistHost(
+        "ns1.cat.1.test", "1.2.3.6", clock.nowUtc().minusYears(1));
 
     // create a domain so that we can use it as a test nameserver search string suffix
     domainCatLol =
@@ -178,12 +181,12 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   }
 
   private void createManyHosts(int numHosts) {
-    ImmutableList.Builder<HostResource> hostsBuilder = new ImmutableList.Builder<>();
+    ImmutableList.Builder<Host> hostsBuilder = new ImmutableList.Builder<>();
     ImmutableSet.Builder<String> subordinateHostsBuilder = new ImmutableSet.Builder<>();
     for (int i = 1; i <= numHosts; i++) {
       String hostName = String.format("nsx%d.cat.lol", i);
       subordinateHostsBuilder.add(hostName);
-      hostsBuilder.add(makeHostResource(hostName, "5.5.5.1", "5.5.5.2"));
+      hostsBuilder.add(FullFieldsTestEntityHelper.makeHost(hostName, "5.5.5.1", "5.5.5.2"));
     }
     persistResources(hostsBuilder.build());
     domainCatLol =
@@ -193,7 +196,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   private void createDeletedHost() {
     persistResource(
-        makeAndPersistHostResource("nsdeleted.cat.lol", "4.3.2.1", clock.nowUtc().minusYears(1))
+        FullFieldsTestEntityHelper.makeAndPersistHost(
+                "nsdeleted.cat.lol", "4.3.2.1", clock.nowUtc().minusYears(1))
             .asBuilder()
             .setDeletionTime(clock.nowUtc().minusMonths(1))
             .build());

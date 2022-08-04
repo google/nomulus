@@ -22,7 +22,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.registrar.Registrar;
 import google.registry.tldconfig.idn.IdnTable;
@@ -129,16 +129,17 @@ public final class RdeMarshaller implements Serializable {
         RdeResourceType.DOMAIN, domain, DomainToXjcConverter.convert(domain, mode));
   }
 
-  /** Turns {@link HostResource} object into an XML fragment. */
-  public DepositFragment marshalSubordinateHost(HostResource host, Domain superordinateDomain) {
-    return marshalResource(RdeResourceType.HOST, host,
-        HostResourceToXjcConverter.convertSubordinate(host, superordinateDomain));
+  /** Turns {@link Host} object into an XML fragment. */
+  public DepositFragment marshalSubordinateHost(Host host, Domain superordinateDomain) {
+    return marshalResource(
+        RdeResourceType.HOST,
+        host,
+        HostToXjcConverter.convertSubordinate(host, superordinateDomain));
   }
 
-  /** Turns {@link HostResource} object into an XML fragment. */
-  public DepositFragment marshalExternalHost(HostResource host) {
-    return marshalResource(RdeResourceType.HOST, host,
-        HostResourceToXjcConverter.convertExternal(host));
+  /** Turns {@link Host} object into an XML fragment. */
+  public DepositFragment marshalExternalHost(Host host) {
+    return marshalResource(RdeResourceType.HOST, host, HostToXjcConverter.convertExternal(host));
   }
 
   /** Turns {@link Registrar} object into an XML fragment. */

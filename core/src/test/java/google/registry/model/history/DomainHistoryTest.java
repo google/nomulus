@@ -21,7 +21,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static google.registry.testing.DatabaseHelper.newDomain;
-import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
+import static google.registry.testing.DatabaseHelper.newHostWithRoid;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -36,7 +36,7 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
@@ -102,7 +102,7 @@ public class DomainHistoryTest extends EntityTestCase {
 
   static Domain createDomainWithContactsAndHosts() {
     createTld("tld");
-    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    Host host = newHostWithRoid("ns1.example.com", "host1");
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
 
     jpaTm()

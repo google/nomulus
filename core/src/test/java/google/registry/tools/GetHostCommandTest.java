@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newHostResource;
+import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -44,9 +44,9 @@ class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
     assertInStdout("fullyQualifiedHostName=ns1.example.tld");
     assertInStdout(
         "Websafe key: "
-            + "kind:HostResource"
+            + "kind:Host"
             + "@sql:rO0ABXQABjItUk9JRA"
-            + "@ofy:agR0ZXN0chgLEgxIb3N0UmVzb3VyY2UiBjItUk9JRAw");
+            + "@ofy:agR0ZXN0chALEgRIb3N0IgYyLVJPSUQM");
   }
 
   @Test
@@ -56,9 +56,9 @@ class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
     assertInStdout("fullyQualifiedHostName=ns1.example.tld");
     assertInStdout(
         "Websafe key: "
-            + "kind:HostResource"
+            + "kind:Host"
             + "@sql:rO0ABXQABjItUk9JRA"
-            + "@ofy:agR0ZXN0chgLEgxIb3N0UmVzb3VyY2UiBjItUk9JRAw");
+            + "@ofy:agR0ZXN0chALEgRIb3N0IgYyLVJPSUQM");
     assertNotInStdout("LiveRef");
   }
 
@@ -71,14 +71,14 @@ class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
     assertInStdout("fullyQualifiedHostName=ns2.example.tld");
     assertInStdout(
         "Websafe key: "
-            + "kind:HostResource"
+            + "kind:Host"
             + "@sql:rO0ABXQABjItUk9JRA"
-            + "@ofy:agR0ZXN0chgLEgxIb3N0UmVzb3VyY2UiBjItUk9JRAw");
+            + "@ofy:agR0ZXN0chALEgRIb3N0IgYyLVJPSUQM");
     assertInStdout(
         "Websafe key: "
-            + "kind:HostResource"
-            + "@sql:rO0ABXQABjItUk9JRA"
-            + "@ofy:agR0ZXN0chgLEgxIb3N0UmVzb3VyY2UiBjItUk9JRAw");
+            + "kind:Host"
+            + "@sql:rO0ABXQABjMtUk9JRA"
+            + "@ofy:agR0ZXN0chALEgRIb3N0IgYzLVJPSUQM");
   }
 
   @Test
@@ -107,9 +107,7 @@ class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
   @Test
   void testSuccess_hostDeletedInFuture() throws Exception {
     persistResource(
-        newHostResource("ns1.example.tld").asBuilder()
-            .setDeletionTime(now.plusDays(1))
-            .build());
+        newHost("ns1.example.tld").asBuilder().setDeletionTime(now.plusDays(1)).build());
     runCommand("ns1.example.tld", "--read_timestamp=" + now.plusMonths(1));
     assertInStdout("Host 'ns1.example.tld' does not exist or is deleted");
   }

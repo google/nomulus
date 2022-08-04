@@ -37,7 +37,7 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.request.auth.AuthLevel;
@@ -89,7 +89,7 @@ final class RegistryLockVerifyActionTest {
   @BeforeEach
   void beforeEach() {
     createTlds("tld", "net");
-    HostResource host = persistActiveHost("ns1.example.net");
+    Host host = persistActiveHost("ns1.example.net");
     domain = persistResource(DatabaseHelper.newDomain("example.tld", host));
     when(request.getRequestURI()).thenReturn("https://registry.example/registry-lock-verification");
     action = createAction(lockId, true);

@@ -37,7 +37,7 @@ import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
@@ -95,7 +95,7 @@ public class RelockDomainActionTest {
   @BeforeEach
   void beforeEach() throws Exception {
     createTlds("tld", "net");
-    HostResource host = persistActiveHost("ns1.example.net");
+    Host host = persistActiveHost("ns1.example.net");
     domain = persistResource(DatabaseHelper.newDomain(DOMAIN_NAME, host));
 
     oldLock = domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, CLIENT_ID, POC_ID, false);

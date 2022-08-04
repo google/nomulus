@@ -21,7 +21,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistContactResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHostResource;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHost;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
@@ -37,7 +37,7 @@ import com.google.gson.JsonObject;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
@@ -72,12 +72,12 @@ class RdapJsonFormatterTest {
   private Registrar registrar;
   private Domain domainFull;
   private Domain domainNoNameserversNoTransfers;
-  private HostResource hostResourceIpv4;
-  private HostResource hostResourceIpv6;
-  private HostResource hostResourceBoth;
-  private HostResource hostResourceNoAddresses;
-  private HostResource hostResourceNotLinked;
-  private HostResource hostResourceSuperordinatePendingTransfer;
+  private Host hostIpv4;
+  private Host hostIpv6;
+  private Host hostBoth;
+  private Host hostNoAddresses;
+  private Host hostNotLinked;
+  private Host hostSuperordinatePendingTransfer;
   private ContactResource contactResourceRegistrant;
   private ContactResource contactResourceAdmin;
   private ContactResource contactResourceTech;
@@ -128,32 +128,32 @@ class RdapJsonFormatterTest {
         ImmutableList.of("Somewhere", "Over the Rainbow"),
         clock.nowUtc().minusYears(4),
         registrar);
-    hostResourceIpv4 =
-        makeAndPersistHostResource(
+    hostIpv4 =
+        makeAndPersistHost(
             "ns1.cat.みんな", "1.2.3.4", null, clock.nowUtc().minusYears(1), "unicoderegistrar");
-    hostResourceIpv6 =
-        makeAndPersistHostResource(
+    hostIpv6 =
+        makeAndPersistHost(
             "ns2.cat.みんな",
             "bad:f00d:cafe:0:0:0:15:beef",
             null,
             clock.nowUtc().minusYears(2),
             "unicoderegistrar");
-    hostResourceBoth =
-        makeAndPersistHostResource(
+    hostBoth =
+        makeAndPersistHost(
             "ns3.cat.みんな",
             "1.2.3.4",
             "bad:f00d:cafe:0:0:0:15:beef",
             clock.nowUtc().minusYears(3),
             "unicoderegistrar");
-    hostResourceNoAddresses =
-        makeAndPersistHostResource(
+    hostNoAddresses =
+        makeAndPersistHost(
             "ns4.cat.みんな", null, null, clock.nowUtc().minusYears(4), "unicoderegistrar");
-    hostResourceNotLinked =
-        makeAndPersistHostResource(
+    hostNotLinked =
+        makeAndPersistHost(
             "ns5.cat.みんな", null, null, clock.nowUtc().minusYears(5), "unicoderegistrar");
-    hostResourceSuperordinatePendingTransfer =
+    hostSuperordinatePendingTransfer =
         persistResource(
-            makeAndPersistHostResource(
+            makeAndPersistHost(
                     "ns1.dog.みんな", null, null, clock.nowUtc().minusYears(6), "unicoderegistrar")
                 .asBuilder()
                 .setSuperordinateDomain(
@@ -189,8 +189,8 @@ class RdapJsonFormatterTest {
                     contactResourceRegistrant,
                     contactResourceAdmin,
                     contactResourceTech,
-                    hostResourceIpv4,
-                    hostResourceIpv6,
+                    hostIpv4,
+                    hostIpv6,
                     registrar)
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc().minusMonths(4))
@@ -210,7 +210,7 @@ class RdapJsonFormatterTest {
                 .setCreationTimeForTest(clock.nowUtc())
                 .setLastEppUpdateTime(null)
                 .build());
-    // Create an unused domain that references hostResourceBoth and hostResourceNoAddresses so that
+    // Create an unused domain that references hostBoth and hostNoAddresses so that
     // they will have "associated" (ie, StatusValue.LINKED) status.
     persistResource(
         makeDomain(
@@ -218,8 +218,8 @@ class RdapJsonFormatterTest {
             contactResourceRegistrant,
             contactResourceAdmin,
             contactResourceTech,
-            hostResourceBoth,
-            hostResourceNoAddresses,
+            hostBoth,
+            hostNoAddresses,
             registrar));
 
     // history entries
@@ -317,49 +317,38 @@ class RdapJsonFormatterTest {
 
   @Test
   void testHost_ipv4() {
-    assertThat(
-            rdapJsonFormatter.createRdapNameserver(hostResourceIpv4, OutputDataType.FULL).toJson())
+    assertThat(rdapJsonFormatter.createRdapNameserver(hostIpv4, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_ipv4.json"));
   }
 
   @Test
   void testHost_ipv6() {
-    assertThat(
-            rdapJsonFormatter.createRdapNameserver(hostResourceIpv6, OutputDataType.FULL).toJson())
+    assertThat(rdapJsonFormatter.createRdapNameserver(hostIpv6, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_ipv6.json"));
   }
 
   @Test
   void testHost_both() {
-    assertThat(
-            rdapJsonFormatter.createRdapNameserver(hostResourceBoth, OutputDataType.FULL).toJson())
+    assertThat(rdapJsonFormatter.createRdapNameserver(hostBoth, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_both.json"));
   }
 
   @Test
   void testHost_both_summary() {
-    assertThat(
-            rdapJsonFormatter
-                .createRdapNameserver(hostResourceBoth, OutputDataType.SUMMARY)
-                .toJson())
+    assertThat(rdapJsonFormatter.createRdapNameserver(hostBoth, OutputDataType.SUMMARY).toJson())
         .isEqualTo(loadJson("rdapjson_host_both_summary.json"));
   }
 
   @Test
   void testHost_noAddresses() {
     assertThat(
-            rdapJsonFormatter
-                .createRdapNameserver(hostResourceNoAddresses, OutputDataType.FULL)
-                .toJson())
+            rdapJsonFormatter.createRdapNameserver(hostNoAddresses, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_no_addresses.json"));
   }
 
   @Test
   void testHost_notLinked() {
-    assertThat(
-            rdapJsonFormatter
-                .createRdapNameserver(hostResourceNotLinked, OutputDataType.FULL)
-                .toJson())
+    assertThat(rdapJsonFormatter.createRdapNameserver(hostNotLinked, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_not_linked.json"));
   }
 
@@ -367,7 +356,7 @@ class RdapJsonFormatterTest {
   void testHost_superordinateHasPendingTransfer() {
     assertThat(
             rdapJsonFormatter
-                .createRdapNameserver(hostResourceSuperordinatePendingTransfer, OutputDataType.FULL)
+                .createRdapNameserver(hostSuperordinatePendingTransfer, OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_host_pending_transfer.json"));
   }

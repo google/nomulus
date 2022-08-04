@@ -26,7 +26,7 @@ import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod.GracePeriodHistory;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.domain.secdns.DomainDsDataHistory;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
@@ -113,7 +113,7 @@ public class DomainHistory extends HistoryEntry {
       })
   @ImmutableObject.EmptySetToNull
   @Column(name = "host_repo_id")
-  Set<VKey<HostResource>> nsHosts;
+  Set<VKey<Host>> nsHosts;
 
   @DoNotCompare
   @OneToMany(
@@ -221,8 +221,8 @@ public class DomainHistory extends HistoryEntry {
     return new DomainHistoryId(getDomainRepoId(), getId());
   }
 
-  /** Returns keys to the {@link HostResource} that are the nameservers for the domain. */
-  public Set<VKey<HostResource>> getNsHosts() {
+  /** Returns keys to the {@link Host} that are the nameservers for the domain. */
+  public Set<VKey<Host>> getNsHosts() {
     return nsHosts;
   }
 
@@ -406,7 +406,7 @@ public class DomainHistory extends HistoryEntry {
 
     public DomainHistory buildAndAssemble(
         ImmutableSet<DomainDsDataHistory> dsDataHistories,
-        ImmutableSet<VKey<HostResource>> domainHistoryHosts,
+        ImmutableSet<VKey<Host>> domainHistoryHosts,
         ImmutableSet<GracePeriodHistory> gracePeriodHistories,
         ImmutableSet<DomainTransactionRecord> transactionRecords) {
       DomainHistory instance = super.build();

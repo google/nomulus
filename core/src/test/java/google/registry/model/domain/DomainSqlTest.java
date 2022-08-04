@@ -47,7 +47,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.ContactTransferData;
@@ -81,8 +81,8 @@ public class DomainSqlTest {
   private DomainHistory historyEntry;
   private VKey<ContactResource> contactKey;
   private VKey<ContactResource> contact2Key;
-  private VKey<HostResource> host1VKey;
-  private HostResource host;
+  private VKey<Host> host1VKey;
+  private Host host;
   private ContactResource contact;
   private ContactResource contact2;
   private ImmutableSet<GracePeriod> gracePeriods;
@@ -95,7 +95,7 @@ public class DomainSqlTest {
     contactKey = createKey(ContactResource.class, "contact_id1");
     contact2Key = createKey(ContactResource.class, "contact_id2");
 
-    host1VKey = createKey(HostResource.class, "host1");
+    host1VKey = createKey(Host.class, "host1");
 
     domain =
         new Domain.Builder()
@@ -130,7 +130,7 @@ public class DomainSqlTest {
             .build();
 
     host =
-        new HostResource.Builder()
+        new Host.Builder()
             .setRepoId("host1")
             .setHostName("ns1.example.com")
             .setCreationRegistrarId("registrar1")
@@ -676,8 +676,8 @@ public class DomainSqlTest {
         jpaTm()
             .transact(
                 () -> {
-                  HostResource host2 =
-                      new HostResource.Builder()
+                  Host host2 =
+                      new Host.Builder()
                           .setRepoId("host2")
                           .setHostName("ns2.example.com")
                           .setCreationRegistrarId("registrar1")

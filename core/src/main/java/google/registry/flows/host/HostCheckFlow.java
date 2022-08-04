@@ -30,8 +30,8 @@ import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CheckData.HostCheck;
 import google.registry.model.eppoutput.CheckData.HostCheckData;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostCommand.Check;
-import google.registry.model.host.HostResource;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.util.Clock;
 import javax.inject.Inject;
@@ -61,8 +61,7 @@ public final class HostCheckFlow implements Flow {
     extensionManager.validate(); // There are no legal extensions for this flow.
     ImmutableList<String> hostnames = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(hostnames, maxChecks);
-    ImmutableSet<String> existingIds =
-        checkResourcesExist(HostResource.class, hostnames, clock.nowUtc());
+    ImmutableSet<String> existingIds = checkResourcesExist(Host.class, hostnames, clock.nowUtc());
     ImmutableList.Builder<HostCheck> checks = new ImmutableList.Builder<>();
     for (String hostname : hostnames) {
       boolean unused = !existingIds.contains(hostname);

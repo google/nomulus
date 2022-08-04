@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
@@ -39,10 +39,10 @@ import org.junit.jupiter.api.Test;
 class UniformRapidSuspensionCommandTest
     extends EppToolCommandTestCase<UniformRapidSuspensionCommand> {
 
-  private HostResource ns1;
-  private HostResource ns2;
-  private HostResource urs1;
-  private HostResource urs2;
+  private Host ns1;
+  private Host ns2;
+  private Host urs1;
+  private Host urs2;
   private Domain defaultDomain;
   private ImmutableSet<DelegationSignerData> defaultDsData;
 
@@ -63,9 +63,9 @@ class UniformRapidSuspensionCommandTest
   }
 
   private void persistDomainWithHosts(
-      Domain domain, ImmutableSet<DelegationSignerData> dsData, HostResource... hosts) {
-    ImmutableSet.Builder<VKey<HostResource>> hostRefs = new ImmutableSet.Builder<>();
-    for (HostResource host : hosts) {
+      Domain domain, ImmutableSet<DelegationSignerData> dsData, Host... hosts) {
+    ImmutableSet.Builder<VKey<Host>> hostRefs = new ImmutableSet.Builder<>();
+    for (Host host : hosts) {
       hostRefs.add(host.createVKey());
     }
     persistResource(domain.asBuilder().setNameservers(hostRefs.build()).setDsData(dsData).build());

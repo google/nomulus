@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.rde.RdeMode;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,8 +71,8 @@ public class RdeFragmenter {
       cache.put(WatermarkModePair.create(watermark, RdeMode.FULL), result);
       cache.put(WatermarkModePair.create(watermark, RdeMode.THIN), result);
       return result;
-    } else if (resource instanceof HostResource) {
-      HostResource host = (HostResource) resource;
+    } else if (resource instanceof Host) {
+      Host host = (Host) resource;
       result =
           Optional.of(
               host.isSubordinate()

@@ -22,7 +22,7 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
-import static google.registry.testing.DatabaseHelper.newHostResource;
+import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
@@ -55,7 +55,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
@@ -100,7 +100,7 @@ public class DomainTest {
     saveRegistrar("gaining");
     createTld("com");
     domain = persistActiveDomain("example.com");
-    VKey<HostResource> hostKey = persistActiveHost("ns1.example.com").createVKey();
+    VKey<Host> hostKey = persistActiveHost("ns1.example.com").createVKey();
     contact1Key = persistActiveContact("contact_id1").createVKey();
     contact2Key = persistActiveContact("contact_id1").createVKey();
     domainHistory =
@@ -288,7 +288,7 @@ public class DomainTest {
     assertThat(
             DatabaseHelper.newDomain("example.com")
                 .asBuilder()
-                .setNameservers(ImmutableSet.of(newHostResource("foo.example.tld").createVKey()))
+                .setNameservers(ImmutableSet.of(newHost("foo.example.tld").createVKey()))
                 .build()
                 .nsHosts)
         .isNotNull();
@@ -336,8 +336,7 @@ public class DomainTest {
 
   @Test
   void testImplicitStatusValues() {
-    ImmutableSet<VKey<HostResource>> nameservers =
-        ImmutableSet.of(newHostResource("foo.example.tld").createVKey());
+    ImmutableSet<VKey<Host>> nameservers = ImmutableSet.of(newHost("foo.example.tld").createVKey());
     StatusValue[] statuses = {StatusValue.OK};
     // OK is implicit if there's no other statuses but there are nameservers.
     assertAboutDomains()

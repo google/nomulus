@@ -23,7 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.testing.TestCacheExtension;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
@@ -51,15 +51,15 @@ public class EppResourceTest extends EntityTestCase {
 
   @Test
   void test_loadCached_ignoresHostChange() {
-    HostResource originalHost = persistActiveHost("ns1.example.com");
+    Host originalHost = persistActiveHost("ns1.example.com");
     assertThat(EppResource.loadCached(ImmutableList.of(originalHost.createVKey())))
         .containsExactly(originalHost.createVKey(), originalHost);
-    HostResource modifiedHost =
+    Host modifiedHost =
         persistResource(
             originalHost.asBuilder().setLastTransferTime(fakeClock.nowUtc().minusDays(60)).build());
     assertThat(EppResource.loadCached(ImmutableList.of(originalHost.createVKey())))
         .containsExactly(originalHost.createVKey(), originalHost);
-    assertThat(loadByForeignKey(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))
+    assertThat(loadByForeignKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
         .hasValue(modifiedHost);
   }
 }

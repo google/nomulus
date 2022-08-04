@@ -18,7 +18,7 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 
 import com.google.common.net.InternetDomainName;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -34,10 +34,10 @@ public class NameserverLookupByHostCommand extends DomainOrHostLookupCommand {
 
   @Override
   protected Optional<WhoisResponse> getResponse(InternetDomainName hostName, DateTime now) {
-    Optional<HostResource> hostResource =
+    Optional<Host> host =
         cached
-            ? loadByForeignKeyCached(HostResource.class, hostName.toString(), now)
-            : loadByForeignKey(HostResource.class, hostName.toString(), now);
-    return hostResource.map(host -> new NameserverWhoisResponse(host, now));
+            ? loadByForeignKeyCached(Host.class, hostName.toString(), now)
+            : loadByForeignKey(Host.class, hostName.toString(), now);
+    return host.map(h -> new NameserverWhoisResponse(h, now));
   }
 }

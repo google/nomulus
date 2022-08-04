@@ -16,7 +16,7 @@ package google.registry.whois;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.newHostResource;
+import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -25,7 +25,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig;
 import google.registry.model.domain.Domain;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
@@ -53,7 +53,7 @@ class WhoisCommandFactoryTest {
   WhoisCommandFactory noncachedFactory = WhoisCommandFactory.createNonCached();
   WhoisCommandFactory cachedFactory = WhoisCommandFactory.createCached();
   Domain domain;
-  HostResource host;
+  Host host;
   Registrar otherRegistrar;
 
   int origSingletonCacheRefreshSeconds;
@@ -62,7 +62,7 @@ class WhoisCommandFactoryTest {
   void setUp() throws Exception {
     persistResource(newRegistry("tld", "TLD"));
     host =
-        newHostResource("ns.example.tld")
+        newHost("ns.example.tld")
             .asBuilder()
             .setInetAddresses(ImmutableSet.of(InetAddress.getByName("1.2.3.4")))
             .build();

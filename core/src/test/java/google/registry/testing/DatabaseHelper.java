@@ -88,7 +88,7 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.index.ForeignKeyIndex;
@@ -154,12 +154,12 @@ public class DatabaseHelper {
     }
   }
 
-  public static HostResource newHostResource(String hostName) {
-    return newHostResourceWithRoid(hostName, generateNewContactHostRoid());
+  public static Host newHost(String hostName) {
+    return newHostWithRoid(hostName, generateNewContactHostRoid());
   }
 
-  public static HostResource newHostResourceWithRoid(String hostName, String repoId) {
-    return new HostResource.Builder()
+  public static Host newHostWithRoid(String hostName, String repoId) {
+    return new Host.Builder()
         .setHostName(hostName)
         .setCreationRegistrarId("TheRegistrar")
         .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
@@ -177,9 +177,9 @@ public class DatabaseHelper {
     return newDomain(domainName, generateNewDomainRoid(getTldFromDomainName(domainName)), contact);
   }
 
-  public static Domain newDomain(String domainName, HostResource... hosts) {
-    ImmutableSet<VKey<HostResource>> hostKeys =
-        Arrays.stream(hosts).map(HostResource::createVKey).collect(toImmutableSet());
+  public static Domain newDomain(String domainName, Host... hosts) {
+    ImmutableSet<VKey<Host>> hostKeys =
+        Arrays.stream(hosts).map(Host::createVKey).collect(toImmutableSet());
     return newDomain(domainName).asBuilder().setNameservers(hostKeys).build();
   }
 
@@ -269,15 +269,14 @@ public class DatabaseHelper {
         newContactResource(contactId).asBuilder().setDeletionTime(deletionTime).build());
   }
 
-  public static HostResource persistActiveHost(String hostName) {
-    return persistResource(newHostResource(hostName));
+  public static Host persistActiveHost(String hostName) {
+    return persistResource(newHost(hostName));
   }
 
-  public static HostResource persistActiveSubordinateHost(
-      String hostName, Domain superordinateDomain) {
+  public static Host persistActiveSubordinateHost(String hostName, Domain superordinateDomain) {
     checkNotNull(superordinateDomain);
     return persistResource(
-        newHostResource(hostName)
+        newHost(hostName)
             .asBuilder()
             .setSuperordinateDomain(superordinateDomain.createVKey())
             .setInetAddresses(
@@ -286,9 +285,8 @@ public class DatabaseHelper {
   }
 
   /** Persists a host resource with the given hostname deleted at the specified time. */
-  public static HostResource persistDeletedHost(String hostName, DateTime deletionTime) {
-    return persistResource(
-        newHostResource(hostName).asBuilder().setDeletionTime(deletionTime).build());
+  public static Host persistDeletedHost(String hostName, DateTime deletionTime) {
+    return persistResource(newHost(hostName).asBuilder().setDeletionTime(deletionTime).build());
   }
 
   public static Domain persistActiveDomain(String domainName) {
@@ -484,8 +482,7 @@ public class DatabaseHelper {
                   .forEach(
                       hostname ->
                           deleteResource(
-                              EppResourceUtils.loadByForeignKey(HostResource.class, hostname, now)
-                                  .get()));
+                              EppResourceUtils.loadByForeignKey(Host.class, hostname, now).get()));
               for (HistoryEntry hist : historyEntries) {
                 deleteResource(hist);
               }
@@ -1158,7 +1155,7 @@ public class DatabaseHelper {
       return resource.getRepoId() != null
           ? HistoryEntry.Type.CONTACT_CREATE
           : HistoryEntry.Type.CONTACT_UPDATE;
-    } else if (resource instanceof HostResource) {
+    } else if (resource instanceof Host) {
       return resource.getRepoId() != null
           ? HistoryEntry.Type.HOST_CREATE
           : HistoryEntry.Type.HOST_UPDATE;

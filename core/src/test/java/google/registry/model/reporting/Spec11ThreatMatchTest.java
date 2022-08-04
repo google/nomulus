@@ -28,7 +28,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
 import org.joda.time.LocalDate;
@@ -45,7 +45,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
 
   private Spec11ThreatMatch threat;
   private Domain domain;
-  private HostResource host;
+  private Host host;
   private ContactResource registrantContact;
 
   Spec11ThreatMatchTest() {
@@ -54,7 +54,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
 
   @BeforeEach
   void setUp() {
-    VKey<HostResource> hostVKey = VKey.createSql(HostResource.class, "host");
+    VKey<Host> hostVKey = VKey.createSql(Host.class, "host");
     VKey<ContactResource> registrantContactVKey =
         VKey.createSql(ContactResource.class, "contact_id");
     String domainRepoId = "4-TLD";
@@ -84,7 +84,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
 
     // Create a host for the purpose of testing a foreign key reference in the Domain table. */
     host =
-        new HostResource.Builder()
+        new Host.Builder()
             .setRepoId("host")
             .setHostName("ns1.example.com")
             .setCreationRegistrarId(REGISTRAR_ID)

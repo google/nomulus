@@ -41,7 +41,7 @@ public abstract class BackupGroupRoot extends ImmutableObject implements UnsafeS
    * that this is updated on every save, rather than only in response to an {@code <update>} command
    */
   @XmlTransient
-  // Prevents subclasses from unexpectedly accessing as property (e.g., HostResource), which would
+  // Prevents subclasses from unexpectedly accessing as property (e.g., Host), which would
   // require an unnecessary non-private setter method.
   @Access(AccessType.FIELD)
   @AttributeOverride(name = "lastUpdateTime", column = @Column(name = "updateTimestamp"))

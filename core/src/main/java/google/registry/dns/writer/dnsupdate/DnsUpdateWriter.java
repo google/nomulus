@@ -29,7 +29,7 @@ import google.registry.dns.writer.BaseDnsWriter;
 import google.registry.dns.writer.DnsWriterZone;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DelegationSignerData;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.tld.Registries;
 import google.registry.util.Clock;
 import java.io.IOException;
@@ -215,7 +215,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
   private void addInBailiwickNameServerSet(Domain domain, Update update) {
     for (String hostName :
         intersection(domain.loadNameserverHostNames(), domain.getSubordinateHosts())) {
-      Optional<HostResource> host = loadByForeignKey(HostResource.class, hostName, clock.nowUtc());
+      Optional<Host> host = loadByForeignKey(Host.class, hostName, clock.nowUtc());
       checkState(host.isPresent(), "Host %s cannot be loaded", hostName);
       update.add(makeAddressSet(host.get()));
       update.add(makeV6AddressSet(host.get()));
@@ -236,7 +236,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
     return nameServerSet;
   }
 
-  private RRset makeAddressSet(HostResource host) {
+  private RRset makeAddressSet(Host host) {
     RRset addressSet = new RRset();
     for (InetAddress address : host.getInetAddresses()) {
       if (address instanceof Inet4Address) {
@@ -252,7 +252,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
     return addressSet;
   }
 
-  private RRset makeV6AddressSet(HostResource host) {
+  private RRset makeV6AddressSet(Host host) {
     RRset addressSet = new RRset();
     for (InetAddress address : host.getInetAddresses()) {
       if (address instanceof Inet6Address) {

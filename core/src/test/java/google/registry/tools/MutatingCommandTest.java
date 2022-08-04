@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
@@ -50,10 +50,10 @@ public class MutatingCommandTest {
   private Registrar registrar2;
   private Registrar newRegistrar1;
   private Registrar newRegistrar2;
-  private HostResource host1;
-  private HostResource host2;
-  private HostResource newHost1;
-  private HostResource newHost2;
+  private Host host1;
+  private Host host2;
+  private Host newHost1;
+  private Host newHost2;
 
   @BeforeEach
   void beforeEach() {
@@ -97,10 +97,10 @@ public class MutatingCommandTest {
     String changes = command.prompt();
     assertThat(changes)
         .isEqualTo(
-            "Update HostResource@2-ROID\n"
+            "Update Host@2-ROID\n"
                 + "lastEppUpdateTime: null -> 2014-09-09T09:09:09.000Z\n"
                 + "\n"
-                + "Update HostResource@3-ROID\n"
+                + "Update Host@3-ROID\n"
                 + "currentSponsorClientId: TheRegistrar -> Registrar2\n"
                 + "\n"
                 + "Update Registrar@Registrar1\n"
@@ -134,18 +134,23 @@ public class MutatingCommandTest {
     };
     command.init();
     String changes = command.prompt();
-    assertThat(changes).isEqualTo(
-        "Create HostResource@2-ROID\n"
-            + newHost1 + "\n"
-            + "\n"
-            + "Create HostResource@3-ROID\n"
-            + newHost2 + "\n"
-            + "\n"
-            + "Create Registrar@Registrar1\n"
-            + newRegistrar1 + "\n"
-            + "\n"
-            + "Create Registrar@Registrar2\n"
-            + newRegistrar2 + "\n");
+    assertThat(changes)
+        .isEqualTo(
+            "Create Host@2-ROID\n"
+                + newHost1
+                + "\n"
+                + "\n"
+                + "Create Host@3-ROID\n"
+                + newHost2
+                + "\n"
+                + "\n"
+                + "Create Registrar@Registrar1\n"
+                + newRegistrar1
+                + "\n"
+                + "\n"
+                + "Create Registrar@Registrar2\n"
+                + newRegistrar2
+                + "\n");
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 4 entities.\n");
     assertThat(loadByEntity(newHost1)).isEqualTo(newHost1);
@@ -167,18 +172,23 @@ public class MutatingCommandTest {
     };
     command.init();
     String changes = command.prompt();
-    assertThat(changes).isEqualTo(
-        "Delete HostResource@2-ROID\n"
-            + host1 + "\n"
-            + "\n"
-            + "Delete HostResource@3-ROID\n"
-            + host2 + "\n"
-            + "\n"
-            + "Delete Registrar@Registrar1\n"
-            + registrar1 + "\n"
-            + "\n"
-            + "Delete Registrar@Registrar2\n"
-            + registrar2 + "\n");
+    assertThat(changes)
+        .isEqualTo(
+            "Delete Host@2-ROID\n"
+                + host1
+                + "\n"
+                + "\n"
+                + "Delete Host@3-ROID\n"
+                + host2
+                + "\n"
+                + "\n"
+                + "Delete Registrar@Registrar1\n"
+                + registrar1
+                + "\n"
+                + "\n"
+                + "Delete Registrar@Registrar2\n"
+                + registrar2
+                + "\n");
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 4 entities.\n");
     assertThat(existsInDb(host1)).isFalse();
@@ -199,12 +209,13 @@ public class MutatingCommandTest {
     command.init();
     String changes = command.prompt();
     System.out.println(changes);
-    assertThat(changes).isEqualTo(
-        "Update HostResource@2-ROID\n"
-            + "[no changes]\n"
-            + "\n"
-            + "Update Registrar@Registrar1\n"
-            + "[no changes]\n");
+    assertThat(changes)
+        .isEqualTo(
+            "Update Host@2-ROID\n"
+                + "[no changes]\n"
+                + "\n"
+                + "Update Registrar@Registrar1\n"
+                + "[no changes]\n");
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 2 entities.\n");
     assertThat(loadByEntity(host1)).isEqualTo(host1);
@@ -227,18 +238,21 @@ public class MutatingCommandTest {
     };
     command.init();
     String changes = command.prompt();
-    assertThat(changes).isEqualTo(
-        "Delete HostResource@2-ROID\n"
-            + host1 + "\n"
-            + "\n"
-            + "Update HostResource@3-ROID\n"
-            + "currentSponsorClientId: TheRegistrar -> Registrar2\n"
-            + "\n"
-            + "Delete Registrar@Registrar1\n"
-            + registrar1 + "\n"
-            + "\n"
-            + "Update Registrar@Registrar2\n"
-            + "blockPremiumNames: false -> true\n");
+    assertThat(changes)
+        .isEqualTo(
+            "Delete Host@2-ROID\n"
+                + host1
+                + "\n"
+                + "\n"
+                + "Update Host@3-ROID\n"
+                + "currentSponsorClientId: TheRegistrar -> Registrar2\n"
+                + "\n"
+                + "Delete Registrar@Registrar1\n"
+                + registrar1
+                + "\n"
+                + "\n"
+                + "Update Registrar@Registrar2\n"
+                + "blockPremiumNames: false -> true\n");
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 4 entities.\n");
     assertThat(existsInDb(host1)).isFalse();
@@ -267,18 +281,21 @@ public class MutatingCommandTest {
     // resource has been updated since the command inited the resources to process.
     registrar2 = persistResource(registrar2.asBuilder().setContactsRequireSyncing(false).build());
     String changes = command.prompt();
-    assertThat(changes).isEqualTo(
-        "Delete HostResource@2-ROID\n"
-            + host1 + "\n"
-            + "\n"
-            + "Update HostResource@3-ROID\n"
-            + "currentSponsorClientId: TheRegistrar -> Registrar2\n"
-            + "\n"
-            + "Delete Registrar@Registrar1\n"
-            + registrar1 + "\n"
-            + "\n"
-            + "Update Registrar@Registrar2\n"
-            + "blockPremiumNames: false -> true\n");
+    assertThat(changes)
+        .isEqualTo(
+            "Delete Host@2-ROID\n"
+                + host1
+                + "\n"
+                + "\n"
+                + "Update Host@3-ROID\n"
+                + "currentSponsorClientId: TheRegistrar -> Registrar2\n"
+                + "\n"
+                + "Delete Registrar@Registrar1\n"
+                + registrar1
+                + "\n"
+                + "\n"
+                + "Update Registrar@Registrar2\n"
+                + "blockPremiumNames: false -> true\n");
 
     IllegalStateException thrown = assertThrows(IllegalStateException.class, command::execute);
     assertThat(thrown).hasMessageThat().contains("Entity changed since init() was called.");

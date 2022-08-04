@@ -29,8 +29,8 @@ import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import java.util.Comparator;
@@ -55,7 +55,7 @@ public class HistoryEntryDao {
               ContactHistory.class,
               Domain.class,
               DomainHistory.class,
-              HostResource.class,
+              Host.class,
               HostHistory.class);
 
   public static ImmutableMap<Class<? extends HistoryEntry>, String> REPO_ID_FIELD_NAMES =

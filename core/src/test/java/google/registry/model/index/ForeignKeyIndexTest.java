@@ -23,7 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.EntityTestCase;
 import google.registry.model.domain.Domain;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.TestCacheExtension;
@@ -56,25 +56,23 @@ class ForeignKeyIndexTest extends EntityTestCase {
 
   @Test
   void testLoadForNonexistentForeignKey_returnsNull() {
-    assertThat(ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))
-        .isNull();
+    assertThat(ForeignKeyIndex.load(Host.class, "ns1.example.com", fakeClock.nowUtc())).isNull();
   }
 
   @Test
   void testLoadForDeletedForeignKey_returnsNull() {
-    HostResource host = persistActiveHost("ns1.example.com");
+    Host host = persistActiveHost("ns1.example.com");
     if (tm().isOfy()) {
       persistResource(ForeignKeyIndex.create(host, fakeClock.nowUtc().minusDays(1)));
     } else {
       persistResource(host.asBuilder().setDeletionTime(fakeClock.nowUtc().minusDays(1)).build());
     }
-    assertThat(ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))
-        .isNull();
+    assertThat(ForeignKeyIndex.load(Host.class, "ns1.example.com", fakeClock.nowUtc())).isNull();
   }
 
   @Test
   void testLoad_newerKeyHasBeenSoftDeleted() {
-    HostResource host1 = persistActiveHost("ns1.example.com");
+    Host host1 = persistActiveHost("ns1.example.com");
     fakeClock.advanceOneMilli();
     if (tm().isOfy()) {
       ForeignKeyHostIndex fki = new ForeignKeyHostIndex();
@@ -85,14 +83,13 @@ class ForeignKeyIndexTest extends EntityTestCase {
     } else {
       persistResource(host1.asBuilder().setDeletionTime(fakeClock.nowUtc()).build());
     }
-    assertThat(ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))
-        .isNull();
+    assertThat(ForeignKeyIndex.load(Host.class, "ns1.example.com", fakeClock.nowUtc())).isNull();
   }
 
   @Test
   void testBatchLoad_skipsDeletedAndNonexistent() {
     persistActiveHost("ns1.example.com");
-    HostResource host = persistActiveHost("ns2.example.com");
+    Host host = persistActiveHost("ns2.example.com");
     if (tm().isOfy()) {
       persistResource(ForeignKeyIndex.create(host, fakeClock.nowUtc().minusDays(1)));
     } else {
@@ -100,7 +97,7 @@ class ForeignKeyIndexTest extends EntityTestCase {
     }
     assertThat(
             ForeignKeyIndex.load(
-                    HostResource.class,
+                    Host.class,
                     ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
                     fakeClock.nowUtc())
                 .keySet())
@@ -110,7 +107,7 @@ class ForeignKeyIndexTest extends EntityTestCase {
   @Test
   void testDeadCodeThatDeletedScrapCommandsReference() {
     persistActiveHost("omg");
-    assertThat(ForeignKeyIndex.load(HostResource.class, "omg", fakeClock.nowUtc()).getForeignKey())
+    assertThat(ForeignKeyIndex.load(Host.class, "omg", fakeClock.nowUtc()).getForeignKey())
         .isEqualTo("omg");
   }
 }

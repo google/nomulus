@@ -28,7 +28,7 @@ import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Booleans;
 import com.googlecode.objectify.cmd.Query;
 import google.registry.model.domain.Domain;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
@@ -159,16 +159,15 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
         NameserverSearchResponse.builder()
             .setIncompletenessWarningType(IncompletenessWarningType.COMPLETE);
 
-    Optional<HostResource> hostResource =
-        loadByForeignKey(
-            HostResource.class, partialStringQuery.getInitialString(), getRequestTime());
+    Optional<Host> host =
+        loadByForeignKey(Host.class, partialStringQuery.getInitialString(), getRequestTime());
 
-    metricInformationBuilder.setNumHostsRetrieved(hostResource.isPresent() ? 1 : 0);
+    metricInformationBuilder.setNumHostsRetrieved(host.isPresent() ? 1 : 0);
 
-    if (shouldBeVisible(hostResource)) {
+    if (shouldBeVisible(host)) {
       builder
           .nameserverSearchResultsBuilder()
-          .add(rdapJsonFormatter.createRdapNameserver(hostResource.get(), OutputDataType.FULL));
+          .add(rdapJsonFormatter.createRdapNameserver(host.get(), OutputDataType.FULL));
     }
     return builder.build();
   }
@@ -187,7 +186,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       throw new UnprocessableEntityException(
           "A suffix after a wildcard in a nameserver lookup must be an in-bailiwick domain");
     }
-    List<HostResource> hostList = new ArrayList<>();
+    List<Host> hostList = new ArrayList<>();
     for (String fqhn : ImmutableSortedSet.copyOf(domain.get().getSubordinateHosts())) {
       if (cursorString.isPresent() && (fqhn.compareTo(cursorString.get()) <= 0)) {
         continue;
@@ -195,10 +194,9 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       // We can't just check that the host name starts with the initial query string, because
       // then the query ns.exam*.example.com would match against nameserver ns.example.com.
       if (partialStringQuery.matches(fqhn)) {
-        Optional<HostResource> hostResource =
-            loadByForeignKey(HostResource.class, fqhn, getRequestTime());
-        if (shouldBeVisible(hostResource)) {
-          hostList.add(hostResource.get());
+        Optional<Host> host = loadByForeignKey(Host.class, fqhn, getRequestTime());
+        if (shouldBeVisible(host)) {
+          hostList.add(host.get());
           if (hostList.size() > rdapResultSetMaxSize) {
             break;
           }
@@ -222,9 +220,9 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
     // Add 1 so we can detect truncation.
     int querySizeLimit = getStandardQuerySizeLimit();
     if (tm().isOfy()) {
-      Query<HostResource> query =
+      Query<Host> query =
           queryItems(
-              HostResource.class,
+              Host.class,
               "fullyQualifiedHostName",
               partialStringQuery,
               cursorString,
@@ -236,9 +234,9 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       return replicaJpaTm()
           .transact(
               () -> {
-                CriteriaQueryBuilder<HostResource> queryBuilder =
+                CriteriaQueryBuilder<Host> queryBuilder =
                     queryItemsSql(
-                        HostResource.class,
+                        Host.class,
                         "fullyQualifiedHostName",
                         partialStringQuery,
                         cursorString,
@@ -254,11 +252,11 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
   private NameserverSearchResponse searchByIp(InetAddress inetAddress) {
     // Add 1 so we can detect truncation.
     int querySizeLimit = getStandardQuerySizeLimit();
-    RdapResultSet<HostResource> rdapResultSet;
+    RdapResultSet<Host> rdapResultSet;
     if (tm().isOfy()) {
-      Query<HostResource> query =
+      Query<Host> query =
           queryItems(
-              HostResource.class,
+              Host.class,
               "inetAddresses",
               inetAddress.getHostAddress(),
               Optional.empty(),
@@ -296,11 +294,11 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
                     javax.persistence.Query query =
                         replicaJpaTm()
                             .getEntityManager()
-                            .createNativeQuery(queryBuilder.toString(), HostResource.class)
+                            .createNativeQuery(queryBuilder.toString(), Host.class)
                             .setMaxResults(querySizeLimit);
                     parameters.build().forEach(query::setParameter);
                     @SuppressWarnings("unchecked")
-                    List<HostResource> resultList = query.getResultList();
+                    List<Host> resultList = query.getResultList();
                     return filterResourcesByVisibility(resultList, querySizeLimit);
                   });
     }
@@ -309,7 +307,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
 
   /** Output JSON for a lists of hosts contained in an {@link RdapResultSet}. */
   private NameserverSearchResponse makeSearchResults(
-      RdapResultSet<HostResource> resultSet, CursorType cursorType) {
+      RdapResultSet<Host> resultSet, CursorType cursorType) {
     return makeSearchResults(
         resultSet.resources(),
         resultSet.incompletenessWarningType(),
@@ -319,7 +317,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
 
   /** Output JSON for a list of hosts. */
   private NameserverSearchResponse makeSearchResults(
-      List<HostResource> hosts,
+      List<Host> hosts,
       IncompletenessWarningType incompletenessWarningType,
       int numHostsRetrieved,
       CursorType cursorType) {
@@ -329,7 +327,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
     NameserverSearchResponse.Builder builder =
         NameserverSearchResponse.builder().setIncompletenessWarningType(incompletenessWarningType);
     Optional<String> newCursor = Optional.empty();
-    for (HostResource host : Iterables.limit(hosts, rdapResultSetMaxSize)) {
+    for (Host host : Iterables.limit(hosts, rdapResultSetMaxSize)) {
       newCursor =
           Optional.of((cursorType == CursorType.NAME) ? host.getHostName() : host.getRepoId());
       builder

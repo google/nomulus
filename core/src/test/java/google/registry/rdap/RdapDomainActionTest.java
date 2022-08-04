@@ -20,7 +20,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistContactResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHostResource;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHost;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
@@ -31,7 +31,7 @@ import com.google.gson.JsonObject;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
@@ -85,10 +85,10 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
             "bog@cat.lol",
             clock.nowUtc().minusYears(3),
             registrarLol);
-    HostResource host1 = makeAndPersistHostResource(
-        "ns1.cat.lol", "1.2.3.4", null, clock.nowUtc().minusYears(1));
-    HostResource host2 = makeAndPersistHostResource(
-        "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
+    Host host1 = makeAndPersistHost("ns1.cat.lol", "1.2.3.4", null, clock.nowUtc().minusYears(1));
+    Host host2 =
+        makeAndPersistHost(
+            "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
     persistResource(
         makeDomain(
                 "cat.lol",
@@ -104,8 +104,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
             .build());
 
     // deleted domain in lol
-    HostResource hostDodo2 = makeAndPersistHostResource(
-        "ns2.dodo.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
+    Host hostDodo2 =
+        makeAndPersistHost(
+            "ns2.dodo.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
     Domain domainDeleted =
         persistResource(
             makeDomain(

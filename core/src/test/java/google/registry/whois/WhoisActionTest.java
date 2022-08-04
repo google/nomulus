@@ -27,7 +27,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeContactResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeHostResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarContacts;
 import static google.registry.whois.WhoisTestData.loadFile;
@@ -47,7 +46,7 @@ import com.google.common.net.InetAddresses;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Registry;
@@ -57,6 +56,7 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
+import google.registry.testing.FullFieldsTestEntityHelper;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestCacheExtension;
 import google.registry.util.Retrier;
@@ -125,8 +125,9 @@ public class WhoisActionTest {
         persistResource(makeContactResource("5372808-ERL", "Goblin Market", "lol@cat.lol")),
         persistResource(makeContactResource("5372808-IRL", "Santa Claus", "BOFH@cat.lol")),
         persistResource(makeContactResource("5372808-TRL", "The Raven", "bog@cat.lol")),
-        persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4")),
-        persistResource(makeHostResource("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
+        persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4")),
+        persistResource(
+            FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
         registrar);
   }
 
@@ -203,8 +204,9 @@ public class WhoisActionTest {
             persistResource(makeContactResource("5372808-ERL", "(◕‿◕)", "lol@cat.みんな")),
             persistResource(makeContactResource("5372808-IRL", "Santa Claus", "BOFH@cat.みんな")),
             persistResource(makeContactResource("5372808-TRL", "The Raven", "bog@cat.みんな")),
-            persistResource(makeHostResource("ns1.cat.みんな", "1.2.3.4")),
-            persistResource(makeHostResource("ns2.cat.みんな", "bad:f00d:cafe::15:beef")),
+            persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.みんな", "1.2.3.4")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeHost("ns2.cat.みんな", "bad:f00d:cafe::15:beef")),
             registrar));
     persistSimpleResources(makeRegistrarContacts(registrar));
     newWhoisAction("domain cat.みんな\r\n").run();
@@ -222,8 +224,9 @@ public class WhoisActionTest {
             persistResource(makeContactResource("5372808-ERL", "(◕‿◕)", "lol@cat.みんな")),
             persistResource(makeContactResource("5372808-IRL", "Santa Claus", "BOFH@cat.みんな")),
             persistResource(makeContactResource("5372808-TRL", "The Raven", "bog@cat.みんな")),
-            persistResource(makeHostResource("ns1.cat.みんな", "1.2.3.4")),
-            persistResource(makeHostResource("ns2.cat.みんな", "bad:f00d:cafe::15:beef")),
+            persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.みんな", "1.2.3.4")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeHost("ns2.cat.みんな", "bad:f00d:cafe::15:beef")),
             registrar));
     persistSimpleResources(makeRegistrarContacts(registrar));
     newWhoisAction("domain cat.xn--q9jyb4c\r\n").run();
@@ -262,8 +265,9 @@ public class WhoisActionTest {
             persistResource(makeContactResource("5372808-ERL", "Goblin Market", "lol@cat.lol")),
             persistResource(makeContactResource("5372808-IRL", "Santa Claus", "BOFH@cat.lol")),
             persistResource(makeContactResource("5372808-TRL", "The Raven", "bog@cat.lol")),
-            persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4")),
-            persistResource(makeHostResource("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
+            persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
             registrar));
     persistSimpleResources(makeRegistrarContacts(registrar));
     newWhoisAction("domain cat.lol\r\n").run();
@@ -280,8 +284,9 @@ public class WhoisActionTest {
                 persistResource(makeContactResource("5372808-ERL", "Peter Murphy", "lol@cat.lol")),
                 persistResource(makeContactResource("5372808-IRL", "Santa Claus", "BOFH@cat.lol")),
                 persistResource(makeContactResource("5372808-TRL", "The Raven", "bog@cat.lol")),
-                persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4")),
-                persistResource(makeHostResource("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
+                persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4")),
+                persistResource(
+                    FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
                 persistResource(
                     (registrar = makeRegistrar("example", "Example Registrar", ACTIVE))))
             .asBuilder()
@@ -309,8 +314,10 @@ public class WhoisActionTest {
                     persistResource(
                         makeContactResource("5372808-IRL", "Santa Claus", "BOFH@cat.lol")),
                     persistResource(makeContactResource("5372808-TRL", "The Raven", "bog@cat.lol")),
-                    persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4")),
-                    persistResource(makeHostResource("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
+                    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4")),
+                    persistResource(
+                        FullFieldsTestEntityHelper.makeHost(
+                            "ns2.cat.lol", "bad:f00d:cafe::15:beef")),
                     persistResource(makeRegistrar("example", "Example Registrar", ACTIVE)))
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc().minusDays(2))
@@ -327,8 +334,10 @@ public class WhoisActionTest {
                         makeContactResource("5372809-IRL", "Mr. Bob Crypto", "bob@example.lol")),
                     persistResource(
                         makeContactResource("5372809-TRL", "Dr. Pablo", "pmy@example.lol")),
-                    persistResource(makeHostResource("ns1.google.lol", "9.9.9.9")),
-                    persistResource(makeHostResource("ns2.google.lol", "4311::f143")),
+                    persistResource(
+                        FullFieldsTestEntityHelper.makeHost("ns1.google.lol", "9.9.9.9")),
+                    persistResource(
+                        FullFieldsTestEntityHelper.makeHost("ns2.google.lol", "4311::f143")),
                     persistResource(
                         (registrar = makeRegistrar("example", "Example Registrar", ACTIVE))))
                 .asBuilder()
@@ -344,7 +353,7 @@ public class WhoisActionTest {
   @Test
   void testRun_nameserverQuery_works() {
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setUrl("http://my.fake.url").build());
-    persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4"));
     newWhoisAction("nameserver ns1.cat.lol\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_nameserver.txt"));
@@ -352,7 +361,7 @@ public class WhoisActionTest {
 
   @Test
   void testRun_ipv6_displaysInCollapsedReadableFormat() {
-    persistResource(makeHostResource("ns1.cat.lol", "bad:f00d:cafe::15:beef"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "bad:f00d:cafe::15:beef"));
     newWhoisAction("nameserver ns1.cat.lol\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).contains("ns1.cat.lol");
@@ -363,7 +372,7 @@ public class WhoisActionTest {
 
   @Test
   void testRun_idnNameserver_works() {
-    persistResource(makeHostResource("ns1.cat.みんな", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.みんな", "1.2.3.4"));
     newWhoisAction("nameserver ns1.cat.みんな\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).contains("ns1.cat.xn--q9jyb4c");
@@ -372,10 +381,9 @@ public class WhoisActionTest {
 
   @Test
   void testRun_nameserver_usesCache() {
-    persistResource(makeHostResource("ns1.cat.xn--q9jyb4c", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.xn--q9jyb4c", "1.2.3.4"));
     // Populate the cache.
-    HostResource host =
-        loadByForeignKeyCached(HostResource.class, "ns1.cat.xn--q9jyb4c", clock.nowUtc()).get();
+    Host host = loadByForeignKeyCached(Host.class, "ns1.cat.xn--q9jyb4c", clock.nowUtc()).get();
     // Make a change to the persisted host that won't be seen because the cache will be hit.
     persistResource(
         host.asBuilder()
@@ -389,7 +397,7 @@ public class WhoisActionTest {
 
   @Test
   void testRun_punycodeNameserver_works() {
-    persistResource(makeHostResource("ns1.cat.みんな", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.みんな", "1.2.3.4"));
     newWhoisAction("nameserver ns1.cat.xn--q9jyb4c\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).contains("ns1.cat.xn--q9jyb4c");
@@ -398,7 +406,7 @@ public class WhoisActionTest {
 
   @Test
   void testRun_nameserverNotFound_returns200AndText() {
-    persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4"));
     newWhoisAction("nameserver ns1.cat.lulz\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_nameserver_not_found.txt"));
@@ -407,8 +415,10 @@ public class WhoisActionTest {
   @Test
   void testRun_nameserverFlaggedAsDeletedInDatastore_doesntGetLeaked() {
     persistResource(
-        makeHostResource("ns1.cat.lol", "1.2.3.4").asBuilder()
-            .setDeletionTime(clock.nowUtc().minusDays(1)).build());
+        FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4")
+            .asBuilder()
+            .setDeletionTime(clock.nowUtc().minusDays(1))
+            .build());
     newWhoisAction("nameserver ns1.cat.lol\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_nameserver_not_found.txt"));
@@ -416,7 +426,7 @@ public class WhoisActionTest {
 
   @Test
   void testRun_ipNameserverLookup_works() {
-    persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4"));
     newWhoisAction("nameserver 1.2.3.4").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).contains("ns1.cat.lol");
@@ -424,8 +434,8 @@ public class WhoisActionTest {
 
   @Test
   void testRun_ipMapsToMultipleNameservers_theyAllGetReturned() {
-    persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
-    persistResource(makeHostResource("ns2.cat.lol", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "1.2.3.4"));
     newWhoisAction("nameserver 1.2.3.4").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).contains("ns1.cat.lol");
@@ -434,9 +444,8 @@ public class WhoisActionTest {
 
   @Test
   void testRun_ipMapsToMultipleNameserverInDifferentTlds_showsThemAll() {
-    persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
-    persistResource(
-        makeHostResource("ns1.cat.xn--q9jyb4c", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.xn--q9jyb4c", "1.2.3.4"));
     newWhoisAction("nameserver 1.2.3.4").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).contains("ns1.cat.lol");
@@ -453,7 +462,7 @@ public class WhoisActionTest {
   @Test
   void testRun_ipMapsToNameserverUnderNonAuthoritativeTld_notFound() {
     assertThat(getTlds()).doesNotContain("com");
-    persistResource(makeHostResource("ns1.google.com", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.google.com", "1.2.3.4"));
     newWhoisAction("nameserver 1.2.3.4").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_ip_not_found.txt"));
@@ -462,7 +471,7 @@ public class WhoisActionTest {
   @Test
   void testRun_nameserverUnderNonAuthoritativeTld_notFound() {
     assertThat(getTlds()).doesNotContain("com");
-    persistResource(makeHostResource("ns1.google.com", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.google.com", "1.2.3.4"));
     newWhoisAction("nameserver ns1.google.com").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_nameserver_not_found.txt"));
@@ -473,7 +482,7 @@ public class WhoisActionTest {
   @Test
   void testRun_nameserverInTestTld_notFound() {
     persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
-    persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4"));
     newWhoisAction("nameserver ns1.cat.lol").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_nameserver_not_found.txt"));
@@ -540,8 +549,9 @@ public class WhoisActionTest {
             persistResource(makeContactResource("5372808-ERL", "(◕‿◕)", "lol@cat.1.test")),
             persistResource(makeContactResource("5372808-IRL", "Santa Claus", "BOFH@cat.1.test")),
             persistResource(makeContactResource("5372808-TRL", "The Raven", "bog@cat.1.test")),
-            persistResource(makeHostResource("ns1.cat.1.test", "1.2.3.4")),
-            persistResource(makeHostResource("ns2.cat.1.test", "bad:f00d:cafe::15:beef")),
+            persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.1.test", "1.2.3.4")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeHost("ns2.cat.1.test", "bad:f00d:cafe::15:beef")),
             registrar));
     persistSimpleResources(makeRegistrarContacts(registrar));
 
@@ -552,7 +562,7 @@ public class WhoisActionTest {
 
   @Test
   void testRun_hostnameWithMultilevelTld_isStillConsideredHostname() {
-    persistResource(makeHostResource("ns1.cat.1.test", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.1.test", "1.2.3.4"));
     newWhoisAction("nameserver ns1.cat.1.test\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).contains("ns1.cat.1.test");
@@ -561,8 +571,8 @@ public class WhoisActionTest {
 
   @Test
   void testRun_metricsLoggedForSuccessfulCommand() {
-    persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
-    persistResource(makeHostResource("ns2.cat.lol", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "1.2.3.4"));
     WhoisAction action = newWhoisAction("nameserver 1.2.3.4");
     action.whoisMetrics = mock(WhoisMetrics.class);
     action.run();
@@ -591,7 +601,7 @@ public class WhoisActionTest {
 
   @Test
   void testRun_metricsLoggedForInternalServerError() throws Exception {
-    persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4"));
     WhoisAction action = newWhoisAction("ns1.cat.lol");
     action.whoisReader = mock(WhoisReader.class);
     when(action.whoisReader.readCommand(any(Reader.class), eq(false), any(DateTime.class)))
@@ -611,7 +621,7 @@ public class WhoisActionTest {
   @Test
   void testRun_retryOnTransientFailure() throws Exception {
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setUrl("http://my.fake.url").build());
-    persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
+    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4"));
     WhoisAction action = newWhoisAction("ns1.cat.lol");
     WhoisResponse expectedResponse =
         action

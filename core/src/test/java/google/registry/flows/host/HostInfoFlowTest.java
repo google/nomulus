@@ -35,7 +35,7 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.testing.DatabaseHelper;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -43,7 +43,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostInfoFlow}. */
-class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> {
+class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, Host> {
 
   @BeforeEach
   void initHostTest() {
@@ -51,9 +51,9 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
     setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"));
   }
 
-  private HostResource persistHostResource() throws Exception {
+  private Host persistHost() throws Exception {
     return persistResource(
-        new HostResource.Builder()
+        new Host.Builder()
             .setHostName(getUniqueIdFromCommand())
             .setRepoId("1FF-FOOBAR")
             .setPersistedCurrentSponsorRegistrarId("my sponsor")
@@ -81,7 +81,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
 
   @Test
   void testSuccess() throws Exception {
-    persistHostResource();
+    persistHost();
     assertTransactionalFlow(false);
     // Check that the persisted host info was returned.
     runFlowAssertResponse(
@@ -94,11 +94,11 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
 
   @Test
   void testSuccess_linked() throws Exception {
-    persistHostResource();
+    persistHost();
     persistResource(
         DatabaseHelper.newDomain("example.foobar")
             .asBuilder()
-            .addNameserver(persistHostResource().createVKey())
+            .addNameserver(persistHost().createVKey())
             .build());
     assertTransactionalFlow(false);
     // Check that the persisted host info was returned.
@@ -121,7 +121,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
                 .setLastTransferTime(domainTransferTime)
                 .setPersistedCurrentSponsorRegistrarId("superclientid")
                 .build());
-    HostResource firstHost = persistHostResource();
+    Host firstHost = persistHost();
     persistResource(
         firstHost
             .asBuilder()
@@ -166,8 +166,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
 
   @Test
   void testFailure_existedButWasDeleted() throws Exception {
-    persistResource(
-        persistHostResource().asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(persistHost().asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
@@ -197,7 +196,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
 
   @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
-    persistHostResource();
+    persistHost();
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-host-info");
   }

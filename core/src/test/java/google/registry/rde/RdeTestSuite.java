@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
   DomainToXjcConverterTest.class,
   GhostrydeGpgIntegrationTest.class,
   GhostrydeTest.class,
-  HostResourceToXjcConverterTest.class,
+  HostToXjcConverterTest.class,
   RdeStagingActionTest.class,
   RdeUploadActionTest.class,
   RdeReportActionTest.class,

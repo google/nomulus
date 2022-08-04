@@ -39,7 +39,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.TransferData;
@@ -73,7 +73,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
 
   protected ContactResource contact;
   protected Domain domain;
-  HostResource subordinateHost;
+  Host subordinateHost;
   private DomainHistory historyEntryDomainCreate;
 
   DomainTransferFlowTestCase() {
@@ -111,7 +111,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
             REGISTRATION_EXPIRATION_TIME);
     subordinateHost =
         persistResource(
-            new HostResource.Builder()
+            new Host.Builder()
                 .setRepoId("2-".concat(Ascii.toUpperCase(tld)))
                 .setHostName("ns1." + label + "." + tld)
                 .setPersistedCurrentSponsorRegistrarId("TheRegistrar")

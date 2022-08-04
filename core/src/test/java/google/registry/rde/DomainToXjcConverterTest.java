@@ -47,7 +47,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.rde.RdeMode;
@@ -275,9 +275,8 @@ public class DomainToXjcConverterTest {
             .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
             .setNameservers(
                 ImmutableSet.of(
-                    makeHostResource(clock, "3-Q9JYB4C", "bird.or.devil.みんな", "1.2.3.4")
-                        .createVKey(),
-                    makeHostResource(clock, "4-Q9JYB4C", "ns2.cat.みんな", "bad:f00d:cafe::15:beef")
+                    makeHost(clock, "3-Q9JYB4C", "bird.or.devil.みんな", "1.2.3.4").createVKey(),
+                    makeHost(clock, "4-Q9JYB4C", "ns2.cat.みんな", "bad:f00d:cafe::15:beef")
                         .createVKey()))
             .setRegistrant(
                 makeContactResource(
@@ -412,11 +411,10 @@ public class DomainToXjcConverterTest {
             .build());
   }
 
-  private static HostResource makeHostResource(
-      FakeClock clock, String repoId, String fqhn, String ip) {
+  private static Host makeHost(FakeClock clock, String repoId, String fqhn, String ip) {
     clock.advanceOneMilli();
     return persistEppResource(
-        new HostResource.Builder()
+        new Host.Builder()
             .setCreationRegistrarId("TheRegistrar")
             .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
             .setPersistedCurrentSponsorRegistrarId("TheRegistrar")

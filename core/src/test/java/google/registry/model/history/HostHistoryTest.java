@@ -19,14 +19,14 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
+import static google.registry.testing.DatabaseHelper.newHostWithRoid;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import google.registry.model.EntityTestCase;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.Test;
@@ -40,9 +40,9 @@ public class HostHistoryTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
-    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    Host host = newHostWithRoid("ns1.example.com", "host1");
     insertInDb(host);
-    HostResource hostFromDb = loadByEntity(host);
+    Host hostFromDb = loadByEntity(host);
     HostHistory hostHistory = createHostHistory(hostFromDb);
     insertInDb(hostHistory);
     jpaTm()
@@ -56,9 +56,9 @@ public class HostHistoryTest extends EntityTestCase {
 
   @Test
   void testSerializable() {
-    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    Host host = newHostWithRoid("ns1.example.com", "host1");
     insertInDb(host);
-    HostResource hostFromDb = loadByEntity(host);
+    Host hostFromDb = loadByEntity(host);
     HostHistory hostHistory = createHostHistory(hostFromDb);
     insertInDb(hostHistory);
     HostHistory fromDatabase = jpaTm().transact(() -> jpaTm().loadByKey(hostHistory.createVKey()));
@@ -67,10 +67,10 @@ public class HostHistoryTest extends EntityTestCase {
 
   @Test
   void testLegacyPersistence_nullHostBase() {
-    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    Host host = newHostWithRoid("ns1.example.com", "host1");
     insertInDb(host);
 
-    HostResource hostFromDb = loadByEntity(host);
+    Host hostFromDb = loadByEntity(host);
     HostHistory hostHistory = createHostHistory(hostFromDb).asBuilder().setHost(null).build();
     insertInDb(hostHistory);
 

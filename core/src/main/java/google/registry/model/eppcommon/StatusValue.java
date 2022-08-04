@@ -24,8 +24,8 @@ import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostBase;
-import google.registry.model.host.HostResource;
 import google.registry.model.translators.EnumToAttributeAdapter.EppEnum;
 import google.registry.model.translators.StatusValueAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -135,7 +135,7 @@ public enum StatusValue implements EppEnum {
         DomainBase.class,
         Domain.class,
         HostBase.class,
-        HostResource.class),
+        Host.class),
     NONE,
     DOMAINS(DomainBase.class, Domain.class);
 

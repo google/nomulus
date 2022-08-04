@@ -20,7 +20,7 @@ import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.secdns.DelegationSignerData;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import java.util.Set;
@@ -89,7 +89,7 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
       })
   @Access(AccessType.PROPERTY)
   @Column(name = "host_repo_id")
-  public Set<VKey<HostResource>> getNsHosts() {
+  public Set<VKey<Host>> getNsHosts() {
     return super.nsHosts;
   }
 

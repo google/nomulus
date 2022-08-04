@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.net.InetAddresses;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -32,15 +32,15 @@ import org.joda.time.DateTime;
 final class NameserverWhoisResponse extends WhoisResponseImpl {
 
   /** Nameserver(s) which were the target of this WHOIS command. */
-  private final ImmutableList<HostResource> hosts;
+  private final ImmutableList<Host> hosts;
 
   /** Creates new WHOIS nameserver response on the given host. */
-  NameserverWhoisResponse(HostResource host, DateTime timestamp) {
+  NameserverWhoisResponse(Host host, DateTime timestamp) {
     this(ImmutableList.of(checkNotNull(host, "host")), timestamp);
   }
 
   /** Creates new WHOIS nameserver response on the given list of hosts. */
-  NameserverWhoisResponse(ImmutableList<HostResource> hosts, DateTime timestamp) {
+  NameserverWhoisResponse(ImmutableList<Host> hosts, DateTime timestamp) {
     super(timestamp);
     this.hosts = checkNotNull(hosts, "hosts");
   }
@@ -48,9 +48,9 @@ final class NameserverWhoisResponse extends WhoisResponseImpl {
   @Override
   public WhoisResponseResults getResponse(boolean preferUnicode, String disclaimer) {
     // If we have subordinate hosts, load their registrar ids in a single transaction up-front.
-    ImmutableList<HostResource> subordinateHosts =
-        hosts.stream().filter(HostResource::isSubordinate).collect(toImmutableList());
-    ImmutableMap<HostResource, String> hostRegistrars =
+    ImmutableList<Host> subordinateHosts =
+        hosts.stream().filter(Host::isSubordinate).collect(toImmutableList());
+    ImmutableMap<Host, String> hostRegistrars =
         subordinateHosts.isEmpty()
             ? ImmutableMap.of()
             : tm().transact(
@@ -64,7 +64,7 @@ final class NameserverWhoisResponse extends WhoisResponseImpl {
 
     BasicEmitter emitter = new BasicEmitter();
     for (int i = 0; i < hosts.size(); i++) {
-      HostResource host = hosts.get(i);
+      Host host = hosts.get(i);
       String registrarId =
           host.isSubordinate()
               ? hostRegistrars.get(host)

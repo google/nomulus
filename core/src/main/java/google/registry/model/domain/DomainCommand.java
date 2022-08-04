@@ -38,7 +38,7 @@ import google.registry.model.eppinput.ResourceCommand.ResourceCheck;
 import google.registry.model.eppinput.ResourceCommand.ResourceCreateOrChange;
 import google.registry.model.eppinput.ResourceCommand.ResourceUpdate;
 import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.persistence.VKey;
 import java.util.Set;
@@ -126,7 +126,7 @@ public class DomainCommand {
     Set<String> nameserverFullyQualifiedHostNames;
 
     /** Resolved keys to hosts that are the nameservers for the domain. */
-    @XmlTransient Set<VKey<HostResource>> nameservers;
+    @XmlTransient Set<VKey<Host>> nameservers;
 
     /** Foreign keyed associated contacts for the domain (other than registrant). */
     @XmlElement(name = "contact")
@@ -156,7 +156,7 @@ public class DomainCommand {
       return nullToEmptyImmutableCopy(nameserverFullyQualifiedHostNames);
     }
 
-    public ImmutableSet<VKey<HostResource>> getNameservers() {
+    public ImmutableSet<VKey<Host>> getNameservers() {
       return nullToEmptyImmutableCopy(nameservers);
     }
 
@@ -349,7 +349,7 @@ public class DomainCommand {
       Set<String> nameserverFullyQualifiedHostNames;
 
       /** Resolved keys to hosts that are the nameservers for the domain. */
-      @XmlTransient Set<VKey<HostResource>> nameservers;
+      @XmlTransient Set<VKey<Host>> nameservers;
 
       /** Foreign keyed associated contacts for the domain (other than registrant). */
       @XmlElement(name = "contact")
@@ -363,7 +363,7 @@ public class DomainCommand {
         return nullSafeImmutableCopy(nameserverFullyQualifiedHostNames);
       }
 
-      public ImmutableSet<VKey<HostResource>> getNameservers() {
+      public ImmutableSet<VKey<Host>> getNameservers() {
         return nullToEmptyImmutableCopy(nameservers);
       }
 
@@ -413,13 +413,13 @@ public class DomainCommand {
     }
   }
 
-  private static Set<VKey<HostResource>> linkHosts(
-      Set<String> fullyQualifiedHostNames, DateTime now) throws InvalidReferencesException {
+  private static Set<VKey<Host>> linkHosts(Set<String> fullyQualifiedHostNames, DateTime now)
+      throws InvalidReferencesException {
     if (fullyQualifiedHostNames == null) {
       return null;
     }
     return ImmutableSet.copyOf(
-        loadByForeignKeysCached(fullyQualifiedHostNames, HostResource.class, now).values());
+        loadByForeignKeysCached(fullyQualifiedHostNames, Host.class, now).values());
   }
 
   private static Set<DesignatedContact> linkContacts(

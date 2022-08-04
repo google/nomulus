@@ -49,7 +49,7 @@ import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -80,10 +80,10 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   @Entity
   public static class ForeignKeyDomainIndex extends ForeignKeyIndex<Domain> {}
 
-  /** The {@link ForeignKeyIndex} type for {@link HostResource} entities. */
+  /** The {@link ForeignKeyIndex} type for {@link Host} entities. */
   @ReportedOn
   @Entity
-  public static class ForeignKeyHostIndex extends ForeignKeyIndex<HostResource> {}
+  public static class ForeignKeyHostIndex extends ForeignKeyIndex<Host> {}
 
   private static final ImmutableBiMap<
           Class<? extends EppResource>, Class<? extends ForeignKeyIndex<?>>>
@@ -91,14 +91,14 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
           ImmutableBiMap.of(
               ContactResource.class, ForeignKeyContactIndex.class,
               Domain.class, ForeignKeyDomainIndex.class,
-              HostResource.class, ForeignKeyHostIndex.class);
+              Host.class, ForeignKeyHostIndex.class);
 
   private static final ImmutableMap<Class<? extends EppResource>, String>
       RESOURCE_CLASS_TO_FKI_PROPERTY =
           ImmutableMap.of(
               ContactResource.class, "contactId",
               Domain.class, "fullyQualifiedDomainName",
-              HostResource.class, "fullyQualifiedHostName");
+              Host.class, "fullyQualifiedHostName");
 
   @Id String foreignKey;
 
@@ -106,7 +106,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    * The deletion time of this {@link ForeignKeyIndex}.
    *
    * <p>This will generally be equal to the deletion time of {@link #topReference}. However, in the
-   * case of a {@link HostResource} that was renamed, this field will hold the time of the rename.
+   * case of a {@link Host} that was renamed, this field will hold the time of the rename.
    */
   @Index DateTime deletionTime;
 
