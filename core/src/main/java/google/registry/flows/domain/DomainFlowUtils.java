@@ -591,7 +591,10 @@ public class DomainFlowUtils {
    * <p>Returns the new autorenew recurring billing event.
    */
   public static Recurring updateAutorenewRecurrenceEndTime(
-      Domain domain, Recurring existingRecurring, DateTime newEndTime) {
+      Domain domain,
+      Recurring existingRecurring,
+      DateTime newEndTime,
+      @Nullable DomainHistoryId historyId) {
     Optional<PollMessage.Autorenew> autorenewPollMessage =
         tm().loadByKeyIfPresent(domain.getAutorenewPollMessage());
 
@@ -599,20 +602,25 @@ public class DomainFlowUtils {
     // create a new one at the same id. This can happen if a transfer was requested on a domain
     // where all autorenew poll messages had already been delivered (this would cause the poll
     // message to be deleted), and then subsequently the transfer was canceled, rejected, or deleted
-    // (which would cause the poll message to be recreated here).
-    PollMessage.Autorenew updatedAutorenewPollMessage =
-        autorenewPollMessage.isPresent()
-            ? autorenewPollMessage.get().asBuilder().setAutorenewEndTime(newEndTime).build()
-            : newAutorenewPollMessage(domain)
-                .setId((Long) domain.getAutorenewPollMessage().getSqlKey())
-                .setAutorenewEndTime(newEndTime)
-                .setDomainHistoryId(
-                    new DomainHistoryId(
-                        domain.getRepoId(), domain.getAutorenewPollMessageHistoryId()))
-                .build();
+    // (which would cause the poll message to be recreated here). In the latter case, the history id
+    // of the event that created the new poll message will also be used.
+    PollMessage.Autorenew updatedAutorenewPollMessage;
+    if (autorenewPollMessage.isPresent()) {
+      updatedAutorenewPollMessage =
+          autorenewPollMessage.get().asBuilder().setAutorenewEndTime(newEndTime).build();
+    } else {
+      checkNotNull(
+          historyId, "Cannot create a new autorenew poll message without a domain history id");
+      updatedAutorenewPollMessage =
+          newAutorenewPollMessage(domain)
+              .setId((Long) domain.getAutorenewPollMessage().getSqlKey())
+              .setAutorenewEndTime(newEndTime)
+              .setDomainHistoryId(historyId)
+              .build();
+    }
 
     // If the resultant autorenew poll message would have no poll messages to deliver, then just
-    // delete it. Otherwise save it with the new end time.
+    // delete it. Otherwise, save it with the new end time.
     if (isAtOrAfter(updatedAutorenewPollMessage.getEventTime(), newEndTime)) {
       autorenewPollMessage.ifPresent(autorenew -> tm().delete(autorenew));
     } else {

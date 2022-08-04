@@ -162,7 +162,7 @@ class DomainTransferCancelFlowTest
             .setEventTime(originalExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
-            .setHistoryEntry(getOnlyHistoryEntryOfType(domain, DOMAIN_CREATE))
+            .setHistoryEntry(getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL))
             .build(),
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")

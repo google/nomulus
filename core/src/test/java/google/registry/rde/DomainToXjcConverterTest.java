@@ -334,8 +334,7 @@ public class DomainToXjcConverterTest {
                             .setMsg("Domain was auto-renewed.")
                             .setHistoryEntry(domainHistory)
                             .build())
-                    .createVKey(),
-                domainHistory.getId())
+                    .createVKey())
             .setTransferData(
                 new DomainTransferData.Builder()
                     .setGainingRegistrarId("NewRegistrar")

@@ -77,10 +77,10 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3, pm4)).values())
         .containsExactly(futurePollMessage);
     assertInStdout(
-        "1-FSDGS-TLD-2406-624-2013,2013-05-01T22:33:44.000Z,ninelives",
-        "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar",
-        "1-FSDGS-TLD-2406-791-2015,2015-01-08T22:33:44.000Z,ginger");
-    assertNotInStdout("1-FSDGS-TLD-2406-123-2015,2015-09-01T22:33:44.000Z,notme");
+        "624-2013,2013-05-01T22:33:44.000Z,ninelives",
+        "316-2014,2014-01-01T22:33:44.000Z,foobar",
+        "791-2015,2015-01-08T22:33:44.000Z,ginger");
+    assertNotInStdout("123-2015,2015-09-01T22:33:44.000Z,notme");
   }
 
   @Test
@@ -105,9 +105,9 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3)).values())
         .containsExactly(resaved);
     assertInStdout(
-        "1-FSDGS-TLD-2406-625-2011,2011-04-15T22:33:44.000Z,autorenew",
-        "1-FSDGS-TLD-2406-624-2013,2013-05-01T22:33:44.000Z,ninelives",
-        "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar");
+        "625-2011,2011-04-15T22:33:44.000Z,autorenew",
+        "624-2013,2013-05-01T22:33:44.000Z,ninelives",
+        "316-2014,2014-01-01T22:33:44.000Z,foobar");
   }
 
   @Test
@@ -130,9 +130,9 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     runCommand("-c", "TheRegistrar");
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3))).isEmpty();
     assertInStdout(
-        "1-FSDGS-TLD-2406-625-2011,2011-04-15T22:33:44.000Z,autorenew",
-        "1-FSDGS-TLD-2406-624-2013,2013-05-01T22:33:44.000Z,ninelives",
-        "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar");
+        "625-2011,2011-04-15T22:33:44.000Z,autorenew",
+        "624-2013,2013-05-01T22:33:44.000Z,ninelives",
+        "316-2014,2014-01-01T22:33:44.000Z,foobar");
   }
 
   @Test

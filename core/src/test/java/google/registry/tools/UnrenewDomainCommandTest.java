@@ -155,7 +155,6 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
                 .build()));
 
     // Check that fields on domain were updated correctly.
-    assertThat(domain.getAutorenewPollMessageHistoryId()).isEqualTo(synthetic.getId());
     assertThat(domain.getRegistrationExpirationTime()).isEqualTo(newExpirationTime);
     assertThat(domain.getLastEppUpdateTime()).isEqualTo(unrenewTime);
     assertThat(domain.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");

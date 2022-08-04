@@ -57,6 +57,7 @@ import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Transfer;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
@@ -260,7 +261,11 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     // the poll message if it has no events left. Note that if the automatic transfer succeeds, then
     // cloneProjectedAtTime() will replace these old autorenew entities with the server approve ones
     // that we've created in this flow and stored in pendingTransferData.
-    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, automaticTransferTime);
+    updateAutorenewRecurrenceEndTime(
+        existingDomain,
+        existingRecurring,
+        automaticTransferTime,
+        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()));
     Domain newDomain =
         existingDomain
             .asBuilder()

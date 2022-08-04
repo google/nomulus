@@ -179,8 +179,7 @@ class DeleteExpiredDomainsActionTest {
                 .asBuilder()
                 .setAutorenewEndTime(Optional.of(clock.nowUtc().minusDays(10)))
                 .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
-                .setAutorenewPollMessage(
-                    autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
+                .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                 .build());
 
     return pendingExpirationDomain;

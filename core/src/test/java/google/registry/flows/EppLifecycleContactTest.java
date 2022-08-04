@@ -95,7 +95,7 @@ class EppLifecycleContactTest extends EppTestCase {
         .hasCommandName("PollRequest")
         .and()
         .hasStatus(SUCCESS_WITH_ACK_MESSAGE);
-    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "2-1-ROID-3-6-2000"))
+    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "6-2000"))
         .atTime("2000-06-08T22:02:00Z")
         .hasResponse("poll_ack_response_empty.xml");
     assertThat(getRecordedEppMetric())
