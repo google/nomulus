@@ -42,6 +42,7 @@ public class RegistryConfigSettings {
   public RegistryTool registryTool;
   public SslCertificateValidation sslCertificateValidation;
   public ContactHistory contactHistory;
+  public DnsUpdate dnsUpdate;
 
   /** Configuration options that apply to the entire App Engine project. */
   public static class AppEngine {
@@ -245,5 +246,13 @@ public class RegistryConfigSettings {
   public static class ContactHistory {
     public int minMonthsBeforeWipeOut;
     public int wipeOutQueryBatchSize;
+  }
+
+  /** Configuration for dns update. */
+  public static class DnsUpdate {
+    public String dnsUpdateFailEmailSubjectText;
+    public String dnsUpdateFailEmailBodyText;
+    public String dnsUpdateFailRegistryName;
+    public String registrySupportEmail;
   }
 }
