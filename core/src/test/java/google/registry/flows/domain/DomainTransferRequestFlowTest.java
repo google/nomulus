@@ -28,11 +28,13 @@ import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsEqual;
+import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatabaseHelper.assertPollMessagesEqual;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.getOnlyPollMessage;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadByKeys;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
@@ -83,6 +85,7 @@ import google.registry.flows.exceptions.TransferPeriodMustBeOneYearException;
 import google.registry.flows.exceptions.TransferPeriodZeroAndFeeTransferExtensionException;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
@@ -101,11 +104,14 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -1200,6 +1206,117 @@ class DomainTransferRequestFlowTest
     persistResource(loadRegistrar("NewRegistrar").asBuilder().setBlockPremiumNames(true).build());
     // We don't verify the results; just check that the flow doesn't fail.
     runTest("domain_transfer_request_fee.xml", UserPrivileges.SUPERUSER, RICH_DOMAIN_MAP);
+  }
+
+  @Test
+  void testSuccess_nonPremiumRenewalPrice_isReflectedInTransferCostAndCarriesOver()
+      throws Exception {
+    setupDomain("example", "tld");
+    PremiumList pl =
+        PremiumListDao.save(
+            new PremiumList.Builder()
+                .setCurrency(USD)
+                .setName("tld")
+                .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
+                .build());
+    persistResource(Registry.get("tld").asBuilder().setPremiumList(pl).build());
+    domain = loadByEntity(domain);
+    persistResource(
+        loadByKey(domain.getAutorenewBillingEvent())
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
+            .build());
+    DateTime now = clock.nowUtc();
+
+    // This ensures that the transfer has non-premium cost, as otherwise, the fee extension would be
+    // required to ack the premium price.
+    setEppInput("domain_transfer_request.xml");
+    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
+    runFlowAssertResponse(loadFile("domain_transfer_request_response.xml"));
+    domain = loadByEntity(domain);
+
+    DomainHistory requestHistory =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REQUEST, DomainHistory.class);
+    // Check that the server approve billing recurrence (which will reify after 5 days if the
+    // transfer is not explicitly acked) maintains the non-premium behavior.
+    assertBillingEventsForResource(
+        domain,
+        new BillingEvent.OneTime.Builder()
+            .setBillingTime(now.plusDays(10)) // 5 day pending transfer + 5 day billing grace period
+            .setEventTime(now.plusDays(5))
+            .setRegistrarId("NewRegistrar")
+            .setCost(Money.of(USD, new BigDecimal("11.00")))
+            .setDomainHistory(requestHistory)
+            .setReason(Reason.TRANSFER)
+            .setPeriodYears(1)
+            .setTargetId("example.tld")
+            .build(),
+        getGainingClientAutorenewEvent()
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
+            .setDomainHistory(requestHistory)
+            .build(),
+        getLosingClientAutorenewEvent()
+            .asBuilder()
+            .setRecurrenceEndTime(now.plusDays(5))
+            .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
+            .build());
+  }
+
+  @Test
+  void testSuccess_specifiedRenewalPrice_isReflectedInTransferCostAndCarriesOver()
+      throws Exception {
+    setupDomain("example", "tld");
+    PremiumList pl =
+        PremiumListDao.save(
+            new PremiumList.Builder()
+                .setCurrency(USD)
+                .setName("tld")
+                .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
+                .build());
+    persistResource(Registry.get("tld").asBuilder().setPremiumList(pl).build());
+    domain = loadByEntity(domain);
+    persistResource(
+        loadByKey(domain.getAutorenewBillingEvent())
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, new BigDecimal("18.79")))
+            .build());
+    DateTime now = clock.nowUtc();
+
+    setEppInput("domain_transfer_request.xml");
+    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
+    runFlowAssertResponse(loadFile("domain_transfer_request_response.xml"));
+    domain = loadByEntity(domain);
+
+    DomainHistory requestHistory =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REQUEST, DomainHistory.class);
+    // Check that the server approve billing recurrence (which will reify after 5 days if the
+    // transfer is not explicitly acked) maintains the non-premium behavior.
+    assertBillingEventsForResource(
+        domain,
+        new BillingEvent.OneTime.Builder()
+            .setBillingTime(now.plusDays(10)) // 5 day pending transfer + 5 day billing grace period
+            .setEventTime(now.plusDays(5))
+            .setRegistrarId("NewRegistrar")
+            .setCost(Money.of(USD, new BigDecimal("18.79")))
+            .setDomainHistory(requestHistory)
+            .setReason(Reason.TRANSFER)
+            .setPeriodYears(1)
+            .setTargetId("example.tld")
+            .build(),
+        getGainingClientAutorenewEvent()
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, new BigDecimal("18.79")))
+            .setDomainHistory(requestHistory)
+            .build(),
+        getLosingClientAutorenewEvent()
+            .asBuilder()
+            .setRecurrenceEndTime(now.plusDays(5))
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, new BigDecimal("18.79")))
+            .build());
   }
 
   private void runWrongCurrencyTest(Map<String, String> substitutions) {

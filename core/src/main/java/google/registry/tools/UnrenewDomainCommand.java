@@ -32,6 +32,7 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
@@ -215,7 +216,8 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
             .setHistoryEntry(domainHistory)
             .build();
     // End the old autorenew billing event and poll message now.
-    updateAutorenewRecurrenceEndTime(domain, now);
+    Recurring existingRecurring = tm().loadByKey(domain.getAutorenewBillingEvent());
+    updateAutorenewRecurrenceEndTime(domain, existingRecurring, now);
     Domain newDomain =
         domain
             .asBuilder()

@@ -583,7 +583,8 @@ public class DomainFlowUtils {
    *
    * <p>Returns the new autorenew recurring billing event.
    */
-  public static Recurring updateAutorenewRecurrenceEndTime(Domain domain, DateTime newEndTime) {
+  public static Recurring updateAutorenewRecurrenceEndTime(
+      Domain domain, Recurring existingRecurring, DateTime newEndTime) {
     Optional<PollMessage.Autorenew> autorenewPollMessage =
         tm().loadByKeyIfPresent(domain.getAutorenewPollMessage());
 
@@ -611,13 +612,9 @@ public class DomainFlowUtils {
       tm().put(updatedAutorenewPollMessage);
     }
 
-    Recurring recurring =
-        tm().loadByKey(domain.getAutorenewBillingEvent())
-            .asBuilder()
-            .setRecurrenceEndTime(newEndTime)
-            .build();
-    tm().put(recurring);
-    return recurring;
+    Recurring newRecurring = existingRecurring.asBuilder().setRecurrenceEndTime(newEndTime).build();
+    tm().put(newRecurring);
+    return newRecurring;
   }
 
   /**
@@ -708,7 +705,10 @@ public class DomainFlowUtils {
           throw new TransfersAreAlwaysForOneYearException();
         }
         builder.setAvailIfSupported(true);
-        fees = pricingLogic.getTransferPrice(registry, domainNameString, now).getFees();
+        fees =
+            pricingLogic
+                .getTransferPrice(registry, domainNameString, now, recurringBillingEvent)
+                .getFees();
         break;
       case UPDATE:
         builder.setAvailIfSupported(true);
@@ -767,7 +767,7 @@ public class DomainFlowUtils {
       final Optional<? extends FeeTransformCommandExtension> feeCommand,
       FeesAndCredits feesAndCredits)
       throws EppException {
-    if (isDomainPremium(domainName, priceTime) && !feeCommand.isPresent()) {
+    if (feesAndCredits.hasAnyPremiumFees() && !feeCommand.isPresent()) {
       throw new FeesRequiredForPremiumNameException();
     }
     validateFeesAckedIfPresent(feeCommand, feesAndCredits);

@@ -52,6 +52,7 @@ import google.registry.flows.exceptions.InvalidTransferPeriodValueException;
 import google.registry.flows.exceptions.ObjectAlreadySponsoredException;
 import google.registry.flows.exceptions.TransferPeriodMustBeOneYearException;
 import google.registry.flows.exceptions.TransferPeriodZeroAndFeeTransferExtensionException;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Transfer;
 import google.registry.model.domain.DomainHistory;
@@ -168,10 +169,12 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
       throw new TransferPeriodZeroAndFeeTransferExtensionException();
     }
     // If the period is zero, then there is no fee for the transfer.
+    Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     Optional<FeesAndCredits> feesAndCredits =
         (period.getValue() == 0)
             ? Optional.empty()
-            : Optional.of(pricingLogic.getTransferPrice(registry, targetId, now));
+            : Optional.of(
+                pricingLogic.getTransferPrice(registry, targetId, now, existingRecurring));
     if (feesAndCredits.isPresent()) {
       validateFeeChallenge(targetId, now, feeTransfer, feesAndCredits.get());
     }
@@ -201,6 +204,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             serverApproveNewExpirationTime,
             domainHistoryKey,
             existingDomain,
+            existingRecurring,
             trid,
             gainingClientId,
             feesAndCredits.map(FeesAndCredits::getTotalCost),
@@ -230,7 +234,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     // the poll message if it has no events left. Note that if the automatic transfer succeeds, then
     // cloneProjectedAtTime() will replace these old autorenew entities with the server approve ones
     // that we've created in this flow and stored in pendingTransferData.
-    updateAutorenewRecurrenceEndTime(existingDomain, automaticTransferTime);
+    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, automaticTransferTime);
     Domain newDomain =
         existingDomain
             .asBuilder()
