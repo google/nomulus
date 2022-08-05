@@ -964,7 +964,7 @@ public class Registrar extends ImmutableObject
   }
 
   /** Verifies that the email address in question is not null and has a valid format. */
-  static String checkValidEmail(String email) {
+  public static String checkValidEmail(String email) {
     checkNotNull(email, "Provided email was null");
     try {
       InternetAddress internetAddress = new InternetAddress(email, true);
