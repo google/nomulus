@@ -20,7 +20,10 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.CacheUtils;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import java.util.Map;
@@ -81,8 +84,25 @@ public class ClaimsList extends ImmutableObject {
    * <p>This field requires special treatment since we want to lazy load it. We have to remove it
    * from the immutability contract so we can modify it after construction and we have to handle the
    * database processing on our own so we can detach it after load.
+   *
+   * <p>Unlike the cache below, this is guaranteed to contain all mappings from labels to claim keys
+   * if it is not null.
    */
   @Insignificant @Transient ImmutableMap<String, String> labelsToKeys;
+
+  /**
+   * A not-necessarily-complete cache of labels to claim keys.
+   *
+   * <p>At any point in time this might or might not contain none, some, or all of the mappings from
+   * labels to claim keys. Exists so that repeated calls to {@link #getClaimKey(String)} can be
+   * quick.
+   *
+   * <p>Note: this cache has no expiration because while claims list revisions can be added over
+   * time, each instance of a claims list is immutable.
+   */
+  @Insignificant @Transient @VisibleForTesting
+  final LoadingCache<String, Optional<String>> claimKeyCache =
+      CacheUtils.newCacheBuilder().build(this::getClaimKeyUncached);
 
   @PreRemove
   void preRemove() {
@@ -139,18 +159,7 @@ public class ClaimsList extends ImmutableObject {
    * entries and cache them locally.
    */
   public Optional<String> getClaimKey(String label) {
-    if (labelsToKeys != null) {
-      return Optional.ofNullable(labelsToKeys.get(label));
-    }
-    return jpaTm()
-        .transact(
-            () ->
-                jpaTm()
-                    .createQueryComposer(ClaimsEntry.class)
-                    .where("revisionId", EQ, revisionId)
-                    .where("domainLabel", EQ, label)
-                    .first()
-                    .map(ClaimsEntry::getClaimKey));
+    return claimKeyCache.get(label);
   }
 
   /**
@@ -190,6 +199,27 @@ public class ClaimsList extends ImmutableObject {
           .count();
     }
     return labelsToKeys.size();
+  }
+
+  /**
+   * Returns the claim key for a given domain if there is one, empty otherwise.
+   *
+   * <p>This attempts to load from the base {@link #labelsToKeys} if possible, otherwise it will
+   * query the database for the entry requested.
+   */
+  private Optional<String> getClaimKeyUncached(String label) {
+    if (labelsToKeys != null) {
+      return Optional.ofNullable(labelsToKeys.get(label));
+    }
+    return jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .createQueryComposer(ClaimsEntry.class)
+                    .where("revisionId", EQ, revisionId)
+                    .where("domainLabel", EQ, label)
+                    .first()
+                    .map(ClaimsEntry::getClaimKey));
   }
 
   public static ClaimsList create(

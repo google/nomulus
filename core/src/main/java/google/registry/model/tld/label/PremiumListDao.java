@@ -73,7 +73,7 @@ public class PremiumListDao {
   }
 
   /**
-   * In-memory price cache for for a given premium list revision and domain label.
+   * In-memory price cache for a given premium list revision and domain label.
    *
    * <p>Note that premium list revision ids are globally unique, so this cache is specific to a
    * given premium list. Premium list entries might not be present, as indicated by the Optional

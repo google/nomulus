@@ -29,7 +29,9 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.TestCacheExtension;
 import google.registry.util.Clock;
+import java.time.Duration;
 import java.util.List;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -43,6 +45,10 @@ class EppLifecycleToolsTest extends EppTestCase {
   @RegisterExtension
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withClock(clock).withCloudSql().withTaskQueue().build();
+
+  @RegisterExtension
+  public final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder().withClaimsListCache(Duration.ofHours(6)).build();
 
   @BeforeEach
   void beforeEach() {
