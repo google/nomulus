@@ -35,7 +35,7 @@ import com.google.template.soy.data.SoyMapData;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.tools.soy.UniformRapidSuspensionSoyInfo;
 import google.registry.util.DomainNameUtils;
@@ -130,7 +130,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     checkArgumentPresent(domainOpt, "Domain '%s' does not exist or is deleted", domainName);
     Domain domain = domainOpt.get();
     Set<String> missingHosts =
-        difference(newHostsSet, checkResourcesExist(HostResource.class, newCanonicalHosts, now));
+        difference(newHostsSet, checkResourcesExist(Host.class, newCanonicalHosts, now));
     checkArgument(missingHosts.isEmpty(), "Hosts do not exist: %s", missingHosts);
     checkArgument(
         locksToPreserve.isEmpty() || undo,
@@ -204,8 +204,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
 
   private ImmutableSortedSet<String> getExistingNameservers(Domain domain) {
     ImmutableSortedSet.Builder<String> nameservers = ImmutableSortedSet.naturalOrder();
-    for (HostResource host :
-        tm().transact(() -> tm().loadByKeys(domain.getNameservers()).values())) {
+    for (Host host : tm().transact(() -> tm().loadByKeys(domain.getNameservers()).values())) {
       nameservers.add(host.getForeignKey());
     }
     return nameservers.build();

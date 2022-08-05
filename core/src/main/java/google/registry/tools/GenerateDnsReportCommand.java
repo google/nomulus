@@ -26,7 +26,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.domain.Domain;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.tools.params.PathParameter;
 import google.registry.util.Clock;
@@ -87,8 +87,8 @@ final class GenerateDnsReportCommand implements CommandWithRemoteApi {
         write(domain);
       }
 
-      Iterable<HostResource> nameservers = tm().transact(() -> tm().loadAllOf(HostResource.class));
-      for (HostResource nameserver : nameservers) {
+      Iterable<Host> nameservers = tm().transact(() -> tm().loadAllOf(Host.class));
+      for (Host nameserver : nameservers) {
         // Skip deleted hosts and external hosts.
         if (isBeforeOrAt(nameserver.getDeletionTime(), now)
             || nameserver.getInetAddresses().isEmpty()) {
@@ -126,7 +126,7 @@ final class GenerateDnsReportCommand implements CommandWithRemoteApi {
       writeJson(mapBuilder.build());
     }
 
-    private void write(HostResource nameserver) {
+    private void write(Host nameserver) {
       ImmutableList<String> ipAddresses =
           nameserver
               .getInetAddresses()

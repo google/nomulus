@@ -44,7 +44,7 @@ import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadByKeyIfPresent;
 import static google.registry.testing.DatabaseHelper.loadByKeysIfPresent;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newHostResource;
+import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
@@ -88,7 +88,7 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.poll.PendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
@@ -732,7 +732,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     setUpGracePeriods(
         GracePeriod.forBillingEvent(GracePeriodStatus.ADD, domain.getRepoId(), graceBillingEvent));
     // Add a nameserver.
-    HostResource host = persistResource(newHostResource("ns1.example.tld"));
+    Host host = persistResource(newHost("ns1.example.tld"));
     persistResource(
         loadByForeignKey(Domain.class, getUniqueIdFromCommand(), clock.nowUtc())
             .get()
@@ -763,7 +763,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   void testSuccess_deletedSubordinateDomain() throws Exception {
     setUpSuccessfulTest();
     persistResource(
-        newHostResource("ns1." + getUniqueIdFromCommand())
+        newHost("ns1." + getUniqueIdFromCommand())
             .asBuilder()
             .setSuperordinateDomain(reloadResourceByForeignKey().createVKey())
             .setDeletionTime(clock.nowUtc().minusDays(1))
@@ -809,9 +809,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   @Test
   void testFailure_hasSubordinateHosts() throws Exception {
     Domain domain = persistActiveDomain(getUniqueIdFromCommand());
-    HostResource subordinateHost =
+    Host subordinateHost =
         persistResource(
-            newHostResource("ns1." + getUniqueIdFromCommand())
+            newHost("ns1." + getUniqueIdFromCommand())
                 .asBuilder()
                 .setSuperordinateDomain(reloadResourceByForeignKey().createVKey())
                 .build());

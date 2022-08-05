@@ -114,7 +114,7 @@ import google.registry.model.domain.secdns.SecDnsUpdateExtension.Remove;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
@@ -375,7 +375,7 @@ public class DomainFlowUtils {
   static void verifyNotInPendingDelete(
       Set<DesignatedContact> contacts,
       VKey<ContactResource> registrant,
-      Set<VKey<HostResource>> nameservers)
+      Set<VKey<Host>> nameservers)
       throws EppException {
     ImmutableList.Builder<VKey<? extends EppResource>> keysToLoad = new ImmutableList.Builder<>();
     contacts.stream().map(DesignatedContact::getContactKey).forEach(keysToLoad::add);

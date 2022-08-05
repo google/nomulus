@@ -31,8 +31,8 @@ import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostResource;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
@@ -55,7 +55,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
 
   private Domain domain;
   private ContactResource contact;
-  private HostResource host;
+  private Host host;
 
   @BeforeEach
   void setUp() {

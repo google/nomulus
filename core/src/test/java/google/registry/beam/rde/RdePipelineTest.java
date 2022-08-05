@@ -62,9 +62,9 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostResource;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.rde.RdeRevision.RdeRevisionId;
@@ -272,7 +272,7 @@ public class RdePipelineTest {
 
     // This host is never referenced.
     persistHostHistory(persistActiveHost("ns0.domain.tld"));
-    HostResource host1 = persistActiveHost("ns1.external.tld");
+    Host host1 = persistActiveHost("ns1.external.tld");
     persistHostHistory(host1);
     Domain helloDomain =
         persistEppResource(
@@ -282,7 +282,7 @@ public class RdePipelineTest {
                 .build());
     persistDomainHistory(helloDomain);
     persistHostHistory(persistActiveHost("not-used-subordinate.hello.soy"));
-    HostResource host2 = persistActiveHost("ns1.hello.soy");
+    Host host2 = persistActiveHost("ns1.hello.soy");
     persistHostHistory(host2);
     Domain kittyDomain =
         persistEppResource(
@@ -306,7 +306,7 @@ public class RdePipelineTest {
     persistContactHistory(contact3);
     // This is a subordinate domain in TLD .cat, which is not included in any pending deposit. But
     // it should still be included as a subordinate host in the pendign deposit for .soy.
-    HostResource host3 = persistActiveHost("ns1.lol.cat");
+    Host host3 = persistActiveHost("ns1.lol.cat");
     persistHostHistory(host3);
     persistDomainHistory(
         helloDomain
@@ -331,7 +331,7 @@ public class RdePipelineTest {
     persistDomainHistory(kittyDomain.asBuilder().setDeletionTime(clock.nowUtc()).build());
     ContactResource futureContact = persistActiveContact("future-contact");
     persistContactHistory(futureContact);
-    HostResource futureHost = persistActiveHost("ns1.future.tld");
+    Host futureHost = persistActiveHost("ns1.future.tld");
     persistHostHistory(futureHost);
     persistDomainHistory(
         persistEppResource(

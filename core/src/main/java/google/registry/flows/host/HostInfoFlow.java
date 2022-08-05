@@ -30,8 +30,8 @@ import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostInfoData;
-import google.registry.model.host.HostResource;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.util.Clock;
 import javax.inject.Inject;
@@ -65,7 +65,7 @@ public final class HostInfoFlow implements Flow {
     extensionManager.validate(); // There are no legal extensions for this flow.
     validateHostName(targetId);
     DateTime now = clock.nowUtc();
-    HostResource host = loadAndVerifyExistence(HostResource.class, targetId, now);
+    Host host = loadAndVerifyExistence(Host.class, targetId, now);
     ImmutableSet.Builder<StatusValue> statusValues = new ImmutableSet.Builder<>();
     statusValues.addAll(host.getStatusValues());
     if (isLinked(host.createVKey(), now)) {

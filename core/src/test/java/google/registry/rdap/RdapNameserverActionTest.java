@@ -19,7 +19,6 @@ import static google.registry.rdap.RdapTestHelper.assertThat;
 import static google.registry.rdap.RdapTestHelper.loadJsonFile;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHostResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static org.mockito.Mockito.verify;
 
@@ -31,6 +30,7 @@ import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
+import google.registry.testing.FullFieldsTestEntityHelper;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,19 +47,20 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
   void beforeEach() {
     // normal
     createTld("lol");
-    makeAndPersistHostResource(
+    FullFieldsTestEntityHelper.makeAndPersistHost(
         "ns1.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1));
     // idn
     createTld("xn--q9jyb4c");
-    makeAndPersistHostResource(
+    FullFieldsTestEntityHelper.makeAndPersistHost(
         "ns1.cat.xn--q9jyb4c", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(1));
     // multilevel
     createTld("1.tld");
-    makeAndPersistHostResource(
+    FullFieldsTestEntityHelper.makeAndPersistHost(
         "ns1.domain.1.tld", "5.6.7.8", clock.nowUtc().minusYears(1));
     // deleted
     persistResource(
-        makeAndPersistHostResource("nsdeleted.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1))
+        FullFieldsTestEntityHelper.makeAndPersistHost(
+                "nsdeleted.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1))
             .asBuilder()
             .setDeletionTime(clock.nowUtc().minusMonths(1))
             .build());
@@ -67,7 +68,8 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     persistResource(
         makeRegistrar("otherregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE, 102L));
     // external
-    makeAndPersistHostResource("ns1.domain.external", "9.10.11.12", clock.nowUtc().minusYears(1));
+    FullFieldsTestEntityHelper.makeAndPersistHost(
+        "ns1.domain.external", "9.10.11.12", clock.nowUtc().minusYears(1));
   }
 
   private JsonObject generateExpectedJson(

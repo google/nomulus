@@ -18,7 +18,7 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.util.DomainNameUtils;
 import java.util.List;
 
@@ -35,7 +35,6 @@ final class GetHostCommand extends GetEppResourceCommand {
   public void runAndPrint() {
     mainParameters.stream()
         .map(DomainNameUtils::canonicalizeHostname)
-        .forEach(
-            h -> printResource("Host", h, loadByForeignKey(HostResource.class, h, readTimestamp)));
+        .forEach(h -> printResource("Host", h, loadByForeignKey(Host.class, h, readTimestamp)));
   }
 }

@@ -38,7 +38,7 @@ import google.registry.dns.writer.DnsWriter;
 import google.registry.dns.writer.DnsWriterZone;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DelegationSignerData;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.tld.Registries;
 import google.registry.util.Clock;
 import google.registry.util.Concurrent;
@@ -190,7 +190,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
     // Load the target host. Note that it can be absent if this host was just deleted.
     // desiredRecords is populated with an empty set to indicate that all existing records
     // should be deleted.
-    Optional<HostResource> host = loadByForeignKey(HostResource.class, hostName, clock.nowUtc());
+    Optional<Host> host = loadByForeignKey(Host.class, hostName, clock.nowUtc());
 
     // Return early if the host is deleted.
     if (!host.isPresent()) {

@@ -24,11 +24,11 @@ import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceCheckFlowTestCase;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostCheckFlow}. */
-class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, HostResource> {
+class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, Host> {
 
   HostCheckFlowTest() {
     setEppInput("host_check.xml");

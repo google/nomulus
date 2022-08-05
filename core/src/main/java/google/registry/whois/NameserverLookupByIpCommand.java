@@ -26,7 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.InternetDomainName;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.tld.Registries;
 import java.net.InetAddress;
 import org.joda.time.DateTime;
@@ -51,12 +51,12 @@ final class NameserverLookupByIpCommand implements WhoisCommand {
   @Override
   @SuppressWarnings("unchecked")
   public WhoisResponse executeQuery(DateTime now) throws WhoisException {
-    Iterable<HostResource> hostsFromDb;
+    Iterable<Host> hostsFromDb;
     if (tm().isOfy()) {
       hostsFromDb =
           auditedOfy()
               .load()
-              .type(HostResource.class)
+              .type(Host.class)
               .filter("inetAddresses", ipAddress)
               .filter("deletionTime >", now.toDate());
     } else {
@@ -76,12 +76,12 @@ final class NameserverLookupByIpCommand implements WhoisCommand {
                               "SELECT * From \"Host\" WHERE "
                                   + "ARRAY[ CAST(:address AS TEXT) ] <@ inet_addresses AND "
                                   + "deletion_time > CAST(:now AS timestamptz)",
-                              HostResource.class)
+                              Host.class)
                           .setParameter("address", InetAddresses.toAddrString(ipAddress))
                           .setParameter("now", now.toString())
                           .getResultList());
     }
-    ImmutableList<HostResource> hosts =
+    ImmutableList<Host> hosts =
         Streams.stream(hostsFromDb)
             .filter(
                 host ->

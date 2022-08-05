@@ -126,8 +126,7 @@ public class HostBase extends EppResource {
   @Override
   public VKey<? extends HostBase> createVKey() {
     throw new UnsupportedOperationException(
-        "HostBase is not an actual persisted entity you can create a key to;"
-            + " use HostResource instead");
+        "HostBase is not an actual persisted entity you can create a key to; use Host instead");
   }
 
   @Deprecated

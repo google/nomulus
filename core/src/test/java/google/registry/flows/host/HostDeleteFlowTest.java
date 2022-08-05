@@ -19,12 +19,12 @@ import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
-import static google.registry.testing.DatabaseHelper.newHostResource;
+import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static google.registry.testing.HostResourceSubject.assertAboutHosts;
+import static google.registry.testing.HostSubject.assertAboutHosts;
 import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
@@ -44,7 +44,7 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
@@ -55,7 +55,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostDeleteFlow}. */
-class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResource> {
+class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
 
   @BeforeEach
   void initFlowTest() {
@@ -111,7 +111,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
 
   private void doFailingStatusTest(StatusValue statusValue, Class<? extends Exception> exception) {
     persistResource(
-        newHostResource("ns1.example.tld")
+        newHost("ns1.example.tld")
             .asBuilder()
             .setStatusValues(ImmutableSet.of(statusValue))
             .build());
@@ -166,7 +166,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
                 .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
                 .build());
     persistResource(
-        newHostResource("ns1.example.tld")
+        newHost("ns1.example.tld")
             .asBuilder()
             .setPersistedCurrentSponsorRegistrarId("NewRegistrar") // Shouldn't hurt.
             .setSuperordinateDomain(domain.createVKey())
@@ -187,7 +187,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
                 .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                 .build());
     persistResource(
-        newHostResource("ns1.example.tld")
+        newHost("ns1.example.tld")
             .asBuilder()
             .setPersistedCurrentSponsorRegistrarId("TheRegistrar") // Shouldn't help.
             .setSuperordinateDomain(domain.createVKey())
@@ -220,7 +220,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
                         .build())
                 .build());
     persistResource(
-        newHostResource("ns1.example.tld")
+        newHost("ns1.example.tld")
             .asBuilder()
             .setPersistedCurrentSponsorRegistrarId("TheRegistrar") // Shouldn't hurt.
             .setSuperordinateDomain(domain.createVKey())
@@ -254,7 +254,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
                         .build())
                 .build());
     persistResource(
-        newHostResource("ns1.example.tld")
+        newHost("ns1.example.tld")
             .asBuilder()
             .setPersistedCurrentSponsorRegistrarId("NewRegistrar") // Shouldn't help.
             .setSuperordinateDomain(domain.createVKey())
@@ -307,7 +307,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
 
   private void assertSqlDeleteSuccess(boolean isSubordinate) throws Exception {
     assertThat(reloadResourceByForeignKey()).isNull();
-    HostResource deletedHost = reloadResourceByForeignKey(clock.nowUtc().minusMillis(1));
+    Host deletedHost = reloadResourceByForeignKey(clock.nowUtc().minusMillis(1));
     assertAboutHosts()
         .that(deletedHost)
         .isNotActiveAt(clock.nowUtc())

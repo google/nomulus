@@ -23,7 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistContactResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistDeletedContactResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeHostResource;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeHost;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarContacts;
 import static org.mockito.Mockito.verify;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verify;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonObject;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
@@ -85,10 +85,8 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
         ImmutableList.of("1 Smiley Row", "Suite みんな"),
         clock.nowUtc(),
         registrarLol);
-    HostResource host1 =
-        persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
-    HostResource host2 =
-        persistResource(makeHostResource("ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef"));
+    Host host1 = persistResource(makeHost("ns1.cat.lol", "1.2.3.4"));
+    Host host2 = persistResource(makeHost("ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef"));
     persistResource(
         makeDomain("cat.lol", registrant, adminContact, techContact, host1, host2, registrarLol));
     // xn--q9jyb4c

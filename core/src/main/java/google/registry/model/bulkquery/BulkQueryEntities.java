@@ -26,7 +26,7 @@ import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.GracePeriod.GracePeriodHistory;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.domain.secdns.DomainDsDataHistory;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -68,7 +68,7 @@ public class BulkQueryEntities {
       DomainLite domainLite,
       ImmutableSet<GracePeriod> gracePeriods,
       ImmutableSet<DelegationSignerData> delegationSignerData,
-      ImmutableSet<VKey<HostResource>> nsHosts) {
+      ImmutableSet<VKey<Host>> nsHosts) {
     Domain.Builder builder = new Domain.Builder();
     builder.copyFrom(domainLite);
     builder.setGracePeriods(gracePeriods);
@@ -82,7 +82,7 @@ public class BulkQueryEntities {
   public static DomainHistory assembleDomainHistory(
       DomainHistoryLite domainHistoryLite,
       ImmutableSet<DomainDsDataHistory> dsDataHistories,
-      ImmutableSet<VKey<HostResource>> domainHistoryHosts,
+      ImmutableSet<VKey<Host>> domainHistoryHosts,
       ImmutableSet<GracePeriodHistory> gracePeriodHistories,
       ImmutableSet<DomainTransactionRecord> transactionRecords) {
     DomainHistory.Builder builder = new DomainHistory.Builder();

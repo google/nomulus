@@ -35,7 +35,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
 import google.registry.model.domain.Domain;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
@@ -121,7 +121,7 @@ class Spec11EmailUtilsTest {
             "Super Cool Registry");
 
     createTld("com");
-    HostResource host = persistActiveHost("ns1.example.com");
+    Host host = persistActiveHost("ns1.example.com");
     aDomain = persistDomainWithHost("a.com", host);
     bDomain = persistDomainWithHost("b.com", host);
     persistDomainWithHost("c.com", host);
@@ -238,7 +238,7 @@ class Spec11EmailUtilsTest {
   void testSuccess_dealsWithDeletedDomains() throws Exception {
     // Create an inactive domain and an active domain with the same name.
     persistResource(loadByEntity(aDomain).asBuilder().addStatusValue(SERVER_HOLD).build());
-    HostResource host = persistActiveHost("ns1.example.com");
+    Host host = persistActiveHost("ns1.example.com");
     aDomain = persistDomainWithHost("a.com", host);
 
     emailUtils.emailSpec11Reports(
@@ -408,7 +408,7 @@ class Spec11EmailUtilsTest {
     assertThat(message).isEqualTo(expectedContentBuilder.build());
   }
 
-  private static Domain persistDomainWithHost(String domainName, HostResource host) {
+  private static Domain persistDomainWithHost(String domainName, Host host) {
     return persistResource(
         DatabaseHelper.newDomain(domainName)
             .asBuilder()

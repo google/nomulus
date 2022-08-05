@@ -35,7 +35,7 @@ import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
@@ -345,8 +345,8 @@ public final class EppResourceUtils {
   public static ImmutableSet<VKey<Domain>> getLinkedDomainKeys(
       VKey<? extends EppResource> key, DateTime now, @Nullable Integer limit) {
     checkArgument(
-        key.getKind().equals(ContactResource.class) || key.getKind().equals(HostResource.class),
-        "key must be either VKey<ContactResource> or VKey<HostResource>, but it is %s",
+        key.getKind().equals(ContactResource.class) || key.getKind().equals(Host.class),
+        "key must be either VKey<ContactResource> or VKey<Host>, but it is %s",
         key);
     boolean isContactKey = key.getKind().equals(ContactResource.class);
     if (tm().isOfy()) {

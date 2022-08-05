@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.newHostResource;
+import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -34,7 +34,7 @@ import com.google.common.net.InetAddresses;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.io.IOException;
@@ -61,10 +61,10 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
     }
   }
 
-  private HostResource nameserver1;
-  private HostResource nameserver2;
-  private HostResource nameserver3;
-  private HostResource nameserver4;
+  private Host nameserver1;
+  private Host nameserver2;
+  private Host nameserver3;
+  private Host nameserver4;
   private Domain domain1;
 
   private static final ImmutableList<?> DS_DATA_OUTPUT = ImmutableList.of(
@@ -121,20 +121,24 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
     clock.setTo(now);
 
     createTlds("xn--q9jyb4c", "example");
-    nameserver1 = persistResource(
-        newHostResource("ns1.example.xn--q9jyb4c")
-            .asBuilder()
-            .setInetAddresses(ImmutableSet.of(
-                InetAddresses.forString("2607:f8b0:400d:c00::c0"),
-                InetAddresses.forString("192.168.1.2")))
-            .build());
-    nameserver2 = persistResource(
-        newHostResource("ns2.example.xn--q9jyb4c")
-            .asBuilder()
-            .setInetAddresses(ImmutableSet.of(
-                InetAddresses.forString("192.168.1.1"),
-                InetAddresses.forString("2607:f8b0:400d:c00::c1")))
-            .build());
+    nameserver1 =
+        persistResource(
+            newHost("ns1.example.xn--q9jyb4c")
+                .asBuilder()
+                .setInetAddresses(
+                    ImmutableSet.of(
+                        InetAddresses.forString("2607:f8b0:400d:c00::c0"),
+                        InetAddresses.forString("192.168.1.2")))
+                .build());
+    nameserver2 =
+        persistResource(
+            newHost("ns2.example.xn--q9jyb4c")
+                .asBuilder()
+                .setInetAddresses(
+                    ImmutableSet.of(
+                        InetAddresses.forString("192.168.1.1"),
+                        InetAddresses.forString("2607:f8b0:400d:c00::c1")))
+                .build());
     nameserver3 = persistActiveHost("ns1.google.com");
     nameserver4 = persistActiveHost("ns2.google.com");
     domain1 =

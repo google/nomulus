@@ -20,44 +20,42 @@ import static com.google.common.truth.Truth.assertAbout;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.SimpleSubjectBuilder;
 import google.registry.model.domain.Domain;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
 import google.registry.testing.TruthChainer.And;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
-/** Truth subject for asserting things about {@link HostResource} instances. */
-public final class HostResourceSubject
-    extends AbstractEppResourceSubject<HostResource, HostResourceSubject> {
+/** Truth subject for asserting things about {@link Host} instances. */
+public final class HostSubject extends AbstractEppResourceSubject<Host, HostSubject> {
 
-  private final HostResource actual;
+  private final Host actual;
 
-  public HostResourceSubject(FailureMetadata failureMetadata, HostResource subject) {
+  public HostSubject(FailureMetadata failureMetadata, Host subject) {
     super(failureMetadata, checkNotNull(subject));
     this.actual = subject;
   }
 
-  public static SimpleSubjectBuilder<HostResourceSubject, HostResource> assertAboutHosts() {
-    return assertAbout(HostResourceSubject::new);
+  public static SimpleSubjectBuilder<HostSubject, Host> assertAboutHosts() {
+    return assertAbout(HostSubject::new);
   }
 
-  public And<HostResourceSubject> hasLastTransferTime(DateTime lastTransferTime) {
+  public And<HostSubject> hasLastTransferTime(DateTime lastTransferTime) {
     return hasValue(lastTransferTime, actual.getLastTransferTime(), "has lastTransferTime");
   }
 
-  public And<HostResourceSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
+  public And<HostSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
     return doesNotHaveValue(lastTransferTime, actual.getLastTransferTime(), "lastTransferTime");
   }
 
-  public And<HostResourceSubject> hasLastSuperordinateChange(DateTime lastSuperordinateChange) {
+  public And<HostSubject> hasLastSuperordinateChange(DateTime lastSuperordinateChange) {
     return hasValue(
         lastSuperordinateChange,
         actual.getLastSuperordinateChange(),
         "has lastSuperordinateChange");
   }
 
-  public And<HostResourceSubject> hasSuperordinateDomain(
-      @Nullable VKey<Domain> superordinateDomain) {
+  public And<HostSubject> hasSuperordinateDomain(@Nullable VKey<Domain> superordinateDomain) {
     return hasValue(
         superordinateDomain, actual.getSuperordinateDomain(), "has superordinateDomain");
   }

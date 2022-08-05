@@ -57,7 +57,7 @@ import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
@@ -128,7 +128,7 @@ public class DomainBase extends EppResource
   @Index String tld;
 
   /** References to hosts that are the nameservers for the domain. */
-  @EmptySetToNull @Index @Transient Set<VKey<HostResource>> nsHosts;
+  @EmptySetToNull @Index @Transient Set<VKey<Host>> nsHosts;
 
   /** Contacts. */
   VKey<ContactResource> adminContact;
@@ -372,13 +372,13 @@ public class DomainBase extends EppResource
     return idnTableName;
   }
 
-  public ImmutableSet<VKey<HostResource>> getNameservers() {
+  public ImmutableSet<VKey<Host>> getNameservers() {
     return nullToEmptyImmutableCopy(nsHosts);
   }
 
   // Hibernate needs this in order to populate nsHosts but no one else should ever use it
   @SuppressWarnings("UnusedMethod")
-  private void setNsHosts(Set<VKey<HostResource>> nsHosts) {
+  private void setNsHosts(Set<VKey<Host>> nsHosts) {
     this.nsHosts = forceEmptyToNull(nsHosts);
   }
 
@@ -602,7 +602,7 @@ public class DomainBase extends EppResource
     return tm().transact(
             () ->
                 tm().loadByKeys(getNameservers()).values().stream()
-                    .map(HostResource::getHostName)
+                    .map(Host::getHostName)
                     .collect(toImmutableSortedSet(Ordering.natural())));
   }
 
@@ -787,32 +787,32 @@ public class DomainBase extends EppResource
       return thisCastToDerived();
     }
 
-    public B setNameservers(VKey<HostResource> nameserver) {
+    public B setNameservers(VKey<Host> nameserver) {
       getInstance().nsHosts = ImmutableSet.of(nameserver);
       getInstance().resetUpdateTimestamp();
       return thisCastToDerived();
     }
 
-    public B setNameservers(ImmutableSet<VKey<HostResource>> nameservers) {
+    public B setNameservers(ImmutableSet<VKey<Host>> nameservers) {
       getInstance().nsHosts = forceEmptyToNull(nameservers);
       getInstance().resetUpdateTimestamp();
       return thisCastToDerived();
     }
 
-    public B addNameserver(VKey<HostResource> nameserver) {
+    public B addNameserver(VKey<Host> nameserver) {
       return addNameservers(ImmutableSet.of(nameserver));
     }
 
-    public B addNameservers(ImmutableSet<VKey<HostResource>> nameservers) {
+    public B addNameservers(ImmutableSet<VKey<Host>> nameservers) {
       return setNameservers(
           ImmutableSet.copyOf(Sets.union(getInstance().getNameservers(), nameservers)));
     }
 
-    public B removeNameserver(VKey<HostResource> nameserver) {
+    public B removeNameserver(VKey<Host> nameserver) {
       return removeNameservers(ImmutableSet.of(nameserver));
     }
 
-    public B removeNameservers(ImmutableSet<VKey<HostResource>> nameservers) {
+    public B removeNameservers(ImmutableSet<VKey<Host>> nameservers) {
       return setNameservers(
           ImmutableSet.copyOf(difference(getInstance().getNameservers(), nameservers)));
     }

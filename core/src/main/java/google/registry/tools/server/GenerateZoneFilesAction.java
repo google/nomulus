@@ -31,7 +31,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DelegationSignerData;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.request.Action;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.JsonActionRunner;
@@ -196,8 +196,8 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
       Domain domain, DateTime exportTime, ImmutableList.Builder<String> result) {
     ImmutableSet<String> subordinateHosts = domain.getSubordinateHosts();
     if (!subordinateHosts.isEmpty()) {
-      for (HostResource unprojectedHost : tm().loadByKeys(domain.getNameservers()).values()) {
-        HostResource host = loadAtPointInTime(unprojectedHost, exportTime);
+      for (Host unprojectedHost : tm().loadByKeys(domain.getNameservers()).values()) {
+        Host host = loadAtPointInTime(unprojectedHost, exportTime);
         // A null means the host was deleted (or not created) at this time.
         if (host != null && subordinateHosts.contains(host.getHostName())) {
           String stanza = hostStanza(host, domain.getTld());
@@ -232,7 +232,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   private String domainStanza(Domain domain, DateTime exportTime) {
     StringBuilder result = new StringBuilder();
     String domainLabel = stripTld(domain.getDomainName(), domain.getTld());
-    for (HostResource nameserver : tm().loadByKeys(domain.getNameservers()).values()) {
+    for (Host nameserver : tm().loadByKeys(domain.getNameservers()).values()) {
       result.append(
           String.format(
               NS_FORMAT,
@@ -267,7 +267,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
    * }
    * </pre>
    */
-  private String hostStanza(HostResource host, String tld) {
+  private String hostStanza(Host host, String tld) {
     StringBuilder result = new StringBuilder();
     for (InetAddress addr : host.getInetAddresses()) {
       // must be either IPv4 or IPv6

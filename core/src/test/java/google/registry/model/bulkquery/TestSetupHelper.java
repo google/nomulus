@@ -35,7 +35,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
@@ -75,7 +75,7 @@ public final class TestSetupHelper {
   public ContactResource contact;
   public Domain domain;
   public DomainHistory domainHistory;
-  public HostResource host;
+  public Host host;
 
   private JpaTransactionManager originalJpaTm;
   private JpaTransactionManager bulkQueryJpaTm;
@@ -135,7 +135,7 @@ public final class TestSetupHelper {
         .build();
   }
 
-  static Domain createFullDomain(ContactResource contact, HostResource host, FakeClock fakeClock) {
+  static Domain createFullDomain(ContactResource contact, Host host, FakeClock fakeClock) {
     return createSimpleDomain(contact)
         .asBuilder()
         .setDomainName(DOMAIN_NAME)
@@ -169,8 +169,8 @@ public final class TestSetupHelper {
         .build();
   }
 
-  static HostResource createHost() {
-    return new HostResource.Builder()
+  static Host createHost() {
+    return new Host.Builder()
         .setRepoId("host1")
         .setHostName("ns1.example.com")
         .setCreationRegistrarId(REGISTRAR_ID)

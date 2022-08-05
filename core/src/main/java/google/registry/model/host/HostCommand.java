@@ -29,26 +29,26 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
-/** A collection of {@link HostResource} commands. */
+/** A collection of {@link Host} commands. */
 public class HostCommand {
 
   /** The fields on "chgType" from <a href="http://tools.ietf.org/html/rfc5732">RFC5732</a>. */
   @XmlTransient
   abstract static class HostCreateOrChange extends AbstractSingleResourceCommand
-      implements ResourceCreateOrChange<HostResource.Builder> {
+      implements ResourceCreateOrChange<Host.Builder> {
     public String getFullyQualifiedHostName() {
       return getTargetId();
     }
   }
 
   /**
-   * A create command for a {@link HostResource}, mapping "createType" from <a
+   * A create command for a {@link Host}, mapping "createType" from <a
    * href="http://tools.ietf.org/html/rfc5732">RFC5732</a>.
    */
   @XmlType(propOrder = {"targetId", "inetAddresses"})
   @XmlRootElement
   public static class Create extends HostCreateOrChange
-      implements ResourceCreateOrChange<HostResource.Builder> {
+      implements ResourceCreateOrChange<Host.Builder> {
     /** IP Addresses for this host. Can be null if this is an external host. */
     @XmlElement(name = "addr")
     Set<InetAddress> inetAddresses;
@@ -58,23 +58,22 @@ public class HostCommand {
     }
   }
 
-  /** A delete command for a {@link HostResource}. */
+  /** A delete command for a {@link Host}. */
   @XmlRootElement
   public static class Delete extends AbstractSingleResourceCommand {}
 
-  /** An info request for a {@link HostResource}. */
+  /** An info request for a {@link Host}. */
   @XmlRootElement
   public static class Info extends AbstractSingleResourceCommand {}
 
-  /** A check request for {@link HostResource}. */
+  /** A check request for {@link Host}. */
   @XmlRootElement
   public static class Check extends ResourceCheck {}
 
-  /** An update to a {@link HostResource}. */
+  /** An update to a {@link Host}. */
   @XmlRootElement
   @XmlType(propOrder = {"targetId", "innerAdd", "innerRemove", "innerChange"})
-  public static class Update extends ResourceUpdate
-      <Update.AddRemove, HostResource.Builder, Update.Change> {
+  public static class Update extends ResourceUpdate<Update.AddRemove, Host.Builder, Update.Change> {
 
     @XmlElement(name = "chg")
     protected Change innerChange;

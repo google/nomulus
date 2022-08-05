@@ -46,9 +46,9 @@ import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CreateData.HostCreateData;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostCommand.Create;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
@@ -105,7 +105,7 @@ public final class HostCreateFlow implements TransactionalFlow {
     extensionManager.validate();
     Create command = (Create) resourceCommand;
     DateTime now = tm().getTransactionTime();
-    verifyResourceDoesNotExist(HostResource.class, targetId, now, registrarId);
+    verifyResourceDoesNotExist(Host.class, targetId, now, registrarId);
     // The superordinate domain of the host object if creating an in-bailiwick host, or null if
     // creating an external host. This is looked up before we actually create the Host object so
     // we can detect error conditions earlier.
@@ -121,8 +121,8 @@ public final class HostCreateFlow implements TransactionalFlow {
           ? new SubordinateHostMustHaveIpException()
           : new UnexpectedExternalHostIpException();
     }
-    HostResource newHost =
-        new HostResource.Builder()
+    Host newHost =
+        new Host.Builder()
             .setCreationRegistrarId(registrarId)
             .setPersistedCurrentSponsorRegistrarId(registrarId)
             .setHostName(targetId)

@@ -33,7 +33,7 @@ import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.VKey;
@@ -51,8 +51,8 @@ class DomainWhoisResponseTest {
   @RegisterExtension
   final AppEngineExtension gae = AppEngineExtension.builder().withCloudSql().build();
 
-  private HostResource hostResource1;
-  private HostResource hostResource2;
+  private Host host1;
+  private Host host2;
   private RegistrarPoc abuseContact;
   private ContactResource adminContact;
   private ContactResource registrant;
@@ -84,16 +84,16 @@ class DomainWhoisResponseTest {
 
     createTld("tld");
 
-    hostResource1 =
+    host1 =
         persistResource(
-            new HostResource.Builder()
+            new Host.Builder()
                 .setHostName("ns01.exampleregistrar.tld")
                 .setRepoId("1-ROID")
                 .build());
 
-    hostResource2 =
+    host2 =
         persistResource(
-            new HostResource.Builder()
+            new Host.Builder()
                 .setHostName("ns02.exampleregistrar.tld")
                 .setRepoId("2-ROID")
                 .build());
@@ -239,8 +239,8 @@ class DomainWhoisResponseTest {
                 .setEmailAddress("EMAIL@EXAMPLE.tld")
                 .build());
 
-    VKey<HostResource> hostResource1Key = hostResource1.createVKey();
-    VKey<HostResource> hostResource2Key = hostResource2.createVKey();
+    VKey<Host> host1VKey = host1.createVKey();
+    VKey<Host> host2VKey = host2.createVKey();
     VKey<ContactResource> registrantResourceKey = registrant.createVKey();
     VKey<ContactResource> adminResourceKey = adminContact.createVKey();
     VKey<ContactResource> techResourceKey = techContact.createVKey();
@@ -267,7 +267,7 @@ class DomainWhoisResponseTest {
                     ImmutableSet.of(
                         DesignatedContact.create(DesignatedContact.Type.ADMIN, adminResourceKey),
                         DesignatedContact.create(DesignatedContact.Type.TECH, techResourceKey)))
-                .setNameservers(ImmutableSet.of(hostResource1Key, hostResource2Key))
+                .setNameservers(ImmutableSet.of(host1VKey, host2VKey))
                 .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, "deadface")))
                 .setGracePeriods(
                     ImmutableSet.of(

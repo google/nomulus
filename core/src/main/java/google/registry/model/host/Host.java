@@ -27,7 +27,7 @@ import javax.persistence.AccessType;
 /**
  * A persistable Host resource including mutable and non-mutable fields.
  *
- * <p>The {@link javax.persistence.Id} of the HostResource is the repoId.
+ * <p>The {@link javax.persistence.Id} of the Host is the repoId.
  */
 @ReportedOn
 @Entity
@@ -54,7 +54,7 @@ import javax.persistence.AccessType;
 @ExternalMessagingName("host")
 @WithStringVKey
 @Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)
-public class HostResource extends HostBase implements ForeignKeyedEppResource {
+public class Host extends HostBase implements ForeignKeyedEppResource {
 
   @Override
   @javax.persistence.Id
@@ -64,8 +64,8 @@ public class HostResource extends HostBase implements ForeignKeyedEppResource {
   }
 
   @Override
-  public VKey<HostResource> createVKey() {
-    return VKey.create(HostResource.class, getRepoId(), Key.create(this));
+  public VKey<Host> createVKey() {
+    return VKey.create(Host.class, getRepoId(), Key.create(this));
   }
 
   @Override
@@ -73,11 +73,11 @@ public class HostResource extends HostBase implements ForeignKeyedEppResource {
     return new Builder(clone(this));
   }
 
-  /** A builder for constructing {@link HostResource}, since it is immutable. */
-  public static class Builder extends HostBase.Builder<HostResource, Builder> {
+  /** A builder for constructing {@link Host}, since it is immutable. */
+  public static class Builder extends HostBase.Builder<Host, Builder> {
     public Builder() {}
 
-    private Builder(HostResource instance) {
+    private Builder(Host instance) {
       super(instance);
     }
 

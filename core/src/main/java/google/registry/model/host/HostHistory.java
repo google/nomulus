@@ -59,7 +59,7 @@ import javax.persistence.PostLoad;
 @IdClass(HostHistoryId.class)
 public class HostHistory extends HistoryEntry implements UnsafeSerializable {
 
-  // Store HostBase instead of HostResource so we don't pick up its @Id
+  // Store HostBase instead of Host so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
   @DoNotCompare @Nullable HostBase hostBase;
 
@@ -74,7 +74,7 @@ public class HostHistory extends HistoryEntry implements UnsafeSerializable {
   /** This method is private because it is only used by Hibernate. */
   @SuppressWarnings("unused")
   private void setHostRepoId(String hostRepoId) {
-    parent = Key.create(HostResource.class, hostRepoId);
+    parent = Key.create(Host.class, hostRepoId);
   }
 
   @Id
@@ -99,9 +99,9 @@ public class HostHistory extends HistoryEntry implements UnsafeSerializable {
     return Optional.ofNullable(hostBase);
   }
 
-  /** The key to the {@link google.registry.model.host.HostResource} this is based off of. */
-  public VKey<HostResource> getParentVKey() {
-    return VKey.create(HostResource.class, getHostRepoId());
+  /** The key to the {@link Host} this is based off of. */
+  public VKey<Host> getParentVKey() {
+    return VKey.create(Host.class, getHostRepoId());
   }
 
   /** Creates a {@link VKey} instance for this entity. */
@@ -113,7 +113,7 @@ public class HostHistory extends HistoryEntry implements UnsafeSerializable {
 
   @Override
   public Optional<? extends EppResource> getResourceAtPointInTime() {
-    return getHostBase().map(hostBase -> new HostResource.Builder().copyFrom(hostBase).build());
+    return getHostBase().map(hostBase -> new Host.Builder().copyFrom(hostBase).build());
   }
 
   @PostLoad
@@ -210,7 +210,7 @@ public class HostHistory extends HistoryEntry implements UnsafeSerializable {
     }
 
     public Builder setHostRepoId(String hostRepoId) {
-      getInstance().parent = Key.create(HostResource.class, hostRepoId);
+      getInstance().parent = Key.create(Host.class, hostRepoId);
       return this;
     }
   }

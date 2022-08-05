@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.net.InetAddresses;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.xjc.host.XjcHostAddrType;
 import google.registry.xjc.host.XjcHostIpType;
 import google.registry.xjc.host.XjcHostStatusType;
@@ -30,23 +30,23 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import org.joda.time.DateTime;
 
-/** Utility class that turns {@link HostResource} as {@link XjcRdeHostElement}. */
-final class HostResourceToXjcConverter {
+/** Utility class that turns a {@link Host} resource into {@link XjcRdeHostElement}. */
+final class HostToXjcConverter {
 
-  /** Converts a subordinate {@link HostResource} to {@link XjcRdeHostElement}. */
-  static XjcRdeHostElement convertSubordinate(HostResource host, Domain superordinateDomain) {
+  /** Converts a subordinate {@link Host} to {@link XjcRdeHostElement}. */
+  static XjcRdeHostElement convertSubordinate(Host host, Domain superordinateDomain) {
     checkArgument(superordinateDomain.createVKey().equals(host.getSuperordinateDomain()));
     return new XjcRdeHostElement(convertSubordinateHost(host, superordinateDomain));
   }
 
-  /** Converts an external {@link HostResource} to {@link XjcRdeHostElement}. */
-  static XjcRdeHostElement convertExternal(HostResource host) {
+  /** Converts an external {@link Host} to {@link XjcRdeHostElement}. */
+  static XjcRdeHostElement convertExternal(Host host) {
     checkArgument(!host.isSubordinate());
     return new XjcRdeHostElement(convertExternalHost(host));
   }
 
-  /** Converts {@link HostResource} to {@link XjcRdeHost}. */
-  static XjcRdeHost convertSubordinateHost(HostResource model, Domain superordinateDomain) {
+  /** Converts {@link Host} to {@link XjcRdeHost}. */
+  static XjcRdeHost convertSubordinateHost(Host model, Domain superordinateDomain) {
     XjcRdeHost bean =
         convertHostCommon(
             model,
@@ -58,14 +58,14 @@ final class HostResourceToXjcConverter {
     return bean;
   }
 
-  /** Converts {@link HostResource} to {@link XjcRdeHost}. */
-  static XjcRdeHost convertExternalHost(HostResource model) {
+  /** Converts {@link Host} to {@link XjcRdeHost}. */
+  static XjcRdeHost convertExternalHost(Host model) {
     return convertHostCommon(
         model, model.getPersistedCurrentSponsorRegistrarId(), model.getLastTransferTime());
   }
 
   private static XjcRdeHost convertHostCommon(
-      HostResource model, String registrarId, DateTime lastTransferTime) {
+      Host model, String registrarId, DateTime lastTransferTime) {
     XjcRdeHost bean = new XjcRdeHost();
     bean.setName(model.getHostName());
     bean.setRoid(model.getRepoId());
@@ -105,5 +105,5 @@ final class HostResourceToXjcConverter {
     return bean;
   }
 
-  private HostResourceToXjcConverter() {}
+  private HostToXjcConverter() {}
 }

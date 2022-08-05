@@ -64,7 +64,7 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
@@ -101,9 +101,9 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
 
   private ContactResource registrant;
   private ContactResource contact;
-  private HostResource host1;
-  private HostResource host2;
-  private HostResource host3;
+  private Host host1;
+  private Host host2;
+  private Host host3;
   private Domain domain;
 
   @BeforeEach
@@ -147,7 +147,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     // Create a subordinate host that is not delegated to by anyone.
     host3 =
         persistResource(
-            new HostResource.Builder()
+            new Host.Builder()
                 .setHostName("ns2.example.tld")
                 .setRepoId("3FF-TLD")
                 .setSuperordinateDomain(domain.createVKey())

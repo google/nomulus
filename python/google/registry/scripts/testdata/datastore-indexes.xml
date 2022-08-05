@@ -22,7 +22,7 @@
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
     <!-- For finding host resources by registrar. -->
-    <datastore-index kind="HostResource" ancestor="false" source="manual">
+    <datastore-index kind="Host" ancestor="false" source="manual">
         <property name="currentSponsorClientId" direction="asc"/>
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
@@ -48,7 +48,7 @@
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
     <!-- For WHOIS IP address lookup -->
-    <datastore-index kind="HostResource" ancestor="false" source="manual">
+    <datastore-index kind="Host" ancestor="false" source="manual">
         <property name="inetAddresses" direction="asc"/>
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
@@ -75,7 +75,7 @@
         <property name="tld" direction="asc"/>
         <property name="fullyQualifiedDomainName" direction="asc"/>
     </datastore-index>
-    <datastore-index kind="HostResource" ancestor="false" source="manual">
+    <datastore-index kind="Host" ancestor="false" source="manual">
         <property name="deletionTime" direction="asc"/>
         <property name="fullyQualifiedHostName" direction="asc"/>
     </datastore-index>

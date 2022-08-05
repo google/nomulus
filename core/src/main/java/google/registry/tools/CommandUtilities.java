@@ -21,7 +21,7 @@ import com.google.common.base.Strings;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
@@ -32,7 +32,7 @@ class CommandUtilities {
   /** A useful parameter enum for commands that operate on {@link EppResource} objects. */
   public enum ResourceType {
     CONTACT(ContactResource.class),
-    HOST(HostResource.class),
+    HOST(Host.class),
     DOMAIN(Domain.class);
 
     private final Class<? extends EppResource> clazz;

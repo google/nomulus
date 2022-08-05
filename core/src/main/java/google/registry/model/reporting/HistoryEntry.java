@@ -44,10 +44,10 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostHistory.HostHistoryId;
-import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import java.util.Optional;
 import java.util.Set;
@@ -389,7 +389,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
     if (parentKind.equals(getKind(Domain.class))) {
       resultEntity =
           new DomainHistory.Builder().copyFrom(this).setDomainRepoId(parent.getName()).build();
-    } else if (parentKind.equals(getKind(HostResource.class))) {
+    } else if (parentKind.equals(getKind(Host.class))) {
       resultEntity =
           new HostHistory.Builder().copyFrom(this).setHostRepoId(parent.getName()).build();
     } else if (parentKind.equals(getKind(ContactResource.class))) {
@@ -413,7 +413,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
           DomainHistory.class,
           new DomainHistoryId(repoId, id),
           Key.create(parent, DomainHistory.class, id));
-    } else if (parentKind.equals(getKind(HostResource.class))) {
+    } else if (parentKind.equals(getKind(Host.class))) {
       return VKey.create(
           HostHistory.class,
           new HostHistoryId(repoId, id),

@@ -7,7 +7,7 @@ ForeignKeyContactIndex
 ForeignKeyDomainIndex
 ForeignKeyHostIndex
 HistoryEntry
-HostResource
+Host
 Modification
 OneTime
 PollMessage

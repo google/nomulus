@@ -21,7 +21,7 @@ import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.HostResourceSubject.assertAboutHosts;
+import static google.registry.testing.HostSubject.assertAboutHosts;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -40,15 +40,15 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link HostResource}. */
-class HostResourceTest extends EntityTestCase {
+/** Unit tests for {@link Host}. */
+class HostTest extends EntityTestCase {
 
   private final DateTime day3 = fakeClock.nowUtc();
   private final DateTime day2 = day3.minusDays(1);
   private final DateTime day1 = day2.minusDays(1);
 
   private Domain domain;
-  private HostResource host;
+  private Host host;
 
   @BeforeEach
   void setUp() {
@@ -73,7 +73,7 @@ class HostResourceTest extends EntityTestCase {
     host =
         persistResource(
             cloneAndSetAutoTimestamps(
-                new HostResource.Builder()
+                new Host.Builder()
                     .setRepoId("DEADBEEF-COM")
                     .setHostName("ns1.example.com")
                     .setCreationRegistrarId("thisRegistrar")
@@ -87,15 +87,15 @@ class HostResourceTest extends EntityTestCase {
   }
 
   @Test
-  void testHostBaseToHostResource() {
+  void testHostBaseToHost() {
     ImmutableObjectSubject.assertAboutImmutableObjects()
-        .that(new HostResource.Builder().copyFrom(host).build())
+        .that(new Host.Builder().copyFrom(host).build())
         .isEqualExceptFields(host, "updateTimestamp", "revisions");
   }
 
   @Test
   void testPersistence() {
-    HostResource newHost = host.asBuilder().setRepoId("NEWHOST").build();
+    Host newHost = host.asBuilder().setRepoId("NEWHOST").build();
     tm().transact(() -> tm().insert(newHost));
     assertThat(ImmutableList.of(tm().transact(() -> tm().loadByKey(newHost.createVKey()))))
         .comparingElementsUsing(immutableObjectCorrespondence("revisions"))
@@ -104,28 +104,28 @@ class HostResourceTest extends EntityTestCase {
 
   @Test
   void testSerializable() {
-    HostResource newHost = host.asBuilder().setRepoId("NEWHOST").build();
+    Host newHost = host.asBuilder().setRepoId("NEWHOST").build();
     tm().transact(() -> tm().insert(newHost));
-    HostResource persisted = tm().transact(() -> tm().loadByEntity(newHost));
+    Host persisted = tm().transact(() -> tm().loadByEntity(newHost));
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @Test
   void testEmptyStringsBecomeNull() {
     assertThat(
-            new HostResource.Builder()
+            new Host.Builder()
                 .setPersistedCurrentSponsorRegistrarId(null)
                 .build()
                 .getPersistedCurrentSponsorRegistrarId())
         .isNull();
     assertThat(
-            new HostResource.Builder()
+            new Host.Builder()
                 .setPersistedCurrentSponsorRegistrarId("")
                 .build()
                 .getPersistedCurrentSponsorRegistrarId())
         .isNull();
     assertThat(
-            new HostResource.Builder()
+            new Host.Builder()
                 .setPersistedCurrentSponsorRegistrarId(" ")
                 .build()
                 .getPersistedCurrentSponsorRegistrarId())
@@ -134,11 +134,11 @@ class HostResourceTest extends EntityTestCase {
 
   @Test
   void testEmptySetsBecomeNull() {
-    assertThat(new HostResource.Builder().setInetAddresses(null).build().inetAddresses).isNull();
-    assertThat(new HostResource.Builder().setInetAddresses(ImmutableSet.of()).build().inetAddresses)
+    assertThat(new Host.Builder().setInetAddresses(null).build().inetAddresses).isNull();
+    assertThat(new Host.Builder().setInetAddresses(ImmutableSet.of()).build().inetAddresses)
         .isNull();
     assertThat(
-            new HostResource.Builder()
+            new Host.Builder()
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                 .build()
                 .inetAddresses)
@@ -148,20 +148,15 @@ class HostResourceTest extends EntityTestCase {
   @Test
   void testImplicitStatusValues() {
     // OK is implicit if there's no other statuses.
-    assertAboutHosts()
-        .that(new HostResource.Builder().build())
-        .hasExactlyStatusValues(StatusValue.OK);
+    assertAboutHosts().that(new Host.Builder().build()).hasExactlyStatusValues(StatusValue.OK);
     // If there are other status values, OK should be suppressed.
     assertAboutHosts()
-        .that(
-            new HostResource.Builder()
-                .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_HOLD))
-                .build())
+        .that(new Host.Builder().setStatusValues(ImmutableSet.of(StatusValue.CLIENT_HOLD)).build())
         .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
     // When OK is suppressed, it should be removed even if it was originally there.
     assertAboutHosts()
         .that(
-            new HostResource.Builder()
+            new Host.Builder()
                 .setStatusValues(ImmutableSet.of(StatusValue.OK, StatusValue.CLIENT_HOLD))
                 .build())
         .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
@@ -223,7 +218,7 @@ class HostResourceTest extends EntityTestCase {
     host =
         persistResource(
             cloneAndSetAutoTimestamps(
-                new HostResource.Builder()
+                new Host.Builder()
                     .setCreationTime(day2)
                     .setRepoId("DEADBEEF-COM")
                     .setHostName("ns1.example.com")

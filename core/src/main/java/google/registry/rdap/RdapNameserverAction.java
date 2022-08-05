@@ -21,7 +21,7 @@ import static google.registry.request.Action.Method.HEAD;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import google.registry.flows.EppException;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapObjectClasses.RdapNameserver;
@@ -61,12 +61,12 @@ public class RdapNameserverAction extends RdapActionBase {
     }
     // If there are no undeleted nameservers with the given name, the foreign key should point to
     // the most recently deleted one.
-    Optional<HostResource> hostResource =
+    Optional<Host> host =
         loadByForeignKey(
-            HostResource.class,
+            Host.class,
             pathSearchString,
             shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
-    if (!hostResource.isPresent() || !isAuthorized(hostResource.get())) {
+    if (!host.isPresent() || !isAuthorized(host.get())) {
       // RFC7480 5.3 - if the server wishes to respond that it doesn't have data satisfying the
       // query, it MUST reply with 404 response code.
       //
@@ -74,6 +74,6 @@ public class RdapNameserverAction extends RdapActionBase {
       // exists but we don't want to show it to you", because we DON'T wish to say that.
       throw new NotFoundException(pathSearchString + " not found");
     }
-    return rdapJsonFormatter.createRdapNameserver(hostResource.get(), OutputDataType.FULL);
+    return rdapJsonFormatter.createRdapNameserver(host.get(), OutputDataType.FULL);
   }
 }

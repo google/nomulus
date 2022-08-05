@@ -40,7 +40,7 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
@@ -87,7 +87,7 @@ public final class DomainLockUtilsTest {
   @BeforeEach
   void setup() {
     createTlds("tld", "net");
-    HostResource host = persistActiveHost("ns1.example.net");
+    Host host = persistActiveHost("ns1.example.net");
     domain = persistResource(DatabaseHelper.newDomain(DOMAIN_NAME, host));
 
     domainLockUtils =
