@@ -220,7 +220,8 @@ public class TlsCredentials implements TransportCredentials {
       super(
           clientInetAddr.isPresent()
               ? String.format(
-                  "Registrar IP address %s is not in stored allow list", clientInetAddr.get())
+                  "Registrar IP address %s is not in stored allow list",
+                  clientInetAddr.get().getHostAddress())
               : "Registrar IP address is not in stored allow list");
     }
   }
