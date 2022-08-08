@@ -374,6 +374,7 @@ An EPP flow that creates a new domain resource.
     *   The allocation token was already redeemed.
 *   2306
     *   Anchor tenant domain create is for the wrong number of years.
+    *   Trademarked domains cannot be registered before the sunrise period.
     *   The provided mark is not yet valid.
     *   The provided mark has expired.
     *   Domain names can only contain a-z, 0-9, '.' and '-'.

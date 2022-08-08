@@ -112,6 +112,7 @@ import google.registry.model.domain.secdns.SecDnsUpdateExtension;
 import google.registry.model.domain.secdns.SecDnsUpdateExtension.Add;
 import google.registry.model.domain.secdns.SecDnsUpdateExtension.Remove;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
 import google.registry.model.host.HostResource;
@@ -270,7 +271,13 @@ public class DomainFlowUtils {
         && token.get().getDomainName().get().equals(domainName.toString())) {
       return true;
     }
-    // Otherwise check whether the metadata extension is being used by a superuser to specify that
+    // Otherwise, check to see if we're using the specialized anchor tenant registration behavior on
+    // the allocation token
+    if (token.isPresent()
+        && token.get().getRegistrationBehavior().equals(RegistrationBehavior.ANCHOR_TENANT)) {
+      return true;
+    }
+    // Otherwise, check whether the metadata extension is being used by a superuser to specify that
     // it's an anchor tenant creation.
     return metadataExtension.isPresent() && metadataExtension.get().getIsAnchorTenant();
   }
