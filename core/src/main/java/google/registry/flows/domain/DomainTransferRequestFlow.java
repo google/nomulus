@@ -47,6 +47,7 @@ import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.flows.exceptions.AlreadyPendingTransferException;
 import google.registry.flows.exceptions.InvalidTransferPeriodValueException;
 import google.registry.flows.exceptions.ObjectAlreadySponsoredException;
@@ -61,6 +62,8 @@ import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.superuser.DomainTransferRequestSuperuserExtension;
+import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -117,6 +120,18 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.PremiumNameBlockedException}
  * @error {@link DomainFlowUtils.RegistrarMustBeActiveForThisOperationException}
  * @error {@link DomainFlowUtils.UnsupportedFeeAttributeException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_TRANSFER_REQUEST)
 public final class DomainTransferRequestFlow implements TransactionalFlow {
@@ -138,6 +153,8 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainPricingLogic pricingLogic;
+  @Inject AllocationTokenFlowUtils allocationTokenFlowUtils;
+
   @Inject DomainTransferRequestFlow() {}
 
   @Override
@@ -145,12 +162,22 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     extensionManager.register(
         DomainTransferRequestSuperuserExtension.class,
         FeeTransferCommandExtension.class,
-        MetadataExtension.class);
+        MetadataExtension.class,
+        AllocationTokenExtension.class);
     validateRegistrarIsLoggedIn(gainingClientId);
     verifyRegistrarIsActive(gainingClientId);
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
+    // Currently we do not do anything with this allocation token, but just want it loaded and
+    // available in this flow in case we use it in the future
+    Optional<AllocationToken> allocationToken =
+        allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
+            existingDomain,
+            Registry.get(existingDomain.getTld()),
+            gainingClientId,
+            now,
+            eppInput.getSingleExtension(AllocationTokenExtension.class));
     Optional<DomainTransferRequestSuperuserExtension> superuserExtension =
         eppInput.getSingleExtension(DomainTransferRequestSuperuserExtension.class);
     Period period =
