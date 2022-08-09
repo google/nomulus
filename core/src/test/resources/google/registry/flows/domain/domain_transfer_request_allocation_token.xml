@@ -1,0 +1,22 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <transfer op="request">
+      <domain:transfer
+          xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>example.tld</domain:name>
+        <domain:period unit="y">1</domain:period>
+        <domain:authInfo>
+          <domain:pw roid="JD1234-REP">2fooBAR</domain:pw>
+        </domain:authInfo>
+      </domain:transfer>
+    </transfer>
+    <extension>
+      <allocationToken:allocationToken
+          xmlns:allocationToken=
+              "urn:ietf:params:xml:ns:allocationToken-1.0">
+        abc123
+      </allocationToken:allocationToken>
+    </extension>
+    <clTRID>ABC-12345</clTRID>
+  </command>
+</epp>

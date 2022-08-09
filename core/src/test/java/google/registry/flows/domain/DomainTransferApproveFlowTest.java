@@ -16,6 +16,8 @@ package google.registry.flows.domain;
 
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
+import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.NET_ADDS_4_YR;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
@@ -43,12 +45,19 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
+import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
 import google.registry.flows.exceptions.NotPendingTransferException;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
@@ -63,6 +72,8 @@ import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
 import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -77,6 +88,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.testing.DatabaseHelper;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -774,5 +786,116 @@ class DomainTransferApproveFlowTest
         "domain_transfer_approve_response_zero_period_autorenew_grace.xml",
         domain.getRegistrationExpirationTime());
     assertHistoryEntriesDoNotContainTransferBillingEventsOrGracePeriods();
+  }
+
+  @Test
+  void testSuccess_allocationToken() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("example.tld")
+            .build());
+    doSuccessfulTest(
+        "tld",
+        "domain_transfer_approve_allocation_token.xml",
+        "domain_transfer_approve_response.xml");
+  }
+
+  @Test
+  void testFailure_invalidAllocationToken() throws Exception {
+    setEppInput("domain_transfer_approve_allocation_token.xml");
+    EppException thrown = assertThrows(InvalidAllocationTokenException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_allocationTokenIsForDifferentName() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("otherdomain.tld")
+            .build());
+    setEppInput("domain_transfer_approve_allocation_token.xml");
+    EppException thrown =
+        assertThrows(AllocationTokenNotValidForDomainException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_allocationTokenNotActive() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
+            .setDiscountFraction(0.5)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(60), TokenStatus.ENDED)
+                    .build())
+            .build());
+    setEppInput("domain_transfer_approve_allocation_token.xml");
+    EppException thrown = assertThrows(AllocationTokenNotInPromotionException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_allocationTokenNotValidForRegistrar() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
+            .setAllowedRegistrarIds(ImmutableSet.of("someClientId"))
+            .setDiscountFraction(0.5)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    setEppInput("domain_transfer_approve_allocation_token.xml");
+    EppException thrown =
+        assertThrows(AllocationTokenNotValidForRegistrarException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_allocationTokenNotValidForTld() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
+            .setAllowedTlds(ImmutableSet.of("example"))
+            .setDiscountFraction(0.5)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    setEppInput("domain_transfer_approve_allocation_token.xml");
+    EppException thrown = assertThrows(AllocationTokenNotValidForTldException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_allocationTokenAlreadyRedeemed() throws Exception {
+    Domain domain = DatabaseHelper.newDomain("foo.tld");
+    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 505L);
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
+            .build());
+    setEppInput("domain_transfer_approve_allocation_token.xml");
+    EppException thrown =
+        assertThrows(AlreadyRedeemedAllocationTokenException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 }

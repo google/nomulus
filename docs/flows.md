@@ -589,12 +589,20 @@ replaced with new ones with the correct approval time.
 *   2201
     *   The specified resource belongs to another client.
     *   Registrar is not authorized to access this TLD.
+    *   The allocation token is invalid.
 *   2202
     *   Authorization information for accessing resource is invalid.
 *   2301
     *   The resource does not have a pending transfer.
 *   2303
     *   Resource with this id does not exist.
+*   2304
+    *   The allocation token is not currently valid.
+*   2305
+    *   The allocation token is not valid for this domain.
+    *   The allocation token is not valid for this registrar.
+    *   The allocation token is not valid for this TLD.
+    *   The allocation token was already redeemed.
 
 ## DomainTransferCancelFlow
 
@@ -723,6 +731,7 @@ new ones with the correct approval time).
     *   Registrar is missing the billing account map for this currency type.
     *   Registrar is not authorized to access this TLD.
     *   Registrar must be active in order to perform this operation.
+    *   The allocation token is invalid.
 *   2202
     *   Authorization information for accessing resource is invalid.
 *   2300
@@ -735,6 +744,12 @@ new ones with the correct approval time).
         extension.
     *   The requested domain name is on the premium price list, and this
         registrar has blocked premium registrations.
+    *   The allocation token is not currently valid.
+*   2305
+    *   The allocation token is not valid for this domain.
+    *   The allocation token is not valid for this registrar.
+    *   The allocation token is not valid for this TLD.
+    *   The allocation token was already redeemed.
 *   2306
     *   Domain transfer period must be one year.
     *   Domain transfer period must be zero or one year when using the superuser
