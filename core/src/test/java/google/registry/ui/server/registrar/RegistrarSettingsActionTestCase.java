@@ -36,7 +36,6 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth;
 import google.registry.flows.certs.CertificateChecker;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonResponse;
@@ -48,7 +47,6 @@ import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
@@ -80,8 +78,6 @@ public abstract class RegistrarSettingsActionTestCase {
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @Mock HttpServletRequest req;
   @Mock HttpServletResponse rsp;
@@ -129,7 +125,6 @@ public abstract class RegistrarSettingsActionTestCase {
             clock);
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
 
-    inject.setStaticField(Ofy.class, "clock", clock);
     when(req.getMethod()).thenReturn("POST");
     when(rsp.getWriter()).thenReturn(new PrintWriter(writer));
     when(req.getContentType()).thenReturn("application/json");

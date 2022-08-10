@@ -24,13 +24,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import google.registry.model.ofy.Ofy;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.RequestModule;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper.CloudTasksHelperModule;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.servlet.http.HttpServletRequest;
@@ -47,8 +45,6 @@ public final class DnsInjectionTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);
   private final StringWriter httpOutput = new StringWriter();
@@ -58,7 +54,6 @@ public final class DnsInjectionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    inject.setStaticField(Ofy.class, "clock", clock);
     when(rsp.getWriter()).thenReturn(new PrintWriter(httpOutput));
     component =
         DaggerDnsTestComponent.builder()

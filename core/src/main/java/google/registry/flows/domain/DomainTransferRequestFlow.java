@@ -62,7 +62,6 @@ import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.superuser.DomainTransferRequestSuperuserExtension;
-import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
@@ -169,15 +168,12 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    // Currently we do not do anything with this allocation token, but just want it loaded and
-    // available in this flow in case we use it in the future
-    Optional<AllocationToken> allocationToken =
-        allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
-            existingDomain,
-            Registry.get(existingDomain.getTld()),
-            gainingClientId,
-            now,
-            eppInput.getSingleExtension(AllocationTokenExtension.class));
+    allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
+        existingDomain,
+        Registry.get(existingDomain.getTld()),
+        gainingClientId,
+        now,
+        eppInput.getSingleExtension(AllocationTokenExtension.class));
     Optional<DomainTransferRequestSuperuserExtension> superuserExtension =
         eppInput.getSingleExtension(DomainTransferRequestSuperuserExtension.class);
     Period period =
@@ -210,9 +206,12 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
         .setId(domainHistoryKey.getId())
         .setOtherRegistrarId(existingDomain.getCurrentSponsorRegistrarId());
     DateTime automaticTransferTime =
-        superuserExtension.isPresent()
-            ? now.plusDays(superuserExtension.get().getAutomaticTransferLength())
-            : now.plus(registry.getAutomaticTransferLength());
+        superuserExtension
+            .map(
+                domainTransferRequestSuperuserExtension ->
+                    now.plusDays(
+                        domainTransferRequestSuperuserExtension.getAutomaticTransferLength()))
+            .orElseGet(() -> now.plus(registry.getAutomaticTransferLength()));
     // If the domain will be in the auto-renew grace period at the moment of transfer, the transfer
     // will subsume the autorenew, so we don't add the normal extra year from the transfer.
     // The gaining registrar is still billed for the extra year; the losing registrar will get a
@@ -325,7 +324,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
    *
    * <p>Even if not required, this policy is desirable because it dramatically simplifies the logic
    * in transfer flows. Registrars appear to never request 2+ year transfers in practice, and they
-   * can always decompose an multi-year transfer into a 1-year transfer followed by a manual renewal
+   * can always decompose a multi-year transfer into a 1-year transfer followed by a manual renewal
    * afterwards. The <a href="https://tools.ietf.org/html/rfc5731#section-3.2.4">EPP Domain RFC,
    * section 3.2.4</a> says about EPP transfer periods that "the number of units available MAY be
    * subject to limits imposed by the server" so we're just limiting the units to one.
@@ -370,7 +369,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   private DomainTransferResponse createResponse(
       Period period, Domain existingDomain, Domain newDomain, DateTime now) {
     // If the registration were approved this instant, this is what the new expiration would be,
-    // because we cap at 10 years from the moment of approval. This is different than the server
+    // because we cap at 10 years from the moment of approval. This is different from the server
     // approval new expiration time, which is capped at 10 years from the server approve time.
     DateTime approveNowExtendedRegistrationTime =
         computeExDateForApprovalTime(existingDomain, now, period);

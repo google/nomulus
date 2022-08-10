@@ -31,11 +31,9 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.truth.Truth8;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,8 +41,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PendingDepositChecker}. */
 public class PendingDepositCheckerTest {
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @RegisterExtension
   public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
@@ -54,7 +50,6 @@ public class PendingDepositCheckerTest {
 
   @BeforeEach
   void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
     checker.brdaDayOfWeek = TUESDAY;
     checker.brdaInterval = standardDays(7);
     checker.clock = clock;

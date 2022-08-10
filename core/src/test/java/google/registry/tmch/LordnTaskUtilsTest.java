@@ -24,11 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.launch.LaunchNotice;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.Clock;
 import org.joda.time.DateTime;
@@ -45,15 +43,12 @@ public class LordnTaskUtilsTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   @BeforeEach
   void beforeEach() {
     createTld("example");
-    inject.setStaticField(Ofy.class, "clock", clock);
   }
 
-  private Domain.Builder newDomainBuilder() {
+  private static Domain.Builder newDomainBuilder() {
     return new Domain.Builder()
         .setDomainName("fleece.example")
         .setPersistedCurrentSponsorRegistrarId("TheRegistrar")

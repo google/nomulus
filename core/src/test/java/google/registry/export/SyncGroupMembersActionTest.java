@@ -42,7 +42,6 @@ import google.registry.request.Response;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.InjectExtension;
 import google.registry.util.Retrier;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
@@ -59,8 +58,6 @@ public class SyncGroupMembersActionTest {
   @RegisterExtension
   public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   private final DirectoryGroupsConnection connection = mock(DirectoryGroupsConnection.class);
   private final Response response = mock(Response.class);
 
@@ -76,8 +73,7 @@ public class SyncGroupMembersActionTest {
   @Test
   void test_getGroupEmailAddressForContactType_convertsToLowercase() {
     assertThat(
-            getGroupEmailAddressForContactType(
-                "SomeRegistrar", RegistrarPoc.Type.ADMIN, "domain-registry.example"))
+            getGroupEmailAddressForContactType("SomeRegistrar", ADMIN, "domain-registry.example"))
         .isEqualTo("someregistrar-primary-contacts@domain-registry.example");
   }
 

@@ -33,7 +33,6 @@ import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.InjectExtension;
 import google.registry.util.CapturingLogHandler;
 import google.registry.util.CloudTasksUtils;
 import google.registry.util.JdkLoggerConfig;
@@ -57,12 +56,10 @@ public class AsyncTaskEnqueuerTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   private AsyncTaskEnqueuer asyncTaskEnqueuer;
   private final CapturingLogHandler logHandler = new CapturingLogHandler();
   private final FakeClock clock = new FakeClock(DateTime.parse("2015-05-18T12:34:56Z"));
-  private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
 
   @BeforeEach
   void beforeEach() {

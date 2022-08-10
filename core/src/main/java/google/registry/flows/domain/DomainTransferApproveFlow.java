@@ -56,7 +56,6 @@ import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppinput.EppInput;
@@ -129,15 +128,12 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    // Currently we do not do anything with this allocation token, but just want it loaded and
-    // available in this flow in case we use it in the future
-    Optional<AllocationToken> allocationToken =
-        allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
-            existingDomain,
-            Registry.get(existingDomain.getTld()),
-            registrarId,
-            now,
-            eppInput.getSingleExtension(AllocationTokenExtension.class));
+    allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
+        existingDomain,
+        Registry.get(existingDomain.getTld()),
+        registrarId,
+        now,
+        eppInput.getSingleExtension(AllocationTokenExtension.class));
     verifyOptionalAuthInfo(authInfo, existingDomain);
     verifyHasPendingTransfer(existingDomain);
     verifyResourceOwnership(registrarId, existingDomain);
@@ -182,9 +178,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
         getOnlyElement(existingDomain.getGracePeriodsOfType(GracePeriodStatus.AUTO_RENEW), null);
     if (autorenewGrace != null) {
       // During a normal transfer, if the domain is in the auto-renew grace period, the auto-renew
-      // billing event is cancelled and the gaining registrar is charged for the one year renewal.
+      // billing event is cancelled and the gaining registrar is charged for the one-year renewal.
       // But, if the superuser extension is used to request a transfer without an additional year
-      // then the gaining registrar is not charged for the one year renewal and the losing registrar
+      // then the gaining registrar is not charged for the one-year renewal and the losing registrar
       // still needs to be charged for the auto-renew.
       if (billingEvent.isPresent()) {
         entitiesToSave.add(

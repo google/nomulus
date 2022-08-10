@@ -27,11 +27,9 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
-import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -54,8 +52,6 @@ public class TransactionManagerTest {
           new TestEntity("entity2", "bar"),
           new TestEntity("entity3", "qux"));
 
-  @RegisterExtension public InjectExtension inject = new InjectExtension();
-
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
@@ -69,7 +65,6 @@ public class TransactionManagerTest {
 
   @BeforeEach
   void setUp() {
-    inject.setStaticField(Ofy.class, "clock", fakeClock);
     fakeClock.setAutoIncrementByOneMilli();
   }
 

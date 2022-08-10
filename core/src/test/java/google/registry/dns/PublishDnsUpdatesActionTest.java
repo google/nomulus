@@ -45,7 +45,6 @@ import google.registry.dns.DnsMetrics.CommitStatus;
 import google.registry.dns.DnsMetrics.PublishStatus;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.model.domain.Domain;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;
@@ -55,7 +54,6 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectExtension;
 import java.util.Optional;
 import java.util.Set;
 import org.joda.time.DateTime;
@@ -71,7 +69,6 @@ public class PublishDnsUpdatesActionTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
   private final FakeClock clock = new FakeClock(DateTime.parse("1971-01-01TZ"));
   private final FakeResponse response = new FakeResponse();
   private final FakeLockHandler lockHandler = new FakeLockHandler(true);
@@ -83,7 +80,6 @@ public class PublishDnsUpdatesActionTest {
 
   @BeforeEach
   void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
     createTld("xn--q9jyb4c");
     persistResource(
         Registry.get("xn--q9jyb4c")

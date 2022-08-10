@@ -42,17 +42,14 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
-import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.InjectExtension;
 import google.registry.util.CapturingLogHandler;
 import google.registry.util.JdkLoggerConfig;
 import java.util.logging.Level;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdateDomainCommand}. */
 class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand> {
@@ -61,11 +58,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
 
   private Domain domain;
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   @BeforeEach
   void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", fakeClock);
     command.clock = fakeClock;
     domain = persistActiveDomain("example.tld");
     JdkLoggerConfig.getConfig(UpdateDomainCommand.class).addHandler(logHandler);

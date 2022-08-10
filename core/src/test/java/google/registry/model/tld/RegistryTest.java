@@ -43,7 +43,6 @@ import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.tld.label.ReservedList;
-import google.registry.testing.DatabaseHelper;
 import google.registry.util.SerializeUtils;
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -61,8 +60,6 @@ public final class RegistryTest extends EntityTestCase {
 
   @BeforeEach
   void beforeEach() {
-    // Auto-increment fakeClock in DatabaseHelper.
-    inject.setStaticField(DatabaseHelper.class, "clock", fakeClock);
     createTld("tld");
   }
 

@@ -41,25 +41,19 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UnrenewDomainCommand}. */
 public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainCommand> {
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @BeforeEach
   void beforeEach() {
     createTld("tld");
     fakeClock.setTo(DateTime.parse("2016-12-06T13:55:01Z"));
-    inject.setStaticField(Ofy.class, "clock", fakeClock);
     command.clock = fakeClock;
   }
 

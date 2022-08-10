@@ -47,7 +47,6 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
@@ -57,7 +56,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.FullFieldsTestEntityHelper;
-import google.registry.testing.InjectExtension;
 import google.registry.testing.TestCacheExtension;
 import google.registry.util.Retrier;
 import google.registry.whois.WhoisMetrics.WhoisMetric;
@@ -79,8 +77,6 @@ public class WhoisActionTest {
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withClock(clock).build();
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @RegisterExtension
   public final TestCacheExtension testCacheExtension =
@@ -109,7 +105,6 @@ public class WhoisActionTest {
   @BeforeEach
   void setUp() {
     createTlds("lol", "xn--q9jyb4c", "1.test");
-    inject.setStaticField(Ofy.class, "clock", clock);
   }
 
   @Test
@@ -119,7 +114,7 @@ public class WhoisActionTest {
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_no_command.txt"));
   }
 
-  private Domain makeDomainWithRegistrar(Registrar registrar) {
+  private static Domain makeDomainWithRegistrar(Registrar registrar) {
     return makeDomain(
         "cat.lol",
         persistResource(makeContactResource("5372808-ERL", "Goblin Market", "lol@cat.lol")),
@@ -287,8 +282,7 @@ public class WhoisActionTest {
                 persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4")),
                 persistResource(
                     FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
-                persistResource(
-                    (registrar = makeRegistrar("example", "Example Registrar", ACTIVE))))
+                persistResource(registrar = makeRegistrar("example", "Example Registrar", ACTIVE)))
             .asBuilder()
             .setDeletionTime(clock.nowUtc().minusDays(1))
             .build());
@@ -339,7 +333,7 @@ public class WhoisActionTest {
                     persistResource(
                         FullFieldsTestEntityHelper.makeHost("ns2.google.lol", "4311::f143")),
                     persistResource(
-                        (registrar = makeRegistrar("example", "Example Registrar", ACTIVE))))
+                        registrar = makeRegistrar("example", "Example Registrar", ACTIVE)))
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc())
                 .build());

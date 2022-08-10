@@ -24,8 +24,6 @@ import static org.mockito.Mockito.mock;
 
 import com.google.appengine.api.users.User;
 import com.google.gson.JsonObject;
-import google.registry.model.ofy.Ofy;
-import google.registry.request.Action;
 import google.registry.request.Actions;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
@@ -33,7 +31,6 @@ import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectExtension;
 import google.registry.util.Idn;
 import google.registry.util.TypeUtils;
 import java.util.HashMap;
@@ -47,8 +44,6 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
 
   @RegisterExtension
   public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   protected static final AuthResult AUTH_RESULT =
       AuthResult.create(
@@ -72,19 +67,18 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
 
   RdapActionBaseTestCase(Class<A> rdapActionClass) {
     this.rdapActionClass = rdapActionClass;
-    this.actionPath = Actions.getPathForAction(rdapActionClass);
+    actionPath = Actions.getPathForAction(rdapActionClass);
   }
 
   @BeforeEach
   public void beforeEachRdapActionBaseTestCase() {
-    inject.setStaticField(Ofy.class, "clock", clock);
     action = TypeUtils.instantiate(rdapActionClass);
     action.includeDeletedParam = Optional.empty();
     action.formatOutputParam = Optional.empty();
     action.response = response;
     action.rdapJsonFormatter = RdapTestHelper.getTestRdapJsonFormatter(clock);
     action.rdapMetrics = rdapMetrics;
-    action.requestMethod = Action.Method.GET;
+    action.requestMethod = GET;
     logout();
   }
 
