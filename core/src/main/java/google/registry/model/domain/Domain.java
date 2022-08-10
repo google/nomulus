@@ -210,7 +210,8 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
           .setSubordinateHosts(domainBase.getSubordinateHosts())
           .setStatusValues(domainBase.getStatusValues())
           .setTransferData(domainBase.getTransferData())
-          .setDnsRefreshRequestTime(domainBase.getDnsRefreshRequestTime());
+          .setDnsRefreshRequestTime(domainBase.getDnsRefreshRequestTime())
+          .setCurrentPackageToken(domainBase.getCurrentPackageToken().orElse(null));
     }
   }
 }
