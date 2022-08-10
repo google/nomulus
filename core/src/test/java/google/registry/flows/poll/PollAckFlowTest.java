@@ -32,19 +32,12 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.poll.PollMessage;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.SetClockExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PollAckFlow}. */
 class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
-
-  @Order(value = Order.DEFAULT - 3)
-  @RegisterExtension
-  final SetClockExtension setClockExtension = new SetClockExtension(clock, "2011-01-02T01:01:01Z");
 
   /** This is the message id being sent in the ACK request. */
   private static final long MESSAGE_ID = 3;
@@ -55,6 +48,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   @BeforeEach
   void setUp() {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2011"));
+    clock.setTo(DateTime.parse("2011-01-02T01:01:01Z"));
     setRegistrarIdForFlow("NewRegistrar");
     createTld("example");
     contact = persistActiveContact("jd1234");

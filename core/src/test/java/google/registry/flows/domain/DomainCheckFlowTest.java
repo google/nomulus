@@ -82,29 +82,21 @@ import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.SetClockExtension;
 import java.math.BigDecimal;
-import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainCheckFlow}. */
 class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Domain> {
 
-  @Order(value = Order.DEFAULT - 3)
-  @RegisterExtension
-  final SetClockExtension setClockExtension = new SetClockExtension(clock, "2009-01-01T10:00:00Z");
-
   DomainCheckFlowTest() {
     setEppInput("domain_check_one_tld.xml");
+    clock.setTo(DateTime.parse("2009-01-01T10:00:00Z"));
   }
 
-  private ReservedList createReservedList() {
+  private static ReservedList createReservedList() {
     persistResource(
         new AllocationToken.Builder()
             .setDomainName("anchor.tld")
@@ -951,10 +943,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     // This works because Money.getAmount(), used in the flow, returns a BigDecimal that is set to
     // display the number of digits that is conventional for the given currency.
     persistResource(
-        Registry.get("tld")
-            .asBuilder()
-            .setCreateBillingCost(Money.of(CurrencyUnit.USD, 11.1))
-            .build());
+        Registry.get("tld").asBuilder().setCreateBillingCost(Money.of(USD, 11.1)).build());
     setEppInput("domain_check_fee_fractional.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_fractional_response.xml"));
   }
@@ -1398,7 +1387,6 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         "domain_check_fee_date_v12.xml", "domain_check_eap_fee_response_date_v12.xml");
   }
 
-  @Disabled
   @Test
   void testSuccess_feeCheck_multipleRanges() {
     // TODO: If at some point we have more than one type of fees that are time dependent, populate

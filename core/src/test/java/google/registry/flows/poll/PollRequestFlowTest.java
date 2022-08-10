@@ -40,18 +40,12 @@ import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.SetClockExtension;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PollRequestFlow}. */
 class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
-
-  @Order(value = Order.DEFAULT - 3)
-  @RegisterExtension
-  final SetClockExtension setClockExtension = new SetClockExtension(clock, "2011-01-02T01:01:01Z");
 
   private Domain domain;
   private ContactResource contact;
@@ -60,6 +54,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   @BeforeEach
   void setUp() {
     setEppInput("poll.xml");
+    clock.setTo(DateTime.parse("2011-01-02T01:01:01Z"));
     setRegistrarIdForFlow("NewRegistrar");
     createTld("example");
     persistNewRegistrar("BadRegistrar");
