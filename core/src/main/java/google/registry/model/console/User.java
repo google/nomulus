@@ -41,12 +41,6 @@ public class User extends ImmutableObject implements Buildable {
   private UserRoles userRoles;
 
   /**
-   * Whether the contact is allowed to set their registry lock password through the registrar
-   * console. This will be set to false on contact creation and when the user sets a password.
-   */
-  boolean allowedToSetRegistryLockPassword = false;
-
-  /**
    * A hashed password that exists iff this contact is registry-lock-enabled. The hash is a base64
    * encoded SHA256 string.
    */
@@ -54,6 +48,10 @@ public class User extends ImmutableObject implements Buildable {
 
   /** Randomly generated hash salt. */
   String registryLockPasswordSalt;
+
+  public long getId() {
+    return id;
+  }
 
   public String getGaiaId() {
     return gaiaId;
@@ -67,11 +65,7 @@ public class User extends ImmutableObject implements Buildable {
     return userRoles;
   }
 
-  public boolean isAllowedToSetRegistryLockPassword() {
-    return allowedToSetRegistryLockPassword;
-  }
-
-  public boolean isRegistryLockAllowed() {
+  public boolean hasRegistryLockPassword() {
     return !isNullOrEmpty(registryLockPasswordHash) && !isNullOrEmpty(registryLockPasswordSalt);
   }
 
@@ -83,6 +77,22 @@ public class User extends ImmutableObject implements Buildable {
     }
     return hashPassword(registryLockPassword, registryLockPasswordSalt)
         .equals(registryLockPasswordHash);
+  }
+
+  /**
+   * Whether the user has the registry lock permission on any registrar or globally.
+   *
+   * <p>If so, they should be allowed to (re)set their registry lock password.
+   */
+  public boolean hasAnyRegistryLockPermission() {
+    if (userRoles == null) {
+      return false;
+    }
+    if (userRoles.isAdmin() || userRoles.hasGlobalPermission(ConsolePermission.REGISTRY_LOCK)) {
+      return true;
+    }
+    return userRoles.getRegistrarRoles().values().stream()
+        .anyMatch(role -> role.hasPermission(ConsolePermission.REGISTRY_LOCK));
   }
 
   @Override
@@ -99,6 +109,7 @@ public class User extends ImmutableObject implements Buildable {
       super(user);
     }
 
+    @Override
     public User build() {
       checkArgumentNotNull(getInstance().gaiaId, "Gaia ID cannot be null");
       checkArgumentNotNull(getInstance().emailAddress, "Email address cannot be null");
@@ -123,25 +134,22 @@ public class User extends ImmutableObject implements Buildable {
       return this;
     }
 
-    public Builder setAllowedToSetRegistryLockPassword(boolean allowedToSetRegistryLockPassword) {
-      if (allowedToSetRegistryLockPassword) {
-        getInstance().registryLockPasswordSalt = null;
-        getInstance().registryLockPasswordHash = null;
-      }
-      getInstance().allowedToSetRegistryLockPassword = allowedToSetRegistryLockPassword;
+    public Builder removeRegistryLockPassword() {
+      getInstance().registryLockPasswordHash = null;
+      getInstance().registryLockPasswordSalt = null;
       return this;
     }
 
     public Builder setRegistryLockPassword(String registryLockPassword) {
       checkArgument(
-          getInstance().allowedToSetRegistryLockPassword,
-          "Not allowed to set registry lock password for this user");
+          getInstance().hasAnyRegistryLockPermission(), "User has no registry lock permission");
+      checkArgument(
+          !getInstance().hasRegistryLockPassword(), "User already has a password, remove it first");
       checkArgument(
           !isNullOrEmpty(registryLockPassword), "Registry lock password was null or empty");
       getInstance().registryLockPasswordSalt = base64().encode(SALT_SUPPLIER.get());
       getInstance().registryLockPasswordHash =
           hashPassword(registryLockPassword, getInstance().registryLockPasswordSalt);
-      getInstance().allowedToSetRegistryLockPassword = false;
       return this;
     }
   }

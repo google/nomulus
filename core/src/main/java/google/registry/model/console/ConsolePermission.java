@@ -63,5 +63,7 @@ public enum ConsolePermission {
   /** View announcements in the UI. */
   VIEW_ANNOUNCEMENTS,
   /** Viewing a record of actions performed in the UI for a particular registrar. */
-  VIEW_ACTIVITY_LOG
+  VIEW_ACTIVITY_LOG,
+  /** View and perform registry locks. */
+  REGISTRY_LOCK
 }

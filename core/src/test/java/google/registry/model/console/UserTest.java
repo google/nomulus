@@ -58,4 +58,33 @@ public class UserTest {
     builder.setUserRoles(new UserRoles.Builder().build());
     builder.build();
   }
+
+  @Test
+  void testRegistryLockPassword() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    new User.Builder()
+                        .setUserRoles(new UserRoles.Builder().build())
+                        .setRegistryLockPassword("foobar")))
+        .hasMessageThat()
+        .isEqualTo("User has no registry lock permission");
+
+    User user =
+        new User.Builder()
+            .setGaiaId("gaiaId")
+            .setEmailAddress("email@email.com")
+            .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
+            .build();
+    assertThat(user.hasRegistryLockPassword()).isFalse();
+
+    user = user.asBuilder().setRegistryLockPassword("foobar").build();
+    assertThat(user.hasRegistryLockPassword()).isTrue();
+    assertThat(user.verifyRegistryLockPassword("foobar")).isTrue();
+
+    user = user.asBuilder().removeRegistryLockPassword().build();
+    assertThat(user.hasRegistryLockPassword()).isFalse();
+    assertThat(user.verifyRegistryLockPassword("foobar")).isFalse();
+  }
 }

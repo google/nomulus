@@ -15,6 +15,7 @@
 package google.registry.model.console;
 
 import static google.registry.model.console.ConsoleRoleDefinitions.ACCOUNT_MANAGER_PERMISSIONS;
+import static google.registry.model.console.ConsoleRoleDefinitions.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK_PERMISSIONS;
 import static google.registry.model.console.ConsoleRoleDefinitions.PRIMARY_CONTACT_PERMISSIONS;
 import static google.registry.model.console.ConsoleRoleDefinitions.TECH_CONTACT_PERMISSIONS;
 
@@ -25,6 +26,8 @@ public enum RegistrarRole {
 
   /** The user is a standard account manager at a registrar. */
   ACCOUNT_MANAGER(ACCOUNT_MANAGER_PERMISSIONS),
+  /** The user is an account manager that can perform registry locks. */
+  ACCOUNT_MANAGER_WITH_REGISTRY_LOCK(ACCOUNT_MANAGER_WITH_REGISTRY_LOCK_PERMISSIONS),
   /** The user is a technical contact of a registrar. */
   TECH_CONTACT(TECH_CONTACT_PERMISSIONS),
   /** The user is the primary contact at a registrar. */
