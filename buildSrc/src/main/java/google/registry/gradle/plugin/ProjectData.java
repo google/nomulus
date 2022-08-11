@@ -17,7 +17,6 @@ package google.registry.gradle.plugin;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import google.registry.gradle.plugin.ProjectData.TaskData;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
