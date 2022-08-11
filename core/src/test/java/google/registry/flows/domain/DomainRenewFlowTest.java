@@ -29,7 +29,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
@@ -95,16 +94,13 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.SetClockExtension;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainRenewFlow}. */
 class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> {
@@ -126,13 +122,9 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
 
   private final DateTime expirationTime = DateTime.parse("2000-04-03T22:00:00.0Z");
 
-  @Order(value = Order.DEFAULT - 3)
-  @RegisterExtension
-  final SetClockExtension setClockExtension =
-      new SetClockExtension(clock, expirationTime.minusMillis(20));
-
   @BeforeEach
   void initDomainTest() {
+    clock.setTo(expirationTime.minusMillis(20));
     createTld("tld");
     persistResource(
         loadRegistrar("TheRegistrar")

@@ -48,9 +48,9 @@ import google.registry.flows.domain.DomainFlowUtils.CurrencyUnitMismatchExceptio
 import google.registry.flows.domain.DomainFlowUtils.FeeChecksDontSupportPhasesException;
 import google.registry.flows.domain.DomainFlowUtils.RestoresAreAlwaysForOneYearException;
 import google.registry.flows.domain.DomainFlowUtils.TransfersAreAlwaysForOneYearException;
-import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactResource;
@@ -70,22 +70,15 @@ import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.SetClockExtension;
+import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainInfoFlow}. */
 class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
-
-  @Order(value = Order.DEFAULT - 3)
-  @RegisterExtension
-  final SetClockExtension setClockExtension =
-      new SetClockExtension(clock, "2005-03-03T22:00:00.000Z");
 
   /**
    * The domain_info_fee.xml default substitutions common to most tests.
@@ -99,6 +92,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
           "CURRENCY", "USD",
           "UNIT", "y");
 
+  private static final Pattern OK_PATTERN = Pattern.compile("\"ok\"");
+
   private ContactResource registrant;
   private ContactResource contact;
   private Host host1;
@@ -109,6 +104,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   @BeforeEach
   void setup() {
     setEppInput("domain_info.xml");
+    clock.setTo(DateTime.parse("2005-03-03T22:00:00.000Z"));
     sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
     persistResource(
@@ -175,7 +171,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     String expected =
         loadFile(expectedXmlFilename, updateSubstitutions(substitutions, "ROID", "2FF-TLD"));
     if (inactive) {
-      expected = expected.replaceAll("\"ok\"", "\"inactive\"");
+      expected = OK_PATTERN.matcher(expected).replaceAll("\"inactive\"");
     }
     runFlowAssertResponse(expected);
     if (!expectHistoryAndBilling) {
@@ -379,9 +375,9 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setModificationTime(clock.nowUtc())
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
-    BillingEvent.Recurring renewEvent =
+    Recurring renewEvent =
         persistResource(
-            new BillingEvent.Recurring.Builder()
+            new Recurring.Builder()
                 .setReason(Reason.RENEW)
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(getUniqueIdFromCommand())
@@ -390,7 +386,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setDomainHistory(historyEntry)
                 .build());
-    VKey<BillingEvent.Recurring> recurringVKey = renewEvent.createVKey();
+    VKey<Recurring> recurringVKey = renewEvent.createVKey();
     // Add an AUTO_RENEW grace period to the saved resource.
     persistResource(
         domain
