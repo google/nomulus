@@ -22,13 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
-import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ListCursorsCommand}. */
 public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> {
@@ -39,12 +36,9 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
   private static final String HEADER_TWO =
       "--------------------------------------------------------------------------";
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   @BeforeEach
   void beforeEach() {
     fakeClock.setTo(DateTime.parse("1984-12-21T06:07:08.789Z"));
-    inject.setStaticField(Ofy.class, "clock", fakeClock);
   }
 
   @Test

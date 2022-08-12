@@ -28,7 +28,6 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.Response;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.InjectExtension;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -38,8 +37,6 @@ class CreateGroupsActionTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
-
-  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   private final DirectoryGroupsConnection connection = mock(DirectoryGroupsConnection.class);
   private final Response response = mock(Response.class);

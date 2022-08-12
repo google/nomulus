@@ -18,20 +18,14 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 
-import google.registry.model.ofy.Ofy;
-import google.registry.testing.InjectExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CountDomainsCommand}. */
 public class CountDomainsCommandTest extends CommandTestCase<CountDomainsCommand> {
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   @BeforeEach
   final void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", fakeClock);
     command.clock = fakeClock;
     createTlds("foo", "bar", "baz", "qux");
   }

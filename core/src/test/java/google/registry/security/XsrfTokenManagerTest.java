@@ -22,7 +22,6 @@ import com.google.common.base.Splitter;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeUserService;
-import google.registry.testing.InjectExtension;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,8 +32,6 @@ class XsrfTokenManagerTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
-
-  @RegisterExtension InjectExtension inject = new InjectExtension();
 
   private final User testUser = new User("test@example.com", "test@example.com");
   private final FakeClock clock = new FakeClock(START_OF_TIME);
@@ -81,7 +78,7 @@ class XsrfTokenManagerTest {
   void testValidate_tokenTimestampTamperedWith() {
     String encodedPart = Splitter.on(':').splitToList(token).get(2);
     long fakeTimestamp = clock.nowUtc().plusMillis(1).getMillis();
-    assertThat(xsrfTokenManager.validateToken("1:" + fakeTimestamp + ":" + encodedPart)).isFalse();
+    assertThat(xsrfTokenManager.validateToken("1:" + fakeTimestamp + ':' + encodedPart)).isFalse();
   }
 
   @Test

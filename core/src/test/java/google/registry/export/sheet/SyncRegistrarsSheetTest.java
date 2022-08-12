@@ -35,14 +35,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.common.Cursor;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,8 +58,6 @@ public class SyncRegistrarsSheetTest {
   @RegisterExtension
   public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   @Captor private ArgumentCaptor<ImmutableList<ImmutableMap<String, String>>> rowsCaptor;
   @Mock private SheetSynchronizer sheetSynchronizer;
 
@@ -76,7 +72,6 @@ public class SyncRegistrarsSheetTest {
 
   @BeforeEach
   void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
     createTld("example");
     // Remove Registrar entities created by AppEngineExtension (and RegistrarContact's, for jpa).
     // We don't do this for ofy because ofy's loadAllOf() can't be called in a transaction but
@@ -215,7 +210,7 @@ public class SyncRegistrarsSheetTest {
                 + "Phone number and email visible in domain WHOIS query as "
                 + "Registrar Abuse contact info: No\n"
                 + "Registrar-Console access: No\n"
-                + "\n"
+                + '\n'
                 + "John Doe\n"
                 + "john.doe@example.tld\n"
                 + "Tel: +1.1234567890\n"

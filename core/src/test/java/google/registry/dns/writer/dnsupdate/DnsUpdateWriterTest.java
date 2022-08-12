@@ -39,13 +39,12 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
-import google.registry.model.ofy.Ofy;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,8 +75,6 @@ public class DnsUpdateWriterTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   @Mock private DnsMessageTransport mockResolver;
   @Captor private ArgumentCaptor<Update> updateCaptor;
 
@@ -87,8 +84,6 @@ public class DnsUpdateWriterTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    inject.setStaticField(Ofy.class, "clock", clock);
-
     createTld("tld");
     when(mockResolver.send(any(Update.class))).thenReturn(messageWithResponseCode(Rcode.NOERROR));
 
@@ -418,23 +413,23 @@ public class DnsUpdateWriterTest {
     assertThat(thrown).hasMessageThat().contains("SERVFAIL");
   }
 
-  private void assertThatUpdatedZoneIs(Update update, String zoneName) {
-    Record[] zoneRecords = update.getSectionArray(Section.ZONE);
-    assertThat(zoneRecords[0].getName().toString()).isEqualTo(zoneName);
+  private static void assertThatUpdatedZoneIs(Update update, String zoneName) {
+    List<Record> zoneRecords = update.getSection(Section.ZONE);
+    assertThat(zoneRecords.get(0).getName().toString()).isEqualTo(zoneName);
   }
 
-  private void assertThatTotalUpdateSetsIs(Update update, int count) {
+  private static void assertThatTotalUpdateSetsIs(Update update, int count) {
     assertThat(update.getSectionRRsets(Section.UPDATE)).hasSize(count);
   }
 
-  private void assertThatUpdateDeletes(Update update, String resourceName, int recordType) {
+  private static void assertThatUpdateDeletes(Update update, String resourceName, int recordType) {
     ImmutableList<Record> deleted = findUpdateRecords(update, resourceName, recordType);
     // There's only an empty (i.e. "delete") record.
     assertThat(deleted.get(0).rdataToString()).hasLength(0);
     assertThat(deleted).hasSize(1);
   }
 
-  private void assertThatUpdateAdds(
+  private static void assertThatUpdateAdds(
       Update update, String resourceName, int recordType, String... resourceData) {
     ArrayList<String> expectedData = new ArrayList<>();
     Collections.addAll(expectedData, resourceData);
@@ -446,7 +441,7 @@ public class DnsUpdateWriterTest {
     assertThat(actualData).containsExactlyElementsIn(expectedData);
   }
 
-  private ImmutableList<Record> findUpdateRecords(
+  private static ImmutableList<Record> findUpdateRecords(
       Update update, String resourceName, int recordType) {
     for (RRset set : update.getSectionRRsets(Section.UPDATE)) {
       if (set.getName().toString().equals(resourceName) && set.getType() == recordType) {
@@ -460,7 +455,7 @@ public class DnsUpdateWriterTest {
     throw new AssertionError();
   }
 
-  private Message messageWithResponseCode(int responseCode) {
+  private static Message messageWithResponseCode(int responseCode) {
     Message message = new Message();
     message.getHeader().setOpcode(Opcode.UPDATE);
     message.getHeader().setFlag(Flags.QR);

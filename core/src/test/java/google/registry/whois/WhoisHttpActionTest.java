@@ -36,14 +36,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import google.registry.model.contact.ContactResource;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FullFieldsTestEntityHelper;
-import google.registry.testing.InjectExtension;
 import google.registry.whois.WhoisMetrics.WhoisMetric;
 import java.io.IOException;
 import java.io.Reader;
@@ -64,8 +62,6 @@ class WhoisHttpActionTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
-
-  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   private final FakeResponse response = new FakeResponse();
   private final FakeClock clock = new FakeClock(DateTime.parse("2009-06-29T20:13:00Z"));
@@ -88,7 +84,6 @@ class WhoisHttpActionTest {
   @BeforeEach
   void beforeEach() {
     createTlds("lol", "xn--q9jyb4c", "1.test");
-    inject.setStaticField(Ofy.class, "clock", clock);
   }
 
   @Test

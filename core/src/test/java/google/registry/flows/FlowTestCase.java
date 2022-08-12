@@ -39,7 +39,6 @@ import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.testing.AppEngineExtension;
@@ -48,7 +47,6 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
-import google.registry.testing.InjectExtension;
 import google.registry.testing.TestDataHelper;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import google.registry.xml.ValidationMode;
@@ -58,7 +56,6 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
@@ -88,13 +85,6 @@ public abstract class FlowTestCase<F extends Flow> {
   protected CloudTasksHelper cloudTasksHelper;
 
   private EppMetric.Builder eppMetricBuilder;
-
-  // Set the clock for transactional flows.  We have to order this before the AppEngineExtension
-  // which populates data.
-  @Order(value = Order.DEFAULT - 1)
-  @RegisterExtension
-  final InjectExtension inject =
-      new InjectExtension().withStaticFieldOverride(Ofy.class, "clock", clock);
 
   @RegisterExtension
   final AppEngineExtension appEngine =
@@ -171,13 +161,13 @@ public abstract class FlowTestCase<F extends Flow> {
   }
 
   /**
-   * Helper to facilitate comparison of maps of GracePeriods to BillingEvents.  This takes a map of
-   * GracePeriods to BillingEvents and returns a map of the same entries that ignores the keys
-   * on the grace periods and the IDs on the billing events (by setting them all to the same dummy
+   * Helper to facilitate comparison of maps of GracePeriods to BillingEvents. This takes a map of
+   * GracePeriods to BillingEvents and returns a map of the same entries that ignores the keys on
+   * the grace periods and the IDs on the billing events (by setting them all to the same dummy
    * values), since they will vary between instantiations even when the other data is the same.
    */
-  private ImmutableMap<GracePeriod, BillingEvent>
-      canonicalizeGracePeriods(ImmutableMap<GracePeriod, ? extends BillingEvent> gracePeriods) {
+  private static ImmutableMap<GracePeriod, BillingEvent> canonicalizeGracePeriods(
+      ImmutableMap<GracePeriod, ? extends BillingEvent> gracePeriods) {
     ImmutableMap.Builder<GracePeriod, BillingEvent> builder = new ImmutableMap.Builder<>();
     for (Map.Entry<GracePeriod, ? extends BillingEvent> entry : gracePeriods.entrySet()) {
       builder.put(
@@ -210,7 +200,7 @@ public abstract class FlowTestCase<F extends Flow> {
    * keys match the expected map of grace periods to billing events. For the expected map, the keys
    * on the grace periods and IDs on the billing events are ignored.
    */
-  protected void assertGracePeriods(
+  protected static void assertGracePeriods(
       Iterable<GracePeriod> actual, ImmutableMap<GracePeriod, ? extends BillingEvent> expected) {
     assertThat(canonicalizeGracePeriods(Maps.toMap(actual, FlowTestCase::expandGracePeriod)))
         .isEqualTo(canonicalizeGracePeriods(expected));
@@ -258,7 +248,7 @@ public abstract class FlowTestCase<F extends Flow> {
     return runFlow(CommitMode.LIVE, UserPrivileges.NORMAL);
   }
 
-  /** Shortcut to call {@link #runFlow(CommitMode, UserPrivileges)} as super user and live run. */
+  /** Shortcut to call {@link #runFlow(CommitMode, UserPrivileges)} as superuser and live run. */
   protected EppOutput runFlowAsSuperuser() throws Exception {
     return runFlow(CommitMode.LIVE, UserPrivileges.SUPERUSER);
   }

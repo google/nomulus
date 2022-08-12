@@ -37,7 +37,6 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.InjectExtension;
 import google.registry.util.JdkLoggerConfig;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -60,8 +59,6 @@ class AuthenticatedRegistrarAccessorTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
-
-  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   @Mock private HttpServletRequest req;
   @Mock private HttpServletResponse rsp;
@@ -142,7 +139,7 @@ class AuthenticatedRegistrarAccessorTest {
     verify(lazyGroupsConnection).get();
   }
 
-  /** Logged out users don't have access to anything. */
+  /** Logged-out users don't have access to anything. */
   @Test
   void getAllClientIdWithAccess_loggedOutUser() {
     AuthenticatedRegistrarAccessor registrarAccessor =

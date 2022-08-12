@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
@@ -33,24 +32,19 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link AckPollMessagesCommand}. */
 public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesCommand> {
 
-  private FakeClock clock = new FakeClock(DateTime.parse("2015-02-04T08:16:32.064Z"));
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+  private final FakeClock clock = new FakeClock(DateTime.parse("2015-02-04T08:16:32.064Z"));
 
   private DomainHistory domainHistory;
 
   @BeforeEach
   final void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
     command.clock = clock;
     createTld("tld");
     Domain domain =

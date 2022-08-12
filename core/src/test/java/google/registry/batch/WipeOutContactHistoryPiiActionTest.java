@@ -38,7 +38,6 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,7 +101,6 @@ class WipeOutContactHistoryPiiActionTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
   private final FakeClock clock = new FakeClock(DateTime.parse("2021-08-26T20:21:22Z"));
 
   private FakeResponse response;

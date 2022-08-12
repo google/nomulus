@@ -15,7 +15,6 @@
 package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -40,7 +39,6 @@ import google.registry.model.registrar.RegistrarPoc.Type;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectExtension;
 import google.registry.util.SelfSignedCaCertificate;
 import google.registry.util.SendEmailService;
 import java.security.cert.X509Certificate;
@@ -57,11 +55,11 @@ class SendExpiringCertificateNotificationEmailActionTest {
 
   private static final String EXPIRATION_WARNING_EMAIL_BODY_TEXT =
       " Dear %1$s,\n"
-          + "\n"
+          + '\n'
           + "We would like to inform you that your %2$s certificate will expire at %3$s."
-          + "\n"
+          + '\n'
           + " Kind update your account using the following steps: "
-          + "\n"
+          + '\n'
           + "  1. Navigate to support and login using your %4$s@registry.example credentials.\n"
           + "  2. Click Settings -> Privacy on the top left corner.\n"
           + "  3. Click Edit and enter certificate string."
@@ -75,7 +73,6 @@ class SendExpiringCertificateNotificationEmailActionTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
   private final FakeClock clock = new FakeClock(DateTime.parse("2021-05-24T20:21:22Z"));
   private final SendEmailService sendEmailService = mock(SendEmailService.class);
   private CertificateChecker certificateChecker;
@@ -708,7 +705,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
   }
 
   /** Returns persisted sample contacts with a customized contact email type. */
-  private ImmutableList<RegistrarPoc> persistSampleContacts(
+  private static ImmutableList<RegistrarPoc> persistSampleContacts(
       Registrar registrar, RegistrarPoc.Type emailType) {
     return persistSimpleResources(
         ImmutableList.of(

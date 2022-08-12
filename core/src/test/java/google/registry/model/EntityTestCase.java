@@ -16,12 +16,9 @@ package google.registry.model;
 
 import static org.joda.time.DateTimeZone.UTC;
 
-import google.registry.model.ofy.Ofy;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Base class of all unit tests for entities which are persisted to Datastore via Objectify. */
@@ -41,8 +38,6 @@ public abstract class EntityTestCase {
 
   @RegisterExtension public final AppEngineExtension appEngine;
 
-  @RegisterExtension public InjectExtension inject = new InjectExtension();
-
   protected EntityTestCase() {
     this(JpaEntityCoverageCheck.DISABLED);
   }
@@ -54,10 +49,5 @@ public abstract class EntityTestCase {
             .enableJpaEntityCoverageCheck(jpaEntityCoverageCheck == JpaEntityCoverageCheck.ENABLED)
             .withClock(fakeClock)
             .build();
-  }
-
-  @BeforeEach
-  public void injectClock() {
-    inject.setStaticField(Ofy.class, "clock", fakeClock);
   }
 }

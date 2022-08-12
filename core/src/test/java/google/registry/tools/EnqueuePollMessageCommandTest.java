@@ -26,25 +26,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.model.domain.Domain;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.InjectExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link EnqueuePollMessageCommand}. */
 class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCommand> {
-
-  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   private Domain domain;
 
   @BeforeEach
   void beforeEach() {
     createTld("tld");
-    inject.setStaticField(Ofy.class, "clock", fakeClock);
     domain = persistActiveDomain("example.tld");
     persistNewRegistrar("AdminRegistrar");
     command.registryAdminClientId = "AdminRegistrar";

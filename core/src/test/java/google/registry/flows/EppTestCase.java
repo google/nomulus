@@ -36,7 +36,6 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.EppXmlTransformer;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.tld.Registry;
 import google.registry.monitoring.whitebox.EppMetric;
@@ -44,7 +43,6 @@ import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectExtension;
 import google.registry.util.ProxyHttpHeaders;
 import java.util.Map;
 import java.util.Objects;
@@ -52,15 +50,11 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class EppTestCase {
 
   private static final MediaType APPLICATION_EPP_XML_UTF8 =
       MediaType.create("application", "epp+xml").withCharset(UTF_8);
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   protected final FakeClock clock = new FakeClock();
 
@@ -68,12 +62,6 @@ public class EppTestCase {
   private TransportCredentials credentials = new PasswordOnlyTransportCredentials();
   private EppMetric.Builder eppMetricBuilder;
   private boolean isSuperuser;
-
-  @BeforeEach
-  public void beforeEachEppTestCase() {
-    // For transactional flows
-    inject.setStaticField(Ofy.class, "clock", clock);
-  }
 
   /**
    * Set the transport credentials.
@@ -92,14 +80,14 @@ public class EppTestCase {
 
   public class CommandAsserter {
     private final String inputFilename;
-    private @Nullable final Map<String, String> inputSubstitutions;
+    @Nullable private final Map<String, String> inputSubstitutions;
     private DateTime now;
 
     private CommandAsserter(
         String inputFilename, @Nullable Map<String, String> inputSubstitutions) {
       this.inputFilename = inputFilename;
       this.inputSubstitutions = inputSubstitutions;
-      this.now = clock.nowUtc();
+      now = clock.nowUtc();
     }
 
     public CommandAsserter atTime(DateTime now) {
@@ -121,9 +109,88 @@ public class EppTestCase {
           inputFilename, inputSubstitutions, outputFilename, outputSubstitutions, now);
     }
 
-    public String hasSuccessfulLogin() throws Exception {
-      return assertLoginCommandAndResponse(inputFilename, inputSubstitutions, null, clock.nowUtc());
+    public void hasSuccessfulLogin() throws Exception {
+      assertLoginCommandAndResponse(inputFilename, inputSubstitutions, null, clock.nowUtc());
     }
+
+    private void assertLoginCommandAndResponse(
+        String inputFilename,
+        @Nullable Map<String, String> inputSubstitutions,
+        @Nullable Map<String, String> outputSubstitutions,
+        DateTime now)
+        throws Exception {
+      String outputFilename = "generic_success_response.xml";
+      clock.setTo(now);
+      String input = loadFile(EppTestCase.class, inputFilename, inputSubstitutions);
+      String expectedOutput = loadFile(EppTestCase.class, outputFilename, outputSubstitutions);
+      setUpSession();
+      FakeResponse response = executeXmlCommand(input);
+
+      // Check that the logged-in header was added to the response
+      assertThat(response.getHeaders())
+          .isEqualTo(ImmutableMap.of(ProxyHttpHeaders.LOGGED_IN, "true"));
+
+      verifyAndReturnOutput(response.getPayload(), expectedOutput, inputFilename, outputFilename);
+    }
+
+    private String assertCommandAndResponse(
+        String inputFilename,
+        @Nullable Map<String, String> inputSubstitutions,
+        String outputFilename,
+        @Nullable Map<String, String> outputSubstitutions,
+        DateTime now)
+        throws Exception {
+      clock.setTo(now);
+      String input = loadFile(EppTestCase.class, inputFilename, inputSubstitutions);
+      String expectedOutput = loadFile(EppTestCase.class, outputFilename, outputSubstitutions);
+      setUpSession();
+      FakeResponse response = executeXmlCommand(input);
+
+      // Checks that the Logged-In header is not in the response. If testing the login command, use
+      // assertLoginCommandAndResponse instead of this method.
+      assertThat(response.getHeaders()).doesNotContainEntry(ProxyHttpHeaders.LOGGED_IN, "true");
+
+      return verifyAndReturnOutput(
+          response.getPayload(), expectedOutput, inputFilename, outputFilename);
+    }
+  }
+
+  private void setUpSession() {
+    if (sessionMetadata == null) {
+      sessionMetadata =
+          new HttpSessionMetadata(new FakeHttpSession()) {
+            @Override
+            public void invalidate() {
+              // When a session is invalidated, reset the sessionMetadata field.
+              super.invalidate();
+              sessionMetadata = null;
+            }
+          };
+    }
+  }
+
+  private FakeResponse executeXmlCommand(String inputXml) {
+    EppRequestHandler handler = new EppRequestHandler();
+    FakeResponse response = new FakeResponse();
+    handler.response = response;
+    FakesAndMocksModule fakesAndMocksModule = FakesAndMocksModule.create(clock);
+    eppMetricBuilder = fakesAndMocksModule.getMetricBuilder();
+    handler.eppController =
+        DaggerEppTestComponent.builder()
+            .fakesAndMocksModule(fakesAndMocksModule)
+            .build()
+            .startRequest()
+            .eppController();
+    handler.executeEpp(
+        sessionMetadata,
+        credentials,
+        EppRequestSource.UNIT_TEST,
+        false, // Not dryRun.
+        isSuperuser,
+        inputXml.getBytes(UTF_8));
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getContentType()).isEqualTo(APPLICATION_EPP_XML_UTF8);
+    return response;
   }
 
   protected CommandAsserter assertThatCommand(String inputFilename) {
@@ -148,63 +215,7 @@ public class EppTestCase {
     assertThatCommand("logout.xml").hasResponse("logout_response.xml");
   }
 
-  private String assertLoginCommandAndResponse(
-      String inputFilename,
-      @Nullable Map<String, String> inputSubstitutions,
-      @Nullable Map<String, String> outputSubstitutions,
-      DateTime now)
-      throws Exception {
-    String outputFilename = "generic_success_response.xml";
-    clock.setTo(now);
-    String input = loadFile(EppTestCase.class, inputFilename, inputSubstitutions);
-    String expectedOutput = loadFile(EppTestCase.class, outputFilename, outputSubstitutions);
-    setUpSession();
-    FakeResponse response = executeXmlCommand(input);
-
-    // Check that the logged-in header was added to the response
-    assertThat(response.getHeaders())
-        .isEqualTo(ImmutableMap.of(ProxyHttpHeaders.LOGGED_IN, "true"));
-
-    return verifyAndReturnOutput(
-        response.getPayload(), expectedOutput, inputFilename, outputFilename);
-  }
-
-  private String assertCommandAndResponse(
-      String inputFilename,
-      @Nullable Map<String, String> inputSubstitutions,
-      String outputFilename,
-      @Nullable Map<String, String> outputSubstitutions,
-      DateTime now)
-      throws Exception {
-    clock.setTo(now);
-    String input = loadFile(EppTestCase.class, inputFilename, inputSubstitutions);
-    String expectedOutput = loadFile(EppTestCase.class, outputFilename, outputSubstitutions);
-    setUpSession();
-    FakeResponse response = executeXmlCommand(input);
-
-    // Checks that the Logged-In header is not in the response. If testing the login command, use
-    // assertLoginCommandAndResponse instead of this method.
-    assertThat(response.getHeaders()).doesNotContainEntry(ProxyHttpHeaders.LOGGED_IN, "true");
-
-    return verifyAndReturnOutput(
-        response.getPayload(), expectedOutput, inputFilename, outputFilename);
-  }
-
-  private void setUpSession() {
-    if (sessionMetadata == null) {
-      sessionMetadata =
-          new HttpSessionMetadata(new FakeHttpSession()) {
-            @Override
-            public void invalidate() {
-              // When a session is invalidated, reset the sessionMetadata field.
-              super.invalidate();
-              EppTestCase.this.sessionMetadata = null;
-            }
-          };
-    }
-  }
-
-  private String verifyAndReturnOutput(
+  private static String verifyAndReturnOutput(
       String actualOutput, String expectedOutput, String inputFilename, String outputFilename)
       throws Exception {
     // Run the resulting xml through the unmarshaller to verify that it was valid.
@@ -217,30 +228,6 @@ public class EppTestCase {
         "epp.response.trID.svTRID");
     tm().clearSessionCache(); // Clear the cache like OfyFilter would.
     return actualOutput;
-  }
-
-  private FakeResponse executeXmlCommand(String inputXml) {
-    EppRequestHandler handler = new EppRequestHandler();
-    FakeResponse response = new FakeResponse();
-    handler.response = response;
-    FakesAndMocksModule fakesAndMocksModule = FakesAndMocksModule.create(clock);
-    eppMetricBuilder = fakesAndMocksModule.getMetricBuilder();
-    handler.eppController =
-        DaggerEppTestComponent.builder()
-            .fakesAndMocksModule(fakesAndMocksModule)
-            .build()
-            .startRequest()
-            .eppController();
-    handler.executeEpp(
-        sessionMetadata,
-        credentials,
-        EppRequestSource.UNIT_TEST,
-        false,  // Not dryRun.
-        isSuperuser,
-        inputXml.getBytes(UTF_8));
-    assertThat(response.getStatus()).isEqualTo(SC_OK);
-    assertThat(response.getContentType()).isEqualTo(APPLICATION_EPP_XML_UTF8);
-    return response;
   }
 
   EppMetric getRecordedEppMetric() {

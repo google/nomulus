@@ -31,17 +31,14 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.dns.DnsQueue;
-import google.registry.model.ofy.Ofy;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectExtension;
 import java.util.Random;
 import org.apache.http.HttpStatus;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
@@ -53,16 +50,11 @@ public class RefreshDnsForAllDomainsActionTest {
   private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T02:02:02Z"));
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
   private RefreshDnsForAllDomainsAction action;
-  private FakeResponse response = new FakeResponse();
+  private final FakeResponse response = new FakeResponse();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
-
-  @Order(Order.DEFAULT - 1)
-  @RegisterExtension
-  public final InjectExtension inject =
-      new InjectExtension().withStaticFieldOverride(Ofy.class, "clock", clock);
 
   @BeforeEach
   void beforeEach() {
@@ -70,7 +62,6 @@ public class RefreshDnsForAllDomainsActionTest {
     action.smearMinutes = 1;
     action.random = new Random();
     action.random.setSeed(123L);
-    action.response = new FakeResponse();
     action.clock = clock;
     action.dnsQueue = dnsQueue;
     action.response = response;

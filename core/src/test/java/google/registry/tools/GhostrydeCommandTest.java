@@ -22,7 +22,6 @@ import google.registry.keyring.api.Keyring;
 import google.registry.rde.Ghostryde;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
-import google.registry.testing.InjectExtension;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,8 +50,6 @@ class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
       + "Haply I may remember,             \n"
       + "  And haply may forget.           \n").getBytes(UTF_8);
 
-  @RegisterExtension final InjectExtension inject = new InjectExtension();
-
   @RegisterExtension
   final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
@@ -78,7 +75,7 @@ class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommand("--input=" + inputFile.toString(), "--output=bar.dat"));
+            () -> runCommand("--input=" + inputFile, "--output=bar.dat"));
     assertThat(thrown).hasMessageThat().isEqualTo("Please specify either --encrypt or --decrypt");
   }
 
@@ -87,8 +84,7 @@ class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
     Path inputFile = Files.createFile(tmpDir.resolve("foo.dat"));
     IllegalArgumentException thrown =
         assertThrows(
-            IllegalArgumentException.class,
-            () -> runCommand("--encrypt", "--input=" + inputFile.toString()));
+            IllegalArgumentException.class, () -> runCommand("--encrypt", "--input=" + inputFile));
     assertThat(thrown).hasMessageThat().isEqualTo("--output path is required in --encrypt mode");
   }
 

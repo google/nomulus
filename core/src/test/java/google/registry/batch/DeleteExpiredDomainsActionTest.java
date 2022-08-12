@@ -34,7 +34,6 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
@@ -43,7 +42,6 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectExtension;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,14 +57,11 @@ class DeleteExpiredDomainsActionTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   private final FakeResponse response = new FakeResponse();
   private DeleteExpiredDomainsAction action;
 
   @BeforeEach
   void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
     createTld("tld");
     EppController eppController =
         DaggerEppTestComponent.builder()
@@ -103,7 +98,7 @@ class DeleteExpiredDomainsActionTest {
 
     // A non-autorenewing domain that is past its expiration time and should be deleted.
     // (This is the only one that needs a full set of subsidiary resources, for the delete flow to
-    // to operate on.)
+    //  operate on.)
     Domain pendingExpirationDomain = persistNonAutorenewingDomain("fizz.tld");
 
     assertThat(loadByEntity(pendingExpirationDomain).getStatusValues())

@@ -48,14 +48,12 @@ import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.launch.LaunchNotice;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.FakeUrlConnectionService;
-import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.Retrier;
 import google.registry.util.TaskQueueUtils;
@@ -95,8 +93,6 @@ class NordnUploadActionTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   private final LordnRequestInitializer lordnRequestInitializer =
       new LordnRequestInitializer(Optional.of("attack"));
   private final NordnUploadAction action = new NordnUploadAction();
@@ -108,7 +104,6 @@ class NordnUploadActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    inject.setStaticField(Ofy.class, "clock", clock);
     when(httpUrlConnection.getInputStream())
         .thenReturn(new ByteArrayInputStream("Success".getBytes(UTF_8)));
     when(httpUrlConnection.getResponseCode()).thenReturn(SC_ACCEPTED);
@@ -164,7 +159,6 @@ class NordnUploadActionTest {
         () -> NordnUploadAction.convertTasksToCsv(null, clock.nowUtc(), "header"));
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   void test_loadAllTasks_retryLogic_thirdTrysTheCharm() {
     Queue queue = mock(Queue.class);
@@ -230,7 +224,7 @@ class NordnUploadActionTest {
   void testRun_claimsMode_payloadMatchesClaimsCsv() {
     persistClaimsModeDomain();
     action.run();
-    assertThat(new String(connectionOutputStream.toByteArray(), UTF_8)).contains(CLAIMS_CSV);
+    assertThat(connectionOutputStream.toString(UTF_8)).contains(CLAIMS_CSV);
   }
 
   @Test
@@ -249,7 +243,7 @@ class NordnUploadActionTest {
   void testRun_sunriseMode_payloadMatchesSunriseCsv() {
     persistSunriseModeDomain();
     action.run();
-    assertThat(new String(connectionOutputStream.toByteArray(), UTF_8)).contains(SUNRISE_CSV);
+    assertThat(connectionOutputStream.toString(UTF_8)).contains(SUNRISE_CSV);
   }
 
   @Test
@@ -258,7 +252,7 @@ class NordnUploadActionTest {
     when(httpUrlConnection.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[] {}));
     persistSunriseModeDomain();
     action.run();
-    assertThat(new String(connectionOutputStream.toByteArray(), UTF_8)).contains(SUNRISE_CSV);
+    assertThat(connectionOutputStream.toString(UTF_8)).contains(SUNRISE_CSV);
   }
 
   @Test
@@ -288,7 +282,7 @@ class NordnUploadActionTest {
     assertThrows(UrlConnectionException.class, action::run);
   }
 
-  private void persistClaimsModeDomain() {
+  private static void persistClaimsModeDomain() {
     Domain domain = DatabaseHelper.newDomain("claims-landrush1.tld");
     persistDomainAndEnqueueLordn(
         domain

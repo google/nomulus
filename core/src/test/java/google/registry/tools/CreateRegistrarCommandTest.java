@@ -40,9 +40,7 @@ import com.google.common.collect.Range;
 import com.google.common.net.MediaType;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
-import google.registry.testing.InjectExtension;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -51,7 +49,6 @@ import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 
@@ -60,11 +57,9 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
   @Mock private AppEngineConnection connection;
 
-  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   @BeforeEach
   void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", fakeClock);
     command.setConnection(connection);
     command.certificateChecker =
         new CertificateChecker(

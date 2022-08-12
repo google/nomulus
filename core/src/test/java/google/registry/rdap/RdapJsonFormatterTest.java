@@ -38,7 +38,6 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.reporting.HistoryEntry;
@@ -51,7 +50,6 @@ import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.rdap.RdapObjectClasses.TopLevelReplyObject;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,8 +60,6 @@ class RdapJsonFormatterTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("1999-01-01T00:00:00Z"));
 
@@ -85,8 +81,6 @@ class RdapJsonFormatterTest {
 
   @BeforeEach
   void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
-
     rdapJsonFormatter = RdapTestHelper.getTestRdapJsonFormatter(clock);
     rdapJsonFormatter.rdapAuthorization =
         RdapAuthorization.create(RdapAuthorization.Role.REGISTRAR, "unicoderegistrar");
@@ -299,7 +293,7 @@ class RdapJsonFormatterTest {
   }
 
   private JsonObject loadJson(String expectedFileName) {
-    return new Gson().fromJson(loadFile(this.getClass(), expectedFileName), JsonObject.class);
+    return new Gson().fromJson(loadFile(getClass(), expectedFileName), JsonObject.class);
   }
 
   @Test
@@ -512,7 +506,7 @@ class RdapJsonFormatterTest {
     assertThat(
             TopLevelReplyObject.create(
                     new ReplyPayloadBase(BoilerplateType.OTHER) {
-                      @JsonableElement public String key = "value";
+                      @JsonableElement public static final String key = "value";
                     },
                     rdapJsonFormatter.createTosNotice())
                 .toJson())
@@ -524,7 +518,7 @@ class RdapJsonFormatterTest {
     assertThat(
             TopLevelReplyObject.create(
                     new ReplyPayloadBase(BoilerplateType.DOMAIN) {
-                      @JsonableElement public String key = "value";
+                      @JsonableElement public static final String key = "value";
                     },
                     rdapJsonFormatter.createTosNotice())
                 .toJson())

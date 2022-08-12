@@ -23,10 +23,8 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.host.Host;
-import google.registry.model.ofy.Ofy;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,12 +40,9 @@ class EppResourceUtilsTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   @BeforeEach
   void beforeEach() {
     createTld("tld");
-    inject.setStaticField(Ofy.class, "clock", clock);
   }
 
   @Test
