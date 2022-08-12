@@ -49,21 +49,30 @@ public class ConsoleRoleDefinitionsTest {
     // Note: we can't use Truth's IterableSubject to check all the subset/superset restrictions
     // because it is generic to iterables and doesn't know about sets.
     assertThat(
-            ConsoleRoleDefinitions.SUPPORT_LEAD_PERMISSIONS.containsAll(
-                ConsoleRoleDefinitions.SUPPORT_AGENT_PERMISSIONS))
+            ConsoleRoleDefinitions.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK_PERMISSIONS.containsAll(
+                ConsoleRoleDefinitions.ACCOUNT_MANAGER_PERMISSIONS))
         .isTrue();
     assertThat(
-            ConsoleRoleDefinitions.SUPPORT_AGENT_PERMISSIONS.containsAll(
-                ConsoleRoleDefinitions.SUPPORT_LEAD_PERMISSIONS))
+            ConsoleRoleDefinitions.ACCOUNT_MANAGER_PERMISSIONS.containsAll(
+                ConsoleRoleDefinitions.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK_PERMISSIONS))
         .isFalse();
 
     assertThat(
-            ConsoleRoleDefinitions.SUPPORT_LEAD_PERMISSIONS.containsAll(
-                ConsoleRoleDefinitions.SUPPORT_AGENT_PERMISSIONS))
+            ConsoleRoleDefinitions.TECH_CONTACT_PERMISSIONS.containsAll(
+                ConsoleRoleDefinitions.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK_PERMISSIONS))
         .isTrue();
     assertThat(
-            ConsoleRoleDefinitions.SUPPORT_AGENT_PERMISSIONS.containsAll(
-                ConsoleRoleDefinitions.SUPPORT_LEAD_PERMISSIONS))
+            ConsoleRoleDefinitions.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK_PERMISSIONS.containsAll(
+                ConsoleRoleDefinitions.TECH_CONTACT_PERMISSIONS))
+        .isFalse();
+
+    assertThat(
+            ConsoleRoleDefinitions.PRIMARY_CONTACT_PERMISSIONS.containsAll(
+                ConsoleRoleDefinitions.TECH_CONTACT_PERMISSIONS))
+        .isTrue();
+    assertThat(
+            ConsoleRoleDefinitions.TECH_CONTACT_PERMISSIONS.containsAll(
+                ConsoleRoleDefinitions.PRIMARY_CONTACT_PERMISSIONS))
         .isFalse();
   }
 }

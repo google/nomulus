@@ -44,7 +44,8 @@ public class ConsoleRoleDefinitions {
           ConsolePermission.VIEW_OPERATIONAL_DATA,
           ConsolePermission.SEND_ANNOUNCEMENTS,
           ConsolePermission.VIEW_ANNOUNCEMENTS,
-          ConsolePermission.VIEW_ACTIVITY_LOG);
+          ConsolePermission.VIEW_ACTIVITY_LOG,
+          ConsolePermission.REGISTRY_LOCK);
 
   /** Permissions for a registry support lead. */
   static final ImmutableSet<ConsolePermission> SUPPORT_LEAD_PERMISSIONS =
@@ -76,10 +77,17 @@ public class ConsoleRoleDefinitions {
           ConsolePermission.VIEW_OPERATIONAL_DATA,
           ConsolePermission.VIEW_ANNOUNCEMENTS);
 
+  /** Permissions for a registrar partner account manager that can perform registry locks. */
+  static final ImmutableSet<ConsolePermission> ACCOUNT_MANAGER_WITH_REGISTRY_LOCK_PERMISSIONS =
+      new ImmutableSet.Builder<ConsolePermission>()
+          .addAll(ACCOUNT_MANAGER_PERMISSIONS)
+          .add(ConsolePermission.REGISTRY_LOCK)
+          .build();
+
   /** Permissions for the tech contact of a registrar. */
   static final ImmutableSet<ConsolePermission> TECH_CONTACT_PERMISSIONS =
       new ImmutableSet.Builder<ConsolePermission>()
-          .addAll(ACCOUNT_MANAGER_PERMISSIONS)
+          .addAll(ACCOUNT_MANAGER_WITH_REGISTRY_LOCK_PERMISSIONS)
           .add(
               ConsolePermission.MANAGE_ACCREDITATION,
               ConsolePermission.CONFIGURE_EPP_CONNECTION,
