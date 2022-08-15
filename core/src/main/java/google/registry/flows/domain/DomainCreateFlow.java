@@ -153,6 +153,7 @@ import org.joda.time.Duration;
  * @error {@link DomainCreateFlow.AnchorTenantCreatePeriodException}
  * @error {@link DomainCreateFlow.MustHaveSignedMarksInCurrentPhaseException}
  * @error {@link DomainCreateFlow.NoGeneralRegistrationsInCurrentPhaseException}
+ * @error {@link DomainCreateFlow.NoTrademarkedRegistrationsBeforeSunriseException}
  * @error {@link DomainCreateFlow.SignedMarksOnlyDuringSunriseException}
  * @error {@link DomainFlowTmchUtils.NoMarksFoundMatchingDomainException}
  * @error {@link DomainFlowTmchUtils.FoundMarkNotYetValidException}
@@ -481,7 +482,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
       boolean isValidReservedCreate,
       boolean hasSignedMarks)
       throws NoGeneralRegistrationsInCurrentPhaseException,
-          MustHaveSignedMarksInCurrentPhaseException {
+          MustHaveSignedMarksInCurrentPhaseException,
+          NoTrademarkedRegistrationsBeforeSunriseException {
     // We allow general registration during GA.
     TldState currentState = registry.getTldState(now);
     if (currentState.equals(GENERAL_AVAILABILITY)) {
@@ -496,16 +498,23 @@ public final class DomainCreateFlow implements TransactionalFlow {
     // Bypass most TLD state checks if that behavior is specified by the token
     if (behavior.equals(RegistrationBehavior.BYPASS_TLD_STATE)
         || behavior.equals(RegistrationBehavior.ANCHOR_TENANT)) {
-      // If bypassing TLD state checks, a post-sunrise state is always fine
-      if (!currentState.equals(START_DATE_SUNRISE)
-          && registry.getTldStateTransitions().headMap(now).containsValue(START_DATE_SUNRISE)) {
-        return;
-      }
       // Non-trademarked names with the state check bypassed are always available
       if (!claimsList.getClaimKey(domainLabel).isPresent()) {
         return;
       }
+      if (!currentState.equals(START_DATE_SUNRISE)) {
+        // Trademarked domains cannot be registered until after the sunrise period has ended, unless
+        // a valid signed mark is provided. Signed marks can only be provided during sunrise.
+        // Thus, when bypassing TLD state checks, a post-sunrise state is always fine.
+        if (registry.getTldStateTransitions().headMap(now).containsValue(START_DATE_SUNRISE)) {
+          return;
+        } else {
+          // If sunrise hasn't happened yet, trademarked domains are unavailable
+          throw new NoTrademarkedRegistrationsBeforeSunriseException(domainLabel);
+        }
+      }
     }
+
     // Otherwise, signed marks are necessary and sufficient in the sunrise period
     if (currentState.equals(START_DATE_SUNRISE)) {
       if (!hasSignedMarks) {
@@ -721,6 +730,17 @@ public final class DomainCreateFlow implements TransactionalFlow {
   static class MustHaveSignedMarksInCurrentPhaseException extends CommandUseErrorException {
     public MustHaveSignedMarksInCurrentPhaseException() {
       super("The current registry phase requires a signed mark for registrations");
+    }
+  }
+
+  /** Trademarked domains cannot be registered before the sunrise period. */
+  static class NoTrademarkedRegistrationsBeforeSunriseException
+      extends ParameterValuePolicyErrorException {
+    public NoTrademarkedRegistrationsBeforeSunriseException(String domainLabel) {
+      super(
+          String.format(
+              "The trademarked label %s cannot be registered before the sunrise period.",
+              domainLabel));
     }
   }
 

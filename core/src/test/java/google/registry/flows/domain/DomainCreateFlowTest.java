@@ -82,6 +82,7 @@ import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.domain.DomainCreateFlow.AnchorTenantCreatePeriodException;
 import google.registry.flows.domain.DomainCreateFlow.MustHaveSignedMarksInCurrentPhaseException;
 import google.registry.flows.domain.DomainCreateFlow.NoGeneralRegistrationsInCurrentPhaseException;
+import google.registry.flows.domain.DomainCreateFlow.NoTrademarkedRegistrationsBeforeSunriseException;
 import google.registry.flows.domain.DomainCreateFlow.RenewalPriceInfo;
 import google.registry.flows.domain.DomainCreateFlow.SignedMarksOnlyDuringSunriseException;
 import google.registry.flows.domain.DomainFlowTmchUtils.FoundMarkExpiredException;
@@ -2734,7 +2735,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testSuccess_quietPeriod_skipTldCheckWithToken() throws Exception {
+  void testSuccess_quietPeriod_skipTldStateCheckWithToken() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -2813,7 +2814,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .build());
     persistContactsAndHosts();
     setEppInput("domain_create_allocationtoken_claims.xml");
-    assertThrows(NoGeneralRegistrationsInCurrentPhaseException.class, this::runFlow);
+    assertThrows(NoTrademarkedRegistrationsBeforeSunriseException.class, this::runFlow);
   }
 
   @Test
@@ -2843,5 +2844,286 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_allocationtoken_claims.xml");
     runFlow();
     assertSuccessfulCreate("tld", ImmutableSet.of(), allocationToken);
+  }
+
+  // ________________________________
+  // Anchor tenant in quiet period before sunrise:
+  // Only non-trademarked domains are allowed.
+  // ________________________________
+  @Test
+  void testSuccess_anchorTenant_quietPeriodBeforeSunrise_nonTrademarked_viaToken()
+      throws Exception {
+    createTld("tld", QUIET_PERIOD);
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("example.tld")
+                .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+                .build());
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistContactsAndHosts();
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token);
+  }
+
+  @Test
+  void testFailure_anchorTenant_quietPeriodBeforeSunrise_trademarked_withoutClaims_viaToken() {
+    createTld("tld", QUIET_PERIOD);
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("test-validate.tld")
+            .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+            .build());
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "test-validate.tld", "YEARS", "2"));
+    persistContactsAndHosts();
+    assertThrows(NoTrademarkedRegistrationsBeforeSunriseException.class, this::runFlow);
+  }
+
+  @Test
+  void testFailure_anchorTenant_quietPeriodBeforeSunrise_trademarked_withClaims_viaToken() {
+    createTld("tld", QUIET_PERIOD);
+    persistResource(
+        allocationToken
+            .asBuilder()
+            .setDomainName("example-one.tld")
+            .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+            .build());
+    setEppInput("domain_create_allocationtoken_claims.xml");
+    persistContactsAndHosts();
+    assertThrows(NoTrademarkedRegistrationsBeforeSunriseException.class, this::runFlow);
+  }
+
+  // ________________________________
+  // Anchor tenant in sunrise:
+  // Non-trademarked domains and trademarked domains with signed marks are allowed
+  // ________________________________
+  @Test
+  void testSuccess_anchorTenant_inSunrise_nonTrademarked_viaToken() throws Exception {
+    createTld("tld", START_DATE_SUNRISE);
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("example.tld")
+                .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+                .build());
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token);
+  }
+
+  @Test
+  void testSuccess_anchorTenant_inSunrise_trademarked_withSignedMark_viaToken() throws Exception {
+    createTld("tld", START_DATE_SUNRISE);
+    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
+    setEppInput(
+        "domain_create_registration_encoded_signed_mark_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "test-validate.tld"));
+    persistResource(
+        allocationToken
+            .asBuilder()
+            .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+            .setDomainName("test-validate.tld")
+            .build());
+    persistContactsAndHosts();
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE, ANCHOR_TENANT), allocationToken);
+  }
+
+  @Test
+  void testFailure_anchorTenant_inSunrise_trademarked_withoutSignedMark_viaToken() {
+    createTld("tld", START_DATE_SUNRISE);
+    persistResource(
+        new AllocationToken.Builder()
+            .setTokenType(SINGLE_USE)
+            .setToken("abc123")
+            .setDomainName("example-one.tld")
+            .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+            .build());
+    persistContactsAndHosts();
+    assertThrows(MustHaveSignedMarksInCurrentPhaseException.class, this::runFlow);
+  }
+
+  @Test
+  void testFailure_anchorTenant_inSunrise_trademarked_withoutSignedMark_withClaims_viaToken() {
+    createTld("tld", START_DATE_SUNRISE);
+    persistResource(
+        allocationToken
+            .asBuilder()
+            .setDomainName("example-one.tld")
+            .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+            .build());
+    setEppInput("domain_create_allocationtoken_claims.xml");
+    persistContactsAndHosts();
+    assertThrows(MustHaveSignedMarksInCurrentPhaseException.class, this::runFlow);
+  }
+
+  // ________________________________
+  // Anchor tenant in a post-sunrise quiet period:
+  // Non-trademarked domains and trademarked domains with claims are allowed.
+  // ________________________________
+  @Test
+  void testSuccess_anchorTenant_quietPeriodAfterSunrise_nonTrademarked_viaToken() throws Exception {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setTldStateTransitions(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    QUIET_PERIOD,
+                    clock.nowUtc().minusYears(1),
+                    START_DATE_SUNRISE,
+                    clock.nowUtc().minusMonths(1),
+                    QUIET_PERIOD))
+            .build());
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+                .setDomainName("example.tld")
+                .build());
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token);
+  }
+
+  @Test
+  void testSuccess_anchorTenant_quietPeriodAfterSunrise_trademarked_withClaims_viaToken()
+      throws Exception {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setTldStateTransitions(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    QUIET_PERIOD,
+                    clock.nowUtc().minusYears(1),
+                    START_DATE_SUNRISE,
+                    clock.nowUtc().minusMonths(1),
+                    QUIET_PERIOD))
+            .build());
+    persistResource(
+        allocationToken
+            .asBuilder()
+            .setDomainName("example-one.tld")
+            .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+            .build());
+    setEppInput("domain_create_allocationtoken_claims.xml");
+    persistContactsAndHosts();
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken);
+  }
+
+  @Test
+  void testFailure_anchorTenant_quietPeriodAfterSunrise_trademarked_withoutClaims_viaToken() {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setTldStateTransitions(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    QUIET_PERIOD,
+                    clock.nowUtc().minusYears(1),
+                    START_DATE_SUNRISE,
+                    clock.nowUtc().minusMonths(1),
+                    QUIET_PERIOD))
+            .build());
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("example-one.tld")
+            .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+            .build());
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example-one.tld", "YEARS", "2"));
+    assertThrows(MissingClaimsNoticeException.class, this::runFlow);
+  }
+
+  // ________________________________
+  // Anchor tenant in GA:
+  // Non-trademarked domains and trademarked domains with claims are allowed.
+  // ________________________________
+  @Test
+  void testSuccess_anchorTenant_ga_nonTrademarked_viaToken() throws Exception {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+                .setDomainName("example.tld")
+                .build());
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token);
+  }
+
+  @Test
+  void testSuccess_anchorTenant_ga_trademarked_withClaims_viaToken() throws Exception {
+    persistResource(
+        allocationToken
+            .asBuilder()
+            .setDomainName("example-one.tld")
+            .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+            .build());
+    setEppInput("domain_create_allocationtoken_claims.xml");
+    persistContactsAndHosts();
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken);
+  }
+
+  @Test
+  void testFailure_anchorTenant_ga_trademarked_withoutClaims_viaToken() {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("example-one.tld")
+            .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+            .build());
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example-one.tld", "YEARS", "2"));
+    assertThrows(MissingClaimsNoticeException.class, this::runFlow);
+  }
+
+  @Test
+  void testFailure_anchorTenant_mismatchedName_viaToken() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
+            .setDomainName("example.tld")
+            .build());
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example-one.tld", "YEARS", "2"));
+    assertThrows(AllocationTokenNotValidForDomainException.class, this::runFlow);
   }
 }
