@@ -477,6 +477,28 @@ contactHistory:
   # The batch size for querying ContactHistory table in the database.
   wipeOutQueryBatchSize: 500
 
+# Configuration options relevant to the DNS update functionality.
+dnsUpdate:
+  dnsUpdateFailRegistryName: Example name
+  registrySupportEmail: email@example.com
+  # Email subject text template to notify partners after repeatedly failing DNS update
+  dnsUpdateFailEmailSubjectText: "[ACTION REQUIRED]: Incomplete DNS Update"
+  # Email body text template for failing DNS update that accepts 5 parameters:
+  # registrar name, domain or host address, 'domain' or 'host' as a string that failed,
+  # registry support email (see dnsUpdateFailRegistrySupportEmail) and registry display name
+  dnsUpdateFailEmailBodyText: >
+    Dear %1$s,
+
+    We are contacting you regarding the changes you recently made to one of your %2$ss.
+    The DNS update for the %3$s %2$s failed to process. Please review your %2$s's DNS records
+    and ensure that it is valid before trying another update.
+
+    If you have any questions or require additional support, please contact us
+    at %4$s.
+
+    Regards,
+    %5$s
+
 # Configuration options for checking SSL certificates.
 sslCertificateValidation:
   # A map specifying the maximum amount of days the certificate can be valid.

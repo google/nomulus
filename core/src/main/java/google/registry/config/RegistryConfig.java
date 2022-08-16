@@ -1301,6 +1301,30 @@ public final class RegistryConfig {
     }
 
     @Provides
+    @Config("dnsUpdateFailEmailSubjectText")
+    public static String provideDnsUpdateFailEmailSubjectText(RegistryConfigSettings config) {
+      return config.dnsUpdate.dnsUpdateFailEmailSubjectText;
+    }
+
+    @Provides
+    @Config("dnsUpdateFailEmailBodyText")
+    public static String provideDnsUpdateFailEmailBodyText(RegistryConfigSettings config) {
+      return config.dnsUpdate.dnsUpdateFailEmailBodyText;
+    }
+
+    @Provides
+    @Config("dnsUpdateFailRegistryName")
+    public static String provideDnsUpdateFailRegistryName(RegistryConfigSettings config) {
+      return config.dnsUpdate.dnsUpdateFailRegistryName;
+    }
+
+    @Provides
+    @Config("registrySupportEmail")
+    public static String provideRegistrySupportEmail(RegistryConfigSettings config) {
+      return config.dnsUpdate.registrySupportEmail;
+    }
+
+    @Provides
     @Config("allowedEcdsaCurves")
     public static ImmutableSet<String> provideAllowedEcdsaCurves(RegistryConfigSettings config) {
       return ImmutableSet.copyOf(config.sslCertificateValidation.allowedEcdsaCurves);
