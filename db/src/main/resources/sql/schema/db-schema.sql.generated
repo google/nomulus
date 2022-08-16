@@ -491,6 +491,17 @@
         primary key (resource_name, scope)
     );
 
+    create table "PackagePromotion" (
+       token text not null,
+        last_notification_sent timestamptz,
+        max_creates int4 not null,
+        max_domains int4 not null,
+        next_billing_date timestamptz,
+        package_price_amount numeric(19, 2),
+        package_price_currency text,
+        primary key (token)
+    );
+
     create table "PollMessage" (
        type text not null,
         poll_message_id int8 not null,
