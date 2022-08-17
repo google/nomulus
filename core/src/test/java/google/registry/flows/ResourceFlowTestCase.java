@@ -40,6 +40,7 @@ import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.testing.TestCacheExtension;
 import google.registry.util.JdkLoggerConfig;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.logging.Level;
@@ -48,6 +49,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.json.simple.JSONValue;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Base class for resource flow unit tests.
@@ -59,6 +61,10 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     extends FlowTestCase<F> {
 
   private final TestLogHandler logHandler = new TestLogHandler();
+
+  @RegisterExtension
+  public final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder().withClaimsListCache(java.time.Duration.ofHours(6)).build();
 
   @BeforeEach
   void beforeResourceFlowTestCase() {
