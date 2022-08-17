@@ -1040,6 +1040,22 @@ CREATE TABLE public."TmchCrl" (
 
 
 --
+-- Name: User; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."User" (
+    id bigint NOT NULL,
+    email_address text NOT NULL,
+    gaia_id text NOT NULL,
+    registry_lock_password_hash text,
+    registry_lock_password_salt text,
+    global_role text NOT NULL,
+    is_admin boolean NOT NULL,
+    registrar_roles public.hstore NOT NULL
+);
+
+
+--
 -- Name: ClaimsList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1366,6 +1382,14 @@ ALTER TABLE ONLY public."Tld"
 
 ALTER TABLE ONLY public."TmchCrl"
     ADD CONSTRAINT "TmchCrl_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: User User_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."User"
+    ADD CONSTRAINT "User_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1950,6 +1974,20 @@ CREATE INDEX spec11threatmatch_registrar_id_idx ON public."Spec11ThreatMatch" US
 --
 
 CREATE INDEX spec11threatmatch_tld_idx ON public."Spec11ThreatMatch" USING btree (tld);
+
+
+--
+-- Name: user_email_address_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_email_address_idx ON public."User" USING btree (email_address);
+
+
+--
+-- Name: user_gaia_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_gaia_id_idx ON public."User" USING btree (gaia_id);
 
 
 --
