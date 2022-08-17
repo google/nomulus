@@ -33,6 +33,7 @@ import java.io.Serializable;
 import java.util.concurrent.ThreadLocalRandom;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
+import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.GroupIntoBatches;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -171,5 +172,14 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
                               outputReceiver.output(
                                   resource.cloneProjectedAtTime(jpaTm().getTransactionTime()))));
     }
+  }
+
+  public static void main(String[] args) {
+    PipelineOptionsFactory.register(ResaveAllEppResourcesPipelineOptions.class);
+    ResaveAllEppResourcesPipelineOptions options =
+        PipelineOptionsFactory.fromArgs(args)
+            .withValidation()
+            .as(ResaveAllEppResourcesPipelineOptions.class);
+    new ResaveAllEppResourcesPipeline(options).run();
   }
 }
