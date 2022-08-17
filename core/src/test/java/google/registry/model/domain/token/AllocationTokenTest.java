@@ -288,7 +288,7 @@ public class AllocationTokenTest extends EntityTestCase {
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("PACKAGE tokens must only have one allowed client");
+        .isEqualTo("PACKAGE tokens must have exactly one allowed client registrar");
   }
 
   @Test

@@ -292,7 +292,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
       checkArgument(
           getInstance().tokenType != TokenType.PACKAGE
               || getInstance().allowedClientIds.size() == 1,
-          "PACKAGE tokens must only have one allowed client");
+          "PACKAGE tokens must have exactly one allowed client registrar");
       checkArgument(
           getInstance().discountFraction > 0 || !getInstance().discountPremiums,
           "Discount premiums can only be specified along with a discount fraction");
