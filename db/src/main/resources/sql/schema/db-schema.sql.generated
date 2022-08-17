@@ -728,6 +728,18 @@
         url text not null,
         primary key (id)
     );
+
+    create table "User" (
+       id int8 not null,
+        email_address text not null,
+        gaia_id text not null,
+        registry_lock_password_hash text,
+        registry_lock_password_salt text,
+        global_role text not null,
+        is_admin boolean not null,
+        registrar_roles hstore,
+        primary key (id)
+    );
 create index allocation_token_domain_name_idx on "AllocationToken" (domain_name);
 create index IDX9g3s7mjv1yn4t06nqid39whss on "AllocationToken" (token_type);
 create index IDXtmlqd31dpvvd2g1h9i7erw6aj on "AllocationToken" (redemption_domain_repo_id);
@@ -812,6 +824,8 @@ create index reservedlist_name_idx on "ReservedList" (name);
 create index spec11threatmatch_registrar_id_idx on "Spec11ThreatMatch" (registrar_id);
 create index spec11threatmatch_tld_idx on "Spec11ThreatMatch" (tld);
 create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date);
+create index user_gaia_id_idx on "User" (gaia_id);
+create index user_email_address_idx on "User" (email_address);
 
     alter table if exists "DelegationSignerData" 
        add constraint FKtr24j9v14ph2mfuw2gsmt12kq 

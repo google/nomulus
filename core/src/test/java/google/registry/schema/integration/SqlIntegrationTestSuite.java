@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assert_;
 
 import google.registry.model.billing.BillingEventTest;
 import google.registry.model.common.CursorTest;
+import google.registry.model.console.UserTest;
 import google.registry.model.contact.ContactResourceTest;
 import google.registry.model.domain.DomainSqlTest;
 import google.registry.model.domain.token.AllocationTokenTest;
@@ -99,6 +100,7 @@ import org.junit.runner.RunWith;
   SignedMarkRevocationListDaoTest.class,
   Spec11ThreatMatchTest.class,
   TmchCrlTest.class,
+  UserTest.class,
   // AfterSuiteTest must be the last entry. See class javadoc for details.
   AfterSuiteTest.class
 })

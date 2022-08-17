@@ -43,6 +43,7 @@
     <class>google.registry.model.billing.BillingEvent$Recurring</class>
     <class>google.registry.model.common.Cursor</class>
     <class>google.registry.model.common.DatabaseMigrationStateSchedule</class>
+    <class>google.registry.model.console.User</class>
     <class>google.registry.model.contact.ContactHistory</class>
     <class>google.registry.model.contact.ContactResource</class>
     <class>google.registry.model.domain.Domain</class>
@@ -90,6 +91,7 @@
     <class>google.registry.persistence.converter.LocalDateConverter</class>
     <class>google.registry.persistence.converter.PostalInfoChoiceListConverter</class>
     <class>google.registry.persistence.converter.RegistrarPocSetConverter</class>
+    <class>google.registry.persistence.converter.RegistrarToRoleConverter</class>
     <class>google.registry.persistence.converter.Spec11ThreatMatchThreatTypeSetConverter</class>
     <class>google.registry.persistence.converter.StatusValueSetConverter</class>
     <class>google.registry.persistence.converter.StringListConverter</class>

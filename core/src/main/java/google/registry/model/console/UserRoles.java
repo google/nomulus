@@ -21,6 +21,10 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import java.util.Map;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 
 /**
  * Contains the global and per-registrar roles for a given user.
@@ -28,15 +32,19 @@ import java.util.Map;
  * <p>See <a href="https://go/nomulus-console-authz">go/nomulus-console-authz</a> for more
  * information.
  */
+@Embeddable
 public class UserRoles extends ImmutableObject implements Buildable {
 
   /** Whether the user is a global admin, who has access to everything. */
+  @Column(nullable = false)
   private boolean isAdmin = false;
 
   /**
    * The global role (e.g. {@link GlobalRole#SUPPORT_AGENT}) that the user has across all
    * registrars.
    */
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
   private GlobalRole globalRole = GlobalRole.NONE;
 
   /** Any per-registrar roles that this user may have. */
