@@ -121,3 +121,4 @@ V120__remove_ofy_key_fields.sql
 V121__drop_sql_checkpoint_and_txn.sql
 V122__add_current_package_token_to_domain.sql
 V123__drop_unused_columns_in_billing_cancellation_table.sql
+V124__add_console_user.sql
