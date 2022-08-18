@@ -16,6 +16,7 @@ package google.registry.model.domain.token;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.Buildable;
@@ -57,7 +58,7 @@ public class PackagePromotion extends ImmutableObject implements Buildable {
   Money packagePrice;
 
   /** The next billing date of the package. */
-  @Nullable DateTime nextBillingDate;
+  DateTime nextBillingDate;
 
   /** Date the last warning email was sent that the package has exceeded the maxDomains limit. */
   @Nullable DateTime lastNotificationSent;
@@ -133,6 +134,9 @@ public class PackagePromotion extends ImmutableObject implements Buildable {
     }
 
     public Builder setNextBillingDate(@Nullable DateTime nextBillingDate) {
+      if(nextBillingDate == null) {
+        nextBillingDate = END_OF_TIME;
+      }
       getInstance().nextBillingDate = nextBillingDate;
       return this;
     }
