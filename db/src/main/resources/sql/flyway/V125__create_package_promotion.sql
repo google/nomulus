@@ -12,14 +12,17 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-create table "PackagePromotion" (
-   token text not null,
-   last_notification_sent timestamptz,
-   max_creates int4 not null,
-   max_domains int4 not null,
-   next_billing_date timestamptz,
-   package_price_amount numeric(19, 2),
-   package_price_currency text,
-   primary key (token)
-);
+ create table "PackagePromotion" (
+       package_promotion_id int8 not null,
+        last_notification_sent timestamptz,
+        max_creates int4 not null,
+        max_domains int4 not null,
+        next_billing_date timestamptz not null,
+        package_price_amount numeric(19, 2),
+        package_price_currency text,
+        token text not null,
+        primary key (package_promotion_id)
+    );
+
+create index IDXlg6a5tp70nch9cp0gc11brc5o on "PackagePromotion" (token);
 

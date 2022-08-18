@@ -647,6 +647,22 @@ CREATE TABLE public."Lock" (
 
 
 --
+-- Name: PackagePromotion; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."PackagePromotion" (
+    package_promotion_id bigint NOT NULL,
+    last_notification_sent timestamp with time zone,
+    max_creates integer NOT NULL,
+    max_domains integer NOT NULL,
+    next_billing_date timestamp with time zone NOT NULL,
+    package_price_amount numeric(19,2),
+    package_price_currency text,
+    token text NOT NULL
+);
+
+
+--
 -- Name: PollMessage; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1265,6 +1281,14 @@ ALTER TABLE ONLY public."Lock"
 
 
 --
+-- Name: PackagePromotion PackagePromotion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PackagePromotion"
+    ADD CONSTRAINT "PackagePromotion_pkey" PRIMARY KEY (package_promotion_id);
+
+
+--
 -- Name: PollMessage PollMessage_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1764,6 +1788,13 @@ CREATE INDEX idxl49vydnq0h5j1piefwjy4i8er ON public."Host" USING btree (current_
 --
 
 CREATE INDEX idxl8vobbecsd32k4ksavdfx8st6 ON public."BillingCancellation" USING btree (domain_repo_id);
+
+
+--
+-- Name: idxlg6a5tp70nch9cp0gc11brc5o; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxlg6a5tp70nch9cp0gc11brc5o ON public."PackagePromotion" USING btree (token);
 
 
 --
