@@ -18,8 +18,8 @@
         max_creates int4 not null,
         max_domains int4 not null,
         next_billing_date timestamptz not null,
-        package_price_amount numeric(19, 2),
-        package_price_currency text,
+        package_price_amount numeric(19, 2) not null,
+        package_price_currency text not null,
         token text not null,
         primary key (package_promotion_id)
     );

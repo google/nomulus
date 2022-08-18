@@ -656,8 +656,8 @@ CREATE TABLE public."PackagePromotion" (
     max_creates integer NOT NULL,
     max_domains integer NOT NULL,
     next_billing_date timestamp with time zone NOT NULL,
-    package_price_amount numeric(19,2),
-    package_price_currency text,
+    package_price_amount numeric(19,2) NOT NULL,
+    package_price_currency text NOT NULL,
     token text NOT NULL
 );
 
