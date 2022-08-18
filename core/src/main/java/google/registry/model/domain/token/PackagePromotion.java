@@ -134,7 +134,7 @@ public class PackagePromotion extends ImmutableObject implements Buildable {
     }
 
     public Builder setNextBillingDate(@Nullable DateTime nextBillingDate) {
-      if(nextBillingDate == null) {
+      if (nextBillingDate == null) {
         nextBillingDate = END_OF_TIME;
       }
       getInstance().nextBillingDate = nextBillingDate;
