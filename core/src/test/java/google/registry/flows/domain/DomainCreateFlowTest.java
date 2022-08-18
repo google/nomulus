@@ -25,6 +25,7 @@ import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DE
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
+import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
@@ -3125,5 +3126,26 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example-one.tld", "YEARS", "2"));
     assertThrows(AllocationTokenNotValidForDomainException.class, this::runFlow);
+  }
+
+  @Test
+  void testSuccess_packageToken_addsTokenToDomain() throws Exception {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(PACKAGE)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setRenewalPriceBehavior(SPECIFIED)
+                .build());
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    runFlowAssertResponse(
+        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
+    Domain domain = reloadResourceByForeignKey();
+    assertThat(domain.getCurrentPackageToken()).isPresent();
+    assertThat(domain.getCurrentPackageToken().get()).isEqualTo(token.createVKey());
   }
 }

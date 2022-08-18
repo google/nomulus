@@ -258,6 +258,7 @@ enum google.registry.model.domain.token.AllocationToken$TokenStatus {
   VALID;
 }
 enum google.registry.model.domain.token.AllocationToken$TokenType {
+  PACKAGE;
   SINGLE_USE;
   UNLIMITED_USE;
 }

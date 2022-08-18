@@ -105,6 +105,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
 
   /** Single-use tokens are invalid after use. Infinite-use tokens, predictably, are not. */
   public enum TokenType {
+    PACKAGE,
     SINGLE_USE,
     UNLIMITED_USE
   }
