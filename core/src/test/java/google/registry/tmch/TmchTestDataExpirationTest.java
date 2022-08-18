@@ -27,6 +27,7 @@ import google.registry.util.ResourceUtils;
 import google.registry.util.SystemClock;
 import java.nio.file.Path;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -38,6 +39,7 @@ class TmchTestDataExpirationTest {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  @Disabled("TODO(b/243130376): update the data files when ICANN provides them")
   @Test
   void testActiveSignedMarkFiles_areValidAndNotExpired() throws Exception {
     DomainFlowTmchUtils tmchUtils =
