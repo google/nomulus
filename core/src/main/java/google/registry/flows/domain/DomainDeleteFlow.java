@@ -263,7 +263,8 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     // the updated recurring billing event, we'll need it later and can't reload it.
     Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     BillingEvent.Recurring recurringBillingEvent =
-        updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, now);
+        updateAutorenewRecurrenceEndTime(
+            existingDomain, existingRecurring, now, domainHistory.getDomainHistoryId());
     // If there's a pending transfer, the gaining client's autorenew billing
     // event and poll message will already have been deleted in
     // ResourceDeleteFlow since it's listed in serverApproveEntities.

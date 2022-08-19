@@ -18,16 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Cancellation;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
@@ -51,21 +48,11 @@ public class TransferDataTest {
 
   @BeforeEach
   void beforeEach() {
-    Key<HistoryEntry> historyEntryKey =
-        Key.create(Key.create(Domain.class, "4-TLD"), HistoryEntry.class, 1356L);
     transferBillingEventKey = OneTime.createVKey(12345L);
     otherServerApproveBillingEventKey = Cancellation.createVKey(2468L);
     recurringBillingEventKey = Recurring.createVKey(13579L);
-    autorenewPollMessageKey =
-        VKey.create(
-            PollMessage.Autorenew.class,
-            67890L,
-            Key.create(historyEntryKey, PollMessage.Autorenew.class, 67890L));
-    otherServerApprovePollMessageKey =
-        VKey.create(
-            PollMessage.OneTime.class,
-            314159L,
-            Key.create(historyEntryKey, PollMessage.OneTime.class, 314159L));
+    autorenewPollMessageKey = VKey.createSql(PollMessage.Autorenew.class, 67890L);
+    otherServerApprovePollMessageKey = VKey.createSql(PollMessage.OneTime.class, 314159L);
   }
 
   @Test

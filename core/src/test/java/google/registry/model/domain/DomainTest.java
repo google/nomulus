@@ -41,7 +41,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.billing.BillingEvent;
@@ -114,7 +113,7 @@ public class DomainTest {
     oneTimeBillKey =
         persistResource(
                 new BillingEvent.OneTime.Builder()
-                    // Use SERVER_STATUS so we don't have to add a period.
+                    // Use SERVER_STATUS, so we don't have to add a period.
                     .setReason(Reason.SERVER_STATUS)
                     .setTargetId(domain.getDomainName())
                     .setRegistrarId(domain.getCurrentSponsorRegistrarId())
@@ -140,7 +139,7 @@ public class DomainTest {
     BillingEvent.OneTime oneTimeBill =
         new BillingEvent.OneTime.Builder()
             .setId(500L)
-            // Use SERVER_STATUS so we don't have to add a period.
+            // Use SERVER_STATUS, so we don't have to add a period.
             .setReason(Reason.SERVER_STATUS)
             .setTargetId("example.com")
             .setRegistrarId("registrar1")
@@ -163,10 +162,8 @@ public class DomainTest {
             .build();
     insertInDb(historyEntry, oneTimeBill, recurringBill);
     recurringBillKey = recurringBill.createVKey();
-    VKey<PollMessage.Autorenew> autorenewPollKey =
-        VKey.from(Key.create(Key.create(domainHistory), PollMessage.Autorenew.class, 3));
-    VKey<PollMessage.OneTime> onetimePollKey =
-        VKey.from(Key.create(Key.create(domainHistory), PollMessage.OneTime.class, 1));
+    VKey<PollMessage.Autorenew> autorenewPollKey = VKey.createSql(PollMessage.Autorenew.class, 3L);
+    VKey<PollMessage.OneTime> onetimePollKey = VKey.createSql(PollMessage.OneTime.class, 1L);
     // Set up a new persisted domain entity.
     domain =
         persistResource(
@@ -215,7 +212,7 @@ public class DomainTest {
                             .build())
                     .setDeletePollMessage(onetimePollKey)
                     .setAutorenewBillingEvent(recurringBillKey)
-                    .setAutorenewPollMessage(autorenewPollKey, historyEntry.getId())
+                    .setAutorenewPollMessage(autorenewPollKey)
                     .setSmdId("smdid")
                     .addGracePeriod(
                         GracePeriod.create(
@@ -849,7 +846,7 @@ public class DomainTest {
 
   @Test
   void testClone_transferDuringAutorenew() {
-    // When the domain is an an autorenew grace period, we should not extend the registration
+    // When the domain is an autorenew grace period, we should not extend the registration
     // expiration by a further year--it should just be whatever the autorenew was
     DateTime now = DateTime.now(UTC);
     DateTime transferExpirationTime = now.minusDays(1);

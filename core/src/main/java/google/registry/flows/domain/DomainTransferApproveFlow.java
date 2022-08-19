@@ -194,7 +194,11 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     }
     // Close the old autorenew event and poll message at the transfer time (aka now). This may end
     // up deleting the poll message.
-    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, now);
+    updateAutorenewRecurrenceEndTime(
+        existingDomain,
+        existingRecurring,
+        now,
+        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()));
     DateTime newExpirationTime =
         computeExDateForApprovalTime(existingDomain, now, transferData.getTransferPeriod());
     // Create a new autorenew event starting at the expiration time.
@@ -240,9 +244,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .build())
             .setRegistrationExpirationTime(newExpirationTime)
             .setAutorenewBillingEvent(autorenewEvent.createVKey())
-            .setAutorenewPollMessage(
-                gainingClientAutorenewPollMessage.createVKey(),
-                gainingClientAutorenewPollMessage.getHistoryRevisionId())
+            .setAutorenewPollMessage(gainingClientAutorenewPollMessage.createVKey())
             // Remove all the old grace periods and add a new one for the transfer.
             .setGracePeriods(
                 billingEvent

@@ -359,26 +359,6 @@ class google.registry.model.index.ForeignKeyIndex$ForeignKeyHostIndex {
   google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
 }
-class google.registry.model.poll.PollMessage {
-  @Id java.lang.Long id;
-  java.lang.String clientId;
-  java.lang.String msg;
-  org.joda.time.DateTime eventTime;
-}
-class google.registry.model.poll.PollMessage$Autorenew {
-  @Id java.lang.Long id;
-  java.lang.String clientId;
-  java.lang.String msg;
-  java.lang.String targetId;
-  org.joda.time.DateTime autorenewEndTime;
-  org.joda.time.DateTime eventTime;
-}
-class google.registry.model.poll.PollMessage$OneTime {
-  @Id java.lang.Long id;
-  java.lang.String clientId;
-  java.lang.String msg;
-  org.joda.time.DateTime eventTime;
-}
 class google.registry.model.rde.RdeRevision {
   @Id java.lang.String id;
   int revision;

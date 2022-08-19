@@ -667,8 +667,7 @@ public class DatabaseHelper {
         domain
             .asBuilder()
             .setAutorenewBillingEvent(autorenewEvent.createVKey())
-            .setAutorenewPollMessage(
-                autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
+            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
             .build());
   }
 

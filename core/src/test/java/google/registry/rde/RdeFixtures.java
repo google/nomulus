@@ -175,8 +175,7 @@ final class RdeFixtures {
                             .setMsg("Domain was auto-renewed.")
                             .setHistoryEntry(historyEntry)
                             .build())
-                    .createVKey(),
-                historyEntry.getId())
+                    .createVKey())
             .setTransferData(
                 new DomainTransferData.Builder()
                     .setGainingRegistrarId("gaining")

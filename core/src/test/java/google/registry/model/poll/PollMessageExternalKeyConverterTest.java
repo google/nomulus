@@ -46,7 +46,7 @@ public class PollMessageExternalKeyConverterTest {
   public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private HistoryEntry historyEntry;
-  private FakeClock clock = new FakeClock(DateTime.parse("2007-07-07T01:01:01Z"));
+  private final FakeClock clock = new FakeClock(DateTime.parse("2007-07-07T01:01:01Z"));
 
   @BeforeEach
   void beforeEach() {
@@ -77,8 +77,8 @@ public class PollMessageExternalKeyConverterTest {
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
                 .build());
-    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("1-2-FOOBAR-4-5-2007");
-    assertVKeysEqual(parsePollMessageExternalId("1-2-FOOBAR-4-5-2007"), pollMessage.createVKey());
+    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("5-2007");
+    assertVKeysEqual(parsePollMessageExternalId("5-2007"), pollMessage.createVKey());
   }
 
   @Test
@@ -94,8 +94,8 @@ public class PollMessageExternalKeyConverterTest {
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
                 .build());
-    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("2-5-ROID-6-7-2007");
-    assertVKeysEqual(parsePollMessageExternalId("2-5-ROID-6-7-2007"), pollMessage.createVKey());
+    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("7-2007");
+    assertVKeysEqual(parsePollMessageExternalId("7-2007"), pollMessage.createVKey());
   }
 
   @Test
@@ -111,46 +111,25 @@ public class PollMessageExternalKeyConverterTest {
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
                 .build());
-    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("3-5-ROID-6-7-2007");
-    assertVKeysEqual(parsePollMessageExternalId("3-5-ROID-6-7-2007"), pollMessage.createVKey());
-  }
-
-  @Test
-  void testFailure_missingYearField() {
-    assertThrows(
-        PollMessageExternalKeyParseException.class,
-        () -> parsePollMessageExternalId("1-2-FOOBAR-4-5"));
-  }
-
-  @Test
-  void testFailure_invalidEppResourceTypeId() {
-    // Populate the testdata correctly as for 1-2-FOOBAR-4-5 so we know that the only thing that
-    // is wrong here is the EppResourceTypeId.
-    testSuccess_domain();
-    assertThrows(
-        PollMessageExternalKeyParseException.class,
-        () -> parsePollMessageExternalId("4-2-FOOBAR-4-5-2007"));
+    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("7-2007");
+    assertVKeysEqual(parsePollMessageExternalId("7-2007"), pollMessage.createVKey());
   }
 
   @Test
   void testFailure_tooFewComponentParts() {
-    assertThrows(
-        PollMessageExternalKeyParseException.class,
-        () -> parsePollMessageExternalId("1-3-EXAMPLE"));
+    assertThrows(PollMessageExternalKeyParseException.class, () -> parsePollMessageExternalId("1"));
   }
 
   @Test
   void testFailure_tooManyComponentParts() {
     assertThrows(
-        PollMessageExternalKeyParseException.class,
-        () -> parsePollMessageExternalId("1-3-EXAMPLE-4-5-2007-2009"));
+        PollMessageExternalKeyParseException.class, () -> parsePollMessageExternalId("1-3-2009"));
   }
 
   @Test
   void testFailure_nonNumericIds() {
     assertThrows(
-        PollMessageExternalKeyParseException.class,
-        () -> parsePollMessageExternalId("A-B-FOOBAR-D-E-F"));
+        PollMessageExternalKeyParseException.class, () -> parsePollMessageExternalId("A-2007"));
   }
 
   // We may have VKeys of slightly varying types, e.g. VKey<PollMessage> (superclass) and

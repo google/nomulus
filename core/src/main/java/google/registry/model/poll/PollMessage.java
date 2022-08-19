@@ -20,18 +20,12 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.EntitySubclass;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.Index;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.ExternalMessagingName;
-import google.registry.model.annotations.ReportedOn;
+import google.registry.model.annotations.OfyIdAllocation;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.contact.ContactResource;
@@ -55,16 +49,19 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.WithLongVKey;
 import google.registry.util.NullIgnoringCollectionBuilder;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.PostLoad;
+import javax.persistence.Table;
 import org.joda.time.DateTime;
 
 /**
@@ -76,10 +73,10 @@ import org.joda.time.DateTime;
  * retained for historical purposes, poll messages are truly deleted once they have been delivered
  * and ACKed.
  *
- * <p>Poll messages are parented off of the {@link HistoryEntry} that resulted in their creation.
- * This means that poll messages are contained in the Datastore entity group of the parent {@link
- * EppResource} (which can be a domain, contact, or host). It is thus possible to perform a strongly
- * consistent query to find all poll messages associated with a given EPP resource.
+ * <p>Poll messages have a reference to the revision id of the {@link HistoryEntry} that resulted in
+ * their creation or re-creation, in case of transfer cancellation/rejection. The revision ids are
+ * not used directly by the Java code, but their presence in the database makes it easier to
+ * diagnose potential issues related to poll messages.
  *
  * <p>Poll messages are identified externally by registrars using the format defined in {@link
  * PollMessageExternalKeyConverter}.
@@ -88,16 +85,10 @@ import org.joda.time.DateTime;
  *     Command</a>
  */
 @Entity
-@ReportedOn
 @ExternalMessagingName("message")
-@javax.persistence.Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "type")
-@javax.persistence.Table(
-    indexes = {
-      @javax.persistence.Index(columnList = "registrar_id"),
-      @javax.persistence.Index(columnList = "eventTime")
-    })
+@Table(indexes = {@Index(columnList = "registrar_id"), @Index(columnList = "eventTime")})
 public abstract class PollMessage extends ImmutableObject
     implements Buildable, TransferServerApproveEntity, UnsafeSerializable {
 
@@ -108,9 +99,9 @@ public abstract class PollMessage extends ImmutableObject
     HOST(3L, Host.class);
 
     private final long id;
-    private final Class<?> clazz;
+    private final Class<? extends EppResource> clazz;
 
-    Type(long id, Class<?> clazz) {
+    Type(long id, Class<? extends EppResource> clazz) {
       this.id = id;
       this.clazz = clazz;
     }
@@ -124,58 +115,40 @@ public abstract class PollMessage extends ImmutableObject
     }
 
     /** Returns the class of the underlying resource for the poll message type. */
-    public Class<?> getResourceClass() {
+    public Class<? extends EppResource> getResourceClass() {
       return clazz;
-    }
-
-    /**
-     * Returns the type specified by the identifer, {@code Optional.empty()} if the id is out of
-     * range.
-     */
-    public static Optional<Type> fromId(long id) {
-      for (Type val : values()) {
-        if (val.id == id) {
-          return Optional.of(val);
-        }
-      }
-
-      return Optional.empty();
     }
   }
 
   /** Entity id. */
   @Id
-  @javax.persistence.Id
+  @OfyIdAllocation
   @Column(name = "poll_message_id")
   Long id;
 
   /** The registrar that this poll message will be delivered to. */
-  @Index
   @Column(name = "registrar_id", nullable = false)
   String clientId;
 
   /** The time when the poll message should be delivered. May be in the future. */
-  @Index
   @Column(nullable = false)
   DateTime eventTime;
 
-  /** Human readable message that will be returned with this poll message. */
+  /** Human-readable message that will be returned with this poll message. */
   @Column(name = "message")
   String msg;
 
-  // TODO(b/456803336): Replace these fields with {Domain,Contact,Host}HistoryId objects.
+  String domainRepoId;
 
-  @Ignore String domainRepoId;
+  String contactRepoId;
 
-  @Ignore String contactRepoId;
+  String hostRepoId;
 
-  @Ignore String hostRepoId;
+  Long domainHistoryRevisionId;
 
-  @Ignore Long domainHistoryRevisionId;
+  Long contactHistoryRevisionId;
 
-  @Ignore Long contactHistoryRevisionId;
-
-  @Ignore Long hostHistoryRevisionId;
+  Long hostHistoryRevisionId;
 
   public Long getId() {
     return id;
@@ -228,31 +201,21 @@ public abstract class PollMessage extends ImmutableObject
    * the resource.
    */
   public String getResourceName() {
-    return domainRepoId != null
-        ? domainRepoId
-        : (contactRepoId != null ? contactRepoId : hostRepoId);
+    return domainRepoId != null ? domainRepoId : contactRepoId != null ? contactRepoId : hostRepoId;
   }
 
   /** Gets the underlying history revision id, regardless of the type of the resource. */
   public Long getHistoryRevisionId() {
     return domainHistoryRevisionId != null
         ? domainHistoryRevisionId
-        : (contactHistoryRevisionId != null ? contactHistoryRevisionId : hostHistoryRevisionId);
+        : contactHistoryRevisionId != null ? contactHistoryRevisionId : hostHistoryRevisionId;
   }
 
   public Type getType() {
-    return domainRepoId != null ? Type.DOMAIN : (contactRepoId != null ? Type.CONTACT : Type.HOST);
+    return domainRepoId != null ? Type.DOMAIN : contactRepoId != null ? Type.CONTACT : Type.HOST;
   }
 
   public abstract ImmutableList<ResponseData> getResponseData();
-
-  @Override
-  public abstract VKey<? extends PollMessage> createVKey();
-
-  /** Static VKey factory method for use by VKeyTranslatorFactory. */
-  public static VKey<PollMessage> createVKey(Key<PollMessage> key) {
-    return VKey.create(PollMessage.class, key.getId(), key);
-  }
 
   /** Override Buildable.asBuilder() to give this method stronger typing. */
   @Override
@@ -318,9 +281,11 @@ public abstract class PollMessage extends ImmutableObject
       // Set the appropriate field based on the history entry type.
       if (history instanceof DomainHistory) {
         return setDomainHistoryId(((DomainHistory) history).getDomainHistoryId());
-      } else if (history instanceof ContactHistory) {
+      }
+      if (history instanceof ContactHistory) {
         return setContactHistoryId(((ContactHistory) history).getContactHistoryId());
-      } else if (history instanceof HostHistory) {
+      }
+      if (history instanceof HostHistory) {
         return setHostHistoryId(((HostHistory) history).getHostHistoryId());
       }
       return thisCastToDerived();
@@ -330,7 +295,7 @@ public abstract class PollMessage extends ImmutableObject
      * Given an array containing pairs of objects, verifies that both members of exactly one of the
      * pairs is non-null.
      */
-    private boolean exactlyOnePairNonNull(Object... pairs) {
+    private static boolean exactlyOnePairNonNull(Object... pairs) {
       int count = 0;
       checkArgument(pairs.length % 2 == 0, "Odd number of arguments provided.");
       for (int i = 0; i < pairs.length; i += 2) {
@@ -360,9 +325,9 @@ public abstract class PollMessage extends ImmutableObject
               instance.contactHistoryRevisionId,
               instance.hostRepoId,
               instance.hostHistoryRevisionId),
-          "the repo id and history revision id must be defined for exactly one of domain, "
-              + "contact or host: "
-              + instance);
+          "The repo id and history revision id must be defined for exactly one of domain, "
+              + "contact or host: %s",
+          instance);
       return super.build();
     }
   }
@@ -372,13 +337,11 @@ public abstract class PollMessage extends ImmutableObject
    *
    * <p>One-time poll messages are deleted from Datastore once they have been delivered and ACKed.
    */
-  @EntitySubclass(index = false)
-  @javax.persistence.Entity
+  @Entity
   @DiscriminatorValue("ONE_TIME")
   @WithLongVKey(compositeKey = true)
   public static class OneTime extends PollMessage {
 
-    @Ignore
     @Embedded
     @AttributeOverrides({
       @AttributeOverride(
@@ -399,7 +362,6 @@ public abstract class PollMessage extends ImmutableObject
     })
     PendingActionNotificationResponse pendingActionNotificationResponse;
 
-    @Ignore
     @Embedded
     @AttributeOverrides({
       @AttributeOverride(
@@ -420,35 +382,21 @@ public abstract class PollMessage extends ImmutableObject
     })
     TransferResponse transferResponse;
 
-    @Ignore
     @Column(name = "transfer_response_domain_name")
     String fullyQualifiedDomainName;
 
-    @Ignore
     @Column(name = "transfer_response_domain_expiration_time")
     DateTime extendedRegistrationExpirationTime;
 
-    @Ignore
     @Column(name = "transfer_response_contact_id")
     String contactId;
 
-    @Ignore
     @Column(name = "transfer_response_host_id")
     String hostId;
 
     @Override
     public VKey<OneTime> createVKey() {
-      return VKey.create(OneTime.class, getId(), Key.create(this));
-    }
-
-    /** Converts an unspecialized VKey&lt;PollMessage&gt; to a VKey of the derived class. */
-    public static @Nullable VKey<OneTime> convertVKey(@Nullable VKey<? extends PollMessage> key) {
-      if (key == null) {
-        return null;
-      }
-      Key<OneTime> ofyKey =
-          Key.create(key.getOfyKey().getParent(), OneTime.class, key.getOfyKey().getId());
-      return VKey.create(OneTime.class, key.getSqlKey(), ofyKey);
+      return VKey.createSql(OneTime.class, getId());
     }
 
     @Override
@@ -525,8 +473,7 @@ public abstract class PollMessage extends ImmutableObject
     /** A builder for {@link OneTime} since it is immutable. */
     public static class Builder extends PollMessage.Builder<OneTime, Builder> {
 
-      public Builder() {
-      }
+      public Builder() {}
 
       private Builder(OneTime instance) {
         super(instance);
@@ -587,14 +534,13 @@ public abstract class PollMessage extends ImmutableObject
   }
 
   /**
-   * An auto-renew poll message which recurs annually.
+   * An autorenew poll message which recurs annually.
    *
    * <p>Auto-renew poll messages are not deleted until the registration of their parent domain has
    * been canceled, because there will always be a speculative renewal for next year until that
    * happens.
    */
-  @EntitySubclass(index = false)
-  @javax.persistence.Entity
+  @Entity
   @DiscriminatorValue("AUTORENEW")
   @WithLongVKey(compositeKey = true)
   public static class Autorenew extends PollMessage {
@@ -604,7 +550,6 @@ public abstract class PollMessage extends ImmutableObject
     String targetId;
 
     /** The autorenew recurs annually between {@link #eventTime} and this time. */
-    @Index
     DateTime autorenewEndTime;
 
     public String getTargetId() {
@@ -617,25 +562,14 @@ public abstract class PollMessage extends ImmutableObject
 
     @Override
     public VKey<Autorenew> createVKey() {
-      return VKey.create(Autorenew.class, getId(), Key.create(this));
-    }
-
-    /** Converts an unspecialized VKey&lt;PollMessage&gt; to a VKey of the derived class. */
-    public static @Nullable VKey<Autorenew> convertVKey(VKey<? extends PollMessage> key) {
-      if (key == null) {
-        return null;
-      }
-      Key<Autorenew> ofyKey =
-          Key.create(key.getOfyKey().getParent(), Autorenew.class, key.getOfyKey().getId());
-      return VKey.create(Autorenew.class, key.getSqlKey(), ofyKey);
+      return VKey.createSql(Autorenew.class, getId());
     }
 
     @Override
     public ImmutableList<ResponseData> getResponseData() {
-      // Note that the event time is when the auto-renew occured, so the expiration time in the
+      // Note that the event time is when the autorenew occurred, so the expiration time in the
       // response should be 1 year past that, since it denotes the new expiration time.
-      return ImmutableList.of(
-          DomainRenewData.create(getTargetId(), getEventTime().plusYears(1)));
+      return ImmutableList.of(DomainRenewData.create(getTargetId(), getEventTime().plusYears(1)));
     }
 
     @Override
