@@ -324,9 +324,11 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
         contactResourceList = ImmutableList.of();
       } else {
         Optional<ContactResource> contactResource =
-            tm().transact(
+            replicaJpaTm()
+                .transact(
                     () ->
-                        tm().loadByKeyIfPresent(
+                        replicaJpaTm()
+                            .loadByKeyIfPresent(
                                 VKey.create(
                                     ContactResource.class, partialStringQuery.getInitialString())));
         contactResourceList =
