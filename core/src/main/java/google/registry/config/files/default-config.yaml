@@ -481,6 +481,7 @@ contactHistory:
 dnsUpdate:
   dnsUpdateFailRegistryName: Example name
   registrySupportEmail: email@example.com
+  registryCcEmail: email@example.com
   # Email subject text template to notify partners after repeatedly failing DNS update
   dnsUpdateFailEmailSubjectText: "[ACTION REQUIRED]: Incomplete DNS Update"
   # Email body text template for failing DNS update that accepts 5 parameters:

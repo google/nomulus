@@ -1320,8 +1320,14 @@ public final class RegistryConfig {
 
     @Provides
     @Config("registrySupportEmail")
-    public static String provideRegistrySupportEmail(RegistryConfigSettings config) {
-      return config.dnsUpdate.registrySupportEmail;
+    public static InternetAddress provideRegistrySupportEmail(RegistryConfigSettings config) {
+      return parseEmailAddress(config.dnsUpdate.registrySupportEmail);
+    }
+
+    @Provides
+    @Config("registryCcEmail")
+    public static InternetAddress provideRegistryCcEmail(RegistryConfigSettings config) {
+      return parseEmailAddress(config.dnsUpdate.registryCcEmail);
     }
 
     @Provides
