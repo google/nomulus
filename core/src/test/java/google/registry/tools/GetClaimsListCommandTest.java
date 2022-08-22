@@ -22,13 +22,19 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
+import google.registry.testing.TestCacheExtension;
 import java.io.File;
 import java.nio.file.Files;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link GetClaimsListCommand}. */
 class GetClaimsListCommandTest extends CommandTestCase<GetClaimsListCommand> {
+
+  @RegisterExtension
+  public final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder().withClaimsListCache(java.time.Duration.ofHours(6)).build();
 
   @Test
   void testSuccess_getWorks() throws Exception {
