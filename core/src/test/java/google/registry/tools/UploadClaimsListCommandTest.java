@@ -20,12 +20,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
+import google.registry.testing.TestCacheExtension;
 import java.io.FileNotFoundException;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UploadClaimsListCommand}. */
 class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsListCommand> {
+
+  @RegisterExtension
+  public final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder().withClaimsListCache(java.time.Duration.ofHours(6)).build();
 
   @Test
   void testSuccess() throws Exception {
