@@ -181,9 +181,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                         .setRegistrationExpirationTime(expirationTime)
                         .setStatusValues(ImmutableSet.copyOf(statusValues))
                         .setAutorenewBillingEvent(autorenewEvent.createVKey())
-                        .setAutorenewPollMessage(
-                            autorenewPollMessage.createVKey(),
-                            autorenewPollMessage.getHistoryRevisionId())
+                        .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                         .build();
                 persistResources(
                     ImmutableSet.of(

@@ -216,13 +216,6 @@ public class DomainBase extends EppResource
   @Column(name = "autorenew_poll_message_id")
   VKey<PollMessage.Autorenew> autorenewPollMessage;
 
-  /**
-   * History record for the autorenew poll message.
-   *
-   * <p>Here so we can restore the original ofy key from sql.
-   */
-  @Ignore Long autorenewPollMessageHistoryId;
-
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
   @Transient Set<GracePeriod> gracePeriods;
 
@@ -320,10 +313,6 @@ public class DomainBase extends EppResource
 
   public VKey<PollMessage.Autorenew> getAutorenewPollMessage() {
     return autorenewPollMessage;
-  }
-
-  public Long getAutorenewPollMessageHistoryId() {
-    return autorenewPollMessageHistoryId;
   }
 
   public ImmutableSet<GracePeriod> getGracePeriods() {
@@ -509,9 +498,7 @@ public class DomainBase extends EppResource
               // Set the speculatively-written new autorenew events as the domain's autorenew
               // events.
               .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
-              .setAutorenewPollMessage(
-                  transferData.getServerApproveAutorenewPollMessage(),
-                  transferData.getServerApproveAutorenewPollMessageHistoryId());
+              .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage());
       if (transferData.getTransferPeriod().getValue() == 1) {
         // Set the grace period using a key to the prescheduled transfer billing event.  Not using
         // GracePeriod.forBillingEvent() here in order to avoid the actual Datastore fetch.
@@ -886,11 +873,8 @@ public class DomainBase extends EppResource
       return thisCastToDerived();
     }
 
-    public B setAutorenewPollMessage(
-        @Nullable VKey<PollMessage.Autorenew> autorenewPollMessage,
-        @Nullable Long autorenewPollMessageHistoryId) {
+    public B setAutorenewPollMessage(@Nullable VKey<PollMessage.Autorenew> autorenewPollMessage) {
       getInstance().autorenewPollMessage = autorenewPollMessage;
-      getInstance().autorenewPollMessageHistoryId = autorenewPollMessageHistoryId;
       return thisCastToDerived();
     }
 

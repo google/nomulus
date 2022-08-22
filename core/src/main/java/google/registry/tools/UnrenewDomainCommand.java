@@ -54,7 +54,7 @@ import org.joda.time.DateTime;
  * <p>This removes years off a domain's registration period. Note that the expiration time cannot be
  * set to prior than the present. Reversal of the charges for these years (if desired) must happen
  * out of band, as they may already have been billed out and thus cannot and won't be reversed in
- * Datastore.
+ * the database.
  */
 @Parameters(separators = " =", commandDescription = "Unrenew a domain.")
 @NonFinalForTesting
@@ -217,7 +217,8 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
             .build();
     // End the old autorenew billing event and poll message now.
     Recurring existingRecurring = tm().loadByKey(domain.getAutorenewBillingEvent());
-    updateAutorenewRecurrenceEndTime(domain, existingRecurring, now);
+    updateAutorenewRecurrenceEndTime(
+        domain, existingRecurring, now, domainHistory.getDomainHistoryId());
     Domain newDomain =
         domain
             .asBuilder()
@@ -225,9 +226,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
             .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setAutorenewBillingEvent(newAutorenewEvent.createVKey())
-            .setAutorenewPollMessage(
-                newAutorenewPollMessage.createVKey(),
-                newAutorenewPollMessage.getHistoryRevisionId())
+            .setAutorenewPollMessage(newAutorenewPollMessage.createVKey())
             .build();
     // In order to do it'll need to write out a new HistoryEntry (likely of type SYNTHETIC), a new
     // autorenew billing event and poll message, and a new one time poll message at the present time

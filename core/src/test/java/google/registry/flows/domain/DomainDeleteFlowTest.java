@@ -147,8 +147,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             domain
                 .asBuilder()
                 .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
-                .setAutorenewPollMessage(
-                    autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
+                .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                 .build());
 
     assertTransactionalFlow(true);
@@ -214,8 +213,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                             "TheRegistrar",
                             autorenewBillingEvent.createVKey())))
                 .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
-                .setAutorenewPollMessage(
-                    autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
+                .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                 .build());
     assertTransactionalFlow(true);
   }

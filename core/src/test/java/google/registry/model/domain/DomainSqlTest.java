@@ -15,7 +15,6 @@
 package google.registry.model.domain;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.flows.domain.DomainTransferUtils.createPendingTransferData;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -40,11 +39,8 @@ import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
-import google.registry.model.domain.Period.Unit;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
@@ -52,7 +48,6 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
@@ -503,8 +498,7 @@ public class DomainSqlTest {
         domain
             .asBuilder()
             .setAutorenewBillingEvent(billEvent.createVKey())
-            .setAutorenewPollMessage(
-                autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
+            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
             .setDeletePollMessage(deletePollMessage.createVKey())
             .setTransferData(transferData)
             .setGracePeriods(gracePeriods)
@@ -549,145 +543,8 @@ public class DomainSqlTest {
     assertThat(persisted.getGracePeriods()).isEqualTo(gracePeriods);
   }
 
-  @Test
-  void persistDomainWithLegacyVKeys() {
-    createTld("com");
-    historyEntry =
-        new DomainHistory.Builder()
-            .setId(100L)
-            .setType(HistoryEntry.Type.DOMAIN_CREATE)
-            .setPeriod(Period.create(1, Period.Unit.YEARS))
-            .setModificationTime(DateTime.now(UTC))
-            .setDomainRepoId("4-COM")
-            .setRegistrarId("registrar1")
-            // These are non-null, but I don't think some tests set them.
-            .setReason("felt like it")
-            .setRequestedByRegistrar(false)
-            .setXmlBytes(new byte[0])
-            .build();
-    BillingEvent.Recurring billEvent =
-        new BillingEvent.Recurring.Builder()
-            .setId(200L)
-            .setReason(Reason.RENEW)
-            .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-            .setTargetId("example.com")
-            .setRegistrarId("registrar1")
-            .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setRecurrenceEndTime(END_OF_TIME)
-            .setDomainHistory(historyEntry)
-            .build();
-    PollMessage.Autorenew autorenewPollMessage =
-        new PollMessage.Autorenew.Builder()
-            .setId(300L)
-            .setRegistrarId("registrar1")
-            .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setHistoryEntry(historyEntry)
-            .build();
-    PollMessage.OneTime deletePollMessage =
-        new PollMessage.OneTime.Builder()
-            .setId(400L)
-            .setRegistrarId("registrar1")
-            .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setHistoryEntry(historyEntry)
-            .build();
-    BillingEvent.OneTime oneTimeBillingEvent =
-        new BillingEvent.OneTime.Builder()
-            .setId(500L)
-            // Use SERVER_STATUS so we don't have to add a period.
-            .setReason(Reason.SERVER_STATUS)
-            .setTargetId("example.com")
-            .setRegistrarId("registrar1")
-            .setBillingTime(DateTime.now(UTC))
-            .setCost(Money.of(USD, 100))
-            .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setDomainHistory(historyEntry)
-            .build();
-    DomainTransferData transferData =
-        createPendingTransferData(
-            domain.getRepoId(),
-            historyEntry.getId(),
-            new DomainTransferData.Builder()
-                .setTransferRequestTrid(Trid.create("foo", "bar"))
-                .setTransferRequestTime(fakeClock.nowUtc())
-                .setGainingRegistrarId("registrar2")
-                .setLosingRegistrarId("registrar1")
-                .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1)),
-            ImmutableSet.of(oneTimeBillingEvent, billEvent, autorenewPollMessage),
-            Period.create(0, Unit.YEARS));
-    gracePeriods =
-        ImmutableSet.of(
-            GracePeriod.create(
-                GracePeriodStatus.ADD,
-                "4-COM",
-                END_OF_TIME,
-                "registrar1",
-                oneTimeBillingEvent.createVKey()),
-            GracePeriod.createForRecurring(
-                GracePeriodStatus.AUTO_RENEW,
-                "4-COM",
-                END_OF_TIME,
-                "registrar1",
-                billEvent.createVKey()));
-
-    domain =
-        domain
-            .asBuilder()
-            .setAutorenewBillingEvent(Recurring.createVKey(billEvent.getId()))
-            .setAutorenewPollMessage(
-                createLegacyVKey(PollMessage.Autorenew.class, autorenewPollMessage.getId()),
-                autorenewPollMessage.getHistoryRevisionId())
-            .setDeletePollMessage(
-                createLegacyVKey(PollMessage.OneTime.class, deletePollMessage.getId()))
-            .setTransferData(transferData)
-            .setGracePeriods(gracePeriods)
-            .build();
-    historyEntry = historyEntry.asBuilder().setDomain(domain).build();
-    insertInDb(
-        contact,
-        contact2,
-        host,
-        historyEntry,
-        autorenewPollMessage,
-        billEvent,
-        deletePollMessage,
-        oneTimeBillingEvent,
-        domain);
-
-    // Store the existing BillingRecurrence VKey.  This happens after the event has been persisted.
-    Domain persisted = loadByKey(domain.createVKey());
-
-    // Verify that the domain data has been persisted.
-    // dsData still isn't persisted.  gracePeriods appears to have the same values but for some
-    // reason is showing up as different.
-    assertEqualDomainExcept(persisted, "creationTime", "dsData", "gracePeriods");
-
-    // Verify that the DomainBase object from the history record sets the fields correctly.
-    DomainHistory persistedHistoryEntry = loadByKey(historyEntry.createVKey());
-    assertThat(persistedHistoryEntry.getDomainBase().get().getAutorenewPollMessage())
-        .isEqualTo(domain.getAutorenewPollMessage());
-    assertThat(persistedHistoryEntry.getDomainBase().get().getAutorenewBillingEvent())
-        .isEqualTo(domain.getAutorenewBillingEvent());
-    assertThat(persistedHistoryEntry.getDomainBase().get().getDeletePollMessage())
-        .isEqualTo(domain.getDeletePollMessage());
-    DomainTransferData persistedTransferData =
-        persistedHistoryEntry.getDomainBase().get().getTransferData();
-    DomainTransferData originalTransferData = domain.getTransferData();
-    assertThat(persistedTransferData.getServerApproveBillingEvent())
-        .isEqualTo(originalTransferData.getServerApproveBillingEvent());
-    assertThat(persistedTransferData.getServerApproveAutorenewEvent())
-        .isEqualTo(originalTransferData.getServerApproveAutorenewEvent());
-    assertThat(persistedTransferData.getServerApproveAutorenewPollMessage())
-        .isEqualTo(originalTransferData.getServerApproveAutorenewPollMessage());
-    assertThat(domain.getGracePeriods()).isEqualTo(gracePeriods);
-  }
-
   private <T> VKey<T> createKey(Class<T> clazz, String name) {
     return VKey.create(clazz, name, Key.create(clazz, name));
-  }
-
-  private <T> VKey<T> createLegacyVKey(Class<T> clazz, long id) {
-    return VKey.create(
-        clazz, id, Key.create(Key.create(EntityGroupRoot.class, "per-tld"), clazz, id));
   }
 
   private void assertEqualDomainExcept(Domain thatDomain, String... excepts) {

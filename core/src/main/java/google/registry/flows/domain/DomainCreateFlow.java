@@ -377,8 +377,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
             .setIdnTableName(validateDomainNameWithIdnTables(domainName))
             .setRegistrationExpirationTime(registrationExpirationTime)
             .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
-            .setAutorenewPollMessage(
-                autorenewPollMessage.createVKey(), autorenewPollMessage.getHistoryRevisionId())
+            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
             .setLaunchNotice(hasClaimsNotice ? launchCreate.get().getNotice() : null)
             .setSmdId(signedMarkId)
             .setDsData(secDnsCreate.map(SecDnsCreateExtension::getDsData).orElse(null))

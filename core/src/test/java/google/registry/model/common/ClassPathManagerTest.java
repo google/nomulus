@@ -27,7 +27,6 @@ import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
-import google.registry.model.poll.PollMessage;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
@@ -63,7 +62,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("Lock")).isEqualTo(Lock.class);
     assertThat(ClassPathManager.getClass("Domain")).isEqualTo(Domain.class);
     assertThat(ClassPathManager.getClass("HistoryEntry")).isEqualTo(HistoryEntry.class);
-    assertThat(ClassPathManager.getClass("PollMessage")).isEqualTo(PollMessage.class);
     assertThat(ClassPathManager.getClass("ForeignKeyHostIndex"))
         .isEqualTo(ForeignKeyHostIndex.class);
     assertThat(ClassPathManager.getClass("ServerSecret")).isEqualTo(ServerSecret.class);
@@ -117,7 +115,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClassName(Lock.class)).isEqualTo("Lock");
     assertThat(ClassPathManager.getClassName(Domain.class)).isEqualTo("Domain");
     assertThat(ClassPathManager.getClassName(HistoryEntry.class)).isEqualTo("HistoryEntry");
-    assertThat(ClassPathManager.getClassName(PollMessage.class)).isEqualTo("PollMessage");
     assertThat(ClassPathManager.getClassName(ForeignKeyHostIndex.class))
         .isEqualTo("ForeignKeyHostIndex");
     assertThat(ClassPathManager.getClassName(ServerSecret.class)).isEqualTo("ServerSecret");

@@ -223,7 +223,11 @@ public final class DomainRenewFlow implements TransactionalFlow {
             .build();
     // End the old autorenew billing event and poll message now. This may delete the poll message.
     Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
-    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, now);
+    updateAutorenewRecurrenceEndTime(
+        existingDomain,
+        existingRecurring,
+        now,
+        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()));
     Domain newDomain =
         existingDomain
             .asBuilder()
@@ -231,9 +235,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
             .setLastEppUpdateRegistrarId(registrarId)
             .setRegistrationExpirationTime(newExpirationTime)
             .setAutorenewBillingEvent(newAutorenewEvent.createVKey())
-            .setAutorenewPollMessage(
-                newAutorenewPollMessage.createVKey(),
-                newAutorenewPollMessage.getHistoryRevisionId())
+            .setAutorenewPollMessage(newAutorenewPollMessage.createVKey())
             .addGracePeriod(
                 GracePeriod.forBillingEvent(
                     GracePeriodStatus.RENEW, existingDomain.getRepoId(), explicitRenewEvent))

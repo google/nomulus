@@ -117,7 +117,8 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
     // Reopen the autorenew event and poll message that we closed for the implicit transfer. This
     // may end up recreating the poll message if it was deleted upon the transfer request.
     Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
-    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, END_OF_TIME);
+    updateAutorenewRecurrenceEndTime(
+        existingDomain, existingRecurring, END_OF_TIME, domainHistory.getDomainHistoryId());
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
     tm().delete(existingDomain.getTransferData().getServerApproveEntities());
