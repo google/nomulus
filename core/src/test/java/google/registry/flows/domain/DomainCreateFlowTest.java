@@ -71,6 +71,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
+import com.google.common.truth.Truth8;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
@@ -3146,6 +3147,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
     Domain domain = reloadResourceByForeignKey();
     assertThat(domain.getCurrentPackageToken()).isPresent();
-    assertThat(domain.getCurrentPackageToken().get()).isEqualTo(token.createVKey());
+    Truth8.assertThat(domain.getCurrentPackageToken()).hasValue(token.createVKey());
   }
 }
