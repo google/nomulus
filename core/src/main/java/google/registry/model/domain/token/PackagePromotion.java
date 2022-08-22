@@ -43,22 +43,29 @@ public class PackagePromotion extends ImmutableObject implements Buildable {
   @Id long packagePromotionId;
 
   /** The allocation token string for the package. */
+  @Column(nullable = false)
   VKey<AllocationToken> token;
 
   /** The maximum number of active domains the package allows at any given time. */
+  @Column(nullable = false)
   int maxDomains;
 
   /** The maximum number of domains that can be created in the package each year. */
+  @Column(nullable = false)
   int maxCreates;
 
   /** The annual price of the package. */
   @Type(type = JodaMoneyType.TYPE_NAME)
   @Columns(
-      columns = {@Column(name = "package_price_amount"), @Column(name = "package_price_currency")})
+      columns = {
+        @Column(name = "package_price_amount", nullable = false),
+        @Column(name = "package_price_currency", nullable = false)
+      })
   Money packagePrice;
 
   /** The next billing date of the package. */
-  DateTime nextBillingDate;
+  @Column(nullable = false)
+  DateTime nextBillingDate = END_OF_TIME;
 
   /** Date the last warning email was sent that the package has exceeded the maxDomains limit. */
   @Nullable DateTime lastNotificationSent;
@@ -79,8 +86,8 @@ public class PackagePromotion extends ImmutableObject implements Buildable {
     return packagePrice;
   }
 
-  public Optional<DateTime> getNextBillingDate() {
-    return Optional.ofNullable(nextBillingDate);
+  public DateTime getNextBillingDate() {
+    return nextBillingDate;
   }
 
   public Optional<DateTime> getLastNotificationSent() {
@@ -119,24 +126,25 @@ public class PackagePromotion extends ImmutableObject implements Buildable {
     }
 
     public Builder setMaxDomains(int maxDomains) {
+      checkArgumentNotNull(maxDomains, "maxDomains must not be null");
       getInstance().maxDomains = maxDomains;
       return this;
     }
 
     public Builder setMaxCreates(int maxCreates) {
+      checkArgumentNotNull(maxCreates, "maxCreates must not be null");
       getInstance().maxCreates = maxCreates;
       return this;
     }
 
     public Builder setPackagePrice(Money packagePrice) {
+      checkArgumentNotNull(packagePrice, "Package price must not be null");
       getInstance().packagePrice = packagePrice;
       return this;
     }
 
     public Builder setNextBillingDate(@Nullable DateTime nextBillingDate) {
-      if (nextBillingDate == null) {
-        nextBillingDate = END_OF_TIME;
-      }
+      checkArgumentNotNull(nextBillingDate, "Next billing date must not be null");
       getInstance().nextBillingDate = nextBillingDate;
       return this;
     }
