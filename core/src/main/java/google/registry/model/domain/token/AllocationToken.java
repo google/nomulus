@@ -105,6 +105,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
 
   /** Single-use tokens are invalid after use. Infinite-use tokens, predictably, are not. */
   public enum TokenType {
+    PACKAGE,
     SINGLE_USE,
     UNLIMITED_USE
   }
@@ -274,6 +275,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
     public AllocationToken build() {
       checkArgumentNotNull(getInstance().tokenType, "Token type must be specified");
       checkArgument(!Strings.isNullOrEmpty(getInstance().token), "Token must not be null or empty");
+      checkArgument(
+          !getInstance().tokenType.equals(TokenType.PACKAGE)
+              || getInstance().renewalPriceBehavior.equals(RenewalPriceBehavior.SPECIFIED),
+          "Package tokens must have renewalPriceBehavior set to SPECIFIED");
       checkArgument(
           getInstance().domainName == null || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Domain name can only be specified for SINGLE_USE tokens");

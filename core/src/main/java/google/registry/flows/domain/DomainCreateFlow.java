@@ -390,6 +390,11 @@ public final class DomainCreateFlow implements TransactionalFlow {
             .addGracePeriod(
                 GracePeriod.forBillingEvent(GracePeriodStatus.ADD, repoId, createBillingEvent))
             .build();
+    if (allocationToken.isPresent()
+        && allocationToken.get().getTokenType().equals(TokenType.PACKAGE)) {
+      domain =
+          domain.asBuilder().setCurrentPackageToken(allocationToken.get().createVKey()).build();
+    }
     DomainHistory domainHistory =
         buildDomainHistory(domain, registry, now, period, registry.getAddGracePeriodLength());
     if (reservationTypes.contains(NAME_COLLISION)) {

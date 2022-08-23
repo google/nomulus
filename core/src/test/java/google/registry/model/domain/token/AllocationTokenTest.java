@@ -214,6 +214,20 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
+  void testFail_packageTokenNotSpecifiedRenewalBehavior() {
+    AllocationToken.Builder builder =
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(TokenType.PACKAGE)
+            .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT);
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> builder.build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Package tokens must have renewalPriceBehavior set to SPECIFIED");
+  }
+
+  @Test
   void testBuild_DomainNameWithLessThanTwoParts() {
     IllegalArgumentException thrown =
         assertThrows(

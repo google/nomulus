@@ -402,7 +402,8 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
             () -> runCommand("--number", "999", "--type", "INVALID_TYPE"));
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Invalid value for -t parameter. Allowed values:[SINGLE_USE, UNLIMITED_USE]");
+        .isEqualTo(
+            "Invalid value for -t parameter. Allowed values:[PACKAGE, SINGLE_USE, UNLIMITED_USE]");
   }
 
   @Test
