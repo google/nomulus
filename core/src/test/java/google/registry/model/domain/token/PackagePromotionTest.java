@@ -21,6 +21,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -51,6 +52,7 @@ public class PackagePromotionTest extends EntityTestCase {
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
 

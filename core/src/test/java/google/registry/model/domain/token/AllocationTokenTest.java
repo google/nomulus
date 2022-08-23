@@ -279,11 +279,12 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  void testBuild_onlyOneClientOnPackage() {
+  void testBuild_onlyOneClientInPackage() {
     Buildable.Builder builder =
         new AllocationToken.Builder()
             .setToken("foobar")
             .setTokenType(PACKAGE)
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setAllowedRegistrarIds(ImmutableSet.of("foo", "bar"));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
