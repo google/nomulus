@@ -46,6 +46,11 @@ final class CreateDomainCommand extends CreateOrUpdateDomainCommand
       description = "Force the creation of premium domains.")
   private boolean forcePremiums;
 
+  @Parameter(
+      names = "--allocation_token",
+      description = "Allocation token to use when creating the domain(s)")
+  private String allocationToken;
+
   @Inject
   @Named("base64StringGenerator")
   StringGenerator passwordGenerator;
@@ -92,7 +97,8 @@ final class CreateDomainCommand extends CreateOrUpdateDomainCommand
               "currency", currency,
               "price", cost,
               "dsRecords", DsRecord.convertToSoy(dsRecords),
-              "reason", reason);
+              "reason", reason,
+              "allocationToken", allocationToken);
       if (requestedByRegistrar != null) {
         soyMapData.put("requestedByRegistrar", requestedByRegistrar.toString());
       }
