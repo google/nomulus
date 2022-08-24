@@ -42,7 +42,7 @@ public abstract class AuthResult {
             userAuthInfo ->
                 String.format(
                     "%s %s",
-                    userAuthInfo.isUserAdmin() ? "admin" : "user", userAuthInfo.user().getEmail()))
+                    userAuthInfo.isUserAdmin() ? "admin" : "user", userAuthInfo.getEmailAddress()))
         .orElse("<logged-out user>");
   }
 

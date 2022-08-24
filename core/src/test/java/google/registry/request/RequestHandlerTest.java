@@ -474,7 +474,7 @@ public final class RequestHandlerTest {
     assertThat(providedAuthResult).isNotNull();
     assertThat(providedAuthResult.authLevel()).isEqualTo(AuthLevel.USER);
     assertThat(providedAuthResult.userAuthInfo()).isPresent();
-    assertThat(providedAuthResult.userAuthInfo().get().user()).isEqualTo(testUser);
+    assertThat(providedAuthResult.userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(providedAuthResult.userAuthInfo().get().oauthTokenInfo()).isEmpty();
     assertMetric("/auth/adminUser", GET, AuthLevel.USER, true);
   }
