@@ -26,6 +26,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -79,6 +80,10 @@ import org.joda.time.DateTime;
 public class AllocationToken extends BackupGroupRoot implements Buildable {
 
   private static final long serialVersionUID = -3954475393220876903L;
+  private static final String REMOVE_PACKAGE = "__REMOVEPACKAGE__";
+
+  private static final ImmutableMap<String, TokenBehavior> STATIC_TOKEN_BEHAVIORS =
+      ImmutableMap.of(REMOVE_PACKAGE, TokenBehavior.REMOVE_PACKAGE);
 
   // Promotions should only move forward, and ENDED / CANCELLED are terminal states.
   private static final ImmutableMultimap<TokenStatus, TokenStatus> VALID_TOKEN_STATUS_TRANSITIONS =
@@ -86,6 +91,18 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
           .putAll(NOT_STARTED, VALID, CANCELLED)
           .putAll(VALID, ENDED, CANCELLED)
           .build();
+
+  private static final ImmutableMap<String, AllocationToken> BEHAVIORAL_TOKENS =
+      ImmutableMap.of(
+          REMOVE_PACKAGE,
+          new AllocationToken.Builder()
+              .setTokenType(TokenType.UNLIMITED_USE)
+              .setToken(REMOVE_PACKAGE)
+              .build());
+
+  public static Optional<AllocationToken> maybeGetStaticTokenInstance(String name) {
+    return Optional.ofNullable(BEHAVIORAL_TOKENS.get(name));
+  }
 
   /** Any special behavior that should be used when registering domains using this token. */
   public enum RegistrationBehavior {
@@ -110,7 +127,21 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
   public enum TokenType {
     PACKAGE,
     SINGLE_USE,
-    UNLIMITED_USE
+    UNLIMITED_USE,
+  }
+
+  /**
+   * System behaves differently based on a token it gets inside a command. This enumerates different
+   * types of behaviors we support.
+   */
+  public enum TokenBehavior {
+    /** No special behavior */
+    DEFAULT,
+    /**
+     * REMOVE_PACKAGE triggers domain removal from promotional package, bypasses DEFAULT token
+     * validations.
+     */
+    REMOVE_PACKAGE
   }
 
   /** The status of this token with regard to any potential promotion. */
@@ -253,6 +284,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
 
   public RegistrationBehavior getRegistrationBehavior() {
     return registrationBehavior;
+  }
+
+  public TokenBehavior getTokenBehavior() {
+    return STATIC_TOKEN_BEHAVIORS.getOrDefault(token, TokenBehavior.DEFAULT);
   }
 
   @Override

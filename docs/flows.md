@@ -497,6 +497,8 @@ comes in at the exact millisecond that the domain would have expired.
     *   Resource status prohibits this operation.
     *   The allocation token is not currently valid.
 *   2305
+    *   The __REMOVEPACKAGE__ token is missing on a renew package domain command
+    *   The __REMOVEPACKAGE__ token is not allowed on non package domains
     *   The allocation token is not valid for this domain.
     *   The allocation token is not valid for this registrar.
     *   The allocation token is not valid for this TLD.

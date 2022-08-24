@@ -20,6 +20,7 @@ import static google.registry.flows.domain.DomainTransferFlowTestCase.persistWit
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -73,6 +74,8 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTok
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemovePackageTokenOnPackageDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemovePackageTokenOnNonPackageDomainException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
@@ -591,7 +594,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   void testSuccess_allocationToken() throws Exception {
     setEppInput(
-        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
     persistDomain();
     AllocationToken allocationToken =
         persistResource(
@@ -611,7 +615,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   void testSuccess_allocationTokenMultiUse() throws Exception {
     setEppInput(
-        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
     persistDomain();
     persistResource(
         new AllocationToken.Builder().setToken("abc123").setTokenType(UNLIMITED_USE).build());
@@ -622,7 +627,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     clock.advanceOneMilli();
     setEppInput(
         "domain_renew_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "other-example.tld", "YEARS", "2"));
+        ImmutableMap.of("DOMAIN", "other-example.tld", "YEARS", "2", "TOKEN", "abc123"));
     persistDomain();
     runFlowAssertResponse(
         loadFile(
@@ -633,7 +638,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   void testFailure_invalidAllocationToken() throws Exception {
     setEppInput(
-        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
     persistDomain();
     EppException thrown = assertThrows(InvalidAllocationTokenException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -642,7 +648,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   void testFailure_allocationTokenIsForADifferentDomain() throws Exception {
     setEppInput(
-        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
     persistDomain();
     persistResource(
         new AllocationToken.Builder()
@@ -660,7 +667,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   void testFailure_promotionNotActive() throws Exception {
     setEppInput(
-        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
     persistDomain();
     persistResource(
         new AllocationToken.Builder()
@@ -682,7 +690,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   void testFailure_promoTokenNotValidForRegistrar() throws Exception {
     setEppInput(
-        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
     persistDomain();
     persistResource(
         new AllocationToken.Builder()
@@ -706,7 +715,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   void testFailure_promoTokenNotValidForTld() throws Exception {
     setEppInput(
-        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
     persistDomain();
     persistResource(
         new AllocationToken.Builder()
@@ -730,7 +740,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   void testFailure_alreadyRedemeedAllocationToken() throws Exception {
     setEppInput(
-        "domain_renew_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
     persistDomain();
     Domain domain = persistActiveDomain("foo.tld");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 505L);
@@ -1184,5 +1195,70 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 historyEntry.getModificationTime().plusMinutes(9),
                 TransactionReportField.netRenewsFieldFromYears(5),
                 1));
+  }
+
+  @Test
+  void testFailsPackageDomainInvalidAllocationToken() throws Exception {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(PACKAGE)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setRenewalPriceBehavior(SPECIFIED)
+                .build());
+    persistDomain();
+    persistResource(
+        reloadResourceByForeignKey()
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+
+    setEppInput(
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
+
+    EppException thrown =
+        assertThrows(MissingRemovePackageTokenOnPackageDomainException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailsToRenewPackageDomainNoRemovePackageToken() throws Exception {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(PACKAGE)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setRenewalPriceBehavior(SPECIFIED)
+                .build());
+    persistDomain();
+    persistResource(
+        reloadResourceByForeignKey()
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+
+    setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "5"));
+
+    EppException thrown =
+        assertThrows(MissingRemovePackageTokenOnPackageDomainException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailsToRenewNonPackageDomainWithRemovePackageToken() throws Exception {
+    persistDomain();
+
+    setEppInput(
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEPACKAGE__"));
+
+    EppException thrown =
+        assertThrows(RemovePackageTokenOnNonPackageDomainException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 }
