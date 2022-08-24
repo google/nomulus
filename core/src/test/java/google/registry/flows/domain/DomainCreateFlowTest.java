@@ -3136,6 +3136,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(PACKAGE)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
                 .build());

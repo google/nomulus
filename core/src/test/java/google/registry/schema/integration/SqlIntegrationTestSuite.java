@@ -21,6 +21,7 @@ import google.registry.model.common.CursorTest;
 import google.registry.model.contact.ContactResourceTest;
 import google.registry.model.domain.DomainSqlTest;
 import google.registry.model.domain.token.AllocationTokenTest;
+import google.registry.model.domain.token.PackagePromotionTest;
 import google.registry.model.history.ContactHistoryTest;
 import google.registry.model.history.DomainHistoryTest;
 import google.registry.model.history.HostHistoryTest;
@@ -88,6 +89,7 @@ import org.junit.runner.RunWith;
   DomainHistoryTest.class,
   HostHistoryTest.class,
   LockTest.class,
+  PackagePromotionTest.class,
   PollMessageTest.class,
   PremiumListDaoTest.class,
   RdeRevisionTest.class,
