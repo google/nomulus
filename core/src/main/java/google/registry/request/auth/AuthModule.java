@@ -14,11 +14,17 @@
 
 package google.registry.request.auth;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.JsonFactory;
 import com.google.appengine.api.oauth.OAuthService;
 import com.google.appengine.api.oauth.OAuthServiceFactory;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.config.RegistryConfig.Config;
+import javax.inject.Singleton;
 
 /**
  * Dagger module for authentication routines.
@@ -29,13 +35,25 @@ public class AuthModule {
   /** Provides the custom authentication mechanisms (including OAuth). */
   @Provides
   ImmutableList<AuthenticationMechanism> provideApiAuthenticationMechanisms(
-      OAuthAuthenticationMechanism oauthAuthenticationMechanism) {
-    return ImmutableList.of(oauthAuthenticationMechanism);
+      OAuthAuthenticationMechanism oauthAuthenticationMechanism,
+      CookieOAuth2AuthenticationMechanism cookieOAuth2AuthenticationMechanism) {
+    return ImmutableList.of(oauthAuthenticationMechanism, cookieOAuth2AuthenticationMechanism);
   }
 
   /** Provides the OAuthService instance. */
   @Provides
   OAuthService provideOauthService() {
     return OAuthServiceFactory.getOAuthService();
+  }
+
+  @Provides
+  @Singleton
+  GoogleIdTokenVerifier provideGoogleIdTokenVerifier(
+      @Config("allowedOauthClientIds") ImmutableSet<String> allowedOauthClientIds,
+      NetHttpTransport httpTransport,
+      JsonFactory jsonFactory) {
+    return new GoogleIdTokenVerifier.Builder(httpTransport, jsonFactory)
+        .setAudience(allowedOauthClientIds)
+        .build();
   }
 }

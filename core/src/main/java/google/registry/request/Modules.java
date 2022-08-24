@@ -19,7 +19,7 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 import com.google.appengine.api.users.UserService;
@@ -63,17 +63,12 @@ public final class Modules {
     }
   }
 
-  /**
-   * Dagger module that causes the Jackson2 JSON parser to be used for Google APIs requests.
-   *
-   * <p>Jackson1 and GSON can also satisfy the {@link JsonFactory} interface, but we've decided to
-   * go with Jackson2, since it's what's used in the public examples for using Google APIs.
-   */
+  /** Dagger module that causes the Google GSON parser to be used for Google APIs requests. */
   @Module
-  public static final class Jackson2Module {
+  public static final class GsonModule {
     @Provides
     static JsonFactory provideJsonFactory() {
-      return JacksonFactory.getDefaultInstance();
+      return GsonFactory.getDefaultInstance();
     }
   }
 
