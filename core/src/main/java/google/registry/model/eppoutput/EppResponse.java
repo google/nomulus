@@ -43,6 +43,7 @@ import google.registry.model.domain.fee12.FeeRenewResponseExtensionV12;
 import google.registry.model.domain.fee12.FeeTransferResponseExtensionV12;
 import google.registry.model.domain.fee12.FeeUpdateResponseExtensionV12;
 import google.registry.model.domain.launch.LaunchCheckResponseExtension;
+import google.registry.model.domain.packagetoken.PackageTokenResponseExtension;
 import google.registry.model.domain.rgp.RgpInfoExtension;
 import google.registry.model.domain.secdns.SecDnsInfoExtension;
 import google.registry.model.eppcommon.Trid;
@@ -121,28 +122,30 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
 
   /** Zero or more response extensions. */
   @XmlElementRefs({
-      @XmlElementRef(type = FeeCheckResponseExtensionV06.class),
-      @XmlElementRef(type = FeeInfoResponseExtensionV06.class),
-      @XmlElementRef(type = FeeCreateResponseExtensionV06.class),
-      @XmlElementRef(type = FeeDeleteResponseExtensionV06.class),
-      @XmlElementRef(type = FeeRenewResponseExtensionV06.class),
-      @XmlElementRef(type = FeeTransferResponseExtensionV06.class),
-      @XmlElementRef(type = FeeUpdateResponseExtensionV06.class),
-      @XmlElementRef(type = FeeCheckResponseExtensionV11.class),
-      @XmlElementRef(type = FeeCreateResponseExtensionV11.class),
-      @XmlElementRef(type = FeeDeleteResponseExtensionV11.class),
-      @XmlElementRef(type = FeeRenewResponseExtensionV11.class),
-      @XmlElementRef(type = FeeTransferResponseExtensionV11.class),
-      @XmlElementRef(type = FeeUpdateResponseExtensionV11.class),
-      @XmlElementRef(type = FeeCheckResponseExtensionV12.class),
-      @XmlElementRef(type = FeeCreateResponseExtensionV12.class),
-      @XmlElementRef(type = FeeDeleteResponseExtensionV12.class),
-      @XmlElementRef(type = FeeRenewResponseExtensionV12.class),
-      @XmlElementRef(type = FeeTransferResponseExtensionV12.class),
-      @XmlElementRef(type = FeeUpdateResponseExtensionV12.class),
-      @XmlElementRef(type = LaunchCheckResponseExtension.class),
-      @XmlElementRef(type = RgpInfoExtension.class),
-      @XmlElementRef(type = SecDnsInfoExtension.class) })
+    @XmlElementRef(type = FeeCheckResponseExtensionV06.class),
+    @XmlElementRef(type = FeeInfoResponseExtensionV06.class),
+    @XmlElementRef(type = FeeCreateResponseExtensionV06.class),
+    @XmlElementRef(type = FeeDeleteResponseExtensionV06.class),
+    @XmlElementRef(type = FeeRenewResponseExtensionV06.class),
+    @XmlElementRef(type = FeeTransferResponseExtensionV06.class),
+    @XmlElementRef(type = FeeUpdateResponseExtensionV06.class),
+    @XmlElementRef(type = FeeCheckResponseExtensionV11.class),
+    @XmlElementRef(type = FeeCreateResponseExtensionV11.class),
+    @XmlElementRef(type = FeeDeleteResponseExtensionV11.class),
+    @XmlElementRef(type = FeeRenewResponseExtensionV11.class),
+    @XmlElementRef(type = FeeTransferResponseExtensionV11.class),
+    @XmlElementRef(type = FeeUpdateResponseExtensionV11.class),
+    @XmlElementRef(type = FeeCheckResponseExtensionV12.class),
+    @XmlElementRef(type = FeeCreateResponseExtensionV12.class),
+    @XmlElementRef(type = FeeDeleteResponseExtensionV12.class),
+    @XmlElementRef(type = FeeRenewResponseExtensionV12.class),
+    @XmlElementRef(type = FeeTransferResponseExtensionV12.class),
+    @XmlElementRef(type = FeeUpdateResponseExtensionV12.class),
+    @XmlElementRef(type = LaunchCheckResponseExtension.class),
+    @XmlElementRef(type = PackageTokenResponseExtension.class),
+    @XmlElementRef(type = RgpInfoExtension.class),
+    @XmlElementRef(type = SecDnsInfoExtension.class)
+  })
   @XmlElementWrapper(name = "extension")
   ImmutableList<? extends ResponseExtension> extensions;
 

@@ -1,0 +1,45 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:infData
+          xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>example.tld</domain:name>
+        <domain:roid>%ROID%</domain:roid>
+        <domain:status s="ok"/>
+        <domain:registrant>jd1234</domain:registrant>
+        <domain:contact type="admin">sh8013</domain:contact>
+        <domain:contact type="tech">sh8013</domain:contact>
+        <domain:ns>
+          <domain:hostObj>ns1.example.tld</domain:hostObj>
+          <domain:hostObj>ns1.example.net</domain:hostObj>
+        </domain:ns>
+        <domain:host>ns1.example.tld</domain:host>
+        <domain:host>ns2.example.tld</domain:host>
+        <domain:clID>NewRegistrar</domain:clID>
+        <domain:crID>TheRegistrar</domain:crID>
+        <domain:crDate>1999-04-03T22:00:00.0Z</domain:crDate>
+        <domain:upID>NewRegistrar</domain:upID>
+        <domain:upDate>1999-12-03T09:00:00.0Z</domain:upDate>
+        <domain:exDate>2005-04-03T22:00:00.0Z</domain:exDate>
+        <domain:trDate>2000-04-08T09:00:00.0Z</domain:trDate>
+        <domain:authInfo>
+          <domain:pw>2fooBAR</domain:pw>
+        </domain:authInfo>
+      </domain:infData>
+    </resData>
+    <extension>
+      <packageToken:packageData xmlns:packageToken=
+          "urn:ietf:params:xml:ns:packageToken">
+        <packageToken:token></packageToken:token>
+      </packageToken:packageData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>

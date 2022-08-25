@@ -42,6 +42,8 @@ import google.registry.model.domain.DomainCommand.Info.HostsRequest;
 import google.registry.model.domain.DomainInfoData;
 import google.registry.model.domain.fee06.FeeInfoCommandExtensionV06;
 import google.registry.model.domain.fee06.FeeInfoResponseExtensionV06;
+import google.registry.model.domain.packagetoken.PackageTokenExtension;
+import google.registry.model.domain.packagetoken.PackageTokenResponseExtension;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.rgp.RgpInfoExtension;
 import google.registry.model.eppcommon.AuthInfo;
@@ -91,7 +93,7 @@ public final class DomainInfoFlow implements Flow {
 
   @Override
   public EppResponse run() throws EppException {
-    extensionManager.register(FeeInfoCommandExtensionV06.class);
+    extensionManager.register(FeeInfoCommandExtensionV06.class, PackageTokenExtension.class);
     flowCustomLogic.beforeValidation();
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
@@ -149,6 +151,15 @@ public final class DomainInfoFlow implements Flow {
     ImmutableSet<GracePeriodStatus> gracePeriodStatuses = domain.getGracePeriodStatuses();
     if (!gracePeriodStatuses.isEmpty()) {
       extensions.add(RgpInfoExtension.create(gracePeriodStatuses));
+    }
+    Optional<PackageTokenExtension> packageInfo =
+        eppInput.getSingleExtension(PackageTokenExtension.class);
+    if (packageInfo.isPresent()) {
+      // Package info was requested.
+      if (registrarId.equals(domain.getCurrentSponsorRegistrarId())) {
+        // Only show package info to owning registrar
+        extensions.add(PackageTokenResponseExtension.create(domain.getCurrentPackageToken()));
+      }
     }
     Optional<FeeInfoCommandExtensionV06> feeInfo =
         eppInput.getSingleExtension(FeeInfoCommandExtensionV06.class);

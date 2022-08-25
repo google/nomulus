@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<schema targetNamespace="urn:ietf:params:xml:ns:packageToken"
+    xmlns:packageToken="urn:ietf:params:xml:ns:packageToken"
+    xmlns="http://www.w3.org/2001/XMLSchema"
+    elementFormDefault="qualified">
+
+  <annotation>
+    <documentation>
+      Extensible Provisioning Protocol v1.0
+      Package Token Extension.
+    </documentation>
+  </annotation>
+
+  <!-- Element used in info command request to get a package token for a domain. -->
+  <element name="info"
+      type="packageToken:infoType"/>
+
+  <complexType name="infoType"/>
+
+  <!-- Element returned in an info command response with a package token for a package domain. -->
+  <element name="packageData"
+      type="packageToken:packageDataType"/>
+
+  <complexType name="packageDataType">
+    <sequence>
+      <element name="token" type="packageToken:tokenType" maxOccurs="unbounded"/>
+    </sequence>
+  </complexType>
+
+  <simpleType name="tokenType">
+    <restriction base="string">
+    </restriction>
+  </simpleType>
+
+
+  <!-- End of schema.-->
+</schema>

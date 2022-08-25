@@ -62,6 +62,8 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
@@ -1074,5 +1076,52 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-dom-info");
     assertTldsFieldLogged("tld");
+  }
+
+  @Test
+  void testPackageInfoExtension_returnsPackageInfo() throws Exception {
+    persistTestEntities(false);
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(TokenType.PACKAGE)
+                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setAllowedTlds(ImmutableSet.of("foo"))
+                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
+                .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setDiscountFraction(1)
+                .build());
+    domain = domain.asBuilder().setCurrentPackageToken(token.createVKey()).build();
+    persistResource(domain);
+    setEppInput("domain_info_package.xml");
+    doSuccessfulTest("domain_info_response_package.xml", false);
+  }
+
+  @Test
+  void testPackageInfoExtension_nameNotInPackage() throws Exception {
+    setEppInput("domain_info_package.xml");
+    doSuccessfulTest("domain_info_response_empty_package.xml");
+  }
+
+  @Test
+  void testPackageInfoExtension_notCurrentSponsorRegistrar() throws Exception {
+    persistTestEntities(false);
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(TokenType.PACKAGE)
+                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setAllowedTlds(ImmutableSet.of("foo"))
+                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
+                .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setDiscountFraction(1)
+                .build());
+    domain = domain.asBuilder().setCurrentPackageToken(token.createVKey()).build();
+    persistResource(domain);
+    sessionMetadata.setRegistrarId("TheRegistrar");
+    setEppInput("domain_info_package.xml");
+    doSuccessfulTest("domain_info_response_unauthorized.xml", false);
   }
 }
