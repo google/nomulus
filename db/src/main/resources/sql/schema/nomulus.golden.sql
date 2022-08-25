@@ -391,7 +391,6 @@ CREATE TABLE public."Domain" (
     autorenew_poll_message_id bigint,
     deletion_poll_message_id bigint,
     autorenew_end_time timestamp with time zone,
-    autorenew_poll_message_history_id bigint,
     transfer_autorenew_poll_message_history_id bigint,
     transfer_history_entry_id bigint,
     transfer_repo_id text,
