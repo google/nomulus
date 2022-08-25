@@ -254,5 +254,6 @@ public class RegistryConfigSettings {
     public String dnsUpdateFailEmailBodyText;
     public String dnsUpdateFailRegistryName;
     public String registrySupportEmail;
+    public String registryCcEmail;
   }
 }
