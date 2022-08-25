@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
+import google.registry.model.console.ConsolePermission;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
@@ -42,6 +43,7 @@ import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
+import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.JsonResponseHelper;
 import java.util.Objects;
 import java.util.Optional;
@@ -153,24 +155,35 @@ public final class RegistryLockGetAction implements JsonGetAction {
 
     boolean isAdmin = registrarAccessor.isAdmin();
     Registrar registrar = getRegistrarAndVerifyLockAccess(registrarAccessor, registrarId, isAdmin);
-    User user = authResult.userAuthInfo().get().user();
 
-    Optional<RegistrarPoc> contactOptional = getContactMatchingLogin(user, registrar);
-    boolean isRegistryLockAllowed =
-        isAdmin || contactOptional.map(RegistrarPoc::isRegistryLockAllowed).orElse(false);
+    UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
+    // Split logic depending on whether we are using the old auth system or the new one
+    boolean isRegistryLockAllowed;
+    String relevantEmail;
+    if (userAuthInfo.appEngineUser().isPresent()) {
+      User user = userAuthInfo.appEngineUser().get();
+      Optional<RegistrarPoc> contactOptional = getContactMatchingLogin(user, registrar);
+      isRegistryLockAllowed =
+          isAdmin || contactOptional.map(RegistrarPoc::isRegistryLockAllowed).orElse(false);
+      relevantEmail =
+          isAdmin
+              ? user.getEmail()
+              // if the contact isn't present, we shouldn't display the email anyway
+              : contactOptional.flatMap(RegistrarPoc::getRegistryLockEmailAddress).orElse("");
+    } else {
+      google.registry.model.console.User user = userAuthInfo.consoleUser().get();
+      isRegistryLockAllowed =
+          user.getUserRoles().hasPermission(registrarId, ConsolePermission.REGISTRY_LOCK);
+      relevantEmail = user.getEmailAddress();
+    }
     // Use the contact's registry lock email if it's present, else use the login email (for admins)
-    String relevantEmail =
-        isAdmin
-            ? user.getEmail()
-            // if the contact isn't present, we shouldn't display the email anyway so empty is fine
-            : contactOptional.flatMap(RegistrarPoc::getRegistryLockEmailAddress).orElse("");
     return ImmutableMap.of(
         LOCK_ENABLED_FOR_CONTACT_PARAM,
         isRegistryLockAllowed,
         EMAIL_PARAM,
         relevantEmail,
         PARAM_CLIENT_ID,
-        registrar.getRegistrarId(),
+        registrarId,
         LOCKS_PARAM,
         getLockedDomains(registrarId, isAdmin));
   }

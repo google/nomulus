@@ -32,6 +32,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
+import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.UserRoles;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action.Method;
@@ -81,6 +83,60 @@ final class RegistryLockGetActionTest {
     action =
         new RegistryLockGetAction(
             Method.GET, response, accessor, authResult, Optional.of("TheRegistrar"));
+  }
+
+  @Test
+  void testSuccess_newConsoleUser() {
+    RegistryLock regularLock =
+        new RegistryLock.Builder()
+            .setRepoId("repoId")
+            .setDomainName("example.test")
+            .setRegistrarId("TheRegistrar")
+            .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
+            .setRegistrarPocId("johndoe@theregistrar.com")
+            .setLockCompletionTime(fakeClock.nowUtc())
+            .build();
+    saveRegistryLock(regularLock);
+    google.registry.model.console.User consoleUser =
+        new google.registry.model.console.User.Builder()
+            .setEmailAddress("johndoe@theregistrar.com")
+            .setGaiaId("gaiaId")
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setRegistrarRoles(
+                        ImmutableMap.of(
+                            "TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
+                    .build())
+            .build();
+
+    action.authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(GSON.fromJson(response.getPayload(), Map.class))
+        .containsExactly(
+            "status",
+            "SUCCESS",
+            "message",
+            "Successful locks retrieval",
+            "results",
+            ImmutableList.of(
+                ImmutableMap.of(
+                    "lockEnabledForContact",
+                    true,
+                    "email",
+                    "johndoe@theregistrar.com",
+                    "clientId",
+                    "TheRegistrar",
+                    "locks",
+                    ImmutableList.of(
+                        new ImmutableMap.Builder<>()
+                            .put("domainName", "example.test")
+                            .put("lockedTime", "2000-06-08T22:00:00.000Z")
+                            .put("lockedBy", "johndoe@theregistrar.com")
+                            .put("isLockPending", false)
+                            .put("isUnlockPending", false)
+                            .put("userCanUnlock", true)
+                            .build()))));
   }
 
   @Test

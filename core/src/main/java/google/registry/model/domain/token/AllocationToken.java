@@ -103,7 +103,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
     ANCHOR_TENANT
   }
 
-  /** Single-use tokens are invalid after use. Infinite-use tokens, predictably, are not. */
+  /**
+   * Single-use tokens are invalid after use. Infinite-use tokens, predictably, are not. Package
+   * tokens are used in package promotions.
+   */
   public enum TokenType {
     PACKAGE,
     SINGLE_USE,
@@ -286,6 +289,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
           getInstance().redemptionHistoryEntry == null
               || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Redemption history entry can only be specified for SINGLE_USE tokens");
+      checkArgument(
+          getInstance().tokenType != TokenType.PACKAGE
+              || getInstance().allowedClientIds.size() == 1,
+          "PACKAGE tokens must have exactly one allowed client registrar");
       checkArgument(
           getInstance().discountFraction > 0 || !getInstance().discountPremiums,
           "Discount premiums can only be specified along with a discount fraction");

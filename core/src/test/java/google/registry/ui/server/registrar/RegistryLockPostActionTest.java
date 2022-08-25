@@ -33,6 +33,8 @@ import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.UserRoles;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.request.JsonActionRunner;
@@ -223,6 +225,47 @@ final class RegistryLockPostActionTest {
   }
 
   @Test
+  void testSuccess_consoleUser() throws Exception {
+    google.registry.model.console.User consoleUser =
+        new google.registry.model.console.User.Builder()
+            .setEmailAddress("johndoe@theregistrar.com")
+            .setGaiaId("gaiaId")
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setRegistrarRoles(
+                        ImmutableMap.of(
+                            "TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
+                    .build())
+            .setRegistryLockPassword("hi")
+            .build();
+    AuthResult consoleAuthResult =
+        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    action = createAction(consoleAuthResult);
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
+    assertSuccess(response, "lock", "johndoe@theregistrar.com");
+  }
+
+  @Test
+  void testSuccess_consoleUser_admin() throws Exception {
+    google.registry.model.console.User consoleUser =
+        new google.registry.model.console.User.Builder()
+            .setEmailAddress("johndoe@theregistrar.com")
+            .setGaiaId("gaiaId")
+            .setUserRoles(new UserRoles.Builder().setIsAdmin(true).build())
+            .build();
+    AuthResult consoleAuthResult =
+        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    action = createAction(consoleAuthResult);
+    Map<String, Object> requestMapWithoutPassword =
+        ImmutableMap.of(
+            "isLock", true,
+            "registrarId", "TheRegistrar",
+            "domainName", "example.tld");
+    Map<String, ?> response = action.handleJsonRequest(requestMapWithoutPassword);
+    assertSuccess(response, "lock", "johndoe@theregistrar.com");
+  }
+
+  @Test
   void testFailure_noInput() {
     Map<String, ?> response = action.handleJsonRequest(null);
     assertFailureWithMessage(response, "Null JSON");
@@ -395,6 +438,33 @@ final class RegistryLockPostActionTest {
   void testFailure_alreadyUnlocked() {
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertFailureWithMessage(response, "Domain example.tld is already unlocked");
+  }
+
+  @Test
+  void testFailure_consoleUser_wrongPassword_noAdmin() {
+    google.registry.model.console.User consoleUser =
+        new google.registry.model.console.User.Builder()
+            .setEmailAddress("johndoe@theregistrar.com")
+            .setGaiaId("gaiaId")
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setRegistrarRoles(
+                        ImmutableMap.of(
+                            "TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
+                    .build())
+            .setRegistryLockPassword("hi")
+            .build();
+    AuthResult consoleAuthResult =
+        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    action = createAction(consoleAuthResult);
+    Map<String, ?> response =
+        action.handleJsonRequest(
+            ImmutableMap.of(
+                "registrarId", "TheRegistrar",
+                "domainName", "example.tld",
+                "isLock", true,
+                "password", "badPassword"));
+    assertFailureWithMessage(response, "Incorrect registry lock password for user");
   }
 
   private ImmutableMap<String, Object> lockRequest() {
