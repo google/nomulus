@@ -18,6 +18,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput.CommandExtension;
 import javax.xml.bind.annotation.XmlRootElement;
 
-/** An package token extension that may be present on EPP domain commands. */
+/** A package token extension that may be present on EPP domain commands. */
 @XmlRootElement(name = "info")
 public class PackageTokenExtension extends ImmutableObject implements CommandExtension {}

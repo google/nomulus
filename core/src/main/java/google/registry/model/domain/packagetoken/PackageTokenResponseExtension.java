@@ -28,8 +28,8 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
- * An XML data object that represents a fee extension that may be present on the response to EPP
- * domain info commands.
+ * An XML data object that represents a package token extension that may be present on the response
+ * to EPP domain info commands.
  */
 @XmlRootElement(name = "packageData")
 @XmlType(propOrder = {"token"})
