@@ -28,13 +28,13 @@ import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.Key;
+import google.registry.model.ImmutableObject;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
-import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -119,19 +119,20 @@ public class MutatingCommandTest {
   @Test
   void testSuccess_create() throws Exception {
     ImmutableList<VKey<?>> keys =
-        Arrays.asList(host1, host2, registrar1, registrar2).stream()
-            .map(entity -> VKey.from(Key.create(entity)))
+        Stream.of(host1, host2, registrar1, registrar2)
+            .map(ImmutableObject::createVKey)
             .collect(toImmutableList());
     tm().transact(() -> tm().delete(keys));
-    MutatingCommand command = new MutatingCommand() {
-      @Override
-      protected void init() {
-        stageEntityChange(null, newHost1);
-        stageEntityChange(null, newHost2);
-        stageEntityChange(null, newRegistrar1);
-        stageEntityChange(null, newRegistrar2);
-      }
-    };
+    MutatingCommand command =
+        new MutatingCommand() {
+          @Override
+          protected void init() {
+            stageEntityChange(null, newHost1);
+            stageEntityChange(null, newHost2);
+            stageEntityChange(null, newRegistrar1);
+            stageEntityChange(null, newRegistrar2);
+          }
+        };
     command.init();
     String changes = command.prompt();
     assertThat(changes)

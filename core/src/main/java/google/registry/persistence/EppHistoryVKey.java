@@ -38,8 +38,8 @@ import javax.persistence.MappedSuperclass;
  */
 @MappedSuperclass
 @Access(AccessType.FIELD)
-public abstract class EppHistoryVKey<K, E extends EppResource> extends ImmutableObject
-    implements Serializable {
+public abstract class EppHistoryVKey<K extends ImmutableObject, E extends EppResource>
+    extends ImmutableObject implements Serializable {
 
   private static final long serialVersionUID = -3906580677709539818L;
 
