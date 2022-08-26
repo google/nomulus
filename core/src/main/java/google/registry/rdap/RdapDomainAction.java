@@ -15,7 +15,7 @@
 package google.registry.rdap;
 
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -60,7 +60,7 @@ public class RdapDomainAction extends RdapActionBase {
     }
     // The query string is not used; the RDAP syntax is /rdap/domain/mydomain.com.
     Optional<Domain> domain =
-        loadByForeignKey(
+        loadByForeignKeyCached(
             Domain.class,
             pathSearchString,
             shouldIncludeDeleted() ? START_OF_TIME : rdapJsonFormatter.getRequestTime());

@@ -15,7 +15,7 @@
 package google.registry.rdap;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
@@ -188,7 +188,8 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
   private DomainSearchResponse searchByDomainNameWithoutWildcard(
       final RdapSearchPattern partialStringQuery) {
     Optional<Domain> domain =
-        loadByForeignKey(Domain.class, partialStringQuery.getInitialString(), getRequestTime());
+        loadByForeignKeyCached(
+            Domain.class, partialStringQuery.getInitialString(), getRequestTime());
     return makeSearchResults(
         shouldBeVisible(domain) ? ImmutableList.of(domain.get()) : ImmutableList.of());
   }
@@ -389,7 +390,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     Optional<String> desiredRegistrar = getDesiredRegistrar();
     if (desiredRegistrar.isPresent()) {
       Optional<Host> host =
-          loadByForeignKey(
+          loadByForeignKeyCached(
               Host.class,
               partialStringQuery.getInitialString(),
               shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
@@ -414,7 +415,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // through the subordinate hosts. This is more efficient, and lets us permit wildcard searches
     // with no initial string.
     Domain domain =
-        loadByForeignKey(
+        loadByForeignKeyCached(
                 Domain.class,
                 partialStringQuery.getSuffix(),
                 shouldIncludeDeleted() ? START_OF_TIME : getRequestTime())
@@ -431,7 +432,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
       if (partialStringQuery.matches(fqhn)) {
         if (desiredRegistrar.isPresent()) {
           Optional<Host> host =
-              loadByForeignKey(
+              loadByForeignKeyCached(
                   Host.class, fqhn, shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
           if (host.isPresent()
               && desiredRegistrar

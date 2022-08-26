@@ -17,7 +17,7 @@ package google.registry.whois;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -53,12 +53,14 @@ final class NameserverWhoisResponse extends WhoisResponseImpl {
     ImmutableMap<Host, String> hostRegistrars =
         subordinateHosts.isEmpty()
             ? ImmutableMap.of()
-            : tm().transact(
+            : replicaJpaTm()
+                .transact(
                     () ->
                         Maps.toMap(
                             subordinateHosts.iterator(),
                             host ->
-                                tm().loadByKey(host.getSuperordinateDomain())
+                                replicaJpaTm()
+                                    .loadByKey(host.getSuperordinateDomain())
                                     .cloneProjectedAtTime(getTimestamp())
                                     .getCurrentSponsorRegistrarId()));
 
