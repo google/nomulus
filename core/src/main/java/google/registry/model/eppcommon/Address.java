@@ -15,14 +15,11 @@
 package google.registry.model.eppcommon;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.annotation.AlsoLoad;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
@@ -59,40 +56,62 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @MappedSuperclass
 public class Address extends ImmutableObject implements Jsonifiable, UnsafeSerializable {
 
-  /** The schema validation will enforce that this has 3 lines at most. */
-  // TODO(b/177569726): Remove this field after migration. We need to figure out how to generate
-  // same XML from streetLine[1,2,3].
+  /**
+   * At most three lines of addresses parsed from XML elements.
+   *
+   * <p>This field is used to marshal to/unmarshal from XML elements. When persisting to/from SQL,
+   * the next three separate fields are used. Those lines are <em>only</em> used for persistence
+   * purpose and should not be directly used in Java.
+   *
+   * <p>We need to keep the list and the three fields in sync in all the following scenarios when an
+   * entity containing a {@link Address} is created:
+   *
+   * <ul>
+   *   <li>When creating an {@link Address} directly in java, using the {@link Builder}: The {@link
+   *       Builder#setStreet(ImmutableList)} sets both the list and the fields.
+   *   <li>When unmarshalling from XML: The list will be set based on the content of the XML.
+   *       Afterwards, {@link #afterUnmarshal(Unmarshaller, Object)}} will be called to set the
+   *       fields.
+   *   <li>When loading from the database: The fields will be set by the values in SQL. Afterwards,
+   *       {@link #postLoad()} will be called to set the list.
+   * </ul>
+   *
+   * The syncing is especially important because when merging a detached entity into a session, JPA
+   * provides no guarantee that transient fields will be preserved. In fact, Hibernate chooses to
+   * discard them when returning a newly merged entity. This means that it is not enough to provide
+   * callbacks to populate the fields based on the list before persistence, as merging does not
+   * invoke the callbacks, and we would lose the address fields if only the list is set. Instead,
+   * the fields must be populated when the list is.
+   *
+   * <p>Schema validation will enforce the 3-line limit.
+   */
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
   @Transient
-  List<String> street;
+  protected List<String> street;
 
-  @Ignore @XmlTransient @IgnoredInDiffableMap String streetLine1;
+  @XmlTransient @IgnoredInDiffableMap protected String streetLine1;
 
-  @Ignore @XmlTransient @IgnoredInDiffableMap String streetLine2;
+  @XmlTransient @IgnoredInDiffableMap protected String streetLine2;
 
-  @Ignore @XmlTransient @IgnoredInDiffableMap String streetLine3;
+  @XmlTransient @IgnoredInDiffableMap protected String streetLine3;
 
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
-  String city;
+  protected String city;
 
   @XmlElement(name = "sp")
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
-  String state;
+  protected String state;
 
   @XmlElement(name = "pc")
   @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
-  String zip;
+  protected String zip;
 
   @XmlElement(name = "cc")
   @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
-  String countryCode;
+  protected String countryCode;
 
   public ImmutableList<String> getStreet() {
-    if (street == null && streetLine1 != null) {
-      return ImmutableList.of(streetLine1, nullToEmpty(streetLine2), nullToEmpty(streetLine3));
-    } else {
-      return nullToEmptyImmutableCopy(street);
-    }
+    return nullToEmptyImmutableCopy(street);
   }
 
   public String getCity() {
@@ -139,7 +158,13 @@ public class Address extends ImmutableObject implements Jsonifiable, UnsafeSeria
     public Builder<T> setStreet(ImmutableList<String> street) {
       checkArgument(
           street == null || (!street.isEmpty() && street.size() <= 3),
-          "Street address must have [1-3] lines: %s", street);
+          "Street address must have [1-3] lines: %s",
+          street);
+      //noinspection ConstantConditions
+      checkArgument(
+          street.stream().noneMatch(String::isEmpty),
+          "Street address cannot contain empty string: %s",
+          street);
       getInstance().street = street;
       getInstance().streetLine1 = street.get(0);
       getInstance().streetLine2 = street.size() >= 2 ? street.get(1) : null;
@@ -172,23 +197,12 @@ public class Address extends ImmutableObject implements Jsonifiable, UnsafeSeria
   }
 
   /**
-   * Sets {@link #streetLine1}, {@link #streetLine2} and {@link #streetLine3} after loading the
-   * entity from Datastore.
-   *
-   * <p>This callback method is used by Objectify to set streetLine[1,2,3] fields as they are not
-   * persisted in the Datastore.
-   */
-  void onLoad(@AlsoLoad("street") List<String> street) {
-    mapStreetListToIndividualFields(street);
-  }
-
-  /**
    * Sets {@link #street} after loading the entity from Cloud SQL.
    *
-   * <p>This callback method is used by Hibernate to set {@link #street} field as it is not
-   * persisted in Cloud SQL. We are doing this because the street list field is exposed by Address
-   * class and is used everywhere in our code base. Also, setting/reading a list of strings is more
-   * convenient.
+   * <p>This callback method is used by Hibernate to set the {@link #street} field as it is not
+   * persisted in Cloud SQL. We are doing this because this field is exposed and used everywhere in
+   * our code base, whereas the individual {@code streetLine} fields are only used by Hibernate for
+   * persistence. Also, setting/reading a list of strings is more convenient.
    */
   @PostLoad
   void postLoad() {
@@ -206,12 +220,9 @@ public class Address extends ImmutableObject implements Jsonifiable, UnsafeSeria
    *
    * <p>This is a callback function that JAXB invokes after unmarshalling the XML message.
    */
+  @SuppressWarnings("unused")
   void afterUnmarshal(Unmarshaller unmarshaller, Object parent) {
-    mapStreetListToIndividualFields(street);
-  }
-
-  private void mapStreetListToIndividualFields(List<String> street) {
-    if (street == null || street.size() == 0) {
+    if (street == null || street.isEmpty()) {
       return;
     }
     streetLine1 = street.get(0);

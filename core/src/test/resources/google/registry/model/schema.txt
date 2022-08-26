@@ -5,13 +5,6 @@ class google.registry.model.common.GaeUserIdConverter {
   @Id long id;
   com.google.appengine.api.users.User user;
 }
-class google.registry.model.contact.ContactAddress {
-  java.lang.String city;
-  java.lang.String countryCode;
-  java.lang.String state;
-  java.lang.String zip;
-  java.util.List<java.lang.String> street;
-}
 class google.registry.model.contact.ContactAuthInfo {
   google.registry.model.eppcommon.AuthInfo$PasswordAuth pw;
 }
@@ -21,8 +14,6 @@ class google.registry.model.contact.ContactBase {
   google.registry.model.contact.ContactPhoneNumber fax;
   google.registry.model.contact.ContactPhoneNumber voice;
   google.registry.model.contact.Disclose disclose;
-  google.registry.model.contact.PostalInfo internationalizedPostalInfo;
-  google.registry.model.contact.PostalInfo localizedPostalInfo;
   google.registry.model.transfer.ContactTransferData transferData;
   java.lang.String contactId;
   java.lang.String creationClientId;
@@ -61,8 +52,6 @@ class google.registry.model.contact.ContactResource {
   google.registry.model.contact.ContactPhoneNumber fax;
   google.registry.model.contact.ContactPhoneNumber voice;
   google.registry.model.contact.Disclose disclose;
-  google.registry.model.contact.PostalInfo internationalizedPostalInfo;
-  google.registry.model.contact.PostalInfo localizedPostalInfo;
   google.registry.model.transfer.ContactTransferData transferData;
   java.lang.String contactId;
   java.lang.String creationClientId;
@@ -86,12 +75,6 @@ class google.registry.model.contact.Disclose {
 }
 class google.registry.model.contact.Disclose$PostalInfoChoice {
   google.registry.model.contact.PostalInfo$Type type;
-}
-class google.registry.model.contact.PostalInfo {
-  google.registry.model.contact.ContactAddress address;
-  google.registry.model.contact.PostalInfo$Type type;
-  java.lang.String name;
-  java.lang.String org;
 }
 enum google.registry.model.contact.PostalInfo$Type {
   INTERNATIONALIZED;
@@ -372,8 +355,6 @@ class google.registry.model.registrar.Registrar {
   boolean registryLockAllowed;
   google.registry.model.registrar.Registrar$State state;
   google.registry.model.registrar.Registrar$Type type;
-  google.registry.model.registrar.RegistrarAddress internationalizedAddress;
-  google.registry.model.registrar.RegistrarAddress localizedAddress;
   java.lang.Long ianaIdentifier;
   java.lang.String clientCertificate;
   java.lang.String clientCertificateHash;
@@ -413,13 +394,6 @@ enum google.registry.model.registrar.Registrar$Type {
   PDT;
   REAL;
   TEST;
-}
-class google.registry.model.registrar.RegistrarAddress {
-  java.lang.String city;
-  java.lang.String countryCode;
-  java.lang.String state;
-  java.lang.String zip;
-  java.util.List<java.lang.String> street;
 }
 class google.registry.model.reporting.DomainTransactionRecord {
   google.registry.model.reporting.DomainTransactionRecord$TransactionReportField reportField;
