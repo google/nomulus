@@ -82,7 +82,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     // choose whether the user is an admin or not.
     this.appEngineExtension =
         AppEngineExtension.builder()
-            .withDatastoreAndCloudSql()
+            .withCloudSql()
             .withLocalModules()
             .withUrlFetch()
             .withTaskQueue()

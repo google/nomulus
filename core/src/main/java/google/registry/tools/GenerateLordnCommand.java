@@ -16,13 +16,12 @@ package google.registry.tools;
 
 import static google.registry.persistence.transaction.QueryComposer.Comparator;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.tmch.LordnTaskUtils;
 import google.registry.tools.params.PathParameter;
 import google.registry.util.Clock;
@@ -63,14 +62,14 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
     DateTime now = clock.nowUtc();
     ImmutableList.Builder<String> claimsCsv = new ImmutableList.Builder<>();
     ImmutableList.Builder<String> sunriseCsv = new ImmutableList.Builder<>();
-    transactIfJpaTm(
-        () ->
-            tm()
-                .createQueryComposer(DomainBase.class)
-                .where("tld", Comparator.EQ, tld)
-                .orderBy("repoId")
-                .stream()
-                .forEach(domain -> processDomain(claimsCsv, sunriseCsv, domain)));
+    tm().transact(
+            () ->
+                tm()
+                    .createQueryComposer(Domain.class)
+                    .where("tld", Comparator.EQ, tld)
+                    .orderBy("repoId")
+                    .stream()
+                    .forEach(domain -> processDomain(claimsCsv, sunriseCsv, domain)));
     ImmutableList<String> claimsRows = claimsCsv.build();
     ImmutableList<String> claimsAll =
         new ImmutableList.Builder<String>()
@@ -92,7 +91,7 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
   private static void processDomain(
       ImmutableList.Builder<String> claimsCsv,
       ImmutableList.Builder<String> sunriseCsv,
-      DomainBase domain) {
+      Domain domain) {
     String status = " ";
     if (domain.getLaunchNotice() == null && domain.getSmdId() != null) {
       sunriseCsv.add(LordnTaskUtils.getCsvLineForSunriseDomain(domain, domain.getCreationTime()));

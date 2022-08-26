@@ -27,10 +27,10 @@ import com.google.common.collect.Streams;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import java.util.Comparator;
@@ -53,9 +53,9 @@ public class HistoryEntryDao {
           ImmutableMap.of(
               ContactResource.class,
               ContactHistory.class,
-              DomainBase.class,
+              Domain.class,
               DomainHistory.class,
-              HostResource.class,
+              Host.class,
               HostHistory.class);
 
   public static ImmutableMap<Class<? extends HistoryEntry>, String> REPO_ID_FIELD_NAMES =

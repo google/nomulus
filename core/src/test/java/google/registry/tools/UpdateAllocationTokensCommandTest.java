@@ -24,6 +24,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
@@ -33,16 +34,15 @@ import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UpdateAllocationTokensCommand}. */
-@DualDatabaseTest
 class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocationTokensCommand> {
 
-  @TestOfyAndSql
+  @Test
   void testUpdateTlds_setTlds() throws Exception {
     AllocationToken token =
         persistResource(builderWithPromo().setAllowedTlds(ImmutableSet.of("toRemove")).build());
@@ -50,7 +50,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).getAllowedTlds()).containsExactly("tld", "example");
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateTlds_clearTlds() throws Exception {
     AllocationToken token =
         persistResource(builderWithPromo().setAllowedTlds(ImmutableSet.of("toRemove")).build());
@@ -58,7 +58,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).getAllowedTlds()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateClientIds_setClientIds() throws Exception {
     AllocationToken token =
         persistResource(
@@ -68,7 +68,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .containsExactly("clientone", "clienttwo");
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateClientIds_clearClientIds() throws Exception {
     AllocationToken token =
         persistResource(
@@ -77,14 +77,14 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).getAllowedRegistrarIds()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateDiscountFraction() throws Exception {
     AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
     runCommandForced("--prefix", "token", "--discount_fraction", "0.15");
     assertThat(reloadResource(token).getDiscountFraction()).isEqualTo(0.15);
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateDiscountPremiums() throws Exception {
     AllocationToken token =
         persistResource(
@@ -95,21 +95,21 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).shouldDiscountPremiums()).isFalse();
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateDiscountYears() throws Exception {
     AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
     runCommandForced("--prefix", "token", "--discount_years", "4");
     assertThat(reloadResource(token).getDiscountYears()).isEqualTo(4);
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateRenewalPriceBehavior_setToSpecified() throws Exception {
     AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
     runCommandForced("--prefix", "token", "--renewal_price_behavior", "SPECIFIED");
     assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(SPECIFIED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateRenewalPriceBehavior_setToDefault() throws Exception {
     AllocationToken token =
         persistResource(
@@ -118,7 +118,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(DEFAULT);
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateRenewalPriceBehavior_setToNonPremium() throws Exception {
     AllocationToken token =
         persistResource(
@@ -127,14 +127,14 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(NONPREMIUM);
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateRenewalPriceBehavior_setFromDefaultToDefault() throws Exception {
     AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
     runCommandForced("--prefix", "token", "--renewal_price_behavior", "defauLT");
     assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(DEFAULT);
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateRenewalPriceBehavior_setFromSpecifiedToSpecified() throws Exception {
     AllocationToken token =
         persistResource(
@@ -143,7 +143,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(SPECIFIED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateRenewalPriceBehavior_setFromNonPremiumToDefault() throws Exception {
     AllocationToken token =
         persistResource(
@@ -155,7 +155,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(DEFAULT);
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateRenewalPriceBehavior_setToMixedCaseDefault() throws Exception {
     AllocationToken token =
         persistResource(
@@ -164,7 +164,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).getRenewalPriceBehavior()).isEqualTo(DEFAULT);
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateRenewalPriceBehavior_setToInvalidBehavior_throwsException() {
     ParameterException thrown =
         assertThrows(
@@ -178,7 +178,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
                 + " NONPREMIUM, SPECIFIED]");
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateRenewalPriceBehavior_setToEmptyString_throwsException() {
     ParameterException thrown =
         assertThrows(
@@ -192,7 +192,68 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
                 + " NONPREMIUM, SPECIFIED]");
   }
 
-  @TestOfyAndSql
+  @Test
+  void testSuccess_registrationBehavior_same() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo()
+                .setRegistrationBehavior(AllocationToken.RegistrationBehavior.BYPASS_TLD_STATE)
+                .build());
+    assertThat(token.getRegistrationBehavior())
+        .isEqualTo(AllocationToken.RegistrationBehavior.BYPASS_TLD_STATE);
+    runCommandForced("--tokens", "token", "--registration_behavior", "BYPASS_TLD_STATE");
+    assertThat(loadByEntity(token).getRegistrationBehavior())
+        .isEqualTo(AllocationToken.RegistrationBehavior.BYPASS_TLD_STATE);
+  }
+
+  @Test
+  void testSuccess_registrationBehavior_different() throws Exception {
+    AllocationToken token = persistResource(builderWithPromo().build());
+    assertThat(token.getRegistrationBehavior())
+        .isEqualTo(AllocationToken.RegistrationBehavior.DEFAULT);
+    runCommandForced("--tokens", "token", "--registration_behavior", "BYPASS_TLD_STATE");
+    assertThat(loadByEntity(token).getRegistrationBehavior())
+        .isEqualTo(RegistrationBehavior.BYPASS_TLD_STATE);
+  }
+
+  @Test
+  void testFailure_registrationBehavior_enforcesAnchorTenantRestriction() throws Exception {
+    AllocationToken token = persistResource(builderWithPromo().build());
+    assertThat(token.getRegistrationBehavior())
+        .isEqualTo(AllocationToken.RegistrationBehavior.DEFAULT);
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--tokens", "token", "--registration_behavior", "ANCHOR_TENANT")))
+        .hasMessageThat()
+        .isEqualTo("ANCHOR_TENANT tokens must be tied to a domain");
+  }
+
+  @Test
+  void testFailure_registrationBehavior_invalid() throws Exception {
+    assertThat(
+            assertThrows(
+                ParameterException.class,
+                () -> runCommand("--tokens", "foobar", "--registration_behavior")))
+        .hasMessageThat()
+        .contains("Expected a value after parameter --registration_behavior");
+    assertThat(
+            assertThrows(
+                ParameterException.class,
+                () -> runCommand("--tokens", "foobar", "--registration_behavior", "bad")))
+        .hasMessageThat()
+        .contains("Invalid value for --registration_behavior");
+    assertThat(
+            assertThrows(
+                ParameterException.class,
+                () -> runCommand("--tokens", "foobar", "--registration_behavior", "")))
+        .hasMessageThat()
+        .contains("Invalid value for --registration_behavior");
+  }
+
+  @Test
   void testUpdateStatusTransitions() throws Exception {
     DateTime now = DateTime.now(UTC);
     AllocationToken token = persistResource(builderWithPromo().build());
@@ -207,7 +268,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .containsExactly(START_OF_TIME, NOT_STARTED, now.minusDays(1), VALID, now, CANCELLED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdateStatusTransitions_badTransitions() {
     DateTime now = DateTime.now(UTC);
     persistResource(builderWithPromo().build());
@@ -227,7 +288,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .isEqualTo("tokenStatusTransitions map cannot transition from NOT_STARTED to ENDED.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdate_onlyWithPrefix() throws Exception {
     AllocationToken token =
         persistResource(builderWithPromo().setAllowedTlds(ImmutableSet.of("tld")).build());
@@ -243,7 +304,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(otherToken).getAllowedTlds()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testUpdate_onlyTokensProvided() throws Exception {
     AllocationToken firstToken =
         persistResource(builderWithPromo().setAllowedTlds(ImmutableSet.of("tld")).build());
@@ -267,7 +328,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(thirdToken).getAllowedTlds()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDoNothing() throws Exception {
     AllocationToken token =
         persistResource(
@@ -283,7 +344,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloaded.getDiscountFraction()).isEqualTo(token.getDiscountFraction());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_bothTokensAndPrefix() {
     assertThat(
             assertThrows(
@@ -293,7 +354,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .isEqualTo("Must provide one of --tokens or --prefix, not both / neither");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_neitherTokensNorPrefix() {
     assertThat(
             assertThrows(
@@ -302,7 +363,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .isEqualTo("Must provide one of --tokens or --prefix, not both / neither");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_emptyPrefix() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("--prefix", ""));

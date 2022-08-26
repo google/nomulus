@@ -16,6 +16,7 @@ package google.registry.persistence;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.model.ImmutableObject.Insignificant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.base.Splitter;
@@ -52,7 +53,8 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   // The SQL key for the referenced entity.
   Serializable sqlKey;
 
-  // The objectify key for the referenced entity.
+  // The objectify key for the referenced entity.  Marked Insignificant to exclude it from
+  // hashing/equality.
   @Insignificant Key<T> ofyKey;
 
   Class<? extends T> kind;
@@ -175,10 +177,10 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    * kind of the ancestor key and the value is either a String or a Long.
    *
    * <p>For example, to restore the objectify key for
-   * DomainBase("COM-1234")/HistoryEntry(123)/PollEvent(567), one might use:
+   * Domain("COM-1234")/HistoryEntry(123)/PollEvent(567), one might use:
    *
    * <pre>{@code
-   * pollEvent.restoreOfy(DomainBase.class, "COM-1234", HistoryEntry.class, 567)
+   * pollEvent.restoreOfy(Domain.class, "COM-1234", HistoryEntry.class, 567)
    * }</pre>
    *
    * <p>The final key id or name is obtained from the SQL key. It is assumed that this value must be

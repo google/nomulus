@@ -169,36 +169,6 @@
     <url-pattern>/_dr/dnsRefresh</url-pattern>
   </servlet-mapping>
 
-  <!-- Exports a Datastore backup snapshot to GCS. -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/backupDatastore</url-pattern>
-  </servlet-mapping>
-
-  <!-- Checks the completion of a Datastore backup snapshot. -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/checkDatastoreBackup</url-pattern>
-  </servlet-mapping>
-
-  <!-- Loads a Datastore backup snapshot into BigQuery. -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/uploadDatastoreBackup</url-pattern>
-  </servlet-mapping>
-
-  <!-- Updates a view to point at a certain snapshot in BigQuery. -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/updateSnapshotView</url-pattern>
-  </servlet-mapping>
-
-  <!-- Polls state of jobs in Bigquery -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/pollBigqueryJob</url-pattern>
-  </servlet-mapping>
-
   <!-- Fans out a cron task over an adjustable range of TLDs. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
@@ -321,12 +291,6 @@ have been in the database for a certain period of time. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
     <url-pattern>/_dr/task/wipeOutCloudSql</url-pattern>
-  </servlet-mapping>
-
-  <!-- Action to wipeout Cloud Datastore data -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/wipeOutDatastore</url-pattern>
   </servlet-mapping>
 
   <!-- Security config -->

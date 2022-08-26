@@ -30,9 +30,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 /**
  * Generates a schema for JPA annotated classes using Hibernate.
  *
- * <p>Note that this isn't complete yet, as all of the persistent classes have not yet been
- * converted. After converting a class, a call to "addAnnotatedClass()" for the new class must be
- * added to the code below.
+ * <p>Note that this isn't complete yet, as all the persistent classes have not yet been converted.
+ * After converting a class, a call to "addAnnotatedClass()" for the new class must be added to the
+ * code below.
  */
 @Parameters(separators = " =", commandDescription = "Generate PostgreSQL schema.")
 public class GenerateSqlSchemaCommand implements Command {
@@ -49,7 +49,7 @@ public class GenerateSqlSchemaCommand implements Command {
   @VisibleForTesting
   public static final int POSTGRESQL_PORT = 5432;
 
-  private PostgreSQLContainer postgresContainer = null;
+  private PostgreSQLContainer<?> postgresContainer = null;
 
   @Parameter(
       names = {"-o", "--out_file"},
@@ -85,12 +85,12 @@ public class GenerateSqlSchemaCommand implements Command {
 
       // Start the container and store the address information.
       postgresContainer =
-          new PostgreSQLContainer(NomulusPostgreSql.getDockerTag())
+          new PostgreSQLContainer<>(NomulusPostgreSql.getDockerTag())
               .withDatabaseName(DB_NAME)
               .withUsername(DB_USERNAME)
               .withPassword(DB_PASSWORD);
       postgresContainer.start();
-      databaseHost = postgresContainer.getContainerIpAddress();
+      databaseHost = postgresContainer.getHost();
       databasePort = postgresContainer.getMappedPort(POSTGRESQL_PORT);
     } else if (databaseHost == null) {
       System.err.println(

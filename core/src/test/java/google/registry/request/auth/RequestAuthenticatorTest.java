@@ -44,8 +44,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class RequestAuthenticatorTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private static final AuthSettings AUTH_NONE =
       AuthSettings.create(
@@ -210,7 +209,7 @@ class RequestAuthenticatorTest {
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.USER);
     assertThat(authResult.get().userAuthInfo()).isPresent();
-    assertThat(authResult.get().userAuthInfo().get().user()).isEqualTo(testUser);
+    assertThat(authResult.get().userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(authResult.get().userAuthInfo().get().isUserAdmin()).isFalse();
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo()).isEmpty();
   }
@@ -225,7 +224,7 @@ class RequestAuthenticatorTest {
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.USER);
     assertThat(authResult.get().userAuthInfo()).isPresent();
-    assertThat(authResult.get().userAuthInfo().get().user()).isEqualTo(testUser);
+    assertThat(authResult.get().userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo()).isEmpty();
   }
 
@@ -265,7 +264,7 @@ class RequestAuthenticatorTest {
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.USER);
     assertThat(authResult.get().userAuthInfo()).isPresent();
-    assertThat(authResult.get().userAuthInfo().get().user()).isEqualTo(testUser);
+    assertThat(authResult.get().userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(authResult.get().userAuthInfo().get().isUserAdmin()).isTrue();
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo()).isEmpty();
   }
@@ -281,7 +280,7 @@ class RequestAuthenticatorTest {
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.USER);
     assertThat(authResult.get().userAuthInfo()).isPresent();
-    assertThat(authResult.get().userAuthInfo().get().user()).isEqualTo(testUser);
+    assertThat(authResult.get().userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(authResult.get().userAuthInfo().get().isUserAdmin()).isFalse();
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo()).isPresent();
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo().get().authorizedScopes())
@@ -304,7 +303,7 @@ class RequestAuthenticatorTest {
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.USER);
     assertThat(authResult.get().userAuthInfo()).isPresent();
-    assertThat(authResult.get().userAuthInfo().get().user()).isEqualTo(testUser);
+    assertThat(authResult.get().userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(authResult.get().userAuthInfo().get().isUserAdmin()).isTrue();
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo()).isPresent();
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo().get().authorizedScopes())
@@ -373,7 +372,7 @@ class RequestAuthenticatorTest {
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.USER);
     assertThat(authResult.get().userAuthInfo()).isPresent();
-    assertThat(authResult.get().userAuthInfo().get().user()).isEqualTo(testUser);
+    assertThat(authResult.get().userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(authResult.get().userAuthInfo().get().isUserAdmin()).isFalse();
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo()).isPresent();
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo().get().authorizedScopes())

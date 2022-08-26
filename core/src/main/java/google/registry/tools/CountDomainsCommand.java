@@ -17,11 +17,10 @@ package google.registry.tools;
 import static google.registry.model.tld.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.QueryComposer.Comparator;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.util.Clock;
 import java.util.List;
 import javax.inject.Inject;
@@ -47,11 +46,11 @@ final class CountDomainsCommand implements CommandWithRemoteApi {
   }
 
   private long getCountForTld(String tld, DateTime now) {
-    return transactIfJpaTm(
-        () ->
-            tm().createQueryComposer(DomainBase.class)
-                .where("tld", Comparator.EQ, tld)
-                .where("deletionTime", Comparator.GT, now)
-                .count());
+    return tm().transact(
+            () ->
+                tm().createQueryComposer(Domain.class)
+                    .where("tld", Comparator.EQ, tld)
+                    .where("deletionTime", Comparator.GT, now)
+                    .count());
   }
 }

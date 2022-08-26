@@ -33,7 +33,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.HttpException.ForbiddenException;
@@ -184,15 +184,34 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
   private String verifyPasswordAndGetEmail(
       UserAuthInfo userAuthInfo, RegistryLockPostInput postInput)
       throws RegistrarAccessDeniedException {
-    User user = userAuthInfo.user();
     if (registrarAccessor.isAdmin()) {
-      return user.getEmail();
+      return userAuthInfo.getEmailAddress();
     }
+    if (userAuthInfo.appEngineUser().isPresent()) {
+      return verifyPasswordAndGetEmailLegacyUser(userAuthInfo.appEngineUser().get(), postInput);
+    } else {
+      return verifyPasswordAndGetEmailConsoleUser(userAuthInfo.consoleUser().get(), postInput);
+    }
+  }
+
+  private String verifyPasswordAndGetEmailConsoleUser(
+      google.registry.model.console.User user, RegistryLockPostInput postInput)
+      throws RegistrarAccessDeniedException {
+    // Verify that the registrar has locking enabled
+    getRegistrarAndVerifyLockAccess(registrarAccessor, postInput.registrarId, false);
+    checkArgument(
+        user.verifyRegistryLockPassword(postInput.password),
+        "Incorrect registry lock password for user");
+    return user.getEmailAddress();
+  }
+
+  private String verifyPasswordAndGetEmailLegacyUser(User user, RegistryLockPostInput postInput)
+      throws RegistrarAccessDeniedException {
     // Verify that the user can access the registrar, that the user has
     // registry lock enabled, and that the user provided a correct password
     Registrar registrar =
         getRegistrarAndVerifyLockAccess(registrarAccessor, postInput.registrarId, false);
-    RegistrarContact registrarContact =
+    RegistrarPoc registrarPoc =
         getContactMatchingLogin(user, registrar)
             .orElseThrow(
                 () ->
@@ -200,16 +219,16 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
                         String.format(
                             "Cannot match user %s to registrar contact", user.getUserId())));
     checkArgument(
-        registrarContact.verifyRegistryLockPassword(postInput.password),
+        registrarPoc.verifyRegistryLockPassword(postInput.password),
         "Incorrect registry lock password for contact");
-    return registrarContact
+    return registrarPoc
         .getRegistryLockEmailAddress()
         .orElseThrow(
             () ->
                 new IllegalStateException(
                     String.format(
                         "Contact %s had no registry lock email address",
-                        registrarContact.getEmailAddress())));
+                        registrarPoc.getEmailAddress())));
   }
 
   /** Value class that represents the expected input body from the UI request. */

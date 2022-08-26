@@ -31,7 +31,6 @@ import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.AppEngineExtension.makeRegistrar2;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertSimpleResources;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
@@ -58,14 +57,14 @@ import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostResource;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.rde.RdeRevision.RdeRevisionId;
@@ -84,6 +83,7 @@ import google.registry.rde.PendingDeposit;
 import google.registry.rde.RdeResourceType;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
@@ -187,7 +187,7 @@ public class RdePipelineTest {
             .build());
   }
 
-  private DomainHistory persistDomainHistory(DomainContent domain) {
+  private DomainHistory persistDomainHistory(DomainBase domain) {
     DomainTransactionRecord transactionRecord =
         new DomainTransactionRecord.Builder()
             .setTld("soy")
@@ -257,8 +257,8 @@ public class RdePipelineTest {
 
     tm().transact(
             () -> {
-              tm().put(Cursor.create(CursorType.BRDA, now, Registry.get("soy")));
-              tm().put(Cursor.create(RDE_STAGING, now, Registry.get("soy")));
+              tm().put(Cursor.createScoped(CursorType.BRDA, now, Registry.get("soy")));
+              tm().put(Cursor.createScoped(RDE_STAGING, now, Registry.get("soy")));
               RdeRevision.saveRevision("soy", now, THIN, 0);
               RdeRevision.saveRevision("soy", now, FULL, 0);
             });
@@ -272,29 +272,29 @@ public class RdePipelineTest {
 
     // This host is never referenced.
     persistHostHistory(persistActiveHost("ns0.domain.tld"));
-    HostResource host1 = persistActiveHost("ns1.external.tld");
+    Host host1 = persistActiveHost("ns1.external.tld");
     persistHostHistory(host1);
-    DomainBase helloDomain =
+    Domain helloDomain =
         persistEppResource(
-            newDomainBase("hello.soy", contact1)
+            DatabaseHelper.newDomain("hello.soy", contact1)
                 .asBuilder()
                 .addNameserver(host1.createVKey())
                 .build());
     persistDomainHistory(helloDomain);
     persistHostHistory(persistActiveHost("not-used-subordinate.hello.soy"));
-    HostResource host2 = persistActiveHost("ns1.hello.soy");
+    Host host2 = persistActiveHost("ns1.hello.soy");
     persistHostHistory(host2);
-    DomainBase kittyDomain =
+    Domain kittyDomain =
         persistEppResource(
-            newDomainBase("kitty.fun", contact2)
+            DatabaseHelper.newDomain("kitty.fun", contact2)
                 .asBuilder()
                 .addNameservers(ImmutableSet.of(host1.createVKey(), host2.createVKey()))
                 .build());
     persistDomainHistory(kittyDomain);
     // Should not appear because the TLD is not included in a pending deposit.
-    persistDomainHistory(persistEppResource(newDomainBase("lol.cat", contact1)));
+    persistDomainHistory(persistEppResource(DatabaseHelper.newDomain("lol.cat", contact1)));
     // To be deleted.
-    DomainBase deletedDomain = persistActiveDomain("deleted.soy");
+    Domain deletedDomain = persistActiveDomain("deleted.soy");
     persistDomainHistory(deletedDomain);
 
     // Advance time
@@ -306,11 +306,15 @@ public class RdePipelineTest {
     persistContactHistory(contact3);
     // This is a subordinate domain in TLD .cat, which is not included in any pending deposit. But
     // it should still be included as a subordinate host in the pendign deposit for .soy.
-    HostResource host3 = persistActiveHost("ns1.lol.cat");
+    Host host3 = persistActiveHost("ns1.lol.cat");
     persistHostHistory(host3);
     persistDomainHistory(
         helloDomain
             .asBuilder()
+            .removeContacts(
+                helloDomain.getContacts().stream()
+                    .filter(dc -> dc.getType() == DesignatedContact.Type.ADMIN)
+                    .collect(toImmutableSet()))
             .addContacts(
                 ImmutableSet.of(
                     DesignatedContact.create(DesignatedContact.Type.ADMIN, contact3.createVKey())))
@@ -327,11 +331,11 @@ public class RdePipelineTest {
     persistDomainHistory(kittyDomain.asBuilder().setDeletionTime(clock.nowUtc()).build());
     ContactResource futureContact = persistActiveContact("future-contact");
     persistContactHistory(futureContact);
-    HostResource futureHost = persistActiveHost("ns1.future.tld");
+    Host futureHost = persistActiveHost("ns1.future.tld");
     persistHostHistory(futureHost);
     persistDomainHistory(
         persistEppResource(
-            newDomainBase("future.soy", futureContact)
+            DatabaseHelper.newDomain("future.soy", futureContact)
                 .asBuilder()
                 .setNameservers(futureHost.createVKey())
                 .build()));
@@ -567,7 +571,9 @@ public class RdePipelineTest {
   }
 
   private static DateTime loadCursorTime(CursorType type) {
-    return tm().transact(() -> tm().loadByKey(Cursor.createVKey(type, "soy")).getCursorTime());
+    return tm().transact(
+            () ->
+                tm().loadByKey(Cursor.createScopedVKey(type, Registry.get("soy"))).getCursorTime());
   }
 
   private static Function<DepositFragment, String> getXmlElement(String pattern) {

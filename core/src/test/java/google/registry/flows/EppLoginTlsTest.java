@@ -44,8 +44,7 @@ import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemWriter;
 class EppLoginTlsTest extends EppTestCase {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension
   @Order(value = Integer.MAX_VALUE)

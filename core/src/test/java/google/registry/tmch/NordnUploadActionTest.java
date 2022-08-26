@@ -21,7 +21,6 @@ import static com.google.common.net.MediaType.FORM_DATA;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistDomainAndEnqueueLordn;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
@@ -47,15 +46,14 @@ import com.google.appengine.api.taskqueue.TransientFailureException;
 import com.google.apphosting.api.DeadlineExceededException;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.launch.LaunchNotice;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.FakeUrlConnectionService;
-import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.Retrier;
 import google.registry.util.TaskQueueUtils;
@@ -93,13 +91,7 @@ class NordnUploadActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(clock)
-          .withTaskQueue()
-          .build();
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
   private final LordnRequestInitializer lordnRequestInitializer =
       new LordnRequestInitializer(Optional.of("attack"));
@@ -112,7 +104,6 @@ class NordnUploadActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    inject.setStaticField(Ofy.class, "clock", clock);
     when(httpUrlConnection.getInputStream())
         .thenReturn(new ByteArrayInputStream("Success".getBytes(UTF_8)));
     when(httpUrlConnection.getResponseCode()).thenReturn(SC_ACCEPTED);
@@ -168,7 +159,6 @@ class NordnUploadActionTest {
         () -> NordnUploadAction.convertTasksToCsv(null, clock.nowUtc(), "header"));
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   void test_loadAllTasks_retryLogic_thirdTrysTheCharm() {
     Queue queue = mock(Queue.class);
@@ -234,7 +224,7 @@ class NordnUploadActionTest {
   void testRun_claimsMode_payloadMatchesClaimsCsv() {
     persistClaimsModeDomain();
     action.run();
-    assertThat(new String(connectionOutputStream.toByteArray(), UTF_8)).contains(CLAIMS_CSV);
+    assertThat(connectionOutputStream.toString(UTF_8)).contains(CLAIMS_CSV);
   }
 
   @Test
@@ -253,7 +243,7 @@ class NordnUploadActionTest {
   void testRun_sunriseMode_payloadMatchesSunriseCsv() {
     persistSunriseModeDomain();
     action.run();
-    assertThat(new String(connectionOutputStream.toByteArray(), UTF_8)).contains(SUNRISE_CSV);
+    assertThat(connectionOutputStream.toString(UTF_8)).contains(SUNRISE_CSV);
   }
 
   @Test
@@ -262,7 +252,7 @@ class NordnUploadActionTest {
     when(httpUrlConnection.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[] {}));
     persistSunriseModeDomain();
     action.run();
-    assertThat(new String(connectionOutputStream.toByteArray(), UTF_8)).contains(SUNRISE_CSV);
+    assertThat(connectionOutputStream.toString(UTF_8)).contains(SUNRISE_CSV);
   }
 
   @Test
@@ -292,8 +282,8 @@ class NordnUploadActionTest {
     assertThrows(UrlConnectionException.class, action::run);
   }
 
-  private void persistClaimsModeDomain() {
-    DomainBase domain = newDomainBase("claims-landrush1.tld");
+  private static void persistClaimsModeDomain() {
+    Domain domain = DatabaseHelper.newDomain("claims-landrush1.tld");
     persistDomainAndEnqueueLordn(
         domain
             .asBuilder()
@@ -305,7 +295,7 @@ class NordnUploadActionTest {
 
   private void persistSunriseModeDomain() {
     action.phase = "sunrise";
-    DomainBase domain = newDomainBase("sunrise1.tld");
+    Domain domain = DatabaseHelper.newDomain("sunrise1.tld");
     persistDomainAndEnqueueLordn(domain.asBuilder().setSmdId("my-smdid").build());
   }
 

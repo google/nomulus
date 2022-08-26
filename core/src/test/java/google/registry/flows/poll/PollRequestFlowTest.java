@@ -16,7 +16,6 @@ package google.registry.flows.poll;
 
 import static google.registry.testing.DatabaseHelper.createHistoryEntryForEppResource;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
@@ -30,43 +29,37 @@ import google.registry.flows.FlowTestCase;
 import google.registry.flows.poll.PollRequestFlow.UnexpectedMessageIdException;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostResource;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.SetClockExtension;
-import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.DatabaseHelper;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PollRequestFlow}. */
-@DualDatabaseTest
 class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
 
-  @Order(value = Order.DEFAULT - 3)
-  @RegisterExtension
-  final SetClockExtension setClockExtension = new SetClockExtension(clock, "2011-01-02T01:01:01Z");
-
-  private DomainBase domain;
+  private Domain domain;
   private ContactResource contact;
-  private HostResource host;
+  private Host host;
 
   @BeforeEach
   void setUp() {
     setEppInput("poll.xml");
+    clock.setTo(DateTime.parse("2011-01-02T01:01:01Z"));
     setRegistrarIdForFlow("NewRegistrar");
     createTld("example");
     persistNewRegistrar("BadRegistrar");
     contact = persistActiveContact("jd1234");
-    domain = persistResource(newDomainBase("test.example", contact));
+    domain = persistResource(DatabaseHelper.newDomain("test.example", contact));
     host = persistActiveHost("ns1.test.example");
   }
 
@@ -87,18 +80,18 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
                         .setPendingTransferExpirationTime(clock.nowUtc().minusDays(1))
                         .setExtendedRegistrationExpirationTime(clock.nowUtc().plusYears(1))
                         .build()))
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_domainTransferApproved() throws Exception {
     persistPendingTransferPollMessage();
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_response_domain_transfer.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_clTridNotSpecified() throws Exception {
     setEppInput("poll_no_cltrid.xml");
     persistPendingTransferPollMessage();
@@ -106,7 +99,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     runFlowAssertResponse(loadFile("poll_response_domain_transfer_no_cltrid.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_contactTransferPending() throws Exception {
     setRegistrarIdForFlow("TheRegistrar");
     persistResource(
@@ -125,13 +118,13 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
                         .setLosingRegistrarId("NewRegistrar")
                         .setPendingTransferExpirationTime(clock.nowUtc())
                         .build()))
-            .setParent(createHistoryEntryForEppResource(contact))
+            .setHistoryEntry(createHistoryEntryForEppResource(contact))
             .build());
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_response_contact_transfer.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_domainPendingActionComplete() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -145,13 +138,13 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
                         true,
                         Trid.create("ABC-12345", "other-trid"),
                         clock.nowUtc())))
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_response_domain_pending_notification.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_domainPendingActionImmediateDelete() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -169,13 +162,13 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
                         true,
                         Trid.create("ABC-12345", "other-trid"),
                         clock.nowUtc())))
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_message_domain_pending_action_immediate_delete.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_domainAutorenewMessage() throws Exception {
     persistResource(
         new PollMessage.Autorenew.Builder()
@@ -183,42 +176,42 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Domain was auto-renewed.")
             .setTargetId("test.example")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_response_autorenew.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_empty() throws Exception {
     runFlowAssertResponse(loadFile("poll_response_empty.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_wrongRegistrar() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
             .setRegistrarId("BadRegistrar")
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Poll message")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     runFlowAssertResponse(loadFile("poll_response_empty.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_futurePollMessage() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
             .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().plusDays(1))
             .setMsg("Poll message")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     runFlowAssertResponse(loadFile("poll_response_empty.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_futureAutorenew() throws Exception {
     persistResource(
         new PollMessage.Autorenew.Builder()
@@ -226,13 +219,13 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
             .setEventTime(clock.nowUtc().plusDays(1))
             .setMsg("Domain was auto-renewed.")
             .setTargetId("target.example")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_response_empty.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_contactDelete() throws Exception {
     // Contact delete poll messages do not have any response data, so ensure that no
     // response data block is produced in the poll message.
@@ -248,14 +241,14 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
         new PollMessage.OneTime.Builder()
             .setRegistrarId("NewRegistrar")
             .setMsg("Deleted contact jd1234")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .setEventTime(clock.nowUtc().minusDays(1))
             .build());
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_response_contact_delete.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_hostDelete() throws Exception {
     // Host delete poll messages do not have any response data, so ensure that no
     // response data block is produced in the poll message.
@@ -271,7 +264,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
         new PollMessage.OneTime.Builder()
             .setRegistrarId("NewRegistrar")
             .setMsg("Deleted host ns1.test.example")
-            .setParent(historyEntry)
+            .setHistoryEntry(historyEntry)
             .setEventTime(clock.nowUtc().minusDays(1))
             .build());
     clock.advanceOneMilli();
@@ -279,7 +272,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     runFlowAssertResponse(loadFile("poll_response_host_delete.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_messageIdProvided() throws Exception {
     setEppInput("poll_with_id.xml");
     assertTransactionalFlow(false);

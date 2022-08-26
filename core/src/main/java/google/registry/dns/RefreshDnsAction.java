@@ -20,8 +20,8 @@ import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
-import google.registry.model.domain.DomainBase;
-import google.registry.model.host.HostResource;
+import google.registry.model.domain.Domain;
+import google.registry.model.host.Host;
 import google.registry.request.Action;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.NotFoundException;
@@ -62,11 +62,11 @@ public final class RefreshDnsAction implements Runnable {
     }
     switch (type) {
       case DOMAIN:
-        loadAndVerifyExistence(DomainBase.class, domainOrHostName);
+        loadAndVerifyExistence(Domain.class, domainOrHostName);
         dnsQueue.addDomainRefreshTask(domainOrHostName);
         break;
       case HOST:
-        verifyHostIsSubordinate(loadAndVerifyExistence(HostResource.class, domainOrHostName));
+        verifyHostIsSubordinate(loadAndVerifyExistence(Host.class, domainOrHostName));
         dnsQueue.addHostRefreshTask(domainOrHostName);
         break;
       default:
@@ -86,7 +86,7 @@ public final class RefreshDnsAction implements Runnable {
                         domainOrHostName)));
   }
 
-  private static void verifyHostIsSubordinate(HostResource host) {
+  private static void verifyHostIsSubordinate(Host host) {
     if (!host.isSubordinate()) {
       throw new BadRequestException(
           String.format("%s isn't a subordinate hostname", host.getHostName()));

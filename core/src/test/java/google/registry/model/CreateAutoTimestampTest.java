@@ -19,40 +19,36 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CreateAutoTimestamp}. */
-@DualDatabaseTest
 public class CreateAutoTimestampTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withOfyTestEntities(CreateAutoTimestampTestObject.class)
-          .withJpaUnitTestEntities(CreateAutoTimestampTestObject.class)
-          .build();
+  public final JpaUnitTestExtension jpaUnitTestExtension =
+      new JpaTestExtensions.Builder()
+          .withEntityClass(CreateAutoTimestampTestObject.class)
+          .buildUnitTestExtension();
 
   /** Timestamped class. */
-  @Entity(name = "CatTestEntity")
-  @javax.persistence.Entity
+  @Entity
   public static class CreateAutoTimestampTestObject extends CrossTldSingleton {
-    @Ignore @javax.persistence.Id long id = SINGLETON_ID;
+    @Id long id = SINGLETON_ID;
     CreateAutoTimestamp createTime = CreateAutoTimestamp.create(null);
   }
 
-  private CreateAutoTimestampTestObject reload() {
+  private static CreateAutoTimestampTestObject reload() {
     return loadByEntity(new CreateAutoTimestampTestObject());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSaveSetsTime() {
     DateTime transactionTime =
         tm().transact(
@@ -63,10 +59,10 @@ public class CreateAutoTimestampTest {
                   return tm().getTransactionTime();
                 });
     tm().clearSessionCache();
-    assertThat(reload().createTime.timestamp).isEqualTo(transactionTime);
+    assertThat(reload().createTime.getTimestamp()).isEqualTo(transactionTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testResavingRespectsOriginalTime() {
     final DateTime oldCreateTime = DateTime.now(UTC).minusDays(1);
     tm().transact(
@@ -76,6 +72,6 @@ public class CreateAutoTimestampTest {
               tm().put(object);
             });
     tm().clearSessionCache();
-    assertThat(reload().createTime.timestamp).isEqualTo(oldCreateTime);
+    assertThat(reload().createTime.getTimestamp()).isEqualTo(oldCreateTime);
   }
 }

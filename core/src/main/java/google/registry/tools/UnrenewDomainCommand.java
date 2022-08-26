@@ -32,7 +32,8 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
@@ -53,7 +54,7 @@ import org.joda.time.DateTime;
  * <p>This removes years off a domain's registration period. Note that the expiration time cannot be
  * set to prior than the present. Reversal of the charges for these years (if desired) must happen
  * out of band, as they may already have been billed out and thus cannot and won't be reversed in
- * Datastore.
+ * the database.
  */
 @Parameters(separators = " =", commandDescription = "Unrenew a domain.")
 @NonFinalForTesting
@@ -87,11 +88,11 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
         new ImmutableMap.Builder<>();
 
     for (String domainName : mainParameters) {
-      if (ForeignKeyIndex.load(DomainBase.class, domainName, START_OF_TIME) == null) {
+      if (ForeignKeyIndex.load(Domain.class, domainName, START_OF_TIME) == null) {
         domainsNonexistentBuilder.add(domainName);
         continue;
       }
-      Optional<DomainBase> domain = loadByForeignKey(DomainBase.class, domainName, now);
+      Optional<Domain> domain = loadByForeignKey(Domain.class, domainName, now);
       if (!domain.isPresent()
           || domain.get().getStatusValues().contains(StatusValue.PENDING_DELETE)) {
         domainsDeletingBuilder.add(domainName);
@@ -139,7 +140,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
     StringBuilder resultBuilder = new StringBuilder();
     DateTime now = clock.nowUtc();
     for (String domainName : mainParameters) {
-      DomainBase domain = loadByForeignKey(DomainBase.class, domainName, now).get();
+      Domain domain = loadByForeignKey(Domain.class, domainName, now).get();
       DateTime previousTime = domain.getRegistrationExpirationTime();
       DateTime newTime = leapSafeSubtractYears(previousTime, period);
       resultBuilder.append(
@@ -162,8 +163,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
   private void unrenewDomain(String domainName) {
     tm().assertInTransaction();
     DateTime now = tm().getTransactionTime();
-    Optional<DomainBase> domainOptional =
-        loadByForeignKey(DomainBase.class, domainName, now);
+    Optional<Domain> domainOptional = loadByForeignKey(Domain.class, domainName, now);
     // Transactional sanity checks on the off chance that something changed between init() running
     // and here.
     checkState(
@@ -171,7 +171,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
             && !domainOptional.get().getStatusValues().contains(StatusValue.PENDING_DELETE),
         "Domain %s was deleted or is pending deletion",
         domainName);
-    DomainBase domain = domainOptional.get();
+    Domain domain = domainOptional.get();
     checkState(
         Sets.intersection(domain.getStatusValues(), DISALLOWED_STATUSES).isEmpty(),
         "Domain %s has prohibited status values",
@@ -201,23 +201,25 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
                 String.format(
                     "Domain %s was unrenewed by %d years; now expires at %s.",
                     domainName, period, newExpirationTime))
-            .setParent(domainHistory)
+            .setHistoryEntry(domainHistory)
             .setEventTime(now)
             .build();
     // Create a new autorenew billing event and poll message starting at the new expiration time.
     BillingEvent.Recurring newAutorenewEvent =
         newAutorenewBillingEvent(domain)
             .setEventTime(newExpirationTime)
-            .setParent(domainHistory)
+            .setDomainHistory(domainHistory)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(domain)
             .setEventTime(newExpirationTime)
-            .setParent(domainHistory)
+            .setHistoryEntry(domainHistory)
             .build();
     // End the old autorenew billing event and poll message now.
-    updateAutorenewRecurrenceEndTime(domain, now);
-    DomainBase newDomain =
+    Recurring existingRecurring = tm().loadByKey(domain.getAutorenewBillingEvent());
+    updateAutorenewRecurrenceEndTime(
+        domain, existingRecurring, now, domainHistory.getDomainHistoryId());
+    Domain newDomain =
         domain
             .asBuilder()
             .setRegistrationExpirationTime(newExpirationTime)

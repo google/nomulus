@@ -18,7 +18,6 @@ import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.HttpHeaders.X_FRAME_OPTIONS;
 import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 
-import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
@@ -27,6 +26,7 @@ import google.registry.request.Action;
 import google.registry.request.RequestMethod;
 import google.registry.request.Response;
 import google.registry.request.auth.AuthResult;
+import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
 import java.util.HashMap;
 import java.util.Map;
@@ -86,16 +86,15 @@ public abstract class HtmlAction implements Runnable {
     }
     response.setContentType(MediaType.HTML_UTF_8);
 
-    User user = authResult.userAuthInfo().get().user();
-
+    UserAuthInfo authInfo = authResult.userAuthInfo().get();
     // Using HashMap to allow null values
     HashMap<String, Object> data = new HashMap<>();
     data.put("logoFilename", logoFilename);
     data.put("productName", productName);
-    data.put("username", user.getNickname());
+    data.put("username", authInfo.getUsername());
     data.put("logoutUrl", userService.createLogoutURL(getPath()));
     data.put("analyticsConfig", analyticsConfig);
-    data.put("xsrfToken", xsrfTokenManager.generateToken(user.getEmail()));
+    data.put("xsrfToken", xsrfTokenManager.generateToken(authInfo.getEmailAddress()));
 
     logger.atInfo().log(
         "User %s is accessing %s with method %s.",

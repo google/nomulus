@@ -16,14 +16,14 @@ package google.registry.tools.params;
 
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
-import google.registry.model.host.HostResource;
+import google.registry.model.domain.Domain;
+import google.registry.model.host.Host;
 
 /** Enum to make it easy for a command to accept a flag that specifies an EppResource subclass. */
 public enum EppResourceTypeParameter {
   CONTACT(ContactResource.class),
-  DOMAIN(DomainBase.class),
-  HOST(HostResource.class);
+  DOMAIN(Domain.class),
+  HOST(Host.class);
 
   private final Class<? extends EppResource> type;
 

@@ -41,7 +41,7 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
@@ -50,13 +50,10 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestDataHelper;
 import google.registry.util.ResourceUtils;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -69,7 +66,6 @@ import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.TypeDescriptor;
-import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,8 +79,7 @@ class InvoicingPipelineTest {
 
   @RegisterExtension
   @Order(Order.DEFAULT - 1)
-  final transient DatastoreEntityExtension datastore =
-      new DatastoreEntityExtension().allThreads(true);
+  final DatastoreEntityExtension datastore = new DatastoreEntityExtension().allThreads(true);
 
   @RegisterExtension
   final TestPipelineExtension pipeline =
@@ -104,8 +99,8 @@ class InvoicingPipelineTest {
       ImmutableList.of(
           BillingEvent.create(
               1,
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -119,8 +114,8 @@ class InvoicingPipelineTest {
               ""),
           BillingEvent.create(
               2,
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -134,8 +129,8 @@ class InvoicingPipelineTest {
               ""),
           BillingEvent.create(
               3,
-              ZonedDateTime.of(2017, 10, 2, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 9, 29, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-02T00:00:00Z"),
+              DateTime.parse("2017-09-29T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -149,8 +144,8 @@ class InvoicingPipelineTest {
               ""),
           BillingEvent.create(
               4,
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
               "bestdomains",
               "456",
               "116688",
@@ -164,8 +159,8 @@ class InvoicingPipelineTest {
               ""),
           BillingEvent.create(
               5,
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
               "anotherRegistrar",
               "789",
               "",
@@ -179,8 +174,8 @@ class InvoicingPipelineTest {
               "SUNRISE ANCHOR_TENANT"),
           BillingEvent.create(
               6,
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -194,8 +189,8 @@ class InvoicingPipelineTest {
               ""),
           BillingEvent.create(
               7,
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
-              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -266,15 +261,6 @@ class InvoicingPipelineTest {
   }
 
   @Test
-  void testSuccess_makeQuery() {
-    String query = InvoicingPipeline.makeQuery("2017-10", "my-project-id");
-    assertThat(query)
-        .isEqualTo(TestDataHelper.loadFile(this.getClass(), "billing_events_test.sql"));
-    // This is necessary because the TestPipelineExtension verifies that the pipeline is run.
-    pipeline.run();
-  }
-
-  @Test
   void testSuccess_fullSqlPipeline() throws Exception {
     setupCloudSql();
     InvoicingPipeline invoicingPipeline = new InvoicingPipeline(options);
@@ -317,7 +303,7 @@ class InvoicingPipelineTest {
             .setInvoicingEnabled(true)
             .build();
     persistResource(test);
-    DomainBase domain = persistActiveDomain("mycanadiandomain.test");
+    Domain domain = persistActiveDomain("mycanadiandomain.test");
 
     persistOneTimeBillingEvent(25, domain, registrar, Reason.RENEW, 3, Money.of(CAD, 20.5));
     PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
@@ -367,14 +353,14 @@ class InvoicingPipelineTest {
     // Test that comments are removed from the .sql file correctly
     assertThat(InvoicingPipeline.makeCloudSqlQuery("2017-10"))
         .isEqualTo(
-            "\n"
+            '\n'
                 + "SELECT b, r FROM BillingEvent b\n"
                 + "JOIN Registrar r ON b.clientId = r.clientIdentifier\n"
                 + "JOIN Domain d ON b.domainRepoId = d.repoId\n"
-                + "JOIN Tld t ON t.tldStrId = d.tld\n"
-                + "LEFT JOIN BillingCancellation c ON b.id = c.refOneTime.billingId\n"
+                + "JOIN Tld t ON t.tldStr = d.tld\n"
+                + "LEFT JOIN BillingCancellation c ON b.id = c.refOneTime\n"
                 + "LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent ="
-                + " cr.refRecurring.billingId\n"
+                + " cr.refRecurring\n"
                 + "WHERE r.billingAccountMap IS NOT NULL\n"
                 + "AND r.type = 'REAL'\n"
                 + "AND t.invoicingEnabled IS TRUE\n"
@@ -388,13 +374,12 @@ class InvoicingPipelineTest {
   private ImmutableList<String> resultFileContents(String filename) throws Exception {
     File resultFile =
         new File(
-            String.format(
-                "%s/invoices/2017-10/%s", billingBucketUrl.getAbsolutePath().toString(), filename));
+            String.format("%s/invoices/2017-10/%s", billingBucketUrl.getAbsolutePath(), filename));
     return ImmutableList.copyOf(
         ResourceUtils.readResourceUtf8(resultFile.toURI().toURL()).split("\n"));
   }
 
-  private void setupCloudSql() {
+  private static void setupCloudSql() {
     // Populate billing events in Cloud SQL to match existing test data for Datastore
     persistNewRegistrar("NewRegistrar");
     persistNewRegistrar("TheRegistrar");
@@ -430,13 +415,13 @@ class InvoicingPipelineTest {
             .build();
     persistResource(hello);
 
-    DomainBase domain1 = persistActiveDomain("mydomain.test");
-    DomainBase domain2 = persistActiveDomain("mydomain2.test");
-    DomainBase domain3 = persistActiveDomain("mydomain3.hello");
-    DomainBase domain4 = persistActiveDomain("mydomain4.test");
-    DomainBase domain5 = persistActiveDomain("mydomain5.test");
-    DomainBase domain6 = persistActiveDomain("locked.test");
-    DomainBase domain7 = persistActiveDomain("update-prohibited.test");
+    Domain domain1 = persistActiveDomain("mydomain.test");
+    Domain domain2 = persistActiveDomain("mydomain2.test");
+    Domain domain3 = persistActiveDomain("mydomain3.hello");
+    Domain domain4 = persistActiveDomain("mydomain4.test");
+    Domain domain5 = persistActiveDomain("mydomain5.test");
+    Domain domain6 = persistActiveDomain("locked.test");
+    Domain domain7 = persistActiveDomain("update-prohibited.test");
 
     persistOneTimeBillingEvent(1, domain1, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
     persistOneTimeBillingEvent(2, domain2, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
@@ -446,7 +431,7 @@ class InvoicingPipelineTest {
         registrar1,
         Reason.CREATE,
         5,
-        Money.ofMajor(CurrencyUnit.JPY, 70),
+        Money.ofMajor(JPY, 70),
         DateTime.parse("2017-09-29T00:00:00.0Z"),
         DateTime.parse("2017-10-02T00:00:00.0Z"));
     persistOneTimeBillingEvent(4, domain4, registrar2, Reason.RENEW, 1, Money.of(USD, 20.5));
@@ -468,7 +453,7 @@ class InvoicingPipelineTest {
     Registrar registrar4 = persistNewRegistrar("noBillRegistrar");
     registrar4 = registrar4.asBuilder().setBillingAccountMap(null).build();
     persistResource(registrar4);
-    DomainBase domain8 = persistActiveDomain("non-billable.test");
+    Domain domain8 = persistActiveDomain("non-billable.test");
     persistOneTimeBillingEvent(8, domain8, registrar4, Reason.RENEW, 3, Money.of(USD, 20.5));
 
     // Add billing event for a non-real registrar
@@ -481,28 +466,28 @@ class InvoicingPipelineTest {
             .setType(Registrar.Type.OTE)
             .build();
     persistResource(registrar5);
-    DomainBase domain9 = persistActiveDomain("not-real.test");
+    Domain domain9 = persistActiveDomain("not-real.test");
     persistOneTimeBillingEvent(9, domain9, registrar5, Reason.RENEW, 3, Money.of(USD, 20.5));
 
     // Add billing event for a non-invoicing TLD
     createTld("nobill");
-    DomainBase domain10 = persistActiveDomain("test.nobill");
+    Domain domain10 = persistActiveDomain("test.nobill");
     persistOneTimeBillingEvent(10, domain10, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
 
     // Add billing event before October 2017
-    DomainBase domain11 = persistActiveDomain("july.test");
+    Domain domain11 = persistActiveDomain("july.test");
     persistOneTimeBillingEvent(
         11,
         domain11,
         registrar1,
         Reason.CREATE,
         5,
-        Money.ofMajor(CurrencyUnit.JPY, 70),
+        Money.ofMajor(JPY, 70),
         DateTime.parse("2017-06-29T00:00:00.0Z"),
         DateTime.parse("2017-07-02T00:00:00.0Z"));
 
     // Add a billing event with a corresponding cancellation
-    DomainBase domain12 = persistActiveDomain("cancel.test");
+    Domain domain12 = persistActiveDomain("cancel.test");
     OneTime oneTime =
         persistOneTimeBillingEvent(12, domain12, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
     DomainHistory domainHistory = persistDomainHistory(domain12, registrar1);
@@ -512,18 +497,17 @@ class InvoicingPipelineTest {
             .asBuilder()
             .setId(1)
             .setRegistrarId(registrar1.getRegistrarId())
-            .setDomainHistoryRevisionId(domainHistory.getId())
             .setEventTime(DateTime.parse("2017-10-05T00:00:00.0Z"))
             .setBillingTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
             .setOneTimeEventKey(oneTime.createVKey())
             .setTargetId(domain12.getDomainName())
             .setReason(Reason.RENEW)
-            .setParent(domainHistory)
+            .setDomainHistory(domainHistory)
             .build();
     persistResource(cancellation);
 
     // Add billing event with a corresponding recurring billing event and cancellation
-    DomainBase domain13 = persistActiveDomain("cancel-recurring.test");
+    Domain domain13 = persistActiveDomain("cancel-recurring.test");
     DomainHistory domainHistoryRecurring = persistDomainHistory(domain13, registrar1);
 
     Recurring recurring =
@@ -532,7 +516,7 @@ class InvoicingPipelineTest {
             .setRegistrarId(registrar1.getRegistrarId())
             .setRecurrenceEndTime(END_OF_TIME)
             .setId(1)
-            .setParent(domainHistoryRecurring)
+            .setDomainHistory(domainHistoryRecurring)
             .setTargetId(domain13.getDomainName())
             .setEventTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
             .setReason(Reason.RENEW)
@@ -543,7 +527,7 @@ class InvoicingPipelineTest {
     oneTimeRecurring =
         oneTimeRecurring
             .asBuilder()
-            .setCancellationMatchingBillingEvent(recurring.createVKey())
+            .setCancellationMatchingBillingEvent(recurring)
             .setFlags(ImmutableSet.of(Flag.SYNTHETIC))
             .setSyntheticCreationTime(DateTime.parse("2017-10-03T00:00:00.0Z"))
             .build();
@@ -554,33 +538,32 @@ class InvoicingPipelineTest {
             .asBuilder()
             .setId(2)
             .setRegistrarId(registrar1.getRegistrarId())
-            .setDomainHistoryRevisionId(domainHistoryRecurring.getId())
             .setEventTime(DateTime.parse("2017-10-05T00:00:00.0Z"))
             .setBillingTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
             .setRecurringEventKey(recurring.createVKey())
             .setTargetId(domain13.getDomainName())
             .setReason(Reason.RENEW)
-            .setParent(domainHistoryRecurring)
+            .setDomainHistory(domainHistoryRecurring)
             .build();
     persistResource(cancellationRecurring);
   }
 
-  private DomainHistory persistDomainHistory(DomainBase domainBase, Registrar registrar) {
+  private static DomainHistory persistDomainHistory(Domain domain, Registrar registrar) {
     DomainHistory domainHistory =
         new DomainHistory.Builder()
             .setType(HistoryEntry.Type.DOMAIN_RENEW)
             .setModificationTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
-            .setDomain(domainBase)
+            .setDomain(domain)
             .setRegistrarId(registrar.getRegistrarId())
             .build();
     return persistResource(domainHistory);
   }
 
-  private OneTime persistOneTimeBillingEvent(
-      int id, DomainBase domainBase, Registrar registrar, Reason reason, int years, Money money) {
+  private static OneTime persistOneTimeBillingEvent(
+      int id, Domain domain, Registrar registrar, Reason reason, int years, Money money) {
     return persistOneTimeBillingEvent(
         id,
-        domainBase,
+        domain,
         registrar,
         reason,
         years,
@@ -589,9 +572,9 @@ class InvoicingPipelineTest {
         DateTime.parse("2017-10-04T00:00:00.0Z"));
   }
 
-  private OneTime persistOneTimeBillingEvent(
+  private static OneTime persistOneTimeBillingEvent(
       int id,
-      DomainBase domainBase,
+      Domain domain,
       Registrar registrar,
       Reason reason,
       int years,
@@ -599,7 +582,7 @@ class InvoicingPipelineTest {
       DateTime eventTime,
       DateTime billingTime,
       Flag... flags) {
-    google.registry.model.billing.BillingEvent.OneTime.Builder billingEventBuilder =
+    OneTime.Builder billingEventBuilder =
         new OneTime()
             .asBuilder()
             .setId(id)
@@ -607,11 +590,10 @@ class InvoicingPipelineTest {
             .setEventTime(eventTime)
             .setRegistrarId(registrar.getRegistrarId())
             .setReason(reason)
-            .setTargetId(domainBase.getDomainName())
-            .setDomainRepoId("REPO-ID")
+            .setTargetId(domain.getDomainName())
             .setCost(money)
             .setFlags(Arrays.stream(flags).collect(toImmutableSet()))
-            .setParent(persistDomainHistory(domainBase, registrar));
+            .setDomainHistory(persistDomainHistory(domain, registrar));
 
     if (years > 0) {
       billingEventBuilder.setPeriodYears(years);
@@ -622,6 +604,9 @@ class InvoicingPipelineTest {
 
   private static class ChangeDomainRepo
       extends PTransform<PCollection<BillingEvent>, PCollection<BillingEvent>> {
+
+    private static final long serialVersionUID = 2695033474967615250L;
+
     @Override
     public PCollection<BillingEvent> expand(PCollection<BillingEvent> input) {
       return input.apply(

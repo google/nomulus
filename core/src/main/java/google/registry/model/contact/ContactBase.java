@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.EppResourceUtils.projectResourceOntoBuilderAtTime;
 
 import com.google.common.collect.ImmutableList;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.OnLoad;
@@ -68,7 +69,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
    * Localized postal info for the contact. All contained values must be representable in the 7-bit
    * US-ASCII character set. Personal info; cleared by {@link ContactResource.Builder#wipeOut}.
    */
-  @IgnoreSave(IfNull.class)
+  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "name", column = @Column(name = "addr_local_name")),
@@ -96,7 +97,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
    * Internationalized postal info for the contact. Personal info; cleared by {@link
    * ContactResource.Builder#wipeOut}.
    */
-  @IgnoreSave(IfNull.class)
+  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "name", column = @Column(name = "addr_i18n_name")),

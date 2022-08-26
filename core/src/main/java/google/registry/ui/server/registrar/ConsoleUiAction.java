@@ -109,13 +109,13 @@ public final class ConsoleUiAction extends HtmlAction {
               .render());
       return;
     }
-    ImmutableSetMultimap<String, Role> roleMap = registrarAccessor.getAllClientIdWithRoles();
+    ImmutableSetMultimap<String, Role> roleMap = registrarAccessor.getAllRegistrarIdsWithRoles();
     soyMapData.put("allClientIds", roleMap.keySet());
     soyMapData.put("environment", RegistryEnvironment.get().toString());
     // We set the initial value to the value that will show if guessClientId throws.
     String clientId = "<null>";
     try {
-      clientId = paramClientId.orElse(registrarAccessor.guessClientId());
+      clientId = paramClientId.orElse(registrarAccessor.guessRegistrarId());
       soyMapData.put("clientId", clientId);
       soyMapData.put("isOwner", roleMap.containsEntry(clientId, OWNER));
       soyMapData.put("isAdmin", roleMap.containsEntry(clientId, ADMIN));

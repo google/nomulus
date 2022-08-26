@@ -41,22 +41,22 @@ def testUberJarName = ''
 dependencies {
   gradleLint.ignore('unused-dependency') {
     if (schema_version == USE_LOCAL) {
-      testRuntime project(path: ':db', configuration: 'schema')
+      testRuntimeOnly project(path: ':db', configuration: 'schema')
     } else {
-      testRuntime "google.registry:schema:${schema_version}"
+      testRuntimeOnly "google.registry:schema:${schema_version}"
     }
     if (nomulus_version == USE_LOCAL) {
-      testRuntime project(path: ':core', configuration: 'nomulus_test')
+      testRuntimeOnly project(path: ':core', configuration: 'nomulus_test')
       testUberJarName = 'nomulus-tests-alldeps.jar'
     } else {
-      testRuntime "google.registry:nomulus_test:${nomulus_version}:public"
-      testRuntime "google.registry:nomulus_test:${nomulus_version}:alldeps"
+      testRuntimeOnly "google.registry:nomulus_test:${nomulus_version}:public"
+      testRuntimeOnly "google.registry:nomulus_test:${nomulus_version}:alldeps"
       testUberJarName = "nomulus_test-${nomulus_version}-alldeps.jar"
     }
   }
 }
 
-configurations.testRuntime.transitive = false
+configurations.testRuntimeOnly.transitive = false
 
 def unpackedTestDir = "${projectDir}/build/unpackedTests/${nomulus_version}"
 
@@ -69,7 +69,7 @@ task extractSqlIntegrationTestSuite (type: Copy) {
   }
   outputs.dir unpackedTestDir
   from zipTree(
-      configurations.testRuntime
+      configurations.testRuntimeClasspath
           .filter { it.name == testUberJarName}
           .singleFile).matching {
     include 'google/registry/**/SqlIntegrationTestSuite.class'
@@ -83,7 +83,7 @@ task sqlIntegrationTest(type: Test) {
   // Explicitly choose JUnit 4 for test suites. See :core:sqlIntegrationTest for details.
   useJUnit()
   testClassesDirs = files(unpackedTestDir)
-  classpath = configurations.testRuntime
+  classpath = configurations.testRuntimeClasspath
   include 'google/registry/schema/integration/SqlIntegrationTestSuite.*'
 
   dependsOn extractSqlIntegrationTestSuite

@@ -174,16 +174,6 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
   }
 
   @Override
-  public void insertWithoutBackup(ImmutableObject entity) {
-    delegate.insertWithoutBackup(entity);
-  }
-
-  @Override
-  public void insertAllWithoutBackup(ImmutableCollection<?> entities) {
-    delegate.insertAllWithoutBackup(entities);
-  }
-
-  @Override
   public void put(Object entity) {
     delegate.put(entity);
   }
@@ -199,16 +189,6 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
   }
 
   @Override
-  public void putWithoutBackup(ImmutableObject entity) {
-    delegate.putWithoutBackup(entity);
-  }
-
-  @Override
-  public void putAllWithoutBackup(ImmutableCollection<?> entities) {
-    delegate.putAllWithoutBackup(entities);
-  }
-
-  @Override
   public void update(Object entity) {
     delegate.update(entity);
   }
@@ -221,16 +201,6 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
   @Override
   public void updateAll(ImmutableObject... entities) {
     delegate.updateAll(entities);
-  }
-
-  @Override
-  public void updateWithoutBackup(ImmutableObject entity) {
-    delegate.updateWithoutBackup(entity);
-  }
-
-  @Override
-  public void updateAllWithoutBackup(ImmutableCollection<?> entities) {
-    delegate.updateAllWithoutBackup(entities);
   }
 
   @Override
@@ -308,21 +278,6 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
   @Override
   public <T> T delete(T entity) {
     return delegate.delete(entity);
-  }
-
-  @Override
-  public void deleteWithoutBackup(VKey<?> key) {
-    delegate.deleteWithoutBackup(key);
-  }
-
-  @Override
-  public void deleteWithoutBackup(Iterable<? extends VKey<?>> keys) {
-    delegate.deleteWithoutBackup(keys);
-  }
-
-  @Override
-  public void deleteWithoutBackup(Object entity) {
-    delegate.deleteWithoutBackup(entity);
   }
 
   @Override

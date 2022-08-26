@@ -51,7 +51,7 @@ class ConsoleUiActionTest {
   @RegisterExtension
   final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withUserService(UserInfo.create("marla.singer@example.com", "12345"))
           .build();
 

@@ -36,10 +36,9 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class StatusValueAdapterTest {
 
-  // Needed to create HostResources.
+  // Needed to create Hosts.
   @RegisterExtension
-  public AppEngineExtension appEngine =
-      new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
+  public AppEngineExtension appEngine = new AppEngineExtension.Builder().withCloudSql().build();
 
   @Test
   void testMarshalling() throws Exception {

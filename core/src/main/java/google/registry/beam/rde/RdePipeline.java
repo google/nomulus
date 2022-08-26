@@ -47,10 +47,10 @@ import google.registry.gcs.GcsUtils;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostResource;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.Type;
@@ -132,7 +132,7 @@ import org.joda.time.DateTime;
  * that are soft-deleted by watermark. The history is emitted as pairs of (resource repo ID: history
  * revision ID) from the SQL query.
  *
- * <h3>{@link DomainBase}</h3>
+ * <h3>{@link Domain}</h3>
  *
  * After the most recent (live) domain resources are loaded from the corresponding history objects,
  * we marshall them to deposit fragments and emit the (pending deposit: deposit fragment) pairs for
@@ -148,7 +148,7 @@ import org.joda.time.DateTime;
  * then loaded from the remaining referenced contact histories, and marshalled into (pending
  * deposit: deposit fragment) pairs.
  *
- * <h3>{@link HostResource}</h3>
+ * <h3>{@link Host}</h3>
  *
  * Similar to {@link ContactResource}, we join the most recent host history with referenced hosts to
  * find most recent referenced hosts. For external hosts we do the same treatment as we did on
@@ -195,7 +195,7 @@ public class RdePipeline implements Serializable {
   private static final ImmutableMap<Class<? extends HistoryEntry>, String> EPP_RESOURCE_FIELD_NAME =
       ImmutableMap.of(
           DomainHistory.class,
-          "domainContent",
+          "domainBase",
           ContactHistory.class,
           "contactBase",
           HostHistory.class,
@@ -467,18 +467,17 @@ public class RdePipeline implements Serializable {
     Counter activeDomainCounter = Metrics.counter("RDE", "ActiveDomainBase");
     Counter domainFragmentCounter = Metrics.counter("RDE", "DomainFragment");
     Counter referencedContactCounter = Metrics.counter("RDE", "ReferencedContactResource");
-    Counter referencedHostCounter = Metrics.counter("RDE", "ReferencedHostResource");
+    Counter referencedHostCounter = Metrics.counter("RDE", "ReferencedHost");
     return domainHistories.apply(
-        "Map DomainHistory to DepositFragment "
-            + "and emit referenced ContactResource and HostResource",
+        "Map DomainHistory to DepositFragment " + "and emit referenced ContactResource and Host",
         ParDo.of(
                 new DoFn<KV<String, Long>, KV<PendingDeposit, DepositFragment>>() {
                   @ProcessElement
                   public void processElement(
                       @Element KV<String, Long> kv, MultiOutputReceiver receiver) {
                     activeDomainCounter.inc();
-                    DomainBase domain =
-                        (DomainBase)
+                    Domain domain =
+                        (Domain)
                             loadResourceByHistoryEntryId(
                                 DomainHistory.class, kv.getKey(), kv.getValue());
                     pendingDeposits.stream()
@@ -565,10 +564,10 @@ public class RdePipeline implements Serializable {
   private PCollectionTuple processHostHistories(
       PCollection<KV<String, PendingDeposit>> referencedHosts,
       PCollection<KV<String, Long>> hostHistories) {
-    Counter subordinateHostCounter = Metrics.counter("RDE", "SubordinateHostResource");
-    Counter externalHostCounter = Metrics.counter("RDE", "ExternalHostResource");
+    Counter subordinateHostCounter = Metrics.counter("RDE", "SubordinateHost");
+    Counter externalHostCounter = Metrics.counter("RDE", "ExternalHost");
     Counter externalHostFragmentCounter = Metrics.counter("RDE", "ExternalHostFragment");
-    return removeUnreferencedResource(referencedHosts, hostHistories, HostResource.class)
+    return removeUnreferencedResource(referencedHosts, hostHistories, Host.class)
         .apply(
             "Map external DomainResource to DepositFragment and process subordinate domains",
             ParDo.of(
@@ -576,8 +575,8 @@ public class RdePipeline implements Serializable {
                       @ProcessElement
                       public void processElement(
                           @Element KV<String, CoGbkResult> kv, MultiOutputReceiver receiver) {
-                        HostResource host =
-                            (HostResource)
+                        Host host =
+                            (Host)
                                 loadResourceByHistoryEntryId(
                                     HostHistory.class,
                                     kv.getKey(),
@@ -631,11 +630,9 @@ public class RdePipeline implements Serializable {
     Counter referencedSubordinateHostCounter = Metrics.counter("RDE", "ReferencedSubordinateHost");
     return KeyedPCollectionTuple.of(HOST_TO_PENDING_DEPOSIT, superordinateDomains)
         .and(REVISION_ID, domainHistories)
+        .apply("Join Host:PendingDeposits with DomainHistory on Domain", CoGroupByKey.create())
         .apply(
-            "Join HostResource:PendingDeposits with DomainHistory on DomainResource",
-            CoGroupByKey.create())
-        .apply(
-            " Remove unreferenced DomainResource",
+            " Remove unreferenced Domain",
             Filter.by(
                 kv -> {
                   boolean toInclude =
@@ -647,15 +644,15 @@ public class RdePipeline implements Serializable {
                   return toInclude;
                 }))
         .apply(
-            "Map subordinate HostResource to DepositFragment",
+            "Map subordinate Host to DepositFragment",
             FlatMapElements.into(
                     kvs(
                         TypeDescriptor.of(PendingDeposit.class),
                         TypeDescriptor.of(DepositFragment.class)))
                 .via(
                     (KV<String, CoGbkResult> kv) -> {
-                      DomainBase superordinateDomain =
-                          (DomainBase)
+                      Domain superordinateDomain =
+                          (Domain)
                               loadResourceByHistoryEntryId(
                                   DomainHistory.class,
                                   kv.getKey(),
@@ -664,8 +661,8 @@ public class RdePipeline implements Serializable {
                           new ImmutableSet.Builder<>();
                       for (KV<String, CoGbkResult> hostToPendingDeposits :
                           kv.getValue().getAll(HOST_TO_PENDING_DEPOSIT)) {
-                        HostResource host =
-                            (HostResource)
+                        Host host =
+                            (Host)
                                 loadResourceByHistoryEntryId(
                                     HostHistory.class,
                                     hostToPendingDeposits.getKey(),

@@ -27,7 +27,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppMetricSubject.assertThat;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
@@ -41,21 +41,19 @@ import com.google.re2j.Pattern;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for domain lifecycle. */
-@DualDatabaseTest
 class EppLifecycleDomainTest extends EppTestCase {
 
   private static final ImmutableMap<String, String> DEFAULT_TRANSFER_RESPONSE_PARMS =
@@ -66,18 +64,14 @@ class EppLifecycleDomainTest extends EppTestCase {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(clock)
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
   @BeforeEach
   void beforeEach() {
     createTlds("example", "tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainDeleteRestore() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
@@ -137,7 +131,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainDeleteRestore_duringAutorenewGracePeriod() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
@@ -211,7 +205,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainDeleteRestore_duringRenewalGracePeriod() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
@@ -293,7 +287,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainDelete_duringAddAndRenewalGracePeriod_deletesImmediately() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
@@ -340,9 +334,8 @@ class EppLifecycleDomainTest extends EppTestCase {
                 // This is the time of the renew.
                 "UPDATE", "2000-06-03T00:00:00Z"));
 
-    DomainBase domain =
-        loadByForeignKey(DomainBase.class, "example.tld", DateTime.parse("2000-06-03T04:00:00Z"))
-            .get();
+    Domain domain =
+        loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2000-06-03T04:00:00Z")).get();
 
     DateTime deleteTime = DateTime.parse("2000-06-04T00:00:00Z");
     // Delete domain example.tld during both grace periods.
@@ -382,13 +375,13 @@ class EppLifecycleDomainTest extends EppTestCase {
     // entire cost of registration was refunded. We have to do this through the DB instead of EPP
     // because domains deleted during the add grace period vanish immediately as far as the world
     // outside our system is concerned.
-    DomainBase deletedDomain = loadByEntity(domain);
+    Domain deletedDomain = loadByEntity(domain);
     assertAboutDomains().that(deletedDomain).hasRegistrationExpirationTime(createTime);
 
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainDeletion_withinAddGracePeriod_deletesImmediately() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
@@ -405,8 +398,7 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "CRDATE", "2000-06-01T00:02:00.0Z",
                 "EXDATE", "2002-06-01T00:02:00.0Z"));
 
-    DomainBase domain =
-        loadByForeignKey(DomainBase.class, "example.tld", createTime.plusHours(1)).get();
+    Domain domain = loadByForeignKey(Domain.class, "example.tld", createTime.plusHours(1)).get();
 
     // Delete domain example.tld within the add grace period.
     DateTime deleteTime = createTime.plusDays(1);
@@ -438,13 +430,13 @@ class EppLifecycleDomainTest extends EppTestCase {
     // entire cost of registration was refunded. We have to do this through the DB instead of EPP
     // because domains deleted during the add grace period vanish immediately as far as the world
     // outside our system is concerned.
-    DomainBase deletedDomain = loadByEntity(domain);
+    Domain deletedDomain = loadByEntity(domain);
     assertAboutDomains().that(deletedDomain).hasRegistrationExpirationTime(createTime);
 
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainDeletion_outsideAddGracePeriod_showsRedemptionPeriod() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
@@ -488,10 +480,8 @@ class EppLifecycleDomainTest extends EppTestCase {
             ImmutableMap.of(
                 "CODE", "2303", "MSG", "The domain with given ID (example.tld) doesn't exist."));
 
-    DomainBase domain =
-        loadByForeignKey(
-                DomainBase.class, "example.tld", DateTime.parse("2000-08-01T00:02:00Z"))
-            .get();
+    Domain domain =
+        loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2000-08-01T00:02:00Z")).get();
     // Verify that the autorenew was ended and that the one-time billing event is not canceled.
     assertBillingEventsForResource(
         domain,
@@ -501,12 +491,12 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
 
     // Make sure that in the future, the domain expiration is unchanged after deletion
-    DomainBase clonedDomain = domain.cloneProjectedAtTime(deleteTime.plusYears(5));
+    Domain clonedDomain = domain.cloneProjectedAtTime(deleteTime.plusYears(5));
     Truth.assertThat(clonedDomain.getRegistrationExpirationTime())
         .isEqualTo(createTime.plusYears(2));
   }
 
-  @TestOfyAndSql
+  @Test
   void testEapDomainDeletion_withinAddGracePeriod_eapFeeIsNotRefunded() throws Exception {
     assertThatCommand("login_valid_fee_extension.xml").hasSuccessfulLogin();
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
@@ -528,10 +518,8 @@ class EppLifecycleDomainTest extends EppTestCase {
         .atTime(createTime)
         .hasResponse("domain_create_response_eap_fee.xml");
 
-    DomainBase domain =
-        loadByForeignKey(
-                DomainBase.class, "example.tld", DateTime.parse("2000-06-01T00:03:00Z"))
-            .get();
+    Domain domain =
+        loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2000-06-01T00:03:00Z")).get();
 
     // Delete domain example.tld within the add grade period.
     DateTime deleteTime = createTime.plusDays(1);
@@ -550,7 +538,8 @@ class EppLifecycleDomainTest extends EppTestCase {
             .setCost(Money.parse("USD 100.00"))
             .setEventTime(createTime)
             .setBillingTime(createTime.plus(Registry.get("tld").getRenewGracePeriodLength()))
-            .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
+            .setDomainHistory(
+                getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
             .build();
 
     // The expected one-time billing event, that should have an associated Cancellation.
@@ -571,7 +560,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainDeletionWithSubordinateHost_fails() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createFakesite();
@@ -584,7 +573,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeletionOfDomain_afterRenameOfSubordinateHost_succeeds() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThat(getRecordedEppMetric())
@@ -639,7 +628,7 @@ class EppLifecycleDomainTest extends EppTestCase {
         .hasStatus(SUCCESS_AND_CLOSE);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDeletionOfDomain_afterUpdateThatCreatesSubordinateHost_fails() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createFakesite();
@@ -682,7 +671,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainCreation_failsBeforeSunrise() throws Exception {
     DateTime sunriseDate = DateTime.parse("2000-05-30T00:00:00Z");
     createTld(
@@ -716,7 +705,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainCheckFee_succeeds() throws Exception {
     DateTime gaDate = DateTime.parse("2000-05-30T00:00:00Z");
     createTld(
@@ -742,7 +731,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainCreate_annualAutoRenewPollMessages_haveUniqueIds() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     // Create the domain.
@@ -758,11 +747,11 @@ class EppLifecycleDomainTest extends EppTestCase {
         .hasResponse(
             "poll_response_autorenew.xml",
             ImmutableMap.of(
-                "ID", "1-B-EXAMPLE-12-15-2002",
+                "ID", "15-2002",
                 "QDATE", "2002-06-01T00:04:00Z",
                 "DOMAIN", "fakesite.example",
                 "EXDATE", "2003-06-01T00:04:00Z"));
-    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "1-B-EXAMPLE-12-15-2002"))
+    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "15-2002"))
         .atTime("2002-07-01T00:02:00Z")
         .hasResponse("poll_ack_response_empty.xml");
 
@@ -776,13 +765,13 @@ class EppLifecycleDomainTest extends EppTestCase {
         .hasResponse(
             "poll_response_autorenew.xml",
             ImmutableMap.of(
-                "ID", "1-B-EXAMPLE-12-15-2003", // Note -- Year is different from previous ID.
+                "ID", "15-2003", // Note -- Year is different from previous ID.
                 "QDATE", "2003-06-01T00:04:00Z",
                 "DOMAIN", "fakesite.example",
                 "EXDATE", "2004-06-01T00:04:00Z"));
 
     // Ack the second poll message and verify that none remain.
-    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "1-B-EXAMPLE-12-15-2003"))
+    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "15-2003"))
         .atTime("2003-07-01T00:05:05Z")
         .hasResponse("poll_ack_response_empty.xml");
     assertThatCommand("poll.xml")
@@ -792,7 +781,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainTransferPollMessage_serverApproved() throws Exception {
     // As the losing registrar, create the domain.
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -812,7 +801,7 @@ class EppLifecycleDomainTest extends EppTestCase {
 
     // As the losing registrar, read the request poll message, and then ack it.
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
-    String messageId = "1-B-EXAMPLE-18-24-2001";
+    String messageId = "24-2001";
     assertThatCommand("poll.xml")
         .atTime("2001-01-01T00:01:00Z")
         .hasResponse("poll_response_domain_transfer_request.xml", ImmutableMap.of("ID", messageId));
@@ -821,7 +810,7 @@ class EppLifecycleDomainTest extends EppTestCase {
         .hasResponse("poll_ack_response_empty.xml");
 
     // Five days in the future, expect a server approval poll message to the loser, and ack it.
-    messageId = "1-B-EXAMPLE-18-23-2001";
+    messageId = "23-2001";
     assertThatCommand("poll.xml")
         .atTime("2001-01-06T00:01:00Z")
         .hasResponse(
@@ -833,7 +822,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
 
     // Also expect a server approval poll message to the winner, with the transfer request trid.
-    messageId = "1-B-EXAMPLE-18-22-2001";
+    messageId = "22-2001";
     assertThatLoginSucceeds("TheRegistrar", "password2");
     assertThatCommand("poll.xml")
         .atTime("2001-01-06T00:02:00Z")
@@ -846,7 +835,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testTransfer_autoRenewGraceActive_onlyAtAutomaticTransferTime_getsSubsumed()
       throws Exception {
     // Register the domain as the first registrar.
@@ -884,7 +873,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testNameserversTransferWithDomain_successfully() throws Exception {
     // Log in as the first registrar and set up domains with hosts.
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -921,7 +910,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testRenewalFails_whenTotalTermExceeds10Years() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     // Creates domain with 2 year expiration.
@@ -935,7 +924,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainDeletionCancelsPendingTransfer() throws Exception {
     // Register the domain as the first registrar.
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -973,7 +962,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainTransfer_subordinateHost_showsChangeInTransferQuery() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createFakesite();
@@ -1009,7 +998,7 @@ class EppLifecycleDomainTest extends EppTestCase {
    * to be subordinate to a different domain, that the host retains the transfer time of the first
    * superordinate domain, not whatever the transfer time from the second domain is.
    */
-  @TestOfyAndSql
+  @Test
   void testSuccess_lastTransferTime_superordinateDomainTransferFollowedByHostUpdate()
       throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -1063,7 +1052,7 @@ class EppLifecycleDomainTest extends EppTestCase {
    * Tests that when a superordinate domain of a host is transferred, and then the host is updated
    * to be external, that the host retains the transfer time of the first superordinate domain.
    */
-  @TestOfyAndSql
+  @Test
   void testSuccess_lastTransferTime_superordinateDomainTransferThenHostUpdateToExternal()
       throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -1106,7 +1095,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_multipartTldsWithSharedSuffixes() throws Exception {
     createTlds("bar.foo.tld", "foo.tld");
 
@@ -1150,7 +1139,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_multipartTldsWithSharedPrefixes() throws Exception {
     createTld("tld.foo");
 
@@ -1189,7 +1178,7 @@ class EppLifecycleDomainTest extends EppTestCase {
    * during start-date sunrise - which we can then delete "as normal" (no need for a signed mark or
    * anything for delete), and then use "regular" create during general-availability.
    */
-  @TestOfyAndSql
+  @Test
   void testDomainCreation_startDateSunriseFull() throws Exception {
     // The signed mark is valid between 2013 and 2017
     DateTime sunriseDate = DateTime.parse("2014-09-08T09:09:09Z");
@@ -1285,7 +1274,7 @@ class EppLifecycleDomainTest extends EppTestCase {
   }
 
   /** Test that missing type= argument on launch create works in start-date sunrise. */
-  @TestOfyAndSql
+  @Test
   void testDomainCreation_startDateSunrise_noType() throws Exception {
     // The signed mark is valid between 2013 and 2017
     DateTime sunriseDate = DateTime.parse("2014-09-08T09:09:09Z");
@@ -1334,7 +1323,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainTransfer_duringAutorenewGrace() throws Exception {
     // Creation date of fakesite: 2000-06-01T00:04:00.0Z
     // Expiration date: 2002-06-01T00:04:00.0Z
@@ -1420,7 +1409,7 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "EXDATE", "2003-06-01T00:04:00Z"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainTransfer_queryForServerApproved() throws Exception {
     // Creation date of fakesite: 2000-06-01T00:04:00.0Z
     // Expiration date: 2002-06-01T00:04:00.0Z
@@ -1450,7 +1439,7 @@ class EppLifecycleDomainTest extends EppTestCase {
         .hasResponse("domain_transfer_query_response_completed_fakesite.xml");
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainUpdateBySuperuser_sendsPollMessage() throws Exception {
     setIsSuperuser(false);
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");

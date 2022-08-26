@@ -25,37 +25,37 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.flows.EppTestCase;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestCacheExtension;
 import google.registry.util.Clock;
+import java.time.Duration;
 import java.util.List;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for tools that affect EPP lifecycle. */
-@DualDatabaseTest
 class EppLifecycleToolsTest extends EppTestCase {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withClock(clock)
-          .withDatastoreAndCloudSql()
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withClock(clock).withCloudSql().withTaskQueue().build();
+
+  @RegisterExtension
+  public final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder().withClaimsListCache(Duration.ofHours(6)).build();
 
   @BeforeEach
   void beforeEach() {
     createTlds("example", "tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_renewDomainThenUnrenew() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
@@ -115,7 +115,7 @@ class EppLifecycleToolsTest extends EppTestCase {
         .atTime("2001-06-08T00:00:00Z")
         .hasResponse("poll_response_unrenew.xml");
 
-    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "1-7-TLD-20-21-2001"))
+    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "21-2001"))
         .atTime("2001-06-08T00:00:01Z")
         .hasResponse("poll_ack_response_empty.xml");
 
@@ -136,17 +136,15 @@ class EppLifecycleToolsTest extends EppTestCase {
         .hasResponse(
             "poll_response_autorenew.xml",
             ImmutableMap.of(
-                "ID", "1-7-TLD-20-23-2003",
+                "ID", "23-2003",
                 "QDATE", "2003-06-01T00:02:00Z",
                 "DOMAIN", "example.tld",
                 "EXDATE", "2004-06-01T00:02:00Z"));
 
     // Assert about billing events.
     DateTime createTime = DateTime.parse("2000-06-01T00:02:00Z");
-    DomainBase domain =
-        loadByForeignKey(
-                DomainBase.class, "example.tld", DateTime.parse("2003-06-02T00:02:00Z"))
-            .get();
+    Domain domain =
+        loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2003-06-02T00:02:00Z")).get();
     BillingEvent.OneTime renewBillingEvent =
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.RENEW)
@@ -156,7 +154,8 @@ class EppLifecycleToolsTest extends EppTestCase {
             .setPeriodYears(4)
             .setEventTime(DateTime.parse("2000-06-07T00:00:00Z"))
             .setBillingTime(DateTime.parse("2000-06-12T00:00:00Z"))
-            .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class))
+            .setDomainHistory(
+                getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class))
             .build();
 
     assertBillingEventsForResource(

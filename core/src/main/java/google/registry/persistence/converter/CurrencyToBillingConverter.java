@@ -14,30 +14,37 @@
 
 package google.registry.persistence.converter;
 
-import static google.registry.model.registrar.Registrar.BillingAccountEntry;
-
-import com.google.common.collect.Maps;
 import java.util.Map;
 import javax.persistence.Converter;
 import org.joda.money.CurrencyUnit;
 
-/** JPA converter for storing/retrieving {@code Map<CurrencyUnit, BillingAccountEntry>} objects. */
+/** JPA converter for storing/retrieving {@code Map<CurrencyUnit, String>} objects. */
 @Converter(autoApply = true)
 public class CurrencyToBillingConverter
-    extends StringMapConverterBase<CurrencyUnit, BillingAccountEntry> {
+    extends StringMapConverterBase<CurrencyUnit, String, Map<CurrencyUnit, String>> {
 
   @Override
-  Map.Entry<String, String> convertToDatabaseMapEntry(
-      Map.Entry<CurrencyUnit, BillingAccountEntry> entry) {
-    return Maps.immutableEntry(entry.getKey().getCode(), entry.getValue().getAccountId());
+  protected String convertKeyToString(CurrencyUnit key) {
+    return key.getCode();
   }
 
   @Override
-  Map.Entry<CurrencyUnit, BillingAccountEntry> convertToEntityMapEntry(
-      Map.Entry<String, String> entry) {
-    CurrencyUnit currencyUnit = CurrencyUnit.of(entry.getKey());
-    BillingAccountEntry billingAccountEntry =
-        new BillingAccountEntry(currencyUnit, entry.getValue());
-    return Maps.immutableEntry(currencyUnit, billingAccountEntry);
+  protected String convertValueToString(String value) {
+    return value;
+  }
+
+  @Override
+  protected CurrencyUnit convertStringToKey(String string) {
+    return CurrencyUnit.of(string);
+  }
+
+  @Override
+  protected String convertStringToValue(String string) {
+    return string;
+  }
+
+  @Override
+  protected Map<CurrencyUnit, String> convertMapToDerivedType(Map<CurrencyUnit, String> map) {
+    return map;
   }
 }

@@ -14,15 +14,12 @@
 
 package google.registry.request;
 
-import static com.google.appengine.api.datastore.DatastoreServiceFactory.getDatastoreService;
-
 import com.google.api.client.extensions.appengine.http.UrlFetchTransport;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 import com.google.appengine.api.users.UserService;
@@ -34,17 +31,6 @@ import javax.inject.Singleton;
 
 /** Dagger modules for App Engine services and other vendor classes. */
 public final class Modules {
-
-  /** Dagger module for {@link DatastoreService}. */
-  @Module
-  public static final class DatastoreServiceModule {
-    private static final DatastoreService datastoreService = getDatastoreService();
-
-    @Provides
-    static DatastoreService provideDatastoreService() {
-      return datastoreService;
-    }
-  }
 
   /** Dagger module for {@link UrlConnectionService}. */
   @Module

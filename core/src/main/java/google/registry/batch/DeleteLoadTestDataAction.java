@@ -30,8 +30,8 @@ import google.registry.flows.poll.PollFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
-import google.registry.model.host.HostResource;
+import google.registry.model.domain.Domain;
+import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
@@ -43,8 +43,8 @@ import google.registry.util.Clock;
 import javax.inject.Inject;
 
 /**
- * Hard deletes load-test ContactResources, HostResources, their subordinate history entries, and
- * the associated ForeignKey and EppResourceIndex entities.
+ * Hard deletes load-test ContactResources, Hosts, their subordinate history entries, and the
+ * associated ForeignKey and EppResourceIndex entities.
  *
  * <p>This only deletes contacts and hosts, NOT domains. To delete domains, use {@link
  * DeleteProberDataAction} and pass it the TLD(s) that the load test domains were created on. Note
@@ -93,7 +93,7 @@ public class DeleteLoadTestDataAction implements Runnable {
             () -> {
               LOAD_TEST_REGISTRARS.forEach(this::deletePollMessages);
               tm().loadAllOfStream(ContactResource.class).forEach(this::deleteContact);
-              tm().loadAllOfStream(HostResource.class).forEach(this::deleteHost);
+              tm().loadAllOfStream(Host.class).forEach(this::deleteHost);
             });
   }
 
@@ -123,19 +123,19 @@ public class DeleteLoadTestDataAction implements Runnable {
     deleteResource(contact);
   }
 
-  private void deleteHost(HostResource host) {
+  private void deleteHost(Host host) {
     if (!LOAD_TEST_REGISTRARS.contains(host.getPersistedCurrentSponsorRegistrarId())) {
       return;
     }
-    VKey<HostResource> hostVKey = host.createVKey();
+    VKey<Host> hostVKey = host.createVKey();
     // We can remove hosts from linked domains, so we should do so then delete the hosts
-    ImmutableSet<VKey<DomainBase>> linkedDomains =
+    ImmutableSet<VKey<Domain>> linkedDomains =
         EppResourceUtils.getLinkedDomainKeys(hostVKey, clock.nowUtc(), null);
     tm().loadByKeys(linkedDomains)
         .values()
         .forEach(
             domain -> {
-              ImmutableSet<VKey<HostResource>> remainingHosts =
+              ImmutableSet<VKey<Host>> remainingHosts =
                   domain.getNsHosts().stream()
                       .filter(vkey -> !vkey.equals(hostVKey))
                       .collect(toImmutableSet());

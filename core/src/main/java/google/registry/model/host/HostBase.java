@@ -26,7 +26,7 @@ import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.EppResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import java.net.InetAddress;
@@ -76,7 +76,7 @@ public class HostBase extends EppResource {
   @Index
   @IgnoreSave(IfNull.class)
   @DoNotHydrate
-  VKey<DomainBase> superordinateDomain;
+  VKey<Domain> superordinateDomain;
 
   /**
    * The time that this resource was last transferred.
@@ -98,7 +98,7 @@ public class HostBase extends EppResource {
     return fullyQualifiedHostName;
   }
 
-  public VKey<DomainBase> getSuperordinateDomain() {
+  public VKey<Domain> getSuperordinateDomain() {
     return superordinateDomain;
   }
 
@@ -126,8 +126,7 @@ public class HostBase extends EppResource {
   @Override
   public VKey<? extends HostBase> createVKey() {
     throw new UnsupportedOperationException(
-        "HostBase is not an actual persisted entity you can create a key to;"
-            + " use HostResource instead");
+        "HostBase is not an actual persisted entity you can create a key to; use Host instead");
   }
 
   @Deprecated
@@ -155,7 +154,7 @@ public class HostBase extends EppResource {
    *     {@link #superordinateDomain} field. Passing it as a parameter allows the caller to control
    *     the degree of consistency used to load it.
    */
-  public DateTime computeLastTransferTime(@Nullable DomainBase superordinateDomain) {
+  public DateTime computeLastTransferTime(@Nullable Domain superordinateDomain) {
     if (!isSubordinate()) {
       checkArgument(superordinateDomain == null);
       return getLastTransferTime();
@@ -222,7 +221,7 @@ public class HostBase extends EppResource {
           ImmutableSet.copyOf(difference(getInstance().getInetAddresses(), inetAddresses)));
     }
 
-    public B setSuperordinateDomain(VKey<DomainBase> superordinateDomain) {
+    public B setSuperordinateDomain(VKey<Domain> superordinateDomain) {
       getInstance().superordinateDomain = superordinateDomain;
       return thisCastToDerived();
     }

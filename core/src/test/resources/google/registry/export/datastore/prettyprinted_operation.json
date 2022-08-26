@@ -7,7 +7,7 @@
       "state" : "PROCESSING"
     },
     "entityFilter" : {
-      "kinds" : [ "Registry", "Registrar", "DomainBase" ]
+      "kinds" : [ "Registry", "Registrar", "Domain" ]
     },
     "outputUrlPrefix" : "gs://domain-registry-alpha-datastore-export-test/2018-10-29T16:01:04_99364",
     "@type" : "type.googleapis.com/google.datastore.admin.v1.ExportEntitiesMetadata"

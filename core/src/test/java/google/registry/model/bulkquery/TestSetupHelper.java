@@ -24,8 +24,8 @@ import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -35,7 +35,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
@@ -73,9 +73,9 @@ public final class TestSetupHelper {
   public Registry registry;
   public Registrar registrar;
   public ContactResource contact;
-  public DomainBase domain;
+  public Domain domain;
   public DomainHistory domainHistory;
-  public HostResource host;
+  public Host host;
 
   private JpaTransactionManager originalJpaTm;
   private JpaTransactionManager bulkQueryJpaTm;
@@ -127,16 +127,15 @@ public final class TestSetupHelper {
         .build();
   }
 
-  static DomainBase createSimpleDomain(ContactResource contact) {
-    return DatabaseHelper.newDomainBase(DOMAIN_NAME, DOMAIN_REPO_ID, contact)
+  static Domain createSimpleDomain(ContactResource contact) {
+    return DatabaseHelper.newDomain(DOMAIN_NAME, DOMAIN_REPO_ID, contact)
         .asBuilder()
         .setCreationRegistrarId(REGISTRAR_ID)
         .setPersistedCurrentSponsorRegistrarId(REGISTRAR_ID)
         .build();
   }
 
-  static DomainBase createFullDomain(
-      ContactResource contact, HostResource host, FakeClock fakeClock) {
+  static Domain createFullDomain(ContactResource contact, Host host, FakeClock fakeClock) {
     return createSimpleDomain(contact)
         .asBuilder()
         .setDomainName(DOMAIN_NAME)
@@ -170,8 +169,8 @@ public final class TestSetupHelper {
         .build();
   }
 
-  static HostResource createHost() {
-    return new HostResource.Builder()
+  static Host createHost() {
+    return new Host.Builder()
         .setRepoId("host1")
         .setHostName("ns1.example.com")
         .setCreationRegistrarId(REGISTRAR_ID)
@@ -188,7 +187,7 @@ public final class TestSetupHelper {
         .build();
   }
 
-  static DomainHistory createHistoryWithoutContent(DomainBase domain, FakeClock fakeClock) {
+  static DomainHistory createHistoryWithoutContent(Domain domain, FakeClock fakeClock) {
     return new DomainHistory.Builder()
         .setType(HistoryEntry.Type.DOMAIN_CREATE)
         .setXmlBytes("<xml></xml>".getBytes(UTF_8))
@@ -204,7 +203,7 @@ public final class TestSetupHelper {
         .build();
   }
 
-  static DomainHistory createFullHistory(DomainBase domain, FakeClock fakeClock) {
+  static DomainHistory createFullHistory(Domain domain, FakeClock fakeClock) {
     return createHistoryWithoutContent(domain, fakeClock)
         .asBuilder()
         .setType(HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE)

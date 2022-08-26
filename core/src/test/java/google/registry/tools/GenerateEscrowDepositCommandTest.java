@@ -21,10 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
-import google.registry.testing.InjectExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
@@ -32,8 +30,6 @@ import org.mockito.quality.Strictness;
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class GenerateEscrowDepositCommandTest
     extends CommandTestCase<GenerateEscrowDepositCommand> {
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
 

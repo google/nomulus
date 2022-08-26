@@ -38,16 +38,16 @@ import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostHistory.HostHistoryId;
-import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import java.util.Optional;
 import java.util.Set;
@@ -386,10 +386,10 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
     String parentKind = getParent().getKind();
     final HistoryEntry resultEntity;
     // can't use a switch statement since we're calling getKind()
-    if (parentKind.equals(getKind(DomainBase.class))) {
+    if (parentKind.equals(getKind(Domain.class))) {
       resultEntity =
           new DomainHistory.Builder().copyFrom(this).setDomainRepoId(parent.getName()).build();
-    } else if (parentKind.equals(getKind(HostResource.class))) {
+    } else if (parentKind.equals(getKind(Host.class))) {
       resultEntity =
           new HostHistory.Builder().copyFrom(this).setHostRepoId(parent.getName()).build();
     } else if (parentKind.equals(getKind(ContactResource.class))) {
@@ -408,12 +408,12 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
     long id = key.getId();
     Key<EppResource> parent = key.getParent();
     String parentKind = parent.getKind();
-    if (parentKind.equals(getKind(DomainBase.class))) {
+    if (parentKind.equals(getKind(Domain.class))) {
       return VKey.create(
           DomainHistory.class,
           new DomainHistoryId(repoId, id),
           Key.create(parent, DomainHistory.class, id));
-    } else if (parentKind.equals(getKind(HostResource.class))) {
+    } else if (parentKind.equals(getKind(Host.class))) {
       return VKey.create(
           HostHistory.class,
           new HostHistoryId(repoId, id),
@@ -537,8 +537,8 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
 
   public static <E extends EppResource>
       HistoryEntry.Builder<? extends HistoryEntry, ?> createBuilderForResource(E parent) {
-    if (parent instanceof DomainContent) {
-      return new DomainHistory.Builder().setDomain((DomainContent) parent);
+    if (parent instanceof DomainBase) {
+      return new DomainHistory.Builder().setDomain((DomainBase) parent);
     } else if (parent instanceof ContactBase) {
       return new ContactHistory.Builder().setContact((ContactBase) parent);
     } else if (parent instanceof HostBase) {

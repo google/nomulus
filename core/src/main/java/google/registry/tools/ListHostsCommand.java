@@ -17,7 +17,7 @@ package google.registry.tools;
 import com.beust.jcommander.Parameters;
 import google.registry.tools.server.ListHostsAction;
 
-/** Command to list all HostResource entities in the system. */
+/** Command to list all Host entities in the system. */
 @Parameters(separators = " =", commandDescription = "List all hosts.")
 final class ListHostsCommand extends ListObjectsCommand {
 

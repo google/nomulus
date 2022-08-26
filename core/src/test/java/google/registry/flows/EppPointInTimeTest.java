@@ -30,42 +30,31 @@ import static org.joda.time.Duration.standardDays;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
-import google.registry.model.domain.DomainBase;
-import google.registry.model.ofy.Ofy;
+import google.registry.model.domain.Domain;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
-import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Test that we can reload EPP resources as they were in the past. */
-@DualDatabaseTest
 class EppPointInTimeTest {
 
   private final FakeClock clock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(clock)
-          .withTaskQueue()
-          .build();
-
-  @RegisterExtension final InjectExtension inject = new InjectExtension();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
   private EppLoader eppLoader;
 
   @BeforeEach
   void beforeEach() {
     createTld("tld");
-    inject.setStaticField(Ofy.class, "clock", clock);
   }
 
   private void runFlow() throws Exception {
@@ -91,7 +80,7 @@ class EppPointInTimeTest {
         .run(EppMetric.builder());
   }
 
-  @TestOfyAndSql
+  @Test
   void testLoadAtPointInTime() throws Exception {
     clock.setTo(DateTime.parse("1984-12-18T12:30Z")); // not midnight
 
@@ -106,7 +95,7 @@ class EppPointInTimeTest {
     eppLoader = new EppLoader(this, "domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlow();
     tm().clearSessionCache();
-    DomainBase domainAfterCreate = Iterables.getOnlyElement(loadAllOf(DomainBase.class));
+    Domain domainAfterCreate = Iterables.getOnlyElement(loadAllOf(Domain.class));
     assertThat(domainAfterCreate.getDomainName()).isEqualTo("example.tld");
 
     clock.advanceBy(standardDays(2));
@@ -115,7 +104,7 @@ class EppPointInTimeTest {
     runFlow();
     tm().clearSessionCache();
 
-    DomainBase domainAfterFirstUpdate = loadByEntity(domainAfterCreate);
+    Domain domainAfterFirstUpdate = loadByEntity(domainAfterCreate);
     assertThat(domainAfterCreate).isNotEqualTo(domainAfterFirstUpdate);
 
     clock.advanceOneMilli(); // same day as first update
@@ -123,7 +112,7 @@ class EppPointInTimeTest {
     eppLoader = new EppLoader(this, "domain_update_dsdata_rem.xml");
     runFlow();
     tm().clearSessionCache();
-    DomainBase domainAfterSecondUpdate = loadByEntity(domainAfterCreate);
+    Domain domainAfterSecondUpdate = loadByEntity(domainAfterCreate);
 
     clock.advanceBy(standardDays(2));
     DateTime timeAtDelete = clock.nowUtc(); // before 'add' grace period ends
@@ -134,7 +123,7 @@ class EppPointInTimeTest {
     assertThat(domainAfterFirstUpdate).isNotEqualTo(domainAfterSecondUpdate);
 
     // Point-in-time can only rewind an object from the current version, not roll forward.
-    DomainBase latest = loadByEntity(domainAfterCreate);
+    Domain latest = loadByEntity(domainAfterCreate);
 
     // Creation time has millisecond granularity due to isActive() check.
     tm().clearSessionCache();

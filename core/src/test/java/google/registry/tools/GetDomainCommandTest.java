@@ -15,13 +15,13 @@
 package google.registry.tools;
 
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
+import google.registry.testing.DatabaseHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,12 +38,12 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     persistActiveDomain("example.tld");
     runCommand("example.tld");
     assertInStdout("fullyQualifiedDomainName=example.tld");
-    assertInStdout("contact=Key<?>(ContactResource(\"3-ROID\"))");
+    assertInStdout("Contact=VKey<ContactResource>(sql:3-ROID");
     assertInStdout(
         "Websafe key: "
-            + "kind:DomainBase"
+            + "kind:Domain"
             + "@sql:rO0ABXQABTItVExE"
-            + "@ofy:agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw");
+            + "@ofy:agR0ZXN0chELEgZEb21haW4iBTItVExEDA");
   }
 
   @Test
@@ -51,12 +51,12 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     persistActiveDomain("example.tld");
     runCommand("example.tld", "--expand");
     assertInStdout("fullyQualifiedDomainName=example.tld");
-    assertInStdout("contact=Key<?>(ContactResource(\"3-ROID\"))");
+    assertInStdout("sqlKey=3-ROID");
     assertInStdout(
         "Websafe key: "
-            + "kind:DomainBase"
+            + "kind:Domain"
             + "@sql:rO0ABXQABTItVExE"
-            + "@ofy:agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw");
+            + "@ofy:agR0ZXN0chELEgZEb21haW4iBTItVExEDA");
     assertNotInStdout("LiveRef");
   }
 
@@ -66,7 +66,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     persistActiveDomain("xn--aualito-txac.xn--q9jyb4c");
     runCommand("çauçalito.みんな", "--expand");
     assertInStdout("fullyQualifiedDomainName=xn--aualito-txac.xn--q9jyb4c");
-    assertInStdout("contact=Key<?>(ContactResource(\"4-ROID\"))");
+    assertInStdout("sqlKey=4-ROID");
   }
 
   @Test
@@ -78,20 +78,20 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     assertInStdout("fullyQualifiedDomainName=example2.tld");
     assertInStdout(
         "Websafe key: "
-            + "kind:DomainBase"
-            + "@sql:rO0ABXQABTQtVExE"
-            + "@ofy:agR0ZXN0chULEgpEb21haW5CYXNlIgU0LVRMRAw");
+            + "kind:Domain"
+            + "@sql:rO0ABXQABTItVExE"
+            + "@ofy:agR0ZXN0chELEgZEb21haW4iBTItVExEDA");
     assertInStdout(
         "Websafe key: "
-            + "kind:DomainBase"
+            + "kind:Domain"
             + "@sql:rO0ABXQABTQtVExE"
-            + "@ofy:agR0ZXN0chULEgpEb21haW5CYXNlIgU0LVRMRAw");
+            + "@ofy:agR0ZXN0chELEgZEb21haW4iBTQtVExEDA");
   }
 
   @Test
   void testSuccess_domainDeletedInFuture() throws Exception {
     persistResource(
-        newDomainBase("example.tld")
+        DatabaseHelper.newDomain("example.tld")
             .asBuilder()
             .setDeletionTime(fakeClock.nowUtc().plusDays(1))
             .build());

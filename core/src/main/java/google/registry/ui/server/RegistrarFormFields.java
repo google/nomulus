@@ -28,7 +28,7 @@ import com.google.common.net.InternetDomainName;
 import com.google.re2j.Pattern;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.ui.forms.FormException;
 import google.registry.ui.forms.FormField;
 import google.registry.ui.forms.FormFieldException;
@@ -217,10 +217,10 @@ public final class RegistrarFormFields {
   public static final FormField<String, String> CONTACT_REGISTRY_LOCK_PASSWORD_FIELD =
       FormFields.NAME.asBuilderNamed("registryLockPassword").build();
 
-  public static final FormField<String, Set<RegistrarContact.Type>> CONTACT_TYPES =
+  public static final FormField<String, Set<RegistrarPoc.Type>> CONTACT_TYPES =
       FormField.named("types")
           .uppercased()
-          .asEnum(RegistrarContact.Type.class)
+          .asEnum(RegistrarPoc.Type.class)
           .asSet(Splitter.on(',').omitEmptyStrings().trimResults())
           .build();
 
@@ -348,8 +348,8 @@ public final class RegistrarFormFields {
     }
   }
 
-  public static ImmutableList<RegistrarContact.Builder> getRegistrarContactBuilders(
-      ImmutableSet<RegistrarContact> existingContacts, @Nullable Map<String, ?> args) {
+  public static ImmutableList<RegistrarPoc.Builder> getRegistrarContactBuilders(
+      ImmutableSet<RegistrarPoc> existingContacts, @Nullable Map<String, ?> args) {
     if (args == null) {
       return ImmutableList.of();
     }
@@ -357,7 +357,7 @@ public final class RegistrarFormFields {
     if (!contactsAsMaps.isPresent()) {
       return ImmutableList.of();
     }
-    ImmutableList.Builder<RegistrarContact.Builder> result = new ImmutableList.Builder<>();
+    ImmutableList.Builder<RegistrarPoc.Builder> result = new ImmutableList.Builder<>();
     for (Map<String, ?> contactAsMap : contactsAsMaps.get()) {
       String emailAddress =
           CONTACT_EMAIL_ADDRESS_FIELD
@@ -365,20 +365,19 @@ public final class RegistrarFormFields {
               .orElseThrow(
                   () -> new IllegalArgumentException("Contacts from UI must have email addresses"));
       // Start with a new builder if the contact didn't previously exist
-      RegistrarContact.Builder contactBuilder =
+      RegistrarPoc.Builder contactBuilder =
           existingContacts.stream()
               .filter(rc -> rc.getEmailAddress().equals(emailAddress))
               .findFirst()
-              .map(RegistrarContact::asBuilder)
-              .orElse(new RegistrarContact.Builder());
+              .map(RegistrarPoc::asBuilder)
+              .orElse(new RegistrarPoc.Builder());
       applyRegistrarContactArgs(contactBuilder, contactAsMap);
       result.add(contactBuilder);
     }
     return result.build();
   }
 
-  private static void applyRegistrarContactArgs(
-      RegistrarContact.Builder builder, Map<String, ?> args) {
+  private static void applyRegistrarContactArgs(RegistrarPoc.Builder builder, Map<String, ?> args) {
     builder.setName(CONTACT_NAME_FIELD.extractUntyped(args).orElse(null));
     builder.setEmailAddress(CONTACT_EMAIL_ADDRESS_FIELD.extractUntyped(args).orElse(null));
     builder.setRegistryLockEmailAddress(

@@ -1,6 +1,6 @@
 {
   "entityFilter": {
-    "kinds": ["Registry", "Registrar", "DomainBase"]
+    "kinds": ["Registry", "Registrar", "Domain"]
   },
   "outputUrlPrefix": "gs://mybucket/path"
 }

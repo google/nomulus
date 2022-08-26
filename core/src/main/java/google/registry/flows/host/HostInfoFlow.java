@@ -19,7 +19,6 @@ import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -28,11 +27,11 @@ import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.annotations.ReportingSpec;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostInfoData;
-import google.registry.model.host.HostResource;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.util.Clock;
 import javax.inject.Inject;
@@ -66,7 +65,7 @@ public final class HostInfoFlow implements Flow {
     extensionManager.validate(); // There are no legal extensions for this flow.
     validateHostName(targetId);
     DateTime now = clock.nowUtc();
-    HostResource host = loadAndVerifyExistence(HostResource.class, targetId, now);
+    Host host = loadAndVerifyExistence(Host.class, targetId, now);
     ImmutableSet.Builder<StatusValue> statusValues = new ImmutableSet.Builder<>();
     statusValues.addAll(host.getStatusValues());
     if (isLinked(host.createVKey(), now)) {
@@ -77,9 +76,9 @@ public final class HostInfoFlow implements Flow {
     // the client id, last transfer time, and pending transfer status need to be read off of it. If
     // there is no superordinate domain, the host's own values for these fields will be correct.
     if (host.isSubordinate()) {
-      DomainBase superordinateDomain =
-          transactIfJpaTm(
-              () -> tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtTime(now));
+      Domain superordinateDomain =
+          tm().transact(
+                  () -> tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtTime(now));
       hostInfoDataBuilder
           .setCurrentSponsorClientId(superordinateDomain.getCurrentSponsorRegistrarId())
           .setLastTransferTime(host.computeLastTransferTime(superordinateDomain));

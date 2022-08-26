@@ -42,7 +42,8 @@ import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
@@ -63,7 +64,7 @@ import org.joda.time.DateTime;
  * transfer is automatically approved. Within that window, this flow allows the losing client to
  * reject the transfer request.
  *
- * <p>When the transfer was requested, poll messages and billing events were saved to Datastore with
+ * <p>When the transfer was requested, poll messages and billing events were saved to SQL with
  * timestamps such that they only would become active when the transfer period passed. In this flow,
  * those speculative objects are deleted.
  *
@@ -92,7 +93,7 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
-    DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
+    Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     Registry registry = Registry.get(existingDomain.getTld());
     Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
     historyBuilder
@@ -105,7 +106,7 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
     if (!isSuperuser) {
       checkAllowedAccessToTld(registrarId, existingDomain.getTld());
     }
-    DomainBase newDomain =
+    Domain newDomain =
         denyPendingTransfer(existingDomain, TransferStatus.CLIENT_REJECTED, now, registrarId);
     DomainHistory domainHistory = buildDomainHistory(newDomain, registry, now);
     tm().putAll(
@@ -115,7 +116,9 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
                 targetId, newDomain.getTransferData(), null, now, domainHistoryKey));
     // Reopen the autorenew event and poll message that we closed for the implicit transfer. This
     // may end up recreating the poll message if it was deleted upon the transfer request.
-    updateAutorenewRecurrenceEndTime(existingDomain, END_OF_TIME);
+    Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
+    updateAutorenewRecurrenceEndTime(
+        existingDomain, existingRecurring, END_OF_TIME, domainHistory.getDomainHistoryId());
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
     tm().delete(existingDomain.getTransferData().getServerApproveEntities());
@@ -124,7 +127,7 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
         .build();
   }
 
-  private DomainHistory buildDomainHistory(DomainBase newDomain, Registry registry, DateTime now) {
+  private DomainHistory buildDomainHistory(Domain newDomain, Registry registry, DateTime now) {
     ImmutableSet<DomainTransactionRecord> cancelingRecords =
         createCancelingRecords(
             newDomain,

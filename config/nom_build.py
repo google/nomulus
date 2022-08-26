@@ -84,6 +84,10 @@ PROPERTIES = [
     Property('pluginsUrl',
              'URL to use for the gradle plugins repository (defaults to maven '
              'central, see also mavenUrl'),
+    Property('allowInsecureProtocol',
+             'Allow connecting to plain HTTP repositories.  This is provided '
+             'to allow us to communicate to a local proxy when doing '
+             'dependency updates.'),
     Property('uploaderDestination',
              'Location to upload test reports to.  Normally this should be a '
              'GCS url (see also uploaderCredentialsFile)'),

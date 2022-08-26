@@ -32,8 +32,7 @@ public final class EntityWrapperTest {
   private static final int ARBITRARY_KEY_ID = 1001;
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void testEquals() {

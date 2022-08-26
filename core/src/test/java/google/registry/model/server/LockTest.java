@@ -20,7 +20,6 @@ import static google.registry.model.server.Lock.LockState.FREE;
 import static google.registry.model.server.Lock.LockState.IN_USE;
 import static google.registry.model.server.Lock.LockState.OWNER_DIED;
 import static google.registry.model.server.Lock.LockState.TIMED_OUT;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -29,18 +28,14 @@ import static org.mockito.Mockito.when;
 
 import google.registry.model.EntityTestCase;
 import google.registry.model.server.Lock.LockState;
-import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import google.registry.util.RequestStatusChecker;
 import java.util.Optional;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Lock}. */
-@DualDatabaseTest
 public class LockTest extends EntityTestCase {
 
   private static final String RESOURCE_NAME = "foo";
@@ -85,7 +80,7 @@ public class LockTest extends EntityTestCase {
     Lock.lockMetrics = origLockMetrics;
   }
 
-  @TestOfyAndSql
+  @Test
   void testReleasedExplicitly() {
     Optional<Lock> lock = acquire("", ONE_DAY, FREE);
     assertThat(lock).isPresent();
@@ -97,7 +92,7 @@ public class LockTest extends EntityTestCase {
     assertThat(acquire("", ONE_DAY, FREE)).isPresent();
   }
 
-  @TestOfyAndSql
+  @Test
   void testReleasedAfterTimeout() {
     assertThat(acquire("", TWO_MILLIS, FREE)).isPresent();
     // We can't get it again at the same time.
@@ -110,7 +105,7 @@ public class LockTest extends EntityTestCase {
     assertThat(acquire("", TWO_MILLIS, TIMED_OUT)).isPresent();
   }
 
-  @TestOfyAndSql
+  @Test
   void testReleasedAfterRequestFinish() {
     assertThat(acquire("", ONE_DAY, FREE)).isPresent();
     // We can't get it again while request is active
@@ -120,7 +115,7 @@ public class LockTest extends EntityTestCase {
     assertThat(acquire("", ONE_DAY, OWNER_DIED)).isPresent();
   }
 
-  @TestOfyAndSql
+  @Test
   void testTldsAreIndependent() {
     Optional<Lock> lockA = acquire("a", ONE_DAY, FREE);
     assertThat(lockA).isPresent();
@@ -135,20 +130,7 @@ public class LockTest extends EntityTestCase {
     assertThat(acquire("b", ONE_DAY, IN_USE)).isEmpty();
   }
 
-  @TestOfyOnly
-  void testSqlLock_inOfyMode() {
-    Lock.lockMetrics = origLockMetrics;
-    Optional<Lock> lock = Lock.acquireSql(RESOURCE_NAME, null, ONE_DAY, requestStatusChecker, true);
-    assertThat(lock).isPresent();
-    assertThat(DatabaseHelper.loadAllOf(Lock.class)).isEmpty();
-    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Lock.class))).containsExactly(lock.get());
-
-    lock.get().releaseSql();
-    assertThat(DatabaseHelper.loadAllOf(Lock.class)).isEmpty();
-    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Lock.class))).isEmpty();
-  }
-
-  @TestOfyAndSql
+  @Test
   void testFailure_emptyResourceName() {
     IllegalArgumentException thrown =
         assertThrows(

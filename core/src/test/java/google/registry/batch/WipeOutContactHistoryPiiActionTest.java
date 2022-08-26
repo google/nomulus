@@ -36,17 +36,14 @@ import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectExtension;
-import google.registry.testing.TestSqlOnly;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link WipeOutContactHistoryPiiAction}. */
-@DualDatabaseTest
 class WipeOutContactHistoryPiiActionTest {
 
   private static final int TEST_BATCH_SIZE = 20;
@@ -102,9 +99,8 @@ class WipeOutContactHistoryPiiActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
   private final FakeClock clock = new FakeClock(DateTime.parse("2021-08-26T20:21:22Z"));
 
   private FakeResponse response;
@@ -118,7 +114,7 @@ class WipeOutContactHistoryPiiActionTest {
             clock, MIN_MONTHS_BEFORE_WIPE_OUT, TEST_BATCH_SIZE, response);
   }
 
-  @TestSqlOnly
+  @Test
   void getAllHistoryEntitiesOlderThan_returnsAllPersistedEntities() {
     ImmutableList<ContactHistory> expectedToBeWipedOut =
         persistLotsOfContactHistoryEntities(
@@ -132,7 +128,7 @@ class WipeOutContactHistoryPiiActionTest {
                     .containsExactlyElementsIn(expectedToBeWipedOut));
   }
 
-  @TestSqlOnly
+  @Test
   void getAllHistoryEntitiesOlderThan_returnsOnlyOldEnoughPersistedEntities() {
     ImmutableList<ContactHistory> expectedToBeWipedOut =
         persistLotsOfContactHistoryEntities(
@@ -151,7 +147,7 @@ class WipeOutContactHistoryPiiActionTest {
                     .containsExactlyElementsIn(expectedToBeWipedOut));
   }
 
-  @TestSqlOnly
+  @Test
   void run_withNoEntitiesToWipeOut_success() {
     assertThat(
             jpaTm()
@@ -179,7 +175,7 @@ class WipeOutContactHistoryPiiActionTest {
         .isEqualTo("Done. Wiped out PII of 0 ContactHistory entities in total.");
   }
 
-  @TestSqlOnly
+  @Test
   void run_withOneBatchOfEntities_success() {
     int numOfMonthsFromNow = MIN_MONTHS_BEFORE_WIPE_OUT + 2;
     ImmutableList<ContactHistory> expectedToBeWipedOut =
@@ -216,7 +212,7 @@ class WipeOutContactHistoryPiiActionTest {
     assertAllPiiFieldsAreWipedOut(DatabaseHelper.loadByEntitiesIfPresent(expectedToBeWipedOut));
   }
 
-  @TestSqlOnly
+  @Test
   void run_withMultipleBatches_numOfEntitiesAsNonMultipleOfBatchSize_success() {
     int numOfMonthsFromNow = MIN_MONTHS_BEFORE_WIPE_OUT + 2;
     ImmutableList<ContactHistory> expectedToBeWipedOut =
@@ -252,7 +248,7 @@ class WipeOutContactHistoryPiiActionTest {
     assertAllPiiFieldsAreWipedOut(DatabaseHelper.loadByEntitiesIfPresent(expectedToBeWipedOut));
   }
 
-  @TestSqlOnly
+  @Test
   void run_withMultipleBatches_numOfEntitiesAsMultiplesOfBatchSize_success() {
     int numOfMonthsFromNow = MIN_MONTHS_BEFORE_WIPE_OUT + 2;
     ImmutableList<ContactHistory> expectedToBeWipedOut =
@@ -289,7 +285,7 @@ class WipeOutContactHistoryPiiActionTest {
     assertAllPiiFieldsAreWipedOut(DatabaseHelper.loadByEntitiesIfPresent(expectedToBeWipedOut));
   }
 
-  @TestSqlOnly
+  @Test
   void wipeOutContactHistoryData_wipesOutNoEntity() {
     jpaTm()
         .transact(
@@ -302,7 +298,7 @@ class WipeOutContactHistoryPiiActionTest {
             });
   }
 
-  @TestSqlOnly
+  @Test
   void wipeOutContactHistoryData_wipesOutMultipleEntities() {
     int numOfMonthsFromNow = MIN_MONTHS_BEFORE_WIPE_OUT + 3;
     ImmutableList<ContactHistory> expectedToBeWipedOut =

@@ -19,43 +19,36 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKeys;
 import static google.registry.testing.DatabaseHelper.loadByKeysIfPresent;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.Key;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.ofy.Ofy;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link AckPollMessagesCommand}. */
-@DualDatabaseTest
 public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesCommand> {
 
-  private FakeClock clock = new FakeClock(DateTime.parse("2015-02-04T08:16:32.064Z"));
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+  private final FakeClock clock = new FakeClock(DateTime.parse("2015-02-04T08:16:32.064Z"));
 
   private DomainHistory domainHistory;
 
   @BeforeEach
   final void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
     command.clock = clock;
     createTld("tld");
-    DomainBase domain = newDomainBase("example.tld").asBuilder().setRepoId("FSDGS-TLD").build();
+    Domain domain =
+        DatabaseHelper.newDomain("example.tld").asBuilder().setRepoId("FSDGS-TLD").build();
     persistResource(domain);
     domainHistory =
         persistResource(
@@ -69,7 +62,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     clock.advanceOneMilli();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_doesntDeletePollMessagesInFuture() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
@@ -84,13 +77,13 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3, pm4)).values())
         .containsExactly(futurePollMessage);
     assertInStdout(
-        "1-FSDGS-TLD-2406-624-2013,2013-05-01T22:33:44.000Z,ninelives",
-        "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar",
-        "1-FSDGS-TLD-2406-791-2015,2015-01-08T22:33:44.000Z,ginger");
-    assertNotInStdout("1-FSDGS-TLD-2406-123-2015,2015-09-01T22:33:44.000Z,notme");
+        "624-2013,2013-05-01T22:33:44.000Z,ninelives",
+        "316-2014,2014-01-01T22:33:44.000Z,foobar",
+        "791-2015,2015-01-08T22:33:44.000Z,ginger");
+    assertNotInStdout("123-2015,2015-09-01T22:33:44.000Z,notme");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_resavesAutorenewPollMessages() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
@@ -100,7 +93,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         persistResource(
             new PollMessage.Autorenew.Builder()
                 .setId(625L)
-                .setParentKey(domainHistory.createVKey().getOfyKey())
+                .setHistoryEntry(domainHistory)
                 .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
                 .setRegistrarId("TheRegistrar")
                 .setMsg("autorenew")
@@ -112,12 +105,12 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3)).values())
         .containsExactly(resaved);
     assertInStdout(
-        "1-FSDGS-TLD-2406-625-2011,2011-04-15T22:33:44.000Z,autorenew",
-        "1-FSDGS-TLD-2406-624-2013,2013-05-01T22:33:44.000Z,ninelives",
-        "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar");
+        "625-2011,2011-04-15T22:33:44.000Z,autorenew",
+        "624-2013,2013-05-01T22:33:44.000Z,ninelives",
+        "316-2014,2014-01-01T22:33:44.000Z,foobar");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_deletesExpiredAutorenewPollMessages() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
@@ -127,7 +120,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         persistResource(
             new PollMessage.Autorenew.Builder()
                 .setId(625L)
-                .setParentKey(domainHistory.createVKey().getOfyKey())
+                .setHistoryEntry(domainHistory)
                 .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
                 .setAutorenewEndTime(DateTime.parse("2012-01-01T22:33:44Z"))
                 .setRegistrarId("TheRegistrar")
@@ -137,12 +130,12 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     runCommand("-c", "TheRegistrar");
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3))).isEmpty();
     assertInStdout(
-        "1-FSDGS-TLD-2406-625-2011,2011-04-15T22:33:44.000Z,autorenew",
-        "1-FSDGS-TLD-2406-624-2013,2013-05-01T22:33:44.000Z,ninelives",
-        "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar");
+        "625-2011,2011-04-15T22:33:44.000Z,autorenew",
+        "624-2013,2013-05-01T22:33:44.000Z,ninelives",
+        "316-2014,2014-01-01T22:33:44.000Z,foobar");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_onlyDeletesPollMessagesMatchingMessage() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good")
@@ -160,7 +153,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         .containsExactly(notMatched1, notMatched2);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_onlyDeletesPollMessagesMatchingClientId() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good")
@@ -172,7 +165,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         persistResource(
             new PollMessage.OneTime.Builder()
                 .setId(2474L)
-                .setParentKey(domainHistory.createVKey().getOfyKey())
+                .setHistoryEntry(domainHistory)
                 .setRegistrarId("NewRegistrar")
                 .setEventTime(DateTime.parse("2013-06-01T22:33:44Z"))
                 .setMsg("baaaahh")
@@ -183,7 +176,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         .containsExactly(notMatched);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_dryRunDoesntDeleteAnything() throws Exception {
     OneTime pm1 = persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar");
     OneTime pm2 = persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives");
@@ -202,11 +195,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     return persistResource(
         new PollMessage.OneTime.Builder()
             .setId(id)
-            .setParentKey(
-                Key.create(
-                    Key.create(DomainBase.class, "FSDGS-TLD"),
-                    HistoryEntry.class,
-                    domainHistory.getId()))
+            .setDomainHistoryId(new DomainHistoryId("FSDGS-TLD", domainHistory.getId()))
             .setRegistrarId("TheRegistrar")
             .setEventTime(eventTime)
             .setMsg(message)

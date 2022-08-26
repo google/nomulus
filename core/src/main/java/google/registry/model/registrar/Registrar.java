@@ -20,11 +20,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
-import static com.google.common.collect.Ordering.natural;
 import static com.google.common.collect.Sets.immutableEnumSet;
 import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.config.RegistryConfig.getDefaultRegistrarWhoisServer;
@@ -34,7 +31,6 @@ import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.tld.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -52,6 +48,7 @@ import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
@@ -59,15 +56,11 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.re2j.Pattern;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.IgnoreSave;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.annotation.Parent;
-import com.googlecode.objectify.condition.IfNull;
-import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
@@ -78,7 +71,6 @@ import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
-import google.registry.model.registrar.Registrar.BillingAccountEntry.CurrencyMapper;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.persistence.VKey;
@@ -217,11 +209,9 @@ public class Registrar extends ImmutableObject
       immutableEnumSet(
           Type.REAL, Type.PDT, Type.OTE, Type.EXTERNAL_MONITORING, Type.MONITORING, Type.INTERNAL);
 
-  /**
-   * Compare two instances of {@link RegistrarContact} by their email addresses lexicographically.
-   */
-  private static final Comparator<RegistrarContact> CONTACT_EMAIL_COMPARATOR =
-      comparing(RegistrarContact::getEmailAddress, String::compareTo);
+  /** Compare two instances of {@link RegistrarPoc} by their email addresses lexicographically. */
+  private static final Comparator<RegistrarPoc> CONTACT_EMAIL_COMPARATOR =
+      comparing(RegistrarPoc::getEmailAddress, String::compareTo);
 
   /**
    * A caching {@link Supplier} of a registrarId to {@link Registrar} map.
@@ -323,7 +313,7 @@ public class Registrar extends ImmutableObject
    * Localized {@link RegistrarAddress} for this registrar. Contents can be represented in
    * unrestricted UTF-8.
    */
-  @IgnoreSave(IfNull.class)
+  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(
@@ -348,7 +338,7 @@ public class Registrar extends ImmutableObject
    * Internationalized {@link RegistrarAddress} for this registrar. All contained values must be
    * representable in the 7-bit US-ASCII character set.
    */
-  @IgnoreSave(IfNull.class)
+  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "streetLine1", column = @Column(name = "i18n_address_street_line1")),
@@ -397,42 +387,7 @@ public class Registrar extends ImmutableObject
    * accessed by {@link #getBillingAccountMap}, a sorted map is returned to guarantee deterministic
    * behavior when serializing the map, for display purpose for instance.
    */
-  @Nullable
-  @Mapify(CurrencyMapper.class)
-  Map<CurrencyUnit, BillingAccountEntry> billingAccountMap;
-
-  /** A billing account entry for this registrar, consisting of a currency and an account Id. */
-  @Embed
-  public static class BillingAccountEntry extends ImmutableObject implements UnsafeSerializable {
-
-    CurrencyUnit currency;
-    String accountId;
-
-    BillingAccountEntry() {}
-
-    public BillingAccountEntry(CurrencyUnit currency, String accountId) {
-      this.accountId = accountId;
-      this.currency = currency;
-    }
-
-    BillingAccountEntry(Map.Entry<CurrencyUnit, String> entry) {
-      this.accountId = entry.getValue();
-      this.currency = entry.getKey();
-    }
-
-    /** Mapper to use for {@code @Mapify}. */
-    static class CurrencyMapper implements Mapper<CurrencyUnit, BillingAccountEntry> {
-      @Override
-      public CurrencyUnit getKey(BillingAccountEntry billingAccountEntry) {
-        return billingAccountEntry.currency;
-      }
-    }
-
-    /** Returns the account id of this entry. */
-    public String getAccountId() {
-      return accountId;
-    }
-  }
+  @Nullable Map<CurrencyUnit, String> billingAccountMap;
 
   /** URL of registrar's website. */
   String url;
@@ -451,10 +406,10 @@ public class Registrar extends ImmutableObject
   // Metadata.
 
   /** The time when this registrar was created. */
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  @Ignore CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** An automatically managed last-saved timestamp. */
-  UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
+  @Ignore UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
 
   /** The time that the certificate was last updated. */
   DateTime lastCertificateUpdateTime;
@@ -496,12 +451,10 @@ public class Registrar extends ImmutableObject
     return Optional.ofNullable(poNumber);
   }
 
-  public ImmutableMap<CurrencyUnit, String> getBillingAccountMap() {
-    if (billingAccountMap == null) {
-      return ImmutableMap.of();
-    }
-    return billingAccountMap.entrySet().stream()
-        .collect(toImmutableSortedMap(natural(), Map.Entry::getKey, v -> v.getValue().accountId));
+  public ImmutableSortedMap<CurrencyUnit, String> getBillingAccountMap() {
+    return billingAccountMap == null
+        ? ImmutableSortedMap.of()
+        : ImmutableSortedMap.copyOf(billingAccountMap);
   }
 
   public DateTime getLastUpdateTime() {
@@ -628,46 +581,43 @@ public class Registrar extends ImmutableObject
   }
 
   /**
-   * Returns a list of all {@link RegistrarContact} objects for this registrar sorted by their email
+   * Returns a list of all {@link RegistrarPoc} objects for this registrar sorted by their email
    * address.
    */
-  public ImmutableSortedSet<RegistrarContact> getContacts() {
+  public ImmutableSortedSet<RegistrarPoc> getContacts() {
     return Streams.stream(getContactsIterable())
         .filter(Objects::nonNull)
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
   }
 
   /**
-   * Returns a list of {@link RegistrarContact} objects of a given type for this registrar sorted by
+   * Returns a list of {@link RegistrarPoc} objects of a given type for this registrar sorted by
    * their email address.
    */
-  public ImmutableSortedSet<RegistrarContact> getContactsOfType(final RegistrarContact.Type type) {
+  public ImmutableSortedSet<RegistrarPoc> getContactsOfType(final RegistrarPoc.Type type) {
     return Streams.stream(getContactsIterable())
         .filter(Objects::nonNull)
-        .filter((@Nullable RegistrarContact contact) -> contact.getTypes().contains(type))
+        .filter((@Nullable RegistrarPoc contact) -> contact.getTypes().contains(type))
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
   }
 
   /**
-   * Returns the {@link RegistrarContact} that is the WHOIS abuse contact for this registrar, or
-   * empty if one does not exist.
+   * Returns the {@link RegistrarPoc} that is the WHOIS abuse contact for this registrar, or empty
+   * if one does not exist.
    */
-  public Optional<RegistrarContact> getWhoisAbuseContact() {
-    return getContacts().stream()
-        .filter(RegistrarContact::getVisibleInDomainWhoisAsAbuse)
-        .findFirst();
+  public Optional<RegistrarPoc> getWhoisAbuseContact() {
+    return getContacts().stream().filter(RegistrarPoc::getVisibleInDomainWhoisAsAbuse).findFirst();
   }
 
-  private Iterable<RegistrarContact> getContactsIterable() {
+  private Iterable<RegistrarPoc> getContactsIterable() {
     if (tm().isOfy()) {
-      return auditedOfy().load().type(RegistrarContact.class).ancestor(Registrar.this);
+      return auditedOfy().load().type(RegistrarPoc.class).ancestor(Registrar.this);
     } else {
       return tm().transact(
               () ->
                   jpaTm()
                       .query(
-                          "FROM RegistrarPoc WHERE registrarId = :registrarId",
-                          RegistrarContact.class)
+                          "FROM RegistrarPoc WHERE registrarId = :registrarId", RegistrarPoc.class)
                       .setParameter("registrarId", clientIdentifier)
                       .getResultStream()
                       .collect(toImmutableList()));
@@ -735,6 +685,7 @@ public class Registrar extends ImmutableObject
   }
 
   /** Creates a {@link VKey} for this instance. */
+  @Override
   public VKey<Registrar> createVKey() {
     return createVKey(Key.create(this));
   }
@@ -781,9 +732,7 @@ public class Registrar extends ImmutableObject
     }
 
     public Builder setBillingAccountMap(@Nullable Map<CurrencyUnit, String> billingAccountMap) {
-      getInstance().billingAccountMap =
-          nullToEmptyImmutableCopy(billingAccountMap).entrySet().stream()
-              .collect(toImmutableMap(Map.Entry::getKey, BillingAccountEntry::new));
+      getInstance().billingAccountMap = nullToEmptyImmutableCopy(billingAccountMap);
       return this;
     }
 
@@ -824,7 +773,7 @@ public class Registrar extends ImmutableObject
               .collect(toImmutableSet());
       Set<VKey<Registry>> missingTldKeys =
           Sets.difference(
-              newTldKeys, transactIfJpaTm(() -> tm().loadByKeysIfPresent(newTldKeys)).keySet());
+              newTldKeys, tm().transact(() -> tm().loadByKeysIfPresent(newTldKeys)).keySet());
       checkArgument(missingTldKeys.isEmpty(), "Trying to set nonexisting TLDs: %s", missingTldKeys);
       getInstance().allowedTlds = ImmutableSortedSet.copyOf(allowedTlds);
       return this;
@@ -1013,7 +962,7 @@ public class Registrar extends ImmutableObject
   }
 
   /** Verifies that the email address in question is not null and has a valid format. */
-  static String checkValidEmail(String email) {
+  public static String checkValidEmail(String email) {
     checkNotNull(email, "Provided email was null");
     try {
       InternetAddress internetAddress = new InternetAddress(email, true);
@@ -1027,7 +976,7 @@ public class Registrar extends ImmutableObject
 
   /** Loads all registrar entities directly from Datastore. */
   public static Iterable<Registrar> loadAll() {
-    return transactIfJpaTm(() -> tm().loadAllOf(Registrar.class));
+    return tm().transact(() -> tm().loadAllOf(Registrar.class));
   }
 
   /** Loads all registrar entities using an in-memory cache. */
@@ -1045,7 +994,7 @@ public class Registrar extends ImmutableObject
   /** Loads and returns a registrar entity by its id directly from Datastore. */
   public static Optional<Registrar> loadByRegistrarId(String registrarId) {
     checkArgument(!Strings.isNullOrEmpty(registrarId), "registrarId must be specified");
-    return transactIfJpaTm(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));
+    return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));
   }
 
   /**

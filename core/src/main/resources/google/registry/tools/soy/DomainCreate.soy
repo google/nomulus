@@ -29,6 +29,7 @@
   {@param dsRecords: list<[keyTag:int, alg:int, digestType:int, digest:string]>}
   {@param? reason: string}
   {@param? requestedByRegistrar: string}
+  {@param? allocationToken: string}
 
   <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
@@ -56,7 +57,7 @@
           </domain:authInfo>
         </domain:create>
       </create>
-      {if length($dsRecords) > 0 or $price != null or $reason or $requestedByRegistrar}
+      {if length($dsRecords) > 0 or $price != null or $reason or $requestedByRegistrar or $allocationToken}
         <extension>
           {if $price != null}
             <fee:create xmlns:fee="urn:ietf:params:xml:ns:fee-0.12">
@@ -85,6 +86,13 @@
               <metadata:requestedByRegistrar>{$requestedByRegistrar}</metadata:requestedByRegistrar>
             {/if}
             </metadata:metadata>
+          {/if}
+          {if $allocationToken}
+            <allocationToken:allocationToken
+                xmlns:allocationToken=
+                    "urn:ietf:params:xml:ns:allocationToken-1.0">
+              {$allocationToken}
+            </allocationToken:allocationToken>
           {/if}
         </extension>
       {/if}

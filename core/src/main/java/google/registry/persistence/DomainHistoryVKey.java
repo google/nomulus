@@ -17,16 +17,16 @@ package google.registry.persistence;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.googlecode.objectify.Key;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.reporting.HistoryEntry;
 import java.io.Serializable;
 import javax.persistence.Embeddable;
 
-/** {@link VKey} for {@link HistoryEntry} which parent is {@link DomainBase}. */
+/** {@link VKey} for {@link HistoryEntry} which parent is {@link Domain}. */
 @Embeddable
-public class DomainHistoryVKey extends EppHistoryVKey<HistoryEntry, DomainBase> {
+public class DomainHistoryVKey extends EppHistoryVKey<HistoryEntry, Domain> {
 
   // Hibernate requires a default constructor
   private DomainHistoryVKey() {}
@@ -38,11 +38,6 @@ public class DomainHistoryVKey extends EppHistoryVKey<HistoryEntry, DomainBase> 
   @Override
   public Serializable createSqlKey() {
     return new DomainHistoryId(repoId, historyRevisionId);
-  }
-
-  @Override
-  public Key<HistoryEntry> createOfyKey() {
-    return Key.create(Key.create(DomainBase.class, repoId), HistoryEntry.class, historyRevisionId);
   }
 
   /** Creates {@link DomainHistoryVKey} from the given {@link Key} instance. */
@@ -57,6 +52,6 @@ public class DomainHistoryVKey extends EppHistoryVKey<HistoryEntry, DomainBase> 
     return VKey.create(
         DomainHistory.class,
         createSqlKey(),
-        Key.create(Key.create(DomainBase.class, repoId), DomainHistory.class, historyRevisionId));
+        Key.create(Key.create(Domain.class, repoId), DomainHistory.class, historyRevisionId));
   }
 }

@@ -36,9 +36,9 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.writer.BaseDnsWriter;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.dns.writer.DnsWriterZone;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DelegationSignerData;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.tld.Registries;
 import google.registry.util.Clock;
 import google.registry.util.Concurrent;
@@ -121,13 +121,12 @@ public class CloudDnsWriter extends BaseDnsWriter {
     String absoluteDomainName = getAbsoluteHostName(domainName);
 
     // Load the target domain. Note that it can be absent if this domain was just deleted.
-    Optional<DomainBase> domainBase =
-        loadByForeignKey(DomainBase.class, domainName, clock.nowUtc());
+    Optional<Domain> domain = loadByForeignKey(Domain.class, domainName, clock.nowUtc());
 
     // Return early if no DNS records should be published.
     // desiredRecordsBuilder is populated with an empty set to indicate that all existing records
     // should be deleted.
-    if (!domainBase.isPresent() || !domainBase.get().shouldPublishToDns()) {
+    if (!domain.isPresent() || !domain.get().shouldPublishToDns()) {
       desiredRecords.put(absoluteDomainName, ImmutableSet.of());
       return;
     }
@@ -135,7 +134,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
     ImmutableSet.Builder<ResourceRecordSet> domainRecords = new ImmutableSet.Builder<>();
 
     // Construct DS records (if any).
-    Set<DelegationSignerData> dsData = domainBase.get().getDsData();
+    Set<DelegationSignerData> dsData = domain.get().getDsData();
     if (!dsData.isEmpty()) {
       HashSet<String> dsRrData = new HashSet<>();
       for (DelegationSignerData ds : dsData) {
@@ -154,8 +153,8 @@ public class CloudDnsWriter extends BaseDnsWriter {
     }
 
     // Construct NS records (if any).
-    Set<String> nameserverData = domainBase.get().loadNameserverHostNames();
-    Set<String> subordinateHosts = domainBase.get().getSubordinateHosts();
+    Set<String> nameserverData = domain.get().loadNameserverHostNames();
+    Set<String> subordinateHosts = domain.get().getSubordinateHosts();
     if (!nameserverData.isEmpty()) {
       HashSet<String> nsRrData = new HashSet<>();
       for (String hostName : nameserverData) {
@@ -191,7 +190,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
     // Load the target host. Note that it can be absent if this host was just deleted.
     // desiredRecords is populated with an empty set to indicate that all existing records
     // should be deleted.
-    Optional<HostResource> host = loadByForeignKey(HostResource.class, hostName, clock.nowUtc());
+    Optional<Host> host = loadByForeignKey(Host.class, hostName, clock.nowUtc());
 
     // Return early if the host is deleted.
     if (!host.isPresent()) {

@@ -28,11 +28,11 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.translators.EnumToAttributeAdapter.EppEnum;
 import google.registry.persistence.VKey;
 import java.util.Objects;
@@ -54,7 +54,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
       "For more information on Whois status codes, please visit https://icann.org/epp\r\n";
 
   /** Domain which was the target of this WHOIS command. */
-  private final DomainBase domain;
+  private final Domain domain;
 
   /** Whether the full WHOIS output is to be displayed. */
   private final boolean fullOutput;
@@ -62,9 +62,9 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
   /** When fullOutput is false, the text to display for the registrant's email fields. */
   private final String whoisRedactedEmailText;
 
- /** Creates new WHOIS domain response on the given domain. */
+  /** Creates new WHOIS domain response on the given domain. */
   DomainWhoisResponse(
-      DomainBase domain, boolean fullOutput, String whoisRedactedEmailText, DateTime timestamp) {
+      Domain domain, boolean fullOutput, String whoisRedactedEmailText, DateTime timestamp) {
     super(timestamp);
     this.domain = checkNotNull(domain, "domain");
     this.fullOutput = fullOutput;
@@ -80,11 +80,9 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
         "Could not load registrar %s",
         domain.getCurrentSponsorRegistrarId());
     Registrar registrar = registrarOptional.get();
-    Optional<RegistrarContact> abuseContact =
-        registrar
-            .getContacts()
-            .stream()
-            .filter(RegistrarContact::getVisibleInDomainWhoisAsAbuse)
+    Optional<RegistrarPoc> abuseContact =
+        registrar.getContacts().stream()
+            .filter(RegistrarPoc::getVisibleInDomainWhoisAsAbuse)
             .findFirst();
     return WhoisResponseResults.create(
         new DomainEmitter()
@@ -102,10 +100,10 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
             // is an abuse contact, we can get an email address from it.
             .emitField(
                 "Registrar Abuse Contact Email",
-                abuseContact.map(RegistrarContact::getEmailAddress).orElse(""))
+                abuseContact.map(RegistrarPoc::getEmailAddress).orElse(""))
             .emitField(
                 "Registrar Abuse Contact Phone",
-                abuseContact.map(RegistrarContact::getPhoneNumber).orElse(""))
+                abuseContact.map(RegistrarPoc::getPhoneNumber).orElse(""))
             .emitStatusValues(domain.getStatusValues(), domain.getGracePeriods())
             .emitContact("Registrant", Optional.of(domain.getRegistrant()), preferUnicode)
             .emitContact("Admin", getContactReference(Type.ADMIN), preferUnicode)

@@ -35,18 +35,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.common.Cursor;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
@@ -56,14 +53,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link SyncRegistrarsSheet}. */
 @ExtendWith(MockitoExtension.class)
-@DualDatabaseTest
 public class SyncRegistrarsSheetTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Captor private ArgumentCaptor<ImmutableList<ImmutableMap<String, String>>> rowsCaptor;
   @Mock private SheetSynchronizer sheetSynchronizer;
@@ -79,24 +72,23 @@ public class SyncRegistrarsSheetTest {
 
   @BeforeEach
   void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
     createTld("example");
     // Remove Registrar entities created by AppEngineExtension (and RegistrarContact's, for jpa).
     // We don't do this for ofy because ofy's loadAllOf() can't be called in a transaction but
     // _must_ be called in a transaction in JPA.
     if (!tm().isOfy()) {
-      tm().transact(() -> tm().loadAllOf(RegistrarContact.class))
+      tm().transact(() -> tm().loadAllOf(RegistrarPoc.class))
           .forEach(DatabaseHelper::deleteResource);
     }
     Registrar.loadAll().forEach(DatabaseHelper::deleteResource);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_wereRegistrarsModified_noRegistrars_returnsFalse() {
     assertThat(newSyncRegistrarsSheet().wereRegistrarsModified()).isFalse();
   }
 
-  @TestOfyAndSql
+  @Test
   void test_wereRegistrarsModified_atDifferentCursorTimes() {
     persistNewRegistrar("SomeRegistrar", "Some Registrar Inc.", Registrar.Type.REAL, 8L);
     persistResource(Cursor.createGlobal(SYNC_REGISTRAR_SHEET, clock.nowUtc().minusHours(1)));
@@ -105,7 +97,7 @@ public class SyncRegistrarsSheetTest {
     assertThat(newSyncRegistrarsSheet().wereRegistrarsModified()).isFalse();
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun() throws Exception {
     persistResource(
         new Registrar.Builder()
@@ -161,33 +153,34 @@ public class SyncRegistrarsSheetTest {
             .setUrl("http://www.example.org/aaa_registrar")
             .setBillingAccountMap(ImmutableMap.of(USD, "USD1234", JPY, "JPY7890"))
             .build();
-    ImmutableList<RegistrarContact> contacts = ImmutableList.of(
-        new RegistrarContact.Builder()
-            .setParent(registrar)
-            .setName("Jane Doe")
-            .setEmailAddress("contact@example.com")
-            .setPhoneNumber("+1.1234567890")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN, RegistrarContact.Type.BILLING))
-            .build(),
-        new RegistrarContact.Builder()
-            .setParent(registrar)
-            .setName("John Doe")
-            .setEmailAddress("john.doe@example.tld")
-            .setPhoneNumber("+1.1234567890")
-            .setFaxNumber("+1.1234567891")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
-            // Purposely flip the internal/external admin/tech
-            // distinction to make sure we're not relying on it.  Sigh.
-            .setVisibleInWhoisAsAdmin(false)
-            .setVisibleInWhoisAsTech(true)
-            .setGaeUserId("light")
-            .build(),
-        new RegistrarContact.Builder()
-            .setParent(registrar)
-            .setName("Jane Smith")
-            .setEmailAddress("pride@example.net")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
-        .build());
+    ImmutableList<RegistrarPoc> contacts =
+        ImmutableList.of(
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
+                .setName("Jane Doe")
+                .setEmailAddress("contact@example.com")
+                .setPhoneNumber("+1.1234567890")
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN, RegistrarPoc.Type.BILLING))
+                .build(),
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
+                .setName("John Doe")
+                .setEmailAddress("john.doe@example.tld")
+                .setPhoneNumber("+1.1234567890")
+                .setFaxNumber("+1.1234567891")
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
+                // Purposely flip the internal/external admin/tech
+                // distinction to make sure we're not relying on it.  Sigh.
+                .setVisibleInWhoisAsAdmin(false)
+                .setVisibleInWhoisAsTech(true)
+                .setGaeUserId("light")
+                .build(),
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
+                .setName("Jane Smith")
+                .setEmailAddress("pride@example.net")
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
+                .build());
     // Use registrar key for contacts' parent.
     DateTime registrarCreationTime = persistResource(registrar).getCreationTime();
     persistSimpleResources(contacts);
@@ -217,7 +210,7 @@ public class SyncRegistrarsSheetTest {
                 + "Phone number and email visible in domain WHOIS query as "
                 + "Registrar Abuse contact info: No\n"
                 + "Registrar-Console access: No\n"
-                + "\n"
+                + '\n'
                 + "John Doe\n"
                 + "john.doe@example.tld\n"
                 + "Tel: +1.1234567890\n"
@@ -332,7 +325,7 @@ public class SyncRegistrarsSheetTest {
     assertThat(cursor.getCursorTime()).isGreaterThan(registrarCreationTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_missingValues_stillWorks() throws Exception {
     persistResource(
         persistNewRegistrar("SomeRegistrar", "Some Registrar", Registrar.Type.REAL, 8L)

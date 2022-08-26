@@ -78,7 +78,7 @@ public abstract class EppHistoryVKey<K, E extends EppResource> extends Immutable
    * Creates the kind path for the given ofyKey}.
    *
    * <p>The kind path is a string including all kind names(delimited by slash) of a hierarchical
-   * {@link Key}, e.g., the kind path for BillingEvent.OneTime is "DomainBase/HistoryEntry/OneTime".
+   * {@link Key}, e.g., the kind path for BillingEvent.OneTime is "Domain/HistoryEntry/OneTime".
    */
   @Nullable
   public static String createKindPath(@Nullable Key<?> ofyKey) {
@@ -96,12 +96,11 @@ public abstract class EppHistoryVKey<K, E extends EppResource> extends Immutable
   }
 
   /** Creates a {@link VKey} from this instance. */
+  @Override
   public VKey<K> createVKey() {
     Class<K> vKeyType = new TypeInstantiator<K>(getClass()) {}.getExactType();
-    return VKey.create(vKeyType, createSqlKey(), createOfyKey());
+    return VKey.createSql(vKeyType, createSqlKey());
   }
 
   public abstract Serializable createSqlKey();
-
-  public abstract Key<K> createOfyKey();
 }

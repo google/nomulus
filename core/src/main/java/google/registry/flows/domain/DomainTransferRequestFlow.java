@@ -47,19 +47,23 @@ import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.flows.exceptions.AlreadyPendingTransferException;
 import google.registry.flows.exceptions.InvalidTransferPeriodValueException;
 import google.registry.flows.exceptions.ObjectAlreadySponsoredException;
 import google.registry.flows.exceptions.TransferPeriodMustBeOneYearException;
 import google.registry.flows.exceptions.TransferPeriodZeroAndFeeTransferExtensionException;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Transfer;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.superuser.DomainTransferRequestSuperuserExtension;
+import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -116,6 +120,18 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.PremiumNameBlockedException}
  * @error {@link DomainFlowUtils.RegistrarMustBeActiveForThisOperationException}
  * @error {@link DomainFlowUtils.UnsupportedFeeAttributeException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_TRANSFER_REQUEST)
 public final class DomainTransferRequestFlow implements TransactionalFlow {
@@ -137,6 +153,8 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainPricingLogic pricingLogic;
+  @Inject AllocationTokenFlowUtils allocationTokenFlowUtils;
+
   @Inject DomainTransferRequestFlow() {}
 
   @Override
@@ -144,12 +162,19 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     extensionManager.register(
         DomainTransferRequestSuperuserExtension.class,
         FeeTransferCommandExtension.class,
-        MetadataExtension.class);
+        MetadataExtension.class,
+        AllocationTokenExtension.class);
     validateRegistrarIsLoggedIn(gainingClientId);
     verifyRegistrarIsActive(gainingClientId);
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
-    DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
+    Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
+    allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
+        existingDomain,
+        Registry.get(existingDomain.getTld()),
+        gainingClientId,
+        now,
+        eppInput.getSingleExtension(AllocationTokenExtension.class));
     Optional<DomainTransferRequestSuperuserExtension> superuserExtension =
         eppInput.getSingleExtension(DomainTransferRequestSuperuserExtension.class);
     Period period =
@@ -168,10 +193,12 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
       throw new TransferPeriodZeroAndFeeTransferExtensionException();
     }
     // If the period is zero, then there is no fee for the transfer.
+    Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     Optional<FeesAndCredits> feesAndCredits =
         (period.getValue() == 0)
             ? Optional.empty()
-            : Optional.of(pricingLogic.getTransferPrice(registry, targetId, now));
+            : Optional.of(
+                pricingLogic.getTransferPrice(registry, targetId, now, existingRecurring));
     if (feesAndCredits.isPresent()) {
       validateFeeChallenge(targetId, now, feeTransfer, feesAndCredits.get());
     }
@@ -180,9 +207,12 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
         .setId(domainHistoryKey.getId())
         .setOtherRegistrarId(existingDomain.getCurrentSponsorRegistrarId());
     DateTime automaticTransferTime =
-        superuserExtension.isPresent()
-            ? now.plusDays(superuserExtension.get().getAutomaticTransferLength())
-            : now.plus(registry.getAutomaticTransferLength());
+        superuserExtension
+            .map(
+                domainTransferRequestSuperuserExtension ->
+                    now.plusDays(
+                        domainTransferRequestSuperuserExtension.getAutomaticTransferLength()))
+            .orElseGet(() -> now.plus(registry.getAutomaticTransferLength()));
     // If the domain will be in the auto-renew grace period at the moment of transfer, the transfer
     // will subsume the autorenew, so we don't add the normal extra year from the transfer.
     // The gaining registrar is still billed for the extra year; the losing registrar will get a
@@ -190,7 +220,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     //
     // See b/19430703#comment17 and https://www.icann.org/news/advisory-2002-06-06-en for the
     // policy documentation for transfers subsuming autorenews within the autorenew grace period.
-    DomainBase domainAtTransferTime = existingDomain.cloneProjectedAtTime(automaticTransferTime);
+    Domain domainAtTransferTime = existingDomain.cloneProjectedAtTime(automaticTransferTime);
     // The new expiration time if there is a server approval.
     DateTime serverApproveNewExpirationTime =
         computeExDateForApprovalTime(domainAtTransferTime, automaticTransferTime, period);
@@ -201,6 +231,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             serverApproveNewExpirationTime,
             domainHistoryKey,
             existingDomain,
+            existingRecurring,
             trid,
             gainingClientId,
             feesAndCredits.map(FeesAndCredits::getTotalCost),
@@ -208,6 +239,8 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     // Create the transfer data that represents the pending transfer.
     DomainTransferData pendingTransferData =
         createPendingTransferData(
+            domainAtTransferTime.getRepoId(),
+            domainHistoryKey.getId(),
             new DomainTransferData.Builder()
                 .setTransferRequestTrid(trid)
                 .setTransferRequestTime(now)
@@ -228,8 +261,12 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     // the poll message if it has no events left. Note that if the automatic transfer succeeds, then
     // cloneProjectedAtTime() will replace these old autorenew entities with the server approve ones
     // that we've created in this flow and stored in pendingTransferData.
-    updateAutorenewRecurrenceEndTime(existingDomain, automaticTransferTime);
-    DomainBase newDomain =
+    updateAutorenewRecurrenceEndTime(
+        existingDomain,
+        existingRecurring,
+        automaticTransferTime,
+        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()));
+    Domain newDomain =
         existingDomain
             .asBuilder()
             .setTransferData(pendingTransferData)
@@ -253,7 +290,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   }
 
   private void verifyTransferAllowed(
-      DomainBase existingDomain,
+      Domain existingDomain,
       Period period,
       DateTime now,
       Optional<DomainTransferRequestSuperuserExtension> superuserExtension)
@@ -292,7 +329,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
    *
    * <p>Even if not required, this policy is desirable because it dramatically simplifies the logic
    * in transfer flows. Registrars appear to never request 2+ year transfers in practice, and they
-   * can always decompose an multi-year transfer into a 1-year transfer followed by a manual renewal
+   * can always decompose a multi-year transfer into a 1-year transfer followed by a manual renewal
    * afterwards. The <a href="https://tools.ietf.org/html/rfc5731#section-3.2.4">EPP Domain RFC,
    * section 3.2.4</a> says about EPP transfer periods that "the number of units available MAY be
    * subject to limits imposed by the server" so we're just limiting the units to one.
@@ -318,7 +355,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   }
 
   private DomainHistory buildDomainHistory(
-      DomainBase newDomain, Registry registry, DateTime now, Period period) {
+      Domain newDomain, Registry registry, DateTime now, Period period) {
     return historyBuilder
         .setType(DOMAIN_TRANSFER_REQUEST)
         .setPeriod(period)
@@ -335,9 +372,9 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   }
 
   private DomainTransferResponse createResponse(
-      Period period, DomainBase existingDomain, DomainBase newDomain, DateTime now) {
+      Period period, Domain existingDomain, Domain newDomain, DateTime now) {
     // If the registration were approved this instant, this is what the new expiration would be,
-    // because we cap at 10 years from the moment of approval. This is different than the server
+    // because we cap at 10 years from the moment of approval. This is different from the server
     // approval new expiration time, which is capped at 10 years from the server approve time.
     DateTime approveNowExtendedRegistrationTime =
         computeExDateForApprovalTime(existingDomain, now, period);

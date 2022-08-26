@@ -20,8 +20,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.persistence.BillingVKey.BillingEventVKey;
-import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.persistence.VKey;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -66,7 +64,9 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
    */
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Access(AccessType.FIELD)
-  BillingEventVKey billingEventOneTime = null;
+  @Column(name = "billing_event_id")
+  @Ignore
+  VKey<BillingEvent.OneTime> billingEventOneTime = null;
 
   /**
    * The recurring billing event corresponding to the action that triggered this grace period, if
@@ -74,7 +74,9 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
    */
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Access(AccessType.FIELD)
-  BillingRecurrenceVKey billingEventRecurring = null;
+  @Column(name = "billing_recurrence_id")
+  @Ignore
+  VKey<BillingEvent.Recurring> billingEventRecurring = null;
 
   public long getGracePeriodId() {
     return gracePeriodId;
@@ -112,7 +114,7 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
    * period is not AUTO_RENEW.
    */
   public VKey<BillingEvent.OneTime> getOneTimeBillingEvent() {
-    return billingEventOneTime == null ? null : billingEventOneTime.createVKey();
+    return billingEventOneTime;
   }
 
   /**
@@ -120,6 +122,6 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
    * period is AUTO_RENEW.
    */
   public VKey<BillingEvent.Recurring> getRecurringBillingEvent() {
-    return billingEventRecurring == null ? null : billingEventRecurring.createVKey();
+    return billingEventRecurring;
   }
 }

@@ -108,7 +108,7 @@ public final class RdapModule {
     if (userAuthInfo.isUserAdmin()) {
       return RdapAuthorization.ADMINISTRATOR_AUTHORIZATION;
     }
-    ImmutableSet<String> clientIds = registrarAccessor.getAllClientIdWithRoles().keySet();
+    ImmutableSet<String> clientIds = registrarAccessor.getAllRegistrarIdsWithRoles().keySet();
     if (clientIds.isEmpty()) {
       logger.atWarning().log("Couldn't find registrar for User %s.", authResult.userIdForLogging());
       return RdapAuthorization.PUBLIC_AUTHORIZATION;

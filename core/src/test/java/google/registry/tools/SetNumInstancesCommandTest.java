@@ -22,11 +22,9 @@ import static org.mockito.Mockito.verify;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMultimap;
 import google.registry.testing.AppEngineAdminApiHelper;
-import google.registry.testing.InjectExtension;
 import google.registry.util.AppEngineServiceUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -34,11 +32,9 @@ import org.mockito.quality.Strictness;
 /** Unit tests for {@link SetNumInstancesCommand}. */
 public class SetNumInstancesCommandTest extends CommandTestCase<SetNumInstancesCommand> {
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   @Mock AppEngineServiceUtils appEngineServiceUtils;
 
-  private final String projectId = "domain-registry-test";
+  private static final String projectId = "domain-registry-test";
 
   @BeforeEach
   void beforeEach() {

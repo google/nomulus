@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
@@ -24,8 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.registrar.Registrar;
+import google.registry.testing.DatabaseHelper;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,8 +60,8 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
         .verifyNoMoreSent();
   }
 
-  private static List<DomainBase> persistThreeDomains() {
-    ImmutableList.Builder<DomainBase> domains = new ImmutableList.Builder<>();
+  private static List<Domain> persistThreeDomains() {
+    ImmutableList.Builder<Domain> domains = new ImmutableList.Builder<>();
     domains.add(
         persistActiveDomain(
             "domain1.tld",
@@ -75,7 +75,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
     // The third domain is owned by a different registrar.
     domains.add(
         persistResource(
-            newDomainBase("domain3.tld")
+            DatabaseHelper.newDomain("domain3.tld")
                 .asBuilder()
                 .setCreationTimeForTest(DateTime.parse("2015-01-05T05:05:05Z"))
                 .setRegistrationExpirationTime(DateTime.parse("2016-01-05T05:05:05Z"))

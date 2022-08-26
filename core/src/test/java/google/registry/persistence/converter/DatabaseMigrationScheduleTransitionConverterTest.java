@@ -22,7 +22,6 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
-import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationStateTransition;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
@@ -58,8 +57,8 @@ public class DatabaseMigrationScheduleTransitionConverterTest {
 
   @Test
   void roundTripConversion_returnsSameTimedTransitionProperty() {
-    TimedTransitionProperty<MigrationState, MigrationStateTransition> timedTransitionProperty =
-        TimedTransitionProperty.fromValueMap(values, MigrationStateTransition.class);
+    TimedTransitionProperty<MigrationState> timedTransitionProperty =
+        TimedTransitionProperty.fromValueMap(values);
     DatabaseMigrationScheduleTransitionConverterTestEntity testEntity =
         new DatabaseMigrationScheduleTransitionConverterTestEntity(timedTransitionProperty);
     insertInDb(testEntity);
@@ -79,12 +78,12 @@ public class DatabaseMigrationScheduleTransitionConverterTest {
 
     @Id String name = "id";
 
-    TimedTransitionProperty<MigrationState, MigrationStateTransition> timedTransitionProperty;
+    TimedTransitionProperty<MigrationState> timedTransitionProperty;
 
     private DatabaseMigrationScheduleTransitionConverterTestEntity() {}
 
     private DatabaseMigrationScheduleTransitionConverterTestEntity(
-        TimedTransitionProperty<MigrationState, MigrationStateTransition> timedTransitionProperty) {
+        TimedTransitionProperty<MigrationState> timedTransitionProperty) {
       this.timedTransitionProperty = timedTransitionProperty;
     }
   }

@@ -29,8 +29,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class ConcurrentTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void testTransform_emptyList_returnsEmptyList() {

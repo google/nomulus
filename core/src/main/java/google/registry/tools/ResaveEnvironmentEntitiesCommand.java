@@ -23,14 +23,14 @@ import com.beust.jcommander.Parameters;
 import com.googlecode.objectify.Key;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.Registry;
 
 /**
  * Command to re-save all environment entities to ensure that they have valid commit logs.
  *
  * <p>The entities that are re-saved are those of type {@link Registry}, {@link Registrar}, and
- * {@link RegistrarContact}.
+ * {@link RegistrarPoc}.
  */
 @Parameters(commandDescription = "Re-save all environment entities.")
 @DeleteAfterMigration
@@ -42,7 +42,7 @@ final class ResaveEnvironmentEntitiesCommand implements CommandWithRemoteApi {
   public void run() {
     batchSave(Registry.class);
     batchSave(Registrar.class);
-    batchSave(RegistrarContact.class);
+    batchSave(RegistrarPoc.class);
   }
 
   private static <T> void batchSave(Class<T> clazz) {

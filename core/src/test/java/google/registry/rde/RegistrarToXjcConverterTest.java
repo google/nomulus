@@ -49,7 +49,7 @@ public class RegistrarToXjcConverterTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(clock).build();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).build();
 
   private Registrar registrar;
 

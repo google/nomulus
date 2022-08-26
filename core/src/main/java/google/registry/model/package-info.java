@@ -33,7 +33,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * via Objectify.
  *
  * <p>All first class entities are represented as a resource class - {@link
- * google.registry.model.domain.DomainBase}, {@link google.registry.model.host.HostResource}, {@link
+ * google.registry.model.domain.Domain}, {@link google.registry.model.host.Host}, {@link
  * google.registry.model.contact.ContactResource}, and {@link
  * google.registry.model.registrar.Registrar}. Resource objects are written in a single shared
  * entity group per TLD. All commands that operate on those entities are grouped in a "Command"

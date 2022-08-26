@@ -22,7 +22,6 @@ import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParse
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.sampleThreatMatches;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,12 +34,11 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
-import google.registry.model.domain.DomainBase;
-import google.registry.model.host.HostResource;
+import google.registry.model.domain.Domain;
+import google.registry.model.host.Host;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.DatabaseHelper;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import java.util.LinkedHashSet;
@@ -50,11 +48,11 @@ import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link Spec11EmailUtils}. */
-@DualDatabaseTest
 class Spec11EmailUtilsTest {
 
   private static final ImmutableList<String> FAKE_RESOURCES = ImmutableList.of("foo");
@@ -95,8 +93,7 @@ class Spec11EmailUtilsTest {
           + " notice, please contact abuse@test.com.</p>";
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private SendEmailService emailService;
   private Spec11EmailUtils emailUtils;
@@ -104,8 +101,8 @@ class Spec11EmailUtilsTest {
   private ArgumentCaptor<EmailMessage> contentCaptor;
   private final LocalDate date = new LocalDate(2018, 7, 15);
 
-  private DomainBase aDomain;
-  private DomainBase bDomain;
+  private Domain aDomain;
+  private Domain bDomain;
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -124,13 +121,13 @@ class Spec11EmailUtilsTest {
             "Super Cool Registry");
 
     createTld("com");
-    HostResource host = persistActiveHost("ns1.example.com");
+    Host host = persistActiveHost("ns1.example.com");
     aDomain = persistDomainWithHost("a.com", host);
     bDomain = persistDomainWithHost("b.com", host);
     persistDomainWithHost("c.com", host);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_emailMonthlySpec11Reports() throws Exception {
     emailUtils.emailSpec11Reports(
         date,
@@ -168,7 +165,7 @@ class Spec11EmailUtilsTest {
         Optional.empty());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_emailDailySpec11Reports() throws Exception {
     emailUtils.emailSpec11Reports(
         date,
@@ -206,7 +203,7 @@ class Spec11EmailUtilsTest {
         Optional.empty());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_skipsInactiveDomain() throws Exception {
     // CLIENT_HOLD and SERVER_HOLD mean no DNS so we don't need to email it out
     persistResource(loadByEntity(aDomain).asBuilder().addStatusValue(SERVER_HOLD).build());
@@ -237,11 +234,11 @@ class Spec11EmailUtilsTest {
         Optional.empty());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_dealsWithDeletedDomains() throws Exception {
     // Create an inactive domain and an active domain with the same name.
     persistResource(loadByEntity(aDomain).asBuilder().addStatusValue(SERVER_HOLD).build());
-    HostResource host = persistActiveHost("ns1.example.com");
+    Host host = persistActiveHost("ns1.example.com");
     aDomain = persistDomainWithHost("a.com", host);
 
     emailUtils.emailSpec11Reports(
@@ -280,7 +277,7 @@ class Spec11EmailUtilsTest {
         Optional.empty());
   }
 
-  @TestOfyAndSql
+  @Test
   void testOneFailure_sendsAlert() throws Exception {
     // If there is one failure, we should still send the other message and then an alert email
     LinkedHashSet<RegistrarThreatMatches> matches = new LinkedHashSet<>();
@@ -335,7 +332,7 @@ class Spec11EmailUtilsTest {
         Optional.empty());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_sendAlertEmail() throws Exception {
     emailUtils.sendAlertEmail("Spec11 Pipeline Alert: 2018-07", "Alert!");
     verify(emailService).sendEmail(contentCaptor.capture());
@@ -349,7 +346,7 @@ class Spec11EmailUtilsTest {
         Optional.empty());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_useWhoisAbuseEmailIfAvailable() throws Exception {
     // if John Doe is the whois abuse contact, email them instead of the regular email
     persistResource(
@@ -368,7 +365,7 @@ class Spec11EmailUtilsTest {
         .containsExactly(new InternetAddress("johndoe@theregistrar.com"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_badClientId() {
     RuntimeException thrown =
         assertThrows(
@@ -411,9 +408,9 @@ class Spec11EmailUtilsTest {
     assertThat(message).isEqualTo(expectedContentBuilder.build());
   }
 
-  private static DomainBase persistDomainWithHost(String domainName, HostResource host) {
+  private static Domain persistDomainWithHost(String domainName, Host host) {
     return persistResource(
-        newDomainBase(domainName)
+        DatabaseHelper.newDomain(domainName)
             .asBuilder()
             .setNameservers(ImmutableSet.of(host.createVKey()))
             .build());

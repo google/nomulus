@@ -48,8 +48,7 @@ class TldFanoutActionTest {
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(new FakeClock());
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private static ImmutableListMultimap<String, String> getParamsMap(String... keysAndValues) {
     ImmutableListMultimap.Builder<String, String> params = new ImmutableListMultimap.Builder<>();

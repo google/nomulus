@@ -33,43 +33,29 @@ import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import google.registry.gcs.GcsUtils;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link ExportDomainListsAction}. */
-@DualDatabaseTest
 class ExportDomainListsActionTest {
 
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
-  private DriveConnection driveConnection = mock(DriveConnection.class);
-  private ArgumentCaptor<byte[]> bytesExportedToDrive = ArgumentCaptor.forClass(byte[].class);
+  private final DriveConnection driveConnection = mock(DriveConnection.class);
+  private final ArgumentCaptor<byte[]> bytesExportedToDrive = ArgumentCaptor.forClass(byte[].class);
   private ExportDomainListsAction action;
   private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T02:02:02Z"));
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withLocalModules()
-          .withTaskQueue()
-          .build();
-
-  @Order(Order.DEFAULT - 1)
-  @RegisterExtension
-  public final InjectExtension inject =
-      new InjectExtension().withStaticFieldOverride(Ofy.class, "clock", clock);
+      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
 
   @BeforeEach
   void beforeEach() {
@@ -95,7 +81,7 @@ class ExportDomainListsActionTest {
     assertThat(new String(bytesExportedToDrive.getValue(), UTF_8)).isEqualTo(domains);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_outputsOnlyActiveDomains() throws Exception {
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
@@ -109,7 +95,7 @@ class ExportDomainListsActionTest {
     verifyNoMoreInteractions(driveConnection);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_outputsOnlyDomainsOnRealTlds() throws Exception {
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
@@ -128,7 +114,7 @@ class ExportDomainListsActionTest {
     verifyNoMoreInteractions(driveConnection);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_outputsDomainsFromDifferentTldsToMultipleFiles() throws Exception {
     createTld("tldtwo");
     persistResource(Registry.get("tldtwo").asBuilder().setDriveFolderId("hooray").build());

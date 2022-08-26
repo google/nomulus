@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.eppcommon.Address;
 import javax.persistence.Embeddable;
 
@@ -29,7 +28,6 @@ import javax.persistence.Embeddable;
  * all defined in parent class {@link Address} so that it can share it with other similar address
  * classes.
  */
-@Embed
 @Embeddable
 public class RegistrarAddress extends Address {
 

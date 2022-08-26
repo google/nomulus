@@ -54,7 +54,7 @@ final class UpdateCursorsCommand extends ConfirmingCommand implements CommandWit
     } else {
       for (String tld : tlds) {
         Registry registry = Registry.get(tld);
-        result.add(Cursor.create(cursorType, newTimestamp, registry));
+        result.add(Cursor.createScoped(cursorType, newTimestamp, registry));
       }
     }
     cursorsToUpdate = result.build();

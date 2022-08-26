@@ -19,13 +19,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
-import static google.registry.ui.server.registrar.RegistryLockGetActionTest.userFromRegistrarContact;
+import static google.registry.ui.server.registrar.RegistryLockGetActionTest.userFromRegistrarPoc;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -34,7 +33,9 @@ import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.UserRoles;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonResponse;
@@ -46,6 +47,7 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.tools.DomainLockUtils;
@@ -84,13 +86,13 @@ final class RegistryLockPostActionTest {
 
   @RegisterExtension
   final AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(clock).build();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).build();
 
   private User userWithoutPermission;
   private User userWithLockPermission;
 
   private InternetAddress outgoingAddress;
-  private DomainBase domain;
+  private Domain domain;
   private RegistryLockPostAction action;
 
   @Mock SendEmailService emailService;
@@ -99,10 +101,10 @@ final class RegistryLockPostActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    userWithLockPermission = userFromRegistrarContact(AppEngineExtension.makeRegistrarContact3());
-    userWithoutPermission = userFromRegistrarContact(AppEngineExtension.makeRegistrarContact2());
+    userWithLockPermission = userFromRegistrarPoc(AppEngineExtension.makeRegistrarContact3());
+    userWithoutPermission = userFromRegistrarPoc(AppEngineExtension.makeRegistrarContact2());
     createTld("tld");
-    domain = persistResource(newDomainBase("example.tld"));
+    domain = persistResource(DatabaseHelper.newDomain("example.tld"));
 
     outgoingAddress = new InternetAddress("domain-registry@example.com");
 
@@ -223,6 +225,47 @@ final class RegistryLockPostActionTest {
   }
 
   @Test
+  void testSuccess_consoleUser() throws Exception {
+    google.registry.model.console.User consoleUser =
+        new google.registry.model.console.User.Builder()
+            .setEmailAddress("johndoe@theregistrar.com")
+            .setGaiaId("gaiaId")
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setRegistrarRoles(
+                        ImmutableMap.of(
+                            "TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
+                    .build())
+            .setRegistryLockPassword("hi")
+            .build();
+    AuthResult consoleAuthResult =
+        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    action = createAction(consoleAuthResult);
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
+    assertSuccess(response, "lock", "johndoe@theregistrar.com");
+  }
+
+  @Test
+  void testSuccess_consoleUser_admin() throws Exception {
+    google.registry.model.console.User consoleUser =
+        new google.registry.model.console.User.Builder()
+            .setEmailAddress("johndoe@theregistrar.com")
+            .setGaiaId("gaiaId")
+            .setUserRoles(new UserRoles.Builder().setIsAdmin(true).build())
+            .build();
+    AuthResult consoleAuthResult =
+        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    action = createAction(consoleAuthResult);
+    Map<String, Object> requestMapWithoutPassword =
+        ImmutableMap.of(
+            "isLock", true,
+            "registrarId", "TheRegistrar",
+            "domainName", "example.tld");
+    Map<String, ?> response = action.handleJsonRequest(requestMapWithoutPassword);
+    assertSuccess(response, "lock", "johndoe@theregistrar.com");
+  }
+
+  @Test
   void testFailure_noInput() {
     Map<String, ?> response = action.handleJsonRequest(null);
     assertFailureWithMessage(response, "Null JSON");
@@ -314,7 +357,7 @@ final class RegistryLockPostActionTest {
   }
 
   @Test
-  void testFailure_notEnabledForRegistrarContact() {
+  void testFailure_notEnabledForRegistrarPoc() {
     action =
         createAction(
             AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, false)));
@@ -397,6 +440,33 @@ final class RegistryLockPostActionTest {
     assertFailureWithMessage(response, "Domain example.tld is already unlocked");
   }
 
+  @Test
+  void testFailure_consoleUser_wrongPassword_noAdmin() {
+    google.registry.model.console.User consoleUser =
+        new google.registry.model.console.User.Builder()
+            .setEmailAddress("johndoe@theregistrar.com")
+            .setGaiaId("gaiaId")
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setRegistrarRoles(
+                        ImmutableMap.of(
+                            "TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
+                    .build())
+            .setRegistryLockPassword("hi")
+            .build();
+    AuthResult consoleAuthResult =
+        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    action = createAction(consoleAuthResult);
+    Map<String, ?> response =
+        action.handleJsonRequest(
+            ImmutableMap.of(
+                "registrarId", "TheRegistrar",
+                "domainName", "example.tld",
+                "isLock", true,
+                "password", "badPassword"));
+    assertFailureWithMessage(response, "Incorrect registry lock password for user");
+  }
+
   private ImmutableMap<String, Object> lockRequest() {
     return fullRequest(true);
   }
@@ -414,7 +484,7 @@ final class RegistryLockPostActionTest {
   }
 
   private RegistryLock createLock() {
-    DomainBase domain = loadByForeignKey(DomainBase.class, "example.tld", clock.nowUtc()).get();
+    Domain domain = loadByForeignKey(Domain.class, "example.tld", clock.nowUtc()).get();
     return new RegistryLock.Builder()
         .setDomainName("example.tld")
         .isSuperuser(false)

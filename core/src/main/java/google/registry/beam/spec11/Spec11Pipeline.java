@@ -26,7 +26,7 @@ import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.RegistryConfig.ConfigModule;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
@@ -127,22 +127,21 @@ public class Spec11Pipeline implements Serializable {
                   @ProcessElement
                   public void processElement(
                       @Element KV<String, String> input, OutputReceiver<DomainNameInfo> output) {
-                    DomainBase domainBase =
+                    Domain domain =
                         jpaTm()
                             .transact(
                                 () ->
                                     jpaTm()
-                                        .loadByKey(
-                                            VKey.createSql(DomainBase.class, input.getKey())));
+                                        .loadByKey(VKey.createSql(Domain.class, input.getKey())));
                     String emailAddress = input.getValue();
                     if (emailAddress == null) {
                       emailAddress = "";
                     }
                     DomainNameInfo domainNameInfo =
                         DomainNameInfo.create(
-                            domainBase.getDomainName(),
-                            domainBase.getRepoId(),
-                            domainBase.getCurrentSponsorRegistrarId(),
+                            domain.getDomainName(),
+                            domain.getRepoId(),
+                            domain.getCurrentSponsorRegistrarId(),
                             emailAddress);
                     output.output(domainNameInfo);
                   }

@@ -21,7 +21,6 @@ import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DE
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.StringGenerator.DEFAULT_PASSWORD_LENGTH;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -40,6 +39,7 @@ import com.google.common.collect.Streams;
 import com.google.common.io.Files;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.persistence.VKey;
@@ -154,6 +154,14 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
   private RenewalPriceBehavior renewalPriceBehavior = DEFAULT;
 
   @Parameter(
+      names = {"--registration_behavior"},
+      description =
+          "Any special registration behavior, including DEFAULT (no special behavior),"
+              + " BYPASS_TLD_STATE (allow registrations during e.g. QUIET_PERIOD), and"
+              + " ANCHOR_TENANT (used for anchor tenant registrations")
+  private RegistrationBehavior registrationBehavior = RegistrationBehavior.DEFAULT;
+
+  @Parameter(
       names = {"--dry_run"},
       description = "Do not actually persist the tokens; defaults to false")
   boolean dryRun;
@@ -197,6 +205,7 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
                         new AllocationToken.Builder()
                             .setToken(t)
                             .setRenewalPriceBehavior(renewalPriceBehavior)
+                            .setRegistrationBehavior(registrationBehavior)
                             .setTokenType(tokenType == null ? SINGLE_USE : tokenType)
                             .setAllowedRegistrarIds(
                                 ImmutableSet.copyOf(nullToEmpty(allowedClientIds)))
@@ -278,7 +287,7 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
     if (dryRun) {
       savedTokens = tokens;
     } else {
-      transactIfJpaTm(() -> tm().transact(() -> tm().putAll(tokens)));
+      tm().transact(() -> tm().transact(() -> tm().putAll(tokens)));
       savedTokens = tm().transact(() -> tm().loadByEntities(tokens));
     }
     savedTokens.forEach(
@@ -307,10 +316,10 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
         candidates.stream()
             .map(input -> VKey.create(AllocationToken.class, input))
             .collect(toImmutableSet());
-    return transactIfJpaTm(
-        () ->
-            tm().loadByKeysIfPresent(existingTokenKeys).values().stream()
-                .map(AllocationToken::getToken)
-                .collect(toImmutableSet()));
+    return tm().transact(
+            () ->
+                tm().loadByKeysIfPresent(existingTokenKeys).values().stream()
+                    .map(AllocationToken::getToken)
+                    .collect(toImmutableSet()));
   }
 }

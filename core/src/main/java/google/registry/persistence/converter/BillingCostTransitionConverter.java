@@ -14,34 +14,19 @@
 
 package google.registry.persistence.converter;
 
-import avro.shaded.com.google.common.collect.Maps;
-import google.registry.model.tld.Registry.BillingCostTransition;
-import java.util.Map;
 import javax.persistence.Converter;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
-/**
- * JPA converter for storing/retrieving {@code TimedTransitionProperty<Money,BillingCostTransition>}
- * objects.
- */
+/** JPA converter for storing/retrieving {@code TimedTransitionProperty<Money>} objects. */
 @Converter(autoApply = true)
-public class BillingCostTransitionConverter
-    extends TimedTransitionPropertyConverterBase<Money, BillingCostTransition> {
-
+public class BillingCostTransitionConverter extends TimedTransitionPropertyConverterBase<Money> {
   @Override
-  Map.Entry<String, String> convertToDatabaseMapEntry(
-      Map.Entry<DateTime, BillingCostTransition> entry) {
-    return Maps.immutableEntry(entry.getKey().toString(), entry.getValue().getValue().toString());
+  protected String convertValueToString(Money value) {
+    return value.toString();
   }
 
   @Override
-  Map.Entry<DateTime, Money> convertToEntityMapEntry(Map.Entry<String, String> entry) {
-    return Maps.immutableEntry(DateTime.parse(entry.getKey()), Money.parse(entry.getValue()));
-  }
-
-  @Override
-  Class<BillingCostTransition> getTimedTransitionSubclass() {
-    return BillingCostTransition.class;
+  protected Money convertStringToValue(String string) {
+    return Money.parse(string);
   }
 }

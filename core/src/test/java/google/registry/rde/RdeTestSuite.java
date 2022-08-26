@@ -23,10 +23,10 @@ import org.junit.runner.RunWith;
 @RunWith(JUnitPlatform.class)
 @SuiteDisplayName("RDE tests suite")
 @SelectClasses({
-  DomainBaseToXjcConverterTest.class,
+  DomainToXjcConverterTest.class,
   GhostrydeGpgIntegrationTest.class,
   GhostrydeTest.class,
-  HostResourceToXjcConverterTest.class,
+  HostToXjcConverterTest.class,
   RdeStagingActionTest.class,
   RdeUploadActionTest.class,
   RdeReportActionTest.class,

@@ -16,26 +16,20 @@ package google.registry.request.auth;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.Streams.stream;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.appengine.api.users.User;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
 import dagger.Lazy;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.groups.GroupsConnection;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 import javax.inject.Inject;
@@ -43,19 +37,19 @@ import javax.inject.Inject;
 /**
  * Allows access only to {@link Registrar}s the current user has access to.
  *
- * <p>A user has OWNER role on a Registrar if there exists a {@link RegistrarContact} with that
- * user's gaeId and the registrar as a parent.
+ * <p>A user has OWNER role on a Registrar if there exists a {@link RegistrarPoc} with that user's
+ * gaeId and the registrar as a parent.
  *
- * <p>An "admin" has in addition OWNER role on {@code #registryAdminClientId} and to all non-{@code
- * REAL} registrars (see {@link Registrar#getType}).
+ * <p>An "admin" has in addition OWNER role on {@code #registryAdminRegistrarId} and to all
+ * non-{@code REAL} registrars (see {@link Registrar#getType}).
  *
  * <p>An "admin" also has ADMIN role on ALL registrars.
  *
  * <p>A user is an "admin" if they are a GAE-admin, or if their email is in the "Support" G Suite
  * group.
  *
- * <p>NOTE: to check whether the user is in the "Support" G Suite group, we need a connection to
- * G Suite. This in turn requires we have valid JsonCredentials, which not all environments have set
+ * <p>NOTE: to check whether the user is in the "Support" G Suite group, we need a connection to G
+ * Suite. This in turn requires we have valid JsonCredentials, which not all environments have set
  * up. This connection will be created lazily (only if needed).
  *
  * <p>Specifically, we don't instantiate the connection if: (a) gSuiteSupportGroupEmailAddress isn't
@@ -82,7 +76,7 @@ public class AuthenticatedRegistrarAccessor {
   private final boolean isAdmin;
 
   /**
-   * Gives all roles a user has for a given clientId.
+   * Gives all roles a user has for a given registrar ID.
    *
    * <p>The order is significant, with "more specific to this user" coming first.
    *
@@ -113,13 +107,13 @@ public class AuthenticatedRegistrarAccessor {
   @Inject
   public AuthenticatedRegistrarAccessor(
       AuthResult authResult,
-      @Config("registryAdminClientId") String registryAdminClientId,
+      @Config("registryAdminClientId") String registryAdminRegistrarId,
       @Config("gSuiteSupportGroupEmailAddress") Optional<String> gSuiteSupportGroupEmailAddress,
       Lazy<GroupsConnection> lazyGroupsConnection) {
     this.isAdmin = userIsAdmin(authResult, gSuiteSupportGroupEmailAddress, lazyGroupsConnection);
 
     this.userIdForLogging = authResult.userIdForLogging();
-    this.roleMap = createRoleMap(authResult, this.isAdmin, registryAdminClientId);
+    this.roleMap = createRoleMap(authResult, this.isAdmin, registryAdminRegistrarId);
 
     logger.atInfo().log("%s has the following roles: %s", userIdForLogging(), roleMap);
   }
@@ -135,7 +129,7 @@ public class AuthenticatedRegistrarAccessor {
    * Creates a "logged-in user" accessor with a given role map, used for tests.
    *
    * <p>The user will be allowed to create Registrars (and hence do OT&amp;E setup) iff they have
-   * the role of ADMIN for at least one clientId.
+   * the role of ADMIN for at least one registrar ID.
    *
    * <p>The user's "name" in logs and exception messages is "TestUserId".
    */
@@ -154,59 +148,62 @@ public class AuthenticatedRegistrarAccessor {
   }
 
   /**
-   * A map that gives all roles a user has for a given clientId.
+   * A map that gives all roles a user has for a given registrar ID.
    *
    * <p>Throws a {@link RegistrarAccessDeniedException} if the user is not logged in.
    *
    * <p>The result is ordered starting from "most specific to this user".
    *
-   * <p>If you want to load the {@link Registrar} object from these (or any other) {@code clientId},
-   * in order to perform actions on behalf of a user, you must use {@link #getRegistrar} which makes
-   * sure the user has permissions.
+   * <p>If you want to load the {@link Registrar} object from these (or any other) {@code
+   * registrarId}, in order to perform actions on behalf of a user, you must use {@link
+   * #getRegistrar} which makes sure the user has permissions.
    *
    * <p>Note that this is an OPTIONAL step in the authentication - only used if we don't have any
-   * other clue as to the requested {@code clientId}. It is perfectly OK to get a {@code clientId}
-   * from any other source, as long as the registrar is then loaded using {@link #getRegistrar}.
+   * other clue as to the requested {@code registrarId}. It is perfectly OK to get a {@code
+   * registrarId} from any other source, as long as the registrar is then loaded using {@link
+   * #getRegistrar}.
    */
-  public ImmutableSetMultimap<String, Role> getAllClientIdWithRoles() {
+  public ImmutableSetMultimap<String, Role> getAllRegistrarIdsWithRoles() {
     return roleMap;
   }
 
   /**
    * Returns all the roles the current user has on the given registrar.
    *
-   * <p>This is syntactic sugar for {@code getAllClientIdWithRoles().get(clientId)}.
+   * <p>This is syntactic sugar for {@code getAllRegistrarIdsWithRoles().get(registrarId)}.
    */
-  public ImmutableSet<Role> getRolesForRegistrar(String clientId) {
-    return getAllClientIdWithRoles().get(clientId);
+  public ImmutableSet<Role> getRolesForRegistrar(String registrarId) {
+    return getAllRegistrarIdsWithRoles().get(registrarId);
   }
 
   /**
    * Checks if we have a given role for a given registrar.
    *
-   * <p>This is syntactic sugar for {@code getAllClientIdWithRoles().containsEntry(clientId, role)}.
+   * <p>This is syntactic sugar for {@code getAllRegistrarIdsWithRoles().containsEntry(registrarId,
+   * role)}.
    */
-  public boolean hasRoleOnRegistrar(Role role, String clientId) {
-    return getAllClientIdWithRoles().containsEntry(clientId, role);
+  public boolean hasRoleOnRegistrar(Role role, String registrarId) {
+    return getAllRegistrarIdsWithRoles().containsEntry(registrarId, role);
   }
 
   /**
    * "Guesses" which client ID the user wants from all those they have access to.
    *
-   * <p>If no such ClientIds exist, throws a RegistrarAccessDeniedException.
+   * <p>If no such registrar IDs exist, throws a RegistrarAccessDeniedException.
    *
-   * <p>This should be the ClientId "most likely wanted by the user".
+   * <p>This should be the registrar ID "most likely wanted by the user".
    *
-   * <p>If you want to load the {@link Registrar} object from this (or any other) {@code clientId},
-   * in order to perform actions on behalf of a user, you must use {@link #getRegistrar} which makes
-   * sure the user has permissions.
+   * <p>If you want to load the {@link Registrar} object from this (or any other) {@code
+   * registrarId}, in order to perform actions on behalf of a user, you must use {@link
+   * #getRegistrar} which makes sure the user has permissions.
    *
    * <p>Note that this is an OPTIONAL step in the authentication - only used if we don't have any
-   * other clue as to the requested {@code clientId}. It is perfectly OK to get a {@code clientId}
-   * from any other source, as long as the registrar is then loaded using {@link #getRegistrar}.
+   * other clue as to the requested {@code registrarId}. It is perfectly OK to get a {@code
+   * registrarId} from any other source, as long as the registrar is then loaded using {@link
+   * #getRegistrar}.
    */
-  public String guessClientId() throws RegistrarAccessDeniedException {
-    return getAllClientIdWithRoles().keySet().stream()
+  public String guessRegistrarId() throws RegistrarAccessDeniedException {
+    return getAllRegistrarIdsWithRoles().keySet().stream()
         .findFirst()
         .orElseThrow(
             () ->
@@ -233,7 +230,7 @@ public class AuthenticatedRegistrarAccessor {
 
     if (!registrarId.equals(registrar.getRegistrarId())) {
       logger.atSevere().log(
-          "registrarLoader.apply(clientId) returned a Registrar with a different clientId. "
+          "registrarLoader.apply(registrarId) returned a Registrar with a different registrarId. "
               + "Requested: %s, returned: %s.",
           registrarId, registrar.getRegistrarId());
       throw new RegistrarAccessDeniedException("Internal error - please check logs");
@@ -243,7 +240,7 @@ public class AuthenticatedRegistrarAccessor {
   }
 
   public void verifyAccess(String registrarId) throws RegistrarAccessDeniedException {
-    ImmutableSet<Role> roles = getAllClientIdWithRoles().get(registrarId);
+    ImmutableSet<Role> roles = getAllRegistrarIdsWithRoles().get(registrarId);
 
     if (roles.isEmpty()) {
       throw new RegistrarAccessDeniedException(
@@ -285,54 +282,34 @@ public class AuthenticatedRegistrarAccessor {
       AuthResult authResult,
       Optional<String> gSuiteSupportGroupEmailAddress,
       Lazy<GroupsConnection> lazyGroupsConnection) {
-
     if (!authResult.userAuthInfo().isPresent()) {
       return false;
     }
 
     UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
-
-    User user = userAuthInfo.user();
-
     // both GAE project admin and members of the gSuiteSupportGroupEmailAddress are considered
     // admins for the RegistrarConsole.
     return !bypassAdminCheck
         && (userAuthInfo.isUserAdmin()
             || checkIsSupport(
-                lazyGroupsConnection, user.getEmail(), gSuiteSupportGroupEmailAddress));
+                lazyGroupsConnection,
+                userAuthInfo.getEmailAddress(),
+                gSuiteSupportGroupEmailAddress));
   }
 
-  /**
-   * Returns a map of registrar client IDs to roles for all registrars that the user has access to.
-   */
+  /** Returns a map of registrar IDs to roles for all registrars that the user has access to. */
   private static ImmutableSetMultimap<String, Role> createRoleMap(
-      AuthResult authResult,
-      boolean isAdmin,
-      String registryAdminClientId) {
-
+      AuthResult authResult, boolean isAdmin, String registryAdminRegistrarId) {
     if (!authResult.userAuthInfo().isPresent()) {
       return ImmutableSetMultimap.of();
     }
-    UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
-    User user = userAuthInfo.user();
     ImmutableSetMultimap.Builder<String, Role> builder = new ImmutableSetMultimap.Builder<>();
-    logger.atInfo().log("Checking registrar contacts for user ID %s.", user.getUserId());
+    UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
+    if (userAuthInfo.appEngineUser().isPresent()) {
+      User user = userAuthInfo.appEngineUser().get();
+      logger.atInfo().log("Checking registrar contacts for user ID %s.", user.getUserId());
 
-    // Find all registrars that have a registrar contact with this user's ID.
-    if (tm().isOfy()) {
-      ImmutableList<Key<Registrar>> accessibleClientIds =
-          stream(
-                  auditedOfy()
-                      .load()
-                      .type(RegistrarContact.class)
-                      .filter("gaeUserId", user.getUserId()))
-              .map(RegistrarContact::getParent)
-              .collect(toImmutableList());
-      // Filter out disabled registrars (note that pending registrars still allow console login).
-      auditedOfy().load().keys(accessibleClientIds).values().stream()
-          .filter(registrar -> registrar.getState() != State.DISABLED)
-          .forEach(registrar -> builder.put(registrar.getRegistrarId(), Role.OWNER));
-    } else {
+      // Find all registrars that have a registrar contact with this user's ID.
       jpaTm()
           .transact(
               () ->
@@ -346,23 +323,30 @@ public class AuthenticatedRegistrarAccessor {
                       .setParameter("state", State.DISABLED)
                       .getResultStream()
                       .forEach(registrar -> builder.put(registrar.getRegistrarId(), Role.OWNER)));
+    } else {
+      userAuthInfo
+          .consoleUser()
+          .get()
+          .getUserRoles()
+          .getRegistrarRoles()
+          .forEach((k, v) -> builder.put(k, Role.OWNER));
     }
 
     // Admins have ADMIN access to all registrars, and also OWNER access to the registry registrar
     // and all non-REAL or non-live registrars.
     if (isAdmin) {
-      transactIfJpaTm(
-          () ->
-              tm().loadAllOf(Registrar.class)
-                  .forEach(
-                      registrar -> {
-                        if (registrar.getType() != Registrar.Type.REAL
-                            || !registrar.isLive()
-                            || registrar.getRegistrarId().equals(registryAdminClientId)) {
-                          builder.put(registrar.getRegistrarId(), Role.OWNER);
-                        }
-                        builder.put(registrar.getRegistrarId(), Role.ADMIN);
-                      }));
+      tm().transact(
+              () ->
+                  tm().loadAllOf(Registrar.class)
+                      .forEach(
+                          registrar -> {
+                            if (registrar.getType() != Registrar.Type.REAL
+                                || !registrar.isLive()
+                                || registrar.getRegistrarId().equals(registryAdminRegistrarId)) {
+                              builder.put(registrar.getRegistrarId(), Role.OWNER);
+                            }
+                            builder.put(registrar.getRegistrarId(), Role.ADMIN);
+                          }));
     }
 
     return builder.build();

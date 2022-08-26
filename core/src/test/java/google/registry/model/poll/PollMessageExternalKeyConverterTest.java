@@ -28,36 +28,28 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessageExternalKeyConverter.PollMessageExternalKeyParseException;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PollMessageExternalKeyConverter}. */
-@DualDatabaseTest
 public class PollMessageExternalKeyConverterTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
-
-  @RegisterExtension public InjectExtension inject = new InjectExtension();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private HistoryEntry historyEntry;
-  private FakeClock clock = new FakeClock(DateTime.parse("2007-07-07T01:01:01Z"));
+  private final FakeClock clock = new FakeClock(DateTime.parse("2007-07-07T01:01:01Z"));
 
   @BeforeEach
   void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
     createTld("foobar");
     historyEntry =
         persistResource(
@@ -75,7 +67,7 @@ public class PollMessageExternalKeyConverterTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_domain() {
     PollMessage.OneTime pollMessage =
         persistResource(
@@ -83,13 +75,13 @@ public class PollMessageExternalKeyConverterTest {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
-    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("1-2-FOOBAR-4-5-2007");
-    assertVKeysEqual(parsePollMessageExternalId("1-2-FOOBAR-4-5-2007"), pollMessage.createVKey());
+    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("5-2007");
+    assertVKeysEqual(parsePollMessageExternalId("5-2007"), pollMessage.createVKey());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_contact() {
     historyEntry =
         persistResource(
@@ -100,13 +92,13 @@ public class PollMessageExternalKeyConverterTest {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
-    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("2-5-ROID-6-7-2007");
-    assertVKeysEqual(parsePollMessageExternalId("2-5-ROID-6-7-2007"), pollMessage.createVKey());
+    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("7-2007");
+    assertVKeysEqual(parsePollMessageExternalId("7-2007"), pollMessage.createVKey());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_host() {
     historyEntry =
         persistResource(
@@ -117,48 +109,27 @@ public class PollMessageExternalKeyConverterTest {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setMsg("Test poll message")
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .build());
-    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("3-5-ROID-6-7-2007");
-    assertVKeysEqual(parsePollMessageExternalId("3-5-ROID-6-7-2007"), pollMessage.createVKey());
+    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("7-2007");
+    assertVKeysEqual(parsePollMessageExternalId("7-2007"), pollMessage.createVKey());
   }
 
-  @TestOfyAndSql
-  void testFailure_missingYearField() {
-    assertThrows(
-        PollMessageExternalKeyParseException.class,
-        () -> parsePollMessageExternalId("1-2-FOOBAR-4-5"));
-  }
-
-  @TestOfyAndSql
-  void testFailure_invalidEppResourceTypeId() {
-    // Populate the testdata correctly as for 1-2-FOOBAR-4-5 so we know that the only thing that
-    // is wrong here is the EppResourceTypeId.
-    testSuccess_domain();
-    assertThrows(
-        PollMessageExternalKeyParseException.class,
-        () -> parsePollMessageExternalId("4-2-FOOBAR-4-5-2007"));
-  }
-
-  @TestOfyAndSql
+  @Test
   void testFailure_tooFewComponentParts() {
-    assertThrows(
-        PollMessageExternalKeyParseException.class,
-        () -> parsePollMessageExternalId("1-3-EXAMPLE"));
+    assertThrows(PollMessageExternalKeyParseException.class, () -> parsePollMessageExternalId("1"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_tooManyComponentParts() {
     assertThrows(
-        PollMessageExternalKeyParseException.class,
-        () -> parsePollMessageExternalId("1-3-EXAMPLE-4-5-2007-2009"));
+        PollMessageExternalKeyParseException.class, () -> parsePollMessageExternalId("1-3-2009"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_nonNumericIds() {
     assertThrows(
-        PollMessageExternalKeyParseException.class,
-        () -> parsePollMessageExternalId("A-B-FOOBAR-D-E-F"));
+        PollMessageExternalKeyParseException.class, () -> parsePollMessageExternalId("A-2007"));
   }
 
   // We may have VKeys of slightly varying types, e.g. VKey<PollMessage> (superclass) and
@@ -170,6 +141,5 @@ public class PollMessageExternalKeyConverterTest {
                 || two.getKind().isAssignableFrom(one.getKind()))
         .isTrue();
     assertThat(one.getSqlKey()).isEqualTo(two.getSqlKey());
-    assertThat(one.getOfyKey()).isEqualTo(two.getOfyKey());
   }
 }

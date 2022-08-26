@@ -24,7 +24,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.base.Ascii;
@@ -36,10 +36,10 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.TransferData;
@@ -72,8 +72,8 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
       REGISTRATION_EXPIRATION_TIME.plusYears(EXTENDED_REGISTRATION_YEARS);
 
   protected ContactResource contact;
-  protected DomainBase domain;
-  HostResource subordinateHost;
+  protected Domain domain;
+  Host subordinateHost;
   private DomainHistory historyEntryDomainCreate;
 
   DomainTransferFlowTestCase() {
@@ -89,7 +89,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         AppEngineExtension.makeRegistrar1().asBuilder().setRegistrarId("ClientZ").build());
   }
 
-  static DomainBase persistWithPendingTransfer(DomainBase domain) {
+  static Domain persistWithPendingTransfer(Domain domain) {
     return persistDomainWithPendingTransfer(
         domain,
         TRANSFER_REQUEST_TIME,
@@ -111,7 +111,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
             REGISTRATION_EXPIRATION_TIME);
     subordinateHost =
         persistResource(
-            new HostResource.Builder()
+            new Host.Builder()
                 .setRepoId("2-".concat(Ascii.toUpperCase(tld)))
                 .setHostName("ns1." + label + "." + tld)
                 .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
@@ -143,7 +143,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .setRegistrarId("TheRegistrar")
         .setEventTime(REGISTRATION_EXPIRATION_TIME)
         .setRecurrenceEndTime(TRANSFER_EXPIRATION_TIME)
-        .setParent(historyEntryDomainCreate)
+        .setDomainHistory(historyEntryDomainCreate)
         .build();
   }
 
@@ -156,14 +156,13 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .setRegistrarId("NewRegistrar")
         .setEventTime(EXTENDED_REGISTRATION_EXPIRATION_TIME)
         .setRecurrenceEndTime(END_OF_TIME)
-        .setParent(
+        .setDomainHistory(
             getOnlyHistoryEntryOfType(
                 domain, HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST, DomainHistory.class))
         .build();
   }
 
-  void assertTransferFailed(
-      DomainBase domain, TransferStatus status, TransferData oldTransferData) {
+  void assertTransferFailed(Domain domain, TransferStatus status, TransferData oldTransferData) {
     assertAboutDomains()
         .that(domain)
         .doesNotHaveStatusValue(StatusValue.PENDING_TRANSFER)

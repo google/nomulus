@@ -20,37 +20,34 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.OteStatsTestHelper;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link VerifyOteAction}. */
-@DualDatabaseTest
 class VerifyOteActionTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final VerifyOteAction action = new VerifyOteAction();
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_summarize_allPass() throws Exception {
     OteStatsTestHelper.setupCompleteOte("blobio");
     assertThat(getResponse(true))
         .isEqualTo("# actions:   30 - Reqs: [----------------] 16/16 - Overall: PASS");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_summarize_someFailures() throws Exception {
     OteStatsTestHelper.setupIncompleteOte("blobio");
     assertThat(getResponse(true))
         .isEqualTo("# actions:   34 - Reqs: [-.-----.------.-] 13/16 - Overall: FAIL");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_passNotSummarized() throws Exception {
     OteStatsTestHelper.setupCompleteOte("blobio");
     String expectedOteStatus =
@@ -80,7 +77,7 @@ class VerifyOteActionTest {
     assertThat(getResponse(false)).containsMatch(expectedOteStatusPattern);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_incomplete() throws Exception {
     OteStatsTestHelper.setupIncompleteOte("blobio");
     String expectedOteStatus =

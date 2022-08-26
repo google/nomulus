@@ -44,13 +44,12 @@ import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadByKeyIfPresent;
 import static google.registry.testing.DatabaseHelper.loadByKeysIfPresent;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
-import static google.registry.testing.DatabaseHelper.newHostResource;
+import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
@@ -82,14 +81,14 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.poll.PendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
@@ -101,19 +100,18 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.DatabaseHelper;
 import java.util.Map;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainDeleteFlow}. */
-@DualDatabaseTest
-class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, DomainBase> {
+class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain> {
 
-  private DomainBase domain;
+  private Domain domain;
   private DomainHistory earlierHistoryEntry;
 
   private static final DateTime TIME_BEFORE_FLOW = DateTime.parse("2000-06-06T22:00:00.0Z");
@@ -160,7 +158,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     ContactResource contact = persistActiveContact("sh8013");
     domain =
         persistResource(
-            newDomainBase(getUniqueIdFromCommand())
+            DatabaseHelper.newDomain(getUniqueIdFromCommand())
                 .asBuilder()
                 .setCreationTimeForTest(TIME_BEFORE_FLOW)
                 .setRegistrant(contact.createVKey())
@@ -240,7 +238,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setEventTime(eventTime)
             .setBillingTime(TIME_BEFORE_FLOW.plusDays(1))
             .setOneTimeEventKey(graceBillingEvent.createVKey())
-            .setParent(historyEntryDomainDelete)
+            .setDomainHistory(historyEntryDomainDelete)
             .build());
   }
 
@@ -260,7 +258,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .setPeriodYears(2)
         .setEventTime(TIME_BEFORE_FLOW.minusDays(4))
         .setBillingTime(TIME_BEFORE_FLOW.plusDays(1))
-        .setParent(earlierHistoryEntry)
+        .setDomainHistory(earlierHistoryEntry)
         .build();
   }
 
@@ -272,7 +270,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .setRegistrarId(registrarId)
         .setEventTime(A_MONTH_FROM_NOW)
         .setRecurrenceEndTime(END_OF_TIME)
-        .setParent(earlierHistoryEntry);
+        .setDomainHistory(earlierHistoryEntry);
   }
 
   private PollMessage.Autorenew.Builder createAutorenewPollMessage(String registrarId) {
@@ -281,17 +279,17 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .setRegistrarId(registrarId)
         .setEventTime(A_MONTH_FROM_NOW)
         .setAutorenewEndTime(END_OF_TIME)
-        .setParent(earlierHistoryEntry);
+        .setHistoryEntry(earlierHistoryEntry);
   }
 
-  @TestOfyAndSql
+  @Test
   void testNotLoggedIn() {
     sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_asyncActionsAreEnqueued() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -316,7 +314,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .scheduleTime(clock.nowUtc().plus(when)));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun() throws Exception {
     setUpSuccessfulTest();
     setUpGracePeriods(
@@ -329,7 +327,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     dryRunFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun_noGracePeriods() throws Exception {
     setUpSuccessfulTest();
     dryRunFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
@@ -365,7 +363,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(getPollMessages("TheRegistrar")).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_updatedEppUpdateTimeAfterPendingRedemption() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -379,9 +377,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
 
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     DateTime redemptionEndTime = domain.getLastEppUpdateTime().plusDays(3);
-    DomainBase domainAtRedemptionTime = domain.cloneProjectedAtTime(redemptionEndTime);
+    Domain domainAtRedemptionTime = domain.cloneProjectedAtTime(redemptionEndTime);
     assertAboutDomains()
         .that(domainAtRedemptionTime)
         .hasLastEppUpdateClientId("TheRegistrar")
@@ -389,26 +387,26 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .hasLastEppUpdateTime(redemptionEndTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_addGracePeriodResultsInImmediateDelete() throws Exception {
     sessionMetadata.setServiceExtensionUris(ImmutableSet.of());
     doAddGracePeriodDeleteTest(GracePeriodStatus.ADD, "generic_success_response.xml");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_addGracePeriodCredit_v06() throws Exception {
     removeServiceExtensionUri(ServiceExtension.FEE_0_11.getUri());
     removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
     doAddGracePeriodDeleteTest(GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_06_MAP);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_addGracePeriodCredit_v11() throws Exception {
     removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
     doAddGracePeriodDeleteTest(GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_11_MAP);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_addGracePeriodCredit_v12() throws Exception {
     doAddGracePeriodDeleteTest(GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_12_MAP);
   }
@@ -437,7 +435,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     DateTime expectedExpirationTime = domain.getRegistrationExpirationTime().minusYears(2);
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile(responseFilename, substitutions));
-    DomainBase resource = reloadResourceByForeignKey();
+    Domain resource = reloadResourceByForeignKey();
     // Check that the domain is in the pending delete state.
     assertAboutDomains()
         .that(resource)
@@ -474,44 +472,44 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertDeletionPollMessageFor(resource, "Domain deleted.");
   }
 
-  private void assertDeletionPollMessageFor(DomainBase domain, String expectedMessage) {
+  private void assertDeletionPollMessageFor(Domain domain, String expectedMessage) {
     // There should be a future poll message at the deletion time. The previous autorenew poll
     // message should now be deleted.
     assertAboutDomains().that(domain).hasDeletePollMessage();
     DateTime deletionTime = domain.getDeletionTime();
     assertThat(getPollMessages("TheRegistrar", deletionTime.minusMinutes(1))).isEmpty();
     assertThat(getPollMessages("TheRegistrar", deletionTime)).hasSize(1);
-    assertThat(domain.getDeletePollMessage().getOfyKey())
-        .isEqualTo(getOnlyPollMessage("TheRegistrar").createVKey().getOfyKey());
+    assertThat(domain.getDeletePollMessage())
+        .isEqualTo(getOnlyPollMessage("TheRegistrar").createVKey());
     PollMessage.OneTime deletePollMessage = loadByKey(domain.getDeletePollMessage());
     assertThat(deletePollMessage.getMsg()).isEqualTo(expectedMessage);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_noAddGracePeriodResultsInPendingDelete() throws Exception {
     sessionMetadata.setServiceExtensionUris(ImmutableSet.of());
     doSuccessfulTest_noAddGracePeriod("domain_delete_response_pending.xml");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_renewGracePeriodCredit_v06() throws Exception {
     removeServiceExtensionUri(ServiceExtension.FEE_0_11.getUri());
     removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
     doSuccessfulTest_noAddGracePeriod("domain_delete_response_pending_fee.xml", FEE_06_MAP);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_renewGracePeriodCredit_v11() throws Exception {
     removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
     doSuccessfulTest_noAddGracePeriod("domain_delete_response_pending_fee.xml", FEE_11_MAP);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_renewGracePeriodCredit_v12() throws Exception {
     doSuccessfulTest_noAddGracePeriod("domain_delete_response_pending_fee.xml", FEE_12_MAP);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_autorenewPollMessageIsNotDeleted() throws Exception {
     setUpSuccessfulTest();
     // Modify the autorenew poll message so that it has unacked messages in the past. This should
@@ -530,7 +528,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(getPollMessages("TheRegistrar", deletionTime)).hasSize(2);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_nonDefaultRedemptionGracePeriod() throws Exception {
     sessionMetadata.setServiceExtensionUris(ImmutableSet.of());
     persistResource(
@@ -541,7 +539,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     doSuccessfulTest_noAddGracePeriod("domain_delete_response_pending.xml");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_nonDefaultPendingDeleteLength() throws Exception {
     sessionMetadata.setServiceExtensionUris(ImmutableSet.of());
     persistResource(
@@ -552,7 +550,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     doSuccessfulTest_noAddGracePeriod("domain_delete_response_pending.xml");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_autoRenewGracePeriod_v06() throws Exception {
     removeServiceExtensionUri(ServiceExtension.FEE_0_11.getUri());
     removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
@@ -561,7 +559,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_06_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_autoRenewGracePeriod_v11() throws Exception {
     removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
     setUpAutorenewGracePeriod();
@@ -569,14 +567,14 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_11_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_autoRenewGracePeriod_v12() throws Exception {
     setUpAutorenewGracePeriod();
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_12_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_autoRenewGracePeriod_priceChanges_v06() throws Exception {
     removeServiceExtensionUri(ServiceExtension.FEE_0_11.getUri());
     removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
@@ -595,7 +593,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_06_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_autoRenewGracePeriod_priceChanges_v11() throws Exception {
     removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
     persistResource(
@@ -613,7 +611,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_11_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_autoRenewGracePeriod_priceChanges_v12() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -630,17 +628,17 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_12_MAP));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_noPendingTransfer_deletedAndHasNoTransferData() throws Exception {
     setRegistrarIdForFlow("TheRegistrar");
     setUpSuccessfulTest();
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     assertThat(domain.getTransferData()).isEqualTo(DomainTransferData.EMPTY);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_pendingTransfer() throws Exception {
     setRegistrarIdForFlow("TheRegistrar");
     setUpSuccessfulTest();
@@ -649,7 +647,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         persistWithPendingTransfer(reloadResourceByForeignKey()).getTransferData();
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
-    DomainBase domain = reloadResourceByForeignKey();
+    Domain domain = reloadResourceByForeignKey();
     // Check that the domain is in the pending delete state.
     // The PENDING_TRANSFER status should be gone.
     assertAboutDomains()
@@ -721,7 +719,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(loadByKeysIfPresent(oldTransferData.getServerApproveEntities())).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testUnlinkingOfResources() throws Exception {
     sessionMetadata.setServiceExtensionUris(ImmutableSet.of());
     setUpSuccessfulTest();
@@ -732,16 +730,16 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     setUpGracePeriods(
         GracePeriod.forBillingEvent(GracePeriodStatus.ADD, domain.getRepoId(), graceBillingEvent));
     // Add a nameserver.
-    HostResource host = persistResource(newHostResource("ns1.example.tld"));
+    Host host = persistResource(newHost("ns1.example.tld"));
     persistResource(
-        loadByForeignKey(DomainBase.class, getUniqueIdFromCommand(), clock.nowUtc())
+        loadByForeignKey(Domain.class, getUniqueIdFromCommand(), clock.nowUtc())
             .get()
             .asBuilder()
             .setNameservers(ImmutableSet.of(host.createVKey()))
             .build());
     // Persist another domain that's already been deleted and references this contact and host.
     persistResource(
-        newDomainBase("example1.tld")
+        DatabaseHelper.newDomain("example1.tld")
             .asBuilder()
             .setRegistrant(
                 loadByForeignKey(ContactResource.class, "sh8013", clock.nowUtc())
@@ -759,11 +757,11 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         eventTime);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_deletedSubordinateDomain() throws Exception {
     setUpSuccessfulTest();
     persistResource(
-        newHostResource("ns1." + getUniqueIdFromCommand())
+        newHost("ns1." + getUniqueIdFromCommand())
             .asBuilder()
             .setSuperordinateDomain(reloadResourceByForeignKey().createVKey())
             .setDeletionTime(clock.nowUtc().minusDays(1))
@@ -774,7 +772,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertOnlyBillingEventIsClosedAutorenew("TheRegistrar");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_predelegation() throws Exception {
     createTld("tld", PREDELEGATION);
     setUpSuccessfulTest();
@@ -782,7 +780,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserPredelegation() throws Exception {
     createTld("tld", PREDELEGATION);
     setUpSuccessfulTest();
@@ -791,14 +789,14 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("domain_delete_response_pending.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_existedButWasDeleted() throws Exception {
     persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     ResourceDoesNotExistException thrown =
@@ -806,12 +804,12 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_hasSubordinateHosts() throws Exception {
-    DomainBase domain = persistActiveDomain(getUniqueIdFromCommand());
-    HostResource subordinateHost =
+    Domain domain = persistActiveDomain(getUniqueIdFromCommand());
+    Host subordinateHost =
         persistResource(
-            newHostResource("ns1." + getUniqueIdFromCommand())
+            newHost("ns1." + getUniqueIdFromCommand())
                 .asBuilder()
                 .setSuperordinateDomain(reloadResourceByForeignKey().createVKey())
                 .build());
@@ -820,7 +818,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_unauthorizedClient() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveDomain(getUniqueIdFromCommand());
@@ -828,7 +826,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserUnauthorizedClient() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     setUpSuccessfulTest();
@@ -841,7 +839,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertPollMessages(
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")
-            .setParent(deleteHistoryEntry)
+            .setHistoryEntry(deleteHistoryEntry)
             .setEventTime(now)
             .setMsg(
                 "Domain example.tld was deleted by registry administrator with final deletion"
@@ -853,7 +851,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .build(),
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")
-            .setParent(deleteHistoryEntry)
+            .setHistoryEntry(deleteHistoryEntry)
             .setEventTime(DateTime.parse("2000-07-11T22:00:00.012Z"))
             .setMsg("Deleted by registry administrator.")
             .setResponseData(
@@ -866,7 +864,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_notAuthorizedForTld() throws Exception {
     setUpSuccessfulTest();
     persistResource(
@@ -875,7 +873,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserNotAuthorizedForTld() throws Exception {
     setUpSuccessfulTest();
     persistResource(
@@ -885,10 +883,10 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("domain_delete_response_pending.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_clientDeleteProhibited() throws Exception {
     persistResource(
-        newDomainBase(getUniqueIdFromCommand())
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
             .addStatusValue(StatusValue.CLIENT_DELETE_PROHIBITED)
             .build());
@@ -897,10 +895,10 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(thrown).hasMessageThat().contains("clientDeleteProhibited");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_serverDeleteProhibited() throws Exception {
     persistResource(
-        newDomainBase(getUniqueIdFromCommand())
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
             .addStatusValue(StatusValue.SERVER_DELETE_PROHIBITED)
             .build());
@@ -909,10 +907,10 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(thrown).hasMessageThat().contains("serverDeleteProhibited");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_pendingDelete() throws Exception {
     persistResource(
-        newDomainBase(getUniqueIdFromCommand())
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
             .addStatusValue(StatusValue.PENDING_DELETE)
             .build());
@@ -921,7 +919,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(thrown).hasMessageThat().contains("pendingDelete");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_metadata() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput("domain_delete_metadata.xml");
@@ -944,15 +942,15 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .hasMetadataRequestedByRegistrar(false);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_metadataNotFromTool() throws Exception {
     setEppInput("domain_delete_metadata.xml");
-    persistResource(newDomainBase(getUniqueIdFromCommand()));
+    persistResource(DatabaseHelper.newDomain(getUniqueIdFromCommand()));
     EppException thrown = assertThrows(OnlyToolCanPassMetadataException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannActivityReportField_getsLogged() throws Exception {
     setUpSuccessfulTest();
     clock.advanceOneMilli();
@@ -961,7 +959,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertTldsFieldLogged("tld");
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannTransactionRecord_testTld_notStored() throws Exception {
     setUpSuccessfulTest();
     setUpGracePeriodDurations();
@@ -984,7 +982,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(persistedEntry.getDomainTransactionRecords()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannTransactionRecord_noGrace_entryOutsideMaxGracePeriod() throws Exception {
     setUpSuccessfulTest();
     setUpGracePeriodDurations();
@@ -1009,7 +1007,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 "tld", clock.nowUtc().plusHours(3), DELETED_DOMAINS_NOGRACE, 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannTransactionRecord_noGrace_noAddOrRenewRecords() throws Exception {
     setUpSuccessfulTest();
     setUpGracePeriodDurations();
@@ -1036,7 +1034,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   }
 
   /** Verifies that if there's no add grace period, we still cancel out valid renew records */
-  @TestOfyAndSql
+  @Test
   void testIcannTransactionRecord_noGrace_hasRenewRecord() throws Exception {
     setUpSuccessfulTest();
     setUpGracePeriodDurations();
@@ -1064,7 +1062,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             renewRecord.asBuilder().setReportAmount(-1).build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannTransactionRecord_inGrace_noRecords() throws Exception {
     setUpSuccessfulTest();
     setUpGracePeriods(
@@ -1084,7 +1082,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             DomainTransactionRecord.create("tld", clock.nowUtc(), DELETED_DOMAINS_GRACE, 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void testIcannTransactionRecord_inGrace_multipleRecords() throws Exception {
     setUpSuccessfulTest();
     setUpGracePeriods(
@@ -1128,7 +1126,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             existingRecord.asBuilder().setReportAmount(-1).build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserExtension_nonZeroDayGrace_nonZeroDayPendingDelete() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput(
@@ -1138,7 +1136,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     clock.advanceOneMilli();
     runFlowAssertResponse(
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("domain_delete_response_pending.xml"));
-    DomainBase resource = reloadResourceByForeignKey();
+    Domain resource = reloadResourceByForeignKey();
     assertAboutDomains()
         .that(resource)
         .hasExactlyStatusValues(StatusValue.INACTIVE, StatusValue.PENDING_DELETE)
@@ -1156,7 +1154,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertDeletionPollMessageFor(resource, "Deleted by registry administrator.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserExtension_zeroDayGrace_nonZeroDayPendingDelete() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput(
@@ -1166,7 +1164,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     clock.advanceOneMilli();
     runFlowAssertResponse(
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("domain_delete_response_pending.xml"));
-    DomainBase resource = reloadResourceByForeignKey();
+    Domain resource = reloadResourceByForeignKey();
     assertAboutDomains()
         .that(resource)
         .hasExactlyStatusValues(StatusValue.INACTIVE, StatusValue.PENDING_DELETE)
@@ -1176,7 +1174,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertDeletionPollMessageFor(resource, "Deleted by registry administrator.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserExtension_nonZeroDayGrace_zeroDayPendingDelete() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput(
@@ -1186,7 +1184,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     clock.advanceOneMilli();
     runFlowAssertResponse(
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("domain_delete_response_pending.xml"));
-    DomainBase resource = reloadResourceByForeignKey();
+    Domain resource = reloadResourceByForeignKey();
     assertAboutDomains()
         .that(resource)
         .hasExactlyStatusValues(StatusValue.INACTIVE, StatusValue.PENDING_DELETE)
@@ -1204,7 +1202,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertDeletionPollMessageFor(resource, "Deleted by registry administrator.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_superuserExtension_zeroDayGrace_zeroDayPendingDelete() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput(
@@ -1215,11 +1213,11 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     runFlowAssertResponse(
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
     assertThat(reloadResourceByForeignKey()).isNull();
-    DomainBase resavedDomain = loadByEntity(domain);
+    Domain resavedDomain = loadByEntity(domain);
     assertDeletionPollMessageFor(resavedDomain, "Deleted by registry administrator.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_immediateDelete_withSuperuserAndMetadataExtension() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     eppRequestSource = EppRequestSource.TOOL;
@@ -1235,7 +1233,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         loadByEntity(domain), "Deleted by registry administrator: Broke world.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_allocationTokenNotSupportedOnDelete() {
     setEppInput("domain_delete_allocationtoken.xml");
     EppException thrown = assertThrows(UnimplementedExtensionException.class, this::runFlow);

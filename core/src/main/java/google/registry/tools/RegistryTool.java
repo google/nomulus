@@ -15,9 +15,7 @@
 package google.registry.tools;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.tools.javascrap.BackfillRegistrarBillingAccountsCommand;
 import google.registry.tools.javascrap.CompareEscrowDepositsCommand;
-import google.registry.tools.javascrap.HardDeleteHostCommand;
 
 /** Container class to create and run remote commands against a Datastore instance. */
 public final class RegistryTool {
@@ -31,7 +29,6 @@ public final class RegistryTool {
   public static final ImmutableMap<String, Class<? extends Command>> COMMAND_MAP =
       new ImmutableMap.Builder<String, Class<? extends Command>>()
           .put("ack_poll_messages", AckPollMessagesCommand.class)
-          .put("backfill_registrar_billing_accounts", BackfillRegistrarBillingAccountsCommand.class)
           .put("canonicalize_labels", CanonicalizeLabelsCommand.class)
           .put("check_domain", CheckDomainCommand.class)
           .put("check_domain_claims", CheckDomainClaimsCommand.class)
@@ -66,11 +63,11 @@ public final class RegistryTool {
           .put("get_allocation_token", GetAllocationTokenCommand.class)
           .put("get_claims_list", GetClaimsListCommand.class)
           .put("get_contact", GetContactCommand.class)
+          .put("get_database_migration_state", GetDatabaseMigrationStateCommand.class)
           .put("get_domain", GetDomainCommand.class)
           .put("get_history_entries", GetHistoryEntriesCommand.class)
           .put("get_host", GetHostCommand.class)
           .put("get_keyring_secret", GetKeyringSecretCommand.class)
-          .put("get_operation_status", GetOperationStatusCommand.class)
           .put("get_premium_list", GetPremiumListCommand.class)
           .put("get_registrar", GetRegistrarCommand.class)
           .put("get_reserved_list", GetReservedListCommand.class)
@@ -80,32 +77,26 @@ public final class RegistryTool {
           .put("get_sql_credential", GetSqlCredentialCommand.class)
           .put("get_tld", GetTldCommand.class)
           .put("ghostryde", GhostrydeCommand.class)
-          .put("hard_delete_host", HardDeleteHostCommand.class)
           .put("hash_certificate", HashCertificateCommand.class)
-          .put("import_datastore", ImportDatastoreCommand.class)
           .put("list_cursors", ListCursorsCommand.class)
-          .put("list_datastore_operations", ListDatastoreOperationsCommand.class)
           .put("list_domains", ListDomainsCommand.class)
           .put("list_hosts", ListHostsCommand.class)
           .put("list_premium_lists", ListPremiumListsCommand.class)
           .put("list_registrars", ListRegistrarsCommand.class)
           .put("list_reserved_lists", ListReservedListsCommand.class)
           .put("list_tlds", ListTldsCommand.class)
-          .put("load_snapshot", LoadSnapshotCommand.class)
           .put("load_test", LoadTestCommand.class)
           .put("lock_domain", LockDomainCommand.class)
           .put("login", LoginCommand.class)
           .put("logout", LogoutCommand.class)
           .put("pending_escrow", PendingEscrowCommand.class)
-          .put("registrar_contact", RegistrarContactCommand.class)
+          .put("registrar_poc", RegistrarPocCommand.class)
           .put("renew_domain", RenewDomainCommand.class)
-          .put("resave_entities", ResaveEntitiesCommand.class)
           .put("resave_environment_entities", ResaveEnvironmentEntitiesCommand.class)
-          .put("resave_epp_resource", ResaveEppResourceCommand.class)
           .put("save_sql_credential", SaveSqlCredentialCommand.class)
           .put("send_escrow_report_to_icann", SendEscrowReportToIcannCommand.class)
+          .put("set_database_migration_state", SetDatabaseMigrationStateCommand.class)
           .put("set_num_instances", SetNumInstancesCommand.class)
-          .put("set_sql_replay_checkpoint", SetSqlReplayCheckpointCommand.class)
           .put("setup_ote", SetupOteCommand.class)
           .put("uniform_rapid_suspension", UniformRapidSuspensionCommand.class)
           .put("unlock_domain", UnlockDomainCommand.class)

@@ -22,7 +22,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntitiesIfPresent;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
@@ -42,7 +41,7 @@ import google.registry.dns.DnsQueue;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
@@ -51,32 +50,26 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.FakeResponse;
 import google.registry.testing.SystemPropertyExtension;
-import google.registry.testing.TestOfyAndSql;
 import java.util.Optional;
 import java.util.Set;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DeleteProberDataAction}. */
-@DualDatabaseTest
 class DeleteProberDataActionTest {
 
   private static final DateTime DELETION_TIME = DateTime.parse("2010-01-01T00:00:00.000Z");
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withLocalModules()
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
 
   @RegisterExtension
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
@@ -108,7 +101,6 @@ class DeleteProberDataActionTest {
   private void resetAction() {
     action = new DeleteProberDataAction();
     action.dnsQueue = DnsQueue.createForTesting(new FakeClock());
-    action.response = new FakeResponse();
     action.isDryRun = false;
     action.tlds = ImmutableSet.of();
     action.registryAdminRegistrarId = "TheRegistrar";
@@ -120,7 +112,7 @@ class DeleteProberDataActionTest {
     RegistryEnvironment.UNITTEST.setup(systemPropertyExtension);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_deletesAllAndOnlyProberData() throws Exception {
     Set<ImmutableObject> tldEntities = persistLotsOfDomains("tld");
     Set<ImmutableObject> exampleEntities = persistLotsOfDomains("example");
@@ -135,7 +127,7 @@ class DeleteProberDataActionTest {
     assertAllAbsent(oaEntities);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_deletesAllAndOnlyGivenTlds() throws Exception {
     Set<ImmutableObject> tldEntities = persistLotsOfDomains("tld");
     Set<ImmutableObject> exampleEntities = persistLotsOfDomains("example");
@@ -151,7 +143,7 @@ class DeleteProberDataActionTest {
     assertAllAbsent(ibEntities);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFail_givenNonTestTld() {
     action.tlds = ImmutableSet.of("not-test.test");
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
@@ -160,7 +152,7 @@ class DeleteProberDataActionTest {
         .contains("If tlds are given, they must all exist and be TEST tlds");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFail_givenNonExistentTld() {
     action.tlds = ImmutableSet.of("non-existent.test");
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
@@ -169,7 +161,7 @@ class DeleteProberDataActionTest {
         .contains("If tlds are given, they must all exist and be TEST tlds");
   }
 
-  @TestOfyAndSql
+  @Test
   void testFail_givenNonDotTestTldOnProd() {
     action.tlds = ImmutableSet.of("example");
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
@@ -179,16 +171,16 @@ class DeleteProberDataActionTest {
         .contains("On production, can only work on TLDs that end with .test");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_doesntDeleteNicDomainForProbers() throws Exception {
-    DomainBase nic = persistActiveDomain("nic.ib-any.test");
+    Domain nic = persistActiveDomain("nic.ib-any.test");
     Set<ImmutableObject> ibEntities = persistLotsOfDomains("ib-any.test");
     action.run();
     assertAllAbsent(ibEntities);
     assertAllExist(ImmutableSet.of(nic));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun_doesntDeleteData() throws Exception {
     Set<ImmutableObject> tldEntities = persistLotsOfDomains("tld");
     Set<ImmutableObject> oaEntities = persistLotsOfDomains("oa-canary.test");
@@ -198,57 +190,56 @@ class DeleteProberDataActionTest {
     assertAllExist(oaEntities);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_activeDomain_isSoftDeleted() throws Exception {
-    DomainBase domain =
+    Domain domain =
         persistResource(
-            newDomainBase("blah.ib-any.test")
+            DatabaseHelper.newDomain("blah.ib-any.test")
                 .asBuilder()
                 .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
                 .build());
     action.run();
     DateTime timeAfterDeletion = DateTime.now(UTC);
-    assertThat(loadByForeignKey(DomainBase.class, "blah.ib-any.test", timeAfterDeletion)).isEmpty();
+    assertThat(loadByForeignKey(Domain.class, "blah.ib-any.test", timeAfterDeletion)).isEmpty();
     assertThat(loadByEntity(domain).getDeletionTime()).isLessThan(timeAfterDeletion);
     assertDnsTasksEnqueued("blah.ib-any.test");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_activeDomain_doubleMapSoftDeletes() throws Exception {
-    DomainBase domain = persistResource(
-        newDomainBase("blah.ib-any.test")
-            .asBuilder()
-            .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
-            .build());
+    Domain domain =
+        persistResource(
+            DatabaseHelper.newDomain("blah.ib-any.test")
+                .asBuilder()
+                .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
+                .build());
     action.run();
     DateTime timeAfterDeletion = DateTime.now(UTC);
     resetAction();
     action.run();
-    assertThat(loadByForeignKey(DomainBase.class, "blah.ib-any.test", timeAfterDeletion))
-        .isEmpty();
+    assertThat(loadByForeignKey(Domain.class, "blah.ib-any.test", timeAfterDeletion)).isEmpty();
     assertThat(loadByEntity(domain).getDeletionTime()).isLessThan(timeAfterDeletion);
     assertDnsTasksEnqueued("blah.ib-any.test");
   }
 
-  @TestOfyAndSql
+  @Test
   void test_recentlyCreatedDomain_isntDeletedYet() throws Exception {
     persistResource(
-        newDomainBase("blah.ib-any.test")
+        DatabaseHelper.newDomain("blah.ib-any.test")
             .asBuilder()
             .setCreationTimeForTest(DateTime.now(UTC).minusSeconds(1))
             .build());
     action.run();
-    Optional<DomainBase> domain =
-        loadByForeignKey(DomainBase.class, "blah.ib-any.test", DateTime.now(UTC));
+    Optional<Domain> domain = loadByForeignKey(Domain.class, "blah.ib-any.test", DateTime.now(UTC));
     assertThat(domain).isPresent();
     assertThat(domain.get().getDeletionTime()).isEqualTo(END_OF_TIME);
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun_doesntSoftDeleteData() throws Exception {
-    DomainBase domain =
+    Domain domain =
         persistResource(
-            newDomainBase("blah.ib-any.test")
+            DatabaseHelper.newDomain("blah.ib-any.test")
                 .asBuilder()
                 .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
                 .build());
@@ -257,14 +248,14 @@ class DeleteProberDataActionTest {
     assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(END_OF_TIME);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_domainWithSubordinateHosts_isSkipped() throws Exception {
     persistActiveHost("ns1.blah.ib-any.test");
-    DomainBase nakedDomain =
+    Domain nakedDomain =
         persistDeletedDomain("todelete.ib-any.test", DateTime.now(UTC).minusYears(1));
-    DomainBase domainWithSubord =
+    Domain domainWithSubord =
         persistDomainAsDeleted(
-            newDomainBase("blah.ib-any.test")
+            DatabaseHelper.newDomain("blah.ib-any.test")
                 .asBuilder()
                 .setSubordinateHosts(ImmutableSet.of("ns1.blah.ib-any.test"))
                 .build(),
@@ -275,10 +266,10 @@ class DeleteProberDataActionTest {
     assertAllAbsent(ImmutableSet.of(nakedDomain));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_registryAdminClientId_isRequiredForSoftDeletion() {
     persistResource(
-        newDomainBase("blah.ib-any.test")
+        DatabaseHelper.newDomain("blah.ib-any.test")
             .asBuilder()
             .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
             .build());
@@ -292,7 +283,7 @@ class DeleteProberDataActionTest {
    * along with the ForeignKeyIndex and EppResourceIndex.
    */
   private static Set<ImmutableObject> persistDomainAndDescendants(String fqdn) {
-    DomainBase domain = persistDeletedDomain(fqdn, DELETION_TIME);
+    Domain domain = persistDeletedDomain(fqdn, DELETION_TIME);
     DomainHistory historyEntry =
         persistSimpleResource(
             new DomainHistory.Builder()
@@ -304,7 +295,7 @@ class DeleteProberDataActionTest {
     BillingEvent.OneTime billingEvent =
         persistSimpleResource(
             new BillingEvent.OneTime.Builder()
-                .setParent(historyEntry)
+                .setDomainHistory(historyEntry)
                 .setBillingTime(DELETION_TIME.plusYears(1))
                 .setCost(Money.parse("USD 10"))
                 .setPeriodYears(1)
@@ -316,7 +307,7 @@ class DeleteProberDataActionTest {
     PollMessage.OneTime pollMessage =
         persistSimpleResource(
             new PollMessage.OneTime.Builder()
-                .setParent(historyEntry)
+                .setHistoryEntry(historyEntry)
                 .setEventTime(DELETION_TIME)
                 .setRegistrarId("TheRegistrar")
                 .setMsg("Domain registered")
@@ -329,7 +320,7 @@ class DeleteProberDataActionTest {
             .add(pollMessage);
     if (tm().isOfy()) {
       builder
-          .add(ForeignKeyIndex.load(DomainBase.class, fqdn, START_OF_TIME))
+          .add(ForeignKeyIndex.load(Domain.class, fqdn, START_OF_TIME))
           .add(loadByEntity(EppResourceIndex.create(Key.create(domain))));
     }
     return builder.build();

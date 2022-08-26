@@ -18,7 +18,6 @@ import static com.google.common.io.BaseEncoding.base16;
 import static google.registry.testing.DatabaseHelper.generateNewContactHostRoid;
 import static google.registry.testing.DatabaseHelper.generateNewDomainRoid;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistResourceWithBackup;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
@@ -34,8 +33,8 @@ import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -43,7 +42,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.reporting.HistoryEntry;
@@ -57,9 +56,9 @@ import org.joda.time.DateTime;
 /** Utility class for creating {@code EppResource} entities that'll successfully marshal. */
 final class RdeFixtures {
 
-  static DomainBase makeDomainBase(FakeClock clock, String tld) {
-    DomainBase domain =
-        new DomainBase.Builder()
+  static Domain makeDomain(FakeClock clock, String tld) {
+    Domain domain =
+        new Domain.Builder()
             .setDomainName("example." + tld)
             .setRepoId(generateNewDomainRoid(tld))
             .setRegistrant(
@@ -76,7 +75,7 @@ final class RdeFixtures {
                 .build());
     clock.advanceOneMilli();
     BillingEvent.OneTime billingEvent =
-        persistResourceWithBackup(
+        persistResource(
             new BillingEvent.OneTime.Builder()
                 .setReason(Reason.CREATE)
                 .setTargetId("example." + tld)
@@ -85,7 +84,7 @@ final class RdeFixtures {
                 .setPeriodYears(2)
                 .setEventTime(DateTime.parse("1990-01-01T00:00:00Z"))
                 .setBillingTime(DateTime.parse("1990-01-01T00:00:00Z"))
-                .setParent(historyEntry)
+                .setDomainHistory(historyEntry)
                 .build());
     domain =
         domain
@@ -122,8 +121,8 @@ final class RdeFixtures {
             .setIdnTableName("extended_latin")
             .setNameservers(
                 ImmutableSet.of(
-                    makeHostResource(clock, "bird.or.devil.みんな", "1.2.3.4").createVKey(),
-                    makeHostResource(clock, "ns2.cat.みんな", "bad:f00d:cafe::15:beef").createVKey()))
+                    makeHost(clock, "bird.or.devil.みんな", "1.2.3.4").createVKey(),
+                    makeHost(clock, "ns2.cat.みんな", "bad:f00d:cafe::15:beef").createVKey()))
             .setRegistrationExpirationTime(DateTime.parse("1994-01-01T00:00:00Z"))
             .setGracePeriods(
                 ImmutableSet.of(
@@ -139,7 +138,7 @@ final class RdeFixtures {
                                 .setPeriodYears(2)
                                 .setEventTime(DateTime.parse("1992-01-01T00:00:00Z"))
                                 .setBillingTime(DateTime.parse("1992-01-01T00:00:00Z"))
-                                .setParent(historyEntry)
+                                .setDomainHistory(historyEntry)
                                 .build())),
                     GracePeriod.create(
                         GracePeriodStatus.TRANSFER,
@@ -163,7 +162,7 @@ final class RdeFixtures {
                             .setRegistrarId("TheRegistrar")
                             .setEventTime(END_OF_TIME)
                             .setRecurrenceEndTime(END_OF_TIME)
-                            .setParent(historyEntry)
+                            .setDomainHistory(historyEntry)
                             .build())
                     .createVKey())
             .setAutorenewPollMessage(
@@ -174,7 +173,7 @@ final class RdeFixtures {
                             .setEventTime(END_OF_TIME)
                             .setAutorenewEndTime(END_OF_TIME)
                             .setMsg("Domain was auto-renewed.")
-                            .setParent(historyEntry)
+                            .setHistoryEntry(historyEntry)
                             .build())
                     .createVKey())
             .setTransferData(
@@ -192,7 +191,7 @@ final class RdeFixtures {
                                     .setRegistrarId("TheRegistrar")
                                     .setEventTime(END_OF_TIME)
                                     .setRecurrenceEndTime(END_OF_TIME)
-                                    .setParent(historyEntry)
+                                    .setDomainHistory(historyEntry)
                                     .build())
                             .createVKey())
                     .setServerApproveAutorenewPollMessage(
@@ -203,10 +202,13 @@ final class RdeFixtures {
                                     .setEventTime(END_OF_TIME)
                                     .setAutorenewEndTime(END_OF_TIME)
                                     .setMsg("Domain was auto-renewed.")
-                                    .setParent(historyEntry)
+                                    .setHistoryEntry(historyEntry)
                                     .build())
                             .createVKey())
-                    .setServerApproveEntities(ImmutableSet.of(billingEvent.createVKey()))
+                    .setServerApproveEntities(
+                        historyEntry.getDomainRepoId(),
+                        historyEntry.getId(),
+                        ImmutableSet.of(billingEvent.createVKey()))
                     .setTransferRequestTime(DateTime.parse("1991-01-01T00:00:00Z"))
                     .setTransferStatus(TransferStatus.PENDING)
                     .setTransferredRegistrationExpirationTime(
@@ -215,13 +217,13 @@ final class RdeFixtures {
                     .build())
             .build();
     clock.advanceOneMilli();
-    return persistResourceWithBackup(domain);
+    return persistResource(domain);
   }
 
   static ContactResource makeContactResource(
       FakeClock clock, String id, String name, String email) {
     clock.advanceOneMilli();
-    return persistResourceWithBackup(
+    return persistResource(
         new ContactResource.Builder()
             .setContactId(id)
             .setRepoId(generateNewContactHostRoid())
@@ -250,10 +252,10 @@ final class RdeFixtures {
             .build());
   }
 
-  static HostResource makeHostResource(FakeClock clock, String fqhn, String ip) {
+  static Host makeHost(FakeClock clock, String fqhn, String ip) {
     clock.advanceOneMilli();
-    return persistResourceWithBackup(
-        new HostResource.Builder()
+    return persistResource(
+        new Host.Builder()
             .setRepoId(generateNewContactHostRoid())
             .setCreationRegistrarId("LawyerCat")
             .setCreationTimeForTest(clock.nowUtc())

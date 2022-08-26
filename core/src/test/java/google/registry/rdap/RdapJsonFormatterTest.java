@@ -21,8 +21,8 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistContactResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHostResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeDomainBase;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHost;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.TestDataHelper.loadFile;
@@ -35,12 +35,11 @@ import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
-import google.registry.model.ofy.Ofy;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
@@ -50,38 +49,31 @@ import google.registry.rdap.RdapObjectClasses.RdapEntity;
 import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.rdap.RdapObjectClasses.TopLevelReplyObject;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestSqlOnly;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdapJsonFormatter}. */
-@DualDatabaseTest
 class RdapJsonFormatterTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("1999-01-01T00:00:00Z"));
 
   private RdapJsonFormatter rdapJsonFormatter;
 
   private Registrar registrar;
-  private DomainBase domainBaseFull;
-  private DomainBase domainBaseNoNameserversNoTransfers;
-  private HostResource hostResourceIpv4;
-  private HostResource hostResourceIpv6;
-  private HostResource hostResourceBoth;
-  private HostResource hostResourceNoAddresses;
-  private HostResource hostResourceNotLinked;
-  private HostResource hostResourceSuperordinatePendingTransfer;
+  private Domain domainFull;
+  private Domain domainNoNameserversNoTransfers;
+  private Host hostIpv4;
+  private Host hostIpv6;
+  private Host hostBoth;
+  private Host hostNoAddresses;
+  private Host hostNotLinked;
+  private Host hostSuperordinatePendingTransfer;
   private ContactResource contactResourceRegistrant;
   private ContactResource contactResourceAdmin;
   private ContactResource contactResourceTech;
@@ -89,8 +81,6 @@ class RdapJsonFormatterTest {
 
   @BeforeEach
   void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
-
     rdapJsonFormatter = RdapTestHelper.getTestRdapJsonFormatter(clock);
     rdapJsonFormatter.rdapAuthorization =
         RdapAuthorization.create(RdapAuthorization.Role.REGISTRAR, "unicoderegistrar");
@@ -132,37 +122,37 @@ class RdapJsonFormatterTest {
         ImmutableList.of("Somewhere", "Over the Rainbow"),
         clock.nowUtc().minusYears(4),
         registrar);
-    hostResourceIpv4 =
-        makeAndPersistHostResource(
+    hostIpv4 =
+        makeAndPersistHost(
             "ns1.cat.みんな", "1.2.3.4", null, clock.nowUtc().minusYears(1), "unicoderegistrar");
-    hostResourceIpv6 =
-        makeAndPersistHostResource(
+    hostIpv6 =
+        makeAndPersistHost(
             "ns2.cat.みんな",
             "bad:f00d:cafe:0:0:0:15:beef",
             null,
             clock.nowUtc().minusYears(2),
             "unicoderegistrar");
-    hostResourceBoth =
-        makeAndPersistHostResource(
+    hostBoth =
+        makeAndPersistHost(
             "ns3.cat.みんな",
             "1.2.3.4",
             "bad:f00d:cafe:0:0:0:15:beef",
             clock.nowUtc().minusYears(3),
             "unicoderegistrar");
-    hostResourceNoAddresses =
-        makeAndPersistHostResource(
+    hostNoAddresses =
+        makeAndPersistHost(
             "ns4.cat.みんな", null, null, clock.nowUtc().minusYears(4), "unicoderegistrar");
-    hostResourceNotLinked =
-        makeAndPersistHostResource(
+    hostNotLinked =
+        makeAndPersistHost(
             "ns5.cat.みんな", null, null, clock.nowUtc().minusYears(5), "unicoderegistrar");
-    hostResourceSuperordinatePendingTransfer =
+    hostSuperordinatePendingTransfer =
         persistResource(
-            makeAndPersistHostResource(
+            makeAndPersistHost(
                     "ns1.dog.みんな", null, null, clock.nowUtc().minusYears(6), "unicoderegistrar")
                 .asBuilder()
                 .setSuperordinateDomain(
                     persistResource(
-                            makeDomainBase(
+                            makeDomain(
                                     "dog.みんな",
                                     contactResourceRegistrant,
                                     contactResourceAdmin,
@@ -186,23 +176,23 @@ class RdapJsonFormatterTest {
                                 .build())
                         .createVKey())
                 .build());
-    domainBaseFull =
+    domainFull =
         persistResource(
-            makeDomainBase(
+            makeDomain(
                     "cat.みんな",
                     contactResourceRegistrant,
                     contactResourceAdmin,
                     contactResourceTech,
-                    hostResourceIpv4,
-                    hostResourceIpv6,
+                    hostIpv4,
+                    hostIpv6,
                     registrar)
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc().minusMonths(4))
                 .setLastEppUpdateTime(clock.nowUtc().minusMonths(3))
                 .build());
-    domainBaseNoNameserversNoTransfers =
+    domainNoNameserversNoTransfers =
         persistResource(
-            makeDomainBase(
+            makeDomain(
                     "fish.みんな",
                     contactResourceRegistrant,
                     contactResourceRegistrant,
@@ -214,169 +204,158 @@ class RdapJsonFormatterTest {
                 .setCreationTimeForTest(clock.nowUtc())
                 .setLastEppUpdateTime(null)
                 .build());
-    // Create an unused domain that references hostResourceBoth and hostResourceNoAddresses so that
+    // Create an unused domain that references hostBoth and hostNoAddresses so that
     // they will have "associated" (ie, StatusValue.LINKED) status.
     persistResource(
-        makeDomainBase(
+        makeDomain(
             "dog.みんな",
             contactResourceRegistrant,
             contactResourceAdmin,
             contactResourceTech,
-            hostResourceBoth,
-            hostResourceNoAddresses,
+            hostBoth,
+            hostNoAddresses,
             registrar));
 
     // history entries
     // We create 3 "transfer approved" entries, to make sure we only save the last one
     persistResource(
         makeHistoryEntry(
-            domainBaseFull,
+            domainFull,
             HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE,
             null,
             null,
             clock.nowUtc().minusMonths(3)));
     persistResource(
         makeHistoryEntry(
-            domainBaseFull,
+            domainFull,
             HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE,
             null,
             null,
             clock.nowUtc().minusMonths(1)));
     persistResource(
         makeHistoryEntry(
-            domainBaseFull,
+            domainFull,
             HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE,
             null,
             null,
             clock.nowUtc().minusMonths(2)));
-    // We create a "transfer approved" entry for domainBaseNoNameserversNoTransfers that happened
+    // We create a "transfer approved" entry for domainNoNameserversNoTransfers that happened
     // before the domain was created, to make sure we don't show it
     persistResource(
         makeHistoryEntry(
-            domainBaseNoNameserversNoTransfers,
+            domainNoNameserversNoTransfers,
             HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE,
             null,
             null,
             clock.nowUtc().minusMonths(3)));
   }
 
-  static ImmutableList<RegistrarContact> makeMoreRegistrarContacts(Registrar registrar) {
+  static ImmutableList<RegistrarPoc> makeMoreRegistrarContacts(Registrar registrar) {
     return ImmutableList.of(
-        new RegistrarContact.Builder()
-            .setParent(registrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
             .setName("Baby Doe")
             .setEmailAddress("babydoe@example.com")
             .setPhoneNumber("+1.2125551217")
             .setFaxNumber("+1.2125551218")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+            .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
             .setVisibleInWhoisAsAdmin(false)
             .setVisibleInWhoisAsTech(false)
             .build(),
-        new RegistrarContact.Builder()
-            .setParent(registrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
             .setName("John Doe")
             .setEmailAddress("johndoe@example.com")
             .setFaxNumber("+1.2125551213")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+            .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
             .setVisibleInWhoisAsAdmin(false)
             .setVisibleInWhoisAsTech(true)
             .build(),
-        new RegistrarContact.Builder()
-            .setParent(registrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
             .setName("Jane Doe")
             .setEmailAddress("janedoe@example.com")
             .setPhoneNumber("+1.2125551215")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH, RegistrarContact.Type.ADMIN))
+            .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH, RegistrarPoc.Type.ADMIN))
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(false)
             .build(),
-        new RegistrarContact.Builder()
-            .setParent(registrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
             .setName("Play Doe")
             .setEmailAddress("playdoe@example.com")
             .setPhoneNumber("+1.2125551217")
             .setFaxNumber("+1.2125551218")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.BILLING))
+            .setTypes(ImmutableSet.of(RegistrarPoc.Type.BILLING))
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(true)
             .build());
   }
 
   private JsonObject loadJson(String expectedFileName) {
-    return new Gson().fromJson(loadFile(this.getClass(), expectedFileName), JsonObject.class);
+    return new Gson().fromJson(loadFile(getClass(), expectedFileName), JsonObject.class);
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrar() {
     assertThat(rdapJsonFormatter.createRdapRegistrarEntity(registrar, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_registrar.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrar_summary() {
     assertThat(
             rdapJsonFormatter.createRdapRegistrarEntity(registrar, OutputDataType.SUMMARY).toJson())
         .isEqualTo(loadJson("rdapjson_registrar_summary.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testHost_ipv4() {
-    assertThat(
-            rdapJsonFormatter.createRdapNameserver(hostResourceIpv4, OutputDataType.FULL).toJson())
+    assertThat(rdapJsonFormatter.createRdapNameserver(hostIpv4, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_ipv4.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testHost_ipv6() {
-    assertThat(
-            rdapJsonFormatter.createRdapNameserver(hostResourceIpv6, OutputDataType.FULL).toJson())
+    assertThat(rdapJsonFormatter.createRdapNameserver(hostIpv6, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_ipv6.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testHost_both() {
-    assertThat(
-            rdapJsonFormatter.createRdapNameserver(hostResourceBoth, OutputDataType.FULL).toJson())
+    assertThat(rdapJsonFormatter.createRdapNameserver(hostBoth, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_both.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testHost_both_summary() {
-    assertThat(
-            rdapJsonFormatter
-                .createRdapNameserver(hostResourceBoth, OutputDataType.SUMMARY)
-                .toJson())
+    assertThat(rdapJsonFormatter.createRdapNameserver(hostBoth, OutputDataType.SUMMARY).toJson())
         .isEqualTo(loadJson("rdapjson_host_both_summary.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testHost_noAddresses() {
     assertThat(
-            rdapJsonFormatter
-                .createRdapNameserver(hostResourceNoAddresses, OutputDataType.FULL)
-                .toJson())
+            rdapJsonFormatter.createRdapNameserver(hostNoAddresses, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_no_addresses.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testHost_notLinked() {
-    assertThat(
-            rdapJsonFormatter
-                .createRdapNameserver(hostResourceNotLinked, OutputDataType.FULL)
-                .toJson())
+    assertThat(rdapJsonFormatter.createRdapNameserver(hostNotLinked, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_not_linked.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testHost_superordinateHasPendingTransfer() {
     assertThat(
             rdapJsonFormatter
-                .createRdapNameserver(hostResourceSuperordinatePendingTransfer, OutputDataType.FULL)
+                .createRdapNameserver(hostSuperordinatePendingTransfer, OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_host_pending_transfer.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrant() {
     assertThat(
             rdapJsonFormatter
@@ -388,7 +367,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_registrant.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrant_summary() {
     assertThat(
             rdapJsonFormatter
@@ -400,7 +379,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_registrant_summary.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrant_loggedOut() {
     rdapJsonFormatter.rdapAuthorization = RdapAuthorization.PUBLIC_AUTHORIZATION;
     assertThat(
@@ -413,7 +392,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_registrant_logged_out.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRegistrant_baseHasNoTrailingSlash() {
     // First, make sure we have a trailing slash at the end by default!
     // This test tries to change the default state, if the default doesn't have a /, then this test
@@ -432,7 +411,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_registrant.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testAdmin() {
     assertThat(
             rdapJsonFormatter
@@ -444,7 +423,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_admincontact.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testTech() {
     assertThat(
             rdapJsonFormatter
@@ -454,7 +433,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_techcontact.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testRolelessContact() {
     assertThat(
             rdapJsonFormatter
@@ -464,7 +443,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_rolelesscontact.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testUnlinkedContact() {
     assertThat(
             rdapJsonFormatter
@@ -474,46 +453,46 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_unlinkedcontact.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomain_full() {
-    assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.FULL).toJson())
+    assertThat(rdapJsonFormatter.createRdapDomain(domainFull, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_domain_full.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomain_summary() {
-    assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.SUMMARY).toJson())
+    assertThat(rdapJsonFormatter.createRdapDomain(domainFull, OutputDataType.SUMMARY).toJson())
         .isEqualTo(loadJson("rdapjson_domain_summary.json"));
   }
 
-  @TestSqlOnly
+  @Test
   void testGetLastHistoryEntryByType() {
     // Expected data are from "rdapjson_domain_summary.json"
     assertThat(
             Maps.transformValues(
-                rdapJsonFormatter.getLastHistoryEntryByType(domainBaseFull),
+                rdapJsonFormatter.getLastHistoryEntryByType(domainFull),
                 HistoryEntry::getModificationTime))
         .containsExactlyEntriesIn(
             ImmutableMap.of(TRANSFER, DateTime.parse("1999-12-01T00:00:00.000Z")));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomain_logged_out() {
     rdapJsonFormatter.rdapAuthorization = RdapAuthorization.PUBLIC_AUTHORIZATION;
-    assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.FULL).toJson())
+    assertThat(rdapJsonFormatter.createRdapDomain(domainFull, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_domain_logged_out.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomain_noNameserversNoTransfersMultipleRoleContact() {
     assertThat(
             rdapJsonFormatter
-                .createRdapDomain(domainBaseNoNameserversNoTransfers, OutputDataType.FULL)
+                .createRdapDomain(domainNoNameserversNoTransfers, OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_domain_no_nameservers.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testError() {
     assertThat(
             RdapObjectClasses.ErrorResponse.create(
@@ -522,24 +501,24 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_error.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testTopLevel() {
     assertThat(
             TopLevelReplyObject.create(
                     new ReplyPayloadBase(BoilerplateType.OTHER) {
-                      @JsonableElement public String key = "value";
+                      @JsonableElement public static final String key = "value";
                     },
                     rdapJsonFormatter.createTosNotice())
                 .toJson())
         .isEqualTo(loadJson("rdapjson_toplevel.json"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testTopLevel_domain() {
     assertThat(
             TopLevelReplyObject.create(
                     new ReplyPayloadBase(BoilerplateType.DOMAIN) {
-                      @JsonableElement public String key = "value";
+                      @JsonableElement public static final String key = "value";
                     },
                     rdapJsonFormatter.createTosNotice())
                 .toJson())

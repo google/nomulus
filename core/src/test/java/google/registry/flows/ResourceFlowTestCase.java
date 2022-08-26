@@ -18,7 +18,6 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 
@@ -29,7 +28,7 @@ import com.google.common.testing.TestLogHandler;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.domain.DomainContent;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
@@ -41,6 +40,7 @@ import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.testing.TestCacheExtension;
 import google.registry.util.JdkLoggerConfig;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.logging.Level;
@@ -49,6 +49,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.json.simple.JSONValue;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Base class for resource flow unit tests.
@@ -60,6 +61,10 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     extends FlowTestCase<F> {
 
   private final TestLogHandler logHandler = new TestLogHandler();
+
+  @RegisterExtension
+  public final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder().withClaimsListCache(java.time.Duration.ofHours(6)).build();
 
   @BeforeEach
   void beforeResourceFlowTestCase() {
@@ -87,7 +92,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     tm().clearSessionCache();
     @SuppressWarnings("unchecked")
     T refreshedResource =
-        (T) transactIfJpaTm(() -> tm().loadByEntity(resource)).cloneProjectedAtTime(now);
+        (T) tm().transact(() -> tm().loadByEntity(resource)).cloneProjectedAtTime(now);
     return refreshedResource;
   }
 
@@ -156,10 +161,10 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
       assertAboutImmutableObjects()
           .that(contactHistory.getContactBase().get())
           .hasFieldsEqualTo(resource);
-    } else if (resource instanceof DomainContent) {
+    } else if (resource instanceof DomainBase) {
       DomainHistory domainHistory = (DomainHistory) historyEntry;
       assertAboutImmutableObjects()
-          .that(domainHistory.getDomainContent().get())
+          .that(domainHistory.getDomainBase().get())
           .isEqualExceptFields(resource, "gracePeriods", "dsData", "nsHosts");
     } else if (resource instanceof HostBase) {
       HostHistory hostHistory = (HostHistory) historyEntry;

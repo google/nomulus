@@ -26,18 +26,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestSqlOnly;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetAllocationTokenCommand}. */
-@DualDatabaseTest
 class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocationTokenCommand> {
 
-  @TestSqlOnly
+  @Test
   void testSuccess_oneToken() throws Exception {
     createTlds("bar");
     AllocationToken token =
@@ -51,7 +49,7 @@ class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocationTokenCo
     assertInStdout(token.toString(), "Token foo was not redeemed.");
   }
 
-  @TestSqlOnly
+  @Test
   void testSuccess_multipleTokens() throws Exception {
     createTlds("baz");
     ImmutableList<AllocationToken> tokens =
@@ -75,11 +73,10 @@ class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocationTokenCo
         "Token fii was not redeemed.");
   }
 
-  @TestSqlOnly
+  @Test
   void testSuccess_redeemedToken() throws Exception {
     createTld("tld");
-    DomainBase domain =
-        persistActiveDomain("fqqdn.tld", DateTime.parse("2016-04-07T22:19:17.044Z"));
+    Domain domain = persistActiveDomain("fqqdn.tld", DateTime.parse("2016-04-07T22:19:17.044Z"));
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -95,7 +92,7 @@ class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocationTokenCo
         "Token foo was redeemed to create domain fqqdn.tld at 2016-04-07T22:19:17.044Z.");
   }
 
-  @TestSqlOnly
+  @Test
   void testSuccess_oneTokenDoesNotExist() throws Exception {
     createTlds("bar");
     AllocationToken token =
@@ -110,7 +107,7 @@ class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocationTokenCo
         token.toString(), "Token foo was not redeemed.", "ERROR: Token bar does not exist.");
   }
 
-  @TestSqlOnly
+  @Test
   void testFailure_noAllocationTokensSpecified() {
     assertThrows(ParameterException.class, this::runCommand);
   }

@@ -16,14 +16,13 @@ package google.registry.tools.server;
 
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static java.util.Comparator.comparing;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EppResourceUtils;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -36,7 +35,7 @@ import org.joda.time.DateTime;
     path = ListHostsAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
-public final class ListHostsAction extends ListObjectsAction<HostResource> {
+public final class ListHostsAction extends ListObjectsAction<Host> {
 
   public static final String PATH = "/_dr/admin/list/hosts";
 
@@ -49,10 +48,10 @@ public final class ListHostsAction extends ListObjectsAction<HostResource> {
   }
 
   @Override
-  public ImmutableSet<HostResource> loadObjects() {
+  public ImmutableSet<Host> loadObjects() {
     final DateTime now = clock.nowUtc();
-    return transactIfJpaTm(() -> tm().loadAllOf(HostResource.class)).stream()
+    return tm().transact(() -> tm().loadAllOf(Host.class)).stream()
         .filter(host -> EppResourceUtils.isActive(host, now))
-        .collect(toImmutableSortedSet(comparing(HostResource::getHostName)));
+        .collect(toImmutableSortedSet(comparing(Host::getHostName)));
   }
 }

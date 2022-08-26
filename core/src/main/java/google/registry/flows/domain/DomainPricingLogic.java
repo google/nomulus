@@ -51,10 +51,12 @@ import org.joda.time.DateTime;
  */
 public final class DomainPricingLogic {
 
-  @Inject DomainPricingCustomLogic customLogic;
+  private final DomainPricingCustomLogic customLogic;
 
   @Inject
-  DomainPricingLogic() {}
+  public DomainPricingLogic(DomainPricingCustomLogic customLogic) {
+    this.customLogic = customLogic;
+  }
 
   /**
    * Returns a new create price for the pricer.
@@ -105,13 +107,12 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new renewal cost for the pricer. */
-  FeesAndCredits getRenewPrice(
+  public FeesAndCredits getRenewPrice(
       Registry registry,
       String domainName,
       DateTime dateTime,
       int years,
-      @Nullable Recurring recurringBillingEvent)
-      throws EppException {
+      @Nullable Recurring recurringBillingEvent) {
     checkArgument(years > 0, "Number of years must be positive");
     Money renewCost;
     boolean isRenewCostPremiumPrice;
@@ -194,9 +195,14 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new transfer price for the pricer. */
-  FeesAndCredits getTransferPrice(Registry registry, String domainName, DateTime dateTime)
+  FeesAndCredits getTransferPrice(
+      Registry registry,
+      String domainName,
+      DateTime dateTime,
+      @Nullable Recurring recurringBillingEvent)
       throws EppException {
-    DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
+    FeesAndCredits renewPrice =
+        getRenewPrice(registry, domainName, dateTime, 1, recurringBillingEvent);
     return customLogic.customizeTransferPrice(
         TransferPriceParameters.newBuilder()
             .setFeesAndCredits(
@@ -204,9 +210,9 @@ public final class DomainPricingLogic {
                     .setCurrency(registry.getCurrency())
                     .addFeeOrCredit(
                         Fee.create(
-                            domainPrices.getRenewCost().getAmount(),
+                            renewPrice.getRenewCost().getAmount(),
                             FeeType.RENEW,
-                            domainPrices.isPremium()))
+                            renewPrice.hasAnyPremiumFees()))
                     .build())
             .setRegistry(registry)
             .setDomainName(InternetDomainName.from(domainName))

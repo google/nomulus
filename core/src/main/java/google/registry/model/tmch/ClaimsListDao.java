@@ -14,25 +14,57 @@
 
 package google.registry.model.tmch;
 
+import static google.registry.config.RegistryConfig.getClaimsListCacheDuration;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.CacheUtils;
+import java.time.Duration;
+import java.util.Optional;
 
 /** Data access object for {@link ClaimsList}. */
 public class ClaimsListDao {
 
+  /**
+   * Cache of the {@link ClaimsList} instance.
+   *
+   * <p>The key is meaningless since we only have one active claims list, this is essentially a
+   * memoizing Supplier that can be reset.
+   */
+  @VisibleForTesting
+  static LoadingCache<Class<ClaimsListDao>, ClaimsList> CACHE =
+      createCache(getClaimsListCacheDuration());
+
+  @VisibleForTesting
+  public static void setCacheForTest(Optional<Duration> expiry) {
+    Duration effectiveExpiry = expiry.orElse(getClaimsListCacheDuration());
+    CACHE = createCache(effectiveExpiry);
+  }
+
+  private static LoadingCache<Class<ClaimsListDao>, ClaimsList> createCache(Duration expiry) {
+    return CacheUtils.newCacheBuilder(expiry).build(ignored -> ClaimsListDao.getUncached());
+  }
+
   /** Saves the given {@link ClaimsList} to Cloud SQL. */
   public static void save(ClaimsList claimsList) {
     jpaTm().transact(() -> jpaTm().insert(claimsList));
+    CACHE.put(ClaimsListDao.class, claimsList);
+  }
+
+  /** Returns the most recent revision of the {@link ClaimsList} from the cache. */
+  public static ClaimsList get() {
+    return CACHE.get(ClaimsListDao.class);
   }
 
   /**
    * Returns the most recent revision of the {@link ClaimsList} in SQL or an empty list if it
    * doesn't exist.
    */
-  public static ClaimsList get() {
+  private static ClaimsList getUncached() {
     return jpaTm()
         .transact(
             () -> {

@@ -38,8 +38,8 @@ import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import javax.inject.Inject;
@@ -92,8 +92,8 @@ public final class HostDeleteFlow implements TransactionalFlow {
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
-    checkLinkedDomains(targetId, now, HostResource.class);
-    HostResource existingHost = loadAndVerifyExistence(HostResource.class, targetId, now);
+    checkLinkedDomains(targetId, now, Host.class);
+    Host existingHost = loadAndVerifyExistence(Host.class, targetId, now);
     verifyNoDisallowedStatuses(existingHost, DISALLOWED_STATUSES);
     if (!isSuperuser) {
       // Hosts transfer with their superordinate domains, so for hosts with a superordinate domain,
@@ -104,8 +104,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
               : existingHost;
       verifyResourceOwnership(registrarId, owningResource);
     }
-    HostResource newHost =
-        existingHost.asBuilder().setStatusValues(null).setDeletionTime(now).build();
+    Host newHost = existingHost.asBuilder().setStatusValues(null).setDeletionTime(now).build();
     if (existingHost.isSubordinate()) {
       dnsQueue.addHostRefreshTask(existingHost.getHostName());
       tm().update(

@@ -16,7 +16,6 @@ package google.registry.model.contact;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.Buildable;
 import google.registry.model.Buildable.Overlayable;
 import google.registry.model.ImmutableObject;
@@ -36,7 +35,6 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * Implementation of both "postalInfoType" and "chgPostalInfoType" from <a href=
  * "http://tools.ietf.org/html/rfc5733">RFC5733</a>.
  */
-@Embed
 @Embeddable
 @XmlType(propOrder = {"name", "org", "address", "type"})
 public class PostalInfo extends ImmutableObject

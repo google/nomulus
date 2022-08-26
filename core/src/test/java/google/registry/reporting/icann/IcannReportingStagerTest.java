@@ -50,7 +50,7 @@ class IcannReportingStagerTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withLocalModules().build();
+      AppEngineExtension.builder().withCloudSql().withLocalModules().build();
 
   private IcannReportingStager createStager() {
     IcannReportingStager action = new IcannReportingStager();

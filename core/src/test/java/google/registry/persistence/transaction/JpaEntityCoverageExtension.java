@@ -45,9 +45,7 @@ public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEach
           // needs to remove it in order to avoid affecting any other tests running in the same JVM.
           // TODO(gbrodman): remove this when we implement proper read-only modes for the
           // transaction managers.
-          "DatabaseMigrationStateSchedule",
-          // TransactionEntity is trivial; its persistence is tested in TransactionTest.
-          "TransactionEntity");
+          "DatabaseMigrationStateSchedule");
 
   public static final ImmutableSet<Class<?>> ALL_JPA_ENTITIES =
       PersistenceXmlUtility.getManagedClasses().stream()

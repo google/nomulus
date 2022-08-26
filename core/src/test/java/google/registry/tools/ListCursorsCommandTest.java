@@ -22,17 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ListCursorsCommand}. */
-@DualDatabaseTest
 public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> {
 
   private static final String HEADER_ONE =
@@ -41,25 +36,22 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
   private static final String HEADER_TWO =
       "--------------------------------------------------------------------------";
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   @BeforeEach
   void beforeEach() {
     fakeClock.setTo(DateTime.parse("1984-12-21T06:07:08.789Z"));
-    inject.setStaticField(Ofy.class, "clock", fakeClock);
   }
 
-  @TestOfyAndSql
+  @Test
   void testListCursors_noTlds_printsNothing() throws Exception {
     runCommand("--type=BRDA");
     assertThat(getStdoutAsString()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testListCursors_twoTldsOneAbsent_printsAbsentAndTimestampSorted() throws Exception {
     createTlds("foo", "bar");
     persistResource(
-        Cursor.create(CursorType.BRDA, DateTime.parse("1984-12-18TZ"), Registry.get("bar")));
+        Cursor.createScoped(CursorType.BRDA, DateTime.parse("1984-12-18TZ"), Registry.get("bar")));
     runCommand("--type=BRDA");
     assertThat(getStdoutAsLines())
         .containsExactly(
@@ -70,19 +62,19 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
         .inOrder();
   }
 
-  @TestOfyAndSql
+  @Test
   void testListCursors_badCursor_throwsIae() {
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> runCommand("--type=love"));
     assertThat(thrown).hasMessageThat().contains("Invalid value for --type parameter.");
   }
 
-  @TestOfyAndSql
+  @Test
   void testListCursors_lowercaseCursor_isAllowed() throws Exception {
     runCommand("--type=brda");
   }
 
-  @TestOfyAndSql
+  @Test
   void testListCursors_filterEscrowEnabled_doesWhatItSays() throws Exception {
     createTlds("foo", "bar");
     persistResource(Registry.get("bar").asBuilder().setEscrowEnabled(true).build());

@@ -26,7 +26,6 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.CacheUtils;
 import google.registry.model.annotations.DeleteAfterMigration;
-import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import java.time.Duration;
 import java.util.Arrays;
 import javax.persistence.Entity;
@@ -109,28 +108,13 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
     }
   }
 
-  public static class MigrationStateTransition extends TimedTransition<MigrationState> {
-    private MigrationState migrationState;
-
-    @Override
-    public MigrationState getValue() {
-      return migrationState;
-    }
-
-    @Override
-    protected void setValue(MigrationState migrationState) {
-      this.migrationState = migrationState;
-    }
-  }
-
   /**
    * Cache of the current migration schedule. The key is meaningless; this is essentially a memoized
    * Supplier that can be reset for testing purposes and after writes.
    */
   @VisibleForTesting
   public static final LoadingCache<
-          Class<DatabaseMigrationStateSchedule>,
-          TimedTransitionProperty<MigrationState, MigrationStateTransition>>
+          Class<DatabaseMigrationStateSchedule>, TimedTransitionProperty<MigrationState>>
       // Each instance should cache the migration schedule for five minutes before reloading
       CACHE =
           CacheUtils.newCacheBuilder(Duration.ofMinutes(5))
@@ -185,44 +169,40 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
 
   // Default map to return if we have never saved any -- only use Datastore.
   @VisibleForTesting
-  public static final TimedTransitionProperty<MigrationState, MigrationStateTransition>
-      DEFAULT_TRANSITION_MAP =
-          TimedTransitionProperty.fromValueMap(
-              ImmutableSortedMap.of(START_OF_TIME, MigrationState.DATASTORE_ONLY),
-              MigrationStateTransition.class);
+  public static final TimedTransitionProperty<MigrationState> DEFAULT_TRANSITION_MAP =
+      TimedTransitionProperty.fromValueMap(
+          ImmutableSortedMap.of(START_OF_TIME, MigrationState.DATASTORE_ONLY));
 
   @VisibleForTesting
-  public TimedTransitionProperty<MigrationState, MigrationStateTransition> migrationTransitions =
-      TimedTransitionProperty.forMapify(
-          MigrationState.DATASTORE_ONLY, MigrationStateTransition.class);
+  public TimedTransitionProperty<MigrationState> migrationTransitions =
+      TimedTransitionProperty.withInitialValue(MigrationState.DATASTORE_ONLY);
 
   // Required for Objectify initialization
   private DatabaseMigrationStateSchedule() {}
 
   @VisibleForTesting
   public DatabaseMigrationStateSchedule(
-      TimedTransitionProperty<MigrationState, MigrationStateTransition> migrationTransitions) {
+      TimedTransitionProperty<MigrationState> migrationTransitions) {
     this.migrationTransitions = migrationTransitions;
   }
 
   /** Sets and persists to SQL the provided migration transition schedule. */
   public static void set(ImmutableSortedMap<DateTime, MigrationState> migrationTransitionMap) {
     jpaTm().assertInTransaction();
-    TimedTransitionProperty<MigrationState, MigrationStateTransition> transitions =
+    TimedTransitionProperty<MigrationState> transitions =
         TimedTransitionProperty.make(
             migrationTransitionMap,
-            MigrationStateTransition.class,
             VALID_STATE_TRANSITIONS,
             "validStateTransitions",
             MigrationState.DATASTORE_ONLY,
             "migrationTransitionMap must start with DATASTORE_ONLY");
     validateTransitionAtCurrentTime(transitions);
-    jpaTm().putWithoutBackup(new DatabaseMigrationStateSchedule(transitions));
+    jpaTm().put(new DatabaseMigrationStateSchedule(transitions));
     CACHE.invalidateAll();
   }
 
   /** Loads the currently-set migration schedule from the cache, or the default if none exists. */
-  public static TimedTransitionProperty<MigrationState, MigrationStateTransition> get() {
+  public static TimedTransitionProperty<MigrationState> get() {
     return CACHE.get(DatabaseMigrationStateSchedule.class);
   }
 
@@ -233,7 +213,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
 
   /** Loads the currently-set migration schedule from SQL, or the default if none exists. */
   @VisibleForTesting
-  static TimedTransitionProperty<MigrationState, MigrationStateTransition> getUncached() {
+  static TimedTransitionProperty<MigrationState> getUncached() {
     return jpaTm()
         .transactWithoutBackup(
             () -> {
@@ -260,7 +240,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
    * time to the new map at the current time must also be valid.
    */
   private static void validateTransitionAtCurrentTime(
-      TimedTransitionProperty<MigrationState, MigrationStateTransition> newTransitions) {
+      TimedTransitionProperty<MigrationState> newTransitions) {
     MigrationState currentValue = getUncached().getValueAtTime(jpaTm().getTransactionTime());
     MigrationState nextCurrentValue = newTransitions.getValueAtTime(jpaTm().getTransactionTime());
     checkArgument(

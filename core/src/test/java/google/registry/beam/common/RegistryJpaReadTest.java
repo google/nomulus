@@ -27,8 +27,8 @@ import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -116,9 +116,9 @@ public class RegistryJpaReadTest {
             ImmutableMap.of("type", Registrar.Type.REAL),
             false,
             (Object[] row) -> {
-              DomainBase domainBase = (DomainBase) row[0];
+              Domain domain = (Domain) row[0];
               String emailAddress = (String) row[1];
-              return domainBase.getRepoId() + "-" + emailAddress;
+              return domain.getRepoId() + "-" + emailAddress;
             });
     PCollection<String> joinedStrings = testPipeline.apply(read);
 
@@ -150,14 +150,14 @@ public class RegistryJpaReadTest {
   @Test
   void readWithStringTypedQuery() {
     setupForJoinQuery();
-    Read<DomainBase, String> read =
+    Read<Domain, String> read =
         RegistryJpaIO.read(
             "select d from Domain d join Registrar r on"
                 + " d.currentSponsorClientId = r.clientIdentifier where r.type = :type"
                 + " and d.deletionTime > now()",
             ImmutableMap.of("type", Registrar.Type.REAL),
-            DomainBase.class,
-            DomainBase::getRepoId);
+            Domain.class,
+            Domain::getRepoId);
     PCollection<String> repoIds = testPipeline.apply(read);
 
     PAssert.that(repoIds).containsInAnyOrder("4-COM");
@@ -179,8 +179,8 @@ public class RegistryJpaReadTest {
             .setTransferData(new ContactTransferData.Builder().build())
             .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
             .build();
-    DomainBase domain =
-        new DomainBase.Builder()
+    Domain domain =
+        new Domain.Builder()
             .setDomainName("example.com")
             .setRepoId("4-COM")
             .setCreationRegistrarId(registrar.getRegistrarId())

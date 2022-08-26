@@ -20,6 +20,7 @@ import static google.registry.model.IdService.allocateId;
 import static google.registry.model.ModelUtils.getAllFields;
 
 import com.googlecode.objectify.annotation.Id;
+import google.registry.model.annotations.OfyIdAllocation;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.lang.reflect.Field;
 import java.util.Optional;
@@ -59,7 +60,10 @@ public interface Buildable {
         // any entity it has one and only one @Id field in its class hierarchy.
         Field idField =
             getAllFields(instance.getClass()).values().stream()
-                .filter(field -> field.isAnnotationPresent(Id.class))
+                .filter(
+                    field ->
+                        field.isAnnotationPresent(Id.class)
+                            || field.isAnnotationPresent(OfyIdAllocation.class))
                 .findFirst()
                 .orElse(null);
         if (idField != null

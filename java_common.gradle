@@ -13,7 +13,6 @@
 // limitations under the License.
 
 apply plugin: 'java'
-apply plugin: 'nebula.lint'
 apply plugin: 'net.ltgt.errorprone'
 apply plugin: 'checkstyle'
 apply plugin: 'jacoco'
@@ -35,17 +34,17 @@ tasks.test.finalizedBy jacocoTestReport
 //
 // Here is the context:
 // - Some dependencies have test-only jars on their 'compile' classpaths.
-// - As a result, they appear in our  'compile', 'runtimeClasspath' and
+// - As a result, they appear in our  'implementation', 'runtimeClasspath' and
 //   'default' configurations, among others, and end up in our release war
 //   files.
 // - Since these jars are needed for our own tests, we can only exclude them
-//   from runtimeClasspath. Excluding them from 'compile' or 'runtime' would
+//   from runtimeClasspath. Excluding them from 'compile' or 'runtimeOnly' would
 //   also exclude them from testCompileClasspath and testRuntimeClasspath,
 //   resulting in test failures.
 // - If configuration is not specified, project dependency uses the 'default'
-//   configuration, which always has the same content as 'runtime'.
+//   configuration, which always has the same content as 'runtimeOnly'.
 // - When release is involved, 'runtimeClasspath' is actually the right
-//   configuration to use. The 'runtime' configuration does not include
+//   configuration to use. The 'runtimeOnly' configuration does not include
 //   'runtimeOnly' dependencies, while 'runtimeClasspath' does.
 // - 'runtimeClasspath' cannot be referenced directly by another project.
 //   We use a custom configuration 'deploy_jar' as a proxy.
@@ -130,16 +129,6 @@ tasks.withType(JavaCompile).configureEach {
 
 compileJava { options.encoding = "UTF-8" }
 compileTestJava { options.encoding = "UTF-8" }
-
-gradleLint.rules = [
-        // Checks if Gradle wrapper is up-to-date
-        'archaic-wrapper',
-        // Checks for indirect dependencies with dynamic version spec. Best
-        // practice calls for declaring them with specific versions.
-        'undeclared-dependency',
-        'unused-dependency'
-        // TODO(weiminyu): enable more dependency checks
-]
 
 // To check or fix file formats, run the following commands from this directory:
 // - Check: ./gradlew spotlessCheck

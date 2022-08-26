@@ -35,8 +35,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ResaveAllEppResourcesPipelineActionTest extends BeamActionTestBase {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final FakeClock fakeClock = new FakeClock();
 

@@ -41,14 +41,14 @@ import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.model.ImmutableObject;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CreateData.HostCreateData;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.host.Host;
 import google.registry.model.host.HostCommand.Create;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
@@ -105,11 +105,11 @@ public final class HostCreateFlow implements TransactionalFlow {
     extensionManager.validate();
     Create command = (Create) resourceCommand;
     DateTime now = tm().getTransactionTime();
-    verifyResourceDoesNotExist(HostResource.class, targetId, now, registrarId);
+    verifyResourceDoesNotExist(Host.class, targetId, now, registrarId);
     // The superordinate domain of the host object if creating an in-bailiwick host, or null if
     // creating an external host. This is looked up before we actually create the Host object so
     // we can detect error conditions earlier.
-    Optional<DomainBase> superordinateDomain =
+    Optional<Domain> superordinateDomain =
         lookupSuperordinateDomain(validateHostName(targetId), now);
     verifySuperordinateDomainNotInPendingDelete(superordinateDomain.orElse(null));
     verifySuperordinateDomainOwnership(registrarId, superordinateDomain.orElse(null));
@@ -121,14 +121,14 @@ public final class HostCreateFlow implements TransactionalFlow {
           ? new SubordinateHostMustHaveIpException()
           : new UnexpectedExternalHostIpException();
     }
-    HostResource newHost =
-        new HostResource.Builder()
+    Host newHost =
+        new Host.Builder()
             .setCreationRegistrarId(registrarId)
             .setPersistedCurrentSponsorRegistrarId(registrarId)
             .setHostName(targetId)
             .setInetAddresses(command.getInetAddresses())
             .setRepoId(createRepoId(allocateId(), roidSuffix))
-            .setSuperordinateDomain(superordinateDomain.map(DomainBase::createVKey).orElse(null))
+            .setSuperordinateDomain(superordinateDomain.map(Domain::createVKey).orElse(null))
             .build();
     historyBuilder.setType(HOST_CREATE).setHost(newHost);
     ImmutableSet<ImmutableObject> entitiesToSave =

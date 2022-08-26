@@ -18,13 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.billing.BillingEvent.Cancellation;
+import google.registry.model.billing.BillingEvent.OneTime;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
@@ -36,8 +36,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class TransferDataTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final DateTime now = DateTime.now(UTC);
 
@@ -49,33 +48,11 @@ public class TransferDataTest {
 
   @BeforeEach
   void beforeEach() {
-    Key<HistoryEntry> historyEntryKey =
-        Key.create(Key.create(DomainBase.class, "4-TLD"), HistoryEntry.class, 1356L);
-    transferBillingEventKey =
-        VKey.create(
-            BillingEvent.OneTime.class,
-            12345L,
-            Key.create(historyEntryKey, BillingEvent.OneTime.class, 12345L));
-    otherServerApproveBillingEventKey =
-        VKey.create(
-            BillingEvent.Cancellation.class,
-            2468L,
-            Key.create(historyEntryKey, BillingEvent.Cancellation.class, 2468L));
-    recurringBillingEventKey =
-        VKey.create(
-            BillingEvent.Recurring.class,
-            13579L,
-            Key.create(historyEntryKey, BillingEvent.Recurring.class, 13579L));
-    autorenewPollMessageKey =
-        VKey.create(
-            PollMessage.Autorenew.class,
-            67890L,
-            Key.create(historyEntryKey, PollMessage.Autorenew.class, 67890L));
-    otherServerApprovePollMessageKey =
-        VKey.create(
-            PollMessage.OneTime.class,
-            314159L,
-            Key.create(historyEntryKey, PollMessage.OneTime.class, 314159L));
+    transferBillingEventKey = OneTime.createVKey(12345L);
+    otherServerApproveBillingEventKey = Cancellation.createVKey(2468L);
+    recurringBillingEventKey = Recurring.createVKey(13579L);
+    autorenewPollMessageKey = VKey.createSql(PollMessage.Autorenew.class, 67890L);
+    otherServerApprovePollMessageKey = VKey.createSql(PollMessage.OneTime.class, 314159L);
   }
 
   @Test
@@ -95,6 +72,8 @@ public class TransferDataTest {
             .setPendingTransferExpirationTime(now)
             .setTransferStatus(TransferStatus.PENDING)
             .setServerApproveEntities(
+                "4-TLD",
+                1356L,
                 ImmutableSet.of(
                     transferBillingEventKey,
                     otherServerApproveBillingEventKey,

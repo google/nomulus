@@ -29,7 +29,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
 import google.registry.request.Action.Service;
 import google.registry.util.CloudTasksUtils;
@@ -140,8 +140,8 @@ public final class AsyncTaskEnqueuer {
   }
 
   /** Enqueues a task to asynchronously refresh DNS for a renamed host. */
-  public void enqueueAsyncDnsRefresh(HostResource host, DateTime now) {
-    VKey<HostResource> hostKey = host.createVKey();
+  public void enqueueAsyncDnsRefresh(Host host, DateTime now) {
+    VKey<Host> hostKey = host.createVKey();
     logger.atInfo().log("Enqueuing async DNS refresh for renamed host %s.", hostKey);
     addTaskToQueueWithRetry(
         asyncDnsRefreshPullQueue,

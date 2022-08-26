@@ -15,7 +15,6 @@
 package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -35,14 +34,11 @@ import google.registry.batch.SendExpiringCertificateNotificationEmailAction.Regi
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
-import google.registry.model.registrar.RegistrarContact.Type;
+import google.registry.model.registrar.RegistrarPoc;
+import google.registry.model.registrar.RegistrarPoc.Type;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.util.SelfSignedCaCertificate;
 import google.registry.util.SendEmailService;
 import java.security.cert.X509Certificate;
@@ -51,19 +47,19 @@ import javax.annotation.Nullable;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link SendExpiringCertificateNotificationEmailAction}. */
-@DualDatabaseTest
 class SendExpiringCertificateNotificationEmailActionTest {
 
   private static final String EXPIRATION_WARNING_EMAIL_BODY_TEXT =
       " Dear %1$s,\n"
-          + "\n"
+          + '\n'
           + "We would like to inform you that your %2$s certificate will expire at %3$s."
-          + "\n"
+          + '\n'
           + " Kind update your account using the following steps: "
-          + "\n"
+          + '\n'
           + "  1. Navigate to support and login using your %4$s@registry.example credentials.\n"
           + "  2. Click Settings -> Privacy on the top left corner.\n"
           + "  3. Click Edit and enter certificate string."
@@ -75,9 +71,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
   private final FakeClock clock = new FakeClock(DateTime.parse("2021-05-24T20:21:22Z"));
   private final SendEmailService sendEmailService = mock(SendEmailService.class);
   private CertificateChecker certificateChecker;
@@ -111,7 +106,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         persistResource(createRegistrar("clientId", "sampleRegistrar", null, null).build());
   }
 
-  @TestOfyAndSql
+  @Test
   void sendNotificationEmail_techEMailAsRecipient_returnsTrue() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
@@ -133,7 +128,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         .isEqualTo(true);
   }
 
-  @TestOfyAndSql
+  @Test
   void sendNotificationEmail_adminEMailAsRecipient_returnsTrue() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
@@ -155,7 +150,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         .isEqualTo(true);
   }
 
-  @TestOfyAndSql
+  @Test
   void sendNotificationEmail_returnsFalse_unsupportedEmailType() throws Exception {
     Registrar registrar =
         persistResource(
@@ -185,7 +180,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         .isEqualTo(false);
   }
 
-  @TestOfyAndSql
+  @Test
   void sendNotificationEmail_returnsFalse_noEmailRecipients() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
@@ -201,7 +196,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         .isEqualTo(false);
   }
 
-  @TestOfyAndSql
+  @Test
   void sendNotificationEmail_throwsRunTimeException() throws Exception {
     doThrow(new RuntimeException("this is a runtime exception"))
         .when(sendEmailService)
@@ -220,15 +215,15 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .asBuilder()
                 .setFailoverClientCertificate(cert.get(), clock.nowUtc())
                 .build());
-    ImmutableList<RegistrarContact> contacts =
+    ImmutableList<RegistrarPoc> contacts =
         ImmutableList.of(
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Will Doe")
                 .setEmailAddress("will@example-registrar.tld")
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .build());
@@ -247,7 +242,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 registrar.getRegistrarName()));
   }
 
-  @TestOfyAndSql
+  @Test
   void sendNotificationEmail_returnsFalse_noCertificate() {
     assertThat(
             action.sendNotificationEmail(
@@ -255,7 +250,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         .isEqualTo(false);
   }
 
-  @TestOfyAndSql
+  @Test
   void sendNotificationEmails_allEmailsBeingSent_onlyMainCertificates() throws Exception {
     for (int i = 1; i <= 10; i++) {
       Registrar registrar =
@@ -275,7 +270,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     assertThat(action.sendNotificationEmails()).isEqualTo(10);
   }
 
-  @TestOfyAndSql
+  @Test
   void sendNotificationEmails_allEmailsBeingSent_onlyFailOverCertificates() throws Exception {
     for (int i = 1; i <= 10; i++) {
       Registrar registrar =
@@ -295,7 +290,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     assertThat(action.sendNotificationEmails()).isEqualTo(10);
   }
 
-  @TestOfyAndSql
+  @Test
   void sendNotificationEmails_allEmailsBeingSent_mixedOfCertificates() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
@@ -334,7 +329,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     assertThat(action.sendNotificationEmails()).isEqualTo(16);
   }
 
-  @TestOfyAndSql
+  @Test
   void updateLastNotificationSentDate_updatedSuccessfully_primaryCertificate() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
@@ -350,7 +345,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         .isEqualTo(clock.nowUtc());
   }
 
-  @TestOfyAndSql
+  @Test
   void updateLastNotificationSentDate_updatedSuccessfully_failOverCertificate() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
@@ -366,7 +361,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         .isEqualTo(clock.nowUtc());
   }
 
-  @TestOfyAndSql
+  @Test
   void updateLastNotificationSentDate_noUpdates_noLastNotificationSentDate() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
@@ -386,7 +381,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         .contains("Failed to update the last notification sent date to Registrar");
   }
 
-  @TestOfyAndSql
+  @Test
   void updateLastNotificationSentDate_noUpdates_invalidCertificateType() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
@@ -406,7 +401,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     assertThat(thrown).hasMessageThat().contains("No enum constant");
   }
 
-  @TestOfyAndSql
+  @Test
   void getRegistrarsWithExpiringCertificates_returnsPartOfRegistrars() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
@@ -434,7 +429,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     assertThat(results).hasSize(numOfRegistrarsWithExpiringCertificates);
   }
 
-  @TestOfyAndSql
+  @Test
   void getRegistrarsWithExpiringCertificates_returnsPartOfRegistrars_failOverCertificateBranch()
       throws Exception {
     X509Certificate expiringCertificate =
@@ -463,7 +458,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         .isEqualTo(numOfRegistrarsWithExpiringCertificates);
   }
 
-  @TestOfyAndSql
+  @Test
   void getRegistrarsWithExpiringCertificates_returnsAllRegistrars() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
@@ -481,7 +476,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         .isEqualTo(numOfRegistrarsWithExpiringCertificates);
   }
 
-  @TestOfyAndSql
+  @Test
   void getRegistrarsWithExpiringCertificates_returnsNoRegistrars() throws Exception {
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
@@ -496,65 +491,65 @@ class SendExpiringCertificateNotificationEmailActionTest {
     assertThat(action.getRegistrarsWithExpiringCertificates()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void getRegistrarsWithExpiringCertificates_noRegistrarsInDatabase() {
     assertThat(action.getRegistrarsWithExpiringCertificates()).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void getEmailAddresses_success_returnsAnEmptyList() {
     assertThat(action.getEmailAddresses(sampleRegistrar, Type.TECH)).isEmpty();
     assertThat(action.getEmailAddresses(sampleRegistrar, Type.ADMIN)).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void getEmailAddresses_success_returnsAListOfEmails() throws Exception {
     Registrar registrar = persistResource(makeRegistrar1());
-    ImmutableList<RegistrarContact> contacts =
+    ImmutableList<RegistrarPoc> contacts =
         ImmutableList.of(
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("John Doe")
                 .setEmailAddress("jd@example-registrar.tld")
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("John Smith")
                 .setEmailAddress("js@example-registrar.tld")
                 .setPhoneNumber("+1.1111111111")
                 .setFaxNumber("+1.1111111111")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Will Doe")
                 .setEmailAddress("will@example-registrar.tld")
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Mike Doe")
                 .setEmailAddress("mike@example-registrar.tld")
                 .setPhoneNumber("+1.1111111111")
                 .setFaxNumber("+1.1111111111")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("John T")
                 .setEmailAddress("john@example-registrar.tld")
                 .setPhoneNumber("+1.3105551215")
                 .setFaxNumber("+1.3105551216")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
                 .setVisibleInWhoisAsTech(true)
                 .build());
     persistSimpleResources(contacts);
@@ -570,7 +565,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
             new InternetAddress("john@example-registrar.tld"));
   }
 
-  @TestOfyAndSql
+  @Test
   void getEmailAddresses_failure_returnsPartialListOfEmails_skipInvalidEmails() {
     // when building a new RegistrarContact object, there's already an email validation process.
     // if the registrarContact is created successful, the email address of the contact object
@@ -578,7 +573,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     // a new InternetAddress using the email address string of the contact object.
   }
 
-  @TestOfyAndSql
+  @Test
   void getEmailBody_returnsEmailBodyText() {
     String registrarName = "good registrar";
     String certExpirationDateStr = "2021-06-15";
@@ -600,7 +595,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     assertThat(emailBody).doesNotContain("%4$s");
   }
 
-  @TestOfyAndSql
+  @Test
   void getEmailBody_throwsIllegalArgumentException_noExpirationDate() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -611,7 +606,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     assertThat(thrown).hasMessageThat().contains("Expiration date cannot be null");
   }
 
-  @TestOfyAndSql
+  @Test
   void getEmailBody_throwsIllegalArgumentException_noCertificateType() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -622,7 +617,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     assertThat(thrown).hasMessageThat().contains("Certificate type cannot be null");
   }
 
-  @TestOfyAndSql
+  @Test
   void getEmailBody_throwsIllegalArgumentException_noRegistrarId() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -636,7 +631,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     assertThat(thrown).hasMessageThat().contains("Registrar Id cannot be null");
   }
 
-  @TestOfyAndSql
+  @Test
   void run_sentZeroEmail_responseStatusIs200() {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
@@ -644,7 +639,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         .isEqualTo("Done. Sent 0 expiring certificate notification emails in total.");
   }
 
-  @TestOfyAndSql
+  @Test
   void run_sentEmails_responseStatusIs200() throws Exception {
     for (int i = 1; i <= 5; i++) {
       Registrar registrar =
@@ -710,20 +705,20 @@ class SendExpiringCertificateNotificationEmailActionTest {
   }
 
   /** Returns persisted sample contacts with a customized contact email type. */
-  private ImmutableList<RegistrarContact> persistSampleContacts(
-      Registrar registrar, RegistrarContact.Type emailType) {
+  private static ImmutableList<RegistrarPoc> persistSampleContacts(
+      Registrar registrar, RegistrarPoc.Type emailType) {
     return persistSimpleResources(
         ImmutableList.of(
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Will Doe")
                 .setEmailAddress("will@example-registrar.tld")
                 .setPhoneNumber("+1.0105551213")
                 .setFaxNumber("+1.0105551213")
                 .setTypes(ImmutableSet.of(emailType))
                 .build(),
-            new RegistrarContact.Builder()
-                .setParent(registrar)
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
                 .setName("Will Smith")
                 .setEmailAddress("will@test-registrar.tld")
                 .setPhoneNumber("+1.3105551213")

@@ -24,56 +24,46 @@ import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.EntityGroupRoot;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import javax.persistence.Transient;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit test for {@link DomainHistoryVKey}. */
-@DualDatabaseTest
 class DomainHistoryVKeyTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
+          .withCloudSql()
           .withOfyTestEntities(TestEntity.class)
           .withJpaUnitTestEntities(TestEntity.class)
           .build();
 
-  @TestOfyAndSql
+  @Test
   void testRestoreSymmetricVKey() {
     Key<HistoryEntry> ofyKey =
-        Key.create(Key.create(DomainBase.class, "domainRepoId"), HistoryEntry.class, 10L);
+        Key.create(Key.create(Domain.class, "domainRepoId"), HistoryEntry.class, 10L);
     DomainHistoryVKey domainHistoryVKey = DomainHistoryVKey.create(ofyKey);
     TestEntity original = new TestEntity(domainHistoryVKey);
     tm().transact(() -> tm().insert(original));
     TestEntity persisted = tm().transact(() -> tm().loadByKey(original.createVKey()));
     assertThat(persisted).isEqualTo(original);
     // Double check that the persisted.domainHistoryVKey is a symmetric VKey
-    assertThat(persisted.domainHistoryVKey.createOfyKey())
-        .isEqualTo(
-            Key.create(Key.create(DomainBase.class, "domainRepoId"), HistoryEntry.class, 10L));
     assertThat(persisted.domainHistoryVKey.createSqlKey())
         .isEqualTo(new DomainHistoryId("domainRepoId", 10L));
     assertThat(persisted.domainHistoryVKey.createVKey())
-        .isEqualTo(
-            VKey.create(
-                HistoryEntry.class,
-                new DomainHistoryId("domainRepoId", 10L),
-                Key.create(Key.create(DomainBase.class, "domainRepoId"), HistoryEntry.class, 10L)));
+        .isEqualTo(VKey.createSql(HistoryEntry.class, new DomainHistoryId("domainRepoId", 10L)));
   }
 
-  @TestOfyAndSql
+  @Test
   void testCreateSymmetricVKeyFromOfyKey() {
     Key<HistoryEntry> ofyKey =
-        Key.create(Key.create(DomainBase.class, "domainRepoId"), HistoryEntry.class, 10L);
+        Key.create(Key.create(Domain.class, "domainRepoId"), HistoryEntry.class, 10L);
     DomainHistoryVKey domainHistoryVKey = DomainHistoryVKey.create(ofyKey);
-    assertThat(domainHistoryVKey.createOfyKey()).isEqualTo(ofyKey);
     assertThat(domainHistoryVKey.createSqlKey())
         .isEqualTo(new DomainHistoryId("domainRepoId", 10L));
     assertThat(domainHistoryVKey.createVKey())
@@ -96,8 +86,9 @@ class DomainHistoryVKeyTest {
       this.domainHistoryVKey = domainHistoryVKey;
     }
 
-    VKey<TestEntity> createVKey() {
-      return VKey.create(TestEntity.class, id, Key.create(parent, TestEntity.class, id));
+    @Override
+    public VKey<TestEntity> createVKey() {
+      return VKey.createSql(TestEntity.class, id);
     }
   }
 }

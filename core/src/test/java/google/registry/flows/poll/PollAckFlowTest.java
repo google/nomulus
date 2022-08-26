@@ -17,7 +17,6 @@ package google.registry.flows.poll;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createHistoryEntryForEppResource;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -30,37 +29,30 @@ import google.registry.flows.poll.PollAckFlow.MessageDoesNotExistException;
 import google.registry.flows.poll.PollAckFlow.MissingMessageIdException;
 import google.registry.flows.poll.PollAckFlow.NotAuthorizedToAckMessageException;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.poll.PollMessage;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.SetClockExtension;
-import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.DatabaseHelper;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PollAckFlow}. */
-@DualDatabaseTest
 class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
-
-  @Order(value = Order.DEFAULT - 3)
-  @RegisterExtension
-  final SetClockExtension setClockExtension = new SetClockExtension(clock, "2011-01-02T01:01:01Z");
 
   /** This is the message id being sent in the ACK request. */
   private static final long MESSAGE_ID = 3;
 
-  private DomainBase domain;
+  private Domain domain;
   private ContactResource contact;
 
   @BeforeEach
   void setUp() {
-    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2011"));
+    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "3-2011"));
+    clock.setTo(DateTime.parse("2011-01-02T01:01:01Z"));
     setRegistrarIdForFlow("NewRegistrar");
     createTld("example");
     contact = persistActiveContact("jd1234");
-    domain = persistResource(newDomainBase("test.example", contact));
+    domain = persistResource(DatabaseHelper.newDomain("test.example", contact));
   }
 
   private void persistOneTimePollMessage(long messageId) {
@@ -70,7 +62,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
             .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
   }
 
@@ -83,64 +75,64 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
             .setAutorenewEndTime(endTime)
             .setMsg("Domain was auto-renewed.")
             .setTargetId("example.com")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testDryRun() throws Exception {
     persistOneTimePollMessage(MESSAGE_ID);
     dryRunFlowAssertResponse(loadFile("poll_ack_response_empty.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_contactPollMessage() throws Exception {
-    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "2-2-ROID-4-3-2011"));
+    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "3-2011"));
     persistResource(
         new PollMessage.OneTime.Builder()
             .setId(MESSAGE_ID)
             .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
-            .setParent(createHistoryEntryForEppResource(contact))
+            .setHistoryEntry(createHistoryEntryForEppResource(contact))
             .build());
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("poll_ack_response_empty.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_contactPollMessage_withIncorrectYearField() throws Exception {
-    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "2-2-ROID-4-3-1999"));
+    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "3-1999"));
     persistResource(
         new PollMessage.OneTime.Builder()
             .setId(MESSAGE_ID)
             .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
-            .setParent(createHistoryEntryForEppResource(contact))
+            .setHistoryEntry(createHistoryEntryForEppResource(contact))
             .build());
     assertTransactionalFlow(true);
     assertThrows(MessageDoesNotExistException.class, this::runFlow);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_messageOnContactResource() throws Exception {
     persistOneTimePollMessage(MESSAGE_ID);
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("poll_ack_response_empty.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_recentActiveAutorenew() throws Exception {
-    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2010"));
+    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "3-2010"));
     persistAutorenewPollMessage(clock.nowUtc().minusMonths(6), END_OF_TIME);
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("poll_ack_response_empty.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_oldActiveAutorenew() throws Exception {
-    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2009"));
+    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "3-2009"));
     persistAutorenewPollMessage(clock.nowUtc().minusYears(2), END_OF_TIME);
     // Create three other messages to be queued for retrieval to get our count right, since the poll
     // ack response wants there to be 4 messages in the queue when the ack comes back.
@@ -149,20 +141,18 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
     }
     assertTransactionalFlow(true);
     runFlowAssertResponse(
-        loadFile(
-            "poll_ack_response.xml",
-            ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2009", "COUNT", "4")));
+        loadFile("poll_ack_response.xml", ImmutableMap.of("MSGID", "3-2009", "COUNT", "4")));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_oldInactiveAutorenew() throws Exception {
-    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2010"));
+    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "3-2010"));
     persistAutorenewPollMessage(clock.nowUtc().minusMonths(6), clock.nowUtc());
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("poll_ack_response_empty.xml"));
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_moreMessages() throws Exception {
     // Create five messages to be queued for retrieval, one of which will be acked.
     for (int i = 0; i < 5; i++) {
@@ -170,69 +160,60 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
     }
     assertTransactionalFlow(true);
     runFlowAssertResponse(
-        loadFile(
-            "poll_ack_response.xml",
-            ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2011", "COUNT", "4")));
+        loadFile("poll_ack_response.xml", ImmutableMap.of("MSGID", "3-2011", "COUNT", "4")));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_noSuchMessage() throws Exception {
     assertTransactionalFlow(true);
     Exception e = assertThrows(MessageDoesNotExistException.class, this::runFlow);
-    assertThat(e).hasMessageThat().contains(String.format("(1-3-EXAMPLE-4-%d-2011)", MESSAGE_ID));
+    assertThat(e).hasMessageThat().contains(String.format("(%d-2011)", MESSAGE_ID));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidId_tooFewComponents() throws Exception {
-    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-2-3"));
+    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1"));
     assertTransactionalFlow(true);
     assertThrows(InvalidMessageIdException.class, this::runFlow);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidId_tooManyComponents() throws Exception {
-    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "2-2-ROID-4-3-1999-2007"));
+    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "2-2-1999-2007"));
     assertTransactionalFlow(true);
     assertThrows(InvalidMessageIdException.class, this::runFlow);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_contactPollMessage_withMissingYearField() throws Exception {
-    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "2-2-ROID-4-3"));
+    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "3"));
     persistResource(
         new PollMessage.OneTime.Builder()
             .setId(MESSAGE_ID)
             .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
-            .setParent(createHistoryEntryForEppResource(contact))
+            .setHistoryEntry(createHistoryEntryForEppResource(contact))
             .build());
     assertTransactionalFlow(true);
     assertThrows(InvalidMessageIdException.class, this::runFlow);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_invalidId_stringInsteadOfNumeric() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "ABC-12345"));
     assertTransactionalFlow(true);
     assertThrows(InvalidMessageIdException.class, this::runFlow);
   }
 
-  @TestOfyAndSql
-  void testFailure_invalidEppResourceClassId() throws Exception {
-    setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "999-1-1-1"));
-    assertTransactionalFlow(true);
-    assertThrows(InvalidMessageIdException.class, this::runFlow);
-  }
-
-  @TestOfyAndSql
+  @Test
   void testFailure_missingId() throws Exception {
     setEppInput("poll_ack_missing_id.xml");
     assertTransactionalFlow(true);
     assertThrows(MissingMessageIdException.class, this::runFlow);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_differentRegistrar() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -240,13 +221,13 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
             .setRegistrarId("TheRegistrar")
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     assertTransactionalFlow(true);
     assertThrows(NotAuthorizedToAckMessageException.class, this::runFlow);
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_messageInFuture() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -254,10 +235,10 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
             .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().plusDays(1))
             .setMsg("Some poll message.")
-            .setParent(createHistoryEntryForEppResource(domain))
+            .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
     assertTransactionalFlow(true);
     Exception e = assertThrows(MessageDoesNotExistException.class, this::runFlow);
-    assertThat(e).hasMessageThat().contains(String.format("(1-3-EXAMPLE-4-%d-2011)", MESSAGE_ID));
+    assertThat(e).hasMessageThat().contains(String.format("(%d-2011)", MESSAGE_ID));
   }
 }

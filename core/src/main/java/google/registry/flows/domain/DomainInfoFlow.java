@@ -22,7 +22,6 @@ import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
 import static google.registry.flows.domain.DomainFlowUtils.loadForeignKeyedDesignatedContacts;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -37,7 +36,7 @@ import google.registry.flows.custom.DomainInfoFlowCustomLogic;
 import google.registry.flows.custom.DomainInfoFlowCustomLogic.AfterValidationParameters;
 import google.registry.flows.custom.DomainInfoFlowCustomLogic.BeforeResponseParameters;
 import google.registry.flows.custom.DomainInfoFlowCustomLogic.BeforeResponseReturnData;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Info;
 import google.registry.model.domain.DomainCommand.Info.HostsRequest;
 import google.registry.model.domain.DomainInfoData;
@@ -97,8 +96,8 @@ public final class DomainInfoFlow implements Flow {
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
     DateTime now = clock.nowUtc();
-    DomainBase domain = verifyExistence(
-        DomainBase.class, targetId, loadByForeignKey(DomainBase.class, targetId, now));
+    Domain domain =
+        verifyExistence(Domain.class, targetId, loadByForeignKey(Domain.class, targetId, now));
     verifyOptionalAuthInfo(authInfo, domain);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setDomain(domain).build());
@@ -110,7 +109,7 @@ public final class DomainInfoFlow implements Flow {
             .setRepoId(domain.getRepoId())
             .setCurrentSponsorClientId(domain.getCurrentSponsorRegistrarId())
             .setRegistrant(
-                transactIfJpaTm(() -> tm().loadByKey(domain.getRegistrant())).getContactId());
+                tm().transact(() -> tm().loadByKey(domain.getRegistrant())).getContactId());
     // If authInfo is non-null, then the caller is authorized to see the full information since we
     // will have already verified the authInfo is valid.
     if (registrarId.equals(domain.getCurrentSponsorRegistrarId()) || authInfo.isPresent()) {
@@ -118,7 +117,7 @@ public final class DomainInfoFlow implements Flow {
       infoBuilder
           .setStatusValues(domain.getStatusValues())
           .setContacts(
-              transactIfJpaTm(() -> loadForeignKeyedDesignatedContacts(domain.getContacts())))
+              tm().transact(() -> loadForeignKeyedDesignatedContacts(domain.getContacts())))
           .setNameservers(hostsRequest.requestDelegated() ? domain.loadNameserverHostNames() : null)
           .setSubordinateHosts(
               hostsRequest.requestSubordinate() ? domain.getSubordinateHosts() : null)
@@ -143,8 +142,8 @@ public final class DomainInfoFlow implements Flow {
         .build();
   }
 
-  private ImmutableList<ResponseExtension> getDomainResponseExtensions(
-      DomainBase domain, DateTime now) throws EppException {
+  private ImmutableList<ResponseExtension> getDomainResponseExtensions(Domain domain, DateTime now)
+      throws EppException {
     ImmutableList.Builder<ResponseExtension> extensions = new ImmutableList.Builder<>();
     addSecDnsExtensionIfPresent(extensions, domain.getDsData());
     ImmutableSet<GracePeriodStatus> gracePeriodStatuses = domain.getGracePeriodStatuses();
@@ -164,7 +163,8 @@ public final class DomainInfoFlow implements Flow {
           now,
           pricingLogic,
           Optional.empty(),
-          false);
+          false,
+          tm().transact(() -> tm().loadByKey(domain.getAutorenewBillingEvent())));
       extensions.add(builder.build());
     }
     return extensions.build();

@@ -20,30 +20,24 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.EppMetricSubject.assertThat;
-import static google.registry.testing.HostResourceSubject.assertAboutHosts;
+import static google.registry.testing.HostSubject.assertAboutHosts;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.domain.DomainBase;
-import google.registry.model.host.HostResource;
+import google.registry.model.domain.Domain;
+import google.registry.model.host.Host;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for host lifecycle. */
-@DualDatabaseTest
 class EppLifecycleHostTest extends EppTestCase {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(clock)
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
-  @TestOfyAndSql
+  @Test
   void testLifecycle() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatCommand("hello.xml")
@@ -91,7 +85,7 @@ class EppLifecycleHostTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testRenamingHostToExistingHost_fails() throws Exception {
     createTld("example");
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -141,7 +135,7 @@ class EppLifecycleHostTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_multipartTldsWithSharedSuffixes() throws Exception {
     createTlds("bar.foo.tld", "foo.tld", "tld");
 
@@ -216,29 +210,27 @@ class EppLifecycleHostTest extends EppTestCase {
 
     DateTime timeAfterCreates = DateTime.parse("2000-06-01T00:06:00Z");
 
-    HostResource exampleBarFooTldHost =
-        loadByForeignKey(HostResource.class, "ns1.example.bar.foo.tld", timeAfterCreates).get();
-    DomainBase exampleBarFooTldDomain =
-        loadByForeignKey(DomainBase.class, "example.bar.foo.tld", timeAfterCreates).get();
+    Host exampleBarFooTldHost =
+        loadByForeignKey(Host.class, "ns1.example.bar.foo.tld", timeAfterCreates).get();
+    Domain exampleBarFooTldDomain =
+        loadByForeignKey(Domain.class, "example.bar.foo.tld", timeAfterCreates).get();
     assertAboutHosts()
         .that(exampleBarFooTldHost)
         .hasSuperordinateDomain(exampleBarFooTldDomain.createVKey());
     assertThat(exampleBarFooTldDomain.getSubordinateHosts())
         .containsExactly("ns1.example.bar.foo.tld");
 
-    HostResource exampleFooTldHost =
-        loadByForeignKey(HostResource.class, "ns1.example.foo.tld", timeAfterCreates).get();
-    DomainBase exampleFooTldDomain =
-        loadByForeignKey(DomainBase.class, "example.foo.tld", timeAfterCreates).get();
+    Host exampleFooTldHost =
+        loadByForeignKey(Host.class, "ns1.example.foo.tld", timeAfterCreates).get();
+    Domain exampleFooTldDomain =
+        loadByForeignKey(Domain.class, "example.foo.tld", timeAfterCreates).get();
     assertAboutHosts()
         .that(exampleFooTldHost)
         .hasSuperordinateDomain(exampleFooTldDomain.createVKey());
     assertThat(exampleFooTldDomain.getSubordinateHosts()).containsExactly("ns1.example.foo.tld");
 
-    HostResource exampleTldHost =
-        loadByForeignKey(HostResource.class, "ns1.example.tld", timeAfterCreates).get();
-    DomainBase exampleTldDomain =
-        loadByForeignKey(DomainBase.class, "example.tld", timeAfterCreates).get();
+    Host exampleTldHost = loadByForeignKey(Host.class, "ns1.example.tld", timeAfterCreates).get();
+    Domain exampleTldDomain = loadByForeignKey(Domain.class, "example.tld", timeAfterCreates).get();
     assertAboutHosts().that(exampleTldHost).hasSuperordinateDomain(exampleTldDomain.createVKey());
     assertThat(exampleTldDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
 

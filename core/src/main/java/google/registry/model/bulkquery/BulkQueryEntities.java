@@ -19,28 +19,28 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.GracePeriod.GracePeriodHistory;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.domain.secdns.DomainDsDataHistory;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManager;
 
 /**
  * Utilities for managing an alternative JPA entity model optimized for bulk loading multi-level
- * entities such as {@link DomainBase} and {@link DomainHistory}.
+ * entities such as {@link Domain} and {@link DomainHistory}.
  *
  * <p>In a bulk query for a multi-level JPA entity type, the JPA framework only generates a bulk
  * query (SELECT * FROM table) for the base table. Then, for each row in the base table, additional
  * queries are issued to load associated rows in child tables. This can be very slow when an entity
  * type has multiple child tables.
  *
- * <p>We have defined an alternative entity model for {@code DomainBase} and {@code DomainHistory},
+ * <p>We have defined an alternative entity model for {@link Domain} and {@link DomainHistory},
  * where the base table as well as the child tables are mapped to single-level entity types. The
  * idea is to load each of these types using a bulk query, and assemble them into the target type in
  * memory in a pipeline. The main use case is Datastore-Cloud SQL validation during the Registry
@@ -53,8 +53,8 @@ public class BulkQueryEntities {
    */
   public static final ImmutableMap<String, String> JPA_ENTITIES_REPLACEMENTS =
       ImmutableMap.of(
-          DomainBase.class.getCanonicalName(),
-          DomainBaseLite.class.getCanonicalName(),
+          Domain.class.getCanonicalName(),
+          DomainLite.class.getCanonicalName(),
           DomainHistory.class.getCanonicalName(),
           DomainHistoryLite.class.getCanonicalName());
 
@@ -64,34 +64,34 @@ public class BulkQueryEntities {
       ImmutableList.of(
           DomainHost.class.getCanonicalName(), DomainHistoryHost.class.getCanonicalName());
 
-  public static DomainBase assembleDomainBase(
-      DomainBaseLite domainBaseLite,
+  public static Domain assembleDomain(
+      DomainLite domainLite,
       ImmutableSet<GracePeriod> gracePeriods,
       ImmutableSet<DelegationSignerData> delegationSignerData,
-      ImmutableSet<VKey<HostResource>> nsHosts) {
-    DomainBase.Builder builder = new DomainBase.Builder();
-    builder.copyFrom(domainBaseLite);
+      ImmutableSet<VKey<Host>> nsHosts) {
+    Domain.Builder builder = new Domain.Builder();
+    builder.copyFrom(domainLite);
     builder.setGracePeriods(gracePeriods);
     builder.setDsData(delegationSignerData);
     builder.setNameservers(nsHosts);
     // Restore the original update timestamp (this gets cleared when we set nameservers or DS data).
-    builder.setUpdateTimestamp(domainBaseLite.getUpdateTimestamp());
+    builder.setUpdateTimestamp(domainLite.getUpdateTimestamp());
     return builder.build();
   }
 
   public static DomainHistory assembleDomainHistory(
       DomainHistoryLite domainHistoryLite,
       ImmutableSet<DomainDsDataHistory> dsDataHistories,
-      ImmutableSet<VKey<HostResource>> domainHistoryHosts,
+      ImmutableSet<VKey<Host>> domainHistoryHosts,
       ImmutableSet<GracePeriodHistory> gracePeriodHistories,
       ImmutableSet<DomainTransactionRecord> transactionRecords) {
     DomainHistory.Builder builder = new DomainHistory.Builder();
     builder.copyFrom(domainHistoryLite);
-    DomainContent rawDomainContent = domainHistoryLite.domainContent;
-    if (rawDomainContent != null) {
-      DomainContent newDomainContent =
+    DomainBase rawDomainBase = domainHistoryLite.domainBase;
+    if (rawDomainBase != null) {
+      DomainBase newDomainBase =
           domainHistoryLite
-              .domainContent
+              .domainBase
               .asBuilder()
               .setNameservers(domainHistoryHosts)
               .setGracePeriods(
@@ -104,9 +104,9 @@ public class BulkQueryEntities {
                       .collect(toImmutableSet()))
               // Restore the original update timestamp (this gets cleared when we set nameservers or
               // DS data).
-              .setUpdateTimestamp(domainHistoryLite.domainContent.getUpdateTimestamp())
+              .setUpdateTimestamp(domainHistoryLite.domainBase.getUpdateTimestamp())
               .build();
-      builder.setDomain(newDomainContent);
+      builder.setDomain(newDomainBase);
     }
     return builder.buildAndAssemble(
         dsDataHistories, domainHistoryHosts, gracePeriodHistories, transactionRecords);

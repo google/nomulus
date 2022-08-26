@@ -39,7 +39,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2018-06-11T12:23:56Z"));
   private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);

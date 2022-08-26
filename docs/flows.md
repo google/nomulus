@@ -374,6 +374,7 @@ An EPP flow that creates a new domain resource.
     *   The allocation token was already redeemed.
 *   2306
     *   Anchor tenant domain create is for the wrong number of years.
+    *   Trademarked domains cannot be registered before the sunrise period.
     *   The provided mark is not yet valid.
     *   The provided mark has expired.
     *   Domain names can only contain a-z, 0-9, '.' and '-'.
@@ -489,10 +490,17 @@ comes in at the exact millisecond that the domain would have expired.
     *   Registrar is missing the billing account map for this currency type.
     *   Registrar is not authorized to access this TLD.
     *   Registrar must be active in order to perform this operation.
+    *   The allocation token is invalid.
 *   2303
     *   Resource with this id does not exist.
 *   2304
     *   Resource status prohibits this operation.
+    *   The allocation token is not currently valid.
+*   2305
+    *   The allocation token is not valid for this domain.
+    *   The allocation token is not valid for this registrar.
+    *   The allocation token is not valid for this TLD.
+    *   The allocation token was already redeemed.
 *   2306
     *   Periods for domain registrations must be specified in years.
     *   The requested fees cannot be provided in the requested currency.
@@ -582,12 +590,20 @@ replaced with new ones with the correct approval time.
 *   2201
     *   The specified resource belongs to another client.
     *   Registrar is not authorized to access this TLD.
+    *   The allocation token is invalid.
 *   2202
     *   Authorization information for accessing resource is invalid.
 *   2301
     *   The resource does not have a pending transfer.
 *   2303
     *   Resource with this id does not exist.
+*   2304
+    *   The allocation token is not currently valid.
+*   2305
+    *   The allocation token is not valid for this domain.
+    *   The allocation token is not valid for this registrar.
+    *   The allocation token is not valid for this TLD.
+    *   The allocation token was already redeemed.
 
 ## DomainTransferCancelFlow
 
@@ -657,8 +673,8 @@ default five days) after which the transfer is automatically approved. Within
 that window, this flow allows the losing client to reject the transfer request.
 
 When the transfer was requested, poll messages and billing events were saved to
-Datastore with timestamps such that they only would become active when the
-transfer period passed. In this flow, those speculative objects are deleted.
+SQL with timestamps such that they only would become active when the transfer
+period passed. In this flow, those speculative objects are deleted.
 
 ### Errors
 
@@ -716,6 +732,7 @@ new ones with the correct approval time).
     *   Registrar is missing the billing account map for this currency type.
     *   Registrar is not authorized to access this TLD.
     *   Registrar must be active in order to perform this operation.
+    *   The allocation token is invalid.
 *   2202
     *   Authorization information for accessing resource is invalid.
 *   2300
@@ -728,6 +745,12 @@ new ones with the correct approval time).
         extension.
     *   The requested domain name is on the premium price list, and this
         registrar has blocked premium registrations.
+    *   The allocation token is not currently valid.
+*   2305
+    *   The allocation token is not valid for this domain.
+    *   The allocation token is not valid for this registrar.
+    *   The allocation token is not valid for this TLD.
+    *   The allocation token was already redeemed.
 *   2306
     *   Domain transfer period must be one year.
     *   Domain transfer period must be zero or one year when using the superuser

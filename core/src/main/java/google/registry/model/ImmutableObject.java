@@ -27,6 +27,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Ignore;
+import google.registry.persistence.VKey;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -254,5 +255,9 @@ public abstract class ImmutableObject implements Cloneable {
   @SuppressWarnings("unchecked")
   public Map<String, Object> toDiffableFieldMap() {
     return (Map<String, Object>) toMapRecursive(this);
+  }
+
+  public VKey createVKey() {
+    throw new UnsupportedOperationException("VKey creation is not supported for this entity");
   }
 }

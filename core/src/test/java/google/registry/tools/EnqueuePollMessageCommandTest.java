@@ -25,35 +25,27 @@ import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntr
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import google.registry.model.domain.DomainBase;
-import google.registry.model.ofy.Ofy;
+import google.registry.model.domain.Domain;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link EnqueuePollMessageCommand}. */
-@DualDatabaseTest
 class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCommand> {
 
-  @RegisterExtension final InjectExtension inject = new InjectExtension();
-
-  private DomainBase domain;
+  private Domain domain;
 
   @BeforeEach
   void beforeEach() {
     createTld("tld");
-    inject.setStaticField(Ofy.class, "clock", fakeClock);
     domain = persistActiveDomain("example.tld");
     persistNewRegistrar("AdminRegistrar");
     command.registryAdminClientId = "AdminRegistrar";
     fakeClock.advanceOneMilli();
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_domainAndMessage() throws Exception {
     // Test canonicalization to lowercase example.tld as well.
     runCommandForced("--domain=EXAMPLE.TLD", "--message=This domain is bad");
@@ -75,14 +67,14 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "TheRegistrar",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain is bad")
             .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_specifyClientIds() throws Exception {
     persistNewRegistrar("foobaz");
     runCommandForced(
@@ -107,7 +99,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "TheRegistrar",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
@@ -115,7 +107,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "NewRegistrar",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("NewRegistrar")
             .setEventTime(fakeClock.nowUtc())
@@ -123,14 +115,14 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "foobaz",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("foobaz")
             .setEventTime(fakeClock.nowUtc())
             .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_sendToAllRegistrars() throws Exception {
     persistNewRegistrar("foobaz");
     runCommandForced("--domain=example.tld", "--message=This domain needs work", "--all=true");
@@ -152,7 +144,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "TheRegistrar",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
@@ -160,7 +152,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "NewRegistrar",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("NewRegistrar")
             .setEventTime(fakeClock.nowUtc())
@@ -168,14 +160,14 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
     assertPollMessages(
         "foobaz",
         new PollMessage.OneTime.Builder()
-            .setParent(synthetic)
+            .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("foobaz")
             .setEventTime(fakeClock.nowUtc())
             .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void testNonexistentDomain() throws Exception {
     IllegalArgumentException thrown =
         assertThrows(
@@ -186,21 +178,21 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
         .isEqualTo("Domain example2.tld doesn't exist or isn't active");
   }
 
-  @TestOfyAndSql
+  @Test
   void testDomainIsRequired() {
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> runCommandForced("--message=Foo bar"));
     assertThat(thrown).hasMessageThat().contains("The following option is required: -d, --domain");
   }
 
-  @TestOfyAndSql
+  @Test
   void testMessageIsRequired() {
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> runCommandForced("--domain=example.tld"));
     assertThat(thrown).hasMessageThat().contains("The following option is required: -m, --message");
   }
 
-  @TestOfyAndSql
+  @Test
   void testCantSpecifyClientIdsAndAll() {
     IllegalArgumentException thrown =
         assertThrows(

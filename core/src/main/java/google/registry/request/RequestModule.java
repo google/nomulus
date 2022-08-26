@@ -15,8 +15,11 @@
 package google.registry.request;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static google.registry.dns.PublishDnsUpdatesAction.APP_ENGINE_RETRY_HEADER;
+import static google.registry.dns.PublishDnsUpdatesAction.CLOUD_TASKS_RETRY_HEADER;
 import static google.registry.model.tld.Registries.assertTldExists;
 import static google.registry.model.tld.Registries.assertTldsExist;
+import static google.registry.request.RequestParameters.extractOptionalHeader;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfParameters;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -40,6 +43,7 @@ import google.registry.util.RequestStatusChecker;
 import google.registry.util.RequestStatusCheckerImpl;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -244,5 +248,17 @@ public final class RequestModule {
       }
     }
     return params.build();
+  }
+
+  @Provides
+  @Header(APP_ENGINE_RETRY_HEADER)
+  static Optional<Integer> provideAppEngineRetryCount(HttpServletRequest req) {
+    return extractOptionalHeader(req, APP_ENGINE_RETRY_HEADER).map(Integer::parseInt);
+  }
+
+  @Provides
+  @Header(CLOUD_TASKS_RETRY_HEADER)
+  static Optional<Integer> provideCloudTasksRetryCount(HttpServletRequest req) {
+    return extractOptionalHeader(req, CLOUD_TASKS_RETRY_HEADER).map(Integer::parseInt);
   }
 }

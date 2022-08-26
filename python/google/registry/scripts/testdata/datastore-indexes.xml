@@ -5,24 +5,24 @@
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
     <!-- For finding domain resources by registrar. -->
-    <datastore-index kind="DomainBase" ancestor="false" source="manual">
+    <datastore-index kind="Domain" ancestor="false" source="manual">
         <property name="^i" direction="asc"/>
         <property name="currentSponsorClientId" direction="asc"/>
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
     <!-- For finding domain resources by TLD. -->
-    <datastore-index kind="DomainBase" ancestor="false" source="manual">
+    <datastore-index kind="Domain" ancestor="false" source="manual">
         <property name="^i" direction="asc"/>
         <property name="tld" direction="asc"/>
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
     <!-- For finding domain resources by registrar. -->
-    <datastore-index kind="DomainBase" ancestor="false" source="manual">
+    <datastore-index kind="Domain" ancestor="false" source="manual">
         <property name="currentSponsorClientId" direction="asc"/>
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
     <!-- For finding host resources by registrar. -->
-    <datastore-index kind="HostResource" ancestor="false" source="manual">
+    <datastore-index kind="Host" ancestor="false" source="manual">
         <property name="currentSponsorClientId" direction="asc"/>
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
@@ -32,23 +32,23 @@
         <property name="created" direction="desc"/>
     </datastore-index>
     <!-- For determining the active domains linked to a given contact. -->
-    <datastore-index kind="DomainBase" ancestor="false" source="manual">
+    <datastore-index kind="Domain" ancestor="false" source="manual">
         <property name="allContacts.contact" direction="asc"/>
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
     <!-- For determining the active domains linked to a given host. -->
-    <datastore-index kind="DomainBase" ancestor="false" source="manual">
+    <datastore-index kind="Domain" ancestor="false" source="manual">
         <property name="nsHosts" direction="asc"/>
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
     <!-- For RDAP searches by linked nameserver. -->
-    <datastore-index kind="DomainBase" ancestor="false" source="manual">
+    <datastore-index kind="Domain" ancestor="false" source="manual">
         <property name="^i" direction="asc"/>
         <property name="nsHosts" direction="asc"/>
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
     <!-- For WHOIS IP address lookup -->
-    <datastore-index kind="HostResource" ancestor="false" source="manual">
+    <datastore-index kind="Host" ancestor="false" source="manual">
         <property name="inetAddresses" direction="asc"/>
         <property name="deletionTime" direction="asc"/>
     </datastore-index>
@@ -66,16 +66,16 @@
         <property name="modificationTime" direction="asc"/>
     </datastore-index>
     <!-- For RDAP. -->
-    <datastore-index kind="DomainBase" ancestor="false" source="manual">
+    <datastore-index kind="Domain" ancestor="false" source="manual">
         <property name="^i" direction="asc"/>
         <property name="fullyQualifiedDomainName" direction="asc"/>
     </datastore-index>
-    <datastore-index kind="DomainBase" ancestor="false" source="manual">
+    <datastore-index kind="Domain" ancestor="false" source="manual">
         <property name="^i" direction="asc"/>
         <property name="tld" direction="asc"/>
         <property name="fullyQualifiedDomainName" direction="asc"/>
     </datastore-index>
-    <datastore-index kind="HostResource" ancestor="false" source="manual">
+    <datastore-index kind="Host" ancestor="false" source="manual">
         <property name="deletionTime" direction="asc"/>
         <property name="fullyQualifiedHostName" direction="asc"/>
     </datastore-index>

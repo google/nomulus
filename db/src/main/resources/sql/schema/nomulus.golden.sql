@@ -52,7 +52,8 @@ CREATE TABLE public."AllocationToken" (
     token_status_transitions public.hstore,
     token_type text,
     redemption_domain_history_id bigint,
-    renewal_price_behavior text DEFAULT 'DEFAULT'::text NOT NULL
+    renewal_price_behavior text DEFAULT 'DEFAULT'::text NOT NULL,
+    registration_behavior text DEFAULT 'DEFAULT'::text NOT NULL
 );
 
 
@@ -71,11 +72,7 @@ CREATE TABLE public."BillingCancellation" (
     domain_name text NOT NULL,
     billing_time timestamp with time zone,
     billing_event_id bigint,
-    billing_recurrence_id bigint,
-    billing_event_history_id bigint,
-    billing_event_domain_repo_id text,
-    billing_recurrence_history_id bigint,
-    billing_recurrence_domain_repo_id text
+    billing_recurrence_id bigint
 );
 
 
@@ -394,17 +391,12 @@ CREATE TABLE public."Domain" (
     autorenew_poll_message_id bigint,
     deletion_poll_message_id bigint,
     autorenew_end_time timestamp with time zone,
-    billing_recurrence_history_id bigint,
-    autorenew_poll_message_history_id bigint,
-    deletion_poll_message_history_id bigint,
-    transfer_billing_recurrence_history_id bigint,
     transfer_autorenew_poll_message_history_id bigint,
-    transfer_billing_event_history_id bigint,
     transfer_history_entry_id bigint,
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
-    transfer_billing_cancellation_history_id bigint,
-    dns_refresh_request_time timestamp with time zone
+    dns_refresh_request_time timestamp with time zone,
+    current_package_token text
 );
 
 
@@ -487,17 +479,13 @@ CREATE TABLE public."DomainHistory" (
     history_other_registrar_id text,
     history_period_unit text,
     history_period_value integer,
-    billing_recurrence_history_id bigint,
     autorenew_poll_message_history_id bigint,
-    deletion_poll_message_history_id bigint,
-    transfer_billing_recurrence_history_id bigint,
     transfer_autorenew_poll_message_history_id bigint,
-    transfer_billing_event_history_id bigint,
     transfer_history_entry_id bigint,
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
-    transfer_billing_cancellation_history_id bigint,
-    dns_refresh_request_time timestamp with time zone
+    dns_refresh_request_time timestamp with time zone,
+    current_package_token text
 );
 
 
@@ -567,11 +555,7 @@ CREATE TABLE public."GracePeriod" (
     registrar_id text NOT NULL,
     domain_repo_id text NOT NULL,
     expiration_time timestamp with time zone NOT NULL,
-    type text NOT NULL,
-    billing_event_history_id bigint,
-    billing_recurrence_history_id bigint,
-    billing_event_domain_repo_id text,
-    billing_recurrence_domain_repo_id text
+    type text NOT NULL
 );
 
 
@@ -582,17 +566,13 @@ CREATE TABLE public."GracePeriod" (
 CREATE TABLE public."GracePeriodHistory" (
     grace_period_history_revision_id bigint NOT NULL,
     billing_event_id bigint,
-    billing_event_history_id bigint,
     billing_recurrence_id bigint,
-    billing_recurrence_history_id bigint,
     registrar_id text NOT NULL,
     domain_repo_id text NOT NULL,
     expiration_time timestamp with time zone NOT NULL,
     type text NOT NULL,
     domain_history_revision_id bigint,
-    grace_period_id bigint NOT NULL,
-    billing_event_domain_repo_id text,
-    billing_recurrence_domain_repo_id text
+    grace_period_id bigint NOT NULL
 );
 
 
@@ -662,6 +642,22 @@ CREATE TABLE public."Lock" (
     acquired_time timestamp with time zone NOT NULL,
     expiration_time timestamp with time zone NOT NULL,
     request_log_id text NOT NULL
+);
+
+
+--
+-- Name: PackagePromotion; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."PackagePromotion" (
+    package_promotion_id bigint NOT NULL,
+    last_notification_sent timestamp with time zone,
+    max_creates integer NOT NULL,
+    max_domains integer NOT NULL,
+    next_billing_date timestamp with time zone NOT NULL,
+    package_price_amount numeric(19,2) NOT NULL,
+    package_price_currency text NOT NULL,
+    token text NOT NULL
 );
 
 
@@ -1001,16 +997,6 @@ ALTER SEQUENCE public."SignedMarkRevocationList_revision_id_seq" OWNED BY public
 
 
 --
--- Name: SqlReplayCheckpoint; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."SqlReplayCheckpoint" (
-    id bigint NOT NULL,
-    last_replay_time timestamp with time zone NOT NULL
-);
-
-
---
 -- Name: Tld; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1069,32 +1055,19 @@ CREATE TABLE public."TmchCrl" (
 
 
 --
--- Name: Transaction; Type: TABLE; Schema: public; Owner: -
+-- Name: User; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public."Transaction" (
+CREATE TABLE public."User" (
     id bigint NOT NULL,
-    contents bytea
+    email_address text NOT NULL,
+    gaia_id text NOT NULL,
+    registry_lock_password_hash text,
+    registry_lock_password_salt text,
+    global_role text NOT NULL,
+    is_admin boolean NOT NULL,
+    registrar_roles public.hstore NOT NULL
 );
-
-
---
--- Name: Transaction_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."Transaction_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: Transaction_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public."Transaction_id_seq" OWNED BY public."Transaction".id;
 
 
 --
@@ -1144,13 +1117,6 @@ ALTER TABLE ONLY public."SignedMarkRevocationList" ALTER COLUMN revision_id SET 
 --
 
 ALTER TABLE ONLY public."Spec11ThreatMatch" ALTER COLUMN id SET DEFAULT nextval('public."SafeBrowsingThreat_id_seq"'::regclass);
-
-
---
--- Name: Transaction id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Transaction" ALTER COLUMN id SET DEFAULT nextval('public."Transaction_id_seq"'::regclass);
 
 
 --
@@ -1314,6 +1280,14 @@ ALTER TABLE ONLY public."Lock"
 
 
 --
+-- Name: PackagePromotion PackagePromotion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PackagePromotion"
+    ADD CONSTRAINT "PackagePromotion_pkey" PRIMARY KEY (package_promotion_id);
+
+
+--
 -- Name: PollMessage PollMessage_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1418,14 +1392,6 @@ ALTER TABLE ONLY public."SignedMarkRevocationList"
 
 
 --
--- Name: SqlReplayCheckpoint SqlReplayCheckpoint_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."SqlReplayCheckpoint"
-    ADD CONSTRAINT "SqlReplayCheckpoint_pkey" PRIMARY KEY (id);
-
-
---
 -- Name: Tld Tld_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1442,11 +1408,11 @@ ALTER TABLE ONLY public."TmchCrl"
 
 
 --
--- Name: Transaction Transaction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: User User_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."Transaction"
-    ADD CONSTRAINT "Transaction_pkey" PRIMARY KEY (id);
+ALTER TABLE ONLY public."User"
+    ADD CONSTRAINT "User_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1824,6 +1790,13 @@ CREATE INDEX idxl8vobbecsd32k4ksavdfx8st6 ON public."BillingCancellation" USING 
 
 
 --
+-- Name: idxlg6a5tp70nch9cp0gc11brc5o; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxlg6a5tp70nch9cp0gc11brc5o ON public."PackagePromotion" USING btree (token);
+
+
+--
 -- Name: idxlrq7v63pc21uoh3auq6eybyhl; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2034,6 +2007,20 @@ CREATE INDEX spec11threatmatch_tld_idx ON public."Spec11ThreatMatch" USING btree
 
 
 --
+-- Name: user_email_address_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_email_address_idx ON public."User" USING btree (email_address);
+
+
+--
+-- Name: user_gaia_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_gaia_id_idx ON public."User" USING btree (gaia_id);
+
+
+--
 -- Name: Contact fk1sfyj7o7954prbn1exk7lpnoe; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2239,6 +2226,22 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT fk_domain_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: Domain fk_domain_current_package_token; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_current_package_token FOREIGN KEY (current_package_token) REFERENCES public."AllocationToken"(token) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: DomainHistory fk_domain_history_current_package_token; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainHistory"
+    ADD CONSTRAINT fk_domain_history_current_package_token FOREIGN KEY (current_package_token) REFERENCES public."AllocationToken"(token) DEFERRABLE INITIALLY DEFERRED;
 
 
 --

@@ -18,7 +18,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.flows.FlowUtils.marshalWithLenientRetry;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -33,7 +32,7 @@ import google.registry.flows.EppController;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.flows.StatelessRequestSessionMetadata;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
@@ -129,15 +128,13 @@ public class DeleteExpiredDomainsAction implements Runnable {
     logger.atInfo().log(
         "Deleting non-renewing domains with autorenew end times up through %s.", runTime);
 
-    // Note: in Datastore, this query is (and must be) non-transactional, and thus, is only
-    // eventually consistent.
-    ImmutableList<DomainBase> domainsToDelete =
-        transactIfJpaTm(
-            () ->
-                tm().createQueryComposer(DomainBase.class)
-                    .where("autorenewEndTime", Comparator.LTE, runTime)
-                    .where("deletionTime", Comparator.EQ, END_OF_TIME)
-                    .list());
+    ImmutableList<Domain> domainsToDelete =
+        tm().transact(
+                () ->
+                    tm().createQueryComposer(Domain.class)
+                        .where("autorenewEndTime", Comparator.LTE, runTime)
+                        .where("deletionTime", Comparator.EQ, END_OF_TIME)
+                        .list());
     if (domainsToDelete.isEmpty()) {
       logger.atInfo().log("Found 0 domains to delete.");
       response.setPayload("Found 0 domains to delete.");
@@ -148,10 +145,9 @@ public class DeleteExpiredDomainsAction implements Runnable {
         "Found %d domains to delete: %s.",
         domainsToDelete.size(),
         String.join(
-            ", ",
-            domainsToDelete.stream().map(DomainBase::getDomainName).collect(toImmutableList())));
+            ", ", domainsToDelete.stream().map(Domain::getDomainName).collect(toImmutableList())));
     int successes = 0;
-    for (DomainBase domain : domainsToDelete) {
+    for (Domain domain : domainsToDelete) {
       if (runDomainDeleteFlow(domain)) {
         successes++;
       }
@@ -166,7 +162,7 @@ public class DeleteExpiredDomainsAction implements Runnable {
   }
 
   /** Runs the actual domain delete flow and returns whether the deletion was successful. */
-  private boolean runDomainDeleteFlow(DomainBase domain) {
+  private boolean runDomainDeleteFlow(Domain domain) {
     logger.atInfo().log("Attempting to delete domain '%s'.", domain.getDomainName());
     // Create a new transaction that the flow's execution will be enlisted in that loads the domain
     // transactionally. This way we can ensure that nothing else has modified the domain in question
@@ -174,7 +170,7 @@ public class DeleteExpiredDomainsAction implements Runnable {
     Optional<EppOutput> eppOutput =
         tm().transact(
                 () -> {
-                  DomainBase transDomain = tm().loadByKey(domain.createVKey());
+                  Domain transDomain = tm().loadByKey(domain.createVKey());
                   if (!domain.getAutorenewEndTime().isPresent()
                       || domain.getAutorenewEndTime().get().isAfter(tm().getTransactionTime())) {
                     logger.atSevere().log(

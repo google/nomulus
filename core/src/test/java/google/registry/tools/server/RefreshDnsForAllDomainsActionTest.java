@@ -31,45 +31,30 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.dns.DnsQueue;
-import google.registry.model.ofy.Ofy;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestSqlOnly;
 import java.util.Random;
 import org.apache.http.HttpStatus;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 /** Unit tests for {@link RefreshDnsForAllDomainsAction}. */
-@DualDatabaseTest
 public class RefreshDnsForAllDomainsActionTest {
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T02:02:02Z"));
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
   private RefreshDnsForAllDomainsAction action;
-  private FakeResponse response = new FakeResponse();
+  private final FakeResponse response = new FakeResponse();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withLocalModules()
-          .withTaskQueue()
-          .build();
-
-  @Order(Order.DEFAULT - 1)
-  @RegisterExtension
-  public final InjectExtension inject =
-      new InjectExtension().withStaticFieldOverride(Ofy.class, "clock", clock);
+      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
 
   @BeforeEach
   void beforeEach() {
@@ -77,7 +62,6 @@ public class RefreshDnsForAllDomainsActionTest {
     action.smearMinutes = 1;
     action.random = new Random();
     action.random.setSeed(123L);
-    action.response = new FakeResponse();
     action.clock = clock;
     action.dnsQueue = dnsQueue;
     action.response = response;
@@ -85,7 +69,7 @@ public class RefreshDnsForAllDomainsActionTest {
     createTld("bar");
   }
 
-  @TestSqlOnly
+  @Test
   void test_runAction_errorEnqueuingToDnsQueue() throws Exception {
     persistActiveDomain("foo.bar");
     persistActiveDomain("baz.bar");
@@ -103,7 +87,7 @@ public class RefreshDnsForAllDomainsActionTest {
     assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_INTERNAL_SERVER_ERROR);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_runAction_successfullyEnqueuesDnsRefreshes() throws Exception {
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
@@ -113,7 +97,7 @@ public class RefreshDnsForAllDomainsActionTest {
     verify(dnsQueue).addDomainRefreshTask("low.bar", Duration.ZERO);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_runAction_smearsOutDnsRefreshes() throws Exception {
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
@@ -126,7 +110,7 @@ public class RefreshDnsForAllDomainsActionTest {
     assertThat(captor.getAllValues()).containsExactly(standardMinutes(450), standardMinutes(782));
   }
 
-  @TestOfyAndSql
+  @Test
   void test_runAction_doesntRefreshDeletedDomain() throws Exception {
     persistActiveDomain("foo.bar");
     persistDeletedDomain("deleted.bar", clock.nowUtc().minusYears(1));
@@ -136,7 +120,7 @@ public class RefreshDnsForAllDomainsActionTest {
     verify(dnsQueue, never()).addDomainRefreshTask("deleted.bar", Duration.ZERO);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_runAction_ignoresDomainsOnOtherTlds() throws Exception {
     createTld("baz");
     persistActiveDomain("foo.bar");
@@ -149,7 +133,7 @@ public class RefreshDnsForAllDomainsActionTest {
     verify(dnsQueue, never()).addDomainRefreshTask("ignore.baz", Duration.ZERO);
   }
 
-  @TestOfyAndSql
+  @Test
   void test_smearMinutesMustBeSpecified() {
     action.tlds = ImmutableSet.of("bar");
     action.smearMinutes = 0;

@@ -17,7 +17,7 @@ package google.registry.whois;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -44,7 +44,7 @@ class RegistrarWhoisResponse extends WhoisResponseImpl {
 
   @Override
   public WhoisResponseResults getResponse(boolean preferUnicode, String disclaimer) {
-    Set<RegistrarContact> contacts = registrar.getContacts();
+    Set<RegistrarPoc> contacts = registrar.getContacts();
     String plaintext =
         new RegistrarEmitter()
             .emitField("Registrar", registrar.getRegistrarName())
@@ -59,8 +59,8 @@ class RegistrarWhoisResponse extends WhoisResponseImpl {
                 registrar.getPhoneNumber(), registrar.getFaxNumber(), registrar.getEmailAddress())
             .emitField("Registrar WHOIS Server", registrar.getWhoisServer())
             .emitField("Registrar URL", registrar.getUrl())
-            .emitRegistrarContacts("Admin", contacts, AdminOrTech.ADMIN)
-            .emitRegistrarContacts("Technical", contacts, AdminOrTech.TECH)
+            .emitRegistrarPocs("Admin", contacts, AdminOrTech.ADMIN)
+            .emitRegistrarPocs("Technical", contacts, AdminOrTech.TECH)
             .emitLastUpdated(getTimestamp())
             .emitFooter(disclaimer)
             .toString();
@@ -70,11 +70,9 @@ class RegistrarWhoisResponse extends WhoisResponseImpl {
   /** An emitter with logic for registrars. */
   static class RegistrarEmitter extends Emitter<RegistrarEmitter> {
     /** Emits the registrar contact of the given type. */
-    RegistrarEmitter emitRegistrarContacts(
-        String contactLabel,
-        Iterable<RegistrarContact> contacts,
-        AdminOrTech type) {
-      for (RegistrarContact contact : contacts) {
+    RegistrarEmitter emitRegistrarPocs(
+        String contactLabel, Iterable<RegistrarPoc> contacts, AdminOrTech type) {
+      for (RegistrarPoc contact : contacts) {
         if ((type == AdminOrTech.ADMIN && contact.getVisibleInWhoisAsAdmin())
             || (type == AdminOrTech.TECH && contact.getVisibleInWhoisAsTech())) {
           emitField(contactLabel + " Contact", contact.getName())

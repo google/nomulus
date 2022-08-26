@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
@@ -34,9 +33,9 @@ import google.registry.model.EppResource.BuilderWithTransferData;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
@@ -163,7 +162,7 @@ public final class EppResourceUtils {
     T resource =
         useCache
             ? EppResource.loadCached(fki.getResourceKey())
-            : transactIfJpaTm(() -> tm().loadByKeyIfPresent(fki.getResourceKey()).orElse(null));
+            : tm().transact(() -> tm().loadByKeyIfPresent(fki.getResourceKey()).orElse(null));
     if (resource == null || isAtOrAfter(now, resource.getDeletionTime())) {
       return Optional.empty();
     }
@@ -226,7 +225,7 @@ public final class EppResourceUtils {
     checkArgument(TransferStatus.PENDING.equals(transferData.getTransferStatus()));
     TransferData.Builder transferDataBuilder = transferData.asBuilder();
     transferDataBuilder.setTransferStatus(TransferStatus.SERVER_APPROVED);
-    transferDataBuilder.setServerApproveEntities(null);
+    transferDataBuilder.setServerApproveEntities(null, null, null);
     if (transferData instanceof DomainTransferData) {
       ((DomainTransferData.Builder) transferDataBuilder)
           .setServerApproveBillingEvent(null)
@@ -343,24 +342,24 @@ public final class EppResourceUtils {
    * @param now the logical time of the check
    * @param limit the maximum number of returned keys, unlimited if null
    */
-  public static ImmutableSet<VKey<DomainBase>> getLinkedDomainKeys(
+  public static ImmutableSet<VKey<Domain>> getLinkedDomainKeys(
       VKey<? extends EppResource> key, DateTime now, @Nullable Integer limit) {
     checkArgument(
-        key.getKind().equals(ContactResource.class) || key.getKind().equals(HostResource.class),
-        "key must be either VKey<ContactResource> or VKey<HostResource>, but it is %s",
+        key.getKind().equals(ContactResource.class) || key.getKind().equals(Host.class),
+        "key must be either VKey<ContactResource> or VKey<Host>, but it is %s",
         key);
     boolean isContactKey = key.getKind().equals(ContactResource.class);
     if (tm().isOfy()) {
-      com.googlecode.objectify.cmd.Query<DomainBase> query =
+      com.googlecode.objectify.cmd.Query<Domain> query =
           auditedOfy()
               .load()
-              .type(DomainBase.class)
+              .type(Domain.class)
               .filter(isContactKey ? "allContacts.contact" : "nsHosts", key.getOfyKey())
               .filter("deletionTime >", now);
       if (limit != null) {
         query.limit(limit);
       }
-      return query.keys().list().stream().map(DomainBase::createVKey).collect(toImmutableSet());
+      return query.keys().list().stream().map(Domain::createVKey).collect(toImmutableSet());
     } else {
       return tm().transact(
               () -> {
@@ -383,16 +382,15 @@ public final class EppResourceUtils {
                   query.setMaxResults(limit);
                 }
                 @SuppressWarnings("unchecked")
-                ImmutableSet<VKey<DomainBase>> domainBaseKeySet =
-                    (ImmutableSet<VKey<DomainBase>>)
+                ImmutableSet<VKey<Domain>> domainKeySet =
+                    (ImmutableSet<VKey<Domain>>)
                         query
                             .getResultStream()
                             .map(
                                 repoId ->
-                                    DomainBase.createVKey(
-                                        Key.create(DomainBase.class, (String) repoId)))
+                                    Domain.createVKey(Key.create(Domain.class, (String) repoId)))
                             .collect(toImmutableSet());
-                return domainBaseKeySet;
+                return domainKeySet;
               });
     }
   }

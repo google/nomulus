@@ -1,121 +1,19 @@
-class google.registry.model.CreateAutoTimestamp {
-  org.joda.time.DateTime timestamp;
-}
-class google.registry.model.UpdateAutoTimestamp {
-  org.joda.time.DateTime timestamp;
-}
-class google.registry.model.billing.BillingEvent$Cancellation {
-  @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.domain.DomainHistory> parent;
-  google.registry.model.billing.BillingEvent$Reason reason;
-  google.registry.persistence.BillingVKey$BillingEventVKey refOneTime;
-  google.registry.persistence.BillingVKey$BillingRecurrenceVKey refRecurring;
-  java.lang.String clientId;
-  java.lang.String targetId;
-  java.util.Set<google.registry.model.billing.BillingEvent$Flag> flags;
-  org.joda.time.DateTime billingTime;
-  org.joda.time.DateTime eventTime;
-}
-enum google.registry.model.billing.BillingEvent$Flag {
-  ALLOCATION;
-  ANCHOR_TENANT;
-  AUTO_RENEW;
-  LANDRUSH;
-  RESERVED;
-  SUNRISE;
-  SYNTHETIC;
-}
-class google.registry.model.billing.BillingEvent$Modification {
-  @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.domain.DomainHistory> parent;
-  com.googlecode.objectify.Key<google.registry.model.billing.BillingEvent$OneTime> eventRef;
-  google.registry.model.billing.BillingEvent$Reason reason;
-  java.lang.String clientId;
-  java.lang.String description;
-  java.lang.String targetId;
-  java.util.Set<google.registry.model.billing.BillingEvent$Flag> flags;
-  org.joda.money.Money cost;
-  org.joda.time.DateTime eventTime;
-}
-class google.registry.model.billing.BillingEvent$OneTime {
-  @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.domain.DomainHistory> parent;
-  google.registry.model.billing.BillingEvent$Reason reason;
-  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> cancellationMatchingBillingEvent;
-  google.registry.persistence.VKey<google.registry.model.domain.token.AllocationToken> allocationToken;
-  java.lang.Integer periodYears;
-  java.lang.String clientId;
-  java.lang.String targetId;
-  java.util.Set<google.registry.model.billing.BillingEvent$Flag> flags;
-  org.joda.money.Money cost;
-  org.joda.time.DateTime billingTime;
-  org.joda.time.DateTime eventTime;
-  org.joda.time.DateTime syntheticCreationTime;
-}
-enum google.registry.model.billing.BillingEvent$Reason {
-  CREATE;
-  ERROR;
-  FEE_EARLY_ACCESS;
-  RENEW;
-  RESTORE;
-  SERVER_STATUS;
-  TRANSFER;
-}
-class google.registry.model.billing.BillingEvent$Recurring {
-  @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.domain.DomainHistory> parent;
-  google.registry.model.billing.BillingEvent$Reason reason;
-  google.registry.model.billing.BillingEvent$RenewalPriceBehavior renewalPriceBehavior;
-  google.registry.model.common.TimeOfYear recurrenceTimeOfYear;
-  java.lang.String clientId;
-  java.lang.String targetId;
-  java.util.Set<google.registry.model.billing.BillingEvent$Flag> flags;
-  org.joda.money.Money renewalPrice;
-  org.joda.time.DateTime eventTime;
-  org.joda.time.DateTime recurrenceEndTime;
-}
-enum google.registry.model.billing.BillingEvent$RenewalPriceBehavior {
-  DEFAULT;
-  NONPREMIUM;
-  SPECIFIED;
-}
-class google.registry.model.common.Cursor {
-  @Id java.lang.String id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  google.registry.model.UpdateAutoTimestamp lastUpdateTime;
-  org.joda.time.DateTime cursorTime;
-}
 class google.registry.model.common.EntityGroupRoot {
   @Id java.lang.String id;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
 }
 class google.registry.model.common.GaeUserIdConverter {
   @Id long id;
   com.google.appengine.api.users.User user;
-}
-class google.registry.model.common.TimeOfYear {
-  java.lang.String timeString;
-}
-class google.registry.model.contact.ContactAddress {
-  java.lang.String city;
-  java.lang.String countryCode;
-  java.lang.String state;
-  java.lang.String zip;
-  java.util.List<java.lang.String> street;
 }
 class google.registry.model.contact.ContactAuthInfo {
   google.registry.model.eppcommon.AuthInfo$PasswordAuth pw;
 }
 class google.registry.model.contact.ContactBase {
   @Id java.lang.String repoId;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.contact.ContactAuthInfo authInfo;
   google.registry.model.contact.ContactPhoneNumber fax;
   google.registry.model.contact.ContactPhoneNumber voice;
   google.registry.model.contact.Disclose disclose;
-  google.registry.model.contact.PostalInfo internationalizedPostalInfo;
-  google.registry.model.contact.PostalInfo localizedPostalInfo;
   google.registry.model.transfer.ContactTransferData transferData;
   java.lang.String contactId;
   java.lang.String creationClientId;
@@ -150,14 +48,10 @@ class google.registry.model.contact.ContactPhoneNumber {
 }
 class google.registry.model.contact.ContactResource {
   @Id java.lang.String repoId;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.contact.ContactAuthInfo authInfo;
   google.registry.model.contact.ContactPhoneNumber fax;
   google.registry.model.contact.ContactPhoneNumber voice;
   google.registry.model.contact.Disclose disclose;
-  google.registry.model.contact.PostalInfo internationalizedPostalInfo;
-  google.registry.model.contact.PostalInfo localizedPostalInfo;
   google.registry.model.transfer.ContactTransferData transferData;
   java.lang.String contactId;
   java.lang.String creationClientId;
@@ -182,37 +76,20 @@ class google.registry.model.contact.Disclose {
 class google.registry.model.contact.Disclose$PostalInfoChoice {
   google.registry.model.contact.PostalInfo$Type type;
 }
-class google.registry.model.contact.PostalInfo {
-  google.registry.model.contact.ContactAddress address;
-  google.registry.model.contact.PostalInfo$Type type;
-  java.lang.String name;
-  java.lang.String org;
-}
 enum google.registry.model.contact.PostalInfo$Type {
   INTERNATIONALIZED;
   LOCALIZED;
 }
-class google.registry.model.domain.DesignatedContact {
-  com.googlecode.objectify.Key<google.registry.model.contact.ContactResource> contact;
-  google.registry.model.domain.DesignatedContact$Type type;
-}
-enum google.registry.model.domain.DesignatedContact$Type {
-  ADMIN;
-  BILLING;
-  REGISTRANT;
-  TECH;
-}
-class google.registry.model.domain.DomainAuthInfo {
-  google.registry.model.eppcommon.AuthInfo$PasswordAuth pw;
-}
-class google.registry.model.domain.DomainBase {
+class google.registry.model.domain.Domain {
   @Id java.lang.String repoId;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.domain.DomainAuthInfo authInfo;
   google.registry.model.domain.launch.LaunchNotice launchNotice;
   google.registry.model.transfer.DomainTransferData transferData;
-  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> autorenewBillingEvent;
+  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> adminContact;
+  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> billingContact;
+  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> registrantContact;
+  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> techContact;
+  google.registry.persistence.VKey<google.registry.model.domain.token.AllocationToken> currentPackageToken;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
   java.lang.String creationClientId;
@@ -222,11 +99,10 @@ class google.registry.model.domain.DomainBase {
   java.lang.String lastEppUpdateClientId;
   java.lang.String smdId;
   java.lang.String tld;
-  java.util.Set<google.registry.model.domain.DesignatedContact> allContacts;
   java.util.Set<google.registry.model.domain.GracePeriod> gracePeriods;
   java.util.Set<google.registry.model.domain.secdns.DelegationSignerData> dsData;
   java.util.Set<google.registry.model.eppcommon.StatusValue> status;
-  java.util.Set<google.registry.persistence.VKey<google.registry.model.host.HostResource>> nsHosts;
+  java.util.Set<google.registry.persistence.VKey<google.registry.model.host.Host>> nsHosts;
   java.util.Set<java.lang.String> subordinateHosts;
   org.joda.time.DateTime autorenewEndTime;
   org.joda.time.DateTime deletionTime;
@@ -234,14 +110,19 @@ class google.registry.model.domain.DomainBase {
   org.joda.time.DateTime lastTransferTime;
   org.joda.time.DateTime registrationExpirationTime;
 }
-class google.registry.model.domain.DomainContent {
+class google.registry.model.domain.DomainAuthInfo {
+  google.registry.model.eppcommon.AuthInfo$PasswordAuth pw;
+}
+class google.registry.model.domain.DomainBase {
   @Id java.lang.String repoId;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.domain.DomainAuthInfo authInfo;
   google.registry.model.domain.launch.LaunchNotice launchNotice;
   google.registry.model.transfer.DomainTransferData transferData;
-  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> autorenewBillingEvent;
+  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> adminContact;
+  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> billingContact;
+  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> registrantContact;
+  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> techContact;
+  google.registry.persistence.VKey<google.registry.model.domain.token.AllocationToken> currentPackageToken;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
   java.lang.String creationClientId;
@@ -251,11 +132,10 @@ class google.registry.model.domain.DomainContent {
   java.lang.String lastEppUpdateClientId;
   java.lang.String smdId;
   java.lang.String tld;
-  java.util.Set<google.registry.model.domain.DesignatedContact> allContacts;
   java.util.Set<google.registry.model.domain.GracePeriod> gracePeriods;
   java.util.Set<google.registry.model.domain.secdns.DelegationSignerData> dsData;
   java.util.Set<google.registry.model.eppcommon.StatusValue> status;
-  java.util.Set<google.registry.persistence.VKey<google.registry.model.host.HostResource>> nsHosts;
+  java.util.Set<google.registry.persistence.VKey<google.registry.model.host.Host>> nsHosts;
   java.util.Set<java.lang.String> subordinateHosts;
   org.joda.time.DateTime autorenewEndTime;
   org.joda.time.DateTime deletionTime;
@@ -268,7 +148,7 @@ class google.registry.model.domain.DomainHistory {
   @Parent com.googlecode.objectify.Key<? extends google.registry.model.EppResource> parent;
   boolean bySuperuser;
   byte[] xmlBytes;
-  google.registry.model.domain.DomainContent domainContent;
+  google.registry.model.domain.DomainBase domainBase;
   google.registry.model.domain.Period period;
   google.registry.model.eppcommon.Trid trid;
   google.registry.model.reporting.HistoryEntry$Type type;
@@ -279,21 +159,17 @@ class google.registry.model.domain.DomainHistory {
   java.util.Set<google.registry.model.domain.GracePeriod$GracePeriodHistory> gracePeriodHistories;
   java.util.Set<google.registry.model.domain.secdns.DomainDsDataHistory> dsDataHistories;
   java.util.Set<google.registry.model.reporting.DomainTransactionRecord> domainTransactionRecords;
-  java.util.Set<google.registry.persistence.VKey<google.registry.model.host.HostResource>> nsHosts;
+  java.util.Set<google.registry.persistence.VKey<google.registry.model.host.Host>> nsHosts;
   org.joda.time.DateTime modificationTime;
 }
 class google.registry.model.domain.GracePeriod {
   google.registry.model.domain.rgp.GracePeriodStatus type;
-  google.registry.persistence.BillingVKey$BillingEventVKey billingEventOneTime;
-  google.registry.persistence.BillingVKey$BillingRecurrenceVKey billingEventRecurring;
   java.lang.String clientId;
   long gracePeriodId;
   org.joda.time.DateTime expirationTime;
 }
 class google.registry.model.domain.GracePeriod$GracePeriodHistory {
   google.registry.model.domain.rgp.GracePeriodStatus type;
-  google.registry.persistence.BillingVKey$BillingEventVKey billingEventOneTime;
-  google.registry.persistence.BillingVKey$BillingRecurrenceVKey billingEventRecurring;
   java.lang.Long domainHistoryRevisionId;
   java.lang.Long gracePeriodHistoryRevisionId;
   java.lang.String clientId;
@@ -344,10 +220,8 @@ class google.registry.model.domain.token.AllocationToken {
   @Id java.lang.String token;
   boolean discountPremiums;
   double discountFraction;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
-  google.registry.model.billing.BillingEvent$RenewalPriceBehavior renewalPriceBehavior;
-  google.registry.model.common.TimedTransitionProperty<google.registry.model.domain.token.AllocationToken$TokenStatus, google.registry.model.domain.token.AllocationToken$TokenStatusTransition> tokenStatusTransitions;
+  google.registry.model.common.TimedTransitionProperty<google.registry.model.domain.token.AllocationToken$TokenStatus> tokenStatusTransitions;
+  google.registry.model.domain.token.AllocationToken$RegistrationBehavior registrationBehavior;
   google.registry.model.domain.token.AllocationToken$TokenType tokenType;
   google.registry.persistence.DomainHistoryVKey redemptionHistoryEntry;
   int discountYears;
@@ -355,17 +229,19 @@ class google.registry.model.domain.token.AllocationToken {
   java.util.Set<java.lang.String> allowedClientIds;
   java.util.Set<java.lang.String> allowedTlds;
 }
+enum google.registry.model.domain.token.AllocationToken$RegistrationBehavior {
+  ANCHOR_TENANT;
+  BYPASS_TLD_STATE;
+  DEFAULT;
+}
 enum google.registry.model.domain.token.AllocationToken$TokenStatus {
   CANCELLED;
   ENDED;
   NOT_STARTED;
   VALID;
 }
-class google.registry.model.domain.token.AllocationToken$TokenStatusTransition {
-  google.registry.model.domain.token.AllocationToken$TokenStatus tokenStatus;
-  org.joda.time.DateTime transitionTime;
-}
 enum google.registry.model.domain.token.AllocationToken$TokenType {
+  PACKAGE;
   SINGLE_USE;
   UNLIMITED_USE;
 }
@@ -399,11 +275,23 @@ class google.registry.model.eppcommon.Trid {
   java.lang.String clientTransactionId;
   java.lang.String serverTransactionId;
 }
+class google.registry.model.host.Host {
+  @Id java.lang.String repoId;
+  google.registry.persistence.VKey<google.registry.model.domain.Domain> superordinateDomain;
+  java.lang.String creationClientId;
+  java.lang.String currentSponsorClientId;
+  java.lang.String fullyQualifiedHostName;
+  java.lang.String lastEppUpdateClientId;
+  java.util.Set<google.registry.model.eppcommon.StatusValue> status;
+  java.util.Set<java.net.InetAddress> inetAddresses;
+  org.joda.time.DateTime deletionTime;
+  org.joda.time.DateTime lastEppUpdateTime;
+  org.joda.time.DateTime lastSuperordinateChange;
+  org.joda.time.DateTime lastTransferTime;
+}
 class google.registry.model.host.HostBase {
   @Id java.lang.String repoId;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
-  google.registry.persistence.VKey<google.registry.model.domain.DomainBase> superordinateDomain;
+  google.registry.persistence.VKey<google.registry.model.domain.Domain> superordinateDomain;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
   java.lang.String fullyQualifiedHostName;
@@ -431,27 +319,10 @@ class google.registry.model.host.HostHistory {
   java.util.Set<google.registry.model.reporting.DomainTransactionRecord> domainTransactionRecords;
   org.joda.time.DateTime modificationTime;
 }
-class google.registry.model.host.HostResource {
-  @Id java.lang.String repoId;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
-  google.registry.persistence.VKey<google.registry.model.domain.DomainBase> superordinateDomain;
-  java.lang.String creationClientId;
-  java.lang.String currentSponsorClientId;
-  java.lang.String fullyQualifiedHostName;
-  java.lang.String lastEppUpdateClientId;
-  java.util.Set<google.registry.model.eppcommon.StatusValue> status;
-  java.util.Set<java.net.InetAddress> inetAddresses;
-  org.joda.time.DateTime deletionTime;
-  org.joda.time.DateTime lastEppUpdateTime;
-  org.joda.time.DateTime lastSuperordinateChange;
-  org.joda.time.DateTime lastTransferTime;
-}
 class google.registry.model.index.EppResourceIndex {
   @Id java.lang.String id;
   @Parent com.googlecode.objectify.Key<google.registry.model.index.EppResourceIndexBucket> bucket;
   com.googlecode.objectify.Key<? extends google.registry.model.EppResource> reference;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   java.lang.String kind;
 }
 class google.registry.model.index.EppResourceIndexBucket {
@@ -459,72 +330,21 @@ class google.registry.model.index.EppResourceIndexBucket {
 }
 class google.registry.model.index.ForeignKeyIndex$ForeignKeyContactIndex {
   @Id java.lang.String foreignKey;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
 }
 class google.registry.model.index.ForeignKeyIndex$ForeignKeyDomainIndex {
   @Id java.lang.String foreignKey;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
 }
 class google.registry.model.index.ForeignKeyIndex$ForeignKeyHostIndex {
   @Id java.lang.String foreignKey;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
 }
-class google.registry.model.poll.PendingActionNotificationResponse$ContactPendingActionNotificationResponse {
-  google.registry.model.eppcommon.Trid trid;
-  google.registry.model.poll.PendingActionNotificationResponse$NameOrId nameOrId;
-  org.joda.time.DateTime processedDate;
-}
-class google.registry.model.poll.PendingActionNotificationResponse$DomainPendingActionNotificationResponse {
-  google.registry.model.eppcommon.Trid trid;
-  google.registry.model.poll.PendingActionNotificationResponse$NameOrId nameOrId;
-  org.joda.time.DateTime processedDate;
-}
-class google.registry.model.poll.PendingActionNotificationResponse$HostPendingActionNotificationResponse {
-  google.registry.model.eppcommon.Trid trid;
-  google.registry.model.poll.PendingActionNotificationResponse$NameOrId nameOrId;
-  org.joda.time.DateTime processedDate;
-}
-class google.registry.model.poll.PendingActionNotificationResponse$NameOrId {
-  boolean actionResult;
-  java.lang.String value;
-}
-class google.registry.model.poll.PollMessage {
-  @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<? extends google.registry.model.reporting.HistoryEntry> parent;
-  java.lang.String clientId;
-  java.lang.String msg;
-  org.joda.time.DateTime eventTime;
-}
-class google.registry.model.poll.PollMessage$Autorenew {
-  @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<? extends google.registry.model.reporting.HistoryEntry> parent;
-  java.lang.String clientId;
-  java.lang.String msg;
-  java.lang.String targetId;
-  org.joda.time.DateTime autorenewEndTime;
-  org.joda.time.DateTime eventTime;
-}
-class google.registry.model.poll.PollMessage$OneTime {
-  @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<? extends google.registry.model.reporting.HistoryEntry> parent;
-  java.lang.String clientId;
-  java.lang.String msg;
-  java.util.List<google.registry.model.poll.PendingActionNotificationResponse$ContactPendingActionNotificationResponse> contactPendingActionNotificationResponses;
-  java.util.List<google.registry.model.poll.PendingActionNotificationResponse$DomainPendingActionNotificationResponse> domainPendingActionNotificationResponses;
-  java.util.List<google.registry.model.poll.PendingActionNotificationResponse$HostPendingActionNotificationResponse> hostPendingActionNotificationResponses;
-  java.util.List<google.registry.model.transfer.TransferResponse$ContactTransferResponse> contactTransferResponses;
-  java.util.List<google.registry.model.transfer.TransferResponse$DomainTransferResponse> domainTransferResponses;
-  org.joda.time.DateTime eventTime;
-}
 class google.registry.model.rde.RdeRevision {
   @Id java.lang.String id;
-  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   int revision;
 }
 class google.registry.model.registrar.Registrar {
@@ -533,12 +353,8 @@ class google.registry.model.registrar.Registrar {
   boolean blockPremiumNames;
   boolean contactsRequireSyncing;
   boolean registryLockAllowed;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.UpdateAutoTimestamp lastUpdateTime;
   google.registry.model.registrar.Registrar$State state;
   google.registry.model.registrar.Registrar$Type type;
-  google.registry.model.registrar.RegistrarAddress internationalizedAddress;
-  google.registry.model.registrar.RegistrarAddress localizedAddress;
   java.lang.Long ianaIdentifier;
   java.lang.String clientCertificate;
   java.lang.String clientCertificateHash;
@@ -557,16 +373,12 @@ class google.registry.model.registrar.Registrar {
   java.lang.String url;
   java.lang.String whoisServer;
   java.util.List<google.registry.util.CidrAddressBlock> ipAddressWhitelist;
-  java.util.Map<org.joda.money.CurrencyUnit, google.registry.model.registrar.Registrar$BillingAccountEntry> billingAccountMap;
+  java.util.Map<org.joda.money.CurrencyUnit, java.lang.String> billingAccountMap;
   java.util.Set<java.lang.String> allowedTlds;
   java.util.Set<java.lang.String> rdapBaseUrls;
   org.joda.time.DateTime lastCertificateUpdateTime;
   org.joda.time.DateTime lastExpiringCertNotificationSentDate;
   org.joda.time.DateTime lastExpiringFailoverCertNotificationSentDate;
-}
-class google.registry.model.registrar.Registrar$BillingAccountEntry {
-  java.lang.String accountId;
-  org.joda.money.CurrencyUnit currency;
 }
 enum google.registry.model.registrar.Registrar$State {
   ACTIVE;
@@ -582,46 +394,6 @@ enum google.registry.model.registrar.Registrar$Type {
   PDT;
   REAL;
   TEST;
-}
-class google.registry.model.registrar.RegistrarAddress {
-  java.lang.String city;
-  java.lang.String countryCode;
-  java.lang.String state;
-  java.lang.String zip;
-  java.util.List<java.lang.String> street;
-}
-class google.registry.model.registrar.RegistrarContact {
-  @Id java.lang.String emailAddress;
-  @Parent com.googlecode.objectify.Key<google.registry.model.registrar.Registrar> parent;
-  boolean allowedToSetRegistryLockPassword;
-  boolean visibleInDomainWhoisAsAbuse;
-  boolean visibleInWhoisAsAdmin;
-  boolean visibleInWhoisAsTech;
-  java.lang.String faxNumber;
-  java.lang.String gaeUserId;
-  java.lang.String name;
-  java.lang.String phoneNumber;
-  java.lang.String registryLockEmailAddress;
-  java.lang.String registryLockPasswordHash;
-  java.lang.String registryLockPasswordSalt;
-  java.util.Set<google.registry.model.registrar.RegistrarContact$Type> types;
-}
-enum google.registry.model.registrar.RegistrarContact$Type {
-  ABUSE;
-  ADMIN;
-  BILLING;
-  LEGAL;
-  MARKETING;
-  TECH;
-  WHOIS;
-}
-class google.registry.model.replay.LastSqlTransaction {
-  @Id long id;
-  long transactionId;
-}
-class google.registry.model.replay.ReplayGap {
-  @Id long transactionId;
-  org.joda.time.DateTime timestamp;
 }
 class google.registry.model.reporting.DomainTransactionRecord {
   google.registry.model.reporting.DomainTransactionRecord$TransactionReportField reportField;
@@ -714,69 +486,11 @@ class google.registry.model.server.ServerSecret {
   long leastSignificant;
   long mostSignificant;
 }
-class google.registry.model.tld.Registry {
-  @Id java.lang.String tldStrId;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  boolean dnsPaused;
-  boolean escrowEnabled;
-  boolean invoicingEnabled;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.common.TimedTransitionProperty<google.registry.model.tld.Registry$TldState, google.registry.model.tld.Registry$TldStateTransition> tldStateTransitions;
-  google.registry.model.common.TimedTransitionProperty<org.joda.money.Money, google.registry.model.tld.Registry$BillingCostTransition> eapFeeSchedule;
-  google.registry.model.common.TimedTransitionProperty<org.joda.money.Money, google.registry.model.tld.Registry$BillingCostTransition> renewBillingCostTransitions;
-  google.registry.model.tld.Registry$TldType tldType;
-  int numDnsPublishLocks;
-  java.lang.String driveFolderId;
-  java.lang.String lordnUsername;
-  java.lang.String premiumListName;
-  java.lang.String pricingEngineClassName;
-  java.lang.String roidSuffix;
-  java.lang.String tldStr;
-  java.lang.String tldUnicode;
-  java.util.Set<java.lang.String> allowedFullyQualifiedHostNames;
-  java.util.Set<java.lang.String> allowedRegistrantContactIds;
-  java.util.Set<java.lang.String> dnsWriters;
-  java.util.Set<java.lang.String> reservedListNames;
-  org.joda.money.CurrencyUnit currency;
-  org.joda.money.Money createBillingCost;
-  org.joda.money.Money registryLockOrUnlockBillingCost;
-  org.joda.money.Money restoreBillingCost;
-  org.joda.money.Money serverStatusChangeBillingCost;
-  org.joda.time.DateTime claimsPeriodEnd;
-  org.joda.time.Duration addGracePeriodLength;
-  org.joda.time.Duration anchorTenantAddGracePeriodLength;
-  org.joda.time.Duration autoRenewGracePeriodLength;
-  org.joda.time.Duration automaticTransferLength;
-  org.joda.time.Duration pendingDeleteLength;
-  org.joda.time.Duration redemptionGracePeriodLength;
-  org.joda.time.Duration renewGracePeriodLength;
-  org.joda.time.Duration transferGracePeriodLength;
-}
-class google.registry.model.tld.Registry$BillingCostTransition {
-  org.joda.money.Money billingCost;
-  org.joda.time.DateTime transitionTime;
-}
-enum google.registry.model.tld.Registry$TldState {
-  GENERAL_AVAILABILITY;
-  PDT;
-  PREDELEGATION;
-  QUIET_PERIOD;
-  START_DATE_SUNRISE;
-}
-class google.registry.model.tld.Registry$TldStateTransition {
-  google.registry.model.tld.Registry$TldState tldState;
-  org.joda.time.DateTime transitionTime;
-}
-enum google.registry.model.tld.Registry$TldType {
-  REAL;
-  TEST;
-}
 class google.registry.model.transfer.ContactTransferData {
   google.registry.model.eppcommon.Trid transferRequestTrid;
   google.registry.model.transfer.TransferStatus transferStatus;
   java.lang.String gainingClientId;
   java.lang.String losingClientId;
-  java.util.Set<google.registry.persistence.VKey<? extends google.registry.model.transfer.TransferData$TransferServerApproveEntity>> serverApproveEntities;
   org.joda.time.DateTime pendingTransferExpirationTime;
   org.joda.time.DateTime transferRequestTime;
 }
@@ -784,32 +498,12 @@ class google.registry.model.transfer.DomainTransferData {
   google.registry.model.domain.Period transferPeriod;
   google.registry.model.eppcommon.Trid transferRequestTrid;
   google.registry.model.transfer.TransferStatus transferStatus;
-  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$OneTime> serverApproveBillingEvent;
-  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> serverApproveAutorenewEvent;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> serverApproveAutorenewPollMessage;
   java.lang.String gainingClientId;
   java.lang.String losingClientId;
-  java.util.Set<google.registry.persistence.VKey<? extends google.registry.model.transfer.TransferData$TransferServerApproveEntity>> serverApproveEntities;
   org.joda.time.DateTime pendingTransferExpirationTime;
   org.joda.time.DateTime transferRequestTime;
   org.joda.time.DateTime transferredRegistrationExpirationTime;
-}
-class google.registry.model.transfer.TransferResponse$ContactTransferResponse {
-  google.registry.model.transfer.TransferStatus transferStatus;
-  java.lang.String contactId;
-  java.lang.String gainingClientId;
-  java.lang.String losingClientId;
-  org.joda.time.DateTime pendingTransferExpirationTime;
-  org.joda.time.DateTime transferRequestTime;
-}
-class google.registry.model.transfer.TransferResponse$DomainTransferResponse {
-  google.registry.model.transfer.TransferStatus transferStatus;
-  java.lang.String fullyQualifiedDomainName;
-  java.lang.String gainingClientId;
-  java.lang.String losingClientId;
-  org.joda.time.DateTime extendedRegistrationExpirationTime;
-  org.joda.time.DateTime pendingTransferExpirationTime;
-  org.joda.time.DateTime transferRequestTime;
 }
 enum google.registry.model.transfer.TransferStatus {
   CLIENT_APPROVED;
@@ -818,16 +512,6 @@ enum google.registry.model.transfer.TransferStatus {
   PENDING;
   SERVER_APPROVED;
   SERVER_CANCELLED;
-}
-class google.registry.persistence.BillingVKey$BillingEventVKey {
-  java.lang.Long billingId;
-  java.lang.Long historyRevisionId;
-  java.lang.String repoId;
-}
-class google.registry.persistence.BillingVKey$BillingRecurrenceVKey {
-  java.lang.Long billingId;
-  java.lang.Long historyRevisionId;
-  java.lang.String repoId;
 }
 class google.registry.persistence.DomainHistoryVKey {
   java.lang.Long historyRevisionId;

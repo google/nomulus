@@ -14,7 +14,6 @@
 
 package google.registry.tmch;
 
-import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
@@ -23,46 +22,34 @@ import static google.registry.testing.DatabaseHelper.persistDomainAndEnqueueLord
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.launch.LaunchNotice;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
 import google.registry.util.Clock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link LordnTaskUtils}. */
-@DualDatabaseTest
 public class LordnTaskUtilsTest {
 
   private static final Clock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12Z"));
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(clock)
-          .withTaskQueue()
-          .build();
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
   @BeforeEach
   void beforeEach() {
     createTld("example");
-    inject.setStaticField(Ofy.class, "clock", clock);
   }
 
-  private DomainBase.Builder newDomainBuilder() {
-    return new DomainBase.Builder()
+  private static Domain.Builder newDomainBuilder() {
+    return new Domain.Builder()
         .setDomainName("fleece.example")
         .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .setCreationRegistrarId("TheRegistrar")
@@ -71,8 +58,8 @@ public class LordnTaskUtilsTest {
         .setCreationRegistrarId("TheRegistrar");
   }
 
-  @TestOfyAndSql
-  void test_enqueueDomainBaseTask_sunrise() {
+  @Test
+  void test_enqueueDomainTask_sunrise() {
     persistDomainAndEnqueueLordn(newDomainBuilder().setRepoId("A-EXAMPLE").build());
     String expectedPayload =
         "A-EXAMPLE,fleece.example,smdzzzz,1,2010-05-01T10:11:12.000Z";
@@ -80,9 +67,9 @@ public class LordnTaskUtilsTest {
         "lordn-sunrise", new TaskMatcher().payload(expectedPayload).tag("example"));
   }
 
-  @TestOfyAndSql
-  void test_enqueueDomainBaseTask_claims() {
-    DomainBase domain =
+  @Test
+  void test_enqueueDomainTask_claims() {
+    Domain domain =
         newDomainBuilder()
             .setRepoId("11-EXAMPLE")
             .setLaunchNotice(
@@ -95,7 +82,7 @@ public class LordnTaskUtilsTest {
     assertTasksEnqueued("lordn-claims", new TaskMatcher().payload(expectedPayload).tag("example"));
   }
 
-  @TestOfyAndSql
+  @Test
   void test_oteRegistrarWithNullIanaId() {
     tm().transact(
             () ->
@@ -111,24 +98,10 @@ public class LordnTaskUtilsTest {
         "lordn-sunrise", new TaskMatcher().payload(expectedPayload).tag("example"));
   }
 
-  @TestOfyOnly // moot in SQL since the domain creation fails the registrar foreign key check
-  void test_enqueueDomainBaseTask_throwsExceptionOnInvalidRegistrar() {
-    DomainBase domain =
-        newDomainBuilder()
-            .setRepoId("9000-EXAMPLE")
-            .setCreationRegistrarId("nonexistentRegistrar")
-            .build();
-    IllegalStateException thrown =
-        assertThrows(IllegalStateException.class, () -> persistDomainAndEnqueueLordn(domain));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("No registrar found with ID: nonexistentRegistrar");
-  }
-
-  @TestOfyAndSql
-  void test_enqueueDomainBaseTask_throwsNpeOnNullDomain() {
+  @Test
+  void test_enqueueDomainTask_throwsNpeOnNullDomain() {
     assertThrows(
         NullPointerException.class,
-        () -> tm().transactNew(() -> LordnTaskUtils.enqueueDomainBaseTask(null)));
+        () -> tm().transactNew(() -> LordnTaskUtils.enqueueDomainTask(null)));
   }
 }

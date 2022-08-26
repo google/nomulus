@@ -28,16 +28,14 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.EppXmlTransformer;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.tld.Registry;
 import google.registry.monitoring.whitebox.EppMetric;
@@ -45,7 +43,6 @@ import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectExtension;
 import google.registry.util.ProxyHttpHeaders;
 import java.util.Map;
 import java.util.Objects;
@@ -53,15 +50,11 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class EppTestCase {
 
   private static final MediaType APPLICATION_EPP_XML_UTF8 =
       MediaType.create("application", "epp+xml").withCharset(UTF_8);
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   protected final FakeClock clock = new FakeClock();
 
@@ -69,12 +62,6 @@ public class EppTestCase {
   private TransportCredentials credentials = new PasswordOnlyTransportCredentials();
   private EppMetric.Builder eppMetricBuilder;
   private boolean isSuperuser;
-
-  @BeforeEach
-  public void beforeEachEppTestCase() {
-    // For transactional flows
-    inject.setStaticField(Ofy.class, "clock", clock);
-  }
 
   /**
    * Set the transport credentials.
@@ -93,14 +80,14 @@ public class EppTestCase {
 
   public class CommandAsserter {
     private final String inputFilename;
-    private @Nullable final Map<String, String> inputSubstitutions;
+    @Nullable private final Map<String, String> inputSubstitutions;
     private DateTime now;
 
     private CommandAsserter(
         String inputFilename, @Nullable Map<String, String> inputSubstitutions) {
       this.inputFilename = inputFilename;
       this.inputSubstitutions = inputSubstitutions;
-      this.now = clock.nowUtc();
+      now = clock.nowUtc();
     }
 
     public CommandAsserter atTime(DateTime now) {
@@ -122,9 +109,88 @@ public class EppTestCase {
           inputFilename, inputSubstitutions, outputFilename, outputSubstitutions, now);
     }
 
-    public String hasSuccessfulLogin() throws Exception {
-      return assertLoginCommandAndResponse(inputFilename, inputSubstitutions, null, clock.nowUtc());
+    public void hasSuccessfulLogin() throws Exception {
+      assertLoginCommandAndResponse(inputFilename, inputSubstitutions, null, clock.nowUtc());
     }
+
+    private void assertLoginCommandAndResponse(
+        String inputFilename,
+        @Nullable Map<String, String> inputSubstitutions,
+        @Nullable Map<String, String> outputSubstitutions,
+        DateTime now)
+        throws Exception {
+      String outputFilename = "generic_success_response.xml";
+      clock.setTo(now);
+      String input = loadFile(EppTestCase.class, inputFilename, inputSubstitutions);
+      String expectedOutput = loadFile(EppTestCase.class, outputFilename, outputSubstitutions);
+      setUpSession();
+      FakeResponse response = executeXmlCommand(input);
+
+      // Check that the logged-in header was added to the response
+      assertThat(response.getHeaders())
+          .isEqualTo(ImmutableMap.of(ProxyHttpHeaders.LOGGED_IN, "true"));
+
+      verifyAndReturnOutput(response.getPayload(), expectedOutput, inputFilename, outputFilename);
+    }
+
+    private String assertCommandAndResponse(
+        String inputFilename,
+        @Nullable Map<String, String> inputSubstitutions,
+        String outputFilename,
+        @Nullable Map<String, String> outputSubstitutions,
+        DateTime now)
+        throws Exception {
+      clock.setTo(now);
+      String input = loadFile(EppTestCase.class, inputFilename, inputSubstitutions);
+      String expectedOutput = loadFile(EppTestCase.class, outputFilename, outputSubstitutions);
+      setUpSession();
+      FakeResponse response = executeXmlCommand(input);
+
+      // Checks that the Logged-In header is not in the response. If testing the login command, use
+      // assertLoginCommandAndResponse instead of this method.
+      assertThat(response.getHeaders()).doesNotContainEntry(ProxyHttpHeaders.LOGGED_IN, "true");
+
+      return verifyAndReturnOutput(
+          response.getPayload(), expectedOutput, inputFilename, outputFilename);
+    }
+  }
+
+  private void setUpSession() {
+    if (sessionMetadata == null) {
+      sessionMetadata =
+          new HttpSessionMetadata(new FakeHttpSession()) {
+            @Override
+            public void invalidate() {
+              // When a session is invalidated, reset the sessionMetadata field.
+              super.invalidate();
+              sessionMetadata = null;
+            }
+          };
+    }
+  }
+
+  private FakeResponse executeXmlCommand(String inputXml) {
+    EppRequestHandler handler = new EppRequestHandler();
+    FakeResponse response = new FakeResponse();
+    handler.response = response;
+    FakesAndMocksModule fakesAndMocksModule = FakesAndMocksModule.create(clock);
+    eppMetricBuilder = fakesAndMocksModule.getMetricBuilder();
+    handler.eppController =
+        DaggerEppTestComponent.builder()
+            .fakesAndMocksModule(fakesAndMocksModule)
+            .build()
+            .startRequest()
+            .eppController();
+    handler.executeEpp(
+        sessionMetadata,
+        credentials,
+        EppRequestSource.UNIT_TEST,
+        false, // Not dryRun.
+        isSuperuser,
+        inputXml.getBytes(UTF_8));
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getContentType()).isEqualTo(APPLICATION_EPP_XML_UTF8);
+    return response;
   }
 
   protected CommandAsserter assertThatCommand(String inputFilename) {
@@ -149,63 +215,7 @@ public class EppTestCase {
     assertThatCommand("logout.xml").hasResponse("logout_response.xml");
   }
 
-  private String assertLoginCommandAndResponse(
-      String inputFilename,
-      @Nullable Map<String, String> inputSubstitutions,
-      @Nullable Map<String, String> outputSubstitutions,
-      DateTime now)
-      throws Exception {
-    String outputFilename = "generic_success_response.xml";
-    clock.setTo(now);
-    String input = loadFile(EppTestCase.class, inputFilename, inputSubstitutions);
-    String expectedOutput = loadFile(EppTestCase.class, outputFilename, outputSubstitutions);
-    setUpSession();
-    FakeResponse response = executeXmlCommand(input);
-
-    // Check that the logged-in header was added to the response
-    assertThat(response.getHeaders())
-        .isEqualTo(ImmutableMap.of(ProxyHttpHeaders.LOGGED_IN, "true"));
-
-    return verifyAndReturnOutput(
-        response.getPayload(), expectedOutput, inputFilename, outputFilename);
-  }
-
-  private String assertCommandAndResponse(
-      String inputFilename,
-      @Nullable Map<String, String> inputSubstitutions,
-      String outputFilename,
-      @Nullable Map<String, String> outputSubstitutions,
-      DateTime now)
-      throws Exception {
-    clock.setTo(now);
-    String input = loadFile(EppTestCase.class, inputFilename, inputSubstitutions);
-    String expectedOutput = loadFile(EppTestCase.class, outputFilename, outputSubstitutions);
-    setUpSession();
-    FakeResponse response = executeXmlCommand(input);
-
-    // Checks that the Logged-In header is not in the response. If testing the login command, use
-    // assertLoginCommandAndResponse instead of this method.
-    assertThat(response.getHeaders()).doesNotContainEntry(ProxyHttpHeaders.LOGGED_IN, "true");
-
-    return verifyAndReturnOutput(
-        response.getPayload(), expectedOutput, inputFilename, outputFilename);
-  }
-
-  private void setUpSession() {
-    if (sessionMetadata == null) {
-      sessionMetadata =
-          new HttpSessionMetadata(new FakeHttpSession()) {
-            @Override
-            public void invalidate() {
-              // When a session is invalidated, reset the sessionMetadata field.
-              super.invalidate();
-              EppTestCase.this.sessionMetadata = null;
-            }
-          };
-    }
-  }
-
-  private String verifyAndReturnOutput(
+  private static String verifyAndReturnOutput(
       String actualOutput, String expectedOutput, String inputFilename, String outputFilename)
       throws Exception {
     // Run the resulting xml through the unmarshaller to verify that it was valid.
@@ -218,30 +228,6 @@ public class EppTestCase {
         "epp.response.trID.svTRID");
     tm().clearSessionCache(); // Clear the cache like OfyFilter would.
     return actualOutput;
-  }
-
-  private FakeResponse executeXmlCommand(String inputXml) {
-    EppRequestHandler handler = new EppRequestHandler();
-    FakeResponse response = new FakeResponse();
-    handler.response = response;
-    FakesAndMocksModule fakesAndMocksModule = FakesAndMocksModule.create(clock);
-    eppMetricBuilder = fakesAndMocksModule.getMetricBuilder();
-    handler.eppController =
-        DaggerEppTestComponent.builder()
-            .fakesAndMocksModule(fakesAndMocksModule)
-            .build()
-            .startRequest()
-            .eppController();
-    handler.executeEpp(
-        sessionMetadata,
-        credentials,
-        EppRequestSource.UNIT_TEST,
-        false,  // Not dryRun.
-        isSuperuser,
-        inputXml.getBytes(UTF_8));
-    assertThat(response.getStatus()).isEqualTo(SC_OK);
-    assertThat(response.getContentType()).isEqualTo(APPLICATION_EPP_XML_UTF8);
-    return response;
   }
 
   EppMetric getRecordedEppMetric() {
@@ -318,7 +304,7 @@ public class EppTestCase {
 
   /** Makes a one-time billing event corresponding to the given domain's creation. */
   protected static BillingEvent.OneTime makeOneTimeCreateBillingEvent(
-      DomainBase domain, DateTime createTime) {
+      Domain domain, DateTime createTime) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.CREATE)
         .setTargetId(domain.getDomainName())
@@ -327,12 +313,13 @@ public class EppTestCase {
         .setPeriodYears(2)
         .setEventTime(createTime)
         .setBillingTime(createTime.plus(Registry.get(domain.getTld()).getAddGracePeriodLength()))
-        .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
+        .setDomainHistory(
+            getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
         .build();
   }
 
   /** Makes a one-time billing event corresponding to the given domain's renewal. */
-  static BillingEvent.OneTime makeOneTimeRenewBillingEvent(DomainBase domain, DateTime renewTime) {
+  static BillingEvent.OneTime makeOneTimeRenewBillingEvent(Domain domain, DateTime renewTime) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.RENEW)
         .setTargetId(domain.getDomainName())
@@ -341,13 +328,13 @@ public class EppTestCase {
         .setPeriodYears(3)
         .setEventTime(renewTime)
         .setBillingTime(renewTime.plus(Registry.get(domain.getTld()).getRenewGracePeriodLength()))
-        .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class))
+        .setDomainHistory(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class))
         .build();
   }
 
   /** Makes a recurring billing event corresponding to the given domain's creation. */
   static BillingEvent.Recurring makeRecurringCreateBillingEvent(
-      DomainBase domain, DateTime eventTime, DateTime endTime) {
+      Domain domain, DateTime eventTime, DateTime endTime) {
     return makeRecurringBillingEvent(
         domain,
         getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class),
@@ -357,7 +344,7 @@ public class EppTestCase {
 
   /** Makes a recurring billing event corresponding to the given domain's renewal. */
   static BillingEvent.Recurring makeRecurringRenewBillingEvent(
-      DomainBase domain, DateTime eventTime, DateTime endTime) {
+      Domain domain, DateTime eventTime, DateTime endTime) {
     return makeRecurringBillingEvent(
         domain,
         getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class),
@@ -367,7 +354,7 @@ public class EppTestCase {
 
   /** Makes a recurring billing event corresponding to the given history entry. */
   protected static BillingEvent.Recurring makeRecurringBillingEvent(
-      DomainBase domain, DomainHistory historyEntry, DateTime eventTime, DateTime endTime) {
+      Domain domain, DomainHistory historyEntry, DateTime eventTime, DateTime endTime) {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -375,35 +362,37 @@ public class EppTestCase {
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(eventTime)
         .setRecurrenceEndTime(endTime)
-        .setParent(historyEntry)
+        .setDomainHistory(historyEntry)
         .build();
   }
 
   /** Makes a cancellation billing event cancelling out the given domain create billing event. */
   static BillingEvent.Cancellation makeCancellationBillingEventForCreate(
-      DomainBase domain, OneTime billingEventToCancel, DateTime createTime, DateTime deleteTime) {
+      Domain domain, OneTime billingEventToCancel, DateTime createTime, DateTime deleteTime) {
     return new BillingEvent.Cancellation.Builder()
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(deleteTime)
-        .setOneTimeEventKey(VKey.from(findKeyToActualOneTimeBillingEvent(billingEventToCancel)))
+        .setOneTimeEventKey(findKeyToActualOneTimeBillingEvent(billingEventToCancel))
         .setBillingTime(createTime.plus(Registry.get(domain.getTld()).getAddGracePeriodLength()))
         .setReason(Reason.CREATE)
-        .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE, DomainHistory.class))
+        .setDomainHistory(
+            getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE, DomainHistory.class))
         .build();
   }
 
   /** Makes a cancellation billing event cancelling out the given domain renew billing event. */
   static BillingEvent.Cancellation makeCancellationBillingEventForRenew(
-      DomainBase domain, OneTime billingEventToCancel, DateTime renewTime, DateTime deleteTime) {
+      Domain domain, OneTime billingEventToCancel, DateTime renewTime, DateTime deleteTime) {
     return new BillingEvent.Cancellation.Builder()
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(deleteTime)
-        .setOneTimeEventKey(VKey.from(findKeyToActualOneTimeBillingEvent(billingEventToCancel)))
+        .setOneTimeEventKey(findKeyToActualOneTimeBillingEvent(billingEventToCancel))
         .setBillingTime(renewTime.plus(Registry.get(domain.getTld()).getRenewGracePeriodLength()))
         .setReason(Reason.RENEW)
-        .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE, DomainHistory.class))
+        .setDomainHistory(
+            getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE, DomainHistory.class))
         .build();
   }
 
@@ -412,11 +401,11 @@ public class EppTestCase {
    *
    * <p>This is used in the situation where we have created an expected billing event associated
    * with the domain's creation (which is passed as the parameter here), then need to locate the key
-   * to the actual billing event in Datastore that would be seen on a Cancellation billing event.
+   * to the actual billing event in the database that would be seen on a Cancellation billing event.
    * This is necessary because the ID will be different even though all the rest of the fields are
    * the same.
    */
-  private static Key<OneTime> findKeyToActualOneTimeBillingEvent(OneTime expectedBillingEvent) {
+  private static VKey<OneTime> findKeyToActualOneTimeBillingEvent(OneTime expectedBillingEvent) {
     Optional<OneTime> actualCreateBillingEvent =
         loadAllOf(BillingEvent.OneTime.class).stream()
             .filter(
@@ -425,6 +414,6 @@ public class EppTestCase {
                         stripBillingEventId(b), stripBillingEventId(expectedBillingEvent)))
             .findFirst();
     assertThat(actualCreateBillingEvent).isPresent();
-    return Key.create(actualCreateBillingEvent.get());
+    return actualCreateBillingEvent.get().createVKey();
   }
 }

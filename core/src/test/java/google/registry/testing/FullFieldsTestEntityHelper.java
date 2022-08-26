@@ -29,15 +29,15 @@ import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.util.Idn;
@@ -89,34 +89,34 @@ public final class FullFieldsTestEntityHelper {
         .build();
   }
 
-  public static ImmutableList<RegistrarContact> makeRegistrarContacts(Registrar registrar) {
+  public static ImmutableList<RegistrarPoc> makeRegistrarContacts(Registrar registrar) {
     return ImmutableList.of(
-        new RegistrarContact.Builder()
-            .setParent(registrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
             .setName("John Doe")
             .setEmailAddress("johndoe@example.com")
             .setPhoneNumber("+1.2125551213")
             .setFaxNumber("+1.2125551213")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
+            .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
             // Purposely flip the internal/external admin/tech
             // distinction to make sure we're not relying on it.  Sigh.
             .setVisibleInWhoisAsAdmin(false)
             .setVisibleInWhoisAsTech(true)
             .build(),
-        new RegistrarContact.Builder()
-            .setParent(registrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
             .setName("Jane Doe")
             .setEmailAddress("janedoe@example.com")
             .setPhoneNumber("+1.2125551215")
             .setFaxNumber("+1.2125551216")
-            .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+            .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
             // Purposely flip the internal/external admin/tech
             // distinction to make sure we're not relying on it.  Sigh.
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(false)
             .build(),
-        new RegistrarContact.Builder()
-            .setParent(registrar)
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
             .setName("Jake Doe")
             .setEmailAddress("jakedoe@example.com")
             .setPhoneNumber("+1.2125551216")
@@ -125,19 +125,18 @@ public final class FullFieldsTestEntityHelper {
             .build());
   }
 
-  public static HostResource makeHostResource(String fqhn, String ip) {
-    return makeHostResource(fqhn, ip, null);
+  public static Host makeHost(String fqhn, String ip) {
+    return makeHost(fqhn, ip, null);
   }
 
-  public static HostResource makeHostResource(
-      String fqhn, @Nullable String ip1, @Nullable String ip2) {
-    return makeHostResource(fqhn, ip1, ip2, "TheRegistrar");
+  public static Host makeHost(String fqhn, @Nullable String ip1, @Nullable String ip2) {
+    return makeHost(fqhn, ip1, ip2, "TheRegistrar");
   }
 
-  public static HostResource makeHostResource(
+  public static Host makeHost(
       String fqhn, @Nullable String ip1, @Nullable String ip2, String registrarClientId) {
-    HostResource.Builder builder =
-        new HostResource.Builder()
+    Host.Builder builder =
+        new Host.Builder()
             .setRepoId(generateNewContactHostRoid())
             .setHostName(Idn.toASCII(fqhn))
             .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
@@ -155,29 +154,28 @@ public final class FullFieldsTestEntityHelper {
     return builder.build();
   }
 
-  public static HostResource makeAndPersistHostResource(
+  public static Host makeAndPersistHost(
       String fqhn, @Nullable String ip, @Nullable DateTime creationTime) {
-    return makeAndPersistHostResource(fqhn, ip, null, creationTime);
+    return makeAndPersistHost(fqhn, ip, null, creationTime);
   }
 
-  public static HostResource makeAndPersistHostResource(
+  public static Host makeAndPersistHost(
       String fqhn, @Nullable String ip1, @Nullable String ip2, @Nullable DateTime creationTime) {
-    return makeAndPersistHostResource(fqhn, ip1, ip2, creationTime, "TheRegistrar");
+    return makeAndPersistHost(fqhn, ip1, ip2, creationTime, "TheRegistrar");
   }
 
-  public static HostResource makeAndPersistHostResource(
+  public static Host makeAndPersistHost(
       String fqhn,
       @Nullable String ip1,
       @Nullable String ip2,
       @Nullable DateTime creationTime,
       String registrarClientId) {
-    HostResource hostResource =
-        persistResource(makeHostResource(fqhn, ip1, ip2, registrarClientId));
+    Host host = persistResource(makeHost(fqhn, ip1, ip2, registrarClientId));
     if (creationTime != null) {
-      persistResource(makeHistoryEntry(
-          hostResource, HistoryEntry.Type.HOST_CREATE, null, "created", creationTime));
+      persistResource(
+          makeHistoryEntry(host, HistoryEntry.Type.HOST_CREATE, null, "created", creationTime));
     }
-    return hostResource;
+    return host;
   }
 
   public static ContactResource makeContactResource(
@@ -330,16 +328,16 @@ public final class FullFieldsTestEntityHelper {
     return contactResource;
   }
 
-  public static DomainBase makeDomainBase(
+  public static Domain makeDomain(
       String domain,
       @Nullable ContactResource registrant,
       @Nullable ContactResource admin,
       @Nullable ContactResource tech,
-      @Nullable HostResource ns1,
-      @Nullable HostResource ns2,
+      @Nullable Host ns1,
+      @Nullable Host ns2,
       Registrar registrar) {
-    DomainBase.Builder builder =
-        new DomainBase.Builder()
+    Domain.Builder builder =
+        new Domain.Builder()
             .setDomainName(Idn.toASCII(domain))
             .setRepoId(generateNewDomainRoid(getTldFromDomainName(Idn.toASCII(domain))))
             .setLastEppUpdateTime(DateTime.parse("2009-05-29T20:13:00Z"))
@@ -370,7 +368,7 @@ public final class FullFieldsTestEntityHelper {
       builder.setContacts(contactsBuilder.build());
     }
     if ((ns1 != null) || (ns2 != null)) {
-      ImmutableSet.Builder<VKey<HostResource>> nsBuilder = new ImmutableSet.Builder<>();
+      ImmutableSet.Builder<VKey<Host>> nsBuilder = new ImmutableSet.Builder<>();
       if (ns1 != null) {
         nsBuilder.add(ns1.createVKey());
       }

@@ -18,27 +18,19 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 
-import google.registry.model.ofy.Ofy;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.InjectExtension;
-import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CountDomainsCommand}. */
-@DualDatabaseTest
 public class CountDomainsCommandTest extends CommandTestCase<CountDomainsCommand> {
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @BeforeEach
   final void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", fakeClock);
     command.clock = fakeClock;
     createTlds("foo", "bar", "baz", "qux");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_singleTld() throws Exception {
     for (int i = 0; i < 51; i++) {
       persistActiveDomain(String.format("test-%d.foo", i));
@@ -50,7 +42,7 @@ public class CountDomainsCommandTest extends CommandTestCase<CountDomainsCommand
     assertStdoutIs("foo,51\n");
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess_multipleTlds() throws Exception {
     for (int i = 0; i < 29; i++) {
       persistActiveDomain(String.format("test-%d.foo", i));

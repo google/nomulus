@@ -24,6 +24,7 @@
         domain_name text,
         redemption_domain_history_id int8,
         redemption_domain_repo_id text,
+        registration_behavior text not null,
         renewal_price_behavior text not null,
         token_status_transitions hstore,
         token_type text,
@@ -41,11 +42,7 @@
         domain_name text not null,
         billing_time timestamptz,
         billing_event_id int8,
-        billing_event_history_id int8,
-        billing_event_domain_repo_id text,
         billing_recurrence_id int8,
-        billing_recurrence_history_id int8,
-        billing_recurrence_domain_repo_id text,
         primary key (billing_cancellation_id)
     );
 
@@ -272,13 +269,11 @@
         auth_info_repo_id text,
         auth_info_value text,
         billing_recurrence_id int8,
-        billing_recurrence_history_id int8,
         autorenew_end_time timestamptz,
         autorenew_poll_message_id int8,
-        autorenew_poll_message_history_id int8,
         billing_contact text,
+        current_package_token text,
         deletion_poll_message_id int8,
-        deletion_poll_message_history_id int8,
         dns_refresh_request_time timestamptz,
         domain_name text,
         idn_table_name text,
@@ -293,14 +288,11 @@
         subordinate_hosts text[],
         tech_contact text,
         tld text,
-        transfer_billing_cancellation_history_id int8,
         transfer_billing_cancellation_id int8,
         transfer_billing_recurrence_id int8,
-        transfer_billing_recurrence_history_id int8,
         transfer_autorenew_poll_message_id int8,
         transfer_autorenew_poll_message_history_id int8,
         transfer_billing_event_id int8,
-        transfer_billing_event_history_id int8,
         transfer_renew_period_unit text,
         transfer_renew_period_value int4,
         transfer_registration_expiration_time timestamptz,
@@ -346,13 +338,11 @@
         auth_info_repo_id text,
         auth_info_value text,
         billing_recurrence_id int8,
-        billing_recurrence_history_id int8,
         autorenew_end_time timestamptz,
         autorenew_poll_message_id int8,
-        autorenew_poll_message_history_id int8,
         billing_contact text,
+        current_package_token text,
         deletion_poll_message_id int8,
-        deletion_poll_message_history_id int8,
         dns_refresh_request_time timestamptz,
         domain_name text,
         idn_table_name text,
@@ -367,14 +357,11 @@
         subordinate_hosts text[],
         tech_contact text,
         tld text,
-        transfer_billing_cancellation_history_id int8,
         transfer_billing_cancellation_id int8,
         transfer_billing_recurrence_id int8,
-        transfer_billing_recurrence_history_id int8,
         transfer_autorenew_poll_message_id int8,
         transfer_autorenew_poll_message_history_id int8,
         transfer_billing_event_id int8,
-        transfer_billing_event_history_id int8,
         transfer_renew_period_unit text,
         transfer_renew_period_value int4,
         transfer_registration_expiration_time timestamptz,
@@ -429,11 +416,7 @@
     create table "GracePeriod" (
        grace_period_id int8 not null,
         billing_event_id int8,
-        billing_event_history_id int8,
-        billing_event_domain_repo_id text,
         billing_recurrence_id int8,
-        billing_recurrence_history_id int8,
-        billing_recurrence_domain_repo_id text,
         registrar_id text not null,
         domain_repo_id text not null,
         expiration_time timestamptz not null,
@@ -444,11 +427,7 @@
     create table "GracePeriodHistory" (
        grace_period_history_revision_id int8 not null,
         billing_event_id int8,
-        billing_event_history_id int8,
-        billing_event_domain_repo_id text,
         billing_recurrence_id int8,
-        billing_recurrence_history_id int8,
-        billing_recurrence_domain_repo_id text,
         registrar_id text not null,
         domain_repo_id text not null,
         expiration_time timestamptz not null,
@@ -511,6 +490,18 @@
         expiration_time timestamptz not null,
         request_log_id text not null,
         primary key (resource_name, scope)
+    );
+
+    create table "PackagePromotion" (
+       package_promotion_id int8 not null,
+        last_notification_sent timestamptz,
+        max_creates int4 not null,
+        max_domains int4 not null,
+        next_billing_date timestamptz not null,
+        package_price_amount numeric(19, 2) not null,
+        package_price_currency text not null,
+        token text not null,
+        primary key (package_promotion_id)
     );
 
     create table "PollMessage" (
@@ -701,12 +692,6 @@
         primary key (id)
     );
 
-    create table "SqlReplayCheckpoint" (
-       id int8 not null,
-        last_replay_time timestamptz not null,
-        primary key (id)
-    );
-
     create table "Tld" (
        tld_name text not null,
         add_grace_period_length interval not null,
@@ -757,9 +742,15 @@
         primary key (id)
     );
 
-    create table "Transaction" (
-       id  bigserial not null,
-        contents bytea,
+    create table "User" (
+       id int8 not null,
+        email_address text not null,
+        gaia_id text not null,
+        registry_lock_password_hash text,
+        registry_lock_password_salt text,
+        global_role text not null,
+        is_admin boolean not null,
+        registrar_roles hstore,
         primary key (id)
     );
 create index allocation_token_domain_name_idx on "AllocationToken" (domain_name);
@@ -832,6 +823,7 @@ create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id
 create index IDXkkwbwcwvrdkkqothkiye4jiff on "HostHistory" (host_name);
 create index IDXknk8gmj7s47q56cwpa6rmpt5l on "HostHistory" (history_type);
 create index IDX67qwkjtlq5q8dv6egtrtnhqi7 on "HostHistory" (history_modification_time);
+create index IDXlg6a5tp70nch9cp0gc11brc5o on "PackagePromotion" (token);
 create index IDXe7wu46c7wpvfmfnj4565abibp on "PollMessage" (registrar_id);
 create index IDXaydgox62uno9qx8cjlj5lauye on "PollMessage" (event_time);
 create index premiumlist_name_idx on "PremiumList" (name);
@@ -847,6 +839,8 @@ create index reservedlist_name_idx on "ReservedList" (name);
 create index spec11threatmatch_registrar_id_idx on "Spec11ThreatMatch" (registrar_id);
 create index spec11threatmatch_tld_idx on "Spec11ThreatMatch" (tld);
 create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date);
+create index user_gaia_id_idx on "User" (gaia_id);
+create index user_email_address_idx on "User" (email_address);
 
     alter table if exists "DelegationSignerData" 
        add constraint FKtr24j9v14ph2mfuw2gsmt12kq 

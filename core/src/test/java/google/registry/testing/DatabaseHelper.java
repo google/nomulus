@@ -36,8 +36,6 @@ import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.ofyTmOrDoNothing;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.difference;
 import static google.registry.util.CollectionUtils.union;
@@ -71,14 +69,18 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -86,7 +88,7 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.index.ForeignKeyIndex;
@@ -124,6 +126,7 @@ import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.Duration;
 
 /** Static utils for setting up test resources. */
 public class DatabaseHelper {
@@ -151,12 +154,12 @@ public class DatabaseHelper {
     }
   }
 
-  public static HostResource newHostResource(String hostName) {
-    return newHostResourceWithRoid(hostName, generateNewContactHostRoid());
+  public static Host newHost(String hostName) {
+    return newHostWithRoid(hostName, generateNewContactHostRoid());
   }
 
-  public static HostResource newHostResourceWithRoid(String hostName, String repoId) {
-    return new HostResource.Builder()
+  public static Host newHostWithRoid(String hostName, String repoId) {
+    return new Host.Builder()
         .setHostName(hostName)
         .setCreationRegistrarId("TheRegistrar")
         .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
@@ -165,26 +168,24 @@ public class DatabaseHelper {
         .build();
   }
 
-  public static DomainBase newDomainBase(String domainName) {
+  public static Domain newDomain(String domainName) {
     String repoId = generateNewDomainRoid(getTldFromDomainName(domainName));
-    return newDomainBase(domainName, repoId, persistActiveContact("contact1234"));
+    return newDomain(domainName, repoId, persistActiveContact("contact1234"));
   }
 
-  public static DomainBase newDomainBase(String domainName, ContactResource contact) {
-    return newDomainBase(
-        domainName, generateNewDomainRoid(getTldFromDomainName(domainName)), contact);
+  public static Domain newDomain(String domainName, ContactResource contact) {
+    return newDomain(domainName, generateNewDomainRoid(getTldFromDomainName(domainName)), contact);
   }
 
-  public static DomainBase newDomainBase(String domainName, HostResource... hosts) {
-    ImmutableSet<VKey<HostResource>> hostKeys =
-        Arrays.stream(hosts).map(HostResource::createVKey).collect(toImmutableSet());
-    return newDomainBase(domainName).asBuilder().setNameservers(hostKeys).build();
+  public static Domain newDomain(String domainName, Host... hosts) {
+    ImmutableSet<VKey<Host>> hostKeys =
+        Arrays.stream(hosts).map(Host::createVKey).collect(toImmutableSet());
+    return newDomain(domainName).asBuilder().setNameservers(hostKeys).build();
   }
 
-  public static DomainBase newDomainBase(
-      String domainName, String repoId, ContactResource contact) {
+  public static Domain newDomain(String domainName, String repoId, ContactResource contact) {
     VKey<ContactResource> contactKey = contact.createVKey();
-    return new DomainBase.Builder()
+    return new Domain.Builder()
         .setRepoId(repoId)
         .setDomainName(domainName)
         .setCreationRegistrarId("TheRegistrar")
@@ -268,15 +269,14 @@ public class DatabaseHelper {
         newContactResource(contactId).asBuilder().setDeletionTime(deletionTime).build());
   }
 
-  public static HostResource persistActiveHost(String hostName) {
-    return persistResource(newHostResource(hostName));
+  public static Host persistActiveHost(String hostName) {
+    return persistResource(newHost(hostName));
   }
 
-  public static HostResource persistActiveSubordinateHost(
-      String hostName, DomainBase superordinateDomain) {
+  public static Host persistActiveSubordinateHost(String hostName, Domain superordinateDomain) {
     checkNotNull(superordinateDomain);
     return persistResource(
-        newHostResource(hostName)
+        newHost(hostName)
             .asBuilder()
             .setSuperordinateDomain(superordinateDomain.createVKey())
             .setInetAddresses(
@@ -285,24 +285,23 @@ public class DatabaseHelper {
   }
 
   /** Persists a host resource with the given hostname deleted at the specified time. */
-  public static HostResource persistDeletedHost(String hostName, DateTime deletionTime) {
+  public static Host persistDeletedHost(String hostName, DateTime deletionTime) {
+    return persistResource(newHost(hostName).asBuilder().setDeletionTime(deletionTime).build());
+  }
+
+  public static Domain persistActiveDomain(String domainName) {
+    return persistResource(newDomain(domainName));
+  }
+
+  public static Domain persistActiveDomain(String domainName, DateTime creationTime) {
     return persistResource(
-        newHostResource(hostName).asBuilder().setDeletionTime(deletionTime).build());
+        newDomain(domainName).asBuilder().setCreationTimeForTest(creationTime).build());
   }
 
-  public static DomainBase persistActiveDomain(String domainName) {
-    return persistResource(newDomainBase(domainName));
-  }
-
-  public static DomainBase persistActiveDomain(String domainName, DateTime creationTime) {
-    return persistResource(
-        newDomainBase(domainName).asBuilder().setCreationTimeForTest(creationTime).build());
-  }
-
-  public static DomainBase persistActiveDomain(
+  public static Domain persistActiveDomain(
       String domainName, DateTime creationTime, DateTime expirationTime) {
     return persistResource(
-        newDomainBase(domainName)
+        newDomain(domainName)
             .asBuilder()
             .setCreationTimeForTest(creationTime)
             .setRegistrationExpirationTime(expirationTime)
@@ -310,26 +309,57 @@ public class DatabaseHelper {
   }
 
   /** Persists a domain resource with the given domain name deleted at the specified time. */
-  public static DomainBase persistDeletedDomain(String domainName, DateTime deletionTime) {
-    return persistDomainAsDeleted(newDomainBase(domainName), deletionTime);
+  public static Domain persistDeletedDomain(String domainName, DateTime deletionTime) {
+    return persistDomainAsDeleted(newDomain(domainName), deletionTime);
   }
 
   /**
    * Returns a persisted domain that is the passed-in domain modified to be deleted at the specified
    * time.
    */
-  public static DomainBase persistDomainAsDeleted(DomainBase domain, DateTime deletionTime) {
+  public static Domain persistDomainAsDeleted(Domain domain, DateTime deletionTime) {
     return persistResource(domain.asBuilder().setDeletionTime(deletionTime).build());
   }
 
   /** Persists a domain and enqueues a LORDN task of the appropriate type for it. */
-  public static DomainBase persistDomainAndEnqueueLordn(final DomainBase domain) {
-    final DomainBase persistedDomain = persistResource(domain);
-    // Calls {@link LordnTaskUtils#enqueueDomainBaseTask} wrapped in a transaction so that the
-    // transaction time is set correctly.
-    tm().transactNew(() -> LordnTaskUtils.enqueueDomainBaseTask(persistedDomain));
+  public static Domain persistDomainAndEnqueueLordn(final Domain domain) {
+    final Domain persistedDomain = persistResource(domain);
+    /**
+     * Calls {@link LordnTaskUtils#enqueueDomainTask} wrapped in a transaction so that the
+     * transaction time is set correctly.
+     */
+    tm().transactNew(() -> LordnTaskUtils.enqueueDomainTask(persistedDomain));
     maybeAdvanceClock();
     return persistedDomain;
+  }
+
+  /** Persists a {@link Recurring} and {@link HistoryEntry} for a domain that already exists. */
+  public static Domain persistBillingRecurrenceForDomain(
+      Domain domain, RenewalPriceBehavior renewalPriceBehavior, @Nullable Money renewalPrice) {
+    DomainHistory historyEntry =
+        persistResource(
+            new DomainHistory.Builder()
+                .setRegistrarId(domain.getCreationRegistrarId())
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setModificationTime(domain.getCreationTime())
+                .setDomain(domain)
+                .build());
+    Recurring recurring =
+        persistResource(
+            new BillingEvent.Recurring.Builder()
+                .setDomainHistory(historyEntry)
+                .setRenewalPrice(renewalPrice)
+                .setRenewalPriceBehavior(renewalPriceBehavior)
+                .setRegistrarId(domain.getCreationRegistrarId())
+                .setEventTime(domain.getCreationTime())
+                .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                .setId(2L)
+                .setReason(Reason.RENEW)
+                .setRecurrenceEndTime(END_OF_TIME)
+                .setTargetId(domain.getDomainName())
+                .build());
+    return persistResource(
+        domain.asBuilder().setAutorenewBillingEvent(recurring.createVKey()).build());
   }
 
   public static ReservedList persistReservedList(String listName, String... lines) {
@@ -388,12 +418,12 @@ public class DatabaseHelper {
   }
 
   /** Creates and persists a tld. */
-  public static void createTld(String tld) {
-    createTld(tld, GENERAL_AVAILABILITY);
+  public static Registry createTld(String tld) {
+    return createTld(tld, GENERAL_AVAILABILITY);
   }
 
-  public static void createTld(String tld, String roidSuffix) {
-    createTld(tld, roidSuffix, ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
+  public static Registry createTld(String tld, String roidSuffix) {
+    return createTld(tld, roidSuffix, ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
   }
 
   /** Creates and persists the given TLDs. */
@@ -403,23 +433,25 @@ public class DatabaseHelper {
     }
   }
 
-  public static void createTld(String tld, TldState tldState) {
-    createTld(tld, ImmutableSortedMap.of(START_OF_TIME, tldState));
+  public static Registry createTld(String tld, TldState tldState) {
+    return createTld(tld, ImmutableSortedMap.of(START_OF_TIME, tldState));
   }
 
-  public static void createTld(String tld, ImmutableSortedMap<DateTime, TldState> tldStates) {
+  public static Registry createTld(String tld, ImmutableSortedMap<DateTime, TldState> tldStates) {
     // Coerce the TLD string into a valid ROID suffix.
     String roidSuffix =
         Ascii.toUpperCase(tld.replaceFirst(ACE_PREFIX_REGEX, "").replace('.', '_'))
             .replace('-', '_');
-    createTld(tld, roidSuffix.length() > 8 ? roidSuffix.substring(0, 8) : roidSuffix, tldStates);
+    return createTld(
+        tld, roidSuffix.length() > 8 ? roidSuffix.substring(0, 8) : roidSuffix, tldStates);
   }
 
-  public static void createTld(
+  public static Registry createTld(
       String tld, String roidSuffix, ImmutableSortedMap<DateTime, TldState> tldStates) {
-    persistResource(newRegistry(tld, roidSuffix, tldStates));
+    Registry registry = persistResource(newRegistry(tld, roidSuffix, tldStates));
     allowRegistrarAccess("TheRegistrar", tld);
     allowRegistrarAccess("NewRegistrar", tld);
+    return registry;
   }
 
   public static void deleteTld(String tld) {
@@ -431,7 +463,7 @@ public class DatabaseHelper {
   /**
    * Deletes "domain" and all history records, billing events, poll messages and subordinate hosts.
    */
-  public static void deleteTestDomain(DomainBase domain, DateTime now) {
+  public static void deleteTestDomain(Domain domain, DateTime now) {
     Iterable<BillingEvent> billingEvents = getBillingEvents(domain);
     Iterable<? extends HistoryEntry> historyEntries =
         HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey());
@@ -450,8 +482,7 @@ public class DatabaseHelper {
                   .forEach(
                       hostname ->
                           deleteResource(
-                              EppResourceUtils.loadByForeignKey(HostResource.class, hostname, now)
-                                  .get()));
+                              EppResourceUtils.loadByForeignKey(Host.class, hostname, now).get()));
               for (HistoryEntry hist : historyEntries) {
                 deleteResource(hist);
               }
@@ -508,12 +539,12 @@ public class DatabaseHelper {
         .setEventTime(expirationTime)
         .setMsg("Transfer server approved.")
         .setResponseData(ImmutableList.of(createTransferResponse(resource, transferData)))
-        .setParent(historyEntry)
+        .setHistoryEntry(historyEntry)
         .build();
   }
 
   public static BillingEvent.OneTime createBillingEventForTransfer(
-      DomainBase domain, DomainHistory historyEntry, DateTime costLookupTime, DateTime eventTime) {
+      Domain domain, DomainHistory historyEntry, DateTime costLookupTime, DateTime eventTime) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.TRANSFER)
         .setTargetId(domain.getDomainName())
@@ -523,7 +554,7 @@ public class DatabaseHelper {
         .setRegistrarId("NewRegistrar")
         .setPeriodYears(1)
         .setCost(getDomainRenewCost(domain.getDomainName(), costLookupTime, 1))
-        .setParent(historyEntry)
+        .setDomainHistory(historyEntry)
         .build();
   }
 
@@ -547,6 +578,8 @@ public class DatabaseHelper {
                 createContactTransferDataBuilder(requestTime, expirationTime)
                     .setPendingTransferExpirationTime(now.plus(getContactAutomaticTransferLength()))
                     .setServerApproveEntities(
+                        ((ContactHistory) historyEntryContactTransfer).getContactRepoId(),
+                        historyEntryContactTransfer.getId(),
                         ImmutableSet.of(
                             // Pretend it's 3 days since the request
                             persistResource(
@@ -573,7 +606,7 @@ public class DatabaseHelper {
             .build());
   }
 
-  public static DomainBase persistDomainWithDependentResources(
+  public static Domain persistDomainWithDependentResources(
       String label,
       String tld,
       ContactResource contact,
@@ -582,9 +615,9 @@ public class DatabaseHelper {
       DateTime expirationTime) {
     String domainName = String.format("%s.%s", label, tld);
     String repoId = generateNewDomainRoid(tld);
-    DomainBase domain =
+    Domain domain =
         persistResource(
-            new DomainBase.Builder()
+            new Domain.Builder()
                 .setRepoId(repoId)
                 .setDomainName(domainName)
                 .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
@@ -618,7 +651,7 @@ public class DatabaseHelper {
                 .setRegistrarId("TheRegistrar")
                 .setEventTime(expirationTime)
                 .setRecurrenceEndTime(END_OF_TIME)
-                .setParent(historyEntryDomainCreate)
+                .setDomainHistory(historyEntryDomainCreate)
                 .build());
     PollMessage.Autorenew autorenewPollMessage =
         persistResource(
@@ -628,7 +661,7 @@ public class DatabaseHelper {
                 .setEventTime(expirationTime)
                 .setAutorenewEndTime(END_OF_TIME)
                 .setMsg("Domain was auto-renewed.")
-                .setParent(historyEntryDomainCreate)
+                .setHistoryEntry(historyEntryDomainCreate)
                 .build());
     return persistResource(
         domain
@@ -638,8 +671,8 @@ public class DatabaseHelper {
             .build());
   }
 
-  public static DomainBase persistDomainWithPendingTransfer(
-      DomainBase domain,
+  public static Domain persistDomainWithPendingTransfer(
+      Domain domain,
       DateTime requestTime,
       DateTime expirationTime,
       DateTime extendedRegistrationExpirationTime) {
@@ -664,7 +697,7 @@ public class DatabaseHelper {
                 .setRegistrarId("NewRegistrar")
                 .setEventTime(extendedRegistrationExpirationTime)
                 .setRecurrenceEndTime(END_OF_TIME)
-                .setParent(historyEntryDomainTransfer)
+                .setDomainHistory(historyEntryDomainTransfer)
                 .build());
     PollMessage.Autorenew gainingClientAutorenewPollMessage =
         persistResource(
@@ -674,20 +707,20 @@ public class DatabaseHelper {
                 .setEventTime(extendedRegistrationExpirationTime)
                 .setAutorenewEndTime(END_OF_TIME)
                 .setMsg("Domain was auto-renewed.")
-                .setParent(historyEntryDomainTransfer)
+                .setHistoryEntry(historyEntryDomainTransfer)
                 .build());
     // Modify the existing autorenew event to reflect the pending transfer.
     persistResource(
-        transactIfJpaTm(
-            () ->
-                tm().loadByKey(domain.getAutorenewBillingEvent())
-                    .asBuilder()
-                    .setRecurrenceEndTime(expirationTime)
-                    .build()));
+        tm().transact(
+                () ->
+                    tm().loadByKey(domain.getAutorenewBillingEvent())
+                        .asBuilder()
+                        .setRecurrenceEndTime(expirationTime)
+                        .build()));
     // Update the end time of the existing autorenew poll message. We must delete it if it has no
     // events left in it.
     PollMessage.Autorenew autorenewPollMessage =
-        transactIfJpaTm(() -> tm().loadByKey(domain.getAutorenewPollMessage()));
+        tm().transact(() -> tm().loadByKey(domain.getAutorenewPollMessage()));
     if (autorenewPollMessage.getEventTime().isBefore(expirationTime)) {
       persistResource(autorenewPollMessage.asBuilder().setAutorenewEndTime(expirationTime).build());
     } else {
@@ -709,6 +742,8 @@ public class DatabaseHelper {
                     .setServerApproveAutorenewPollMessage(
                         gainingClientAutorenewPollMessage.createVKey())
                     .setServerApproveEntities(
+                        historyEntryDomainTransfer.getDomainRepoId(),
+                        historyEntryDomainTransfer.getId(),
                         ImmutableSet.of(
                             transferBillingEvent.createVKey(),
                             gainingClientAutorenewEvent.createVKey(),
@@ -775,28 +810,30 @@ public class DatabaseHelper {
   }
 
   public static Iterable<BillingEvent> getBillingEvents() {
-    return transactIfJpaTm(
-        () ->
-            Iterables.concat(
-                tm().loadAllOf(BillingEvent.OneTime.class),
-                tm().loadAllOf(BillingEvent.Recurring.class),
-                tm().loadAllOf(BillingEvent.Cancellation.class)));
+    return tm().transact(
+            () ->
+                Iterables.concat(
+                    tm().loadAllOf(BillingEvent.OneTime.class),
+                    tm().loadAllOf(BillingEvent.Recurring.class),
+                    tm().loadAllOf(BillingEvent.Cancellation.class)));
   }
 
   private static Iterable<BillingEvent> getBillingEvents(EppResource resource) {
-    return transactIfJpaTm(
-        () ->
-            Iterables.concat(
-                tm().loadAllOfStream(BillingEvent.OneTime.class)
-                    .filter(oneTime -> oneTime.getDomainRepoId().equals(resource.getRepoId()))
-                    .collect(toImmutableList()),
-                tm().loadAllOfStream(BillingEvent.Recurring.class)
-                    .filter(recurring -> recurring.getDomainRepoId().equals(resource.getRepoId()))
-                    .collect(toImmutableList()),
-                tm().loadAllOfStream(BillingEvent.Cancellation.class)
-                    .filter(
-                        cancellation -> cancellation.getDomainRepoId().equals(resource.getRepoId()))
-                    .collect(toImmutableList())));
+    return tm().transact(
+            () ->
+                Iterables.concat(
+                    tm().loadAllOfStream(BillingEvent.OneTime.class)
+                        .filter(oneTime -> oneTime.getDomainRepoId().equals(resource.getRepoId()))
+                        .collect(toImmutableList()),
+                    tm().loadAllOfStream(BillingEvent.Recurring.class)
+                        .filter(
+                            recurring -> recurring.getDomainRepoId().equals(resource.getRepoId()))
+                        .collect(toImmutableList()),
+                    tm().loadAllOfStream(BillingEvent.Cancellation.class)
+                        .filter(
+                            cancellation ->
+                                cancellation.getDomainRepoId().equals(resource.getRepoId()))
+                        .collect(toImmutableList())));
   }
 
   /** Assert that the actual billing event matches the expected one, ignoring IDs. */
@@ -865,61 +902,54 @@ public class DatabaseHelper {
     assertPollMessagesEqual(getPollMessages(), asList(expected));
   }
 
-  public static void assertPollMessagesForResource(DomainContent domain, PollMessage... expected) {
+  public static void assertPollMessagesForResource(DomainBase domain, PollMessage... expected) {
     assertPollMessagesEqual(getPollMessages(domain), asList(expected));
   }
 
   public static ImmutableList<PollMessage> getPollMessages() {
-    return ImmutableList.copyOf(transactIfJpaTm(() -> tm().loadAllOf(PollMessage.class)));
+    return ImmutableList.copyOf(tm().transact(() -> tm().loadAllOf(PollMessage.class)));
   }
 
   public static ImmutableList<PollMessage> getPollMessages(String registrarId) {
-    return transactIfJpaTm(
-        () ->
-            tm().loadAllOf(PollMessage.class).stream()
-                .filter(pollMessage -> pollMessage.getRegistrarId().equals(registrarId))
-                .collect(toImmutableList()));
+    return tm().transact(
+            () ->
+                tm().loadAllOf(PollMessage.class).stream()
+                    .filter(pollMessage -> pollMessage.getRegistrarId().equals(registrarId))
+                    .collect(toImmutableList()));
   }
 
-  public static ImmutableList<PollMessage> getPollMessages(DomainContent domain) {
-    return transactIfJpaTm(
-        () ->
-            tm().loadAllOf(PollMessage.class).stream()
-                .filter(
-                    pollMessage ->
-                        pollMessage.getParentKey().getParent().getName().equals(domain.getRepoId()))
-                .collect(toImmutableList()));
+  public static ImmutableList<PollMessage> getPollMessages(DomainBase domain) {
+    return tm().transact(
+            () ->
+                tm().loadAllOf(PollMessage.class).stream()
+                    .filter(pollMessage -> pollMessage.getDomainRepoId().equals(domain.getRepoId()))
+                    .collect(toImmutableList()));
   }
 
   public static ImmutableList<PollMessage> getPollMessages(
       String registrarId, DateTime beforeOrAt) {
-    return transactIfJpaTm(
-        () ->
-            tm().loadAllOf(PollMessage.class).stream()
-                .filter(pollMessage -> pollMessage.getRegistrarId().equals(registrarId))
-                .filter(pollMessage -> isBeforeOrAt(pollMessage.getEventTime(), beforeOrAt))
-                .collect(toImmutableList()));
+    return tm().transact(
+            () ->
+                tm().loadAllOf(PollMessage.class).stream()
+                    .filter(pollMessage -> pollMessage.getRegistrarId().equals(registrarId))
+                    .filter(pollMessage -> isBeforeOrAt(pollMessage.getEventTime(), beforeOrAt))
+                    .collect(toImmutableList()));
   }
 
   /** Gets all PollMessages associated with the given EppResource. */
   public static ImmutableList<PollMessage> getPollMessages(
       EppResource resource, String registrarId, DateTime now) {
-    return transactIfJpaTm(
-        () ->
-            tm().loadAllOf(PollMessage.class).stream()
-                .filter(
-                    pollMessage ->
-                        pollMessage
-                            .getParentKey()
-                            .getParent()
-                            .getName()
-                            .equals(resource.getRepoId()))
-                .filter(pollMessage -> pollMessage.getRegistrarId().equals(registrarId))
-                .filter(
-                    pollMessage ->
-                        pollMessage.getEventTime().isEqual(now)
-                            || pollMessage.getEventTime().isBefore(now))
-                .collect(toImmutableList()));
+    return tm().transact(
+            () ->
+                tm().loadAllOf(PollMessage.class).stream()
+                    .filter(
+                        pollMessage -> pollMessage.getDomainRepoId().equals(resource.getRepoId()))
+                    .filter(pollMessage -> pollMessage.getRegistrarId().equals(registrarId))
+                    .filter(
+                        pollMessage ->
+                            pollMessage.getEventTime().isEqual(now)
+                                || pollMessage.getEventTime().isBefore(now))
+                    .collect(toImmutableList()));
   }
 
   public static PollMessage getOnlyPollMessage(String registrarId) {
@@ -939,10 +969,7 @@ public class DatabaseHelper {
   }
 
   public static PollMessage getOnlyPollMessage(
-      DomainContent domain,
-      String registrarId,
-      DateTime now,
-      Class<? extends PollMessage> subType) {
+      DomainBase domain, String registrarId, DateTime now, Class<? extends PollMessage> subType) {
     return getPollMessages(domain, registrarId, now).stream()
         .filter(subType::isInstance)
         .map(subType::cast)
@@ -950,7 +977,7 @@ public class DatabaseHelper {
   }
 
   public static void assertAllocationTokens(AllocationToken... expectedTokens) {
-    assertThat(transactIfJpaTm(() -> tm().loadAllOf(AllocationToken.class)))
+    assertThat(tm().transact(() -> tm().loadAllOf(AllocationToken.class)))
         .comparingElementsUsing(immutableObjectCorrespondence("updateTimestamp", "creationTime"))
         .containsExactlyElementsIn(expectedTokens);
   }
@@ -965,31 +992,9 @@ public class DatabaseHelper {
     return createRepoId(allocateId(), getContactAndHostRoidSuffix());
   }
 
-  /**
-   * Persists a test resource to Datastore and returns it.
-   *
-   * <p>Tests should always use this method (or the shortcut persist methods in this class) to
-   * persist test data, to avoid potentially subtle bugs related to race conditions and a stale ofy
-   * session cache. Specifically, this method calls .now() on the save to force the write to
-   * actually get sent to Datastore (although it does not force it to be applied) and clears the
-   * session cache. If necessary, this method also updates the relevant {@link EppResourceIndex},
-   * {@link ForeignKeyIndex}.
-   *
-   * <p><b>Note:</b> Your resource will not be enrolled in a commit log. If you want backups, use
-   * {@link #persistResourceWithBackup(Object)}.
-   */
-  public static <R extends ImmutableObject> R persistResource(final R resource) {
-    return persistResource(resource, false);
-  }
-
-  /** Same as {@link #persistResource(Object)} with backups enabled. */
-  public static <R extends ImmutableObject> R persistResourceWithBackup(final R resource) {
-    return persistResource(resource, true);
-  }
-
-  private static <R extends ImmutableObject> void saveResource(R resource, boolean wantBackup) {
+  private static <R extends ImmutableObject> void saveResource(R resource) {
     if (tm().isOfy()) {
-      Consumer<ImmutableObject> saver = wantBackup ? tm()::put : tm()::putWithoutBackup;
+      Consumer<ImmutableObject> saver = tm()::put;
       saver.accept(resource);
       if (resource instanceof EppResource) {
         EppResource eppResource = (EppResource) resource;
@@ -1012,19 +1017,19 @@ public class DatabaseHelper {
     }
   }
 
-  private static <R extends ImmutableObject> R persistResource(
-      final R resource, final boolean wantBackup) {
+  /** Persists an object in the DB for tests. */
+  public static <R extends ImmutableObject> R persistResource(final R resource) {
     assertWithMessage("Attempting to persist a Builder is almost certainly an error in test code")
         .that(resource)
         .isNotInstanceOf(Buildable.Builder.class);
-    tm().transact(() -> saveResource(resource, wantBackup));
+    tm().transact(() -> saveResource(resource));
     maybeAdvanceClock();
     // Force the session cache to be cleared so that when we read the resource back, we read from
     // Datastore and not from the session cache. This is needed to trigger Objectify's load process
     // (unmarshalling entity protos to POJOs, nulling out empty collections, calling @OnLoad
     // methods, etc.) which is bypassed for entities loaded from the session cache.
     tm().clearSessionCache();
-    return transactIfJpaTm(() -> tm().loadByEntity(resource));
+    return tm().transact(() -> tm().loadByEntity(resource));
   }
 
   /** Persists an EPP resource with the {@link EppResourceIndex} always going into bucket one. */
@@ -1043,15 +1048,11 @@ public class DatabaseHelper {
             });
     maybeAdvanceClock();
     tm().clearSessionCache();
-    return transactIfJpaTm(() -> tm().loadByEntity(resource));
+    return tm().transact(() -> tm().loadByEntity(resource));
   }
 
+  /** Persists the specified resources to the DB. */
   public static <R extends ImmutableObject> void persistResources(final Iterable<R> resources) {
-    persistResources(resources, false);
-  }
-
-  private static <R extends ImmutableObject> void persistResources(
-      final Iterable<R> resources, final boolean wantBackup) {
     for (R resource : resources) {
       assertWithMessage("Attempting to persist a Builder is almost certainly an error in test code")
           .that(resource)
@@ -1059,7 +1060,7 @@ public class DatabaseHelper {
     }
     // Persist domains ten at a time, to avoid exceeding the entity group limit.
     for (final List<R> chunk : Iterables.partition(resources, 10)) {
-      tm().transact(() -> chunk.forEach(resource -> saveResource(resource, wantBackup)));
+      tm().transact(() -> chunk.forEach(DatabaseHelper::saveResource));
       maybeAdvanceClock();
     }
     // Force the session to be cleared so that when we read it back, we read from Datastore
@@ -1088,12 +1089,10 @@ public class DatabaseHelper {
                           .setType(getHistoryEntryType(resource))
                           .setModificationTime(tm().getTransactionTime())
                           .build());
-              ofyTmOrDoNothing(
-                  () -> tm().put(ForeignKeyIndex.create(resource, resource.getDeletionTime())));
             });
     maybeAdvanceClock();
     tm().clearSessionCache();
-    return transactIfJpaTm(() -> tm().loadByEntity(resource));
+    return tm().transact(() -> tm().loadByEntity(resource));
   }
 
   /** Returns all of the history entries that are parented off the given EppResource. */
@@ -1155,11 +1154,11 @@ public class DatabaseHelper {
       return resource.getRepoId() != null
           ? HistoryEntry.Type.CONTACT_CREATE
           : HistoryEntry.Type.CONTACT_UPDATE;
-    } else if (resource instanceof HostResource) {
+    } else if (resource instanceof Host) {
       return resource.getRepoId() != null
           ? HistoryEntry.Type.HOST_CREATE
           : HistoryEntry.Type.HOST_UPDATE;
-    } else if (resource instanceof DomainBase) {
+    } else if (resource instanceof Domain) {
       return resource.getRepoId() != null
           ? HistoryEntry.Type.DOMAIN_CREATE
           : HistoryEntry.Type.DOMAIN_UPDATE;
@@ -1170,12 +1169,21 @@ public class DatabaseHelper {
 
   public static PollMessage getOnlyPollMessageForHistoryEntry(HistoryEntry historyEntry) {
     return Iterables.getOnlyElement(
-        transactIfJpaTm(
-            () ->
-                tm().loadAllOf(PollMessage.class).stream()
-                    .filter(
-                        pollMessage -> pollMessage.getParentKey().equals(Key.create(historyEntry)))
-                    .collect(toImmutableList())));
+        tm().transact(
+                () ->
+                    tm().loadAllOf(PollMessage.class).stream()
+                        .filter(
+                            pollMessage ->
+                                pollMessage
+                                        .getResourceName()
+                                        .equals(historyEntry.getParent().getName())
+                                    && pollMessage.getHistoryRevisionId() == historyEntry.getId()
+                                    && pollMessage
+                                        .getType()
+                                        .getResourceClass()
+                                        .getName()
+                                        .equals(historyEntry.getParent().getKind()))
+                        .collect(toImmutableList())));
   }
 
   public static <T extends EppResource> HistoryEntry createHistoryEntryForEppResource(
@@ -1199,7 +1207,7 @@ public class DatabaseHelper {
    */
   public static <R> ImmutableList<R> persistSimpleResources(final Iterable<R> resources) {
     insertSimpleResources(resources);
-    return transactIfJpaTm(() -> tm().loadByEntities(resources));
+    return tm().transact(() -> tm().loadByEntities(resources));
   }
 
   /**
@@ -1207,7 +1215,7 @@ public class DatabaseHelper {
    * entities.
    */
   public static <R> void insertSimpleResources(final Iterable<R> resources) {
-    tm().transact(() -> tm().putAllWithoutBackup(ImmutableList.copyOf(resources)));
+    tm().transact(() -> tm().putAll(ImmutableList.copyOf(resources)));
     maybeAdvanceClock();
     // Force the session to be cleared so that when we read it back, we read from Datastore
     // and not from the transaction's session cache.
@@ -1215,7 +1223,7 @@ public class DatabaseHelper {
   }
 
   public static void deleteResource(final Object resource) {
-    transactIfJpaTm(() -> tm().deleteWithoutBackup(resource));
+    tm().transact(() -> tm().delete(resource));
     // Force the session to be cleared so that when we read it back, we read from Datastore and
     // not from the transaction's session cache.
     tm().clearSessionCache();
@@ -1282,7 +1290,7 @@ public class DatabaseHelper {
    * convenience, so you don't need to wrap it in a transaction at the callsite.
    */
   public static <T> T loadByEntity(T entity) {
-    return transactIfJpaTm(() -> tm().loadByEntity(entity));
+    return tm().transact(() -> tm().loadByEntity(entity));
   }
 
   /**
@@ -1292,7 +1300,7 @@ public class DatabaseHelper {
    * convenience, so you don't need to wrap it in a transaction at the callsite.
    */
   public static <T> T loadByKey(VKey<T> key) {
-    return transactIfJpaTm(() -> tm().loadByKey(key));
+    return tm().transact(() -> tm().loadByKey(key));
   }
 
   /**
@@ -1302,7 +1310,7 @@ public class DatabaseHelper {
    * convenience, so you don't need to wrap it in a transaction at the callsite.
    */
   public static <T> Optional<T> loadByKeyIfPresent(VKey<T> key) {
-    return transactIfJpaTm(() -> tm().loadByKeyIfPresent(key));
+    return tm().transact(() -> tm().loadByKeyIfPresent(key));
   }
 
   /**
@@ -1312,7 +1320,7 @@ public class DatabaseHelper {
    * convenience, so you don't need to wrap it in a transaction at the callsite.
    */
   public static <T> ImmutableCollection<T> loadByKeys(Iterable<? extends VKey<? extends T>> keys) {
-    return transactIfJpaTm(() -> tm().loadByKeys(keys).values());
+    return tm().transact(() -> tm().loadByKeys(keys).values());
   }
 
   /**
@@ -1322,7 +1330,7 @@ public class DatabaseHelper {
    * convenience, so you don't need to wrap it in a transaction at the callsite.
    */
   public static <T> ImmutableList<T> loadAllOf(Class<T> clazz) {
-    return transactIfJpaTm(() -> tm().loadAllOf(clazz));
+    return tm().transact(() -> tm().loadAllOf(clazz));
   }
 
   /**
@@ -1336,7 +1344,7 @@ public class DatabaseHelper {
    */
   public static <T> ImmutableMap<VKey<? extends T>, T> loadByKeysIfPresent(
       Iterable<? extends VKey<? extends T>> keys) {
-    return transactIfJpaTm(() -> tm().loadByKeysIfPresent(keys));
+    return tm().transact(() -> tm().loadByKeysIfPresent(keys));
   }
 
   /**
@@ -1349,7 +1357,7 @@ public class DatabaseHelper {
    * NoSuchElementException} will be thrown.
    */
   public static <T> ImmutableList<T> loadByEntitiesIfPresent(Iterable<T> entities) {
-    return transactIfJpaTm(() -> tm().loadByEntitiesIfPresent(entities));
+    return tm().transact(() -> tm().loadByEntitiesIfPresent(entities));
   }
 
   /** Returns whether or not the given entity exists in Cloud SQL. */
@@ -1395,6 +1403,105 @@ public class DatabaseHelper {
   public static <T> T assertDetachedFromEntityManager(T entity) {
     assertThat(jpaTm().getEntityManager().contains(entity)).isFalse();
     return entity;
+  }
+
+  /**
+   * Sets a DATASTORE_PRIMARY_NO_ASYNC state on the {@link DatabaseMigrationStateSchedule}.
+   *
+   * <p>In order to allow for tests to manipulate the clock how they need, we start the transitions
+   * one millisecond after the clock's current time (in case the clock's current value is
+   * START_OF_TIME). We then advance the clock one second so that we're in the
+   * DATASTORE_PRIMARY_READ_ONLY phase.
+   *
+   * <p>We must use the current time, otherwise the setting of the migration state will fail due to
+   * an invalid transition.
+   */
+  public static void setMigrationScheduleToDatastorePrimaryNoAsync(FakeClock fakeClock) {
+    DateTime now = fakeClock.nowUtc();
+    jpaTm()
+        .transact(
+            () ->
+                DatabaseMigrationStateSchedule.set(
+                    ImmutableSortedMap.of(
+                        START_OF_TIME,
+                        MigrationState.DATASTORE_ONLY,
+                        now.plusMillis(1),
+                        MigrationState.DATASTORE_PRIMARY,
+                        now.plusMillis(2),
+                        MigrationState.DATASTORE_PRIMARY_NO_ASYNC)));
+    fakeClock.advanceBy(Duration.standardSeconds(1));
+  }
+
+  /**
+   * Sets a DATASTORE_PRIMARY_READ_ONLY state on the {@link DatabaseMigrationStateSchedule}.
+   *
+   * <p>In order to allow for tests to manipulate the clock how they need, we start the transitions
+   * one millisecond after the clock's current time (in case the clock's current value is
+   * START_OF_TIME). We then advance the clock one second so that we're in the
+   * DATASTORE_PRIMARY_READ_ONLY phase.
+   *
+   * <p>We must use the current time, otherwise the setting of the migration state will fail due to
+   * an invalid transition.
+   */
+  public static void setMigrationScheduleToDatastorePrimaryReadOnly(FakeClock fakeClock) {
+    DateTime now = fakeClock.nowUtc();
+    jpaTm()
+        .transact(
+            () ->
+                DatabaseMigrationStateSchedule.set(
+                    ImmutableSortedMap.of(
+                        START_OF_TIME,
+                        MigrationState.DATASTORE_ONLY,
+                        now.plusMillis(1),
+                        MigrationState.DATASTORE_PRIMARY,
+                        now.plusMillis(2),
+                        MigrationState.DATASTORE_PRIMARY_NO_ASYNC,
+                        now.plusMillis(3),
+                        MigrationState.DATASTORE_PRIMARY_READ_ONLY)));
+    fakeClock.advanceBy(Duration.standardSeconds(1));
+  }
+
+  /**
+   * Sets a SQL_PRIMARY state on the {@link DatabaseMigrationStateSchedule}.
+   *
+   * <p>In order to allow for tests to manipulate the clock how they need, we start the transitions
+   * one millisecond after the clock's current time (in case the clock's current value is
+   * START_OF_TIME). We then advance the clock one second so that we're in the SQL_PRIMARY phase.
+   *
+   * <p>We must use the current time, otherwise the setting of the migration state will fail due to
+   * an invalid transition.
+   */
+  public static void setMigrationScheduleToSqlPrimary(FakeClock fakeClock) {
+    DateTime now = fakeClock.nowUtc();
+    jpaTm()
+        .transact(
+            () ->
+                DatabaseMigrationStateSchedule.set(
+                    ImmutableSortedMap.of(
+                        START_OF_TIME,
+                        MigrationState.DATASTORE_ONLY,
+                        now.plusMillis(1),
+                        MigrationState.DATASTORE_PRIMARY,
+                        now.plusMillis(2),
+                        MigrationState.DATASTORE_PRIMARY_NO_ASYNC,
+                        now.plusMillis(3),
+                        MigrationState.DATASTORE_PRIMARY_READ_ONLY,
+                        now.plusMillis(4),
+                        MigrationState.SQL_PRIMARY)));
+    fakeClock.advanceBy(Duration.standardSeconds(1));
+  }
+
+  /** Removes the database migration schedule, in essence transitioning to DATASTORE_ONLY. */
+  public static void removeDatabaseMigrationSchedule() {
+    // use the raw calls because going SQL_PRIMARY -> DATASTORE_ONLY is not valid
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .put(
+                        new DatabaseMigrationStateSchedule(
+                            DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP)));
+    DatabaseMigrationStateSchedule.CACHE.invalidateAll();
   }
 
   private DatabaseHelper() {}

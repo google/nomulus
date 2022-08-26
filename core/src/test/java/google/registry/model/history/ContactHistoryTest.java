@@ -17,14 +17,12 @@ package google.registry.model.history;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactBase;
@@ -34,21 +32,17 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.persistence.VKey;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import google.registry.util.SerializeUtils;
+import org.junit.jupiter.api.Test;
 
 /** Tests for {@link ContactHistory}. */
-@DualDatabaseTest
 public class ContactHistoryTest extends EntityTestCase {
 
   ContactHistoryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
-  @TestSqlOnly
+  @Test
   void testPersistence() {
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
     insertInDb(contact);
@@ -64,7 +58,7 @@ public class ContactHistoryTest extends EntityTestCase {
             });
   }
 
-  @TestSqlOnly
+  @Test
   void testSerializable() {
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
     insertInDb(contact);
@@ -76,7 +70,7 @@ public class ContactHistoryTest extends EntityTestCase {
     assertThat(SerializeUtils.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 
-  @TestSqlOnly
+  @Test
   void testLegacyPersistence_nullContactBase() {
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
     insertInDb(contact);
@@ -94,29 +88,7 @@ public class ContactHistoryTest extends EntityTestCase {
             });
   }
 
-  @TestOfyOnly
-  void testOfyPersistence() {
-    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
-    tm().transact(() -> tm().insert(contact));
-    VKey<ContactResource> contactVKey = contact.createVKey();
-    ContactResource contactFromDb = tm().transact(() -> tm().loadByKey(contactVKey));
-    fakeClock.advanceOneMilli();
-    ContactHistory contactHistory = createContactHistory(contactFromDb);
-    tm().transact(() -> tm().insert(contactHistory));
-
-    // retrieving a HistoryEntry or a ContactHistory with the same key should return the same object
-    // note: due to the @EntitySubclass annotation. all Keys for ContactHistory objects will have
-    // type HistoryEntry
-    VKey<ContactHistory> contactHistoryVKey = contactHistory.createVKey();
-    VKey<HistoryEntry> historyEntryVKey =
-        VKey.createOfy(HistoryEntry.class, Key.create(contactHistory.asHistoryEntry()));
-    ContactHistory hostHistoryFromDb = tm().transact(() -> tm().loadByKey(contactHistoryVKey));
-    HistoryEntry historyEntryFromDb = tm().transact(() -> tm().loadByKey(historyEntryVKey));
-
-    assertThat(hostHistoryFromDb).isEqualTo(historyEntryFromDb);
-  }
-
-  @TestSqlOnly
+  @Test
   void testWipeOutPii_assertsAllPiiFieldsAreNull() {
     ContactHistory originalEntity =
         createContactHistory(

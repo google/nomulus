@@ -180,6 +180,19 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
   }
 
   @Test
+  void testSuccess_allocationToken() throws Exception {
+    createTld("tld");
+    runCommandForced(
+        "--client=NewRegistrar",
+        "--registrant=crr-admin",
+        "--admins=crr-admin",
+        "--techs=crr-tech",
+        "--allocation_token=abc123",
+        "example.tld");
+    eppVerifier.verifySent("domain_create_token.xml");
+  }
+
+  @Test
   void testFailure_duplicateDomains() {
     IllegalArgumentException thrown =
         assertThrows(

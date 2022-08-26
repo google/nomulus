@@ -14,34 +14,19 @@
 
 package google.registry.persistence.converter;
 
-import com.google.common.collect.Maps;
 import google.registry.model.tld.Registry.TldState;
-import google.registry.model.tld.Registry.TldStateTransition;
-import java.util.Map;
 import javax.persistence.Converter;
-import org.joda.time.DateTime;
 
-/**
- * JPA converter for storing/retrieving {@code TimedTransitionProperty<TldState,
- * TldStateTransition>} objects.
- */
+/** JPA converter for storing/retrieving {@code TimedTransitionProperty<TldState>} objects. */
 @Converter(autoApply = true)
-public class TldStateTransitionConverter
-    extends TimedTransitionPropertyConverterBase<TldState, TldStateTransition> {
-
+public class TldStateTransitionConverter extends TimedTransitionPropertyConverterBase<TldState> {
   @Override
-  Map.Entry<String, String> convertToDatabaseMapEntry(
-      Map.Entry<DateTime, TldStateTransition> entry) {
-    return Maps.immutableEntry(entry.getKey().toString(), entry.getValue().getValue().name());
+  protected String convertValueToString(TldState value) {
+    return value.name();
   }
 
   @Override
-  Map.Entry<DateTime, TldState> convertToEntityMapEntry(Map.Entry<String, String> entry) {
-    return Maps.immutableEntry(DateTime.parse(entry.getKey()), TldState.valueOf(entry.getValue()));
-  }
-
-  @Override
-  Class<TldStateTransition> getTimedTransitionSubclass() {
-    return TldStateTransition.class;
+  protected TldState convertStringToValue(String string) {
+    return TldState.valueOf(string);
   }
 }

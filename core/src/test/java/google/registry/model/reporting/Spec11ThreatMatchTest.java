@@ -27,28 +27,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
-import google.registry.model.host.HostResource;
+import google.registry.model.domain.Domain;
+import google.registry.model.host.Host;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestSqlOnly;
 import org.joda.time.LocalDate;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Spec11ThreatMatch}. */
-@DualDatabaseTest
 public final class Spec11ThreatMatchTest extends EntityTestCase {
 
   private static final String REGISTRAR_ID = "registrar";
   private static final LocalDate DATE = LocalDate.parse("2020-06-10", ISODateTimeFormat.date());
 
   private Spec11ThreatMatch threat;
-  private DomainBase domain;
-  private HostResource host;
+  private Domain domain;
+  private Host host;
   private ContactResource registrantContact;
 
   Spec11ThreatMatchTest() {
@@ -57,15 +54,15 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
 
   @BeforeEach
   void setUp() {
-    VKey<HostResource> hostVKey = VKey.createSql(HostResource.class, "host");
+    VKey<Host> hostVKey = VKey.createSql(Host.class, "host");
     VKey<ContactResource> registrantContactVKey =
         VKey.createSql(ContactResource.class, "contact_id");
     String domainRepoId = "4-TLD";
     createTld("tld");
 
-    /** Create a domain for the purpose of testing a foreign key reference in the Threat table. */
+    // Create a domain for the purpose of testing a foreign key reference in the Threat table.
     domain =
-        new DomainBase()
+        new Domain()
             .asBuilder()
             .setCreationRegistrarId(REGISTRAR_ID)
             .setPersistedCurrentSponsorRegistrarId(REGISTRAR_ID)
@@ -76,7 +73,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
             .setContacts(ImmutableSet.of())
             .build();
 
-    /** Create a contact for the purpose of testing a foreign key reference in the Domain table. */
+    // Create a contact for the purpose of testing a foreign key reference in the Domain table.
     registrantContact =
         new ContactResource.Builder()
             .setRepoId("contact_id")
@@ -85,9 +82,9 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
             .setPersistedCurrentSponsorRegistrarId(REGISTRAR_ID)
             .build();
 
-    /** Create a host for the purpose of testing a foreign key reference in the Domain table. */
+    // Create a host for the purpose of testing a foreign key reference in the Domain table. */
     host =
-        new HostResource.Builder()
+        new Host.Builder()
             .setRepoId("host")
             .setHostName("ns1.example.com")
             .setCreationRegistrarId(REGISTRAR_ID)
@@ -104,7 +101,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
             .build();
   }
 
-  @TestSqlOnly
+  @Test
   void testPersistence() {
     createTld("tld");
     saveRegistrar(REGISTRAR_ID);
@@ -112,7 +109,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
     assertAboutImmutableObjects().that(loadByEntity(threat)).isEqualExceptFields(threat, "id");
   }
 
-  @TestSqlOnly
+  @Test
   @Disabled("We can't rely on foreign keys until we've migrated to SQL")
   void testThreatForeignKeyConstraints() {
     // Persist the threat without the associated registrar.
@@ -124,7 +121,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
     assertThrowForeignKeyViolation(() -> insertInDb(registrantContact, host, threat));
   }
 
-  @TestOfyAndSql
+  @Test
   void testFailure_threatsWithInvalidFields() {
     assertThrows(
         IllegalArgumentException.class, () -> threat.asBuilder().setRegistrarId(null).build());

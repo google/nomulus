@@ -14,18 +14,15 @@
 
 package google.registry.tmch;
 
-import static google.registry.testing.TestDataHelper.listFiles;
+import static google.registry.testing.TestDataHelper.loadFile;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowTmchUtils;
 import google.registry.model.smd.EncodedSignedMark;
 import google.registry.testing.AppEngineExtension;
-import google.registry.util.ResourceUtils;
 import google.registry.util.SystemClock;
-import java.nio.file.Path;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -34,11 +31,19 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class TmchTestDataExpirationTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
+  /**
+   * Verifies the currently-active signed mark file provided by ICANN.
+   *
+   * <p>The rest of the tests use injected clocks so that we don't have to keep updating those SMD
+   * files and so that we can test various types of files, but this test will vail when the validity
+   * of the ICANN-provided file expires.
+   *
+   * <p>When this fails, check
+   * <a>https://newgtlds.icann.org/en/about/trademark-clearinghouse/registries-registrars</a> for a
+   * new updated SMD file.
+   */
   @Test
   void testActiveSignedMarkFiles_areValidAndNotExpired() throws Exception {
     DomainFlowTmchUtils tmchUtils =
@@ -46,19 +51,13 @@ class TmchTestDataExpirationTest {
             new TmchXmlSignature(
                 new TmchCertificateAuthority(TmchCaMode.PILOT, new SystemClock())));
 
-    for (Path path : listFiles(TmchTestDataExpirationTest.class, "active/")) {
-      if (path.toString().endsWith(".smd")) {
-        logger.atInfo().log("Verifying: %s", path);
-        String tmchData = ResourceUtils.readResourceUtf8(path.toUri().toURL());
-        EncodedSignedMark smd = TmchData.readEncodedSignedMark(tmchData);
-        try {
-          tmchUtils.verifyEncodedSignedMark(smd, DateTime.now(UTC));
-        } catch (EppException e) {
-          throw new AssertionError("Error verifying signed mark " + path, e);
-        }
-      } else {
-        logger.atInfo().log("Ignored: %s", path);
-      }
+    String filePath = "active/smd-active-21aug20-en.smd";
+    String tmchData = loadFile(TmchTestDataExpirationTest.class, filePath);
+    EncodedSignedMark smd = TmchData.readEncodedSignedMark(tmchData);
+    try {
+      tmchUtils.verifyEncodedSignedMark(smd, DateTime.now(UTC));
+    } catch (EppException e) {
+      throw new AssertionError("Error verifying signed mark " + filePath, e);
     }
   }
 }

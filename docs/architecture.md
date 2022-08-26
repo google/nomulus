@@ -333,9 +333,7 @@ registry codebase:
     remembering which dates have been processed. For instance, for the RDE
     export, Cursor entities maintain the date up to which each TLD has been
     exported.
-*   `DomainApplicationIndex` -- These hold domain applications received during
-    the sunrise period.
-*   `DomainBase` -- These hold the ICANN domain information.
+*   `Domain` -- These hold the ICANN domain information.
 *   `DomainRecord` -- These are used during the DNS update process.
 *   `EntityGroupRoot` -- There is only one EntityGroupRoot entity, which serves
     as the Datastore parent of many other entities.
@@ -351,7 +349,7 @@ registry codebase:
 *   `HistoryEntry` -- A HistoryEntry is the record of a command which mutated an
     EPP resource. It serves as the parent of BillingEvents and PollMessages.
 *   `HostRecord` -- These are used during the DNS update process.
-*   `HostResource` -- These hold the ICANN host information.
+*   `Host` -- These hold the ICANN host information.
 *   `Lock` -- Lock entities are used to control access to a shared resource such
     as an App Engine queue. Under ordinary circumstances, these locks will be
     cleaned up automatically, and should not accumulate.

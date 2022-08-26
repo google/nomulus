@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.tools.Injector.injectReflectively;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -256,20 +255,24 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
               options, new ByteArrayInputStream(component.googleCredentialJson().getBytes(UTF_8)));
         }
         installer.install(options);
+
+        // Database setup -- we also only ever do this if "installer" is null, just so that it's
+        // only done once.
+
+        // Ensure that all entity classes are loaded before command code runs.
+        ObjectifyService.initOfy();
+        // Make sure we start the command with a clean cache, so that any previous command won't
+        // interfere with this one.
+        ObjectifyService.ofy().clearSessionCache();
+
+        // Enable Cloud SQL for command that needs remote API as they will very likely use
+        // Cloud SQL after the database migration. Note that the DB password is stored in Datastore
+        // and it is already initialized above.
+        TransactionManagerFactory.setJpaTm(
+            () -> component.nomulusToolJpaTransactionManager().get());
+        TransactionManagerFactory.setReplicaJpaTm(
+            () -> component.nomulusToolReplicaJpaTransactionManager().get());
       }
-
-      // Ensure that all entity classes are loaded before command code runs.
-      ObjectifyService.initOfy();
-      // Make sure we start the command with a clean cache, so that any previous command won't
-      // interfere with this one.
-      ofyTm().clearSessionCache();
-
-      // Enable Cloud SQL for command that needs remote API as they will very likely use
-      // Cloud SQL after the database migration. Note that the DB password is stored in Datastore
-      // and it is already initialized above.
-      TransactionManagerFactory.setJpaTm(() -> component.nomulusToolJpaTransactionManager().get());
-      TransactionManagerFactory.setReplicaJpaTm(
-          () -> component.nomulusToolReplicaJpaTransactionManager().get());
     }
 
     command.run();

@@ -20,9 +20,8 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static google.registry.model.EppResourceUtils.isLinked;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.rdap.RdapIcannStandardInformation.CONTACT_REDACTED_VALUE;
 import static google.registry.util.CollectionUtils.union;
 
@@ -46,13 +45,13 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.Address;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.persistence.VKey;
@@ -236,8 +235,8 @@ public class RdapJsonFormatter {
       ImmutableMap.of("type", ImmutableList.of("fax"));
 
   /** Sets the ordering for hosts; just use the fully qualified host name. */
-  private static final Ordering<HostResource> HOST_RESOURCE_ORDERING =
-      Ordering.natural().onResultOf(HostResource::getHostName);
+  private static final Ordering<Host> HOST_RESOURCE_ORDERING =
+      Ordering.natural().onResultOf(Host::getHostName);
 
   /** Sets the ordering for designated contacts; order them in a fixed order by contact type. */
   private static final Ordering<DesignatedContact> DESIGNATED_CONTACT_ORDERING =
@@ -268,7 +267,7 @@ public class RdapJsonFormatter {
   }
 
   /**
-   * Creates a JSON object for a {@link DomainBase}.
+   * Creates a JSON object for a {@link Domain}.
    *
    * <p>NOTE that domain searches aren't in the spec yet - they're in the RFC 9082 that describes
    * the query format, but they aren't in the RDAP Technical Implementation Guide 15feb19, meaning
@@ -277,20 +276,20 @@ public class RdapJsonFormatter {
    * <p>We're implementing domain searches anyway, BUT we won't have the response for searches
    * conform to the RDAP Response Profile.
    *
-   * @param domainBase the domain resource object from which the JSON object should be created
+   * @param domain the domain resource object from which the JSON object should be created
    * @param outputDataType whether to generate FULL or SUMMARY data. Domains are never INTERNAL.
    */
-  RdapDomain createRdapDomain(DomainBase domainBase, OutputDataType outputDataType) {
+  RdapDomain createRdapDomain(Domain domain, OutputDataType outputDataType) {
     RdapDomain.Builder builder = RdapDomain.builder();
-    builder.linksBuilder().add(makeSelfLink("domain", domainBase.getDomainName()));
+    builder.linksBuilder().add(makeSelfLink("domain", domain.getDomainName()));
     if (outputDataType != OutputDataType.FULL) {
       builder.remarksBuilder().add(RdapIcannStandardInformation.SUMMARY_DATA_REMARK);
     }
     // RDAP Response Profile 15feb19 section 2.1 discusses the domain name.
-    builder.setLdhName(domainBase.getDomainName());
+    builder.setLdhName(domain.getDomainName());
     // RDAP Response Profile 15feb19 section 2.2:
     // The domain handle MUST be the ROID
-    builder.setHandle(domainBase.getRepoId());
+    builder.setHandle(domain.getRepoId());
     // If this is a summary (search result) - we'll return now. Since there's no requirement for
     // domain searches at all, having the name, handle, and self link is enough.
     if (outputDataType == OutputDataType.SUMMARY) {
@@ -305,12 +304,12 @@ public class RdapJsonFormatter {
             Event.builder()
                 .setEventAction(EventAction.REGISTRATION)
                 .setEventActor(
-                    Optional.ofNullable(domainBase.getCreationRegistrarId()).orElse("(none)"))
-                .setEventDate(domainBase.getCreationTime())
+                    Optional.ofNullable(domain.getCreationRegistrarId()).orElse("(none)"))
+                .setEventDate(domain.getCreationTime())
                 .build(),
             Event.builder()
                 .setEventAction(EventAction.EXPIRATION)
-                .setEventDate(domainBase.getRegistrationExpirationTime())
+                .setEventDate(domain.getRegistrationExpirationTime())
                 .build(),
             Event.builder()
                 .setEventAction(EventAction.LAST_UPDATE_OF_RDAP_DATABASE)
@@ -318,18 +317,18 @@ public class RdapJsonFormatter {
                 .build());
     // RDAP Response Profile 15feb19 section 2.3.2 discusses optional events. We add some of those
     // here. We also add a few others we find interesting.
-    builder.eventsBuilder().addAll(makeOptionalEvents(domainBase));
+    builder.eventsBuilder().addAll(makeOptionalEvents(domain));
     // RDAP Response Profile 15feb19 section 2.4.1:
     // The domain object in the RDAP response MUST contain an entity with the Registrar role.
     //
     // See {@link createRdapRegistrarEntity} for details of section 2.4 conformance
     Registrar registrar =
-        Registrar.loadRequiredRegistrarCached(domainBase.getCurrentSponsorRegistrarId());
+        Registrar.loadRequiredRegistrarCached(domain.getCurrentSponsorRegistrarId());
     builder.entitiesBuilder().add(createRdapRegistrarEntity(registrar, OutputDataType.INTERNAL));
     // RDAP Technical Implementation Guide 3.2: must have link to the registrar's RDAP URL for this
     // domain, with rel=related.
     for (String registrarRdapBase : registrar.getRdapBaseUrls()) {
-      String href = makeServerRelativeUrl(registrarRdapBase, "domain", domainBase.getDomainName());
+      String href = makeServerRelativeUrl(registrarRdapBase, "domain", domain.getDomainName());
       builder
           .linksBuilder()
           .add(
@@ -343,26 +342,30 @@ public class RdapJsonFormatter {
     // makeStatusValueList should in theory always contain one of either "active" or "inactive".
     ImmutableSet<RdapStatus> status =
         makeStatusValueList(
-            domainBase.getStatusValues(),
+            domain.getStatusValues(),
             false, // isRedacted
-            domainBase.getDeletionTime().isBefore(getRequestTime()));
+            domain.getDeletionTime().isBefore(getRequestTime()));
     builder.statusBuilder().addAll(status);
     if (status.isEmpty()) {
       logger.atWarning().log(
           "Domain %s (ROID %s) doesn't have any status.",
-          domainBase.getDomainName(), domainBase.getRepoId());
+          domain.getDomainName(), domain.getRepoId());
     }
     // RDAP Response Profile 2.6.3, must have a notice about statuses. That is in {@link
     // RdapIcannStandardInformation#domainBoilerplateNotices}
 
     // Kick off the database loads of the nameservers that we will need, so it can load
     // asynchronously while we load and process the contacts.
-    ImmutableSet<HostResource> loadedHosts =
-        transactIfJpaTm(
-            () -> ImmutableSet.copyOf(tm().loadByKeys(domainBase.getNameservers()).values()));
+    ImmutableSet<Host> loadedHosts =
+        replicaJpaTm()
+            .transact(
+                () ->
+                    ImmutableSet.copyOf(
+                        replicaJpaTm().loadByKeys(domain.getNameservers()).values()));
     // Load the registrant and other contacts and add them to the data.
     ImmutableMap<VKey<? extends ContactResource>, ContactResource> loadedContacts =
-        transactIfJpaTm(() -> tm().loadByKeysIfPresent(domainBase.getReferencedContacts()));
+        replicaJpaTm()
+            .transact(() -> replicaJpaTm().loadByKeysIfPresent(domain.getReferencedContacts()));
     // RDAP Response Profile 2.7.3, A domain MUST have the REGISTRANT, ADMIN, TECH roles and MAY
     // have others. We also add the BILLING.
     //
@@ -372,8 +375,8 @@ public class RdapJsonFormatter {
     // the GDPR redaction is handled in createRdapContactEntity
     ImmutableSetMultimap<VKey<ContactResource>, Type> contactsToRoles =
         Streams.concat(
-                domainBase.getContacts().stream(),
-                Stream.of(DesignatedContact.create(Type.REGISTRANT, domainBase.getRegistrant())))
+                domain.getContacts().stream(),
+                Stream.of(DesignatedContact.create(Type.REGISTRANT, domain.getRegistrant())))
             .sorted(DESIGNATED_CONTACT_ORDERING)
             .collect(
                 toImmutableSetMultimap(
@@ -395,8 +398,8 @@ public class RdapJsonFormatter {
     }
     // Add the nameservers to the data; the load was kicked off above for efficiency.
     // RDAP Response Profile 2.9: we MUST have the nameservers
-    for (HostResource hostResource : HOST_RESOURCE_ORDERING.immutableSortedCopy(loadedHosts)) {
-      builder.nameserversBuilder().add(createRdapNameserver(hostResource, OutputDataType.INTERNAL));
+    for (Host host : HOST_RESOURCE_ORDERING.immutableSortedCopy(loadedHosts)) {
+      builder.nameserversBuilder().add(createRdapNameserver(host, OutputDataType.INTERNAL));
     }
 
     // RDAP Response Profile 2.10 - MUST contain a secureDns member including at least a
@@ -405,30 +408,30 @@ public class RdapJsonFormatter {
     //
     // TODO(b/133310221): get the zoneSigned value from the config files.
     SecureDns.Builder secureDnsBuilder = SecureDns.builder().setZoneSigned(true);
-    domainBase.getDsData().forEach(secureDnsBuilder::addDsData);
+    domain.getDsData().forEach(secureDnsBuilder::addDsData);
     builder.setSecureDns(secureDnsBuilder.build());
 
     return builder.build();
   }
 
   /**
-   * Creates a JSON object for a {@link HostResource}.
+   * Creates a JSON object for a {@link Host}.
    *
-   * @param hostResource the host resource object from which the JSON object should be created
+   * @param host the host resource object from which the JSON object should be created
    * @param outputDataType whether to generate full or summary data
    */
-  RdapNameserver createRdapNameserver(HostResource hostResource, OutputDataType outputDataType) {
+  RdapNameserver createRdapNameserver(Host host, OutputDataType outputDataType) {
     RdapNameserver.Builder builder = RdapNameserver.builder();
-    builder.linksBuilder().add(makeSelfLink("nameserver", hostResource.getHostName()));
+    builder.linksBuilder().add(makeSelfLink("nameserver", host.getHostName()));
     if (outputDataType != OutputDataType.FULL) {
       builder.remarksBuilder().add(RdapIcannStandardInformation.SUMMARY_DATA_REMARK);
     }
 
     // We need the ldhName: RDAP Response Profile 2.9.1, 4.1
-    builder.setLdhName(hostResource.getHostName());
+    builder.setLdhName(host.getHostName());
     // Handle is optional, but if given it MUST be the ROID.
     // We will set it always as it's important as a "self link"
-    builder.setHandle(hostResource.getRepoId());
+    builder.setHandle(host.getRepoId());
 
     // Status is optional for internal Nameservers - RDAP Response Profile 2.9.2
     // It isn't mentioned at all anywhere else. So we can just not put it at all?
@@ -436,17 +439,19 @@ public class RdapJsonFormatter {
     // To be safe, we'll put it on the "FULL" version anyway
     if (outputDataType == OutputDataType.FULL) {
       ImmutableSet.Builder<StatusValue> statuses = new ImmutableSet.Builder<>();
-      statuses.addAll(hostResource.getStatusValues());
-      if (isLinked(hostResource.createVKey(), getRequestTime())) {
+      statuses.addAll(host.getStatusValues());
+      if (isLinked(host.createVKey(), getRequestTime())) {
         statuses.add(StatusValue.LINKED);
       }
-      if (hostResource.isSubordinate()
-          && transactIfJpaTm(
-              () ->
-                  tm().loadByKey(hostResource.getSuperordinateDomain())
-                      .cloneProjectedAtTime(getRequestTime())
-                      .getStatusValues()
-                      .contains(StatusValue.PENDING_TRANSFER))) {
+      if (host.isSubordinate()
+          && replicaJpaTm()
+              .transact(
+                  () ->
+                      replicaJpaTm()
+                          .loadByKey(host.getSuperordinateDomain())
+                          .cloneProjectedAtTime(getRequestTime())
+                          .getStatusValues()
+                          .contains(StatusValue.PENDING_TRANSFER))) {
         statuses.add(StatusValue.PENDING_TRANSFER);
       }
       builder
@@ -455,14 +460,14 @@ public class RdapJsonFormatter {
               makeStatusValueList(
                   statuses.build(),
                   false, // isRedacted
-                  hostResource.getDeletionTime().isBefore(getRequestTime())));
+                  host.getDeletionTime().isBefore(getRequestTime())));
     }
 
     // For query responses - we MUST have all the ip addresses: RDAP Response Profile 4.2.
     //
     // However, it is optional for internal responses: RDAP Response Profile 2.9.2
     if (outputDataType != OutputDataType.INTERNAL) {
-      for (InetAddress inetAddress : hostResource.getInetAddresses()) {
+      for (InetAddress inetAddress : host.getInetAddresses()) {
         if (inetAddress instanceof Inet4Address) {
           builder.ipv4Builder().add(InetAddresses.toAddrString(inetAddress));
         } else if (inetAddress instanceof Inet6Address) {
@@ -474,8 +479,7 @@ public class RdapJsonFormatter {
     // RDAP Response Profile 4.3 - Registrar member is optional, so we only set it for FULL
     if (outputDataType == OutputDataType.FULL) {
       Registrar registrar =
-          Registrar.loadRequiredRegistrarCached(
-              hostResource.getPersistedCurrentSponsorRegistrarId());
+          Registrar.loadRequiredRegistrarCached(host.getPersistedCurrentSponsorRegistrarId());
       builder.entitiesBuilder().add(createRdapRegistrarEntity(registrar, OutputDataType.INTERNAL));
     }
     if (outputDataType != OutputDataType.INTERNAL) {
@@ -777,7 +781,7 @@ public class RdapJsonFormatter {
   }
 
   /**
-   * Creates a JSON object for a {@link RegistrarContact}.
+   * Creates a JSON object for a {@link RegistrarPoc}.
    *
    * <p>Returns empty if this contact shouldn't be visible (doesn't have a role).
    *
@@ -794,11 +798,10 @@ public class RdapJsonFormatter {
    * <li>Registrar inside a Nameserver isn't required at all, and if given doesn't require any
    *     contacts
    *
-   * @param registrarContact the registrar contact for which the JSON object should be created
+   * @param registrarPoc the registrar contact for which the JSON object should be created
    */
-  static Optional<RdapContactEntity> makeRdapJsonForRegistrarContact(
-      RegistrarContact registrarContact) {
-    ImmutableList<RdapEntity.Role> roles = makeRdapRoleList(registrarContact);
+  static Optional<RdapContactEntity> makeRdapJsonForRegistrarContact(RegistrarPoc registrarPoc) {
+    ImmutableList<RdapEntity.Role> roles = makeRdapRoleList(registrarPoc);
     if (roles.isEmpty()) {
       return Optional.empty();
     }
@@ -808,20 +811,20 @@ public class RdapJsonFormatter {
     // Create the vCard.
     VcardArray.Builder vcardBuilder = VcardArray.builder();
     // MUST include FN member: RDAP Response Profile 3.2
-    String name = registrarContact.getName();
+    String name = registrarPoc.getName();
     if (name != null) {
       vcardBuilder.add(Vcard.create("fn", "text", name));
     }
     // MUST include TEL and EMAIL members: RDAP Response Profile 2.4.5, 3.2
-    String voicePhoneNumber = registrarContact.getPhoneNumber();
+    String voicePhoneNumber = registrarPoc.getPhoneNumber();
     if (voicePhoneNumber != null) {
       vcardBuilder.add(makePhoneEntry(PHONE_TYPE_VOICE, "tel:" + voicePhoneNumber));
     }
-    String faxPhoneNumber = registrarContact.getFaxNumber();
+    String faxPhoneNumber = registrarPoc.getFaxNumber();
     if (faxPhoneNumber != null) {
       vcardBuilder.add(makePhoneEntry(PHONE_TYPE_FAX, "tel:" + faxPhoneNumber));
     }
-    String emailAddress = registrarContact.getEmailAddress();
+    String emailAddress = registrarPoc.getEmailAddress();
     if (emailAddress != null) {
       vcardBuilder.add(Vcard.create("email", "text", emailAddress));
     }
@@ -857,16 +860,15 @@ public class RdapJsonFormatter {
    *
    * <p>3.2. For direct Registrar queries, we SHOULD have at least "admin" and "tech".
    */
-  private static ImmutableList<RdapEntity.Role> makeRdapRoleList(
-      RegistrarContact registrarContact) {
+  private static ImmutableList<RdapEntity.Role> makeRdapRoleList(RegistrarPoc registrarPoc) {
     ImmutableList.Builder<RdapEntity.Role> rolesBuilder = new ImmutableList.Builder<>();
-    if (registrarContact.getVisibleInWhoisAsAdmin()) {
+    if (registrarPoc.getVisibleInWhoisAsAdmin()) {
       rolesBuilder.add(RdapEntity.Role.ADMIN);
     }
-    if (registrarContact.getVisibleInWhoisAsTech()) {
+    if (registrarPoc.getVisibleInWhoisAsTech()) {
       rolesBuilder.add(RdapEntity.Role.TECH);
     }
-    if (registrarContact.getVisibleInDomainWhoisAsAbuse()) {
+    if (registrarPoc.getVisibleInDomainWhoisAsAbuse()) {
       rolesBuilder.add(RdapEntity.Role.ABUSE);
     }
     return rolesBuilder.build();
@@ -904,7 +906,8 @@ public class RdapJsonFormatter {
               .replace("%repoIdField%", repoIdFieldName)
               .replace("%repoIdValue%", resourceVkey.getSqlKey().toString());
       historyEntries =
-          jpaTm().transact(() -> jpaTm().getEntityManager().createQuery(jpql).getResultList());
+          replicaJpaTm()
+              .transact(() -> replicaJpaTm().getEntityManager().createQuery(jpql).getResultList());
     }
     for (HistoryEntry historyEntry : historyEntries) {
       EventAction rdapEventAction =

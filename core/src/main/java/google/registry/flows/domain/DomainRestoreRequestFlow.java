@@ -50,9 +50,10 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
@@ -139,7 +140,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     extensionManager.validate();
     Update command = (Update) resourceCommand;
     DateTime now = tm().getTransactionTime();
-    DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
+    Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     boolean isExpired = existingDomain.getRegistrationExpirationTime().isBefore(now);
     FeesAndCredits feesAndCredits =
         pricingLogic.getRestorePrice(
@@ -149,6 +150,8 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     verifyRestoreAllowed(command, existingDomain, feeUpdate, feesAndCredits, now);
     Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
     historyBuilder.setId(domainHistoryKey.getId());
+    DomainHistoryId domainHistoryId =
+        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId());
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
 
     DateTime newExpirationTime =
@@ -157,25 +160,27 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     // a year and bill for it immediately, with no grace period.
     if (isExpired) {
       entitiesToSave.add(
-          createRenewBillingEvent(domainHistoryKey, feesAndCredits.getRenewCost(), now));
+          createRenewBillingEvent(domainHistoryId, feesAndCredits.getRenewCost(), now));
     }
     // Always bill for the restore itself.
     entitiesToSave.add(
-        createRestoreBillingEvent(domainHistoryKey, feesAndCredits.getRestoreCost(), now));
+        createRestoreBillingEvent(domainHistoryId, feesAndCredits.getRestoreCost(), now));
 
     BillingEvent.Recurring autorenewEvent =
         newAutorenewBillingEvent(existingDomain)
             .setEventTime(newExpirationTime)
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(domainHistoryKey)
+            .setDomainHistoryId(domainHistoryId)
             .build();
     PollMessage.Autorenew autorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
             .setEventTime(newExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)
-            .setParentKey(domainHistoryKey)
+            .setDomainHistoryId(
+                new DomainHistoryId(
+                    domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
             .build();
-    DomainBase newDomain =
+    Domain newDomain =
         performRestore(
             existingDomain,
             newExpirationTime,
@@ -194,7 +199,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
         .build();
   }
 
-  private DomainHistory buildDomainHistory(DomainBase newDomain, DateTime now) {
+  private DomainHistory buildDomainHistory(Domain newDomain, DateTime now) {
     return historyBuilder
         .setType(DOMAIN_RESTORE)
         .setDomain(newDomain)
@@ -207,10 +212,11 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
 
   private void verifyRestoreAllowed(
       Update command,
-      DomainBase existingDomain,
+      Domain existingDomain,
       Optional<FeeUpdateCommandExtension> feeUpdate,
       FeesAndCredits feesAndCredits,
-      DateTime now) throws EppException {
+      DateTime now)
+      throws EppException {
     verifyOptionalAuthInfo(authInfo, existingDomain);
     if (!isSuperuser) {
       verifyResourceOwnership(registrarId, existingDomain);
@@ -230,8 +236,8 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     validateFeeChallenge(targetId, now, feeUpdate, feesAndCredits);
   }
 
-  private static DomainBase performRestore(
-      DomainBase existingDomain,
+  private static Domain performRestore(
+      Domain existingDomain,
       DateTime newExpirationTime,
       BillingEvent.Recurring autorenewEvent,
       PollMessage.Autorenew autorenewPollMessage,
@@ -255,19 +261,17 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
   }
 
   private OneTime createRenewBillingEvent(
-      Key<DomainHistory> domainHistoryKey, Money renewCost, DateTime now) {
-    return prepareBillingEvent(domainHistoryKey, renewCost, now).setReason(Reason.RENEW).build();
+      DomainHistoryId domainHistoryId, Money renewCost, DateTime now) {
+    return prepareBillingEvent(domainHistoryId, renewCost, now).setReason(Reason.RENEW).build();
   }
 
   private BillingEvent.OneTime createRestoreBillingEvent(
-      Key<DomainHistory> domainHistoryKey, Money restoreCost, DateTime now) {
-    return prepareBillingEvent(domainHistoryKey, restoreCost, now)
-        .setReason(Reason.RESTORE)
-        .build();
+      DomainHistoryId domainHistoryId, Money restoreCost, DateTime now) {
+    return prepareBillingEvent(domainHistoryId, restoreCost, now).setReason(Reason.RESTORE).build();
   }
 
   private OneTime.Builder prepareBillingEvent(
-      Key<DomainHistory> domainHistoryKey, Money cost, DateTime now) {
+      DomainHistoryId domainHistoryId, Money cost, DateTime now) {
     return new BillingEvent.OneTime.Builder()
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
@@ -275,7 +279,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
         .setBillingTime(now)
         .setPeriodYears(1)
         .setCost(cost)
-        .setParent(domainHistoryKey);
+        .setDomainHistoryId(domainHistoryId);
   }
 
   private static ImmutableList<FeeTransformResponseExtension> createResponseExtensions(

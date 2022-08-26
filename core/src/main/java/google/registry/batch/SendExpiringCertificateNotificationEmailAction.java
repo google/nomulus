@@ -32,8 +32,8 @@ import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
-import google.registry.model.registrar.RegistrarContact.Type;
+import google.registry.model.registrar.RegistrarPoc;
+import google.registry.model.registrar.RegistrarPoc.Type;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -281,9 +281,9 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
    */
   @VisibleForTesting
   ImmutableSet<InternetAddress> getEmailAddresses(Registrar registrar, Type contactType) {
-    ImmutableSortedSet<RegistrarContact> contacts = registrar.getContactsOfType(contactType);
+    ImmutableSortedSet<RegistrarPoc> contacts = registrar.getContactsOfType(contactType);
     ImmutableSet.Builder<InternetAddress> recipientEmails = new ImmutableSet.Builder<>();
-    for (RegistrarContact contact : contacts) {
+    for (RegistrarPoc contact : contacts) {
       try {
         recipientEmails.add(new InternetAddress(contact.getEmailAddress()));
       } catch (AddressException e) {

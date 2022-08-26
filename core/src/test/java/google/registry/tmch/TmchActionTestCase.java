@@ -22,8 +22,10 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeUrlConnectionService;
+import google.registry.testing.TestCacheExtension;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,11 +40,14 @@ abstract class TmchActionTestCase {
   static final String MARKSDB_URL = "http://127.0.0.1/love";
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
+
+  @RegisterExtension
+  public final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder().withClaimsListCache(Duration.ofHours(6)).build();
 
   final FakeClock clock = new FakeClock();
   final Marksdb marksdb = new Marksdb();

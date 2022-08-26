@@ -34,7 +34,7 @@ public class TestDomainCreateFlowCustomLogic extends DomainCreateFlowCustomLogic
     if (parameters.newDomain().getDomainName().startsWith("custom-logic-test")) {
       PollMessage extraPollMessage =
           new PollMessage.OneTime.Builder()
-              .setParent(parameters.historyEntry())
+              .setHistoryEntry(parameters.historyEntry())
               .setEventTime(tm().getTransactionTime())
               .setRegistrarId(getSessionMetadata().get().getRegistrarId())
               .setMsg("Custom logic was triggered")

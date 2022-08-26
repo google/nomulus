@@ -22,7 +22,6 @@ import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import google.registry.config.RegistryEnvironment;
-import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.DaggerPersistenceComponent;
 import google.registry.tools.RegistryToolEnvironment;
 import google.registry.util.NonFinalForTesting;
@@ -32,8 +31,6 @@ import java.util.function.Supplier;
 /** Factory class to create {@link TransactionManager} instance. */
 // TODO: Rename this to PersistenceFactory and move to persistence package.
 public final class TransactionManagerFactory {
-
-  private static final DatastoreTransactionManager ofyTm = createTransactionManager();
 
   /** Optional override to manually set the transaction manager per-test. */
   private static Optional<TransactionManager> tmForTest = Optional.empty();
@@ -67,10 +64,6 @@ public final class TransactionManagerFactory {
     }
   }
 
-  private static DatastoreTransactionManager createTransactionManager() {
-    return new DatastoreTransactionManager(null);
-  }
-
   /**
    * This function uses App Engine API to determine if the current runtime environment is App
    * Engine.
@@ -87,8 +80,8 @@ public final class TransactionManagerFactory {
   /**
    * Returns the {@link TransactionManager} instance.
    *
-   * <p>Returns the {@link JpaTransactionManager} or {@link DatastoreTransactionManager} based on
-   * the migration schedule or the manually specified per-test transaction manager.
+   * <p>Returns the {@link JpaTransactionManager} or replica based on the possible manually
+   * specified per-test transaction manager.
    */
   public static TransactionManager tm() {
     return tmForTest.orElseGet(TransactionManagerFactory::jpaTm);
@@ -117,12 +110,6 @@ public final class TransactionManagerFactory {
    */
   public static TransactionManager replicaTm() {
     return tm().isOfy() ? tm() : replicaJpaTm();
-  }
-
-  /** Returns {@link DatastoreTransactionManager} instance. */
-  @VisibleForTesting
-  public static DatastoreTransactionManager ofyTm() {
-    return ofyTm;
   }
 
   /** Sets the return of {@link #jpaTm()} to the given instance of {@link JpaTransactionManager}. */

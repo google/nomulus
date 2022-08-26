@@ -15,8 +15,8 @@
 package google.registry.model.bulkquery;
 
 import com.googlecode.objectify.Key;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
@@ -49,9 +49,9 @@ import javax.persistence.PostLoad;
 @IdClass(DomainHistoryId.class)
 public class DomainHistoryLite extends HistoryEntry {
 
-  // Store DomainContent instead of DomainBase so we don't pick up its @Id
+  // Store DomainBase instead of Domain so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
-  @Nullable DomainContent domainContent;
+  @Nullable DomainBase domainBase;
 
   @Id
   @Access(AccessType.PROPERTY)
@@ -64,7 +64,7 @@ public class DomainHistoryLite extends HistoryEntry {
   /** This method is private because it is only used by Hibernate. */
   @SuppressWarnings("unused")
   private void setDomainRepoId(String domainRepoId) {
-    parent = Key.create(DomainBase.class, domainRepoId);
+    parent = Key.create(Domain.class, domainRepoId);
   }
 
   @Override
@@ -101,9 +101,9 @@ public class DomainHistoryLite extends HistoryEntry {
     return super.getId();
   }
 
-  /** The key to the {@link DomainBase} this is based off of. */
-  public VKey<DomainBase> getParentVKey() {
-    return VKey.create(DomainBase.class, getDomainRepoId());
+  /** The key to the {@link Domain} this is based off of. */
+  public VKey<Domain> getParentVKey() {
+    return VKey.create(Domain.class, getDomainRepoId());
   }
 
   public DomainHistoryId getDomainHistoryId() {
@@ -112,14 +112,14 @@ public class DomainHistoryLite extends HistoryEntry {
 
   @PostLoad
   void postLoad() {
-    if (domainContent == null) {
+    if (domainBase == null) {
       return;
     }
     // See inline comments in DomainHistory.postLoad for reasons for the following lines.
-    if (domainContent.getDomainName() == null) {
-      domainContent = null;
-    } else if (domainContent.getRepoId() == null) {
-      domainContent.setRepoId(parent.getName());
+    if (domainBase.getDomainName() == null) {
+      domainBase = null;
+    } else if (domainBase.getRepoId() == null) {
+      domainBase.setRepoId(parent.getName());
     }
   }
 }

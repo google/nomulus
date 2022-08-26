@@ -22,7 +22,7 @@ indexes:
   - name: currentSponsorClientId
   - name: deletionTime
 
-- kind: HostResource
+- kind: Host
   properties:
   - name: currentSponsorClientId
   - name: deletionTime
@@ -50,7 +50,7 @@ indexes:
   - name: nsHosts
   - name: deletionTime
 
-- kind: HostResource
+- kind: Host
   properties:
   - name: inetAddresses
   - name: deletionTime
@@ -82,7 +82,7 @@ indexes:
   - name: tld
   - name: fullyQualifiedDomainName
 
-- kind: HostResource
+- kind: Host
   properties:
   - name: deletionTime
   - name: fullyQualifiedHostName

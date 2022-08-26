@@ -28,38 +28,36 @@ import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
-import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestOfyAndSql;
 import google.registry.whois.WhoisResponse.WhoisResponseResults;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainWhoisResponse}. */
-@DualDatabaseTest
 class DomainWhoisResponseTest {
 
   @RegisterExtension
-  final AppEngineExtension gae = AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension gae = AppEngineExtension.builder().withCloudSql().build();
 
-  private HostResource hostResource1;
-  private HostResource hostResource2;
-  private RegistrarContact abuseContact;
+  private Host host1;
+  private Host host2;
+  private RegistrarPoc abuseContact;
   private ContactResource adminContact;
   private ContactResource registrant;
   private ContactResource techContact;
-  private DomainBase domainBase;
+  private Domain domain;
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2009-05-29T20:15:00Z"));
 
@@ -74,27 +72,28 @@ class DomainWhoisResponseTest {
                 .setIanaIdentifier(5555555L)
                 .build());
 
-    abuseContact = persistResource(
-        new RegistrarContact.Builder()
-            .setParent(registrar)
-            .setName("Jake Doe")
-            .setEmailAddress("jakedoe@theregistrar.com")
-            .setPhoneNumber("+1.2125551216")
-            .setVisibleInDomainWhoisAsAbuse(true)
-            .build());
+    abuseContact =
+        persistResource(
+            new RegistrarPoc.Builder()
+                .setRegistrar(registrar)
+                .setName("Jake Doe")
+                .setEmailAddress("jakedoe@theregistrar.com")
+                .setPhoneNumber("+1.2125551216")
+                .setVisibleInDomainWhoisAsAbuse(true)
+                .build());
 
     createTld("tld");
 
-    hostResource1 =
+    host1 =
         persistResource(
-            new HostResource.Builder()
+            new Host.Builder()
                 .setHostName("ns01.exampleregistrar.tld")
                 .setRepoId("1-ROID")
                 .build());
 
-    hostResource2 =
+    host2 =
         persistResource(
-            new HostResource.Builder()
+            new Host.Builder()
                 .setHostName("ns02.exampleregistrar.tld")
                 .setRepoId("2-ROID")
                 .build());
@@ -240,16 +239,16 @@ class DomainWhoisResponseTest {
                 .setEmailAddress("EMAIL@EXAMPLE.tld")
                 .build());
 
-    VKey<HostResource> hostResource1Key = hostResource1.createVKey();
-    VKey<HostResource> hostResource2Key = hostResource2.createVKey();
+    VKey<Host> host1VKey = host1.createVKey();
+    VKey<Host> host2VKey = host2.createVKey();
     VKey<ContactResource> registrantResourceKey = registrant.createVKey();
     VKey<ContactResource> adminResourceKey = adminContact.createVKey();
     VKey<ContactResource> techResourceKey = techContact.createVKey();
 
     String repoId = "3-TLD";
-    domainBase =
+    domain =
         persistResource(
-            new DomainBase.Builder()
+            new Domain.Builder()
                 .setDomainName("example.tld")
                 .setRepoId(repoId)
                 .setCreationRegistrarId("NewRegistrar")
@@ -268,7 +267,7 @@ class DomainWhoisResponseTest {
                     ImmutableSet.of(
                         DesignatedContact.create(DesignatedContact.Type.ADMIN, adminResourceKey),
                         DesignatedContact.create(DesignatedContact.Type.TECH, techResourceKey)))
-                .setNameservers(ImmutableSet.of(hostResource1Key, hostResource2Key))
+                .setNameservers(ImmutableSet.of(host1VKey, host2VKey))
                 .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, "deadface")))
                 .setGracePeriods(
                     ImmutableSet.of(
@@ -279,10 +278,10 @@ class DomainWhoisResponseTest {
                 .build());
   }
 
-  @TestOfyAndSql
+  @Test
   void getPlainTextOutputTest() {
     DomainWhoisResponse domainWhoisResponse =
-        new DomainWhoisResponse(domainBase, false, "Please contact registrar", clock.nowUtc());
+        new DomainWhoisResponse(domain, false, "Please contact registrar", clock.nowUtc());
     assertThat(
             domainWhoisResponse.getResponse(
                 false,
@@ -290,11 +289,11 @@ class DomainWhoisResponseTest {
         .isEqualTo(WhoisResponseResults.create(loadFile("whois_domain.txt"), 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void getPlainTextOutputTest_registrarAbuseInfoMissing() {
     persistResource(abuseContact.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build());
     DomainWhoisResponse domainWhoisResponse =
-        new DomainWhoisResponse(domainBase, false, "Please contact registrar", clock.nowUtc());
+        new DomainWhoisResponse(domain, false, "Please contact registrar", clock.nowUtc());
     assertThat(
         domainWhoisResponse.getResponse(false, "Footer"))
         .isEqualTo(
@@ -302,10 +301,10 @@ class DomainWhoisResponseTest {
                 loadFile("whois_domain_registrar_abuse_info_missing.txt"), 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void getPlainTextOutputTest_fullOutput() {
     DomainWhoisResponse domainWhoisResponse =
-        new DomainWhoisResponse(domainBase, true, "Please contact registrar", clock.nowUtc());
+        new DomainWhoisResponse(domain, true, "Please contact registrar", clock.nowUtc());
     assertThat(
             domainWhoisResponse.getResponse(
                 false,
@@ -313,11 +312,11 @@ class DomainWhoisResponseTest {
         .isEqualTo(WhoisResponseResults.create(loadFile("whois_domain_full_output.txt"), 1));
   }
 
-  @TestOfyAndSql
+  @Test
   void addImplicitOkStatusTest() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(
-            domainBase.asBuilder().setStatusValues(null).build(),
+            domain.asBuilder().setStatusValues(null).build(),
             false,
             "Contact the registrar",
             clock.nowUtc());

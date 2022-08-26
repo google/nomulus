@@ -27,7 +27,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -42,7 +41,9 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Named;
@@ -1266,7 +1267,7 @@ public final class RegistryConfig {
                       e.getKey().equals("START_OF_TIME")
                           ? START_OF_TIME
                           : DateTime.parse(e.getKey()),
-                  e -> e.getValue()));
+                  Entry::getValue));
     }
 
     @Provides
@@ -1300,6 +1301,36 @@ public final class RegistryConfig {
     }
 
     @Provides
+    @Config("dnsUpdateFailEmailSubjectText")
+    public static String provideDnsUpdateFailEmailSubjectText(RegistryConfigSettings config) {
+      return config.dnsUpdate.dnsUpdateFailEmailSubjectText;
+    }
+
+    @Provides
+    @Config("dnsUpdateFailEmailBodyText")
+    public static String provideDnsUpdateFailEmailBodyText(RegistryConfigSettings config) {
+      return config.dnsUpdate.dnsUpdateFailEmailBodyText;
+    }
+
+    @Provides
+    @Config("dnsUpdateFailRegistryName")
+    public static String provideDnsUpdateFailRegistryName(RegistryConfigSettings config) {
+      return config.dnsUpdate.dnsUpdateFailRegistryName;
+    }
+
+    @Provides
+    @Config("registrySupportEmail")
+    public static InternetAddress provideRegistrySupportEmail(RegistryConfigSettings config) {
+      return parseEmailAddress(config.dnsUpdate.registrySupportEmail);
+    }
+
+    @Provides
+    @Config("registryCcEmail")
+    public static InternetAddress provideRegistryCcEmail(RegistryConfigSettings config) {
+      return parseEmailAddress(config.dnsUpdate.registryCcEmail);
+    }
+
+    @Provides
     @Config("allowedEcdsaCurves")
     public static ImmutableSet<String> provideAllowedEcdsaCurves(RegistryConfigSettings config) {
       return ImmutableSet.copyOf(config.sslCertificateValidation.allowedEcdsaCurves);
@@ -1330,19 +1361,7 @@ public final class RegistryConfig {
   }
 
   /**
-   * Returns the Google Cloud Storage bucket for storing Datastore backups.
-   *
-   * @see google.registry.export.BackupDatastoreAction
-   */
-  public static String getDatastoreBackupsBucket() {
-    return "gs://" + getProjectId() + "-datastore-backups";
-  }
-
-  /**
-   * Returns the length of time before commit logs should be deleted from Datastore.
-   *
-   * <p>The only reason you'll want to retain this commit logs in Datastore is for performing
-   * point-in-time restoration queries for subsystems like RDE.
+   * Returns the length of time before commit logs should be deleted from the database.
    *
    * @see google.registry.tools.server.GenerateZoneFilesAction
    */
@@ -1436,6 +1455,11 @@ public final class RegistryConfig {
   /** Returns the maximum number of EPP resources and keys to keep in in-memory cache. */
   public static int getEppResourceMaxCachedEntries() {
     return CONFIG_SETTINGS.get().caching.eppResourceMaxCachedEntries;
+  }
+
+  /** Returns the amount of time that a particular claims list should be cached. */
+  public static java.time.Duration getClaimsListCacheDuration() {
+    return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.claimsListCachingSeconds);
   }
 
   /** Returns the email address that outgoing emails from the app are sent from. */

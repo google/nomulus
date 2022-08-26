@@ -21,23 +21,17 @@ import static google.registry.testing.EppMetricSubject.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for contact lifecycle. */
-@DualDatabaseTest
 class EppLifecycleContactTest extends EppTestCase {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withDatastoreAndCloudSql()
-          .withClock(clock)
-          .withTaskQueue()
-          .build();
+      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
 
-  @TestOfyAndSql
+  @Test
   void testContactLifecycle() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatCommand("contact_create_sh8013.xml")
@@ -73,7 +67,7 @@ class EppLifecycleContactTest extends EppTestCase {
     assertThatLogoutSucceeds();
   }
 
-  @TestOfyAndSql
+  @Test
   void testContactTransferPollMessage() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatCommand("contact_create_sh8013.xml")
@@ -101,7 +95,7 @@ class EppLifecycleContactTest extends EppTestCase {
         .hasCommandName("PollRequest")
         .and()
         .hasStatus(SUCCESS_WITH_ACK_MESSAGE);
-    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "2-1-ROID-3-6-2000"))
+    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "6-2000"))
         .atTime("2000-06-08T22:02:00Z")
         .hasResponse("poll_ack_response_empty.xml");
     assertThat(getRecordedEppMetric())
