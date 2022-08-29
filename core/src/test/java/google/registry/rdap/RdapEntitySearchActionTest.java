@@ -23,12 +23,10 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistContactResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistDeletedContactResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeContactResource;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistDeletedContact;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarContacts;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -37,13 +35,14 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import google.registry.model.ImmutableObject;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.FullFieldsTestEntityHelper;
 import java.net.URLDecoder;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -110,12 +109,12 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     registrarDeleted =
         persistResource(
             makeRegistrar("2-Registrar", "Yes Virginia <script>", Registrar.State.ACTIVE, 20L));
-    persistSimpleResources(makeRegistrarContacts(registrarDeleted));
+    persistSimpleResources(makeRegistrarPocs(registrarDeleted));
 
     // inactive
     registrarInactive =
         persistResource(makeRegistrar("2-RegistrarInact", "No Way", Registrar.State.PENDING, 21L));
-    persistSimpleResources(makeRegistrarContacts(registrarInactive));
+    persistSimpleResources(makeRegistrarPocs(registrarInactive));
 
     // test
     registrarTest =
@@ -125,9 +124,9 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
                 .setType(Registrar.Type.TEST)
                 .setIanaIdentifier(null)
                 .build());
-    persistSimpleResources(makeRegistrarContacts(registrarTest));
+    persistSimpleResources(makeRegistrarPocs(registrarTest));
 
-    makeAndPersistContactResource(
+    FullFieldsTestEntityHelper.makeAndPersistContact(
         "blinky",
         "Blinky (赤ベイ)",
         "blinky@b.tld",
@@ -135,7 +134,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
         clock.nowUtc(),
         registrarTest);
 
-    makeAndPersistContactResource(
+    FullFieldsTestEntityHelper.makeAndPersistContact(
         "blindly",
         "Blindly",
         "blindly@b.tld",
@@ -143,11 +142,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
         clock.nowUtc(),
         registrarTest);
 
-    makeAndPersistDeletedContactResource(
-        "clyde",
-        clock.nowUtc().minusYears(1),
-        registrarDeleted,
-        clock.nowUtc().minusMonths(6));
+    makeAndPersistDeletedContact(
+        "clyde", clock.nowUtc().minusYears(1), registrarDeleted, clock.nowUtc().minusMonths(6));
 
     action.fnParam = Optional.empty();
     action.handleParam = Optional.empty();
@@ -200,8 +196,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     ImmutableList.Builder<ImmutableObject> resourcesBuilder = new ImmutableList.Builder<>();
     for (int i = 1; i <= numContacts; i++) {
       // Set the ROIDs to a known value for later use.
-      ContactResource contact =
-          makeContactResource(
+      Contact contact =
+          FullFieldsTestEntityHelper.makeContact(
                   String.format("contact%d", i),
                   String.format("Entity %d", i),
                   String.format("contact%d@gmail.com", i),
@@ -222,7 +218,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
               Registrar.State.ACTIVE,
               300L + i);
       resourcesBuilder.add(registrar);
-      resourcesBuilder.addAll(makeRegistrarContacts(registrar));
+      resourcesBuilder.addAll(makeRegistrarPocs(registrar));
     }
     persistResources(resourcesBuilder.build());
   }

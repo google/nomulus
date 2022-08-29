@@ -17,11 +17,11 @@ package google.registry.beam.common;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.newContact;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.beam.TestPipelineExtension;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.AppEngineExtension;
@@ -55,21 +55,17 @@ class RegistryJpaWriteTest implements Serializable {
   @Test
   void writeToSql_twoWriters() {
     jpaTm().transact(() -> jpaTm().put(AppEngineExtension.makeRegistrar2()));
-    ImmutableList.Builder<ContactResource> contactsBuilder = new ImmutableList.Builder<>();
+    ImmutableList.Builder<Contact> contactsBuilder = new ImmutableList.Builder<>();
     for (int i = 0; i < 3; i++) {
-      contactsBuilder.add(newContactResource("contact_" + i));
+      contactsBuilder.add(newContact("contact_" + i));
     }
-    ImmutableList<ContactResource> contacts = contactsBuilder.build();
+    ImmutableList<Contact> contacts = contactsBuilder.build();
     testPipeline
         .apply(Create.of(contacts))
-        .apply(
-            RegistryJpaIO.<ContactResource>write()
-                .withName("ContactResource")
-                .withBatchSize(4)
-                .withShards(2));
+        .apply(RegistryJpaIO.<Contact>write().withName("Contact").withBatchSize(4).withShards(2));
     testPipeline.run().waitUntilFinish();
 
-    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(ContactResource.class)))
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Contact.class)))
         .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
         .containsExactlyElementsIn(contacts);
   }

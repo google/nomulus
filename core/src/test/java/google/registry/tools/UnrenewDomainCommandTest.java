@@ -37,7 +37,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.StatusValue;
@@ -59,7 +59,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
 
   @Test
   void test_unrenewTwoDomains_worksSuccessfully() throws Exception {
-    ContactResource contact = persistActiveContact("jd1234");
+    Contact contact = persistActiveContact("jd1234");
     fakeClock.advanceOneMilli();
     persistDomainWithDependentResources(
         "foo",
@@ -94,7 +94,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
 
   @Test
   void test_unrenewDomain_savesDependentEntitiesCorrectly() throws Exception {
-    ContactResource contact = persistActiveContact("jd1234");
+    Contact contact = persistActiveContact("jd1234");
     fakeClock.advanceOneMilli();
     persistDomainWithDependentResources(
         "foo",

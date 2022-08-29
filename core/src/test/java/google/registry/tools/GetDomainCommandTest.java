@@ -38,7 +38,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     persistActiveDomain("example.tld");
     runCommand("example.tld");
     assertInStdout("fullyQualifiedDomainName=example.tld");
-    assertInStdout("Contact=VKey<ContactResource>(sql:3-ROID");
+    assertInStdout("Contact=VKey<Contact>(sql:3-ROID");
     assertInStdout(
         "Websafe key: "
             + "kind:Domain"

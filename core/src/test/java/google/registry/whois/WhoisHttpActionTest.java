@@ -20,10 +20,9 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeContactResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarContacts;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
 import static google.registry.whois.WhoisTestData.loadFile;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -35,7 +34,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
@@ -120,14 +119,19 @@ class WhoisHttpActionTest {
     persistResource(
         makeDomain(
             "cat.lol",
-            persistResource(makeContactResource("5372808-ERL", "Goblin Market", "lol@cat.lol")),
-            persistResource(makeContactResource("5372808-IRL", "Santa Claus", "BOFH@cat.lol")),
-            persistResource(makeContactResource("5372808-TRL", "The Raven", "bog@cat.lol")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact(
+                    "5372808-ERL", "Goblin Market", "lol@cat.lol")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact(
+                    "5372808-IRL", "Santa Claus", "BOFH@cat.lol")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact("5372808-TRL", "The Raven", "bog@cat.lol")),
             persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4")),
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
             registrar));
-    persistSimpleResources(makeRegistrarContacts(registrar));
+    persistSimpleResources(makeRegistrarPocs(registrar));
     newWhoisHttpAction("/domain/cat.lol").run();
     assertThat(response.getStatus()).isEqualTo(404);
     assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
@@ -141,14 +145,18 @@ class WhoisHttpActionTest {
     persistResource(
         makeDomain(
             "cat.みんな",
-            persistResource(makeContactResource("5372808-ERL", "(◕‿◕)", "lol@cat.みんな")),
-            persistResource(makeContactResource("5372808-IRL", "Santa Claus", "BOFH@cat.みんな")),
-            persistResource(makeContactResource("5372808-TRL", "The Raven", "bog@cat.みんな")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact("5372808-ERL", "(◕‿◕)", "lol@cat.みんな")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact(
+                    "5372808-IRL", "Santa Claus", "BOFH@cat.みんな")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact("5372808-TRL", "The Raven", "bog@cat.みんな")),
             persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.みんな", "1.2.3.4")),
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.みんな", "bad:f00d:cafe::15:beef")),
             registrar));
-    persistSimpleResources(makeRegistrarContacts(registrar));
+    persistSimpleResources(makeRegistrarPocs(registrar));
     newWhoisHttpAction("/domain/cat.みんな").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_idn_utf8.txt"));
@@ -156,7 +164,8 @@ class WhoisHttpActionTest {
 
   @Test
   void testRun_wickedLineFeedForgeryInDatastore_crlfSubstitutedWithSpace() {
-    ContactResource trl = makeContactResource("5372808-TRL", "Eric Schmidt", "bog@cat.みんな");
+    Contact trl =
+        FullFieldsTestEntityHelper.makeContact("5372808-TRL", "Eric Schmidt", "bog@cat.みんな");
     trl =
         persistResource(
             trl.asBuilder()
@@ -186,9 +195,13 @@ class WhoisHttpActionTest {
     persistResource(
         makeDomain(
             "cat.みんな",
-            persistResource(makeContactResource("5372808-ERL", "(◕‿◕)", "lol@cat.みんな")),
-            persistResource(makeContactResource("5372808-IRL", "Operator", "BOFH@cat.みんな")),
-            persistResource(makeContactResource("5372808-TRL", "Eric Schmidt", "bog@cat.みんな")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact("5372808-ERL", "(◕‿◕)", "lol@cat.みんな")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact("5372808-IRL", "Operator", "BOFH@cat.みんな")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact(
+                    "5372808-TRL", "Eric Schmidt", "bog@cat.みんな")),
             persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.みんな", "1.2.3.4")),
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.みんな", "bad:f00d:cafe::15:beef")),
@@ -213,14 +226,18 @@ class WhoisHttpActionTest {
     persistResource(
         makeDomain(
             "cat.みんな",
-            persistResource(makeContactResource("5372808-ERL", "(◕‿◕)", "lol@cat.みんな")),
-            persistResource(makeContactResource("5372808-IRL", "Santa Claus", "BOFH@cat.みんな")),
-            persistResource(makeContactResource("5372808-TRL", "The Raven", "bog@cat.みんな")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact("5372808-ERL", "(◕‿◕)", "lol@cat.みんな")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact(
+                    "5372808-IRL", "Santa Claus", "BOFH@cat.みんな")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact("5372808-TRL", "The Raven", "bog@cat.みんな")),
             persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.みんな", "1.2.3.4")),
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.みんな", "bad:f00d:cafe::15:beef")),
             registrar));
-    persistSimpleResources(makeRegistrarContacts(registrar));
+    persistSimpleResources(makeRegistrarPocs(registrar));
     newWhoisHttpAction("/domain/cat.xn--q9jyb4c").run();
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_idn_utf8.txt"));
   }
@@ -280,9 +297,14 @@ class WhoisHttpActionTest {
     persistResource(
         makeDomain(
             "cat.lol",
-            persistResource(makeContactResource("5372808-ERL", "Peter Murphy", "lol@cat.lol")),
-            persistResource(makeContactResource("5372808-IRL", "Operator", "BOFH@cat.lol")),
-            persistResource(makeContactResource("5372808-TRL", "Eric Schmidt", "bog@cat.lol")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact(
+                    "5372808-ERL", "Peter Murphy", "lol@cat.lol")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact("5372808-IRL", "Operator", "BOFH@cat.lol")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact(
+                    "5372808-TRL", "Eric Schmidt", "bog@cat.lol")),
             persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4")),
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
@@ -297,9 +319,14 @@ class WhoisHttpActionTest {
     persistResource(
         makeDomain(
             "cat.lol",
-            persistResource(makeContactResource("5372808-ERL", "Peter Murphy", "lol@cat.lol")),
-            persistResource(makeContactResource("5372808-IRL", "Operator", "BOFH@cat.lol")),
-            persistResource(makeContactResource("5372808-TRL", "Eric Schmidt", "bog@cat.lol")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact(
+                    "5372808-ERL", "Peter Murphy", "lol@cat.lol")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact("5372808-IRL", "Operator", "BOFH@cat.lol")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact(
+                    "5372808-TRL", "Eric Schmidt", "bog@cat.lol")),
             persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4")),
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
@@ -314,7 +341,7 @@ class WhoisHttpActionTest {
   void testRun_registrarLookup_works() {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarContacts(registrar));
+    persistSimpleResources(makeRegistrarPocs(registrar));
     // Notice the partial search without "inc".
     newWhoisHttpAction("/registrar/Example%20Registrar").run();
     assertThat(response.getStatus()).isEqualTo(200);
@@ -325,7 +352,7 @@ class WhoisHttpActionTest {
   void testRun_registrarLookupInPendingState_returnsNotFound() {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", Registrar.State.PENDING));
-    persistSimpleResources(makeRegistrarContacts(registrar));
+    persistSimpleResources(makeRegistrarPocs(registrar));
     newWhoisHttpAction("/registrar/Example%20Registrar,%20Inc.").run();
     assertThat(response.getStatus()).isEqualTo(404);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar_not_found.txt"));
@@ -336,7 +363,7 @@ class WhoisHttpActionTest {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", Registrar.State.ACTIVE)
             .asBuilder().setType(Registrar.Type.TEST).setIanaIdentifier(null).build());
-    persistSimpleResources(makeRegistrarContacts(registrar));
+    persistSimpleResources(makeRegistrarPocs(registrar));
     newWhoisHttpAction("/registrar/Example%20Registrar,%20Inc.").run();
     assertThat(response.getStatus()).isEqualTo(404);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar_not_found.txt"));

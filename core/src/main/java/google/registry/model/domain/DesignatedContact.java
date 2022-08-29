@@ -22,7 +22,7 @@ import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.persistence.VKey;
 import javax.persistence.Embeddable;
 import javax.xml.bind.annotation.XmlEnumValue;
@@ -64,7 +64,7 @@ public class DesignatedContact extends ImmutableObject implements UnsafeSerializ
     REGISTRANT
   }
 
-  public static DesignatedContact create(Type type, VKey<ContactResource> contact) {
+  public static DesignatedContact create(Type type, VKey<Contact> contact) {
     DesignatedContact instance = new DesignatedContact();
     instance.type = type;
     instance.contactVKey = checkArgumentNotNull(contact, "Must specify contact key");
@@ -74,14 +74,14 @@ public class DesignatedContact extends ImmutableObject implements UnsafeSerializ
 
   Type type;
 
-  @Index Key<ContactResource> contact;
-  @Ignore VKey<ContactResource> contactVKey;
+  @Index Key<Contact> contact;
+  @Ignore VKey<Contact> contactVKey;
 
   public Type getType() {
     return type;
   }
 
-  public VKey<ContactResource> getContactKey() {
+  public VKey<Contact> getContactKey() {
     return contactVKey;
   }
 

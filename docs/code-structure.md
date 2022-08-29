@@ -142,14 +142,9 @@ encapsulate related values together.
 The classes that extend `EppResource` (along with the RFCs that define them) are
 as follows:
 
-*   `Domain` ([RFC 5731](https://tools.ietf.org/html/rfc5731)), further
-    broken down into:
-    *   `DomainApplication`, an application for a domain submitted during (e.g.)
-        sunrise or landrush
-    *   `DomainResource`, a domain name allocated following a successful
-        application, or registered during a general availability phase
+*   `Domain` ([RFC 5731](https://tools.ietf.org/html/rfc5731))
 *   `Host` ([RFC 5732](https://tools.ietf.org/html/rfc5732))
-*   `ContactResource` ([RFC 5733](https://tools.ietf.org/html/rfc5733))
+*   `Contact` ([RFC 5733](https://tools.ietf.org/html/rfc5733))
 
 All `EppResource` entities use a Repository Object Identifier (ROID) as its
 unique id, in the format specified by [RFC
@@ -173,7 +168,7 @@ Foreign key indexes provide a means of loading active instances of `EppResource`
 objects by their unique IDs:
 
 *   `Domain`: fully-qualified domain name
-*   `ContactResource`: contact id
+*   `Contact`: contact id
 *   `Host`: fully-qualified host name
 
 Since all `EppResource` entities are indexed on ROID (which is also unique, but

@@ -23,9 +23,9 @@ import static google.registry.whois.WhoisTestData.loadFile;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactPhoneNumber;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
@@ -54,9 +54,9 @@ class DomainWhoisResponseTest {
   private Host host1;
   private Host host2;
   private RegistrarPoc abuseContact;
-  private ContactResource adminContact;
-  private ContactResource registrant;
-  private ContactResource techContact;
+  private Contact adminContact;
+  private Contact registrant;
+  private Contact techContact;
   private Domain domain;
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2009-05-29T20:15:00Z"));
@@ -100,7 +100,7 @@ class DomainWhoisResponseTest {
 
     registrant =
         persistResource(
-            new ContactResource.Builder()
+            new Contact.Builder()
                 .setContactId("5372808-ERL")
                 .setRepoId("4-ROID")
                 .setCreationRegistrarId("NewRegistrar")
@@ -148,7 +148,7 @@ class DomainWhoisResponseTest {
 
     adminContact =
         persistResource(
-            new ContactResource.Builder()
+            new Contact.Builder()
                 .setContactId("5372809-ERL")
                 .setRepoId("5-ROID")
                 .setCreationRegistrarId("NewRegistrar")
@@ -193,7 +193,7 @@ class DomainWhoisResponseTest {
 
     techContact =
         persistResource(
-            new ContactResource.Builder()
+            new Contact.Builder()
                 .setContactId("5372811-ERL")
                 .setRepoId("6-ROID")
                 .setCreationRegistrarId("NewRegistrar")
@@ -241,9 +241,9 @@ class DomainWhoisResponseTest {
 
     VKey<Host> host1VKey = host1.createVKey();
     VKey<Host> host2VKey = host2.createVKey();
-    VKey<ContactResource> registrantResourceKey = registrant.createVKey();
-    VKey<ContactResource> adminResourceKey = adminContact.createVKey();
-    VKey<ContactResource> techResourceKey = techContact.createVKey();
+    VKey<Contact> registrantResourceKey = registrant.createVKey();
+    VKey<Contact> adminResourceKey = adminContact.createVKey();
+    VKey<Contact> techResourceKey = techContact.createVKey();
 
     String repoId = "3-TLD";
     domain =

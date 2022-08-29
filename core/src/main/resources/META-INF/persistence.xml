@@ -45,7 +45,7 @@
     <class>google.registry.model.common.DatabaseMigrationStateSchedule</class>
     <class>google.registry.model.console.User</class>
     <class>google.registry.model.contact.ContactHistory</class>
-    <class>google.registry.model.contact.ContactResource</class>
+    <class>google.registry.model.contact.Contact</class>
     <class>google.registry.model.domain.Domain</class>
     <class>google.registry.model.domain.DomainHistory</class>
     <class>google.registry.model.domain.GracePeriod</class>
@@ -104,7 +104,7 @@
     <class>google.registry.model.billing.VKeyConverter_Cancellation</class>
     <class>google.registry.model.billing.VKeyConverter_OneTime</class>
     <class>google.registry.model.billing.VKeyConverter_Recurring</class>
-    <class>google.registry.model.contact.VKeyConverter_ContactResource</class>
+    <class>google.registry.model.contact.VKeyConverter_Contact</class>
     <class>google.registry.model.domain.VKeyConverter_Domain</class>
     <class>google.registry.model.domain.token.VKeyConverter_AllocationToken</class>
     <class>google.registry.model.host.VKeyConverter_Host</class>

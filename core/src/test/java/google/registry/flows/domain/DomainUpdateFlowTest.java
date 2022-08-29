@@ -91,7 +91,7 @@ import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedExcepti
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.Domain;
@@ -127,9 +127,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
           "DIGEST_TYPE", "1",
           "DIGEST", "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3");
 
-  private ContactResource sh8013Contact;
-  private ContactResource mak21Contact;
-  private ContactResource unusedContact;
+  private Contact sh8013Contact;
+  private Contact mak21Contact;
+  private Contact unusedContact;
 
   @BeforeEach
   void beforeEach() {
@@ -419,8 +419,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   void testSuccess_registrantMovedToTechContact() throws Exception {
     setEppInput("domain_update_registrant_to_tech.xml");
     persistReferencedEntities();
-    ContactResource sh8013 =
-        loadByForeignKey(ContactResource.class, "sh8013", clock.nowUtc()).get();
+    Contact sh8013 = loadByForeignKey(Contact.class, "sh8013", clock.nowUtc()).get();
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
@@ -434,9 +433,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   void testSuccess_multipleReferencesToSameContactRemoved() throws Exception {
     setEppInput("domain_update_remove_multiple_contacts.xml");
     persistReferencedEntities();
-    ContactResource sh8013 =
-        loadByForeignKey(ContactResource.class, "sh8013", clock.nowUtc()).get();
-    VKey<ContactResource> sh8013Key = sh8013.createVKey();
+    Contact sh8013 = loadByForeignKey(Contact.class, "sh8013", clock.nowUtc()).get();
+    VKey<Contact> sh8013Key = sh8013.createVKey();
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
@@ -1111,9 +1109,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setContacts(
                 DesignatedContact.create(
                     Type.TECH,
-                    loadByForeignKey(ContactResource.class, "foo", clock.nowUtc())
-                        .get()
-                        .createVKey()))
+                    loadByForeignKey(Contact.class, "foo", clock.nowUtc()).get().createVKey()))
             .build());
     EppException thrown = assertThrows(DuplicateContactForRoleException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1436,9 +1432,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setContacts(
                 DesignatedContact.create(
                     Type.TECH,
-                    loadByForeignKey(ContactResource.class, "sh8013", clock.nowUtc())
-                        .get()
-                        .createVKey()))
+                    loadByForeignKey(Contact.class, "sh8013", clock.nowUtc()).get().createVKey()))
             .build());
     EppException thrown = assertThrows(AddRemoveSameValueException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1484,7 +1478,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistActiveHost("ns2.example.foo");
     persistActiveContact("sh8013");
     persistResource(
-        loadByForeignKey(ContactResource.class, "mak21", clock.nowUtc())
+        loadByForeignKey(Contact.class, "mak21", clock.nowUtc())
             .get()
             .asBuilder()
             .addStatusValue(StatusValue.PENDING_DELETE)

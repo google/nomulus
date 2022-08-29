@@ -25,8 +25,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
 import google.registry.model.EppResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.Host;
@@ -51,7 +51,7 @@ public class HistoryEntryDao {
   public static ImmutableMap<Class<? extends EppResource>, Class<? extends HistoryEntry>>
       RESOURCE_TYPES_TO_HISTORY_TYPES =
           ImmutableMap.of(
-              ContactResource.class,
+              Contact.class,
               ContactHistory.class,
               Domain.class,
               DomainHistory.class,

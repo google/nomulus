@@ -21,10 +21,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactPhoneNumber;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.Disclose;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
@@ -52,12 +52,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
- * Unit tests for {@link ContactResourceToXjcConverter}.
+ * Unit tests for {@link ContactToXjcConverter}.
  *
- * <p>This tests the mapping between {@link ContactResource} and {@link XjcRdeContact} as well as
- * some exceptional conditions.
+ * <p>This tests the mapping between {@link Contact} and {@link XjcRdeContact} as well as some
+ * exceptional conditions.
  */
-public class ContactResourceToXjcConverterTest {
+public class ContactToXjcConverterTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
@@ -69,8 +69,8 @@ public class ContactResourceToXjcConverterTest {
 
   @Test
   void testConvertContact() {
-    ContactResource contact = makeContactResource();
-    XjcRdeContact bean = ContactResourceToXjcConverter.convertContact(contact);
+    Contact contact = makeContact();
+    XjcRdeContact bean = ContactToXjcConverter.convertContact(contact);
 
     // o  A <id> element that contains the server-unique identifier of the
     //    contact object
@@ -230,38 +230,32 @@ public class ContactResourceToXjcConverterTest {
 
   @Test
   void testConvertContact_absentVoiceAndFaxNumbers() {
-    XjcRdeContact bean = ContactResourceToXjcConverter.convertContact(
-        makeContactResource().asBuilder()
-            .setVoiceNumber(null)
-            .setFaxNumber(null)
-            .build());
+    XjcRdeContact bean =
+        ContactToXjcConverter.convertContact(
+            makeContact().asBuilder().setVoiceNumber(null).setFaxNumber(null).build());
     assertThat(bean.getVoice()).isNull();
     assertThat(bean.getFax()).isNull();
   }
 
   @Test
   void testConvertContact_absentDisclose() {
-    XjcRdeContact bean = ContactResourceToXjcConverter.convertContact(
-        makeContactResource().asBuilder()
-            .setDisclose(null)
-            .build());
+    XjcRdeContact bean =
+        ContactToXjcConverter.convertContact(makeContact().asBuilder().setDisclose(null).build());
     assertThat(bean.getDisclose()).isNull();
   }
 
   @Test
   void testConvertContact_absentTransferData() {
-    XjcRdeContact bean = ContactResourceToXjcConverter.convertContact(
-        makeContactResource().asBuilder()
-            .setLastTransferTime(null)
-            .setTransferData(null)
-            .build());
+    XjcRdeContact bean =
+        ContactToXjcConverter.convertContact(
+            makeContact().asBuilder().setLastTransferTime(null).setTransferData(null).build());
     assertThat(bean.getTrDate()).isNull();
     assertThat(bean.getTrnData()).isNull();
   }
 
   @Test
   void testMarshal() throws Exception {
-    XjcRdeContact bean = ContactResourceToXjcConverter.convertContact(makeContactResource());
+    XjcRdeContact bean = ContactToXjcConverter.convertContact(makeContact());
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
   }
 
@@ -282,8 +276,8 @@ public class ContactResourceToXjcConverterTest {
     return deposit;
   }
 
-  private static ContactResource makeContactResource() {
-    return new ContactResource.Builder()
+  private static Contact makeContact() {
+    return new Contact.Builder()
         .setContactId("love-id")
         .setRepoId("2-ROID")
         .setCreationRegistrarId("NewRegistrar")

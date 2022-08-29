@@ -32,7 +32,7 @@ import static org.mockito.Mockito.verify;
 
 import google.registry.beam.TestPipelineExtension;
 import google.registry.model.EppResource;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.StatusValue;
@@ -81,7 +81,7 @@ public class ResaveAllEppResourcesPipelineTest {
 
   @Test
   void testPipeline_unchangedEntity() {
-    ContactResource contact = persistActiveContact("test123");
+    Contact contact = persistActiveContact("test123");
     DateTime creationTime = contact.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
     assertThat(loadByEntity(contact).getUpdateTimestamp().getTimestamp()).isEqualTo(creationTime);
@@ -92,7 +92,7 @@ public class ResaveAllEppResourcesPipelineTest {
 
   @Test
   void testPipeline_fulfilledContactTransfer() {
-    ContactResource contact = persistActiveContact("test123");
+    Contact contact = persistActiveContact("test123");
     DateTime now = fakeClock.nowUtc();
     contact = persistContactWithPendingTransfer(contact, now, now.plusDays(5), now);
     fakeClock.advanceBy(Duration.standardDays(10));
@@ -154,7 +154,7 @@ public class ResaveAllEppResourcesPipelineTest {
   @Test
   void testPipeline_fastOnlySavesChanged() {
     DateTime now = fakeClock.nowUtc();
-    ContactResource contact = persistActiveContact("jd1234");
+    Contact contact = persistActiveContact("jd1234");
     persistDomainWithDependentResources("renewed", "tld", contact, now, now, now.plusYears(1));
     persistActiveDomain("nonrenewed.tld", now, now.plusYears(20));
     // Spy the transaction manager so we can be sure we're only saving the renewed domain
@@ -171,7 +171,7 @@ public class ResaveAllEppResourcesPipelineTest {
   void testPipeline_notFastResavesAll() {
     options.setFast(false);
     DateTime now = fakeClock.nowUtc();
-    ContactResource contact = persistActiveContact("jd1234");
+    Contact contact = persistActiveContact("jd1234");
     Domain renewed =
         persistDomainWithDependentResources("renewed", "tld", contact, now, now, now.plusYears(1));
     Domain nonRenewed =

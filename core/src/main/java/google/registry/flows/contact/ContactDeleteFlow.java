@@ -35,8 +35,8 @@ import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
@@ -91,15 +91,15 @@ public final class ContactDeleteFlow implements TransactionalFlow {
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
-    checkLinkedDomains(targetId, now, ContactResource.class);
-    ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
+    checkLinkedDomains(targetId, now, Contact.class);
+    Contact existingContact = loadAndVerifyExistence(Contact.class, targetId, now);
     verifyNoDisallowedStatuses(existingContact, DISALLOWED_STATUSES);
     verifyOptionalAuthInfo(authInfo, existingContact);
     if (!isSuperuser) {
       verifyResourceOwnership(registrarId, existingContact);
     }
     // Handle pending transfers on contact deletion.
-    ContactResource newContact =
+    Contact newContact =
         existingContact.getStatusValues().contains(StatusValue.PENDING_TRANSFER)
             ? denyPendingTransfer(existingContact, SERVER_CANCELLED, now, registrarId)
             : existingContact;

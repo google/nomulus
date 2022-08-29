@@ -67,7 +67,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
 
   /**
    * Localized postal info for the contact. All contained values must be representable in the 7-bit
-   * US-ASCII character set. Personal info; cleared by {@link ContactResource.Builder#wipeOut}.
+   * US-ASCII character set. Personal info; cleared by {@link Contact.Builder#wipeOut}.
    */
   @Ignore
   @Embedded
@@ -95,7 +95,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
 
   /**
    * Internationalized postal info for the contact. Personal info; cleared by {@link
-   * ContactResource.Builder#wipeOut}.
+   * Contact.Builder#wipeOut}.
    */
   @Ignore
   @Embedded
@@ -124,11 +124,11 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   /**
    * Contact name used for name searches. This is set automatically to be the internationalized
    * postal name, or if null, the localized postal name, or if that is null as well, null. Personal
-   * info; cleared by {@link ContactResource.Builder#wipeOut}.
+   * info; cleared by {@link Contact.Builder#wipeOut}.
    */
   @Index String searchName;
 
-  /** Contact’s voice number. Personal info; cleared by {@link ContactResource.Builder#wipeOut}. */
+  /** Contact’s voice number. Personal info; cleared by {@link Contact.Builder#wipeOut}. */
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
@@ -137,7 +137,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   })
   ContactPhoneNumber voice;
 
-  /** Contact’s fax number. Personal info; cleared by {@link ContactResource.Builder#wipeOut}. */
+  /** Contact’s fax number. Personal info; cleared by {@link Contact.Builder#wipeOut}. */
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
@@ -146,7 +146,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   })
   ContactPhoneNumber fax;
 
-  /** Contact’s email address. Personal info; cleared by {@link ContactResource.Builder#wipeOut}. */
+  /** Contact’s email address. Personal info; cleared by {@link Contact.Builder#wipeOut}. */
   @IgnoreSave(IfNull.class)
   String email;
 
@@ -188,7 +188,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   public VKey<? extends ContactBase> createVKey() {
     throw new UnsupportedOperationException(
         "ContactBase is not an actual persisted entity you can create a key to;"
-            + " use ContactResource instead");
+            + " use Contact instead");
   }
 
   @OnLoad
@@ -292,7 +292,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
     return new Builder<>(clone(this));
   }
 
-  /** A builder for constructing {@link ContactResource}, since it is immutable. */
+  /** A builder for constructing {@link Contact}, since it is immutable. */
   public static class Builder<T extends ContactBase, B extends Builder<T, B>>
       extends EppResource.Builder<T, B> implements BuilderWithTransferData<ContactTransferData, B> {
 

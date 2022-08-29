@@ -23,7 +23,7 @@ import static google.registry.request.Action.Method.HEAD;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Longs;
 import com.google.re2j.Pattern;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.VKey;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
@@ -69,14 +69,14 @@ public class RdapEntityAction extends RdapActionBase {
     // RDAP Technical Implementation Guide 2.3.1 - MUST support contact entity lookup using the
     // handle
     if (ROID_PATTERN.matcher(pathSearchString).matches()) {
-      VKey<ContactResource> contactVKey = VKey.create(ContactResource.class, pathSearchString);
-      Optional<ContactResource> contactResource =
+      VKey<Contact> contactVKey = VKey.create(Contact.class, pathSearchString);
+      Optional<Contact> contact =
           replicaJpaTm().transact(() -> replicaJpaTm().loadByKeyIfPresent(contactVKey));
       // As per Andy Newton on the regext mailing list, contacts by themselves have no role, since
       // they are global, and might have different roles for different domains.
-      if (contactResource.isPresent() && isAuthorized(contactResource.get())) {
+      if (contact.isPresent() && isAuthorized(contact.get())) {
         return rdapJsonFormatter.createRdapContactEntity(
-            contactResource.get(), ImmutableSet.of(), OutputDataType.FULL);
+            contact.get(), ImmutableSet.of(), OutputDataType.FULL);
       }
     }
 

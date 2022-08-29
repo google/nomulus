@@ -32,7 +32,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.eppinput.ResourceCommand.AbstractSingleResourceCommand;
 import google.registry.model.eppinput.ResourceCommand.ResourceCheck;
 import google.registry.model.eppinput.ResourceCommand.ResourceCreateOrChange;
@@ -80,7 +80,7 @@ public class DomainCommand {
     String registrantContactId;
 
     /** A resolved key to the registrant who registered this domain. */
-    @XmlTransient VKey<ContactResource> registrant;
+    @XmlTransient VKey<Contact> registrant;
 
     /** Authorization info (aka transfer secret) of the domain. */
     DomainAuthInfo authInfo;
@@ -90,7 +90,7 @@ public class DomainCommand {
     }
 
     @Nullable
-    public VKey<ContactResource> getRegistrant() {
+    public VKey<Contact> getRegistrant() {
       return registrant;
     }
 
@@ -391,7 +391,7 @@ public class DomainCommand {
                 ? null
                 : getOnlyElement(
                     loadByForeignKeysCached(
-                            ImmutableSet.of(clone.registrantContactId), ContactResource.class, now)
+                            ImmutableSet.of(clone.registrantContactId), Contact.class, now)
                         .values());
         return clone;
       }
@@ -431,8 +431,8 @@ public class DomainCommand {
     for (ForeignKeyedDesignatedContact contact : contacts) {
       foreignKeys.add(contact.contactId);
     }
-    ImmutableMap<String, VKey<ContactResource>> loadedContacts =
-        loadByForeignKeysCached(foreignKeys.build(), ContactResource.class, now);
+    ImmutableMap<String, VKey<Contact>> loadedContacts =
+        loadByForeignKeysCached(foreignKeys.build(), Contact.class, now);
     ImmutableSet.Builder<DesignatedContact> linkedContacts = new ImmutableSet.Builder<>();
     for (ForeignKeyedDesignatedContact contact : contacts) {
       linkedContacts.add(

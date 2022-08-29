@@ -33,9 +33,9 @@ import com.google.common.net.InetAddresses;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactPhoneNumber;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
@@ -247,7 +247,7 @@ public class DomainToXjcConverterTest {
                 ImmutableSet.of(
                     DesignatedContact.create(
                         DesignatedContact.Type.ADMIN,
-                        makeContactResource(
+                        makeContact(
                                 clock,
                                 "10-Q9JYB4C",
                                 "5372808-IRL",
@@ -256,7 +256,7 @@ public class DomainToXjcConverterTest {
                             .createVKey()),
                     DesignatedContact.create(
                         DesignatedContact.Type.TECH,
-                        makeContactResource(
+                        makeContact(
                                 clock,
                                 "11-Q9JYB4C",
                                 "5372808-TRL",
@@ -279,7 +279,7 @@ public class DomainToXjcConverterTest {
                     makeHost(clock, "4-Q9JYB4C", "ns2.cat.みんな", "bad:f00d:cafe::15:beef")
                         .createVKey()))
             .setRegistrant(
-                makeContactResource(
+                makeContact(
                         clock, "12-Q9JYB4C", "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")
                     .createVKey())
             .setRegistrationExpirationTime(DateTime.parse("1930-01-01T00:00:00Z"))
@@ -379,11 +379,11 @@ public class DomainToXjcConverterTest {
     return persistResource(domain);
   }
 
-  private static ContactResource makeContactResource(
+  private static Contact makeContact(
       FakeClock clock, String repoId, String id, String name, String email) {
     clock.advanceOneMilli();
     return persistEppResource(
-        new ContactResource.Builder()
+        new Contact.Builder()
             .setContactId(id)
             .setEmailAddress(email)
             .setPersistedCurrentSponsorRegistrarId("TheRegistrar")

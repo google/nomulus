@@ -33,8 +33,8 @@ import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppinput.ResourceCommand;
@@ -74,7 +74,7 @@ public final class ContactTransferApproveFlow implements TransactionalFlow {
 
   /**
    * The logic in this flow, which handles client approvals, very closely parallels the logic in
-   * {@link ContactResource#cloneProjectedAtTime} which handles implicit server approvals.
+   * {@link Contact#cloneProjectedAtTime} which handles implicit server approvals.
    */
   @Override
   public EppResponse run() throws EppException {
@@ -82,11 +82,11 @@ public final class ContactTransferApproveFlow implements TransactionalFlow {
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
-    ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
+    Contact existingContact = loadAndVerifyExistence(Contact.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, existingContact);
     verifyHasPendingTransfer(existingContact);
     verifyResourceOwnership(registrarId, existingContact);
-    ContactResource newContact =
+    Contact newContact =
         approvePendingTransfer(existingContact, TransferStatus.CLIENT_APPROVED, now);
     ContactHistory contactHistory =
         historyBuilder.setType(CONTACT_TRANSFER_APPROVE).setContact(newContact).build();

@@ -26,8 +26,8 @@ import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactCommand.Check;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CheckData.ContactCheck;
 import google.registry.model.eppoutput.CheckData.ContactCheckData;
@@ -62,7 +62,7 @@ public final class ContactCheckFlow implements Flow {
     ImmutableList<String> targetIds = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(targetIds, maxChecks);
     ImmutableSet<String> existingIds =
-        checkResourcesExist(ContactResource.class, targetIds, clock.nowUtc());
+        checkResourcesExist(Contact.class, targetIds, clock.nowUtc());
     ImmutableList.Builder<ContactCheck> checks = new ImmutableList.Builder<>();
     for (String id : targetIds) {
       boolean unused = !existingIds.contains(id);

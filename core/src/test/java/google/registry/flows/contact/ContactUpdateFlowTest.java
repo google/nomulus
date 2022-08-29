@@ -15,9 +15,9 @@
 package google.registry.flows.contact;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
+import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
-import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDeletedContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -37,15 +37,15 @@ import google.registry.flows.contact.ContactFlowUtils.BadInternationalizedPostal
 import google.registry.flows.contact.ContactFlowUtils.DeclineContactDisclosureFieldDisallowedPolicyException;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppcommon.StatusValue;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactUpdateFlow}. */
-class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, ContactResource> {
+class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Contact> {
 
   ContactUpdateFlowTest() {
     setEppInput("contact_update.xml");
@@ -56,7 +56,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
-    ContactResource contact = reloadResourceByForeignKey();
+    Contact contact = reloadResourceByForeignKey();
     // Check that the contact was updated. This value came from the xml.
     assertAboutContacts()
         .that(contact)
@@ -88,19 +88,22 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
 
   @Test
   void testSuccess_updatingInternationalizedPostalInfoDeletesLocalized() throws Exception {
-    ContactResource contact =
+    Contact contact =
         persistResource(
-            newContactResource(getUniqueIdFromCommand()).asBuilder()
-                .setLocalizedPostalInfo(new PostalInfo.Builder()
-                    .setType(Type.LOCALIZED)
-                    .setAddress(new ContactAddress.Builder()
-                        .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
-                        .setCity("New York")
-                        .setState("NY")
-                        .setZip("10011")
-                        .setCountryCode("US")
+            newContact(getUniqueIdFromCommand())
+                .asBuilder()
+                .setLocalizedPostalInfo(
+                    new PostalInfo.Builder()
+                        .setType(Type.LOCALIZED)
+                        .setAddress(
+                            new ContactAddress.Builder()
+                                .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
+                                .setCity("New York")
+                                .setState("NY")
+                                .setZip("10011")
+                                .setCountryCode("US")
+                                .build())
                         .build())
-                    .build())
                 .build());
     clock.advanceOneMilli();
     // The test xml updates the internationalized postal info and should therefore implicitly delete
@@ -127,19 +130,22 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
   @Test
   void testSuccess_updatingLocalizedPostalInfoDeletesInternationalized() throws Exception {
     setEppInput("contact_update_localized.xml");
-    ContactResource contact =
+    Contact contact =
         persistResource(
-            newContactResource(getUniqueIdFromCommand()).asBuilder()
-                .setInternationalizedPostalInfo(new PostalInfo.Builder()
-                    .setType(Type.INTERNATIONALIZED)
-                    .setAddress(new ContactAddress.Builder()
-                        .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
-                        .setCity("New York")
-                        .setState("NY")
-                        .setZip("10011")
-                        .setCountryCode("US")
+            newContact(getUniqueIdFromCommand())
+                .asBuilder()
+                .setInternationalizedPostalInfo(
+                    new PostalInfo.Builder()
+                        .setType(Type.INTERNATIONALIZED)
+                        .setAddress(
+                            new ContactAddress.Builder()
+                                .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
+                                .setCity("New York")
+                                .setState("NY")
+                                .setZip("10011")
+                                .setCountryCode("US")
+                                .build())
                         .build())
-                    .build())
                 .build());
     clock.advanceOneMilli();
     // The test xml updates the localized postal info and should therefore implicitly delete
@@ -167,19 +173,22 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
   void testSuccess_partialPostalInfoUpdate() throws Exception {
     setEppInput("contact_update_partial_postalinfo.xml");
     persistResource(
-        newContactResource(getUniqueIdFromCommand()).asBuilder()
-            .setLocalizedPostalInfo(new PostalInfo.Builder()
-                .setType(Type.LOCALIZED)
-                .setName("A. Person")
-                .setOrg("Company Inc.")
-                .setAddress(new ContactAddress.Builder()
-                    .setStreet(ImmutableList.of("123 4th st", "5th Floor"))
-                    .setCity("City")
-                    .setState("AB")
-                    .setZip("12345")
-                    .setCountryCode("US")
+        newContact(getUniqueIdFromCommand())
+            .asBuilder()
+            .setLocalizedPostalInfo(
+                new PostalInfo.Builder()
+                    .setType(Type.LOCALIZED)
+                    .setName("A. Person")
+                    .setOrg("Company Inc.")
+                    .setAddress(
+                        new ContactAddress.Builder()
+                            .setStreet(ImmutableList.of("123 4th st", "5th Floor"))
+                            .setCity("City")
+                            .setState("AB")
+                            .setZip("12345")
+                            .setCountryCode("US")
+                            .build())
                     .build())
-                .build())
             .build());
     clock.advanceOneMilli();
     // The test xml updates the address of the postal info and should leave the name untouched.
@@ -203,32 +212,37 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
   void testSuccess_updateOnePostalInfo_touchOtherPostalInfoPreservesIt() throws Exception {
     setEppInput("contact_update_partial_postalinfo_preserve_int.xml");
     persistResource(
-        newContactResource(getUniqueIdFromCommand()).asBuilder()
-        .setLocalizedPostalInfo(new PostalInfo.Builder()
-            .setType(Type.LOCALIZED)
-            .setName("A. Person")
-            .setOrg("Company Inc.")
-            .setAddress(new ContactAddress.Builder()
-                .setStreet(ImmutableList.of("123 4th st", "5th Floor"))
-                .setCity("City")
-                .setState("AB")
-                .setZip("12345")
-                .setCountryCode("US")
-                .build())
-            .build())
-        .setInternationalizedPostalInfo(new PostalInfo.Builder()
-            .setType(Type.INTERNATIONALIZED)
-            .setName("B. Person")
-            .setOrg("Company Co.")
-            .setAddress(new ContactAddress.Builder()
-                .setStreet(ImmutableList.of("100 200th Dr.", "6th Floor"))
-                .setCity("Town")
-                .setState("CD")
-                .setZip("67890")
-                .setCountryCode("US")
-                .build())
-            .build())
-        .build());
+        newContact(getUniqueIdFromCommand())
+            .asBuilder()
+            .setLocalizedPostalInfo(
+                new PostalInfo.Builder()
+                    .setType(Type.LOCALIZED)
+                    .setName("A. Person")
+                    .setOrg("Company Inc.")
+                    .setAddress(
+                        new ContactAddress.Builder()
+                            .setStreet(ImmutableList.of("123 4th st", "5th Floor"))
+                            .setCity("City")
+                            .setState("AB")
+                            .setZip("12345")
+                            .setCountryCode("US")
+                            .build())
+                    .build())
+            .setInternationalizedPostalInfo(
+                new PostalInfo.Builder()
+                    .setType(Type.INTERNATIONALIZED)
+                    .setName("B. Person")
+                    .setOrg("Company Co.")
+                    .setAddress(
+                        new ContactAddress.Builder()
+                            .setStreet(ImmutableList.of("100 200th Dr.", "6th Floor"))
+                            .setCity("Town")
+                            .setState("CD")
+                            .setZip("67890")
+                            .setCountryCode("US")
+                            .build())
+                    .build())
+            .build());
     clock.advanceOneMilli();
     // The test xml updates the address of the localized postal info. It also sets the name of the
     // internationalized postal info to the same value it previously had, which causes it to be
@@ -320,7 +334,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
   void testSuccess_clientUpdateProhibited_removed() throws Exception {
     setEppInput("contact_update_remove_client_update_prohibited.xml");
     persistResource(
-        newContactResource(getUniqueIdFromCommand())
+        newContact(getUniqueIdFromCommand())
             .asBuilder()
             .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_UPDATE_PROHIBITED))
             .build());
@@ -334,7 +348,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
   void testSuccess_superuserClientUpdateProhibited_notRemoved() throws Exception {
     setEppInput("contact_update_prohibited_status.xml");
     persistResource(
-        newContactResource(getUniqueIdFromCommand())
+        newContact(getUniqueIdFromCommand())
             .asBuilder()
             .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_UPDATE_PROHIBITED))
             .build());
@@ -351,7 +365,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
   @Test
   void testFailure_clientUpdateProhibited_notRemoved() throws Exception {
     persistResource(
-        newContactResource(getUniqueIdFromCommand())
+        newContact(getUniqueIdFromCommand())
             .asBuilder()
             .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_UPDATE_PROHIBITED))
             .build());
@@ -363,7 +377,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
   @Test
   void testFailure_serverUpdateProhibited() throws Exception {
     persistResource(
-        newContactResource(getUniqueIdFromCommand())
+        newContact(getUniqueIdFromCommand())
             .asBuilder()
             .setStatusValues(ImmutableSet.of(StatusValue.SERVER_UPDATE_PROHIBITED))
             .build());
@@ -376,7 +390,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
   @Test
   void testFailure_pendingDeleteProhibited() throws Exception {
     persistResource(
-        newContactResource(getUniqueIdFromCommand())
+        newContact(getUniqueIdFromCommand())
             .asBuilder()
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .build());

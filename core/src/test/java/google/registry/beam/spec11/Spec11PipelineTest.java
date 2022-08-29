@@ -37,7 +37,7 @@ import com.google.common.truth.Correspondence.BinaryPredicate;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.beam.spec11.SafeBrowsingTransformsTest.HttpResponder;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
@@ -258,9 +258,9 @@ class Spec11PipelineTest {
     createTld("bank");
     createTld("dev");
 
-    ContactResource contact1 = persistActiveContact(registrar1.getRegistrarId());
-    ContactResource contact2 = persistActiveContact(registrar2.getRegistrarId());
-    ContactResource contact3 = persistActiveContact(registrar3.getRegistrarId());
+    Contact contact1 = persistActiveContact(registrar1.getRegistrarId());
+    Contact contact2 = persistActiveContact(registrar2.getRegistrarId());
+    Contact contact3 = persistActiveContact(registrar3.getRegistrarId());
 
     persistResource(createDomain("111.com", "123456789-COM", registrar1, contact1));
     persistResource(createDomain("party-night.net", "2244AABBC-NET", registrar2, contact2));
@@ -297,7 +297,7 @@ class Spec11PipelineTest {
   }
 
   private Domain createDomain(
-      String domainName, String repoId, Registrar registrar, ContactResource contact) {
+      String domainName, String repoId, Registrar registrar, Contact contact) {
     return new Domain.Builder()
         .setDomainName(domainName)
         .setRepoId(repoId)

@@ -17,7 +17,7 @@ package google.registry.beam.common;
 import static com.google.common.base.Verify.verify;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import java.io.Serializable;
@@ -46,8 +46,7 @@ public class JpaDemoPipeline implements Serializable {
         .apply(
             "Read contacts",
             RegistryJpaIO.read(
-                () -> CriteriaQueryBuilder.create(ContactResource.class).build(),
-                ContactResource::getRepoId))
+                () -> CriteriaQueryBuilder.create(Contact.class).build(), Contact::getRepoId))
         .apply(
             "Count Contacts",
             ParDo.of(

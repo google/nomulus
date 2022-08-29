@@ -19,16 +19,16 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
+import static google.registry.testing.DatabaseHelper.newContactWithRoid;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.EntityTestCase;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactPhoneNumber;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
@@ -44,9 +44,9 @@ public class ContactHistoryTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
-    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+    Contact contact = newContactWithRoid("contactId", "contact1");
     insertInDb(contact);
-    ContactResource contactFromDb = loadByEntity(contact);
+    Contact contactFromDb = loadByEntity(contact);
     ContactHistory contactHistory = createContactHistory(contactFromDb);
     insertInDb(contactHistory);
     jpaTm()
@@ -60,9 +60,9 @@ public class ContactHistoryTest extends EntityTestCase {
 
   @Test
   void testSerializable() {
-    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+    Contact contact = newContactWithRoid("contactId", "contact1");
     insertInDb(contact);
-    ContactResource contactFromDb = loadByEntity(contact);
+    Contact contactFromDb = loadByEntity(contact);
     ContactHistory contactHistory = createContactHistory(contactFromDb);
     insertInDb(contactHistory);
     ContactHistory fromDatabase =
@@ -72,9 +72,9 @@ public class ContactHistoryTest extends EntityTestCase {
 
   @Test
   void testLegacyPersistence_nullContactBase() {
-    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+    Contact contact = newContactWithRoid("contactId", "contact1");
     insertInDb(contact);
-    ContactResource contactFromDb = loadByEntity(contact);
+    Contact contactFromDb = loadByEntity(contact);
     ContactHistory contactHistory =
         createContactHistory(contactFromDb).asBuilder().setContact(null).build();
     insertInDb(contactHistory);
@@ -92,7 +92,7 @@ public class ContactHistoryTest extends EntityTestCase {
   void testWipeOutPii_assertsAllPiiFieldsAreNull() {
     ContactHistory originalEntity =
         createContactHistory(
-            new ContactResource.Builder()
+            new Contact.Builder()
                 .setRepoId("1-FOOBAR")
                 .setLocalizedPostalInfo(
                     new PostalInfo.Builder()

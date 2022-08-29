@@ -28,7 +28,7 @@ import com.google.common.collect.Streams;
 import com.google.common.primitives.Booleans;
 import com.google.common.primitives.Longs;
 import com.googlecode.objectify.cmd.Query;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
@@ -253,7 +253,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
     // see any names anyway. Also, if a registrar cursor is present, we have already moved past the
     // contacts, and don't need to fetch them this time. We can skip contacts if subtype is
     // REGISTRARS.
-    RdapResultSet<ContactResource> resultSet;
+    RdapResultSet<Contact> resultSet;
     if (subtype == Subtype.REGISTRARS) {
       resultSet = RdapResultSet.create(ImmutableList.of());
     } else {
@@ -262,9 +262,9 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
         resultSet = RdapResultSet.create(ImmutableList.of());
       } else {
         if (tm().isOfy()) {
-          Query<ContactResource> query =
+          Query<Contact> query =
               queryItems(
-                  ContactResource.class,
+                  Contact.class,
                   "searchName",
                   partialStringQuery,
                   cursorQueryString, // if we get here and there's a cursor, it must be a contact
@@ -279,9 +279,9 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
               replicaJpaTm()
                   .transact(
                       () -> {
-                        CriteriaQueryBuilder<ContactResource> builder =
+                        CriteriaQueryBuilder<Contact> builder =
                             queryItemsSql(
-                                ContactResource.class,
+                                Contact.class,
                                 "searchName",
                                 partialStringQuery,
                                 cursorQueryString,
@@ -319,21 +319,20 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
     }
     // Handle queries without a wildcard (and not including deleted) -- load by ID.
     if (!partialStringQuery.getHasWildcard() && !shouldIncludeDeleted()) {
-      ImmutableList<ContactResource> contactResourceList;
+      ImmutableList<Contact> contactList;
       if (subtype == Subtype.REGISTRARS) {
-        contactResourceList = ImmutableList.of();
+        contactList = ImmutableList.of();
       } else {
-        Optional<ContactResource> contactResource =
+        Optional<Contact> contact =
             replicaJpaTm()
                 .transact(
                     () ->
                         replicaJpaTm()
                             .loadByKeyIfPresent(
-                                VKey.create(
-                                    ContactResource.class, partialStringQuery.getInitialString())));
-        contactResourceList =
-            (contactResource.isPresent() && shouldBeVisible(contactResource.get()))
-                ? ImmutableList.of(contactResource.get())
+                                VKey.create(Contact.class, partialStringQuery.getInitialString())));
+        contactList =
+            (contact.isPresent() && shouldBeVisible(contact.get()))
+                ? ImmutableList.of(contact.get())
                 : ImmutableList.of();
       }
       ImmutableList<Registrar> registrarList;
@@ -343,9 +342,9 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
         registrarList = getMatchingRegistrars(partialStringQuery.getInitialString());
       }
       return makeSearchResults(
-          contactResourceList,
+          contactList,
           IncompletenessWarningType.COMPLETE,
-          contactResourceList.size(),
+          contactList.size(),
           registrarList,
           QueryType.HANDLE);
     // Handle queries with a wildcard (or including deleted), but no suffix. Because the handle
@@ -383,7 +382,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
       // get excluded due to permissioning. Any cursor present must be a contact cursor, because we
       // would never return a registrar for this search.
       int querySizeLimit = getStandardQuerySizeLimit();
-      RdapResultSet<ContactResource> contactResultSet;
+      RdapResultSet<Contact> contactResultSet;
       if (subtype == Subtype.REGISTRARS) {
         contactResultSet = RdapResultSet.create(ImmutableList.of());
       } else {
@@ -391,7 +390,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
           contactResultSet =
               getMatchingResources(
                   queryItemsByKey(
-                      ContactResource.class,
+                      Contact.class,
                       partialStringQuery,
                       cursorQueryString,
                       getDeletedItemHandling(),
@@ -405,7 +404,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
                       () ->
                           getMatchingResourcesSql(
                               queryItemsByKeySql(
-                                  ContactResource.class,
+                                  Contact.class,
                                   partialStringQuery,
                                   cursorQueryString,
                                   getDeletedItemHandling()),
@@ -436,7 +435,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
    * properties of the {@link RdapResultSet} structure and passes them as separate arguments.
    */
   private EntitySearchResponse makeSearchResults(
-      RdapResultSet<ContactResource> resultSet, List<Registrar> registrars, QueryType queryType) {
+      RdapResultSet<Contact> resultSet, List<Registrar> registrars, QueryType queryType) {
     return makeSearchResults(
         resultSet.resources(),
         resultSet.incompletenessWarningType(),
@@ -461,7 +460,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
    * @return an {@link RdapSearchResults} object
    */
   private EntitySearchResponse makeSearchResults(
-      List<ContactResource> contacts,
+      List<Contact> contacts,
       IncompletenessWarningType incompletenessWarningType,
       int numContactsRetrieved,
       List<Registrar> registrars,
@@ -485,7 +484,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
         EntitySearchResponse.builder()
             .setIncompletenessWarningType(incompletenessWarningType);
     Optional<String> newCursor = Optional.empty();
-    for (ContactResource contact : Iterables.limit(contacts, rdapResultSetMaxSize)) {
+    for (Contact contact : Iterables.limit(contacts, rdapResultSetMaxSize)) {
       // As per Andy Newton on the regext mailing list, contacts by themselves have no role, since
       // they are global, and might have different roles for different domains.
       builder

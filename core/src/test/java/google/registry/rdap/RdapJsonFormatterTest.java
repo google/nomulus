@@ -20,7 +20,6 @@ import static google.registry.rdap.RdapTestHelper.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistContactResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHost;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
@@ -34,7 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
@@ -50,6 +49,7 @@ import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.rdap.RdapObjectClasses.TopLevelReplyObject;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
+import google.registry.testing.FullFieldsTestEntityHelper;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,10 +74,10 @@ class RdapJsonFormatterTest {
   private Host hostNoAddresses;
   private Host hostNotLinked;
   private Host hostSuperordinatePendingTransfer;
-  private ContactResource contactResourceRegistrant;
-  private ContactResource contactResourceAdmin;
-  private ContactResource contactResourceTech;
-  private ContactResource contactResourceNotLinked;
+  private Contact contactRegistrant;
+  private Contact contactAdmin;
+  private Contact contactTech;
+  private Contact contactNotLinked;
 
   @BeforeEach
   void beforeEach() {
@@ -94,34 +94,33 @@ class RdapJsonFormatterTest {
 
     persistSimpleResources(makeMoreRegistrarContacts(registrar));
 
-    contactResourceRegistrant = makeAndPersistContactResource(
-        "8372808-ERL",
-        "(◕‿◕)",
-        "lol@cat.みんな",
-        null,
-        clock.nowUtc().minusYears(1),
-        registrar);
-    contactResourceAdmin = makeAndPersistContactResource(
-        "8372808-IRL",
-        "Santa Claus",
-        null,
-        ImmutableList.of("Santa Claus Tower", "41st floor", "Suite みんな"),
-        clock.nowUtc().minusYears(2),
-        registrar);
-    contactResourceTech = makeAndPersistContactResource(
-        "8372808-TRL",
-        "The Raven",
-        "bog@cat.みんな",
-        ImmutableList.of("Chamber Door", "upper level"),
-        clock.nowUtc().minusYears(3),
-        registrar);
-    contactResourceNotLinked = makeAndPersistContactResource(
-        "8372808-QRL",
-        "The Wizard",
-        "dog@cat.みんな",
-        ImmutableList.of("Somewhere", "Over the Rainbow"),
-        clock.nowUtc().minusYears(4),
-        registrar);
+    contactRegistrant =
+        FullFieldsTestEntityHelper.makeAndPersistContact(
+            "8372808-ERL", "(◕‿◕)", "lol@cat.みんな", null, clock.nowUtc().minusYears(1), registrar);
+    contactAdmin =
+        FullFieldsTestEntityHelper.makeAndPersistContact(
+            "8372808-IRL",
+            "Santa Claus",
+            null,
+            ImmutableList.of("Santa Claus Tower", "41st floor", "Suite みんな"),
+            clock.nowUtc().minusYears(2),
+            registrar);
+    contactTech =
+        FullFieldsTestEntityHelper.makeAndPersistContact(
+            "8372808-TRL",
+            "The Raven",
+            "bog@cat.みんな",
+            ImmutableList.of("Chamber Door", "upper level"),
+            clock.nowUtc().minusYears(3),
+            registrar);
+    contactNotLinked =
+        FullFieldsTestEntityHelper.makeAndPersistContact(
+            "8372808-QRL",
+            "The Wizard",
+            "dog@cat.みんな",
+            ImmutableList.of("Somewhere", "Over the Rainbow"),
+            clock.nowUtc().minusYears(4),
+            registrar);
     hostIpv4 =
         makeAndPersistHost(
             "ns1.cat.みんな", "1.2.3.4", null, clock.nowUtc().minusYears(1), "unicoderegistrar");
@@ -154,9 +153,9 @@ class RdapJsonFormatterTest {
                     persistResource(
                             makeDomain(
                                     "dog.みんな",
-                                    contactResourceRegistrant,
-                                    contactResourceAdmin,
-                                    contactResourceTech,
+                                    contactRegistrant,
+                                    contactAdmin,
+                                    contactTech,
                                     null,
                                     null,
                                     registrar)
@@ -180,9 +179,9 @@ class RdapJsonFormatterTest {
         persistResource(
             makeDomain(
                     "cat.みんな",
-                    contactResourceRegistrant,
-                    contactResourceAdmin,
-                    contactResourceTech,
+                    contactRegistrant,
+                    contactAdmin,
+                    contactTech,
                     hostIpv4,
                     hostIpv6,
                     registrar)
@@ -194,9 +193,9 @@ class RdapJsonFormatterTest {
         persistResource(
             makeDomain(
                     "fish.みんな",
-                    contactResourceRegistrant,
-                    contactResourceRegistrant,
-                    contactResourceRegistrant,
+                    contactRegistrant,
+                    contactRegistrant,
+                    contactRegistrant,
                     null,
                     null,
                     registrar)
@@ -209,9 +208,9 @@ class RdapJsonFormatterTest {
     persistResource(
         makeDomain(
             "dog.みんな",
-            contactResourceRegistrant,
-            contactResourceAdmin,
-            contactResourceTech,
+            contactRegistrant,
+            contactAdmin,
+            contactTech,
             hostBoth,
             hostNoAddresses,
             registrar));
@@ -360,7 +359,7 @@ class RdapJsonFormatterTest {
     assertThat(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    contactResourceRegistrant,
+                    contactRegistrant,
                     ImmutableSet.of(RdapEntity.Role.REGISTRANT),
                     OutputDataType.FULL)
                 .toJson())
@@ -372,7 +371,7 @@ class RdapJsonFormatterTest {
     assertThat(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    contactResourceRegistrant,
+                    contactRegistrant,
                     ImmutableSet.of(RdapEntity.Role.REGISTRANT),
                     OutputDataType.SUMMARY)
                 .toJson())
@@ -385,7 +384,7 @@ class RdapJsonFormatterTest {
     assertThat(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    contactResourceRegistrant,
+                    contactRegistrant,
                     ImmutableSet.of(RdapEntity.Role.REGISTRANT),
                     OutputDataType.FULL)
                 .toJson())
@@ -404,7 +403,7 @@ class RdapJsonFormatterTest {
     assertThat(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    contactResourceRegistrant,
+                    contactRegistrant,
                     ImmutableSet.of(RdapEntity.Role.REGISTRANT),
                     OutputDataType.FULL)
                 .toJson())
@@ -416,9 +415,7 @@ class RdapJsonFormatterTest {
     assertThat(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    contactResourceAdmin,
-                    ImmutableSet.of(RdapEntity.Role.ADMIN),
-                    OutputDataType.FULL)
+                    contactAdmin, ImmutableSet.of(RdapEntity.Role.ADMIN), OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_admincontact.json"));
   }
@@ -428,7 +425,7 @@ class RdapJsonFormatterTest {
     assertThat(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    contactResourceTech, ImmutableSet.of(RdapEntity.Role.TECH), OutputDataType.FULL)
+                    contactTech, ImmutableSet.of(RdapEntity.Role.TECH), OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_techcontact.json"));
   }
@@ -437,8 +434,7 @@ class RdapJsonFormatterTest {
   void testRolelessContact() {
     assertThat(
             rdapJsonFormatter
-                .createRdapContactEntity(
-                    contactResourceTech, ImmutableSet.of(), OutputDataType.FULL)
+                .createRdapContactEntity(contactTech, ImmutableSet.of(), OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_rolelesscontact.json"));
   }
@@ -447,8 +443,7 @@ class RdapJsonFormatterTest {
   void testUnlinkedContact() {
     assertThat(
             rdapJsonFormatter
-                .createRdapContactEntity(
-                    contactResourceNotLinked, ImmutableSet.of(), OutputDataType.FULL)
+                .createRdapContactEntity(contactNotLinked, ImmutableSet.of(), OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_unlinkedcontact.json"));
   }

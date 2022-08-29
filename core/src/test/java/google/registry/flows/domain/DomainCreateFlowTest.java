@@ -43,7 +43,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.deleteTld;
 import static google.registry.testing.DatabaseHelper.getHistoryEntries;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -1723,8 +1723,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistActiveHost("ns1.example.net");
     persistActiveHost("ns2.example.net");
     persistActiveContact("sh8013");
-    persistResource(
-        newContactResource("jd1234").asBuilder().addStatusValue(PENDING_DELETE).build());
+    persistResource(newContact("jd1234").asBuilder().addStatusValue(PENDING_DELETE).build());
     clock.advanceOneMilli();
     LinkedResourceInPendingDeleteProhibitsOperationException thrown =
         assertThrows(LinkedResourceInPendingDeleteProhibitsOperationException.class, this::runFlow);

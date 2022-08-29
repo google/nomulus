@@ -27,8 +27,8 @@ import com.google.common.collect.ImmutableList;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowTestCase;
 import google.registry.flows.poll.PollRequestFlow.UnexpectedMessageIdException;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
@@ -48,7 +48,7 @@ import org.junit.jupiter.api.Test;
 class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
 
   private Domain domain;
-  private ContactResource contact;
+  private Contact contact;
   private Host host;
 
   @BeforeEach

@@ -16,9 +16,9 @@ package google.registry.rde;
 
 import static google.registry.util.XmlEnumUtils.enumToXml;
 
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactPhoneNumber;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.Disclose;
 import google.registry.model.contact.Disclose.PostalInfoChoice;
 import google.registry.model.contact.PostalInfo;
@@ -39,16 +39,16 @@ import google.registry.xjc.rdecontact.XjcRdeContactTransferDataType;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 
-/** Utility class that turns {@link ContactResource} as {@link XjcRdeContactElement}. */
-final class ContactResourceToXjcConverter {
+/** Utility class that turns {@link Contact} as {@link XjcRdeContactElement}. */
+final class ContactToXjcConverter {
 
-  /** Converts {@link ContactResource} to {@link XjcRdeContactElement}. */
-  static XjcRdeContactElement convert(ContactResource host) {
+  /** Converts {@link Contact} to {@link XjcRdeContactElement}. */
+  static XjcRdeContactElement convert(Contact host) {
     return new XjcRdeContactElement(convertContact(host));
   }
 
-  /** Converts {@link ContactResource} to {@link XjcRdeContact}. */
-  static XjcRdeContact convertContact(ContactResource model) {
+  /** Converts {@link Contact} to {@link XjcRdeContact}. */
+  static XjcRdeContact convertContact(Contact model) {
     XjcRdeContact bean = new XjcRdeContact();
     bean.setRoid(model.getRepoId());
     for (StatusValue status : model.getStatusValues()) {
@@ -188,5 +188,5 @@ final class ContactResourceToXjcConverter {
     return bean;
   }
 
-  private ContactResourceToXjcConverter() {}
+  private ContactToXjcConverter() {}
 }
