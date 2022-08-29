@@ -15,8 +15,8 @@
 package google.registry.model.console;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
@@ -30,32 +30,6 @@ public class UserTest extends EntityTestCase {
   }
 
   @Test
-  void testPersistence_lookupByEmail() {
-    User user =
-        new User.Builder()
-            .setGaiaId("gaiaId")
-            .setEmailAddress("email@email.com")
-            .setUserRoles(
-                new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(true).build())
-            .build();
-    persistResource(user);
-    jpaTm()
-        .transact(
-            () -> {
-              assertThat(
-                      jpaTm()
-                          .query("FROM User WHERE emailAddress = 'email@email.com'", User.class)
-                          .getSingleResult())
-                  .isEqualTo(user);
-              assertThat(
-                      jpaTm()
-                          .query("FROM User WHERE emailAddress = 'bad@fake.com'", User.class)
-                          .getResultList())
-                  .isEmpty();
-            });
-  }
-
-  @Test
   void testPersistence_lookupByGaiaId() {
     User user =
         new User.Builder()
@@ -64,15 +38,16 @@ public class UserTest extends EntityTestCase {
             .setUserRoles(
                 new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(true).build())
             .build();
-    persistResource(user);
+    jpaTm().transact(() -> jpaTm().put(user));
     jpaTm()
         .transact(
             () -> {
-              assertThat(
+              assertAboutImmutableObjects()
+                  .that(
                       jpaTm()
                           .query("FROM User WHERE gaiaId = 'gaiaId'", User.class)
                           .getSingleResult())
-                  .isEqualTo(user);
+                  .isEqualExceptFields(user, "id", "updateTimestamp");
               assertThat(
                       jpaTm()
                           .query("FROM User WHERE gaiaId = 'badGaiaId'", User.class)
