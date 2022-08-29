@@ -13,8 +13,9 @@
 // limitations under the License.
 
 @XmlSchema(
-    namespace = "urn:ietf:params:xml:ns:packageToken",
-    xmlns = @XmlNs(prefix = "packageToken", namespaceURI = "urn:ietf:params:xml:ns:packageToken"),
+    namespace = "urn:google:params:xml:ns:packageToken-1.0",
+    xmlns =
+        @XmlNs(prefix = "packageToken", namespaceURI = "urn:google:params:xml:ns:packageToken-1.0"),
     elementFormDefault = XmlNsForm.QUALIFIED)
 @XmlAccessorType(XmlAccessType.FIELD)
 package google.registry.model.domain.packagetoken;

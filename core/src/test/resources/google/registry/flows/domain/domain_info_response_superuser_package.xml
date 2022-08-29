@@ -1,0 +1,26 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:infData
+          xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>example.tld</domain:name>
+        <domain:roid>%ROID%</domain:roid>
+        <domain:registrant>jd1234</domain:registrant>
+        <domain:clID>NewRegistrar</domain:clID>
+      </domain:infData>
+    </resData>
+    <extension>
+      <packageToken:packageData xmlns:packageToken=
+          "urn:google:params:xml:ns:packageToken-1.0">
+        <packageToken:token>abc123</packageToken:token>
+      </packageToken:packageData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>

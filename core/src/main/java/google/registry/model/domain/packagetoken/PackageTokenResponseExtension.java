@@ -14,17 +14,13 @@
 
 package google.registry.model.domain.packagetoken;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
 import google.registry.persistence.VKey;
 import google.registry.xml.TrimWhitespaceAdapter;
 import java.util.Optional;
-import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
@@ -32,11 +28,9 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * to EPP domain info commands.
  */
 @XmlRootElement(name = "packageData")
-@XmlType(propOrder = {"token"})
 public class PackageTokenResponseExtension extends ImmutableObject implements ResponseExtension {
 
   /** Token string of the PACKAGE token the name belongs to. */
-  @XmlElement(name = "token")
   @XmlJavaTypeAdapter(TrimWhitespaceAdapter.class)
   String token;
 
@@ -44,7 +38,7 @@ public class PackageTokenResponseExtension extends ImmutableObject implements Re
     PackageTokenResponseExtension instance = new PackageTokenResponseExtension();
     instance.token = "";
     if (tokenKey.isPresent()) {
-      instance.token = tm().transact(() -> tm().loadByKey(tokenKey.get())).getToken();
+      instance.token = tokenKey.get().getSqlKey().toString();
     }
     return instance;
   }

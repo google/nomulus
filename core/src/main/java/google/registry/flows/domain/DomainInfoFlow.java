@@ -30,6 +30,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
+import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.custom.DomainInfoFlowCustomLogic;
@@ -87,6 +88,7 @@ public final class DomainInfoFlow implements Flow {
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainInfoFlowCustomLogic flowCustomLogic;
   @Inject DomainPricingLogic pricingLogic;
+  @Inject @Superuser boolean isSuperuser;
 
   @Inject
   DomainInfoFlow() {}
@@ -156,8 +158,8 @@ public final class DomainInfoFlow implements Flow {
         eppInput.getSingleExtension(PackageTokenExtension.class);
     if (packageInfo.isPresent()) {
       // Package info was requested.
-      if (registrarId.equals(domain.getCurrentSponsorRegistrarId())) {
-        // Only show package info to owning registrar
+      if (isSuperuser || registrarId.equals(domain.getCurrentSponsorRegistrarId())) {
+        // Only show package info to owning registrar or superusers
         extensions.add(PackageTokenResponseExtension.create(domain.getCurrentPackageToken()));
       }
     }

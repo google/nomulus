@@ -33,7 +33,7 @@
     </resData>
     <extension>
       <packageToken:packageData xmlns:packageToken=
-          "urn:ietf:params:xml:ns:packageToken">
+          "urn:google:params:xml:ns:packageToken-1.0">
         <packageToken:token></packageToken:token>
       </packageToken:packageData>
     </extension>

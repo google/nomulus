@@ -9,7 +9,7 @@
     <extension>
       <packageToken:info
           xmlns:packageToken=
-              "urn:ietf:params:xml:ns:packageToken" />
+              "urn:google:params:xml:ns:packageToken-1.0" />
     </extension>
     <clTRID>ABC-12345</clTRID>
   </command>

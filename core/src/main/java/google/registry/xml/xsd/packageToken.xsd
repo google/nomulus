@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<schema targetNamespace="urn:ietf:params:xml:ns:packageToken"
-    xmlns:packageToken="urn:ietf:params:xml:ns:packageToken"
+<schema targetNamespace="urn:google:params:xml:ns:packageToken-1.0"
+    xmlns:packageToken="urn:google:params:xml:ns:packageToken-1.0"
     xmlns="http://www.w3.org/2001/XMLSchema"
     elementFormDefault="qualified">
 

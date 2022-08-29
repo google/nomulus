@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
 import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -31,6 +32,8 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static google.registry.testing.TestDataHelper.updateSubstitutions;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.xml.XmlTestUtils.assertXmlEquals;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -66,12 +69,14 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
+import google.registry.xml.ValidationMode;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
@@ -1096,6 +1101,32 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     persistResource(domain);
     setEppInput("domain_info_package.xml");
     doSuccessfulTest("domain_info_response_package.xml", false);
+  }
+
+  @Test
+  void testPackageInfoExtension_returnsPackageInfoForSuperUser() throws Exception {
+    persistTestEntities(false);
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(TokenType.PACKAGE)
+                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setAllowedTlds(ImmutableSet.of("foo"))
+                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
+                .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setDiscountFraction(1)
+                .build());
+    domain = domain.asBuilder().setCurrentPackageToken(token.createVKey()).build();
+    persistResource(domain);
+    sessionMetadata.setRegistrarId("TheRegistrar");
+    setEppInput("domain_info_package.xml");
+    EppOutput output = runFlowAsSuperuser();
+    String expectedOutput =
+        loadFile(
+            "domain_info_response_superuser_package.xml",
+            updateSubstitutions(ImmutableMap.of(), "ROID", "2FF-TLD"));
+    assertXmlEquals(expectedOutput, new String(marshal(output, ValidationMode.LENIENT), UTF_8));
   }
 
   @Test
