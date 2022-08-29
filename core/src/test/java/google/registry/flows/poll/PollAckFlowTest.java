@@ -28,7 +28,7 @@ import google.registry.flows.poll.PollAckFlow.InvalidMessageIdException;
 import google.registry.flows.poll.PollAckFlow.MessageDoesNotExistException;
 import google.registry.flows.poll.PollAckFlow.MissingMessageIdException;
 import google.registry.flows.poll.PollAckFlow.NotAuthorizedToAckMessageException;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.poll.PollMessage;
 import google.registry.testing.DatabaseHelper;
@@ -43,7 +43,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   private static final long MESSAGE_ID = 3;
 
   private Domain domain;
-  private ContactResource contact;
+  private Contact contact;
 
   @BeforeEach
   void setUp() {
@@ -116,7 +116,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   }
 
   @Test
-  void testSuccess_messageOnContactResource() throws Exception {
+  void testSuccess_messageOnContact() throws Exception {
     persistOneTimePollMessage(MESSAGE_ID);
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("poll_ack_response_empty.xml"));

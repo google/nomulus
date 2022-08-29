@@ -19,7 +19,7 @@ import static google.registry.model.domain.DesignatedContact.Type.BILLING;
 import static google.registry.model.domain.DesignatedContact.Type.TECH;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -28,8 +28,8 @@ import static org.joda.money.CurrencyUnit.USD;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.OteStatsTestHelper;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.testing.DatabaseHelper;
@@ -59,56 +59,69 @@ public enum Fixture {
         throw new RuntimeException(e);
       }
 
-      ContactResource google = persistResource(newContactResource("google")
-          .asBuilder()
-          .setLocalizedPostalInfo(new PostalInfo.Builder()
-              .setType(PostalInfo.Type.LOCALIZED)
-              .setName("Mr. Google")
-              .setOrg("Google Inc.")
-              .setAddress(new ContactAddress.Builder()
-                  .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
-                  .setCity("New York")
-                  .setState("NY")
-                  .setZip("10011")
-                  .setCountryCode("US")
-                  .build())
-              .build())
-            .build());
+      Contact google =
+          persistResource(
+              newContact("google")
+                  .asBuilder()
+                  .setLocalizedPostalInfo(
+                      new PostalInfo.Builder()
+                          .setType(PostalInfo.Type.LOCALIZED)
+                          .setName("Mr. Google")
+                          .setOrg("Google Inc.")
+                          .setAddress(
+                              new ContactAddress.Builder()
+                                  .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
+                                  .setCity("New York")
+                                  .setState("NY")
+                                  .setZip("10011")
+                                  .setCountryCode("US")
+                                  .build())
+                          .build())
+                  .build());
 
-      ContactResource justine = persistResource(newContactResource("justine")
-          .asBuilder()
-          .setLocalizedPostalInfo(new PostalInfo.Builder()
-              .setType(PostalInfo.Type.LOCALIZED)
-              .setName("Justine Bean")
-              .setOrg("(✿◕ ‿◕ )ノ Incorporated")
-              .setAddress(new ContactAddress.Builder()
-                  .setStreet(ImmutableList.of("123 Fake St."))
-                  .setCity("Stratford")
-                  .setState("CT")
-                  .setZip("06615")
-                  .setCountryCode("US")
-                  .build())
-              .build())
-            .build());
+      Contact justine =
+          persistResource(
+              newContact("justine")
+                  .asBuilder()
+                  .setLocalizedPostalInfo(
+                      new PostalInfo.Builder()
+                          .setType(PostalInfo.Type.LOCALIZED)
+                          .setName("Justine Bean")
+                          .setOrg("(✿◕ ‿◕ )ノ Incorporated")
+                          .setAddress(
+                              new ContactAddress.Builder()
+                                  .setStreet(ImmutableList.of("123 Fake St."))
+                                  .setCity("Stratford")
+                                  .setState("CT")
+                                  .setZip("06615")
+                                  .setCountryCode("US")
+                                  .build())
+                          .build())
+                  .build());
 
-      ContactResource robert = persistResource(newContactResource("robert")
-          .asBuilder()
-          .setLocalizedPostalInfo(new PostalInfo.Builder()
-              .setType(PostalInfo.Type.LOCALIZED)
-              .setName("Captain Robert")
-              .setOrg("Ancient World")
-              .setAddress(new ContactAddress.Builder()
-                  .setStreet(ImmutableList.of(
-                      "A skeleton crew is what came back",
-                      "And once in port he filled his sack",
-                      "With bribes and cash and fame and coin"))
-                  .setCity("Things to make a new crew join")
-                  .setState("NY")
-                  .setZip("10011")
-                  .setCountryCode("US")
-                  .build())
-              .build())
-            .build());
+      Contact robert =
+          persistResource(
+              newContact("robert")
+                  .asBuilder()
+                  .setLocalizedPostalInfo(
+                      new PostalInfo.Builder()
+                          .setType(PostalInfo.Type.LOCALIZED)
+                          .setName("Captain Robert")
+                          .setOrg("Ancient World")
+                          .setAddress(
+                              new ContactAddress.Builder()
+                                  .setStreet(
+                                      ImmutableList.of(
+                                          "A skeleton crew is what came back",
+                                          "And once in port he filled his sack",
+                                          "With bribes and cash and fame and coin"))
+                                  .setCity("Things to make a new crew join")
+                                  .setState("NY")
+                                  .setZip("10011")
+                                  .setCountryCode("US")
+                                  .build())
+                          .build())
+                  .build());
 
       persistResource(
           DatabaseHelper.newDomain("love.xn--q9jyb4c", justine)

@@ -5,6 +5,24 @@ class google.registry.model.common.GaeUserIdConverter {
   @Id long id;
   com.google.appengine.api.users.User user;
 }
+class google.registry.model.contact.Contact {
+  @Id java.lang.String repoId;
+  google.registry.model.contact.ContactAuthInfo authInfo;
+  google.registry.model.contact.ContactPhoneNumber fax;
+  google.registry.model.contact.ContactPhoneNumber voice;
+  google.registry.model.contact.Disclose disclose;
+  google.registry.model.transfer.ContactTransferData transferData;
+  java.lang.String contactId;
+  java.lang.String creationClientId;
+  java.lang.String currentSponsorClientId;
+  java.lang.String email;
+  java.lang.String lastEppUpdateClientId;
+  java.lang.String searchName;
+  java.util.Set<google.registry.model.eppcommon.StatusValue> status;
+  org.joda.time.DateTime deletionTime;
+  org.joda.time.DateTime lastEppUpdateTime;
+  org.joda.time.DateTime lastTransferTime;
+}
 class google.registry.model.contact.ContactAuthInfo {
   google.registry.model.eppcommon.AuthInfo$PasswordAuth pw;
 }
@@ -46,24 +64,6 @@ class google.registry.model.contact.ContactPhoneNumber {
   java.lang.String extension;
   java.lang.String phoneNumber;
 }
-class google.registry.model.contact.ContactResource {
-  @Id java.lang.String repoId;
-  google.registry.model.contact.ContactAuthInfo authInfo;
-  google.registry.model.contact.ContactPhoneNumber fax;
-  google.registry.model.contact.ContactPhoneNumber voice;
-  google.registry.model.contact.Disclose disclose;
-  google.registry.model.transfer.ContactTransferData transferData;
-  java.lang.String contactId;
-  java.lang.String creationClientId;
-  java.lang.String currentSponsorClientId;
-  java.lang.String email;
-  java.lang.String lastEppUpdateClientId;
-  java.lang.String searchName;
-  java.util.Set<google.registry.model.eppcommon.StatusValue> status;
-  org.joda.time.DateTime deletionTime;
-  org.joda.time.DateTime lastEppUpdateTime;
-  org.joda.time.DateTime lastTransferTime;
-}
 class google.registry.model.contact.Disclose {
   google.registry.model.eppcommon.PresenceMarker email;
   google.registry.model.eppcommon.PresenceMarker fax;
@@ -85,10 +85,10 @@ class google.registry.model.domain.Domain {
   google.registry.model.domain.DomainAuthInfo authInfo;
   google.registry.model.domain.launch.LaunchNotice launchNotice;
   google.registry.model.transfer.DomainTransferData transferData;
-  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> adminContact;
-  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> billingContact;
-  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> registrantContact;
-  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> techContact;
+  google.registry.persistence.VKey<google.registry.model.contact.Contact> adminContact;
+  google.registry.persistence.VKey<google.registry.model.contact.Contact> billingContact;
+  google.registry.persistence.VKey<google.registry.model.contact.Contact> registrantContact;
+  google.registry.persistence.VKey<google.registry.model.contact.Contact> techContact;
   google.registry.persistence.VKey<google.registry.model.domain.token.AllocationToken> currentPackageToken;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
@@ -118,10 +118,10 @@ class google.registry.model.domain.DomainBase {
   google.registry.model.domain.DomainAuthInfo authInfo;
   google.registry.model.domain.launch.LaunchNotice launchNotice;
   google.registry.model.transfer.DomainTransferData transferData;
-  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> adminContact;
-  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> billingContact;
-  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> registrantContact;
-  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> techContact;
+  google.registry.persistence.VKey<google.registry.model.contact.Contact> adminContact;
+  google.registry.persistence.VKey<google.registry.model.contact.Contact> billingContact;
+  google.registry.persistence.VKey<google.registry.model.contact.Contact> registrantContact;
+  google.registry.persistence.VKey<google.registry.model.contact.Contact> techContact;
   google.registry.persistence.VKey<google.registry.model.domain.token.AllocationToken> currentPackageToken;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;

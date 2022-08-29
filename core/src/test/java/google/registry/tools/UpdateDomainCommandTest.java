@@ -20,7 +20,7 @@ import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -35,7 +35,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -237,10 +237,10 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
 
   @Test
   void testSuccess_setContacts() throws Exception {
-    ContactResource adminContact = persistResource(newContactResource("crr-admin1"));
-    ContactResource techContact = persistResource(newContactResource("crr-tech1"));
-    VKey<ContactResource> adminContactKey = adminContact.createVKey();
-    VKey<ContactResource> techContactKey = techContact.createVKey();
+    Contact adminContact = persistResource(newContact("crr-admin1"));
+    Contact techContact = persistResource(newContact("crr-tech1"));
+    VKey<Contact> adminContactKey = adminContact.createVKey();
+    VKey<Contact> techContactKey = techContact.createVKey();
 
     persistResource(
         DatabaseHelper.newDomain("example.tld")
@@ -364,10 +364,10 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
 
   @Test
   void testSuccess_canUpdatePendingDeleteDomain_whenSuperuserPassesOverrideFlag() throws Exception {
-    ContactResource adminContact = persistResource(newContactResource("crr-admin1"));
-    ContactResource techContact = persistResource(newContactResource("crr-tech1"));
-    VKey<ContactResource> adminContactKey = adminContact.createVKey();
-    VKey<ContactResource> techContactKey = techContact.createVKey();
+    Contact adminContact = persistResource(newContact("crr-admin1"));
+    Contact techContact = persistResource(newContact("crr-tech1"));
+    VKey<Contact> adminContactKey = adminContact.createVKey();
+    VKey<Contact> techContactKey = techContact.createVKey();
 
     persistResource(
         DatabaseHelper.newDomain("example.tld")

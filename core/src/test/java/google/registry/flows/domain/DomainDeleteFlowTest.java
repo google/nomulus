@@ -80,7 +80,7 @@ import google.registry.flows.exceptions.ResourceStatusProhibitsOperationExceptio
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -155,7 +155,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   private void createReferencedEntities(DateTime expirationTime) throws Exception {
     // Persist a linked contact.
-    ContactResource contact = persistActiveContact("sh8013");
+    Contact contact = persistActiveContact("sh8013");
     domain =
         persistResource(
             DatabaseHelper.newDomain(getUniqueIdFromCommand())
@@ -742,9 +742,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         DatabaseHelper.newDomain("example1.tld")
             .asBuilder()
             .setRegistrant(
-                loadByForeignKey(ContactResource.class, "sh8013", clock.nowUtc())
-                    .get()
-                    .createVKey())
+                loadByForeignKey(Contact.class, "sh8013", clock.nowUtc()).get().createVKey())
             .setNameservers(ImmutableSet.of(host.createVKey()))
             .setDeletionTime(START_OF_TIME)
             .build());

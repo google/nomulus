@@ -25,7 +25,7 @@ import com.google.common.collect.Sets;
 import google.registry.model.EppResource.BuilderWithTransferData;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -60,7 +60,7 @@ public final class ResourceTransferUtils {
       EppResource eppResource, TransferData transferData) {
     assertIsContactOrDomain(eppResource);
     TransferResponse.Builder<? extends TransferResponse, ?> builder;
-    if (eppResource instanceof ContactResource) {
+    if (eppResource instanceof Contact) {
       builder = new ContactTransferResponse.Builder().setContactId(eppResource.getForeignKey());
     } else {
       DomainTransferData domainTransferData = (DomainTransferData) transferData;
@@ -93,7 +93,7 @@ public final class ResourceTransferUtils {
       boolean actionResult,
       DateTime processedDate) {
     assertIsContactOrDomain(eppResource);
-    return eppResource instanceof ContactResource
+    return eppResource instanceof Contact
         ? ContactPendingActionNotificationResponse.create(
             eppResource.getForeignKey(), actionResult, transferRequestTrid, processedDate)
         : DomainPendingActionNotificationResponse.create(
@@ -101,7 +101,7 @@ public final class ResourceTransferUtils {
   }
 
   private static void assertIsContactOrDomain(EppResource eppResource) {
-    checkState(eppResource instanceof ContactResource || eppResource instanceof Domain);
+    checkState(eppResource instanceof Contact || eppResource instanceof Domain);
   }
 
   /** Update the relevant {@link ForeignKeyIndex} to cache the new deletion time. */

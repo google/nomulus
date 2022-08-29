@@ -40,7 +40,7 @@ public class EppHistoryVKeyTranslatorFactory
   // one dedicated VKey class, e.g. DomainHistoryVKey, for each such kind of entity, and we need
   // a way to map the raw Datastore key to its VKey class. So, we use the kind path as the key of
   // the map, and the kind path is created by concatenating all the kind strings in a raw Datastore
-  // key, e.g. the map key for ContactPollMessageVKey is "ContactResource/HistoryEntry/PollMessage".
+  // key, e.g. the map key for ContactPollMessageVKey is "Contact/HistoryEntry/PollMessage".
   @VisibleForTesting
   static final ImmutableMap<String, Class<? extends EppHistoryVKey>> kindPathToVKeyClass =
       ImmutableSet.of(DomainHistoryVKey.class).stream()

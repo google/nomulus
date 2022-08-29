@@ -15,14 +15,14 @@
 package google.registry.flows.contact;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.persistContactWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
 import google.registry.flows.Flow;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.model.EppResource;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineExtension;
@@ -47,7 +47,7 @@ abstract class ContactTransferFlowTestCase<F extends Flow, R extends EppResource
       TRANSFER_REQUEST_TIME.plus(Registry.DEFAULT_TRANSFER_GRACE_PERIOD);
   private static final Duration TIME_SINCE_REQUEST = Duration.standardDays(3);
 
-  protected ContactResource contact;
+  protected Contact contact;
 
   ContactTransferFlowTestCase() {
     checkState(!Registry.DEFAULT_TRANSFER_GRACE_PERIOD.isShorterThan(TIME_SINCE_REQUEST));
@@ -64,11 +64,12 @@ abstract class ContactTransferFlowTestCase<F extends Flow, R extends EppResource
 
   /** Adds a contact that has a pending transfer on it from TheRegistrar to NewRegistrar. */
   void setupContactWithPendingTransfer() {
-    contact = persistContactWithPendingTransfer(
-        newContactResource("sh8013"),
-        TRANSFER_REQUEST_TIME,
-        TRANSFER_EXPIRATION_TIME,
-        TRANSFER_REQUEST_TIME);
+    contact =
+        persistContactWithPendingTransfer(
+            newContact("sh8013"),
+            TRANSFER_REQUEST_TIME,
+            TRANSFER_EXPIRATION_TIME,
+            TRANSFER_REQUEST_TIME);
   }
 
   /** Changes the transfer status on the persisted contact. */

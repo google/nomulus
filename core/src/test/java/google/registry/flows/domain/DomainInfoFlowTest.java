@@ -52,8 +52,8 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.Domain;
@@ -94,8 +94,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
 
   private static final Pattern OK_PATTERN = Pattern.compile("\"ok\"");
 
-  private ContactResource registrant;
-  private ContactResource contact;
+  private Contact registrant;
+  private Contact contact;
   private Host host1;
   private Host host2;
   private Host host3;
@@ -661,7 +661,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   @Test
   void testFailure_differentRegistrarUnrelatedContactAuthInfo() {
     persistTestEntities(false);
-    ContactResource unrelatedContact = persistActiveContact("foo1234");
+    Contact unrelatedContact = persistActiveContact("foo1234");
     sessionMetadata.setRegistrarId("ClientZ");
     setEppInput("domain_info_with_contact_auth.xml");
     // Replace the ROID in the xml file with the one for our unrelated contact.
@@ -673,7 +673,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   @Test
   void testFailure_unrelatedContactAuthInfo() {
     persistTestEntities(false);
-    ContactResource unrelatedContact = persistActiveContact("foo1234");
+    Contact unrelatedContact = persistActiveContact("foo1234");
     setEppInput("domain_info_with_contact_auth.xml");
     // Replace the ROID in the xml file with the one for our unrelated contact.
     eppLoader.replaceAll("JD1234-REP", unrelatedContact.getRepoId());

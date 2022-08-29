@@ -20,8 +20,8 @@ import static com.google.common.base.Strings.nullToEmpty;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EppResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactBase;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.Host;
@@ -130,12 +130,12 @@ public enum StatusValue implements EppEnum {
   /** Enum to help clearly list which resource types a status value is allowed to be present on. */
   private enum AllowedOn {
     ALL(
+        Contact.class,
         ContactBase.class,
-        ContactResource.class,
-        DomainBase.class,
         Domain.class,
-        HostBase.class,
-        Host.class),
+        DomainBase.class,
+        Host.class,
+        HostBase.class),
     NONE,
     DOMAINS(DomainBase.class, Domain.class);
 

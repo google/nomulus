@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDeletedContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -44,9 +44,9 @@ class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
     assertInStdout("contactId=sh8013");
     assertInStdout(
         "Websafe key: "
-            + "kind:ContactResource"
+            + "kind:Contact"
             + "@sql:rO0ABXQABjItUk9JRA"
-            + "@ofy:agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
+            + "@ofy:agR0ZXN0chMLEgdDb250YWN0IgYyLVJPSUQM");
   }
 
   @Test
@@ -56,9 +56,9 @@ class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
     assertInStdout("contactId=sh8013");
     assertInStdout(
         "Websafe key: "
-            + "kind:ContactResource"
+            + "kind:Contact"
             + "@sql:rO0ABXQABjItUk9JRA"
-            + "@ofy:agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
+            + "@ofy:agR0ZXN0chMLEgdDb250YWN0IgYyLVJPSUQM");
     assertNotInStdout("LiveRef");
   }
 
@@ -71,14 +71,14 @@ class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
     assertInStdout("contactId=jd1234");
     assertInStdout(
         "Websafe key: "
-            + "kind:ContactResource"
+            + "kind:Contact"
             + "@sql:rO0ABXQABjItUk9JRA"
-            + "@ofy:agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
+            + "@ofy:agR0ZXN0chMLEgdDb250YWN0IgYyLVJPSUQM");
     assertInStdout(
         "Websafe key: "
-            + "kind:ContactResource"
-            + "@sql:rO0ABXQABjItUk9JRA"
-            + "@ofy:agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
+            + "kind:Contact"
+            + "@sql:rO0ABXQABjMtUk9JRA"
+            + "@ofy:agR0ZXN0chMLEgdDb250YWN0IgYzLVJPSUQM");
   }
 
   @Test
@@ -101,8 +101,7 @@ class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
 
   @Test
   void testSuccess_contactDeletedInFuture() throws Exception {
-    persistResource(
-        newContactResource("sh8013").asBuilder().setDeletionTime(now.plusDays(1)).build());
+    persistResource(newContact("sh8013").asBuilder().setDeletionTime(now.plusDays(1)).build());
     runCommand("sh8013", "--read_timestamp=" + now.plusMonths(1));
     assertInStdout("Contact 'sh8013' does not exist or is deleted");
   }

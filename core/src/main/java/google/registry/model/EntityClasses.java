@@ -18,8 +18,8 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.common.GaeUserIdConverter;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
@@ -42,8 +42,8 @@ public final class EntityClasses {
   public static final ImmutableSet<Class<? extends ImmutableObject>> ALL_CLASSES =
       ImmutableSet.of(
           AllocationToken.class,
+          Contact.class,
           ContactHistory.class,
-          ContactResource.class,
           Domain.class,
           DomainHistory.class,
           EntityGroupRoot.class,

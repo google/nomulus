@@ -17,11 +17,11 @@ package google.registry.flows.contact;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
-import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
+import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
-import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistContactWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistDeletedContact;
@@ -39,7 +39,7 @@ import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.flows.exceptions.ResourceToDeleteIsReferencedException;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PendingActionNotificationResponse;
@@ -56,7 +56,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactDeleteFlow}. */
-class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, ContactResource> {
+class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Contact> {
 
   @BeforeEach
   void initFlowTest() {
@@ -99,7 +99,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("contact_delete_response.xml"));
     assertSqlDeleteSuccess(Type.CONTACT_DELETE, Type.CONTACT_TRANSFER_REQUEST);
-    ContactResource softDeletedContact = reloadResourceByForeignKey(clock.nowUtc().minusMillis(1));
+    Contact softDeletedContact = reloadResourceByForeignKey(clock.nowUtc().minusMillis(1));
     assertThat(softDeletedContact.getTransferData())
         .isEqualTo(
             oldTransferData
@@ -175,7 +175,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
   private void doFailingStatusTest(StatusValue statusValue, Class<? extends EppException> exception)
       throws Exception {
     persistResource(
-        newContactResource(getUniqueIdFromCommand())
+        newContact(getUniqueIdFromCommand())
             .asBuilder()
             .setStatusValues(ImmutableSet.of(statusValue))
             .build());

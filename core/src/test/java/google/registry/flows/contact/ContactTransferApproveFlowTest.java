@@ -16,7 +16,7 @@ package google.registry.flows.contact;
 
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
+import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyPollMessage;
@@ -31,8 +31,8 @@ import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
 import google.registry.flows.exceptions.NotPendingTransferException;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PendingActionNotificationResponse;
@@ -46,7 +46,7 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactTransferApproveFlow}. */
 class ContactTransferApproveFlowTest
-    extends ContactTransferFlowTestCase<ContactTransferApproveFlow, ContactResource> {
+    extends ContactTransferFlowTestCase<ContactTransferApproveFlow, Contact> {
 
   @BeforeEach
   void setUp() {

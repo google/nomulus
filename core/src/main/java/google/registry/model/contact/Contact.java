@@ -15,7 +15,6 @@
 package google.registry.model.contact;
 
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
@@ -23,6 +22,10 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Index;
+import javax.persistence.Table;
 import org.joda.time.DateTime;
 
 /**
@@ -32,35 +35,35 @@ import org.joda.time.DateTime;
  */
 @ReportedOn
 @Entity
-@javax.persistence.Entity(name = "Contact")
-@javax.persistence.Table(
+@com.googlecode.objectify.annotation.Entity
+@Table(
     name = "Contact",
     indexes = {
-      @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "currentSponsorRegistrarId"),
-      @javax.persistence.Index(columnList = "deletionTime"),
-      @javax.persistence.Index(columnList = "contactId"),
-      @javax.persistence.Index(columnList = "searchName")
+      @Index(columnList = "creationTime"),
+      @Index(columnList = "currentSponsorRegistrarId"),
+      @Index(columnList = "deletionTime"),
+      @Index(columnList = "contactId"),
+      @Index(columnList = "searchName")
     })
 @ExternalMessagingName("contact")
 @WithStringVKey
 @Access(AccessType.FIELD)
-public class ContactResource extends ContactBase implements ForeignKeyedEppResource {
+public class Contact extends ContactBase implements ForeignKeyedEppResource {
 
   @Override
-  public VKey<ContactResource> createVKey() {
-    return VKey.create(ContactResource.class, getRepoId(), Key.create(this));
+  public VKey<Contact> createVKey() {
+    return VKey.create(Contact.class, getRepoId(), Key.create(this));
   }
 
   @Override
-  @javax.persistence.Id
+  @Id
   @Access(AccessType.PROPERTY)
   public String getRepoId() {
     return super.getRepoId();
   }
 
   @Override
-  public ContactResource cloneProjectedAtTime(DateTime now) {
+  public Contact cloneProjectedAtTime(DateTime now) {
     return ContactBase.cloneContactProjectedAtTime(this, now);
   }
 
@@ -69,12 +72,12 @@ public class ContactResource extends ContactBase implements ForeignKeyedEppResou
     return new Builder(clone(this));
   }
 
-  /** A builder for constructing {@link ContactResource}, since it is immutable. */
-  public static class Builder extends ContactBase.Builder<ContactResource, Builder> {
+  /** A builder for constructing {@link Contact}, since it is immutable. */
+  public static class Builder extends ContactBase.Builder<Contact, Builder> {
 
     public Builder() {}
 
-    private Builder(ContactResource instance) {
+    private Builder(Contact instance) {
       super(instance);
     }
 

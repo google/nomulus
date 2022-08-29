@@ -38,7 +38,7 @@ import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.Period;
@@ -139,7 +139,7 @@ public final class ResourceFlowUtils {
   }
 
   /** Check that the given AuthInfo is either missing or else is valid for the given resource. */
-  public static void verifyOptionalAuthInfo(Optional<AuthInfo> authInfo, ContactResource contact)
+  public static void verifyOptionalAuthInfo(Optional<AuthInfo> authInfo, Contact contact)
       throws EppException {
     if (authInfo.isPresent()) {
       verifyAuthInfo(authInfo.get(), contact);
@@ -167,7 +167,7 @@ public final class ResourceFlowUtils {
       return;
     }
     // The roid should match one of the contacts.
-    Optional<VKey<ContactResource>> foundContact =
+    Optional<VKey<Contact>> foundContact =
         domain.getReferencedContacts().stream()
             .filter(key -> key.getSqlKey().equals(authRepoId))
             .findFirst();
@@ -179,8 +179,7 @@ public final class ResourceFlowUtils {
   }
 
   /** Check that the given {@link AuthInfo} is valid for the given contact. */
-  public static void verifyAuthInfo(AuthInfo authInfo, ContactResource contact)
-      throws EppException {
+  public static void verifyAuthInfo(AuthInfo authInfo, Contact contact) throws EppException {
     String authRepoId = authInfo.getPw().getRepoId();
     String authPassword = authInfo.getPw().getValue();
     String contactPassword = contact.getAuthInfo().getPw().getValue();

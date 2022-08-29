@@ -22,7 +22,7 @@ import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.ofy.Ofy.getBaseEntityClassFromEntityOrKey;
-import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -39,8 +39,8 @@ import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.AppEngineExtension;
@@ -74,7 +74,7 @@ public class OfyTest {
             .setRegistrarId("clientid")
             .setModificationTime(START_OF_TIME)
             .setType(HistoryEntry.Type.CONTACT_CREATE)
-            .setContact(newContactResource("parentContact"))
+            .setContact(newContact("parentContact"))
             .setTrid(Trid.create("client", "server"))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .build();
@@ -294,10 +294,9 @@ public class OfyTest {
 
   @Test
   void test_getBaseEntityClassFromEntityOrKey_regularEntity() {
-    ContactResource contact = newContactResource("testcontact");
-    assertThat(getBaseEntityClassFromEntityOrKey(contact)).isEqualTo(ContactResource.class);
-    assertThat(getBaseEntityClassFromEntityOrKey(Key.create(contact)))
-        .isEqualTo(ContactResource.class);
+    Contact contact = newContact("testcontact");
+    assertThat(getBaseEntityClassFromEntityOrKey(contact)).isEqualTo(Contact.class);
+    assertThat(getBaseEntityClassFromEntityOrKey(Key.create(contact))).isEqualTo(Contact.class);
   }
 
   @Test

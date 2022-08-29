@@ -39,7 +39,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -80,12 +80,12 @@ public class DomainSqlTest {
 
   private Domain domain;
   private DomainHistory historyEntry;
-  private VKey<ContactResource> contactKey;
-  private VKey<ContactResource> contact2Key;
+  private VKey<Contact> contactKey;
+  private VKey<Contact> contact2Key;
   private VKey<Host> host1VKey;
   private Host host;
-  private ContactResource contact;
-  private ContactResource contact2;
+  private Contact contact;
+  private Contact contact2;
   private ImmutableSet<GracePeriod> gracePeriods;
   private AllocationToken allocationToken;
 
@@ -94,8 +94,8 @@ public class DomainSqlTest {
     saveRegistrar("registrar1");
     saveRegistrar("registrar2");
     saveRegistrar("registrar3");
-    contactKey = createKey(ContactResource.class, "contact_id1");
-    contact2Key = createKey(ContactResource.class, "contact_id2");
+    contactKey = createKey(Contact.class, "contact_id1");
+    contact2Key = createKey(Contact.class, "contact_id2");
 
     host1VKey = createKey(Host.class, "host1");
 
@@ -406,8 +406,8 @@ public class DomainSqlTest {
         .isEqualExceptFields(domain, "updateTimestamp", "creationTime");
   }
 
-  static ContactResource makeContact(String repoId) {
-    return new ContactResource.Builder()
+  static Contact makeContact(String repoId) {
+    return new Contact.Builder()
         .setRepoId(repoId)
         .setCreationRegistrarId("registrar1")
         .setTransferData(new ContactTransferData.Builder().build())

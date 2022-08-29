@@ -53,7 +53,7 @@ class AppEngineExtensionTest {
       Joiner.on('\n')
           .join(
               "<datastore-indexes autoGenerate=\"false\">",
-              "  <datastore-index kind=\"ContactResource\" ancestor=\"false\" source=\"manual\">",
+              "  <datastore-index kind=\"Contact\" ancestor=\"false\" source=\"manual\">",
               "    <property name=\"currentSponsorClientId\" direction=\"asc\"/>",
               "    <property name=\"deletionTime\" direction=\"asc\"/>",
               "    <property name=\"searchName\" direction=\"asc\"/>",
@@ -61,7 +61,7 @@ class AppEngineExtensionTest {
               "</datastore-indexes>");
 
   private static final String UNDECLARED_INDEX =
-      DECLARED_INDEX.replace("ContactResource", "NoSuchResource");
+      DECLARED_INDEX.replace("Contact", "NoSuchResource");
 
   /**
    * Sets up test AppEngine instance.

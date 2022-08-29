@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
+import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
@@ -43,13 +43,13 @@ import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link ContactResource}. */
-public class ContactResourceTest extends EntityTestCase {
+/** Unit tests for {@link Contact}. */
+public class ContactTest extends EntityTestCase {
 
-  private ContactResource originalContact;
-  private ContactResource contactResource;
+  private Contact originalContact;
+  private Contact contact;
 
-  ContactResourceTest() {
+  ContactTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
@@ -57,7 +57,7 @@ public class ContactResourceTest extends EntityTestCase {
   void setUp() {
     createTld("foobar");
     originalContact =
-        new ContactResource.Builder()
+        new Contact.Builder()
             .setContactId("contact_id")
             .setRepoId("1-FOOBAR")
             .setCreationRegistrarId("TheRegistrar")
@@ -118,15 +118,15 @@ public class ContactResourceTest extends EntityTestCase {
                     .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
                     .build())
             .build();
-    // Set up a new persisted ContactResource entity.
-    contactResource = persistResource(cloneAndSetAutoTimestamps(originalContact));
+    // Set up a new persisted Contact entity.
+    contact = persistResource(cloneAndSetAutoTimestamps(originalContact));
   }
 
   @Test
-  void testContactBaseToContactResource() {
+  void testContactBaseToContact() {
     assertAboutImmutableObjects()
-        .that(new ContactResource.Builder().copyFrom(contactResource).build())
-        .isEqualExceptFields(contactResource, "updateTimestamp", "revisions");
+        .that(new Contact.Builder().copyFrom(contact).build())
+        .isEqualExceptFields(contact, "updateTimestamp", "revisions");
   }
 
   @Test
@@ -143,8 +143,8 @@ public class ContactResourceTest extends EntityTestCase {
 
   @Test
   void testCloudSqlPersistence_succeed() {
-    ContactResource persisted = loadByEntity(originalContact);
-    ContactResource fixed =
+    Contact persisted = loadByEntity(originalContact);
+    Contact fixed =
         originalContact
             .asBuilder()
             .setCreationTime(persisted.getCreationTime())
@@ -160,28 +160,25 @@ public class ContactResourceTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
-    assertThat(
-            loadByForeignKey(
-                ContactResource.class, contactResource.getForeignKey(), fakeClock.nowUtc()))
-        .hasValue(contactResource);
+    assertThat(loadByForeignKey(Contact.class, contact.getForeignKey(), fakeClock.nowUtc()))
+        .hasValue(contact);
   }
 
   @Test
   void testSerializable() {
-    ContactResource persisted =
-        loadByForeignKey(ContactResource.class, contactResource.getForeignKey(), fakeClock.nowUtc())
-            .get();
+    Contact persisted =
+        loadByForeignKey(Contact.class, contact.getForeignKey(), fakeClock.nowUtc()).get();
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @Test
   void testEmptyStringsBecomeNull() {
-    assertThat(new ContactResource.Builder().setContactId(null).build().getContactId()).isNull();
-    assertThat(new ContactResource.Builder().setContactId("").build().getContactId()).isNull();
-    assertThat(new ContactResource.Builder().setContactId(" ").build().getContactId()).isNotNull();
+    assertThat(new Contact.Builder().setContactId(null).build().getContactId()).isNull();
+    assertThat(new Contact.Builder().setContactId("").build().getContactId()).isNull();
+    assertThat(new Contact.Builder().setContactId(" ").build().getContactId()).isNotNull();
     // Nested ImmutableObjects should also be fixed
     assertThat(
-            new ContactResource.Builder()
+            new Contact.Builder()
                 .setInternationalizedPostalInfo(
                     new PostalInfo.Builder().setType(Type.INTERNATIONALIZED).setName(null).build())
                 .build()
@@ -189,7 +186,7 @@ public class ContactResourceTest extends EntityTestCase {
                 .getName())
         .isNull();
     assertThat(
-            new ContactResource.Builder()
+            new Contact.Builder()
                 .setInternationalizedPostalInfo(
                     new PostalInfo.Builder().setType(Type.INTERNATIONALIZED).setName("").build())
                 .build()
@@ -197,7 +194,7 @@ public class ContactResourceTest extends EntityTestCase {
                 .getName())
         .isNull();
     assertThat(
-            new ContactResource.Builder()
+            new Contact.Builder()
                 .setInternationalizedPostalInfo(
                     new PostalInfo.Builder().setType(Type.INTERNATIONALIZED).setName(" ").build())
                 .build()
@@ -208,9 +205,8 @@ public class ContactResourceTest extends EntityTestCase {
 
   @Test
   void testEmptyTransferDataBecomesNull() {
-    ContactResource withNull = new ContactResource.Builder().setTransferData(null).build();
-    ContactResource withEmpty =
-        withNull.asBuilder().setTransferData(ContactTransferData.EMPTY).build();
+    Contact withNull = new Contact.Builder().setTransferData(null).build();
+    Contact withEmpty = withNull.asBuilder().setTransferData(ContactTransferData.EMPTY).build();
     assertThat(withNull).isEqualTo(withEmpty);
     assertThat(withEmpty.transferData).isNull();
   }
@@ -219,19 +215,17 @@ public class ContactResourceTest extends EntityTestCase {
   void testImplicitStatusValues() {
     // OK is implicit if there's no other statuses.
     assertAboutContacts()
-        .that(new ContactResource.Builder().build())
+        .that(new Contact.Builder().build())
         .hasExactlyStatusValues(StatusValue.OK);
     // If there are other status values, OK should be suppressed.
     assertAboutContacts()
         .that(
-            new ContactResource.Builder()
-                .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_HOLD))
-                .build())
+            new Contact.Builder().setStatusValues(ImmutableSet.of(StatusValue.CLIENT_HOLD)).build())
         .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
     // When OK is suppressed, it should be removed even if it was originally there.
     assertAboutContacts()
         .that(
-            new ContactResource.Builder()
+            new Contact.Builder()
                 .setStatusValues(ImmutableSet.of(StatusValue.OK, StatusValue.CLIENT_HOLD))
                 .build())
         .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
@@ -239,11 +233,11 @@ public class ContactResourceTest extends EntityTestCase {
 
   @Test
   void testExpiredTransfer() {
-    ContactResource afterTransfer =
-        contactResource
+    Contact afterTransfer =
+        contact
             .asBuilder()
             .setTransferData(
-                contactResource
+                contact
                     .getTransferData()
                     .asBuilder()
                     .setTransferStatus(TransferStatus.PENDING)
@@ -262,14 +256,13 @@ public class ContactResourceTest extends EntityTestCase {
   void testSetCreationTime_cantBeCalledTwice() {
     IllegalStateException thrown =
         assertThrows(
-            IllegalStateException.class,
-            () -> contactResource.asBuilder().setCreationTime(END_OF_TIME));
+            IllegalStateException.class, () -> contact.asBuilder().setCreationTime(END_OF_TIME));
     assertThat(thrown).hasMessageThat().contains("creationTime can only be set once");
   }
 
   @Test
   void testToHydratedString_notCircular() {
     // If there are circular references, this will overflow the stack.
-    contactResource.toHydratedString();
+    contact.toHydratedString();
   }
 }

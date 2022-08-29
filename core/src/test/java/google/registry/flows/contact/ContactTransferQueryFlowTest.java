@@ -15,7 +15,7 @@
 package google.registry.flows.contact;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
+import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
@@ -27,8 +27,8 @@ import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.exceptions.NoTransferHistoryToQueryException;
 import google.registry.flows.exceptions.NotAuthorizedToViewTransferException;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferStatus;
@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactTransferQueryFlow}. */
 class ContactTransferQueryFlowTest
-    extends ContactTransferFlowTestCase<ContactTransferQueryFlow, ContactResource> {
+    extends ContactTransferFlowTestCase<ContactTransferQueryFlow, Contact> {
 
   @BeforeEach
   void setUp() {

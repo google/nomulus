@@ -79,7 +79,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.Domain;
@@ -380,9 +380,7 @@ public class DomainFlowUtils {
 
   /** Verify that no linked resources have disallowed statuses. */
   static void verifyNotInPendingDelete(
-      Set<DesignatedContact> contacts,
-      VKey<ContactResource> registrant,
-      Set<VKey<Host>> nameservers)
+      Set<DesignatedContact> contacts, VKey<Contact> registrant, Set<VKey<Host>> nameservers)
       throws EppException {
     ImmutableList.Builder<VKey<? extends EppResource>> keysToLoad = new ImmutableList.Builder<>();
     contacts.stream().map(DesignatedContact::getContactKey).forEach(keysToLoad::add);
@@ -427,7 +425,7 @@ public class DomainFlowUtils {
 
   static void validateNoDuplicateContacts(Set<DesignatedContact> contacts)
       throws ParameterValuePolicyErrorException {
-    ImmutableMultimap<Type, VKey<ContactResource>> contactsByType =
+    ImmutableMultimap<Type, VKey<Contact>> contactsByType =
         contacts.stream()
             .collect(
                 toImmutableSetMultimap(
@@ -436,15 +434,13 @@ public class DomainFlowUtils {
     // If any contact type has multiple contacts:
     if (contactsByType.asMap().values().stream().anyMatch(v -> v.size() > 1)) {
       // Find the duplicates.
-      Map<Type, Collection<VKey<ContactResource>>> dupeKeysMap =
+      Map<Type, Collection<VKey<Contact>>> dupeKeysMap =
           Maps.filterEntries(contactsByType.asMap(), e -> e.getValue().size() > 1);
-      ImmutableList<VKey<ContactResource>> dupeKeys =
+      ImmutableList<VKey<Contact>> dupeKeys =
           dupeKeysMap.values().stream().flatMap(Collection::stream).collect(toImmutableList());
       // Load the duplicates in one batch.
-      Map<VKey<? extends ContactResource>, ContactResource> dupeContacts =
-          tm().loadByKeys(dupeKeys);
-      ImmutableMultimap.Builder<Type, VKey<ContactResource>> typesMap =
-          new ImmutableMultimap.Builder<>();
+      Map<VKey<? extends Contact>, Contact> dupeContacts = tm().loadByKeys(dupeKeys);
+      ImmutableMultimap.Builder<Type, VKey<Contact>> typesMap = new ImmutableMultimap.Builder<>();
       dupeKeysMap.forEach(typesMap::putAll);
       // Create an error message showing the type and contact IDs of the duplicates.
       throw new DuplicateContactForRoleException(
@@ -453,7 +449,7 @@ public class DomainFlowUtils {
   }
 
   static void validateRequiredContactsPresent(
-      @Nullable VKey<ContactResource> registrant, Set<DesignatedContact> contacts)
+      @Nullable VKey<Contact> registrant, Set<DesignatedContact> contacts)
       throws RequiredParameterMissingException {
     if (registrant == null) {
       throw new MissingRegistrantException();

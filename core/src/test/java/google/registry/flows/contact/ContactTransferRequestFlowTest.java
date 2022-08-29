@@ -20,7 +20,7 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.config.RegistryConfig.getContactAutomaticTransferLength;
-import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
+import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertPollMessagesEqual;
 import static google.registry.testing.DatabaseHelper.deleteResource;
@@ -42,8 +42,8 @@ import google.registry.flows.exceptions.AlreadyPendingTransferException;
 import google.registry.flows.exceptions.MissingTransferRequestAuthInfoException;
 import google.registry.flows.exceptions.ObjectAlreadySponsoredException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -57,7 +57,7 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactTransferRequestFlow}. */
 class ContactTransferRequestFlowTest
-    extends ContactTransferFlowTestCase<ContactTransferRequestFlow, ContactResource> {
+    extends ContactTransferFlowTestCase<ContactTransferRequestFlow, Contact> {
 
   ContactTransferRequestFlowTest() {
     // We need the transfer to happen at exactly this time in order for the response to match up.

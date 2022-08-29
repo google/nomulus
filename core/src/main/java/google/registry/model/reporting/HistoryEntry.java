@@ -34,10 +34,10 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
@@ -392,7 +392,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
     } else if (parentKind.equals(getKind(Host.class))) {
       resultEntity =
           new HostHistory.Builder().copyFrom(this).setHostRepoId(parent.getName()).build();
-    } else if (parentKind.equals(getKind(ContactResource.class))) {
+    } else if (parentKind.equals(getKind(Contact.class))) {
       resultEntity =
           new ContactHistory.Builder().copyFrom(this).setContactRepoId(parent.getName()).build();
     } else {
@@ -418,7 +418,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
           HostHistory.class,
           new HostHistoryId(repoId, id),
           Key.create(parent, HostHistory.class, id));
-    } else if (parentKind.equals(getKind(ContactResource.class))) {
+    } else if (parentKind.equals(getKind(Contact.class))) {
       return VKey.create(
           ContactHistory.class,
           new ContactHistoryId(repoId, id),

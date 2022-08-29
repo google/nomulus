@@ -22,7 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
@@ -72,7 +72,7 @@ public final class TestSetupHelper {
 
   public Registry registry;
   public Registrar registrar;
-  public ContactResource contact;
+  public Contact contact;
   public Domain domain;
   public DomainHistory domainHistory;
   public Host host;
@@ -118,8 +118,8 @@ public final class TestSetupHelper {
     }
   }
 
-  static ContactResource createContact(String repoId, String registrarId) {
-    return new ContactResource.Builder()
+  static Contact createContact(String repoId, String registrarId) {
+    return new Contact.Builder()
         .setRepoId(repoId)
         .setCreationRegistrarId(registrarId)
         .setTransferData(new ContactTransferData.Builder().build())
@@ -127,7 +127,7 @@ public final class TestSetupHelper {
         .build();
   }
 
-  static Domain createSimpleDomain(ContactResource contact) {
+  static Domain createSimpleDomain(Contact contact) {
     return DatabaseHelper.newDomain(DOMAIN_NAME, DOMAIN_REPO_ID, contact)
         .asBuilder()
         .setCreationRegistrarId(REGISTRAR_ID)
@@ -135,7 +135,7 @@ public final class TestSetupHelper {
         .build();
   }
 
-  static Domain createFullDomain(ContactResource contact, Host host, FakeClock fakeClock) {
+  static Domain createFullDomain(Contact contact, Host host, FakeClock fakeClock) {
     return createSimpleDomain(contact)
         .asBuilder()
         .setDomainName(DOMAIN_NAME)

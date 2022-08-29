@@ -20,17 +20,16 @@ import static google.registry.rdap.RdapTestHelper.loadJsonFile;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistContactResource;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistDeletedContactResource;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistDeletedContact;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHost;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarContacts;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonObject;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.rdap.RdapMetrics.EndpointType;
@@ -38,6 +37,7 @@ import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
+import google.registry.testing.FullFieldsTestEntityHelper;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,11 +51,11 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
   }
 
   private Registrar registrarLol;
-  private ContactResource registrant;
-  private ContactResource adminContact;
-  private ContactResource techContact;
-  private ContactResource disconnectedContact;
-  private ContactResource deletedContact;
+  private Contact registrant;
+  private Contact adminContact;
+  private Contact techContact;
+  private Contact disconnectedContact;
+  private Contact deletedContact;
 
   @BeforeEach
   void beforeEach() {
@@ -63,28 +63,31 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
     createTld("lol");
     registrarLol = persistResource(makeRegistrar(
         "evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE, 101L));
-    persistSimpleResources(makeRegistrarContacts(registrarLol));
-    registrant = makeAndPersistContactResource(
-        "8372808-REG",
-        "(◕‿◕)",
-        "lol@cat.みんな",
-        ImmutableList.of("1 Smiley Row", "Suite みんな"),
-        clock.nowUtc(),
-        registrarLol);
-    adminContact = makeAndPersistContactResource(
-        "8372808-ADM",
-        "(◕‿◕)",
-        "lol@cat.みんな",
-        ImmutableList.of("1 Smiley Row", "Suite みんな"),
-        clock.nowUtc(),
-        registrarLol);
-    techContact = makeAndPersistContactResource(
-        "8372808-TEC",
-        "(◕‿◕)",
-        "lol@cat.みんな",
-        ImmutableList.of("1 Smiley Row", "Suite みんな"),
-        clock.nowUtc(),
-        registrarLol);
+    persistSimpleResources(makeRegistrarPocs(registrarLol));
+    registrant =
+        FullFieldsTestEntityHelper.makeAndPersistContact(
+            "8372808-REG",
+            "(◕‿◕)",
+            "lol@cat.みんな",
+            ImmutableList.of("1 Smiley Row", "Suite みんな"),
+            clock.nowUtc(),
+            registrarLol);
+    adminContact =
+        FullFieldsTestEntityHelper.makeAndPersistContact(
+            "8372808-ADM",
+            "(◕‿◕)",
+            "lol@cat.みんな",
+            ImmutableList.of("1 Smiley Row", "Suite みんな"),
+            clock.nowUtc(),
+            registrarLol);
+    techContact =
+        FullFieldsTestEntityHelper.makeAndPersistContact(
+            "8372808-TEC",
+            "(◕‿◕)",
+            "lol@cat.みんな",
+            ImmutableList.of("1 Smiley Row", "Suite みんな"),
+            clock.nowUtc(),
+            registrarLol);
     Host host1 = persistResource(makeHost("ns1.cat.lol", "1.2.3.4"));
     Host host2 = persistResource(makeHost("ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef"));
     persistResource(
@@ -93,19 +96,19 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
     createTld("xn--q9jyb4c");
     Registrar registrarIdn = persistResource(
         makeRegistrar("idnregistrar", "IDN Registrar", Registrar.State.ACTIVE, 102L));
-    persistSimpleResources(makeRegistrarContacts(registrarIdn));
+    persistSimpleResources(makeRegistrarPocs(registrarIdn));
     // 1.tld
     createTld("1.tld");
     Registrar registrar1tld = persistResource(
         makeRegistrar("1tldregistrar", "Multilevel Registrar", Registrar.State.ACTIVE, 103L));
-    persistSimpleResources(makeRegistrarContacts(registrar1tld));
+    persistSimpleResources(makeRegistrarPocs(registrar1tld));
     // deleted registrar
     Registrar registrarDeleted = persistResource(
         makeRegistrar("deletedregistrar", "Yes Virginia <script>", Registrar.State.PENDING, 104L));
-    persistSimpleResources(makeRegistrarContacts(registrarDeleted));
+    persistSimpleResources(makeRegistrarPocs(registrarDeleted));
     // other contacts
     disconnectedContact =
-        makeAndPersistContactResource(
+        FullFieldsTestEntityHelper.makeAndPersistContact(
             "8372808-DIS",
             "(◕‿◕)",
             "lol@cat.みんな",
@@ -113,7 +116,7 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
             clock.nowUtc(),
             registrarLol);
     deletedContact =
-        makeAndPersistDeletedContactResource(
+        makeAndPersistDeletedContact(
             "8372808-DEL",
             clock.nowUtc().minusYears(1),
             registrarLol,

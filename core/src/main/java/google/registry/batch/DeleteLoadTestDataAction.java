@@ -29,7 +29,7 @@ import google.registry.config.RegistryEnvironment;
 import google.registry.flows.poll.PollFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResourceUtils;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
@@ -43,8 +43,8 @@ import google.registry.util.Clock;
 import javax.inject.Inject;
 
 /**
- * Hard deletes load-test ContactResources, Hosts, their subordinate history entries, and the
- * associated ForeignKey and EppResourceIndex entities.
+ * Hard deletes load-test Contacts, Hosts, their subordinate history entries, and the associated
+ * ForeignKey and EppResourceIndex entities.
  *
  * <p>This only deletes contacts and hosts, NOT domains. To delete domains, use {@link
  * DeleteProberDataAction} and pass it the TLD(s) that the load test domains were created on. Note
@@ -92,7 +92,7 @@ public class DeleteLoadTestDataAction implements Runnable {
     tm().transact(
             () -> {
               LOAD_TEST_REGISTRARS.forEach(this::deletePollMessages);
-              tm().loadAllOfStream(ContactResource.class).forEach(this::deleteContact);
+              tm().loadAllOfStream(Contact.class).forEach(this::deleteContact);
               tm().loadAllOfStream(Host.class).forEach(this::deleteHost);
             });
   }
@@ -108,7 +108,7 @@ public class DeleteLoadTestDataAction implements Runnable {
     }
   }
 
-  private void deleteContact(ContactResource contact) {
+  private void deleteContact(Contact contact) {
     if (!LOAD_TEST_REGISTRARS.contains(contact.getPersistedCurrentSponsorRegistrarId())) {
       return;
     }

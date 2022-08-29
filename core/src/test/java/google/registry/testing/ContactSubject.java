@@ -20,124 +20,120 @@ import static com.google.common.truth.Truth.assertAbout;
 
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.SimpleSubjectBuilder;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.testing.TruthChainer.And;
 import org.joda.time.DateTime;
 
-/** Truth subject for asserting things about {@link ContactResource} instances. */
-public final class ContactResourceSubject
-    extends AbstractEppResourceSubject<ContactResource, ContactResourceSubject> {
+/** Truth subject for asserting things about {@link Contact} entities. */
+public final class ContactSubject extends AbstractEppResourceSubject<Contact, ContactSubject> {
 
-  private final ContactResource actual;
+  private final Contact actual;
 
-  public ContactResourceSubject(FailureMetadata failureMetadata, ContactResource subject) {
+  public ContactSubject(FailureMetadata failureMetadata, Contact subject) {
     super(failureMetadata, checkNotNull(subject));
     this.actual = subject;
   }
 
-  public And<ContactResourceSubject> hasLocalizedPostalInfo(PostalInfo postalInfo) {
+  public And<ContactSubject> hasLocalizedPostalInfo(PostalInfo postalInfo) {
     return hasValue(postalInfo, actual.getLocalizedPostalInfo(), "has localizedPostalInfo");
   }
 
-  public And<ContactResourceSubject> hasNullLocalizedPostalInfo() {
+  public And<ContactSubject> hasNullLocalizedPostalInfo() {
     if (actual.getLocalizedPostalInfo() != null) {
       failWithActual(simpleFact("expected to have null localized postal info"));
     }
     return andChainer();
   }
 
-  public And<ContactResourceSubject> hasNonNullLocalizedPostalInfo() {
+  public And<ContactSubject> hasNonNullLocalizedPostalInfo() {
     if (actual.getLocalizedPostalInfo() == null) {
       failWithActual(simpleFact("expected to have non-null localized postal info"));
     }
     return andChainer();
   }
 
-  public And<ContactResourceSubject> hasInternationalizedPostalInfo(
-      PostalInfo postalInfo) {
+  public And<ContactSubject> hasInternationalizedPostalInfo(PostalInfo postalInfo) {
     return hasValue(
         postalInfo, actual.getInternationalizedPostalInfo(), "has internationalizedPostalInfo");
   }
 
-  public And<ContactResourceSubject> hasNullInternationalizedPostalInfo() {
+  public And<ContactSubject> hasNullInternationalizedPostalInfo() {
     if (actual.getInternationalizedPostalInfo() != null) {
       failWithActual(simpleFact("expected to have null internationalized postal info"));
     }
     return andChainer();
   }
 
-
-  public And<ContactResourceSubject> hasNonNullInternationalizedPostalInfo() {
+  public And<ContactSubject> hasNonNullInternationalizedPostalInfo() {
     if (actual.getInternationalizedPostalInfo() == null) {
       failWithActual(simpleFact("expected to have non-null internationalized postal info"));
     }
     return andChainer();
   }
 
-  public And<ContactResourceSubject> hasNullEmailAddress() {
+  public And<ContactSubject> hasNullEmailAddress() {
     if (actual.getEmailAddress() != null) {
       failWithActual(simpleFact("expected to have null email address"));
     }
     return andChainer();
   }
 
-  public And<ContactResourceSubject> hasNonNullEmailAddress() {
+  public And<ContactSubject> hasNonNullEmailAddress() {
     if (actual.getEmailAddress() == null) {
       failWithActual(simpleFact("expected to have non-null email address"));
     }
     return andChainer();
   }
 
-  public And<ContactResourceSubject> hasNullVoiceNumber() {
+  public And<ContactSubject> hasNullVoiceNumber() {
     if (actual.getVoiceNumber() != null) {
       failWithActual(simpleFact("expected to have null voice number"));
     }
     return andChainer();
   }
 
-  public And<ContactResourceSubject> hasNonNullVoiceNumber() {
+  public And<ContactSubject> hasNonNullVoiceNumber() {
     if (actual.getVoiceNumber() == null) {
       failWithActual(simpleFact("expected to have non-null voice number"));
     }
     return andChainer();
   }
 
-  public And<ContactResourceSubject> hasNullFaxNumber() {
+  public And<ContactSubject> hasNullFaxNumber() {
     if (actual.getFaxNumber() != null) {
       failWithActual(simpleFact("expected to have null fax number"));
     }
     return andChainer();
   }
 
-  public And<ContactResourceSubject> hasNonNullFaxNumber() {
+  public And<ContactSubject> hasNonNullFaxNumber() {
     if (actual.getFaxNumber() == null) {
       failWithActual(simpleFact("expected to have non-null fax number"));
     }
     return andChainer();
   }
 
-  public And<ContactResourceSubject> hasAuthInfoPwd(String pw) {
+  public And<ContactSubject> hasAuthInfoPwd(String pw) {
     AuthInfo authInfo = actual.getAuthInfo();
     return hasValue(pw, authInfo == null ? null : authInfo.getPw().getValue(), "has auth info pw");
   }
 
-  public And<ContactResourceSubject> hasLastTransferTime(DateTime lastTransferTime) {
+  public And<ContactSubject> hasLastTransferTime(DateTime lastTransferTime) {
     return hasValue(lastTransferTime, actual.getLastTransferTime(), "has lastTransferTime");
   }
 
-  public And<ContactResourceSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
+  public And<ContactSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
     return doesNotHaveValue(lastTransferTime, actual.getLastTransferTime(), "lastTransferTime");
   }
 
-  public And<ContactResourceSubject> hasCurrentSponsorRegistrarId(String registrarId) {
+  public And<ContactSubject> hasCurrentSponsorRegistrarId(String registrarId) {
     return hasValue(
         registrarId, actual.getCurrentSponsorRegistrarId(), "has currentSponsorRegistrarId");
   }
 
-  public static SimpleSubjectBuilder<ContactResourceSubject, ContactResource>
-      assertAboutContacts() {
-    return assertAbout(ContactResourceSubject::new);
+  public static SimpleSubjectBuilder<ContactSubject, Contact> assertAboutContacts() {
+    return assertAbout(ContactSubject::new);
   }
 }

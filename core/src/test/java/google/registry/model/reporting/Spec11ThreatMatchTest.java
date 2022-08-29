@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.model.transfer.ContactTransferData;
@@ -46,7 +46,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
   private Spec11ThreatMatch threat;
   private Domain domain;
   private Host host;
-  private ContactResource registrantContact;
+  private Contact registrantContact;
 
   Spec11ThreatMatchTest() {
     super(JpaEntityCoverageCheck.ENABLED);
@@ -55,8 +55,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
   @BeforeEach
   void setUp() {
     VKey<Host> hostVKey = VKey.createSql(Host.class, "host");
-    VKey<ContactResource> registrantContactVKey =
-        VKey.createSql(ContactResource.class, "contact_id");
+    VKey<Contact> registrantContactVKey = VKey.createSql(Contact.class, "contact_id");
     String domainRepoId = "4-TLD";
     createTld("tld");
 
@@ -75,7 +74,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
 
     // Create a contact for the purpose of testing a foreign key reference in the Domain table.
     registrantContact =
-        new ContactResource.Builder()
+        new Contact.Builder()
             .setRepoId("contact_id")
             .setCreationRegistrarId(REGISTRAR_ID)
             .setTransferData(new ContactTransferData.Builder().build())

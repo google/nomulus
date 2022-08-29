@@ -58,7 +58,7 @@ import javax.persistence.PostLoad;
 @IdClass(ContactHistoryId.class)
 public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
 
-  // Store ContactBase instead of ContactResource so we don't pick up its @Id
+  // Store ContactBase instead of Contact so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
   @DoNotCompare @Nullable ContactBase contactBase;
 
@@ -73,7 +73,7 @@ public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
   /** This method is private because it is only used by Hibernate. */
   @SuppressWarnings("unused")
   private void setContactRepoId(String contactRepoId) {
-    parent = Key.create(ContactResource.class, contactRepoId);
+    parent = Key.create(Contact.class, contactRepoId);
   }
 
   @Id
@@ -98,9 +98,9 @@ public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
     return Optional.ofNullable(contactBase);
   }
 
-  /** The key to the {@link ContactResource} this is based off of. */
-  public VKey<ContactResource> getParentVKey() {
-    return VKey.create(ContactResource.class, getContactRepoId());
+  /** The key to the {@link Contact} this is based off of. */
+  public VKey<Contact> getParentVKey() {
+    return VKey.create(Contact.class, getContactRepoId());
   }
 
   /** Creates a {@link VKey} instance for this entity. */
@@ -112,8 +112,7 @@ public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
 
   @Override
   public Optional<? extends EppResource> getResourceAtPointInTime() {
-    return getContactBase()
-        .map(contactBase -> new ContactResource.Builder().copyFrom(contactBase).build());
+    return getContactBase().map(contactBase -> new Contact.Builder().copyFrom(contactBase).build());
   }
 
   @PostLoad
@@ -210,7 +209,7 @@ public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
     }
 
     public Builder setContactRepoId(String contactRepoId) {
-      getInstance().parent = Key.create(ContactResource.class, contactRepoId);
+      getInstance().parent = Key.create(Contact.class, contactRepoId);
       return this;
     }
 

@@ -33,9 +33,9 @@ import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactCommand.Create;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CreateData.ContactCreateData;
@@ -75,9 +75,9 @@ public final class ContactCreateFlow implements TransactionalFlow {
     extensionManager.validate();
     Create command = (Create) resourceCommand;
     DateTime now = tm().getTransactionTime();
-    verifyResourceDoesNotExist(ContactResource.class, targetId, now, registrarId);
-    ContactResource newContact =
-        new ContactResource.Builder()
+    verifyResourceDoesNotExist(Contact.class, targetId, now, registrarId);
+    Contact newContact =
+        new Contact.Builder()
             .setContactId(targetId)
             .setAuthInfo(command.getAuthInfo())
             .setCreationRegistrarId(registrarId)

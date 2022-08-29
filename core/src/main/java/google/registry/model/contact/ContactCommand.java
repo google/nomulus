@@ -34,13 +34,13 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-/** A collection of {@link ContactResource} commands. */
+/** A collection of {@link Contact} commands. */
 public class ContactCommand {
 
   /** The fields on "chgType" from <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. */
   @XmlTransient
   public static class ContactCreateOrChange extends ImmutableObject
-      implements ResourceCreateOrChange<ContactResource.Builder> {
+      implements ResourceCreateOrChange<Contact.Builder> {
 
     /** Postal info for the contact. */
     List<PostalInfo> postalInfo;
@@ -111,13 +111,13 @@ public class ContactCommand {
   }
 
   /**
-   * A create command for a {@link ContactResource}, mapping "createType" from <a
+   * A create command for a {@link Contact}, mapping "createType" from <a
    * href="http://tools.ietf.org/html/rfc5733">RFC5733</a>}.
    */
   @XmlType(propOrder = {"contactId", "postalInfo", "voice", "fax", "email", "authInfo", "disclose"})
   @XmlRootElement
   public static class Create extends ContactCreateOrChange
-      implements SingleResourceCommand, ResourceCreateOrChange<ContactResource.Builder> {
+      implements SingleResourceCommand, ResourceCreateOrChange<Contact.Builder> {
     /**
      * Unique identifier for this contact.
      *
@@ -139,29 +139,29 @@ public class ContactCommand {
     }
   }
 
-  /** A delete command for a {@link ContactResource}. */
+  /** A delete command for a {@link Contact}. */
   @XmlRootElement
   public static class Delete extends AbstractSingleResourceCommand {}
 
-  /** An info request for a {@link ContactResource}. */
+  /** An info request for a {@link Contact}. */
   @XmlRootElement
   @XmlType(propOrder = {"targetId", "authInfo"})
   public static class Info extends AbstractContactAuthCommand {}
 
-  /** A check request for {@link ContactResource}. */
+  /** A check request for {@link Contact}. */
   @XmlRootElement
   public static class Check extends ResourceCheck {}
 
-  /** A transfer operation for a {@link ContactResource}. */
+  /** A transfer operation for a {@link Contact}. */
   @XmlRootElement
   @XmlType(propOrder = {"targetId", "authInfo"})
   public static class Transfer extends AbstractContactAuthCommand {}
 
-  /** An update to a {@link ContactResource}. */
+  /** An update to a {@link Contact}. */
   @XmlRootElement
   @XmlType(propOrder = {"targetId", "innerAdd", "innerRemove", "innerChange"})
   public static class Update
-      extends ResourceUpdate<Update.AddRemove, ContactResource.Builder, Update.Change> {
+      extends ResourceUpdate<Update.AddRemove, Contact.Builder, Update.Change> {
 
     @XmlElement(name = "chg")
     protected Change innerChange;

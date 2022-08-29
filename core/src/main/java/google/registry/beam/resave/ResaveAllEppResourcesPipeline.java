@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.model.EppResource;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.Host;
@@ -53,7 +53,7 @@ import org.joda.time.DateTime;
 public class ResaveAllEppResourcesPipeline implements Serializable {
 
   private static final ImmutableSet<Class<? extends EppResource>> EPP_RESOURCE_CLASSES =
-      ImmutableSet.of(ContactResource.class, Domain.class, Host.class);
+      ImmutableSet.of(Contact.class, Domain.class, Host.class);
 
   /**
    * There exist three possible situations where we know we'll want to project domains to the
@@ -99,13 +99,13 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
 
   /** Projects to the current time and saves any contacts with expired transfers. */
   private void fastResaveContacts(Pipeline pipeline) {
-    Read<ContactResource, ContactResource> read =
+    Read<Contact, Contact> read =
         RegistryJpaIO.read(
             "FROM Contact WHERE transferData.transferStatus = 'PENDING' AND"
                 + " transferData.pendingTransferExpirationTime < current_timestamp()",
-            ContactResource.class,
+            Contact.class,
             c -> c);
-    projectAndResaveResources(pipeline, ContactResource.class, read);
+    projectAndResaveResources(pipeline, Contact.class, read);
   }
 
   /**

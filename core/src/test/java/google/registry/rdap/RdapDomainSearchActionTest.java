@@ -23,11 +23,10 @@ import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistContactResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarContacts;
+import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -36,7 +35,7 @@ import com.google.common.collect.Range;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
 import google.registry.model.host.Host;
@@ -70,9 +69,9 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   private Domain domainCatExample;
   private Domain domainIdn;
   private Domain domainMultipart;
-  private ContactResource contact1;
-  private ContactResource contact2;
-  private ContactResource contact3;
+  private Contact contact1;
+  private Contact contact2;
+  private Contact contact3;
   private Host hostNs1CatLol;
   private Host hostNs2CatLol;
   private HashMap<String, Host> hostNameToHostMap = new HashMap<>();
@@ -134,15 +133,15 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     registrar =
         persistResource(
             makeRegistrar("evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarContacts(registrar));
+    persistSimpleResources(makeRegistrarPocs(registrar));
     contact1 =
-        makeAndPersistContactResource(
+        FullFieldsTestEntityHelper.makeAndPersistContact(
             "5372808-ERL", "Goblin Market", "lol@cat.lol", clock.nowUtc().minusYears(1), registrar);
     contact2 =
-        makeAndPersistContactResource(
+        FullFieldsTestEntityHelper.makeAndPersistContact(
             "5372808-IRL", "Santa Claus", "BOFH@cat.lol", clock.nowUtc().minusYears(2), registrar);
     contact3 =
-        makeAndPersistContactResource(
+        FullFieldsTestEntityHelper.makeAndPersistContact(
             "5372808-TRL", "The Raven", "bog@cat.lol", clock.nowUtc().minusYears(3), registrar);
     hostNs1CatLol =
         addHostToMap(
@@ -176,19 +175,19 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         persistResource(
             makeDomain(
                     "cat2.lol",
-                    makeAndPersistContactResource(
+                    FullFieldsTestEntityHelper.makeAndPersistContact(
                         "6372808-ERL",
                         "Siegmund",
                         "siegmund@cat2.lol",
                         clock.nowUtc().minusYears(1),
                         registrar),
-                    makeAndPersistContactResource(
+                    FullFieldsTestEntityHelper.makeAndPersistContact(
                         "6372808-IRL",
                         "Sieglinde",
                         "sieglinde@cat2.lol",
                         clock.nowUtc().minusYears(2),
                         registrar),
-                    makeAndPersistContactResource(
+                    FullFieldsTestEntityHelper.makeAndPersistContact(
                         "6372808-TRL",
                         "Siegfried",
                         "siegfried@cat2.lol",
@@ -212,24 +211,24 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     registrar =
         persistResource(
             makeRegistrar("goodregistrar", "St. John Chrysostom", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarContacts(registrar));
+    persistSimpleResources(makeRegistrarPocs(registrar));
     domainCatExample =
         persistResource(
             makeDomain(
                     "cat.example",
-                    makeAndPersistContactResource(
+                    FullFieldsTestEntityHelper.makeAndPersistContact(
                         "7372808-ERL",
                         "Matthew",
                         "lol@cat.lol",
                         clock.nowUtc().minusYears(1),
                         registrar),
-                    makeAndPersistContactResource(
+                    FullFieldsTestEntityHelper.makeAndPersistContact(
                         "7372808-IRL",
                         "Mark",
                         "BOFH@cat.lol",
                         clock.nowUtc().minusYears(2),
                         registrar),
-                    makeAndPersistContactResource(
+                    FullFieldsTestEntityHelper.makeAndPersistContact(
                         "7372808-TRL",
                         "Luke",
                         "bog@cat.lol",
@@ -249,24 +248,24 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     // cat.みんな
     createTld("xn--q9jyb4c");
     registrar = persistResource(makeRegistrar("unicoderegistrar", "みんな", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarContacts(registrar));
+    persistSimpleResources(makeRegistrarPocs(registrar));
     domainIdn =
         persistResource(
             makeDomain(
                     "cat.みんな",
-                    makeAndPersistContactResource(
+                    FullFieldsTestEntityHelper.makeAndPersistContact(
                         "8372808-ERL",
                         "(◕‿◕)",
                         "lol@cat.みんな",
                         clock.nowUtc().minusYears(1),
                         registrar),
-                    makeAndPersistContactResource(
+                    FullFieldsTestEntityHelper.makeAndPersistContact(
                         "8372808-IRL",
                         "Santa Claus",
                         "BOFH@cat.みんな",
                         clock.nowUtc().minusYears(2),
                         registrar),
-                    makeAndPersistContactResource(
+                    FullFieldsTestEntityHelper.makeAndPersistContact(
                         "8372808-TRL",
                         "The Raven",
                         "bog@cat.みんな",
@@ -288,24 +287,24 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     // cat.1.test
     createTld("1.test");
     registrar = persistResource(makeRegistrar("multiregistrar", "1.test", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarContacts(registrar));
+    persistSimpleResources(makeRegistrarPocs(registrar));
     domainMultipart =
         persistResource(
             makeDomain(
                     "cat.1.test",
-                    makeAndPersistContactResource(
+                    FullFieldsTestEntityHelper.makeAndPersistContact(
                         "9372808-ERL",
                         "(◕‿◕)",
                         "lol@cat.みんな",
                         clock.nowUtc().minusYears(1),
                         registrar),
-                    makeAndPersistContactResource(
+                    FullFieldsTestEntityHelper.makeAndPersistContact(
                         "9372808-IRL",
                         "Santa Claus",
                         "BOFH@cat.みんな",
                         clock.nowUtc().minusYears(2),
                         registrar),
-                    makeAndPersistContactResource(
+                    FullFieldsTestEntityHelper.makeAndPersistContact(
                         "9372808-TRL",
                         "The Raven",
                         "bog@cat.みんな",

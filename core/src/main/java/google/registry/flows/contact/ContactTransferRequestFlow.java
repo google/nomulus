@@ -38,8 +38,8 @@ import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.AlreadyPendingTransferException;
 import google.registry.flows.exceptions.ObjectAlreadySponsoredException;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
@@ -96,7 +96,7 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
     validateRegistrarIsLoggedIn(gainingClientId);
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
-    ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
+    Contact existingContact = loadAndVerifyExistence(Contact.class, targetId, now);
     verifyAuthInfoPresentForResourceTransfer(authInfo);
     verifyAuthInfo(authInfo.get(), existingContact);
     // Verify that the resource does not already have a pending transfer.
@@ -146,10 +146,12 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
             .asBuilder()
             .setEventTime(now) // Unlike the serverApprove messages, this applies immediately.
             .build();
-    ContactResource newContact = existingContact.asBuilder()
-        .setTransferData(pendingTransferData)
-        .addStatusValue(StatusValue.PENDING_TRANSFER)
-        .build();
+    Contact newContact =
+        existingContact
+            .asBuilder()
+            .setTransferData(pendingTransferData)
+            .addStatusValue(StatusValue.PENDING_TRANSFER)
+            .build();
     tm().update(newContact);
     tm().insertAll(
             ImmutableSet.of(

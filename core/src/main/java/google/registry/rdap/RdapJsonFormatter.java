@@ -39,9 +39,9 @@ import com.google.common.net.InetAddresses;
 import com.google.gson.JsonArray;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactPhoneNumber;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -363,7 +363,7 @@ public class RdapJsonFormatter {
                     ImmutableSet.copyOf(
                         replicaJpaTm().loadByKeys(domain.getNameservers()).values()));
     // Load the registrant and other contacts and add them to the data.
-    ImmutableMap<VKey<? extends ContactResource>, ContactResource> loadedContacts =
+    ImmutableMap<VKey<? extends Contact>, Contact> loadedContacts =
         replicaJpaTm()
             .transact(() -> replicaJpaTm().loadByKeysIfPresent(domain.getReferencedContacts()));
     // RDAP Response Profile 2.7.3, A domain MUST have the REGISTRANT, ADMIN, TECH roles and MAY
@@ -373,7 +373,7 @@ public class RdapJsonFormatter {
     // fields we don't want to show (as opposed to not having contacts at all) because of GDPR etc.
     //
     // the GDPR redaction is handled in createRdapContactEntity
-    ImmutableSetMultimap<VKey<ContactResource>, Type> contactsToRoles =
+    ImmutableSetMultimap<VKey<Contact>, Type> contactsToRoles =
         Streams.concat(
                 domain.getContacts().stream(),
                 Stream.of(DesignatedContact.create(Type.REGISTRANT, domain.getRegistrant())))
@@ -382,7 +382,7 @@ public class RdapJsonFormatter {
                 toImmutableSetMultimap(
                     DesignatedContact::getContactKey, DesignatedContact::getType));
 
-    for (VKey<ContactResource> contactKey : contactsToRoles.keySet()) {
+    for (VKey<Contact> contactKey : contactsToRoles.keySet()) {
       Set<RdapEntity.Role> roles =
           contactsToRoles.get(contactKey).stream()
               .map(RdapJsonFormatter::convertContactTypeToRdapRole)
@@ -495,16 +495,14 @@ public class RdapJsonFormatter {
   }
 
   /**
-   * Creates a JSON object for a {@link ContactResource} and associated contact type.
+   * Creates a JSON object for a {@link Contact} and associated contact type.
    *
-   * @param contactResource the contact resource object from which the JSON object should be created
+   * @param contact the contact resource object from which the JSON object should be created
    * @param roles the roles of this contact
    * @param outputDataType whether to generate full or summary data
    */
   RdapContactEntity createRdapContactEntity(
-      ContactResource contactResource,
-      Iterable<RdapEntity.Role> roles,
-      OutputDataType outputDataType) {
+      Contact contact, Iterable<RdapEntity.Role> roles, OutputDataType outputDataType) {
     RdapContactEntity.Builder contactBuilder = RdapContactEntity.builder();
 
     // RDAP Response Profile 2.7.1, 2.7.3 - we MUST have the contacts. 2.7.4 discusses censoring of
@@ -512,12 +510,12 @@ public class RdapJsonFormatter {
     //
     // 2.8 allows for unredacted output for authorized people.
     boolean isAuthorized =
-        rdapAuthorization.isAuthorizedForRegistrar(contactResource.getCurrentSponsorRegistrarId());
+        rdapAuthorization.isAuthorizedForRegistrar(contact.getCurrentSponsorRegistrarId());
 
     // ROID needs to be redacted if we aren't authorized, so we can't have a self-link for
     // unauthorized users
     if (isAuthorized) {
-      contactBuilder.linksBuilder().add(makeSelfLink("entity", contactResource.getRepoId()));
+      contactBuilder.linksBuilder().add(makeSelfLink("entity", contact.getRepoId()));
     }
 
     // Only show the "summary data remark" if the user is authorized to see this data - because
@@ -544,10 +542,10 @@ public class RdapJsonFormatter {
           .remarksBuilder()
           .add(RdapIcannStandardInformation.CONTACT_PERSONAL_DATA_HIDDEN_DATA_REMARK);
       // to make sure we don't accidentally display data we shouldn't - we replace the
-      // contactResource with a safe resource. Then we can add any information we need (e.g. the
+      // contact with a safe resource. Then we can add any information we need (e.g. the
       // Organization / state / country of the registrant), although we currently don't do that.
-      contactResource =
-          new ContactResource.Builder()
+      contact =
+          new Contact.Builder()
               .setRepoId(CONTACT_REDACTED_VALUE)
               .setVoiceNumber(
                   new ContactPhoneNumber.Builder().setPhoneNumber(CONTACT_REDACTED_VALUE).build())
@@ -572,7 +570,7 @@ public class RdapJsonFormatter {
 
     // RDAP Response Profile 2.7.3 - we MUST provide a handle set with the ROID, subject to the
     // redaction above.
-    contactBuilder.setHandle(contactResource.getRepoId());
+    contactBuilder.setHandle(contact.getRepoId());
 
     // RDAP Response Profile doesn't mention status for contacts, so we only show it if we're both
     // FULL and Authorized.
@@ -581,11 +579,11 @@ public class RdapJsonFormatter {
           .statusBuilder()
           .addAll(
               makeStatusValueList(
-                  isLinked(contactResource.createVKey(), getRequestTime())
-                      ? union(contactResource.getStatusValues(), StatusValue.LINKED)
-                      : contactResource.getStatusValues(),
+                  isLinked(contact.createVKey(), getRequestTime())
+                      ? union(contact.getStatusValues(), StatusValue.LINKED)
+                      : contact.getStatusValues(),
                   false,
-                  contactResource.getDeletionTime().isBefore(getRequestTime())));
+                  contact.getDeletionTime().isBefore(getRequestTime())));
     }
 
     contactBuilder.rolesBuilder().addAll(roles);
@@ -596,9 +594,9 @@ public class RdapJsonFormatter {
     // RDAP Response Profile 2.7.3 - we MUST have FN, ADR, TEL, EMAIL.
     //
     // Note that 2.7.5 also says the EMAIL must be omitted, so we'll omit it
-    PostalInfo postalInfo = contactResource.getInternationalizedPostalInfo();
+    PostalInfo postalInfo = contact.getInternationalizedPostalInfo();
     if (postalInfo == null) {
-      postalInfo = contactResource.getLocalizedPostalInfo();
+      postalInfo = contact.getLocalizedPostalInfo();
     }
     if (postalInfo != null) {
       if (postalInfo.getName() != null) {
@@ -609,11 +607,11 @@ public class RdapJsonFormatter {
       }
       addVCardAddressEntry(vcardBuilder, postalInfo.getAddress());
     }
-    ContactPhoneNumber voicePhoneNumber = contactResource.getVoiceNumber();
+    ContactPhoneNumber voicePhoneNumber = contact.getVoiceNumber();
     if (voicePhoneNumber != null) {
       vcardBuilder.add(makePhoneEntry(PHONE_TYPE_VOICE, makePhoneString(voicePhoneNumber)));
     }
-    ContactPhoneNumber faxPhoneNumber = contactResource.getFaxNumber();
+    ContactPhoneNumber faxPhoneNumber = contact.getFaxNumber();
     if (faxPhoneNumber != null) {
       vcardBuilder.add(makePhoneEntry(PHONE_TYPE_FAX, makePhoneString(faxPhoneNumber)));
     }
@@ -641,7 +639,7 @@ public class RdapJsonFormatter {
     // We also only add it for authorized users because millisecond times can fingerprint a user
     // just as much as the handle can.
     if (outputDataType == OutputDataType.FULL && isAuthorized) {
-      contactBuilder.eventsBuilder().addAll(makeOptionalEvents(contactResource));
+      contactBuilder.eventsBuilder().addAll(makeOptionalEvents(contact));
     }
     return contactBuilder.build();
   }
