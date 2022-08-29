@@ -33,8 +33,8 @@ import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppinput.ResourceCommand;
@@ -78,11 +78,11 @@ public final class ContactTransferCancelFlow implements TransactionalFlow {
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
-    ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
+    Contact existingContact = loadAndVerifyExistence(Contact.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, existingContact);
     verifyHasPendingTransfer(existingContact);
     verifyTransferInitiator(registrarId, existingContact);
-    ContactResource newContact =
+    Contact newContact =
         denyPendingTransfer(existingContact, TransferStatus.CLIENT_CANCELLED, now, registrarId);
     ContactHistory contactHistory =
         historyBuilder.setType(CONTACT_TRANSFER_CANCEL).setContact(newContact).build();

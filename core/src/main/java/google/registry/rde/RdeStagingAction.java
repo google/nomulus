@@ -45,7 +45,7 @@ import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.model.index.EppResourceIndex;
@@ -82,8 +82,8 @@ import org.joda.time.Duration;
  * type and loads the embedded resource from it, which is then projected to watermark time to
  * account for things like pending transfer.
  *
- * <p>Only {@link ContactResource}s and {@link Host}s that are referenced by an included {@link
- * Domain} will be included in the corresponding pending deposit.
+ * <p>Only {@link Contact}s and {@link Host}s that are referenced by an included {@link Domain} will
+ * be included in the corresponding pending deposit.
  *
  * <p>{@link Registrar} entities, both active and inactive, are included in all deposits. They are
  * not rewinded point-in-time.

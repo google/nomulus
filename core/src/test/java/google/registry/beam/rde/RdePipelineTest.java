@@ -53,9 +53,9 @@ import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.PgpHelper;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
@@ -265,9 +265,9 @@ public class RdePipelineTest {
 
     // This contact is never referenced.
     persistContactHistory(persistActiveContact("contactX"));
-    ContactResource contact1 = persistActiveContact("contact1234");
+    Contact contact1 = persistActiveContact("contact1234");
     persistContactHistory(contact1);
-    ContactResource contact2 = persistActiveContact("contact456");
+    Contact contact2 = persistActiveContact("contact456");
     persistContactHistory(contact2);
 
     // This host is never referenced.
@@ -302,7 +302,7 @@ public class RdePipelineTest {
     persistDomainHistory(deletedDomain.asBuilder().setDeletionTime(clock.nowUtc()).build());
     kittyDomain = kittyDomain.asBuilder().setDomainName("cat.fun").build();
     persistDomainHistory(kittyDomain);
-    ContactResource contact3 = persistActiveContact("contact789");
+    Contact contact3 = persistActiveContact("contact789");
     persistContactHistory(contact3);
     // This is a subordinate domain in TLD .cat, which is not included in any pending deposit. But
     // it should still be included as a subordinate host in the pendign deposit for .soy.
@@ -329,7 +329,7 @@ public class RdePipelineTest {
     // resulting deposit fragments.
     clock.advanceBy(Duration.standardDays(2));
     persistDomainHistory(kittyDomain.asBuilder().setDeletionTime(clock.nowUtc()).build());
-    ContactResource futureContact = persistActiveContact("future-contact");
+    Contact futureContact = persistActiveContact("future-contact");
     persistContactHistory(futureContact);
     Host futureHost = persistActiveHost("ns1.future.tld");
     persistHostHistory(futureHost);

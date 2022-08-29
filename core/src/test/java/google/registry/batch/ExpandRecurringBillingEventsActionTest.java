@@ -44,6 +44,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.common.Cursor;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -1084,8 +1085,15 @@ public class ExpandRecurringBillingEventsActionTest {
             .setEventTime(eventDate.plusYears(1))
             .setDomainHistory(persistedEntries.get(1))
             .build();
-    assertBillingEventsForResource(domain, recurring, cheaper, expensive);
+    assertBillingEventsForResource(domain, recurringNextYear(recurring), cheaper, expensive);
     assertCursorAt(currentTestTime);
+  }
+
+  private static Recurring recurringNextYear(Recurring recurring) {
+    return recurring
+        .asBuilder()
+        .setRecurrenceLastExpansion(recurring.getRecurrenceLastExpansion().plusYears(1))
+        .build();
   }
 
   @Test

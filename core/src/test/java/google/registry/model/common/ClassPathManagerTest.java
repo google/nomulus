@@ -17,7 +17,7 @@ package google.registry.model.common;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
@@ -54,7 +54,7 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("RdeRevision")).isEqualTo(RdeRevision.class);
     assertThat(ClassPathManager.getClass("Host")).isEqualTo(Host.class);
     assertThat(ClassPathManager.getClass("Registrar")).isEqualTo(Registrar.class);
-    assertThat(ClassPathManager.getClass("ContactResource")).isEqualTo(ContactResource.class);
+    assertThat(ClassPathManager.getClass("Contact")).isEqualTo(Contact.class);
     assertThat(ClassPathManager.getClass("GaeUserIdConverter")).isEqualTo(GaeUserIdConverter.class);
     assertThat(ClassPathManager.getClass("EppResourceIndexBucket"))
         .isEqualTo(EppResourceIndexBucket.class);
@@ -106,7 +106,7 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClassName(RdeRevision.class)).isEqualTo("RdeRevision");
     assertThat(ClassPathManager.getClassName(Host.class)).isEqualTo("Host");
     assertThat(ClassPathManager.getClassName(Registrar.class)).isEqualTo("Registrar");
-    assertThat(ClassPathManager.getClassName(ContactResource.class)).isEqualTo("ContactResource");
+    assertThat(ClassPathManager.getClassName(Contact.class)).isEqualTo("Contact");
     assertThat(ClassPathManager.getClassName(GaeUserIdConverter.class))
         .isEqualTo("GaeUserIdConverter");
     assertThat(ClassPathManager.getClassName(EppResourceIndexBucket.class))

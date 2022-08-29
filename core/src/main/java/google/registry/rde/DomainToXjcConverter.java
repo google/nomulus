@@ -21,7 +21,7 @@ import com.google.common.base.Ascii;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -168,11 +168,11 @@ final class DomainToXjcConverter {
         // o  An OPTIONAL <registrant> element that contain the identifier for
         //    the human or organizational social information object associated
         //    as the holder of the domain name object.
-        VKey<ContactResource> registrant = model.getRegistrant();
+        VKey<Contact> registrant = model.getRegistrant();
         if (registrant == null) {
           logger.atWarning().log("Domain %s has no registrant contact.", domainName);
         } else {
-          ContactResource registrantContact = tm().transact(() -> tm().loadByKey(registrant));
+          Contact registrantContact = tm().transact(() -> tm().loadByKey(registrant));
           checkState(
               registrantContact != null,
               "Registrant contact %s on domain %s does not exist",
@@ -304,7 +304,7 @@ final class DomainToXjcConverter {
         "Contact key for type %s is null on domain %s",
         model.getType(),
         domainName);
-    ContactResource contact = tm().transact(() -> tm().loadByKey(model.getContactKey()));
+    Contact contact = tm().transact(() -> tm().loadByKey(model.getContactKey()));
     checkState(
         contact != null,
         "Contact %s on domain %s does not exist",

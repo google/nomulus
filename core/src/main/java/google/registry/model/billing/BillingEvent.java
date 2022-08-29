@@ -487,7 +487,6 @@ public abstract class BillingEvent extends ImmutableObject
      * in the past. If it's more recent than that, it means that the recurrence was already expanded
      * too recently to need to be checked again (as domains autorenew each year).
      */
-    @Index
     @Column(name = "recurrenceLastExpansion", nullable = false)
     DateTime recurrenceLastExpansion;
 
@@ -594,9 +593,11 @@ public abstract class BillingEvent extends ImmutableObject
         checkNotNull(instance.eventTime);
         checkNotNull(instance.reason);
         // Don't require recurrenceLastExpansion to be individually set on every new Recurrence.
-        // The correct default value if not otherwise set is the event time of the recurrence.
+        // The correct default value if not otherwise set is the event time of the recurrence minus
+        // 1 year.
         instance.recurrenceLastExpansion =
-            Optional.ofNullable(instance.recurrenceLastExpansion).orElse(instance.eventTime);
+            Optional.ofNullable(instance.recurrenceLastExpansion)
+                .orElse(instance.eventTime.minusYears(1));
         checkArgument(
             instance.renewalPriceBehavior == RenewalPriceBehavior.SPECIFIED
                 ^ instance.renewalPrice == null,

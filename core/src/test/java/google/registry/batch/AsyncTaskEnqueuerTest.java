@@ -27,7 +27,7 @@ import static org.joda.time.Duration.standardSeconds;
 
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableSortedSet;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
@@ -80,7 +80,7 @@ public class AsyncTaskEnqueuerTest {
 
   @Test
   void test_enqueueAsyncResave_success() {
-    ContactResource contact = persistActiveContact("jd23456");
+    Contact contact = persistActiveContact("jd23456");
     asyncTaskEnqueuer.enqueueAsyncResave(
         contact.createVKey(), clock.nowUtc(), clock.nowUtc().plusDays(5));
     cloudTasksHelper.assertTasksEnqueued(
@@ -97,7 +97,7 @@ public class AsyncTaskEnqueuerTest {
 
   @Test
   void test_enqueueAsyncResave_multipleResaves() {
-    ContactResource contact = persistActiveContact("jd23456");
+    Contact contact = persistActiveContact("jd23456");
     DateTime now = clock.nowUtc();
     asyncTaskEnqueuer.enqueueAsyncResave(
         contact.createVKey(),
@@ -119,7 +119,7 @@ public class AsyncTaskEnqueuerTest {
   @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
   void test_enqueueAsyncResave_ignoresTasksTooFarIntoFuture() {
-    ContactResource contact = persistActiveContact("jd23456");
+    Contact contact = persistActiveContact("jd23456");
     asyncTaskEnqueuer.enqueueAsyncResave(
         contact.createVKey(), clock.nowUtc(), clock.nowUtc().plusDays(31));
     cloudTasksHelper.assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);

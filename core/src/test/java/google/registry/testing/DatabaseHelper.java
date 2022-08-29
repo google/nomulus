@@ -73,9 +73,9 @@ import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.Domain;
@@ -173,7 +173,7 @@ public class DatabaseHelper {
     return newDomain(domainName, repoId, persistActiveContact("contact1234"));
   }
 
-  public static Domain newDomain(String domainName, ContactResource contact) {
+  public static Domain newDomain(String domainName, Contact contact) {
     return newDomain(domainName, generateNewDomainRoid(getTldFromDomainName(domainName)), contact);
   }
 
@@ -183,8 +183,8 @@ public class DatabaseHelper {
     return newDomain(domainName).asBuilder().setNameservers(hostKeys).build();
   }
 
-  public static Domain newDomain(String domainName, String repoId, ContactResource contact) {
-    VKey<ContactResource> contactKey = contact.createVKey();
+  public static Domain newDomain(String domainName, String repoId, Contact contact) {
+    VKey<Contact> contactKey = contact.createVKey();
     return new Domain.Builder()
         .setRepoId(repoId)
         .setDomainName(domainName)
@@ -202,15 +202,15 @@ public class DatabaseHelper {
   }
 
   /**
-   * Returns a newly created {@link ContactResource} for the given contactId (which is the foreign
-   * key) with an auto-generated repoId.
+   * Returns a newly created {@link Contact} for the given contactId (which is the foreign key) with
+   * an auto-generated repoId.
    */
-  public static ContactResource newContactResource(String contactId) {
-    return newContactResourceWithRoid(contactId, generateNewContactHostRoid());
+  public static Contact newContact(String contactId) {
+    return newContactWithRoid(contactId, generateNewContactHostRoid());
   }
 
-  public static ContactResource newContactResourceWithRoid(String contactId, String repoId) {
-    return new ContactResource.Builder()
+  public static Contact newContactWithRoid(String contactId, String repoId) {
+    return new Contact.Builder()
         .setRepoId(repoId)
         .setContactId(contactId)
         .setCreationRegistrarId("TheRegistrar")
@@ -259,14 +259,13 @@ public class DatabaseHelper {
         .build();
   }
 
-  public static ContactResource persistActiveContact(String contactId) {
-    return persistResource(newContactResource(contactId));
+  public static Contact persistActiveContact(String contactId) {
+    return persistResource(newContact(contactId));
   }
 
   /** Persists a contact resource with the given contact id deleted at the specified time. */
-  public static ContactResource persistDeletedContact(String contactId, DateTime deletionTime) {
-    return persistResource(
-        newContactResource(contactId).asBuilder().setDeletionTime(deletionTime).build());
+  public static Contact persistDeletedContact(String contactId, DateTime deletionTime) {
+    return persistResource(newContact(contactId).asBuilder().setDeletionTime(deletionTime).build());
   }
 
   public static Host persistActiveHost(String hostName) {
@@ -558,8 +557,8 @@ public class DatabaseHelper {
         .build();
   }
 
-  public static ContactResource persistContactWithPendingTransfer(
-      ContactResource contact, DateTime requestTime, DateTime expirationTime, DateTime now) {
+  public static Contact persistContactWithPendingTransfer(
+      Contact contact, DateTime requestTime, DateTime expirationTime, DateTime now) {
     HistoryEntry historyEntryContactTransfer =
         persistResource(
             new ContactHistory.Builder()
@@ -609,7 +608,7 @@ public class DatabaseHelper {
   public static Domain persistDomainWithDependentResources(
       String label,
       String tld,
-      ContactResource contact,
+      Contact contact,
       DateTime now,
       DateTime creationTime,
       DateTime expirationTime) {
@@ -1150,7 +1149,7 @@ public class DatabaseHelper {
   }
 
   private static HistoryEntry.Type getHistoryEntryType(EppResource resource) {
-    if (resource instanceof ContactResource) {
+    if (resource instanceof Contact) {
       return resource.getRepoId() != null
           ? HistoryEntry.Type.CONTACT_CREATE
           : HistoryEntry.Type.CONTACT_UPDATE;

@@ -55,13 +55,13 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
+import google.registry.util.DateTimeUtils;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeComparator;
 
 /**
  * An action that expands {@link Recurring} billing events into synthetic {@link OneTime} events.
@@ -133,13 +133,13 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                                     + "AND eventTime < recurrenceEndTime "
                                     + "AND id > :maxProcessedRecurrenceId "
                                     + "AND recurrenceEndTime > :cursorTime "
-                                    + "AND recurrenceLastExpansion < :cursorTime1Yr "
+                                    + "AND recurrenceLastExpansion < :oneYearAgo "
                                     + "ORDER BY id ASC",
                                 Recurring.class)
                             .setParameter("executeTime", executeTime)
                             .setParameter("maxProcessedRecurrenceId", prevMaxProcessedRecurrenceId)
                             .setParameter("cursorTime", cursorTime)
-                            .setParameter("cursorTime1Yr", cursorTime.minusYears(1))
+                            .setParameter("oneYearAgo", executeTime.minusYears(1))
                             .setMaxResults(batchSize)
                             .getResultList();
                     for (Recurring recurring : recurrings) {
@@ -267,6 +267,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
     ImmutableSet<DateTime> existingBillingTimes =
         getExistingBillingTimes(oneTimesForDomain, recurring);
 
+    DateTime newRecurrenceLastExpansion = recurring.getRecurrenceLastExpansion();
     ImmutableSet.Builder<DomainHistory> historyEntriesBuilder = new ImmutableSet.Builder<>();
     // Create synthetic OneTime events for all billing times that do not yet have
     // an event persisted.
@@ -300,6 +301,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
       historyEntriesBuilder.add(historyEntry);
 
       DateTime eventTime = billingTime.minus(tld.getAutoRenewGracePeriodLength());
+      newRecurrenceLastExpansion = DateTimeUtils.latestOf(newRecurrenceLastExpansion, eventTime);
 
       syntheticOneTimesBuilder.add(
           new OneTime.Builder()
@@ -323,10 +325,6 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
     Set<DomainHistory> historyEntries = historyEntriesBuilder.build();
     Set<OneTime> syntheticOneTimes = syntheticOneTimesBuilder.build();
     if (!isDryRun) {
-      DateTime newRecurrenceLastExpansion =
-          billingTimes.stream()
-              .max(DateTimeComparator.getInstance())
-              .orElse(recurring.getRecurrenceLastExpansion());
       ImmutableSet<ImmutableObject> entitiesToSave =
           new ImmutableSet.Builder<ImmutableObject>()
               .addAll(historyEntries)

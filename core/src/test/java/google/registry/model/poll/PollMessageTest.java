@@ -25,7 +25,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.EntityTestCase;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
@@ -53,7 +53,7 @@ public class PollMessageTest extends EntityTestCase {
   @BeforeEach
   void setUp() {
     createTld("foobar");
-    ContactResource contact = persistActiveContact("contact1234");
+    Contact contact = persistActiveContact("contact1234");
     domain = persistResource(DatabaseHelper.newDomain("foo.foobar", contact));
     historyEntry =
         persistResource(

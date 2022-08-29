@@ -22,7 +22,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.host.Host;
 import google.registry.testing.TestCacheExtension;
 import java.time.Duration;
@@ -38,14 +38,14 @@ public class EppResourceTest extends EntityTestCase {
 
   @Test
   void test_loadCached_ignoresContactChange() {
-    ContactResource originalContact = persistActiveContact("contact123");
+    Contact originalContact = persistActiveContact("contact123");
     assertThat(EppResource.loadCached(ImmutableList.of(originalContact.createVKey())))
         .containsExactly(originalContact.createVKey(), originalContact);
-    ContactResource modifiedContact =
+    Contact modifiedContact =
         persistResource(originalContact.asBuilder().setEmailAddress("different@fake.lol").build());
     assertThat(EppResource.loadCached(ImmutableList.of(originalContact.createVKey())))
         .containsExactly(originalContact.createVKey(), originalContact);
-    assertThat(loadByForeignKey(ContactResource.class, "contact123", fakeClock.nowUtc()))
+    assertThat(loadByForeignKey(Contact.class, "contact123", fakeClock.nowUtc()))
         .hasValue(modifiedContact);
   }
 

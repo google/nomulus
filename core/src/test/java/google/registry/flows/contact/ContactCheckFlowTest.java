@@ -24,11 +24,11 @@ import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceCheckFlowTestCase;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactCheckFlow}. */
-class ContactCheckFlowTest extends ResourceCheckFlowTestCase<ContactCheckFlow, ContactResource> {
+class ContactCheckFlowTest extends ResourceCheckFlowTestCase<ContactCheckFlow, Contact> {
 
   ContactCheckFlowTest() {
     setEppInput("contact_check.xml");

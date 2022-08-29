@@ -15,9 +15,9 @@
 package google.registry.flows.contact;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
+import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
-import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDeletedContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -31,12 +31,12 @@ import google.registry.flows.contact.ContactFlowUtils.BadInternationalizedPostal
 import google.registry.flows.contact.ContactFlowUtils.DeclineContactDisclosureFieldDisallowedPolicyException;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactCreateFlow}. */
-class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, ContactResource> {
+class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Contact> {
 
   ContactCreateFlowTest() {
     setEppInput("contact_create.xml");
@@ -47,7 +47,7 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("contact_create_response.xml"));
     // Check that the contact was created and persisted with a history entry.
-    ContactResource contact = reloadResourceByForeignKey();
+    Contact contact = reloadResourceByForeignKey();
     assertAboutContacts().that(contact).hasOnlyOneHistoryEntryWhich().hasNoXml();
     assertNoBillingEvents();
     assertLastHistoryContainsResource(contact);
@@ -93,7 +93,7 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
   void testFailure_resourceContention() throws Exception {
     String targetId = getUniqueIdFromCommand();
     persistResource(
-        newContactResource(targetId)
+        newContact(targetId)
             .asBuilder()
             .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
             .build());

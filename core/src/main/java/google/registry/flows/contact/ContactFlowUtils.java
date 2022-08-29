@@ -24,10 +24,10 @@ import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.poll.PendingActionNotificationResponse.ContactPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
@@ -61,7 +61,7 @@ public class ContactFlowUtils {
   }
 
   /** Check contact's state against server policy. */
-  static void validateContactAgainstPolicy(ContactResource contact) throws EppException {
+  static void validateContactAgainstPolicy(Contact contact) throws EppException {
     if (contact.getDisclose() != null && !contact.getDisclose().getFlag()) {
       throw new DeclineContactDisclosureFieldDisallowedPolicyException();
     }

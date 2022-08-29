@@ -16,6 +16,7 @@ package google.registry.beam.common;
 
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -25,8 +26,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.common.RegistryJpaIO.Read;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactBase;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.GracePeriod;
@@ -42,7 +43,6 @@ import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import org.apache.beam.sdk.testing.PAssert;
@@ -76,17 +76,17 @@ public class RegistryJpaReadTest {
   final transient TestPipelineExtension testPipeline =
       TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
-  private transient ImmutableList<ContactResource> contacts;
+  private transient ImmutableList<Contact> contacts;
 
   @BeforeEach
   void beforeEach() {
     Registrar ofyRegistrar = AppEngineExtension.makeRegistrar2();
     insertInDb(ofyRegistrar);
 
-    ImmutableList.Builder<ContactResource> builder = new ImmutableList.Builder<>();
+    ImmutableList.Builder<Contact> builder = new ImmutableList.Builder<>();
 
     for (int i = 0; i < 3; i++) {
-      ContactResource contact = DatabaseHelper.newContactResource("contact_" + i);
+      Contact contact = newContact("contact_" + i);
       builder.add(contact);
     }
     contacts = builder.build();
@@ -95,10 +95,9 @@ public class RegistryJpaReadTest {
 
   @Test
   void readWithCriteriaQuery() {
-    Read<ContactResource, String> read =
+    Read<Contact, String> read =
         RegistryJpaIO.read(
-            () -> CriteriaQueryBuilder.create(ContactResource.class).build(),
-            ContactBase::getContactId);
+            () -> CriteriaQueryBuilder.create(Contact.class).build(), ContactBase::getContactId);
     PCollection<String> repoIds = testPipeline.apply(read);
 
     PAssert.that(repoIds).containsInAnyOrder("contact_0", "contact_1", "contact_2");
@@ -172,8 +171,8 @@ public class RegistryJpaReadTest {
             .setRegistrarId("registrar1")
             .setEmailAddress("me@google.com")
             .build();
-    ContactResource contact =
-        new ContactResource.Builder()
+    Contact contact =
+        new Contact.Builder()
             .setRepoId("contactid_1")
             .setCreationRegistrarId(registrar.getRegistrarId())
             .setTransferData(new ContactTransferData.Builder().build())

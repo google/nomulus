@@ -28,9 +28,9 @@ import com.google.common.net.InetAddresses;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactPhoneNumber;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
@@ -62,7 +62,7 @@ final class RdeFixtures {
             .setDomainName("example." + tld)
             .setRepoId(generateNewDomainRoid(tld))
             .setRegistrant(
-                makeContactResource(clock, "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")
+                makeContact(clock, "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")
                     .createVKey())
             .build();
     DomainHistory historyEntry =
@@ -94,7 +94,7 @@ final class RdeFixtures {
                 ImmutableSet.of(
                     DesignatedContact.create(
                         DesignatedContact.Type.ADMIN,
-                        makeContactResource(
+                        makeContact(
                                 clock,
                                 "5372808-IRL",
                                 "be that word our sign in parting",
@@ -102,7 +102,7 @@ final class RdeFixtures {
                             .createVKey()),
                     DesignatedContact.create(
                         DesignatedContact.Type.TECH,
-                        makeContactResource(
+                        makeContact(
                                 clock,
                                 "5372808-TRL",
                                 "bird or fiend!? i shrieked upstarting",
@@ -220,11 +220,10 @@ final class RdeFixtures {
     return persistResource(domain);
   }
 
-  static ContactResource makeContactResource(
-      FakeClock clock, String id, String name, String email) {
+  static Contact makeContact(FakeClock clock, String id, String name, String email) {
     clock.advanceOneMilli();
     return persistResource(
-        new ContactResource.Builder()
+        new Contact.Builder()
             .setContactId(id)
             .setRepoId(generateNewContactHostRoid())
             .setEmailAddress(email)

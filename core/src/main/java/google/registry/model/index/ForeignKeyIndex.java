@@ -47,7 +47,7 @@ import google.registry.model.CacheUtils.AppEngineEnvironmentCacheLoader;
 import google.registry.model.EppResource;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
@@ -70,10 +70,10 @@ import org.joda.time.DateTime;
 @DeleteAfterMigration
 public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroupRoot {
 
-  /** The {@link ForeignKeyIndex} type for {@link ContactResource} entities. */
+  /** The {@link ForeignKeyIndex} type for {@link Contact} entities. */
   @ReportedOn
   @Entity
-  public static class ForeignKeyContactIndex extends ForeignKeyIndex<ContactResource> {}
+  public static class ForeignKeyContactIndex extends ForeignKeyIndex<Contact> {}
 
   /** The {@link ForeignKeyIndex} type for {@link Domain} entities. */
   @ReportedOn
@@ -89,14 +89,14 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
           Class<? extends EppResource>, Class<? extends ForeignKeyIndex<?>>>
       RESOURCE_CLASS_TO_FKI_CLASS =
           ImmutableBiMap.of(
-              ContactResource.class, ForeignKeyContactIndex.class,
+              Contact.class, ForeignKeyContactIndex.class,
               Domain.class, ForeignKeyDomainIndex.class,
               Host.class, ForeignKeyHostIndex.class);
 
   private static final ImmutableMap<Class<? extends EppResource>, String>
       RESOURCE_CLASS_TO_FKI_PROPERTY =
           ImmutableMap.of(
-              ContactResource.class, "contactId",
+              Contact.class, "contactId",
               Domain.class, "fullyQualifiedDomainName",
               Host.class, "fullyQualifiedHostName");
 

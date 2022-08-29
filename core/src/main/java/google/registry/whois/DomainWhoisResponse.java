@@ -23,8 +23,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.EppResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactPhoneNumber;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -124,7 +124,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
   }
 
   /** Returns the contact of the given type. */
-  private Optional<VKey<ContactResource>> getContactReference(Type type) {
+  private Optional<VKey<Contact>> getContactReference(Type type) {
     Optional<DesignatedContact> contactOfType =
         domain.getContacts().stream().filter(d -> d.getType() == type).findFirst();
     return contactOfType.map(DesignatedContact::getContactKey);
@@ -145,15 +145,15 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
 
     /** Emit the contact entry of the given type. */
     DomainEmitter emitContact(
-        String contactType, Optional<VKey<ContactResource>> contact, boolean preferUnicode) {
+        String contactType, Optional<VKey<Contact>> contact, boolean preferUnicode) {
       if (!contact.isPresent()) {
         return this;
       }
       // If we refer to a contact that doesn't exist, that's a bug. It means referential integrity
       // has somehow been broken. We skip the rest of this contact, but log it to hopefully bring it
       // someone's attention.
-      ContactResource contactResource = EppResource.loadCached(contact.get());
-      if (contactResource == null) {
+      Contact contact1 = EppResource.loadCached(contact.get());
+      if (contact1 == null) {
         logger.atSevere().log(
             "(BUG) Broken reference found from domain %s to contact %s.",
             domain.getDomainName(), contact);
@@ -162,11 +162,10 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
       PostalInfo postalInfo =
           chooseByUnicodePreference(
               preferUnicode,
-              contactResource.getLocalizedPostalInfo(),
-              contactResource.getInternationalizedPostalInfo());
+              contact1.getLocalizedPostalInfo(),
+              contact1.getInternationalizedPostalInfo());
       // ICANN Consistent Labeling & Display policy requires that this be the ROID.
-      emitField(
-          ImmutableList.of("Registry", contactType, "ID"), contactResource.getRepoId(), fullOutput);
+      emitField(ImmutableList.of("Registry", contactType, "ID"), contact1.getRepoId(), fullOutput);
       if (postalInfo != null) {
         emitFieldIfDefined(ImmutableList.of(contactType, "Name"), postalInfo.getName(), fullOutput);
         emitFieldIfDefined(
@@ -175,10 +174,9 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
             fullOutput || contactType.equals("Registrant"));
         emitAddress(contactType, postalInfo.getAddress(), fullOutput);
       }
-      emitPhone(contactType, "Phone", contactResource.getVoiceNumber());
-      emitPhone(contactType, "Fax", contactResource.getFaxNumber());
-      String emailFieldContent =
-          fullOutput ? contactResource.getEmailAddress() : whoisRedactedEmailText;
+      emitPhone(contactType, "Phone", contact1.getVoiceNumber());
+      emitPhone(contactType, "Fax", contact1.getFaxNumber());
+      String emailFieldContent = fullOutput ? contact1.getEmailAddress() : whoisRedactedEmailText;
       emitField(ImmutableList.of(contactType, "Email"), emailFieldContent);
       return this;
     }

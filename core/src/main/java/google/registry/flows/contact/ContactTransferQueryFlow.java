@@ -27,7 +27,7 @@ import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.NoTransferHistoryToQueryException;
 import google.registry.flows.exceptions.NotAuthorizedToViewTransferException;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
@@ -66,8 +66,7 @@ public final class ContactTransferQueryFlow implements Flow {
   public EppResponse run() throws EppException {
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate(); // There are no legal extensions for this flow.
-    ContactResource contact =
-        loadAndVerifyExistence(ContactResource.class, targetId, clock.nowUtc());
+    Contact contact = loadAndVerifyExistence(Contact.class, targetId, clock.nowUtc());
     verifyOptionalAuthInfo(authInfo, contact);
     // Most of the fields on the transfer response are required, so there's no way to return valid
     // XML if the object has never been transferred (and hence the fields aren't populated).

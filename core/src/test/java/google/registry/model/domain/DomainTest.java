@@ -46,7 +46,7 @@ import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -89,7 +89,7 @@ public class DomainTest {
   private VKey<BillingEvent.OneTime> oneTimeBillKey;
   private VKey<BillingEvent.Recurring> recurringBillKey;
   private DomainHistory domainHistory;
-  private VKey<ContactResource> contact1Key, contact2Key;
+  private VKey<Contact> contact1Key, contact2Key;
 
   @BeforeEach
   void setUp() {
@@ -938,8 +938,8 @@ public class DomainTest {
 
   @Test
   void testContactFields() {
-    VKey<ContactResource> contact3Key = persistActiveContact("contact_id3").createVKey();
-    VKey<ContactResource> contact4Key = persistActiveContact("contact_id4").createVKey();
+    VKey<Contact> contact3Key = persistActiveContact("contact_id3").createVKey();
+    VKey<Contact> contact4Key = persistActiveContact("contact_id4").createVKey();
 
     // Set all of the contacts.
     domain.setContactFields(

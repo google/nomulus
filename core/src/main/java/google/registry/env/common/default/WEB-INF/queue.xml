@@ -10,10 +10,10 @@
     <name>dns-publish</name>
     <rate>100/s</rate>
     <bucket-size>100</bucket-size>
-    <!-- 30 sec backoff increasing linearly up to 10 minutes. -->
+    <!-- 30 sec backoff increasing linearly up to 30 minutes. -->
     <retry-parameters>
       <min-backoff-seconds>30</min-backoff-seconds>
-      <max-backoff-seconds>600</max-backoff-seconds>
+      <max-backoff-seconds>1800</max-backoff-seconds>
       <max-doublings>0</max-doublings>
     </retry-parameters>
   </queue>

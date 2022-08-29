@@ -36,10 +36,10 @@ import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactCommand.Update;
 import google.registry.model.contact.ContactCommand.Update.Change;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
@@ -94,7 +94,7 @@ public final class ContactUpdateFlow implements TransactionalFlow {
     extensionManager.validate();
     Update command = (Update) resourceCommand;
     DateTime now = tm().getTransactionTime();
-    ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
+    Contact existingContact = loadAndVerifyExistence(Contact.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, existingContact);
     ImmutableSet<StatusValue> statusToRemove = command.getInnerRemove().getStatusValues();
     ImmutableSet<StatusValue> statusesToAdd = command.getInnerAdd().getStatusValues();
@@ -104,7 +104,7 @@ public final class ContactUpdateFlow implements TransactionalFlow {
     }
     verifyNoDisallowedStatuses(existingContact, DISALLOWED_STATUSES);
     checkSameValuesNotAddedAndRemoved(statusesToAdd, statusToRemove);
-    ContactResource.Builder builder = existingContact.asBuilder();
+    Contact.Builder builder = existingContact.asBuilder();
     Change change = command.getInnerChange();
     // The spec requires the following behaviors:
     //   * If you update part of a postal info, the fields that you didn't update are unchanged.
@@ -126,7 +126,7 @@ public final class ContactUpdateFlow implements TransactionalFlow {
         builder.setInternationalizedPostalInfo(null);
       }
     }
-    ContactResource newContact =
+    Contact newContact =
         builder
             .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(registrarId)

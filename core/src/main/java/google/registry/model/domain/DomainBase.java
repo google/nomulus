@@ -52,7 +52,7 @@ import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.EntityGroupRoot;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
@@ -132,11 +132,11 @@ public class DomainBase extends EppResource
   @EmptySetToNull @Index @Transient Set<VKey<Host>> nsHosts;
 
   /** Contacts. */
-  VKey<ContactResource> adminContact;
+  VKey<Contact> adminContact;
 
-  VKey<ContactResource> billingContact;
-  VKey<ContactResource> techContact;
-  VKey<ContactResource> registrantContact;
+  VKey<Contact> billingContact;
+  VKey<Contact> techContact;
+  VKey<Contact> registrantContact;
 
   /** Authorization info (aka transfer secret) of the domain. */
   @Embedded
@@ -602,19 +602,19 @@ public class DomainBase extends EppResource
   }
 
   /** A key to the registrant who registered this domain. */
-  public VKey<ContactResource> getRegistrant() {
+  public VKey<Contact> getRegistrant() {
     return registrantContact;
   }
 
-  public VKey<ContactResource> getAdminContact() {
+  public VKey<Contact> getAdminContact() {
     return adminContact;
   }
 
-  public VKey<ContactResource> getBillingContact() {
+  public VKey<Contact> getBillingContact() {
     return billingContact;
   }
 
-  public VKey<ContactResource> getTechContact() {
+  public VKey<Contact> getTechContact() {
     return techContact;
   }
 
@@ -628,7 +628,7 @@ public class DomainBase extends EppResource
   }
 
   /** Returns all referenced contacts from this domain. */
-  public ImmutableSet<VKey<ContactResource>> getReferencedContacts() {
+  public ImmutableSet<VKey<Contact>> getReferencedContacts() {
     return nullToEmptyImmutableCopy(getAllContacts(true)).stream()
         .map(DesignatedContact::getContactKey)
         .filter(Objects::nonNull)
@@ -771,7 +771,7 @@ public class DomainBase extends EppResource
       return thisCastToDerived();
     }
 
-    public B setRegistrant(VKey<ContactResource> registrant) {
+    public B setRegistrant(VKey<Contact> registrant) {
       // Set the registrant field specifically.
       getInstance().registrantContact = registrant;
       return thisCastToDerived();

@@ -27,8 +27,8 @@ import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactInfoData;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppoutput.EppResponse;
@@ -69,7 +69,7 @@ public final class ContactInfoFlow implements Flow {
     DateTime now = clock.nowUtc();
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate(); // There are no legal extensions for this flow.
-    ContactResource contact = loadAndVerifyExistence(ContactResource.class, targetId, now);
+    Contact contact = loadAndVerifyExistence(Contact.class, targetId, now);
     if (!isSuperuser) {
       verifyResourceOwnership(registrarId, contact);
     }

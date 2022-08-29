@@ -45,8 +45,8 @@ import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.EppResource;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.Host;
@@ -140,7 +140,7 @@ import org.joda.time.DateTime;
  * pairs of (contact/host repo ID: pending deposit) for all RDE pending deposits for further
  * processing.
  *
- * <h3>{@link ContactResource}</h3>
+ * <h3>{@link Contact}</h3>
  *
  * We first join most recent contact histories, represented by (contact repo ID: contact history
  * revision ID) pairs, with referenced contacts, represented by (contact repo ID: pending deposit)
@@ -150,13 +150,13 @@ import org.joda.time.DateTime;
  *
  * <h3>{@link Host}</h3>
  *
- * Similar to {@link ContactResource}, we join the most recent host history with referenced hosts to
- * find most recent referenced hosts. For external hosts we do the same treatment as we did on
- * contacts and obtain the (pending deposit: deposit fragment) pairs. For subordinate hosts, we need
- * to find the superordinate domain in order to properly handle pending transfer in the deposit as
- * well. So we first find the superordinate domain repo ID from the host and join the (superordinate
- * domain repo ID: (subordinate host repo ID: (pending deposit: revision ID))) pair with the (domain
- * repo ID: revision ID) pair obtained from the domain history query in order to map the host at
+ * Similar to {@link Contact}, we join the most recent host history with referenced hosts to find
+ * most recent referenced hosts. For external hosts we do the same treatment as we did on contacts
+ * and obtain the (pending deposit: deposit fragment) pairs. For subordinate hosts, we need to find
+ * the superordinate domain in order to properly handle pending transfer in the deposit as well. So
+ * we first find the superordinate domain repo ID from the host and join the (superordinate domain
+ * repo ID: (subordinate host repo ID: (pending deposit: revision ID))) pair with the (domain repo
+ * ID: revision ID) pair obtained from the domain history query in order to map the host at
  * watermark to the domain at watermark. We then proceed to create the (pending deposit: deposit
  * fragment) pair for subordinate hosts using the added domain information.
  *
@@ -466,10 +466,10 @@ public class RdePipeline implements Serializable {
   private PCollectionTuple processDomainHistories(PCollection<KV<String, Long>> domainHistories) {
     Counter activeDomainCounter = Metrics.counter("RDE", "ActiveDomainBase");
     Counter domainFragmentCounter = Metrics.counter("RDE", "DomainFragment");
-    Counter referencedContactCounter = Metrics.counter("RDE", "ReferencedContactResource");
+    Counter referencedContactCounter = Metrics.counter("RDE", "ReferencedContact");
     Counter referencedHostCounter = Metrics.counter("RDE", "ReferencedHost");
     return domainHistories.apply(
-        "Map DomainHistory to DepositFragment " + "and emit referenced ContactResource and Host",
+        "Map DomainHistory to DepositFragment " + "and emit referenced Contact and Host",
         ParDo.of(
                 new DoFn<KV<String, Long>, KV<PendingDeposit, DepositFragment>>() {
                   @ProcessElement
@@ -533,17 +533,17 @@ public class RdePipeline implements Serializable {
       PCollection<KV<String, PendingDeposit>> referencedContacts,
       PCollection<KV<String, Long>> contactHistories) {
     Counter contactFragmentCounter = Metrics.counter("RDE", "ContactFragment");
-    return removeUnreferencedResource(referencedContacts, contactHistories, ContactResource.class)
+    return removeUnreferencedResource(referencedContacts, contactHistories, Contact.class)
         .apply(
-            "Map ContactResource to DepositFragment",
+            "Map Contact to DepositFragment",
             FlatMapElements.into(
                     kvs(
                         TypeDescriptor.of(PendingDeposit.class),
                         TypeDescriptor.of(DepositFragment.class)))
                 .via(
                     (KV<String, CoGbkResult> kv) -> {
-                      ContactResource contact =
-                          (ContactResource)
+                      Contact contact =
+                          (Contact)
                               loadResourceByHistoryEntryId(
                                   ContactHistory.class,
                                   kv.getKey(),

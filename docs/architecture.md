@@ -327,7 +327,7 @@ registry codebase:
 *   `ClaimsList`, `ClaimsListShard`, and `ClaimsListSingleton` -- These entities
     store the TMCH claims list, for use in trademark processing.
 *   `CommitLog*` -- These entities store the commit log information.
-*   `ContactResource` -- These hold the ICANN contact information (but not
+*   `Contact` -- These hold the ICANN contact information (but not
     registrar contacts, who have a separate entity type).
 *   `Cursor` -- We use Cursor entities to maintain state about daily processes,
     remembering which dates have been processed. For instance, for the RDE
@@ -373,8 +373,8 @@ registry codebase:
 *   `Recurring` -- A Recurring is a billing event which represents a recurring
     charge to the client (as opposed to OneTime).
 *   `Registrar` -- These hold information about client registrars.
-*   `RegistrarContact` -- Registrars have contacts just as domains do. These are
-    stored in a special RegistrarContact entity.
+*   `RegistrarPoc` -- Registrars have contacts just as domains do. These are
+    stored in a special RegistrarPoc entity.
 *   `Registry` -- These hold information about the TLDs supported by the
     Registry system.
 *   `RegistryCursor` -- These entities are the predecessor to the Cursor
