@@ -1066,8 +1066,28 @@ CREATE TABLE public."User" (
     registry_lock_password_salt text,
     global_role text NOT NULL,
     is_admin boolean NOT NULL,
-    registrar_roles public.hstore NOT NULL
+    registrar_roles public.hstore NOT NULL,
+    update_timestamp timestamp with time zone
 );
+
+
+--
+-- Name: User_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."User_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: User_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."User_id_seq" OWNED BY public."User".id;
 
 
 --
@@ -1117,6 +1137,13 @@ ALTER TABLE ONLY public."SignedMarkRevocationList" ALTER COLUMN revision_id SET 
 --
 
 ALTER TABLE ONLY public."Spec11ThreatMatch" ALTER COLUMN id SET DEFAULT nextval('public."SafeBrowsingThreat_id_seq"'::regclass);
+
+
+--
+-- Name: User id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."User" ALTER COLUMN id SET DEFAULT nextval('public."User_id_seq"'::regclass);
 
 
 --
@@ -1437,6 +1464,14 @@ ALTER TABLE ONLY public."DomainHost"
 
 ALTER TABLE ONLY public."DomainHistoryHost"
     ADD CONSTRAINT ukt2e7ae3t8gcsxd13wjx2ka7ij UNIQUE (domain_history_history_revision_id, domain_history_domain_repo_id, host_repo_id);
+
+
+--
+-- Name: User user_unique_email; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."User"
+    ADD CONSTRAINT user_unique_email UNIQUE (email_address);
 
 
 --

@@ -124,3 +124,4 @@ V123__drop_unused_columns_in_billing_cancellation_table.sql
 V124__add_console_user.sql
 V125__create_package_promotion.sql
 V126__drop_autorenew_poll_message_history_id_column_in_domain_table.sql
+V127__fix_user.sql
