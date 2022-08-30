@@ -30,6 +30,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
+import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.custom.DomainInfoFlowCustomLogic;
@@ -42,6 +43,8 @@ import google.registry.model.domain.DomainCommand.Info.HostsRequest;
 import google.registry.model.domain.DomainInfoData;
 import google.registry.model.domain.fee06.FeeInfoCommandExtensionV06;
 import google.registry.model.domain.fee06.FeeInfoResponseExtensionV06;
+import google.registry.model.domain.packagetoken.PackageTokenExtension;
+import google.registry.model.domain.packagetoken.PackageTokenResponseExtension;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.rgp.RgpInfoExtension;
 import google.registry.model.eppcommon.AuthInfo;
@@ -85,13 +88,14 @@ public final class DomainInfoFlow implements Flow {
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainInfoFlowCustomLogic flowCustomLogic;
   @Inject DomainPricingLogic pricingLogic;
+  @Inject @Superuser boolean isSuperuser;
 
   @Inject
   DomainInfoFlow() {}
 
   @Override
   public EppResponse run() throws EppException {
-    extensionManager.register(FeeInfoCommandExtensionV06.class);
+    extensionManager.register(FeeInfoCommandExtensionV06.class, PackageTokenExtension.class);
     flowCustomLogic.beforeValidation();
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
@@ -149,6 +153,15 @@ public final class DomainInfoFlow implements Flow {
     ImmutableSet<GracePeriodStatus> gracePeriodStatuses = domain.getGracePeriodStatuses();
     if (!gracePeriodStatuses.isEmpty()) {
       extensions.add(RgpInfoExtension.create(gracePeriodStatuses));
+    }
+    Optional<PackageTokenExtension> packageInfo =
+        eppInput.getSingleExtension(PackageTokenExtension.class);
+    if (packageInfo.isPresent()) {
+      // Package info was requested.
+      if (isSuperuser || registrarId.equals(domain.getCurrentSponsorRegistrarId())) {
+        // Only show package info to owning registrar or superusers
+        extensions.add(PackageTokenResponseExtension.create(domain.getCurrentPackageToken()));
+      }
     }
     Optional<FeeInfoCommandExtensionV06> feeInfo =
         eppInput.getSingleExtension(FeeInfoCommandExtensionV06.class);

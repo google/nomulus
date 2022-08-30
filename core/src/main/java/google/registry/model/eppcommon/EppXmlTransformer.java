@@ -31,25 +31,27 @@ import java.io.ByteArrayOutputStream;
 public class EppXmlTransformer  {
 
   // Hardcoded XML schemas, ordered with respect to dependency.
-  private static final ImmutableList<String> SCHEMAS = ImmutableList.of(
-      "eppcom.xsd",
-      "epp.xsd",
-      "contact.xsd",
-      "host.xsd",
-      "domain.xsd",
-      "rgp.xsd",
-      "secdns.xsd",
-      "fee06.xsd",
-      "fee11.xsd",
-      "fee12.xsd",
-      "metadata.xsd",
-      "mark.xsd",
-      "dsig.xsd",
-      "smd.xsd",
-      "launch.xsd",
-      "allocate.xsd",
-      "superuser.xsd",
-      "allocationToken-1.0.xsd");
+  private static final ImmutableList<String> SCHEMAS =
+      ImmutableList.of(
+          "eppcom.xsd",
+          "epp.xsd",
+          "contact.xsd",
+          "host.xsd",
+          "domain.xsd",
+          "rgp.xsd",
+          "secdns.xsd",
+          "fee06.xsd",
+          "fee11.xsd",
+          "fee12.xsd",
+          "metadata.xsd",
+          "mark.xsd",
+          "dsig.xsd",
+          "smd.xsd",
+          "launch.xsd",
+          "allocate.xsd",
+          "superuser.xsd",
+          "allocationToken-1.0.xsd",
+          "packageToken.xsd");
 
   private static final XmlTransformer INPUT_TRANSFORMER =
       new XmlTransformer(SCHEMAS, EppInput.class);
