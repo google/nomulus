@@ -29,6 +29,7 @@ import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.AllocationTokenExtension;
@@ -109,23 +110,27 @@ public class AllocationTokenFlowUtils {
   private void validateToken(
       InternetDomainName domainName, AllocationToken token, String registrarId, DateTime now)
       throws EppException {
-    if (!token.getAllowedRegistrarIds().isEmpty()
-        && !token.getAllowedRegistrarIds().contains(registrarId)) {
-      throw new AllocationTokenNotValidForRegistrarException();
-    }
-    if (!token.getAllowedTlds().isEmpty()
-        && !token.getAllowedTlds().contains(domainName.parent().toString())) {
-      throw new AllocationTokenNotValidForTldException();
-    }
-    if (token.getDomainName().isPresent()
-        && !token.getDomainName().get().equals(domainName.toString())) {
-      throw new AllocationTokenNotValidForDomainException();
-    }
-    // Tokens without status transitions will just have a single-entry NOT_STARTED map, so only
-    // check the status transitions map if it's non-trivial.
-    if (token.getTokenStatusTransitions().size() > 1
-        && !TokenStatus.VALID.equals(token.getTokenStatusTransitions().getValueAtTime(now))) {
-      throw new AllocationTokenNotInPromotionException();
+
+    // Only tokens with default behavior require validation
+    if (TokenBehavior.DEFAULT.equals(token.getTokenBehavior())) {
+      if (!token.getAllowedRegistrarIds().isEmpty()
+          && !token.getAllowedRegistrarIds().contains(registrarId)) {
+        throw new AllocationTokenNotValidForRegistrarException();
+      }
+      if (!token.getAllowedTlds().isEmpty()
+          && !token.getAllowedTlds().contains(domainName.parent().toString())) {
+        throw new AllocationTokenNotValidForTldException();
+      }
+      if (token.getDomainName().isPresent()
+          && !token.getDomainName().get().equals(domainName.toString())) {
+        throw new AllocationTokenNotValidForDomainException();
+      }
+      // Tokens without status transitions will just have a single-entry NOT_STARTED map, so only
+      // check the status transitions map if it's non-trivial.
+      if (token.getTokenStatusTransitions().size() > 1
+          && !TokenStatus.VALID.equals(token.getTokenStatusTransitions().getValueAtTime(now))) {
+        throw new AllocationTokenNotInPromotionException();
+      }
     }
   }
 
@@ -137,8 +142,15 @@ public class AllocationTokenFlowUtils {
       // See https://tools.ietf.org/html/draft-ietf-regext-allocation-token-04#section-2.1
       throw new InvalidAllocationTokenException();
     }
-    Optional<AllocationToken> maybeTokenEntity =
+
+    Optional<AllocationToken> maybeTokenEntity = AllocationToken.maybeGetStaticTokenInstance(token);
+    if (maybeTokenEntity.isPresent()) {
+      return maybeTokenEntity.get();
+    }
+
+    maybeTokenEntity =
         tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token)));
+
     if (!maybeTokenEntity.isPresent()) {
       throw new InvalidAllocationTokenException();
     }
@@ -187,6 +199,21 @@ public class AllocationTokenFlowUtils {
         tokenCustomLogic.validateToken(existingDomain, tokenEntity, registry, registrarId, now));
   }
 
+  public static void verifyTokenAllowedOnDomain(
+      Domain domain, Optional<AllocationToken> allocationToken) throws EppException {
+
+    boolean domainHasPackageToken = domain.getCurrentPackageToken().isPresent();
+    boolean hasRemovePackageToken =
+        allocationToken.isPresent()
+            && TokenBehavior.REMOVE_PACKAGE.equals(allocationToken.get().getTokenBehavior());
+
+    if (hasRemovePackageToken && !domainHasPackageToken) {
+      throw new RemovePackageTokenOnNonPackageDomainException();
+    } else if (!hasRemovePackageToken && domainHasPackageToken) {
+      throw new MissingRemovePackageTokenOnPackageDomainException();
+    }
+  }
+
   // Note: exception messages should be <= 32 characters long for domain check results
 
   /** The allocation token is not currently valid. */
@@ -232,6 +259,22 @@ public class AllocationTokenFlowUtils {
   public static class InvalidAllocationTokenException extends AuthorizationErrorException {
     InvalidAllocationTokenException() {
       super("The allocation token is invalid");
+    }
+  }
+
+  /** The __REMOVEPACKAGE__ token is missing on a renew package domain command */
+  public static class MissingRemovePackageTokenOnPackageDomainException
+      extends AssociationProhibitsOperationException {
+    MissingRemovePackageTokenOnPackageDomainException() {
+      super("Domains that are inside packages cannot be explicitly renewed");
+    }
+  }
+
+  /** The __REMOVEPACKAGE__ token is not allowed on non package domains */
+  public static class RemovePackageTokenOnNonPackageDomainException
+      extends AssociationProhibitsOperationException {
+    RemovePackageTokenOnNonPackageDomainException() {
+      super("__REMOVEPACKAGE__ token is not allowed on non package domains");
     }
   }
 }

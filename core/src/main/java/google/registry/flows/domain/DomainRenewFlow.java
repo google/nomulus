@@ -30,6 +30,7 @@ import static google.registry.flows.domain.DomainFlowUtils.validateFeeChallenge;
 import static google.registry.flows.domain.DomainFlowUtils.validateRegistrationPeriod;
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
 import static google.registry.flows.domain.DomainFlowUtils.verifyUnitIsYears;
+import static google.registry.flows.domain.token.AllocationTokenFlowUtils.verifyTokenAllowedOnDomain;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
@@ -119,6 +120,10 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.UnsupportedFeeAttributeException}
  * @error {@link DomainRenewFlow.IncorrectCurrentExpirationDateException}
  * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemovePackageTokenOnPackageDomainException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.RemovePackageTokenOnNonPackageDomainException}
+ * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException}
@@ -174,7 +179,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
             registrarId,
             now,
             eppInput.getSingleExtension(AllocationTokenExtension.class));
-    verifyRenewAllowed(authInfo, existingDomain, command);
+    verifyRenewAllowed(authInfo, existingDomain, command, allocationToken);
     int years = command.getPeriod().getValue();
     DateTime newExpirationTime =
         leapSafeAddYears(existingDomain.getRegistrationExpirationTime(), years);  // Uncapped
@@ -302,10 +307,16 @@ public final class DomainRenewFlow implements TransactionalFlow {
         .build();
   }
 
-  private void verifyRenewAllowed(Optional<AuthInfo> authInfo, Domain existingDomain, Renew command)
+  private void verifyRenewAllowed(
+      Optional<AuthInfo> authInfo,
+      Domain existingDomain,
+      Renew command,
+      Optional<AllocationToken> allocationToken)
       throws EppException {
     verifyOptionalAuthInfo(authInfo, existingDomain);
     verifyNoDisallowedStatuses(existingDomain, RENEW_DISALLOWED_STATUSES);
+    // We only allow __REMOVE_PACKAGE__ token on promo package domains for now
+    verifyTokenAllowedOnDomain(existingDomain, allocationToken);
     if (!isSuperuser) {
       verifyResourceOwnership(registrarId, existingDomain);
       checkAllowedAccessToTld(registrarId, existingDomain.getTld());

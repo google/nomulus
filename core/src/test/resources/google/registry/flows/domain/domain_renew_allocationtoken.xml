@@ -12,7 +12,7 @@
         <allocationToken:allocationToken
             xmlns:allocationToken=
                 "urn:ietf:params:xml:ns:allocationToken-1.0">
-          abc123
+          %TOKEN%
         </allocationToken:allocationToken>
     </extension>
     <clTRID>ABC-12345</clTRID>
