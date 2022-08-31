@@ -26,9 +26,7 @@ import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import javax.inject.Singleton;
 
-/**
- * Dagger module for authentication routines.
- */
+/** Dagger module for authentication routines. */
 @Module
 public class AuthModule {
 
@@ -36,8 +34,12 @@ public class AuthModule {
   @Provides
   ImmutableList<AuthenticationMechanism> provideApiAuthenticationMechanisms(
       OAuthAuthenticationMechanism oauthAuthenticationMechanism,
-      CookieOAuth2AuthenticationMechanism cookieOAuth2AuthenticationMechanism) {
-    return ImmutableList.of(oauthAuthenticationMechanism, cookieOAuth2AuthenticationMechanism);
+      CookieOAuth2AuthenticationMechanism cookieOAuth2AuthenticationMechanism,
+      NonGaeOAuthAuthenticationMechanism nonGaeOAuthAuthenticationMechanism) {
+    return ImmutableList.of(
+        oauthAuthenticationMechanism,
+        cookieOAuth2AuthenticationMechanism,
+        nonGaeOAuthAuthenticationMechanism);
   }
 
   /** Provides the OAuthService instance. */

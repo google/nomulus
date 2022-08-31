@@ -24,7 +24,7 @@ import javax.inject.Inject;
 
 /** Authorizes the nomulus tool for OAuth 2.0 access to remote resources. */
 @Parameters(commandDescription = "Create local OAuth credentials")
-final class LoginCommand implements Command {
+public final class LoginCommand implements Command {
 
   @Inject GoogleAuthorizationCodeFlow flow;
   @Inject @AuthModule.ClientScopeQualifier String clientScopeQualifier;
