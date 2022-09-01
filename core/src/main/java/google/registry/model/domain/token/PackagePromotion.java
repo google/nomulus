@@ -15,6 +15,7 @@
 package google.registry.model.domain.token;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -94,6 +95,22 @@ public class PackagePromotion extends ImmutableObject implements Buildable {
     return Optional.ofNullable(lastNotificationSent);
   }
 
+  /** Loads and returns a PackagePromotion entity by its token string directly from Cloud SQL. */
+  public static Optional<PackagePromotion> loadByTokenString(String tokenString) {
+    return tm().transact(
+            () ->
+                jpaTm()
+                    .query("FROM PackagePromotion WHERE token = :token", PackagePromotion.class)
+                    .setParameter("token", VKey.createSql(AllocationToken.class, tokenString))
+                    .getResultStream()
+                    .findFirst());
+  }
+
+  @Override
+  public VKey<PackagePromotion> createVKey() {
+    return VKey.createSql(PackagePromotion.class, packagePromotionId);
+  }
+
   @Override
   public Builder asBuilder() {
     return new Builder(clone(this));
@@ -143,7 +160,7 @@ public class PackagePromotion extends ImmutableObject implements Buildable {
       return this;
     }
 
-    public Builder setNextBillingDate(@Nullable DateTime nextBillingDate) {
+    public Builder setNextBillingDate(DateTime nextBillingDate) {
       checkArgumentNotNull(nextBillingDate, "Next billing date must not be null");
       getInstance().nextBillingDate = nextBillingDate;
       return this;
