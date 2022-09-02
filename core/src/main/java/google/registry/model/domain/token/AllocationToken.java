@@ -292,6 +292,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
 
   @Override
   public VKey<AllocationToken> createVKey() {
+    if (!AllocationToken.TokenBehavior.DEFAULT.equals(getTokenBehavior())) {
+      throw new IllegalArgumentException(
+          String.format("%s tokens are not stored in the database", getTokenBehavior()));
+    }
     return VKey.create(AllocationToken.class, getToken(), Key.create(this));
   }
 
