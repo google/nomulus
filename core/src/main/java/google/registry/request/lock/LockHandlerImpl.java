@@ -76,27 +76,6 @@ public class LockHandlerImpl implements LockHandler {
     return executeWithLockAcquirer(callable, tld, leaseLength, this::acquire, lockNames);
   }
 
-  /**
-   * Acquire one or more locks using only Cloud SQL and execute a Void {@link Callable}.
-   *
-   * <p>Thread will be killed if it doesn't complete before the lease expires.
-   *
-   * <p>Note that locks are specific either to a given tld or to the entire system (in which case
-   * tld should be passed as null).
-   *
-   * <p>This method exists so that Beam pipelines can acquire / load / release locks.
-   *
-   * @return whether all locks were acquired and the callable was run.
-   */
-  @Override
-  public boolean executeWithSqlLocks(
-      final Callable<Void> callable,
-      @Nullable String tld,
-      Duration leaseLength,
-      String... lockNames) {
-    return executeWithLockAcquirer(callable, tld, leaseLength, this::acquireSql, lockNames);
-  }
-
   private boolean executeWithLockAcquirer(
       final Callable<Void> callable,
       @Nullable String tld,
@@ -136,11 +115,6 @@ public class LockHandlerImpl implements LockHandler {
   @VisibleForTesting
   Optional<Lock> acquire(String lockName, @Nullable String tld, Duration leaseLength) {
     return Lock.acquire(lockName, tld, leaseLength, requestStatusChecker, true);
-  }
-
-  @VisibleForTesting
-  Optional<Lock> acquireSql(String lockName, @Nullable String tld, Duration leaseLength) {
-    return Lock.acquireSql(lockName, tld, leaseLength, requestStatusChecker, true);
   }
 
   private interface LockAcquirer {
