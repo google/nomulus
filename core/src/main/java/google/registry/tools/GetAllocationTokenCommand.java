@@ -47,7 +47,7 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
     for (List<String> tokens : Lists.partition(mainParameters, BATCH_SIZE)) {
       ImmutableList<VKey<AllocationToken>> tokenKeys =
           tokens.stream()
-              .map(t -> VKey.create(AllocationToken.class, t))
+              .map(t -> VKey.createSql(AllocationToken.class, t))
               .collect(toImmutableList());
       tm().transact(
               () ->

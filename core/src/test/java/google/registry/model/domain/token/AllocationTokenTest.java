@@ -222,8 +222,7 @@ public class AllocationTokenTest extends EntityTestCase {
             .setToken("abc123")
             .setTokenType(TokenType.PACKAGE)
             .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT);
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> builder.build());
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Package tokens must have renewalPriceBehavior set to SPECIFIED");
@@ -280,7 +279,7 @@ public class AllocationTokenTest extends EntityTestCase {
 
   @Test
   void testBuild_onlyOneClientInPackage() {
-    Buildable.Builder builder =
+    Buildable.Builder<AllocationToken> builder =
         new AllocationToken.Builder()
             .setToken("foobar")
             .setTokenType(PACKAGE)
@@ -531,7 +530,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   private void assertTerminal(TokenStatus status) {
-    // The "terminal" message is slightly different so it must be tested separately
+    // The "terminal" message is slightly different, so it must be tested separately
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

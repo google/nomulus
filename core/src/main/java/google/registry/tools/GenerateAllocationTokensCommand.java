@@ -314,7 +314,7 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
   private ImmutableSet<String> getExistingTokenStrings(ImmutableSet<String> candidates) {
     ImmutableSet<VKey<AllocationToken>> existingTokenKeys =
         candidates.stream()
-            .map(input -> VKey.create(AllocationToken.class, input))
+            .map(input -> VKey.createSql(AllocationToken.class, input))
             .collect(toImmutableSet());
     return tm().transact(
             () ->

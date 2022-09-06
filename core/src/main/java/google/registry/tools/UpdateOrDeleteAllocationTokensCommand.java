@@ -55,7 +55,7 @@ abstract class UpdateOrDeleteAllocationTokensCommand extends ConfirmingCommand
     if (tokens != null) {
       ImmutableSet<VKey<AllocationToken>> keys =
           tokens.stream()
-              .map(token -> VKey.create(AllocationToken.class, token))
+              .map(token -> VKey.createSql(AllocationToken.class, token))
               .collect(toImmutableSet());
       ImmutableSet<VKey<AllocationToken>> nonexistentKeys =
           tm().transact(

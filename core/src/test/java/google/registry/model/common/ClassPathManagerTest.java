@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.host.Host;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
@@ -49,7 +48,6 @@ public class ClassPathManagerTest {
      */
     assertThat(ClassPathManager.getClass("ForeignKeyContactIndex"))
         .isEqualTo(ForeignKeyContactIndex.class);
-    assertThat(ClassPathManager.getClass("AllocationToken")).isEqualTo(AllocationToken.class);
     assertThat(ClassPathManager.getClass("Host")).isEqualTo(Host.class);
     assertThat(ClassPathManager.getClass("Registrar")).isEqualTo(Registrar.class);
     assertThat(ClassPathManager.getClass("Contact")).isEqualTo(Contact.class);
@@ -100,7 +98,6 @@ public class ClassPathManagerTest {
      */
     assertThat(ClassPathManager.getClassName(ForeignKeyContactIndex.class))
         .isEqualTo("ForeignKeyContactIndex");
-    assertThat(ClassPathManager.getClassName(AllocationToken.class)).isEqualTo("AllocationToken");
     assertThat(ClassPathManager.getClassName(Host.class)).isEqualTo("Host");
     assertThat(ClassPathManager.getClassName(Registrar.class)).isEqualTo("Registrar");
     assertThat(ClassPathManager.getClassName(Contact.class)).isEqualTo("Contact");

@@ -1352,7 +1352,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   private void assertAllocationTokenWasRedeemed(String token) throws Exception {
     AllocationToken reloadedToken =
-        tm().transact(() -> tm().loadByKey(VKey.create(AllocationToken.class, token)));
+        tm().transact(() -> tm().loadByKey(VKey.createSql(AllocationToken.class, token)));
     assertThat(reloadedToken.isRedeemed()).isTrue();
     assertThat(reloadedToken.getRedemptionHistoryEntry())
         .hasValue(
@@ -1362,7 +1362,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   private void assertAllocationTokenWasNotRedeemed(String token) {
     AllocationToken reloadedToken =
-        tm().transact(() -> tm().loadByKey(VKey.create(AllocationToken.class, token)));
+        tm().transact(() -> tm().loadByKey(VKey.createSql(AllocationToken.class, token)));
     assertThat(reloadedToken.isRedeemed()).isFalse();
   }
 

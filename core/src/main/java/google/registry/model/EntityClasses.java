@@ -22,7 +22,6 @@ import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
 import google.registry.model.index.EppResourceIndex;
@@ -40,7 +39,6 @@ public final class EntityClasses {
   /** Set of entity classes. */
   public static final ImmutableSet<Class<? extends ImmutableObject>> ALL_CLASSES =
       ImmutableSet.of(
-          AllocationToken.class,
           Contact.class,
           ContactHistory.class,
           Domain.class,
