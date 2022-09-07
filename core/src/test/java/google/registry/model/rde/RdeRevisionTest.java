@@ -121,8 +121,7 @@ public class RdeRevisionTest extends EntityTestCase {
   }
 
   public static void save(String tld, DateTime date, RdeMode mode, int revision) {
-    String triplet = RdeNamingUtils.makePartialName(tld, date, mode);
-    RdeRevision object = RdeRevision.create(triplet, tld, date.toLocalDate(), mode, revision);
+    RdeRevision object = RdeRevision.create(tld, date.toLocalDate(), mode, revision);
     tm().transact(() -> tm().put(object));
   }
 }
