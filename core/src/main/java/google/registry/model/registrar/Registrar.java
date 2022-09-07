@@ -26,8 +26,6 @@ import static com.google.common.collect.Sets.immutableEnumSet;
 import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.config.RegistryConfig.getDefaultRegistrarWhoisServer;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.tld.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -44,7 +42,6 @@ import static java.util.function.Predicate.isEqual;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -55,12 +52,6 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.re2j.Pattern;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
@@ -68,9 +59,6 @@ import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.UpdateAutoTimestamp;
-import google.registry.model.annotations.InCrossTld;
-import google.registry.model.annotations.ReportedOn;
-import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.persistence.VKey;
@@ -83,6 +71,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -90,25 +79,22 @@ import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
+import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
 /** Information about a registrar. */
-@ReportedOn
 @Entity
-@javax.persistence.Entity
 @Table(
     indexes = {
-      @javax.persistence.Index(columnList = "registrarName", name = "registrar_name_idx"),
-      @javax.persistence.Index(
-          columnList = "ianaIdentifier",
-          name = "registrar_iana_identifier_idx"),
+      @Index(columnList = "registrarName", name = "registrar_name_idx"),
+      @Index(columnList = "ianaIdentifier", name = "registrar_iana_identifier_idx"),
     })
-@InCrossTld
 public class Registrar extends ImmutableObject
     implements Buildable, Jsonifiable, UnsafeSerializable {
 
@@ -197,7 +183,7 @@ public class Registrar extends ImmutableObject
 
   /** The states in which a {@link Registrar} is considered {@link #isLive live}. */
   private static final ImmutableSet<State> LIVE_STATES =
-      Sets.immutableEnumSet(State.ACTIVE, State.SUSPENDED);
+      immutableEnumSet(State.ACTIVE, State.SUSPENDED);
 
   /**
    * The types for which a {@link Registrar} should be included in WHOIS and RDAP output. We exclude
@@ -213,18 +199,9 @@ public class Registrar extends ImmutableObject
   private static final Comparator<RegistrarPoc> CONTACT_EMAIL_COMPARATOR =
       comparing(RegistrarPoc::getEmailAddress, String::compareTo);
 
-  /**
-   * A caching {@link Supplier} of a registrarId to {@link Registrar} map.
-   *
-   * <p>The supplier's get() method enters a transactionless context briefly to avoid enrolling the
-   * query inside an unrelated client-affecting transaction.
-   */
+  /** A caching {@link Supplier} of a registrarId to {@link Registrar} map. */
   private static final Supplier<ImmutableMap<String, Registrar>> CACHE_BY_REGISTRAR_ID =
-      memoizeWithShortExpiration(
-          () ->
-              tm().doTransactionless(() -> Maps.uniqueIndex(loadAll(), Registrar::getRegistrarId)));
-
-  @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();
+      memoizeWithShortExpiration(() -> Maps.uniqueIndex(loadAll(), Registrar::getRegistrarId));
 
   /**
    * Unique registrar client id. Must conform to "clIDType" as defined in RFC5730.
@@ -233,7 +210,6 @@ public class Registrar extends ImmutableObject
    *     <p>TODO(b/177567432): Rename this field to registrarId.
    */
   @Id
-  @javax.persistence.Id
   @Column(name = "registrarId", nullable = false)
   String clientIdentifier;
 
@@ -248,7 +224,6 @@ public class Registrar extends ImmutableObject
    * @see <a href="http://www.icann.org/registrar-reports/accredited-list.html">ICANN-Accredited
    *     Registrars</a>
    */
-  @Index
   @Column(nullable = false)
   String registrarName;
 
@@ -313,7 +288,6 @@ public class Registrar extends ImmutableObject
    * Localized {@link RegistrarAddress} for this registrar. Contents can be represented in
    * unrestricted UTF-8.
    */
-  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(
@@ -338,7 +312,6 @@ public class Registrar extends ImmutableObject
    * Internationalized {@link RegistrarAddress} for this registrar. All contained values must be
    * representable in the 7-bit US-ASCII character set.
    */
-  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "streetLine1", column = @Column(name = "i18n_address_street_line1")),
@@ -367,14 +340,14 @@ public class Registrar extends ImmutableObject
    *
    * <ul>
    *   <li>8 is used for Testing Registrar.
-   *   <li>9997 is used by ICAAN for SLA monitoring.
+   *   <li>9997 is used by ICANN for SLA monitoring.
    *   <li>9999 is used for cases when the registry operator acts as registrar.
    * </ul>
    *
    * @see <a href="http://www.iana.org/assignments/registrar-ids/registrar-ids.txt">Registrar
    *     IDs</a>
    */
-  @Index @Nullable Long ianaIdentifier;
+  @Nullable Long ianaIdentifier;
 
   /** Purchase Order number used for invoices in external billing system, if applicable. */
   @Nullable String poNumber;
@@ -395,7 +368,7 @@ public class Registrar extends ImmutableObject
   /**
    * ICANN referral email address.
    *
-   * <p>This value is specified in the initial registrar contact. It can't be edited in the web GUI
+   * <p>This value is specified in the initial registrar contact. It can't be edited in the web GUI,
    * and it must be specified when the registrar account is created.
    */
   String icannReferralEmail;
@@ -406,10 +379,10 @@ public class Registrar extends ImmutableObject
   // Metadata.
 
   /** The time when this registrar was created. */
-  @Ignore CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** An automatically managed last-saved timestamp. */
-  @Ignore UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
+  UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
 
   /** The time that the certificate was last updated. */
   DateTime lastCertificateUpdateTime;
@@ -610,18 +583,13 @@ public class Registrar extends ImmutableObject
   }
 
   private Iterable<RegistrarPoc> getContactsIterable() {
-    if (tm().isOfy()) {
-      return auditedOfy().load().type(RegistrarPoc.class).ancestor(Registrar.this);
-    } else {
-      return tm().transact(
-              () ->
-                  jpaTm()
-                      .query(
-                          "FROM RegistrarPoc WHERE registrarId = :registrarId", RegistrarPoc.class)
-                      .setParameter("registrarId", clientIdentifier)
-                      .getResultStream()
-                      .collect(toImmutableList()));
-    }
+    return tm().transact(
+            () ->
+                jpaTm()
+                    .query("FROM RegistrarPoc WHERE registrarId = :registrarId", RegistrarPoc.class)
+                    .setParameter("registrarId", clientIdentifier)
+                    .getResultStream()
+                    .collect(toImmutableList()));
   }
 
   @Override
@@ -687,18 +655,13 @@ public class Registrar extends ImmutableObject
   /** Creates a {@link VKey} for this instance. */
   @Override
   public VKey<Registrar> createVKey() {
-    return createVKey(Key.create(this));
+    return createVKey(clientIdentifier);
   }
 
   /** Creates a {@link VKey} for the given {@code registrarId}. */
   public static VKey<Registrar> createVKey(String registrarId) {
     checkArgumentNotNull(registrarId, "registrarId must be specified");
-    return createVKey(Key.create(getCrossTldKey(), Registrar.class, registrarId));
-  }
-
-  /** Creates a {@link VKey} instance from a {@link Key} instance. */
-  public static VKey<Registrar> createVKey(Key<Registrar> key) {
-    return VKey.create(Registrar.class, key.getName(), key);
+    return VKey.createSql(Registrar.class, registrarId);
   }
 
   /** A builder for constructing {@link Registrar}, since it is immutable. */
@@ -774,7 +737,7 @@ public class Registrar extends ImmutableObject
       Set<VKey<Registry>> missingTldKeys =
           Sets.difference(
               newTldKeys, tm().transact(() -> tm().loadByKeysIfPresent(newTldKeys)).keySet());
-      checkArgument(missingTldKeys.isEmpty(), "Trying to set nonexisting TLDs: %s", missingTldKeys);
+      checkArgument(missingTldKeys.isEmpty(), "Trying to set nonexistent TLDs: %s", missingTldKeys);
       getInstance().allowedTlds = ImmutableSortedSet.copyOf(allowedTlds);
       return this;
     }

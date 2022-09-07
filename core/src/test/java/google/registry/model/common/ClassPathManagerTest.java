@@ -26,7 +26,6 @@ import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
-import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
@@ -49,7 +48,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("ForeignKeyContactIndex"))
         .isEqualTo(ForeignKeyContactIndex.class);
     assertThat(ClassPathManager.getClass("Host")).isEqualTo(Host.class);
-    assertThat(ClassPathManager.getClass("Registrar")).isEqualTo(Registrar.class);
     assertThat(ClassPathManager.getClass("Contact")).isEqualTo(Contact.class);
     assertThat(ClassPathManager.getClass("GaeUserIdConverter")).isEqualTo(GaeUserIdConverter.class);
     assertThat(ClassPathManager.getClass("EppResourceIndexBucket"))
@@ -99,7 +97,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClassName(ForeignKeyContactIndex.class))
         .isEqualTo("ForeignKeyContactIndex");
     assertThat(ClassPathManager.getClassName(Host.class)).isEqualTo("Host");
-    assertThat(ClassPathManager.getClassName(Registrar.class)).isEqualTo("Registrar");
     assertThat(ClassPathManager.getClassName(Contact.class)).isEqualTo("Contact");
     assertThat(ClassPathManager.getClassName(GaeUserIdConverter.class))
         .isEqualTo("GaeUserIdConverter");

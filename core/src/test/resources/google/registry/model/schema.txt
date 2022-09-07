@@ -312,54 +312,6 @@ class google.registry.model.index.ForeignKeyIndex$ForeignKeyHostIndex {
   google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
 }
-class google.registry.model.registrar.Registrar {
-  @Id java.lang.String clientIdentifier;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  boolean blockPremiumNames;
-  boolean contactsRequireSyncing;
-  boolean registryLockAllowed;
-  google.registry.model.registrar.Registrar$State state;
-  google.registry.model.registrar.Registrar$Type type;
-  java.lang.Long ianaIdentifier;
-  java.lang.String clientCertificate;
-  java.lang.String clientCertificateHash;
-  java.lang.String driveFolderId;
-  java.lang.String emailAddress;
-  java.lang.String failoverClientCertificate;
-  java.lang.String failoverClientCertificateHash;
-  java.lang.String faxNumber;
-  java.lang.String icannReferralEmail;
-  java.lang.String passwordHash;
-  java.lang.String phoneNumber;
-  java.lang.String phonePasscode;
-  java.lang.String poNumber;
-  java.lang.String registrarName;
-  java.lang.String salt;
-  java.lang.String url;
-  java.lang.String whoisServer;
-  java.util.List<google.registry.util.CidrAddressBlock> ipAddressWhitelist;
-  java.util.Map<org.joda.money.CurrencyUnit, java.lang.String> billingAccountMap;
-  java.util.Set<java.lang.String> allowedTlds;
-  java.util.Set<java.lang.String> rdapBaseUrls;
-  org.joda.time.DateTime lastCertificateUpdateTime;
-  org.joda.time.DateTime lastExpiringCertNotificationSentDate;
-  org.joda.time.DateTime lastExpiringFailoverCertNotificationSentDate;
-}
-enum google.registry.model.registrar.Registrar$State {
-  ACTIVE;
-  DISABLED;
-  PENDING;
-  SUSPENDED;
-}
-enum google.registry.model.registrar.Registrar$Type {
-  EXTERNAL_MONITORING;
-  INTERNAL;
-  MONITORING;
-  OTE;
-  PDT;
-  REAL;
-  TEST;
-}
 class google.registry.model.reporting.DomainTransactionRecord {
   google.registry.model.reporting.DomainTransactionRecord$TransactionReportField reportField;
   java.lang.Integer reportAmount;

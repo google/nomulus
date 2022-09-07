@@ -257,7 +257,7 @@ public abstract class ImmutableObject implements Cloneable {
     return (Map<String, Object>) toMapRecursive(this);
   }
 
-  public VKey createVKey() {
+  public VKey<? extends ImmutableObject> createVKey() {
     throw new UnsupportedOperationException("VKey creation is not supported for this entity");
   }
 }

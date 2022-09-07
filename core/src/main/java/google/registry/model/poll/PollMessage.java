@@ -215,6 +215,9 @@ public abstract class PollMessage extends ImmutableObject
     return domainRepoId != null ? Type.DOMAIN : contactRepoId != null ? Type.CONTACT : Type.HOST;
   }
 
+  @Override
+  public abstract VKey<? extends PollMessage> createVKey();
+
   public abstract ImmutableList<ResponseData> getResponseData();
 
   /** Override Buildable.asBuilder() to give this method stronger typing. */

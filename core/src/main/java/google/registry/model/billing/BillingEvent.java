@@ -212,6 +212,9 @@ public abstract class BillingEvent extends ImmutableObject
     return nullToEmptyImmutableCopy(flags);
   }
 
+  @Override
+  public abstract VKey<? extends BillingEvent> createVKey();
+
   /** Override Buildable.asBuilder() to give this method stronger typing. */
   @Override
   public abstract Builder<?, ?> asBuilder();

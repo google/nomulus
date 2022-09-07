@@ -366,7 +366,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--registrar=blobio",
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
-    assertThat(thrown).hasMessageThat().contains("VKey<Registrar>(sql:blobio-1,ofy:blobio-1)");
+    assertThat(thrown).hasMessageThat().contains("VKey<Registrar>(sql:blobio-1)");
   }
 
   @Test
