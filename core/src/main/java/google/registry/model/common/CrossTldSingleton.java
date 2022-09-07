@@ -19,7 +19,12 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.DeleteAfterMigration;
 import javax.persistence.MappedSuperclass;
 
-/** A singleton entity in the database. */
+/**
+ * A singleton entity in the database.
+ *
+ * <p>This class should not be deleted after the migration, because there is still a concept of
+ * singleton in SQL. We should remove the ofy @Id annotation after all of its subclass are Ofy-free.
+ */
 @DeleteAfterMigration
 @MappedSuperclass
 public abstract class CrossTldSingleton extends ImmutableObject {
