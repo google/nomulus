@@ -28,7 +28,6 @@ import google.registry.model.host.HostHistory;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
@@ -57,7 +56,6 @@ public final class EntityClasses {
           Host.class,
           HostHistory.class,
           Lock.class,
-          RdeRevision.class,
           Registrar.class,
           ServerSecret.class);
 

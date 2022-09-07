@@ -343,10 +343,6 @@ class google.registry.model.index.ForeignKeyIndex$ForeignKeyHostIndex {
   google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
 }
-class google.registry.model.rde.RdeRevision {
-  @Id java.lang.String id;
-  int revision;
-}
 class google.registry.model.registrar.Registrar {
   @Id java.lang.String clientIdentifier;
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;

@@ -19,10 +19,6 @@ import static google.registry.model.rde.RdeNamingUtils.makePartialName;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.VerifyException;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.ImmutableObject;
 import google.registry.model.rde.RdeRevision.RdeRevisionId;
@@ -32,10 +28,11 @@ import java.io.Serializable;
 import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.Convert;
+import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.Transient;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
@@ -47,18 +44,14 @@ import org.joda.time.LocalDate;
  * flag is included in the generated XML.
  */
 @Entity
-@javax.persistence.Entity
 @IdClass(RdeRevisionId.class)
 public final class RdeRevision extends BackupGroupRoot {
 
-  /** String triplet of tld, date, and mode, e.g. {@code soy_2015-09-01_full}. */
-  @Id @Transient String id;
+  @Id String tld;
 
-  @javax.persistence.Id @Ignore String tld;
+  @Id LocalDate date;
 
-  @javax.persistence.Id @Ignore LocalDate date;
-
-  @javax.persistence.Id @Ignore RdeMode mode;
+  @Id RdeMode mode;
 
   /**
    * Number of last revision successfully staged to GCS.
@@ -71,10 +64,8 @@ public final class RdeRevision extends BackupGroupRoot {
   /** Hibernate requires an empty constructor. */
   private RdeRevision() {}
 
-  public static RdeRevision create(
-      String id, String tld, LocalDate date, RdeMode mode, int revision) {
+  public static RdeRevision create(String tld, LocalDate date, RdeMode mode, int revision) {
     RdeRevision instance = new RdeRevision();
-    instance.id = id;
     instance.tld = tld;
     instance.date = date;
     instance.mode = mode;
@@ -92,12 +83,9 @@ public final class RdeRevision extends BackupGroupRoot {
    * @return {@code 0} for first deposit generation and {@code >0} for resends
    */
   public static int getNextRevision(String tld, DateTime date, RdeMode mode) {
-    String id = makePartialName(tld, date, mode);
     RdeRevisionId sqlKey = RdeRevisionId.create(tld, date.toLocalDate(), mode);
-    Key<RdeRevision> ofyKey = Key.create(RdeRevision.class, id);
     Optional<RdeRevision> revisionOptional =
-        tm().transact(
-                () -> tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, sqlKey, ofyKey)));
+        tm().transact(() -> tm().loadByKeyIfPresent(VKey.createSql(RdeRevision.class, sqlKey)));
     return revisionOptional.map(rdeRevision -> rdeRevision.revision + 1).orElse(0);
   }
 
@@ -121,12 +109,10 @@ public final class RdeRevision extends BackupGroupRoot {
    */
   public static void saveRevision(String tld, DateTime date, RdeMode mode, int revision) {
     checkArgument(revision >= 0, "Negative revision: %s", revision);
-    String triplet = makePartialName(tld, date, mode);
     tm().assertInTransaction();
     RdeRevisionId sqlKey = RdeRevisionId.create(tld, date.toLocalDate(), mode);
-    Key<RdeRevision> ofyKey = Key.create(RdeRevision.class, triplet);
     Optional<RdeRevision> revisionOptional =
-        tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, sqlKey, ofyKey));
+        tm().loadByKeyIfPresent(VKey.createSql(RdeRevision.class, sqlKey));
     if (revision == 0) {
       revisionOptional.ifPresent(
           rdeRevision -> {
@@ -139,7 +125,7 @@ public final class RdeRevision extends BackupGroupRoot {
       checkArgument(
           revisionOptional.isPresent(),
           "Couldn't find existing RDE revision %s when trying to save new revision %s",
-          triplet,
+          makePartialName(tld, date, mode),
           revision);
       checkArgument(
           revisionOptional.get().revision == revision - 1,
@@ -147,7 +133,7 @@ public final class RdeRevision extends BackupGroupRoot {
           revision - 1,
           revisionOptional.get());
     }
-    RdeRevision object = RdeRevision.create(triplet, tld, date.toLocalDate(), mode, revision);
+    RdeRevision object = create(tld, date.toLocalDate(), mode, revision);
     tm().put(object);
   }
 
