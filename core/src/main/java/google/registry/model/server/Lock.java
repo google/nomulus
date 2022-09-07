@@ -240,8 +240,6 @@ public class Lock extends ImmutableObject implements Serializable {
 
           Lock newLock =
               create(resourceName, scope, requestStatusChecker.getLogId(), now, leaseLength);
-          // Locks are not parented under an EntityGroupRoot (so as to avoid write
-          // contention) and don't need to be backed up.
           jpaTm().put(newLock);
 
           return AcquireResult.create(now, lock, newLock, lockState);

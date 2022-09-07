@@ -22,7 +22,6 @@ import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.filterValues;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -66,7 +65,6 @@ public final class Registries {
                             auditedOfy()
                                 .load()
                                 .type(Registry.class)
-                                .ancestor(getCrossTldKey())
                                 .keys()
                                 .list()
                                 .stream()

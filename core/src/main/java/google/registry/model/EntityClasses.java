@@ -16,7 +16,6 @@ package google.registry.model;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.annotations.DeleteAfterMigration;
-import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
@@ -41,7 +40,6 @@ public final class EntityClasses {
           ContactHistory.class,
           Domain.class,
           DomainHistory.class,
-          EntityGroupRoot.class,
           EppResourceIndex.class,
           EppResourceIndexBucket.class,
           ForeignKeyIndex.ForeignKeyContactIndex.class,

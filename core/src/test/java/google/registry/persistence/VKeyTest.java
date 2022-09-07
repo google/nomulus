@@ -162,18 +162,14 @@ class VKeyTest {
   void testStringify_sqlAndOfyVKey() {
     assertThat(
             VKey.create(TestObject.class, "foo", Key.create(TestObject.create("foo"))).stringify())
-        .isEqualTo(
-            "kind:TestObject@sql:rO0ABXQAA2Zvbw@ofy:agR0ZXN0cjELEg9FbnRpdH"
-                + "lHcm91cFJvb3QiCWNyb3NzLXRsZAwLEgpUZXN0T2JqZWN0IgNmb28M");
+        .isEqualTo("kind:TestObject@sql:rO0ABXQAA2Zvbw@ofy:agR0ZXN0chMLEgpUZXN0T2JqZWN0IgNmb28M");
   }
 
   @Test
   void testStringify_asymmetricVKey() {
     assertThat(
             VKey.create(TestObject.class, "test", Key.create(TestObject.create("foo"))).stringify())
-        .isEqualTo(
-            "kind:TestObject@sql:rO0ABXQABHRlc3Q@ofy:agR0ZXN0cjELEg9FbnRpd"
-                + "HlHcm91cFJvb3QiCWNyb3NzLXRsZAwLEgpUZXN0T2JqZWN0IgNmb28M");
+        .isEqualTo("kind:TestObject@sql:rO0ABXQABHRlc3Q@ofy:agR0ZXN0chMLEgpUZXN0T2JqZWN0IgNmb28M");
   }
 
   /** Test create() via different vkey string representations. */

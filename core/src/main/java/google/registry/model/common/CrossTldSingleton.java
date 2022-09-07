@@ -14,26 +14,17 @@
 
 package google.registry.model.common;
 
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.DeleteAfterMigration;
-import google.registry.model.annotations.InCrossTld;
 import javax.persistence.MappedSuperclass;
-import javax.persistence.Transient;
 
-/** A singleton entity in Datastore. */
+/** A singleton entity in the database. */
 @DeleteAfterMigration
 @MappedSuperclass
-@InCrossTld
 public abstract class CrossTldSingleton extends ImmutableObject {
 
   public static final long SINGLETON_ID = 1; // There is always exactly one of these.
 
   @Id @javax.persistence.Id long id = SINGLETON_ID;
-
-  @Transient @Parent Key<EntityGroupRoot> parent = getCrossTldKey();
 }

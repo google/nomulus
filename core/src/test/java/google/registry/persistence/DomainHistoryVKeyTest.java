@@ -15,20 +15,16 @@
 package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
-import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.AppEngineExtension;
-import javax.persistence.Transient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -74,7 +70,6 @@ class DomainHistoryVKeyTest {
   @Entity
   @javax.persistence.Entity(name = "TestEntity")
   private static class TestEntity extends ImmutableObject {
-    @Transient @Parent Key<EntityGroupRoot> parent = getCrossTldKey();
 
     @Id @javax.persistence.Id String id = "id";
 

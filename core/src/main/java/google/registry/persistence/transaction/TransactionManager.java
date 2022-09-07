@@ -18,7 +18,6 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
-import google.registry.model.annotations.InCrossTld;
 import google.registry.persistence.VKey;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -176,18 +175,14 @@ public interface TransactionManager {
   /**
    * Returns a list of all entities of the given type that exist in the database.
    *
-   * <p>The resulting list is empty if there are no entities of this type. In Datastore mode, if the
-   * class is a member of the cross-TLD entity group (i.e. if it has the {@link InCrossTld}
-   * annotation, then the correct ancestor query will automatically be applied.
+   * <p>The resulting list is empty if there are no entities of this type.
    */
   <T> ImmutableList<T> loadAllOf(Class<T> clazz);
 
   /**
    * Returns a stream of all entities of the given type that exist in the database.
    *
-   * <p>The resulting stream is empty if there are no entities of this type. In Datastore mode, if
-   * the class is a member of the cross-TLD entity group (i.e. if it has the {@link InCrossTld}
-   * annotation, then the correct ancestor query will automatically be applied.
+   * <p>The resulting stream is empty if there are no entities of this type.
    */
   <T> Stream<T> loadAllOfStream(Class<T> clazz);
 
