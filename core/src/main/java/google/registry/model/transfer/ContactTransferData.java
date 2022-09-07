@@ -31,12 +31,11 @@ public class ContactTransferData extends TransferData<ContactTransferData.Builde
     return new Builder(clone(this));
   }
 
-  public static class Builder
-      extends TransferData.Builder<ContactTransferData, ContactTransferData.Builder> {
-    /** Create a {@link ContactTransferData.Builder} wrapping a new instance. */
+  public static class Builder extends TransferData.Builder<ContactTransferData, Builder> {
+    /** Create a {@link Builder} wrapping a new instance. */
     public Builder() {}
 
-    /** Create a {@link ContactTransferData.Builder} wrapping the given instance. */
+    /** Create a {@link Builder} wrapping the given instance. */
     private Builder(ContactTransferData instance) {
       super(instance);
     }
