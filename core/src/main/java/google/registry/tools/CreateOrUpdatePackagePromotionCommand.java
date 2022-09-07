@@ -23,30 +23,28 @@ import org.joda.money.Money;
 import org.joda.time.DateTime;
 
 /** Shared base class for commands to create or update a PackagePromotion object. */
-abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
+abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand
+    implements CommandWithRemoteApi {
 
   @Parameter(description = "Allocation token String of the package token", required = true)
   List<String> mainParameters;
 
   @Parameter(
       names = "--max_domains",
-      description = "Maximum concurrent active domains allowed in the package",
-      required = true)
+      description = "Maximum concurrent active domains allowed in the package")
   int maxDomains;
 
   @Parameter(
       names = "--max_creates",
-      description = "Maximum domain creations allowed in the package each year",
-      required = true)
+      description = "Maximum domain creations allowed in the package each year")
   int maxCreates;
 
-  @Parameter(names = "--price", description = "Annual price of the package", required = true)
+  @Parameter(names = "--price", description = "Annual price of the package")
   Money price;
 
   @Parameter(
       names = "--next_billing_date",
-      description = "The next date that the package should be billed for its annual fee",
-      required = true)
+      description = "The next date that the package should be billed for its annual fee")
   DateTime nextBillingDate;
 
   /** Returns the existing PackagePromotion (for update) or null, (for creates). */

@@ -26,9 +26,8 @@ import org.jetbrains.annotations.Nullable;
 import org.joda.time.DateTime;
 
 /** Command to update a PackagePromotion */
-@Parameters(separators = " =", commandDescription = "Create new package(s)")
-public final class UpdatePackagePromotionCommand extends CreateOrUpdatePackagePromotionCommand
-    implements CommandWithRemoteApi {
+@Parameters(separators = " =", commandDescription = "Update package promotion object(s)")
+public final class UpdatePackagePromotionCommand extends CreateOrUpdatePackagePromotionCommand {
 
   @Parameter(
       names = "--clear_last_notification_sent",
@@ -39,7 +38,7 @@ public final class UpdatePackagePromotionCommand extends CreateOrUpdatePackagePr
 
   @Override
   PackagePromotion getOldPackagePromotion(String tokenString) {
-    getAllocationToken(tokenString);
+    checkAllocationToken(tokenString);
     Optional<PackagePromotion> oldPackage = PackagePromotion.loadByTokenString(tokenString);
     checkArgument(
         oldPackage.isPresent(), "PackagePromotion with token %s does not exist", tokenString);
@@ -48,6 +47,11 @@ public final class UpdatePackagePromotionCommand extends CreateOrUpdatePackagePr
 
   @Override
   AllocationToken getAllocationToken(String tokenString) {
+    Optional<AllocationToken> allocationToken = checkAllocationToken(tokenString);
+    return allocationToken.get();
+  }
+
+  private Optional<AllocationToken> checkAllocationToken(String tokenString) {
     Optional<AllocationToken> allocationToken =
         tm().transact(
                 () -> tm().loadByKeyIfPresent(VKey.createSql(AllocationToken.class, tokenString)));
@@ -55,7 +59,7 @@ public final class UpdatePackagePromotionCommand extends CreateOrUpdatePackagePr
         allocationToken.isPresent(),
         "An allocation token with the token String %s does not exist",
         tokenString);
-    return allocationToken.get();
+    return allocationToken;
   }
 
   @Nullable

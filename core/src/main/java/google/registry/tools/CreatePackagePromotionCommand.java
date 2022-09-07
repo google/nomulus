@@ -26,14 +26,17 @@ import org.jetbrains.annotations.Nullable;
 import org.joda.time.DateTime;
 
 /** Command to create a PackagePromotion */
-@Parameters(separators = " =", commandDescription = "Create new package(s)")
-public final class CreatePackagePromotionCommand extends CreateOrUpdatePackagePromotionCommand
-    implements CommandWithRemoteApi {
+@Parameters(
+    separators = " =",
+    commandDescription =
+        "Create new package promotion object(s) for registrars to register multiple names under"
+            + " one contractual annual package price using a package allocation token")
+public final class CreatePackagePromotionCommand extends CreateOrUpdatePackagePromotionCommand {
 
   @Nullable
   @Override
   PackagePromotion getOldPackagePromotion(String tokenString) {
-    getAllocationToken(tokenString);
+    checkAllocationToken(tokenString);
     checkArgument(
         !PackagePromotion.loadByTokenString(tokenString).isPresent(),
         "PackagePromotion with token %s already exists",
@@ -43,6 +46,11 @@ public final class CreatePackagePromotionCommand extends CreateOrUpdatePackagePr
 
   @Override
   AllocationToken getAllocationToken(String tokenString) {
+    Optional<AllocationToken> allocationToken = checkAllocationToken(tokenString);
+    return allocationToken.get();
+  }
+
+  private Optional<AllocationToken> checkAllocationToken(String tokenString) {
     Optional<AllocationToken> allocationToken =
         tm().transact(
                 () -> tm().loadByKeyIfPresent(VKey.createSql(AllocationToken.class, tokenString)));
@@ -54,7 +62,7 @@ public final class CreatePackagePromotionCommand extends CreateOrUpdatePackagePr
     checkArgument(
         allocationToken.get().getTokenType().equals(TokenType.PACKAGE),
         "The allocation token must be of the PACKAGE token type");
-    return allocationToken.get();
+    return allocationToken;
   }
 
   @Nullable
