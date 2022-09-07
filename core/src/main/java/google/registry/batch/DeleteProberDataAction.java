@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.batch.BatchModule.PARAM_DRY_RUN;
 import static google.registry.config.RegistryEnvironment.PRODUCTION;
-import static google.registry.model.ResourceTransferUtils.updateForeignKeyIndexDeletionTime;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_DELETE;
 import static google.registry.model.tld.Registries.getTldsOfType;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
@@ -267,8 +266,6 @@ public class DeleteProberDataAction implements Runnable {
     // messages, or auto-renews because those will all be hard-deleted the next time the job runs
     // anyway.
     tm().putAll(ImmutableList.of(deletedDomain, historyEntry));
-    // updating foreign keys is a no-op in SQL
-    updateForeignKeyIndexDeletionTime(deletedDomain);
     dnsQueue.addDomainRefreshTask(deletedDomain.getDomainName());
   }
 }

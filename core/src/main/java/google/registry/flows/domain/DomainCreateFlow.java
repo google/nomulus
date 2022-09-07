@@ -106,7 +106,6 @@ import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CreateData.DomainCreateData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.index.EppResourceIndex;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
@@ -404,7 +403,6 @@ public final class DomainCreateFlow implements TransactionalFlow {
     entitiesToSave.add(
         domain,
         domainHistory,
-        ForeignKeyIndex.create(domain, domain.getDeletionTime()),
         EppResourceIndex.create(Key.create(domain)));
     if (allocationToken.isPresent()
         && TokenType.SINGLE_USE.equals(allocationToken.get().getTokenType())) {

@@ -29,7 +29,6 @@ import static google.registry.flows.domain.DomainFlowUtils.updateAutorenewRecurr
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPredelegation;
 import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
 import static google.registry.model.ResourceTransferUtils.handlePendingTransferOnDelete;
-import static google.registry.model.ResourceTransferUtils.updateForeignKeyIndexDeletionTime;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.ADD_FIELDS;
@@ -257,7 +256,6 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     Domain newDomain = builder.build();
     DomainHistory domainHistory =
         buildDomainHistory(newDomain, registry, now, durationUntilDelete, inAddGracePeriod);
-    updateForeignKeyIndexDeletionTime(newDomain);
     handlePendingTransferOnDelete(existingDomain, newDomain, now, domainHistory);
     // Close the autorenew billing event and poll message. This may delete the poll message.  Store
     // the updated recurring billing event, we'll need it later and can't reload it.

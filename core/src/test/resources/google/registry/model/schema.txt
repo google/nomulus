@@ -297,21 +297,6 @@ class google.registry.model.index.EppResourceIndex {
 class google.registry.model.index.EppResourceIndexBucket {
   @Id long bucketId;
 }
-class google.registry.model.index.ForeignKeyIndex$ForeignKeyContactIndex {
-  @Id java.lang.String foreignKey;
-  google.registry.persistence.VKey<E> topReference;
-  org.joda.time.DateTime deletionTime;
-}
-class google.registry.model.index.ForeignKeyIndex$ForeignKeyDomainIndex {
-  @Id java.lang.String foreignKey;
-  google.registry.persistence.VKey<E> topReference;
-  org.joda.time.DateTime deletionTime;
-}
-class google.registry.model.index.ForeignKeyIndex$ForeignKeyHostIndex {
-  @Id java.lang.String foreignKey;
-  google.registry.persistence.VKey<E> topReference;
-  org.joda.time.DateTime deletionTime;
-}
 class google.registry.model.reporting.DomainTransactionRecord {
   google.registry.model.reporting.DomainTransactionRecord$TransactionReportField reportField;
   java.lang.Integer reportAmount;

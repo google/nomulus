@@ -41,7 +41,6 @@ import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CreateData.ContactCreateData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.index.EppResourceIndex;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import javax.inject.Inject;
@@ -100,7 +99,6 @@ public final class ContactCreateFlow implements TransactionalFlow {
             ImmutableSet.of(
                 newContact,
                 historyBuilder.build(),
-                ForeignKeyIndex.create(newContact, newContact.getDeletionTime()),
                 EppResourceIndex.create(Key.create(newContact))));
     return responseBuilder
         .setResData(ContactCreateData.create(newContact.getContactId(), now))

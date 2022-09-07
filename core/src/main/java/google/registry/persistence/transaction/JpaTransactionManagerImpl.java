@@ -31,9 +31,6 @@ import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.ImmutableObject;
 import google.registry.model.index.EppResourceIndex;
-import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
-import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
-import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
 import google.registry.persistence.JpaRetries;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
@@ -83,11 +80,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   // to exclude the Datastore specific entities when the underlying tm() is jpaTm().
   // TODO(b/176108270): Remove this property after database migration.
   private static final ImmutableSet<Class<? extends ImmutableObject>> IGNORED_ENTITY_CLASSES =
-      ImmutableSet.of(
-          EppResourceIndex.class,
-          ForeignKeyContactIndex.class,
-          ForeignKeyDomainIndex.class,
-          ForeignKeyHostIndex.class);
+      ImmutableSet.of(EppResourceIndex.class);
 
   // EntityManagerFactory is thread safe.
   private final EntityManagerFactory emf;

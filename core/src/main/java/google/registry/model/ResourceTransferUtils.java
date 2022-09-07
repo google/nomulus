@@ -23,13 +23,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import google.registry.model.EppResource.BuilderWithTransferData;
-import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.poll.PendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.ContactPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
@@ -102,13 +100,6 @@ public final class ResourceTransferUtils {
 
   private static void assertIsContactOrDomain(EppResource eppResource) {
     checkState(eppResource instanceof Contact || eppResource instanceof Domain);
-  }
-
-  /** Update the relevant {@link ForeignKeyIndex} to cache the new deletion time. */
-  public static <R extends EppResource> void updateForeignKeyIndexDeletionTime(R resource) {
-    if (resource instanceof ForeignKeyedEppResource) {
-      tm().insert(ForeignKeyIndex.create(resource, resource.getDeletionTime()));
-    }
   }
 
   /** If there is a transfer out, delete the server-approve entities and enqueue a poll message. */

@@ -26,7 +26,6 @@ import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.ServerSecret;
 
@@ -44,9 +43,6 @@ public final class EntityClasses {
           EntityGroupRoot.class,
           EppResourceIndex.class,
           EppResourceIndexBucket.class,
-          ForeignKeyIndex.ForeignKeyContactIndex.class,
-          ForeignKeyIndex.ForeignKeyDomainIndex.class,
-          ForeignKeyIndex.ForeignKeyHostIndex.class,
           GaeUserIdConverter.class,
           HistoryEntry.class,
           Host.class,

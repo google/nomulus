@@ -63,7 +63,6 @@ import com.googlecode.objectify.Key;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
-import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
@@ -91,7 +90,6 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registrar.Registrar;
@@ -1011,9 +1009,6 @@ public class DatabaseHelper {
         .that(resource.getRepoId())
         .isNotEmpty();
     saver.accept(index);
-    if (resource instanceof ForeignKeyedEppResource) {
-      saver.accept(ForeignKeyIndex.create(resource, resource.getDeletionTime()));
-    }
   }
 
   /** Persists an object in the DB for tests. */

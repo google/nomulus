@@ -19,10 +19,8 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 import static google.registry.util.TypeUtils.instantiate;
 
@@ -36,17 +34,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Index;
 import google.registry.config.RegistryConfig;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.CacheUtils;
-import google.registry.model.CacheUtils.AppEngineEnvironmentCacheLoader;
 import google.registry.model.EppResource;
-import google.registry.model.annotations.DeleteAfterMigration;
-import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
@@ -67,22 +58,15 @@ import org.joda.time.DateTime;
  * the foreign key string. The instance is never deleted, but it is updated if a newer entity
  * becomes the active entity.
  */
-@DeleteAfterMigration
 public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroupRoot {
 
   /** The {@link ForeignKeyIndex} type for {@link Contact} entities. */
-  @ReportedOn
-  @Entity
   public static class ForeignKeyContactIndex extends ForeignKeyIndex<Contact> {}
 
   /** The {@link ForeignKeyIndex} type for {@link Domain} entities. */
-  @ReportedOn
-  @Entity
   public static class ForeignKeyDomainIndex extends ForeignKeyIndex<Domain> {}
 
   /** The {@link ForeignKeyIndex} type for {@link Host} entities. */
-  @ReportedOn
-  @Entity
   public static class ForeignKeyHostIndex extends ForeignKeyIndex<Host> {}
 
   private static final ImmutableBiMap<
@@ -100,23 +84,18 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
               Domain.class, "fullyQualifiedDomainName",
               Host.class, "fullyQualifiedHostName");
 
-  @Id String foreignKey;
+  String foreignKey;
 
   /**
    * The deletion time of this {@link ForeignKeyIndex}.
    *
-   * <p>This will generally be equal to the deletion time of {@link #topReference}. However, in the
+   * <p>This will generally be equal to the deletion time of {@link #reference}. However, in the
    * case of a {@link Host} that was renamed, this field will hold the time of the rename.
    */
-  @Index DateTime deletionTime;
+  DateTime deletionTime;
 
-  /**
-   * The referenced resource.
-   *
-   * <p>This field holds a key to the only referenced resource. It is named "topReference" for
-   * historical reasons.
-   */
-  VKey<E> topReference;
+  /** The referenced resource. */
+  VKey<E> reference;
 
   public String getForeignKey() {
     return foreignKey;
@@ -127,7 +106,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   }
 
   public VKey<E> getResourceKey() {
-    return topReference;
+    return reference;
   }
 
   @SuppressWarnings("unchecked")
@@ -137,26 +116,19 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   }
 
   /** Create a {@link ForeignKeyIndex} instance for a resource, expiring at a specified time. */
-  public static <E extends EppResource> ForeignKeyIndex<E> create(
+  @SuppressWarnings("unchecked")
+  private static <E extends EppResource> ForeignKeyIndex<E> create(
       E resource, DateTime deletionTime) {
-    @SuppressWarnings("unchecked")
     Class<E> resourceClass = (Class<E>) resource.getClass();
     ForeignKeyIndex<E> instance = instantiate(mapToFkiClass(resourceClass));
-    instance.topReference = (VKey<E>) resource.createVKey();
+    instance.reference = (VKey<E>) resource.createVKey();
     instance.foreignKey = resource.getForeignKey();
     instance.deletionTime = deletionTime;
     return instance;
   }
 
-  /** Create a {@link ForeignKeyIndex} key for a resource. */
-  public static <E extends EppResource> Key<ForeignKeyIndex<E>> createKey(E resource) {
-    @SuppressWarnings("unchecked")
-    Class<E> resourceClass = (Class<E>) resource.getClass();
-    return Key.create(mapToFkiClass(resourceClass), resource.getForeignKey());
-  }
-
   /**
-   * Loads a {@link Key} to an {@link EppResource} from Datastore by foreign key.
+   * Loads a {@link VKey} to an {@link EppResource} from the database by foreign key.
    *
    * <p>Returns null if no foreign key index with this foreign key was ever created, or if the most
    * recently created foreign key index was deleted before time "now". This method does not actually
@@ -172,7 +144,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   public static <E extends EppResource> VKey<E> loadAndGetKey(
       Class<E> clazz, String foreignKey, DateTime now) {
     ForeignKeyIndex<E> index = load(clazz, foreignKey, now);
-    return (index == null) ? null : index.getResourceKey();
+    return index == null ? null : index.getResourceKey();
   }
 
   /**
@@ -196,7 +168,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    */
   public static <E extends EppResource> ImmutableMap<String, ForeignKeyIndex<E>> load(
       Class<E> clazz, Collection<String> foreignKeys, final DateTime now) {
-    return loadIndexesFromStore(clazz, foreignKeys, true, false).entrySet().stream()
+    return loadIndexesFromStore(clazz, foreignKeys, false).entrySet().stream()
         .filter(e -> now.isBefore(e.getValue().getDeletionTime()))
         .collect(entriesToImmutableMap());
   }
@@ -206,55 +178,37 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    * keys, regardless of whether or not they have been soft-deleted.
    *
    * <p>Used by both the cached (w/o deletion check) and the non-cached (with deletion check) calls.
-   *
-   * <p>Note that in the cached case, we wish to run this outside of any transaction because we may
-   * be loading many entities, going over the Datastore limit on the number of enrolled entity
-   * groups per transaction (25). If we require consistency, however, we must use a transaction.
-   *
-   * @param inTransaction whether or not to use an Objectify transaction
    */
   private static <E extends EppResource>
       ImmutableMap<String, ForeignKeyIndex<E>> loadIndexesFromStore(
-          Class<E> clazz,
-          Collection<String> foreignKeys,
-          boolean inTransaction,
-          boolean useReplicaJpaTm) {
-    if (tm().isOfy()) {
-      Class<ForeignKeyIndex<E>> fkiClass = mapToFkiClass(clazz);
-      return ImmutableMap.copyOf(
-          inTransaction
-              ? auditedOfy().load().type(fkiClass).ids(foreignKeys)
-              : tm().doTransactionless(() -> auditedOfy().load().type(fkiClass).ids(foreignKeys)));
-    } else {
-      String property = RESOURCE_CLASS_TO_FKI_PROPERTY.get(clazz);
-      JpaTransactionManager jpaTmToUse = useReplicaJpaTm ? replicaJpaTm() : jpaTm();
-      ImmutableList<ForeignKeyIndex<E>> indexes =
-          jpaTmToUse.transact(
-              () ->
-                  jpaTmToUse
-                      .criteriaQuery(
-                          CriteriaQueryBuilder.create(clazz)
-                              .whereFieldIsIn(property, foreignKeys)
-                              .build())
-                      .getResultStream()
-                      .map(e -> ForeignKeyIndex.create(e, e.getDeletionTime()))
-                      .collect(toImmutableList()));
-      // We need to find and return the entities with the maximum deletionTime for each foreign key.
-      return Multimaps.index(indexes, ForeignKeyIndex::getForeignKey).asMap().entrySet().stream()
-          .map(
-              entry ->
-                  Maps.immutableEntry(
-                      entry.getKey(),
-                      entry.getValue().stream()
-                          .max(Comparator.comparing(ForeignKeyIndex::getDeletionTime))
-                          .get()))
-          .collect(entriesToImmutableMap());
-    }
+          Class<E> clazz, Collection<String> foreignKeys, boolean useReplicaJpaTm) {
+    String property = RESOURCE_CLASS_TO_FKI_PROPERTY.get(clazz);
+    JpaTransactionManager jpaTmToUse = useReplicaJpaTm ? replicaJpaTm() : jpaTm();
+    ImmutableList<ForeignKeyIndex<E>> indexes =
+        jpaTmToUse.transact(
+            () ->
+                jpaTmToUse
+                    .criteriaQuery(
+                        CriteriaQueryBuilder.create(clazz)
+                            .whereFieldIsIn(property, foreignKeys)
+                            .build())
+                    .getResultStream()
+                    .map(e -> create(e, e.getDeletionTime()))
+                    .collect(toImmutableList()));
+    // We need to find and return the entities with the maximum deletionTime for each foreign key.
+    return Multimaps.index(indexes, ForeignKeyIndex::getForeignKey).asMap().entrySet().stream()
+        .map(
+            entry ->
+                Maps.immutableEntry(
+                    entry.getKey(),
+                    entry.getValue().stream()
+                        .max(Comparator.comparing(ForeignKeyIndex::getDeletionTime))
+                        .get()))
+        .collect(entriesToImmutableMap());
   }
 
   static final CacheLoader<VKey<ForeignKeyIndex<?>>, Optional<ForeignKeyIndex<?>>> CACHE_LOADER =
-      new AppEngineEnvironmentCacheLoader<
-          VKey<ForeignKeyIndex<?>>, Optional<ForeignKeyIndex<?>>>() {
+      new CacheLoader<VKey<ForeignKeyIndex<?>>, Optional<ForeignKeyIndex<?>>>() {
 
         @Override
         public Optional<ForeignKeyIndex<?>> load(VKey<ForeignKeyIndex<?>> key) {
@@ -263,7 +217,6 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
               loadIndexesFromStore(
                       RESOURCE_CLASS_TO_FKI_CLASS.inverse().get(key.getKind()),
                       ImmutableSet.of(foreignKey),
-                      false,
                       true)
                   .get(foreignKey));
         }
@@ -280,7 +233,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
               Streams.stream(keys).map(v -> v.getSqlKey().toString()).collect(toImmutableSet());
           ImmutableSet<VKey<ForeignKeyIndex<?>>> typedKeys = ImmutableSet.copyOf(keys);
           ImmutableMap<String, ? extends ForeignKeyIndex<? extends EppResource>> existingFkis =
-              loadIndexesFromStore(resourceClass, foreignKeys, false, true);
+              loadIndexesFromStore(resourceClass, foreignKeys, true);
           // ofy omits keys that don't have values in Datastore, so re-add them in
           // here with Optional.empty() values.
           return Maps.asMap(
@@ -333,14 +286,14 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   public static <E extends EppResource> ImmutableMap<String, ForeignKeyIndex<E>> loadCached(
       Class<E> clazz, Collection<String> foreignKeys, final DateTime now) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return tm().doTransactionless(() -> load(clazz, foreignKeys, now));
+      return load(clazz, foreignKeys, now);
     }
     Class<? extends ForeignKeyIndex<?>> fkiClass = mapToFkiClass(clazz);
     // Safe to cast VKey<FKI<E>> to VKey<FKI<?>>
     @SuppressWarnings("unchecked")
     ImmutableList<VKey<ForeignKeyIndex<?>>> fkiVKeys =
         foreignKeys.stream()
-            .map(fk -> (VKey<ForeignKeyIndex<?>>) VKey.create(fkiClass, fk))
+            .map(fk -> (VKey<ForeignKeyIndex<?>>) VKey.createSql(fkiClass, fk))
             .collect(toImmutableList());
     // This cast is safe because when we loaded ForeignKeyIndexes above we used type clazz, which
     // is scoped to E.

@@ -23,9 +23,6 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.Host;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
-import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
-import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
-import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.ServerSecret;
 import google.registry.testing.TestObject;
@@ -44,8 +41,6 @@ public class ClassPathManagerTest {
      * below are all classes supported in CLASS_REGISTRY. This test breaks if someone changes a
      * classname without preserving the original name.
      */
-    assertThat(ClassPathManager.getClass("ForeignKeyContactIndex"))
-        .isEqualTo(ForeignKeyContactIndex.class);
     assertThat(ClassPathManager.getClass("Host")).isEqualTo(Host.class);
     assertThat(ClassPathManager.getClass("Contact")).isEqualTo(Contact.class);
     assertThat(ClassPathManager.getClass("GaeUserIdConverter")).isEqualTo(GaeUserIdConverter.class);
@@ -54,12 +49,8 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("EntityGroupRoot")).isEqualTo(EntityGroupRoot.class);
     assertThat(ClassPathManager.getClass("Domain")).isEqualTo(Domain.class);
     assertThat(ClassPathManager.getClass("HistoryEntry")).isEqualTo(HistoryEntry.class);
-    assertThat(ClassPathManager.getClass("ForeignKeyHostIndex"))
-        .isEqualTo(ForeignKeyHostIndex.class);
     assertThat(ClassPathManager.getClass("ServerSecret")).isEqualTo(ServerSecret.class);
     assertThat(ClassPathManager.getClass("EppResourceIndex")).isEqualTo(EppResourceIndex.class);
-    assertThat(ClassPathManager.getClass("ForeignKeyDomainIndex"))
-        .isEqualTo(ForeignKeyDomainIndex.class);
   }
 
   @Test
@@ -92,8 +83,6 @@ public class ClassPathManagerTest {
      * The classes below are all classes supported in CLASS_NAME_REGISTRY. This test breaks if
      * someone changes a classname without preserving the original name.
      */
-    assertThat(ClassPathManager.getClassName(ForeignKeyContactIndex.class))
-        .isEqualTo("ForeignKeyContactIndex");
     assertThat(ClassPathManager.getClassName(Host.class)).isEqualTo("Host");
     assertThat(ClassPathManager.getClassName(Contact.class)).isEqualTo("Contact");
     assertThat(ClassPathManager.getClassName(GaeUserIdConverter.class))
@@ -103,12 +92,8 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClassName(EntityGroupRoot.class)).isEqualTo("EntityGroupRoot");
     assertThat(ClassPathManager.getClassName(Domain.class)).isEqualTo("Domain");
     assertThat(ClassPathManager.getClassName(HistoryEntry.class)).isEqualTo("HistoryEntry");
-    assertThat(ClassPathManager.getClassName(ForeignKeyHostIndex.class))
-        .isEqualTo("ForeignKeyHostIndex");
     assertThat(ClassPathManager.getClassName(ServerSecret.class)).isEqualTo("ServerSecret");
     assertThat(ClassPathManager.getClassName(EppResourceIndex.class)).isEqualTo("EppResourceIndex");
-    assertThat(ClassPathManager.getClassName(ForeignKeyDomainIndex.class))
-        .isEqualTo("ForeignKeyDomainIndex");
   }
 
   @Test
