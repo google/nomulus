@@ -44,7 +44,7 @@ final class LockHandlerImplTest {
   final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private static class CountingCallable implements Callable<Void> {
-    int numCalled = 0;
+    int numCalled;
 
     @Override
     public Void call() {
@@ -69,14 +69,9 @@ final class LockHandlerImplTest {
     }
   }
 
-  private boolean executeWithLocks(Callable<Void> callable, final @Nullable Lock acquiredLock) {
+  private boolean executeWithLocks(Callable<Void> callable, @Nullable final Lock acquiredLock) {
     return createTestLockHandler(acquiredLock)
         .executeWithLocks(callable, "tld", ONE_DAY, "resourceName");
-  }
-
-  private boolean executeWithSqlLocks(Callable<Void> callable, final @Nullable Lock acquiredLock) {
-    return createTestLockHandler(acquiredLock)
-        .executeWithSqlLocks(callable, "tld", ONE_DAY, "resourceName");
   }
 
   @Test
@@ -84,15 +79,6 @@ final class LockHandlerImplTest {
     Lock lock = mock(Lock.class);
     CountingCallable countingCallable = new CountingCallable();
     assertThat(executeWithLocks(countingCallable, lock)).isTrue();
-    assertThat(countingCallable.numCalled).isEqualTo(1);
-    verify(lock, times(1)).release();
-  }
-
-  @Test
-  void testSqlLockSucceeds() {
-    Lock lock = mock(Lock.class);
-    CountingCallable countingCallable = new CountingCallable();
-    assertThat(executeWithSqlLocks(countingCallable, lock)).isTrue();
     assertThat(countingCallable.numCalled).isEqualTo(1);
     verify(lock, times(1)).release();
   }
@@ -156,11 +142,6 @@ final class LockHandlerImplTest {
         assertThat(tld).isEqualTo("tld");
         assertThat(leaseLength).isEqualTo(ONE_DAY);
         return Optional.ofNullable(acquiredLock);
-      }
-
-      @Override
-      Optional<Lock> acquireSql(String resourceName, String tld, Duration leaseLength) {
-        return acquire(resourceName, tld, leaseLength);
       }
     };
   }

@@ -28,7 +28,6 @@ import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
 
 /** Sets of classes of the Objectify-registered entities in use throughout the model. */
@@ -52,7 +51,6 @@ public final class EntityClasses {
           HistoryEntry.class,
           Host.class,
           HostHistory.class,
-          Lock.class,
           ServerSecret.class);
 
   private EntityClasses() {}

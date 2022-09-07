@@ -42,12 +42,6 @@ public class FakeLockHandler implements LockHandler {
     return execute(callable);
   }
 
-  @Override
-  public boolean executeWithSqlLocks(
-      Callable<Void> callable, @Nullable String tld, Duration leaseLength, String... lockNames) {
-    return execute(callable);
-  }
-
   private boolean execute(Callable<Void> callable) {
     if (!lockSucceeds) {
       return false;

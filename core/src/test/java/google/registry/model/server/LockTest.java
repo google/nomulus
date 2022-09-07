@@ -49,7 +49,8 @@ public class LockTest extends EntityTestCase {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
-  private Optional<Lock> acquire(String tld, Duration leaseLength, LockState expectedLockState) {
+  private static Optional<Lock> acquire(
+      String tld, Duration leaseLength, LockState expectedLockState) {
     Lock.lockMetrics = mock(LockMetrics.class);
     Optional<Lock> lock = Lock.acquire(RESOURCE_NAME, tld, leaseLength, requestStatusChecker, true);
     verify(Lock.lockMetrics).recordAcquire(RESOURCE_NAME, tld, expectedLockState);
@@ -58,7 +59,7 @@ public class LockTest extends EntityTestCase {
     return lock;
   }
 
-  private void release(Lock lock, String expectedTld, long expectedMillis) {
+  private static void release(Lock lock, String expectedTld, long expectedMillis) {
     Lock.lockMetrics = mock(LockMetrics.class);
     lock.release();
     verify(Lock.lockMetrics)
