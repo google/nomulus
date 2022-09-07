@@ -89,7 +89,6 @@ class google.registry.model.domain.Domain {
   google.registry.persistence.VKey<google.registry.model.contact.Contact> billingContact;
   google.registry.persistence.VKey<google.registry.model.contact.Contact> registrantContact;
   google.registry.persistence.VKey<google.registry.model.contact.Contact> techContact;
-  google.registry.persistence.VKey<google.registry.model.domain.token.AllocationToken> currentPackageToken;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
   java.lang.String creationClientId;
@@ -122,7 +121,6 @@ class google.registry.model.domain.DomainBase {
   google.registry.persistence.VKey<google.registry.model.contact.Contact> billingContact;
   google.registry.persistence.VKey<google.registry.model.contact.Contact> registrantContact;
   google.registry.persistence.VKey<google.registry.model.contact.Contact> techContact;
-  google.registry.persistence.VKey<google.registry.model.domain.token.AllocationToken> currentPackageToken;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
   java.lang.String creationClientId;
@@ -215,35 +213,6 @@ class google.registry.model.domain.secdns.DomainDsDataHistory {
   int keyTag;
   java.lang.Long domainHistoryRevisionId;
   java.lang.Long dsDataHistoryRevisionId;
-}
-class google.registry.model.domain.token.AllocationToken {
-  @Id java.lang.String token;
-  boolean discountPremiums;
-  double discountFraction;
-  google.registry.model.common.TimedTransitionProperty<google.registry.model.domain.token.AllocationToken$TokenStatus> tokenStatusTransitions;
-  google.registry.model.domain.token.AllocationToken$RegistrationBehavior registrationBehavior;
-  google.registry.model.domain.token.AllocationToken$TokenType tokenType;
-  google.registry.persistence.DomainHistoryVKey redemptionHistoryEntry;
-  int discountYears;
-  java.lang.String domainName;
-  java.util.Set<java.lang.String> allowedClientIds;
-  java.util.Set<java.lang.String> allowedTlds;
-}
-enum google.registry.model.domain.token.AllocationToken$RegistrationBehavior {
-  ANCHOR_TENANT;
-  BYPASS_TLD_STATE;
-  DEFAULT;
-}
-enum google.registry.model.domain.token.AllocationToken$TokenStatus {
-  CANCELLED;
-  ENDED;
-  NOT_STARTED;
-  VALID;
-}
-enum google.registry.model.domain.token.AllocationToken$TokenType {
-  PACKAGE;
-  SINGLE_USE;
-  UNLIMITED_USE;
 }
 class google.registry.model.eppcommon.AuthInfo$PasswordAuth {
   java.lang.String repoId;
@@ -508,8 +477,4 @@ enum google.registry.model.transfer.TransferStatus {
   PENDING;
   SERVER_APPROVED;
   SERVER_CANCELLED;
-}
-class google.registry.persistence.DomainHistoryVKey {
-  java.lang.Long historyRevisionId;
-  java.lang.String repoId;
 }

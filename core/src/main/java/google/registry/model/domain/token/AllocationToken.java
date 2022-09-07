@@ -31,18 +31,11 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Range;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.annotation.OnLoad;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
-import google.registry.model.annotations.ReportedOn;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.reporting.HistoryEntry;
@@ -55,27 +48,23 @@ import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.Table;
 import org.joda.time.DateTime;
 
 /** An entity representing an allocation token. */
-@ReportedOn
 @Entity
-@WithStringVKey
-@javax.persistence.Entity
+@WithStringVKey(compositeKey = true)
 @Table(
     indexes = {
-      @javax.persistence.Index(
-          columnList = "token",
-          name = "allocation_token_token_idx",
-          unique = true),
-      @javax.persistence.Index(
-          columnList = "domainName",
-          name = "allocation_token_domain_name_idx"),
-      @javax.persistence.Index(columnList = "tokenType"),
-      @javax.persistence.Index(columnList = "redemption_domain_repo_id")
+      @Index(columnList = "token", name = "allocation_token_token_idx", unique = true),
+      @Index(columnList = "domainName", name = "allocation_token_domain_name_idx"),
+      @Index(columnList = "tokenType"),
+      @Index(columnList = "redemption_domain_repo_id")
     })
 public class AllocationToken extends BackupGroupRoot implements Buildable {
 
@@ -157,11 +146,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
   }
 
   /** The allocation token string. */
-  @javax.persistence.Id @Id String token;
+  @Id String token;
 
   /** The key of the history entry for which the token was used. Null if not yet used. */
   @Nullable
-  @Index
   @AttributeOverrides({
     @AttributeOverride(name = "repoId", column = @Column(name = "redemption_domain_repo_id")),
     @AttributeOverride(
@@ -171,10 +159,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
   DomainHistoryVKey redemptionHistoryEntry;
 
   /** The fully-qualified domain name that this token is limited to, if any. */
-  @Nullable @Index String domainName;
+  @Nullable String domainName;
 
   /** When this token was created. */
-  @Ignore CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** Allowed registrar client IDs for this token, or null if all registrars are allowed. */
   @Column(name = "allowedRegistrarIds")
@@ -203,20 +191,11 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "renewalPriceBehavior", nullable = false)
-  @Ignore
   RenewalPriceBehavior renewalPriceBehavior = RenewalPriceBehavior.DEFAULT;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   RegistrationBehavior registrationBehavior = RegistrationBehavior.DEFAULT;
-
-  // TODO: Remove onLoad once all allocation tokens are migrated to have a discountYears of 1.
-  @OnLoad
-  void onLoad() {
-    if (discountYears == 0) {
-      discountYears = 1;
-    }
-  }
 
   /**
    * Promotional token validity periods.
@@ -296,7 +275,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
       throw new IllegalArgumentException(
           String.format("%s tokens are not stored in the database", getTokenBehavior()));
     }
-    return VKey.create(AllocationToken.class, getToken(), Key.create(this));
+    return VKey.createSql(AllocationToken.class, getToken());
   }
 
   @Override
@@ -330,7 +309,8 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
           "Redemption history entry can only be specified for SINGLE_USE tokens");
       checkArgument(
           getInstance().tokenType != TokenType.PACKAGE
-              || getInstance().allowedClientIds.size() == 1,
+              || (getInstance().allowedClientIds != null
+                  && getInstance().allowedClientIds.size() == 1),
           "PACKAGE tokens must have exactly one allowed client registrar");
       checkArgument(
           getInstance().discountFraction > 0 || !getInstance().discountPremiums,

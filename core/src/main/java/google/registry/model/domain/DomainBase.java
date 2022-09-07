@@ -277,7 +277,7 @@ public class DomainBase extends EppResource
   @Ignore DateTime dnsRefreshRequestTime;
 
   /** The {@link AllocationToken} for the package this domain is currently a part of. */
-  @Nullable VKey<AllocationToken> currentPackageToken;
+  @Ignore @Nullable VKey<AllocationToken> currentPackageToken;
 
   /**
    * Returns the DNS refresh request time iff this domain's DNS needs refreshing, otherwise absent.
