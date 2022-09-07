@@ -48,7 +48,6 @@ import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
-import google.registry.model.index.EppResourceIndex;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.PersistenceModule.JpaTransactionManagerType;
@@ -168,13 +167,6 @@ import org.joda.time.Duration;
  * about. Its view of the database is strongly consistent in Cloud SQL automatically by nature of
  * the initial query for the history entry running at {@code READ_COMMITTED} transaction isolation
  * level.
- *
- * <p>This is also true in Datastore because:
- *
- * <ol>
- *   <li>{@code EppResource} queries are strongly consistent thanks to {@link EppResourceIndex}
- *   <li>{@code EppResource} entities are rewinded to the point-in-time of the watermark
- * </ol>
  *
  * <p>Here's what's not deterministic:
  *

@@ -23,8 +23,6 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
-import google.registry.model.index.EppResourceIndex;
-import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.reporting.HistoryEntry;
 
 /** Sets of classes of the Objectify-registered entities in use throughout the model. */
@@ -38,8 +36,6 @@ public final class EntityClasses {
           ContactHistory.class,
           Domain.class,
           DomainHistory.class,
-          EppResourceIndex.class,
-          EppResourceIndexBucket.class,
           GaeUserIdConverter.class,
           HistoryEntry.class,
           Host.class,

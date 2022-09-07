@@ -183,10 +183,6 @@ registryPolicy:
   requireSslCertificates: true
 
 datastore:
-  # Number of EPP resource index buckets in Datastore. Don’t change after
-  # initial install.
-  eppResourceIndexBucketsNum: 997
-
   # Milliseconds that Objectify waits to retry a Datastore transaction (this
   # doubles after each failure).
   baseOfyRetryMillis: 100

@@ -59,7 +59,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
-import com.googlecode.objectify.Key;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
@@ -105,7 +104,6 @@ import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CreateData.DomainCreateData;
 import google.registry.model.eppoutput.EppResponse;
-import google.registry.model.index.EppResourceIndex;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
@@ -404,10 +402,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
       entitiesToSave.add(
           createNameCollisionOneTimePollMessage(targetId, domainHistory, registrarId, now));
     }
-    entitiesToSave.add(
-        domain,
-        domainHistory,
-        EppResourceIndex.create(Key.create(domain)));
+    entitiesToSave.add(domain, domainHistory);
     if (allocationToken.isPresent()
         && TokenType.SINGLE_USE.equals(allocationToken.get().getTokenType())) {
       entitiesToSave.add(

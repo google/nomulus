@@ -27,7 +27,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
@@ -49,7 +48,6 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.host.Host;
 import google.registry.model.host.HostCommand.Create;
 import google.registry.model.host.HostHistory;
-import google.registry.model.index.EppResourceIndex;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -106,7 +104,7 @@ public final class HostCreateFlow implements TransactionalFlow {
     DateTime now = tm().getTransactionTime();
     verifyResourceDoesNotExist(Host.class, targetId, now, registrarId);
     // The superordinate domain of the host object if creating an in-bailiwick host, or null if
-    // creating an external host. This is looked up before we actually create the Host object so
+    // creating an external host. This is looked up before we actually create the Host object, so
     // we can detect error conditions earlier.
     Optional<Domain> superordinateDomain =
         lookupSuperordinateDomain(validateHostName(targetId), now);
@@ -130,11 +128,7 @@ public final class HostCreateFlow implements TransactionalFlow {
             .setSuperordinateDomain(superordinateDomain.map(Domain::createVKey).orElse(null))
             .build();
     historyBuilder.setType(HOST_CREATE).setHost(newHost);
-    ImmutableSet<ImmutableObject> entitiesToSave =
-        ImmutableSet.of(
-            newHost,
-            historyBuilder.build(),
-            EppResourceIndex.create(Key.create(newHost)));
+    ImmutableSet<ImmutableObject> entitiesToSave = ImmutableSet.of(newHost, historyBuilder.build());
     if (superordinateDomain.isPresent()) {
       tm().update(
               superordinateDomain
@@ -152,14 +146,14 @@ public final class HostCreateFlow implements TransactionalFlow {
 
   /** Subordinate hosts must have an ip address. */
   static class SubordinateHostMustHaveIpException extends RequiredParameterMissingException {
-    public SubordinateHostMustHaveIpException() {
+    SubordinateHostMustHaveIpException() {
       super("Subordinate hosts must have an ip address");
     }
   }
 
   /** External hosts must not have ip addresses. */
   static class UnexpectedExternalHostIpException extends ParameterValueRangeErrorException {
-    public UnexpectedExternalHostIpException() {
+    UnexpectedExternalHostIpException() {
       super("External hosts must not have ip addresses");
     }
   }

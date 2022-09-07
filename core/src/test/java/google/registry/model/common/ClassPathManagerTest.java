@@ -21,8 +21,6 @@ import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.Host;
-import google.registry.model.index.EppResourceIndex;
-import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.TestObject;
 import org.junit.jupiter.api.Test;
@@ -43,11 +41,8 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("Host")).isEqualTo(Host.class);
     assertThat(ClassPathManager.getClass("Contact")).isEqualTo(Contact.class);
     assertThat(ClassPathManager.getClass("GaeUserIdConverter")).isEqualTo(GaeUserIdConverter.class);
-    assertThat(ClassPathManager.getClass("EppResourceIndexBucket"))
-        .isEqualTo(EppResourceIndexBucket.class);
     assertThat(ClassPathManager.getClass("Domain")).isEqualTo(Domain.class);
     assertThat(ClassPathManager.getClass("HistoryEntry")).isEqualTo(HistoryEntry.class);
-    assertThat(ClassPathManager.getClass("EppResourceIndex")).isEqualTo(EppResourceIndex.class);
   }
 
   @Test
@@ -84,11 +79,8 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClassName(Contact.class)).isEqualTo("Contact");
     assertThat(ClassPathManager.getClassName(GaeUserIdConverter.class))
         .isEqualTo("GaeUserIdConverter");
-    assertThat(ClassPathManager.getClassName(EppResourceIndexBucket.class))
-        .isEqualTo("EppResourceIndexBucket");
     assertThat(ClassPathManager.getClassName(Domain.class)).isEqualTo("Domain");
     assertThat(ClassPathManager.getClassName(HistoryEntry.class)).isEqualTo("HistoryEntry");
-    assertThat(ClassPathManager.getClassName(EppResourceIndex.class)).isEqualTo("EppResourceIndex");
   }
 
   @Test
