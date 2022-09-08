@@ -27,7 +27,6 @@ import static google.registry.flows.domain.DomainFlowUtils.validateFeeChallenge;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotReserved;
 import static google.registry.flows.domain.DomainFlowUtils.verifyPremiumNameIsNotBlocked;
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
-import static google.registry.model.ResourceTransferUtils.updateForeignKeyIndexDeletionTime;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RESTORE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -188,7 +187,6 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
             autorenewPollMessage,
             now,
             registrarId);
-    updateForeignKeyIndexDeletionTime(newDomain);
     DomainHistory domainHistory = buildDomainHistory(newDomain, now);
     entitiesToSave.add(newDomain, domainHistory, autorenewEvent, autorenewPollMessage);
     tm().putAll(entitiesToSave.build());

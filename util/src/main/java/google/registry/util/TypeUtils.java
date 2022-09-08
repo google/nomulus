@@ -28,7 +28,9 @@ import java.lang.reflect.Modifier;
 import java.util.function.Predicate;
 
 /** Utilities methods related to reflection. */
-public class TypeUtils {
+public final class TypeUtils {
+
+  private TypeUtils() {}
 
   /** A {@code TypeToken} that removes an ugly cast in the common cases of getting a known type. */
   public static class TypeInstantiator<T> extends TypeToken<T> {
@@ -47,7 +49,8 @@ public class TypeUtils {
   }
 
   public static <T> T instantiate(Class<? extends T> clazz) {
-    checkArgument(Modifier.isPublic(clazz.getModifiers()),
+    checkArgument(
+        Modifier.isPublic(clazz.getModifiers()),
         "AppEngine's custom security manager won't let us reflectively access non-public types");
     try {
       return clazz.getConstructor().newInstance();
@@ -59,14 +62,15 @@ public class TypeUtils {
   /**
    * Instantiate a class with the specified constructor argument.
    *
-   * <p>Because we use arg1's type to lookup the constructor, this only works if arg1's class is
-   * exactly the same type as the constructor argument. Subtypes are not allowed.
+   * <p>Because we use {@code arg}'s type to look up the constructor, this only works if arg1's
+   * class is exactly the same type as the constructor argument. Subtypes are not allowed.
    */
-  public static <T, U> T instantiate(Class<? extends T> clazz, U arg1) {
-    checkArgument(Modifier.isPublic(clazz.getModifiers()),
+  public static <T, U> T instantiate(Class<? extends T> clazz, U arg) {
+    checkArgument(
+        Modifier.isPublic(clazz.getModifiers()),
         "AppEngine's custom security manager won't let us reflectively access non-public types");
     try {
-      return clazz.getConstructor(arg1.getClass()).newInstance(arg1);
+      return clazz.getConstructor(arg.getClass()).newInstance(arg);
     } catch (ReflectiveOperationException e) {
       throw new RuntimeException(e);
     }
@@ -106,8 +110,10 @@ public class TypeUtils {
           T enumField = (T) field.get(null);
           builder.put(field.getName(), enumField);
         } catch (IllegalArgumentException | IllegalAccessException e) {
-          throw new RuntimeException(String.format(
-              "Could not retrieve static final field mapping for %s", clazz.getName()), e);
+          throw new RuntimeException(
+              String.format(
+                  "Could not retrieve static final field mapping for %s", clazz.getName()),
+              e);
         }
       }
     }
@@ -115,8 +121,7 @@ public class TypeUtils {
   }
 
   /** Returns a predicate that tests whether classes are annotated with the given annotation. */
-  public static Predicate<Class<?>> hasAnnotation(
-      final Class<? extends Annotation> annotation) {
+  public static Predicate<Class<?>> hasAnnotation(final Class<? extends Annotation> annotation) {
     return clazz -> clazz.isAnnotationPresent(annotation);
   }
 

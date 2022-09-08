@@ -106,7 +106,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
   }
 
   /**
-   * Setup a domain with a transfer that should have been server approved a day ago.
+   * Set up a domain with a transfer that should have been server approved a day ago.
    *
    * <p>The transfer is from "TheRegistrar" to "NewRegistrar".
    */
@@ -508,7 +508,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
                 .asBuilder()
                 .setLastTransferTime(lastTransferTime)
                 .build());
-    // Set the new domain to have a last transfer time that is different than the last transfer
+    // Set the new domain to have a last transfer time that is different from the last transfer
     // time on the host in question.
     persistResource(
         DatabaseHelper.newDomain("example.tld")
@@ -546,7 +546,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
                 .asBuilder()
                 .setLastTransferTime(clock.nowUtc().minusDays(5))
                 .build());
-    // Set the new domain to have a last transfer time that is different than the last transfer
+    // Set the new domain to have a last transfer time that is different from the last transfer
     // time on the host in question.
     persistResource(
         DatabaseHelper.newDomain("example.tld")
@@ -814,7 +814,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         clock.nowUtc().minusDays(2), clock.nowUtc().minusDays(3));
   }
 
-  /** Test when the new superdordinate domain has never been transferred before. */
+  /** Test when the new superordinate domain has never been transferred before. */
   @Test
   void testSuccess_externalToSubord_lastTransferTimeNotOverridden_whenNull() throws Exception {
     doExternalToInternalLastTransferTimeTest(clock.nowUtc().minusDays(2), null);

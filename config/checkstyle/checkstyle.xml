@@ -61,12 +61,6 @@ by Joshua Bloch in his book Effective Java -->
     <property name="message" value="Use assertThrows and expectThrows from JUnitBackports instead of the deprecated methods on ExpectedException."/>
   </module>
 
-  <!-- Checks that the deprecated MockitoJUnitRunner is not used. -->
-  <module name="RegexpSingleline">
-    <property name="format" value="MockitoJUnitRunner"/>
-    <property name="message" value="MockitoJUnitRunner is deprecated. Use @RunWith(JUnit4.class) and MockitoRule instead."/>
-  </module>
-
   <module name="LineLength">
     <!-- Checks if a line is too long. -->
     <property name="max" value="${com.puppycrawl.tools.checkstyle.checks.sizes.LineLength.max}" default="100"/>

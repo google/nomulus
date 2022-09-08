@@ -57,7 +57,6 @@ import google.registry.model.host.HostCommand.Update;
 import google.registry.model.host.HostCommand.Update.AddRemove;
 import google.registry.model.host.HostCommand.Update.Change;
 import google.registry.model.host.HostHistory;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.persistence.VKey;
 import java.util.Objects;
@@ -194,11 +193,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
     ImmutableSet.Builder<ImmutableObject> entitiesToInsert = new ImmutableSet.Builder<>();
     ImmutableSet.Builder<ImmutableObject> entitiesToUpdate = new ImmutableSet.Builder<>();
     entitiesToUpdate.add(newHost);
-    // Keep the {@link ForeignKeyIndex} for this host up to date.
     if (isHostRename) {
-      // Update the foreign key for the old host name and save one for the new host name.
-      entitiesToUpdate.add(ForeignKeyIndex.create(existingHost, now));
-      entitiesToUpdate.add(ForeignKeyIndex.create(newHost, newHost.getDeletionTime()));
       updateSuperordinateDomains(existingHost, newHost);
     }
     enqueueTasks(existingHost, newHost);

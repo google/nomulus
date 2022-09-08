@@ -50,7 +50,6 @@ import google.registry.model.host.Host;
 import google.registry.model.host.HostCommand.Create;
 import google.registry.model.host.HostHistory;
 import google.registry.model.index.EppResourceIndex;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -135,7 +134,6 @@ public final class HostCreateFlow implements TransactionalFlow {
         ImmutableSet.of(
             newHost,
             historyBuilder.build(),
-            ForeignKeyIndex.create(newHost, newHost.getDeletionTime()),
             EppResourceIndex.create(Key.create(newHost)));
     if (superordinateDomain.isPresent()) {
       tm().update(
