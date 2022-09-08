@@ -742,7 +742,8 @@
     );
 
     create table "User" (
-       id int8 not null,
+       id  bigserial not null,
+        update_timestamp timestamptz,
         email_address text not null,
         gaia_id text not null,
         registry_lock_password_hash text,
