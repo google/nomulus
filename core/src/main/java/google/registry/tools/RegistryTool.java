@@ -92,7 +92,6 @@ public final class RegistryTool {
           .put("pending_escrow", PendingEscrowCommand.class)
           .put("registrar_poc", RegistrarPocCommand.class)
           .put("renew_domain", RenewDomainCommand.class)
-          .put("resave_environment_entities", ResaveEnvironmentEntitiesCommand.class)
           .put("save_sql_credential", SaveSqlCredentialCommand.class)
           .put("send_escrow_report_to_icann", SendEscrowReportToIcannCommand.class)
           .put("set_database_migration_state", SetDatabaseMigrationStateCommand.class)

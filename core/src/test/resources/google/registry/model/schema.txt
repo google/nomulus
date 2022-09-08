@@ -1,6 +1,3 @@
-class google.registry.model.common.EntityGroupRoot {
-  @Id java.lang.String id;
-}
 class google.registry.model.common.GaeUserIdConverter {
   @Id long id;
   com.google.appengine.api.users.User user;
@@ -391,7 +388,6 @@ enum google.registry.model.reporting.HistoryEntry$Type {
 }
 class google.registry.model.server.ServerSecret {
   @Id long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
   long leastSignificant;
   long mostSignificant;
 }

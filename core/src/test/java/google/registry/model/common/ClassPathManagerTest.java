@@ -51,7 +51,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("GaeUserIdConverter")).isEqualTo(GaeUserIdConverter.class);
     assertThat(ClassPathManager.getClass("EppResourceIndexBucket"))
         .isEqualTo(EppResourceIndexBucket.class);
-    assertThat(ClassPathManager.getClass("EntityGroupRoot")).isEqualTo(EntityGroupRoot.class);
     assertThat(ClassPathManager.getClass("Domain")).isEqualTo(Domain.class);
     assertThat(ClassPathManager.getClass("HistoryEntry")).isEqualTo(HistoryEntry.class);
     assertThat(ClassPathManager.getClass("ForeignKeyHostIndex"))
@@ -100,7 +99,6 @@ public class ClassPathManagerTest {
         .isEqualTo("GaeUserIdConverter");
     assertThat(ClassPathManager.getClassName(EppResourceIndexBucket.class))
         .isEqualTo("EppResourceIndexBucket");
-    assertThat(ClassPathManager.getClassName(EntityGroupRoot.class)).isEqualTo("EntityGroupRoot");
     assertThat(ClassPathManager.getClassName(Domain.class)).isEqualTo("Domain");
     assertThat(ClassPathManager.getClassName(HistoryEntry.class)).isEqualTo("HistoryEntry");
     assertThat(ClassPathManager.getClassName(ForeignKeyHostIndex.class))

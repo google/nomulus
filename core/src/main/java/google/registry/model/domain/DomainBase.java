@@ -41,7 +41,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
@@ -51,7 +50,6 @@ import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -60,7 +58,6 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
@@ -284,15 +281,6 @@ public class DomainBase extends EppResource
    */
   public Optional<DateTime> getDnsRefreshRequestTime() {
     return Optional.ofNullable(dnsRefreshRequestTime);
-  }
-
-  public static <T> VKey<T> restoreOfyFrom(Key<Domain> domainKey, VKey<T> key, Long historyId) {
-    if (historyId == null) {
-      // This is a legacy key (or a null key, in which case this works too)
-      return VKey.restoreOfyFrom(key, EntityGroupRoot.class, "per-tld");
-    } else {
-      return VKey.restoreOfyFrom(key, domainKey, HistoryEntry.class, historyId);
-    }
   }
 
   public ImmutableSet<String> getSubordinateHosts() {

@@ -14,24 +14,17 @@
 
 package google.registry.testing;
 
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.VirtualEntity;
-import google.registry.model.common.EntityGroupRoot;
 import google.registry.persistence.VKey;
-import javax.persistence.Transient;
 
 /** A test model object that can be persisted in any entity group. */
 @Entity
 @javax.persistence.Entity
 public class TestObject extends ImmutableObject {
-
-  @Parent @Transient Key<EntityGroupRoot> parent;
 
   @Id @javax.persistence.Id String id;
 
@@ -58,14 +51,9 @@ public class TestObject extends ImmutableObject {
   }
 
   public static TestObject create(String id, String field) {
-    return create(id, field, getCrossTldKey());
-  }
-
-  public static TestObject create(String id, String field, Key<EntityGroupRoot> parent) {
     TestObject instance = new TestObject();
     instance.id = id;
     instance.field = field;
-    instance.parent = parent;
     return instance;
   }
 
