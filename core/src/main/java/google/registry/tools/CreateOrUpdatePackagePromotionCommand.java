@@ -14,47 +14,72 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+
 import com.beust.jcommander.Parameter;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.PackagePromotion;
+import google.registry.persistence.VKey;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 
 /** Shared base class for commands to create or update a PackagePromotion object. */
-abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand
-    implements CommandWithRemoteApi {
+abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
 
   @Parameter(description = "Allocation token String of the package token", required = true)
   List<String> mainParameters;
 
+  @Nullable
   @Parameter(
-      names = "--max_domains",
+      names = {"-d", "--max_domains"},
       description = "Maximum concurrent active domains allowed in the package")
-  int maxDomains;
+  Integer maxDomains;
 
+  @Nullable
   @Parameter(
-      names = "--max_creates",
+      names = {"-c", "--max_creates"},
       description = "Maximum domain creations allowed in the package each year")
-  int maxCreates;
+  Integer maxCreates;
 
-  @Parameter(names = "--price", description = "Annual price of the package")
+  @Nullable
+  @Parameter(
+      names = {"-p", "--price"},
+      description = "Annual price of the package")
   Money price;
 
+  @Nullable
   @Parameter(
       names = "--next_billing_date",
       description = "The next date that the package should be billed for its annual fee")
-  DateTime nextBillingDate;
+  Date nextBillingDate;
 
-  /** Returns the existing PackagePromotion (for update) or null, (for creates). */
+  /** Returns the existing PackagePromotion. */
   @Nullable
-  abstract PackagePromotion getOldPackagePromotion(String token);
+  PackagePromotion getOldPackagePromotion(String token) {
+    Optional<PackagePromotion> oldPackage = PackagePromotion.loadByTokenString(token);
+    checkArgument(oldPackage.isPresent(), "PackagePromotion with token %s does not exist", token);
+    return oldPackage.get();
+  }
+  ;
 
-  abstract AllocationToken getAllocationToken(String token);
+  AllocationToken getAndCheckAllocationToken(String token) {
+    Optional<AllocationToken> allocationToken =
+        tm().transact(() -> tm().loadByKeyIfPresent(VKey.createSql(AllocationToken.class, token)));
+    checkArgument(
+        allocationToken.isPresent(),
+        "An allocation token with the token String %s does not exist",
+        token);
+    return allocationToken.get();
+  }
 
-  @Nullable
-  abstract DateTime getLastNotificationSent(String token);
+  boolean clearLastNotificationSent() {
+    return false;
+  }
 
   protected void initPackagePromotionCommand() {}
 
@@ -63,17 +88,25 @@ abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand
     initPackagePromotionCommand();
     for (String token : mainParameters) {
       PackagePromotion oldPackage = getOldPackagePromotion(token);
+      checkArgument(
+          oldPackage != null || price != null,
+          "PackagePrice is required when creating a new package");
+
+      AllocationToken allocationToken = getAndCheckAllocationToken(token);
+
       PackagePromotion.Builder builder =
           (oldPackage == null)
-              ? new PackagePromotion.Builder().setToken(getAllocationToken(token))
+              ? new PackagePromotion.Builder().setToken(allocationToken)
               : oldPackage.asBuilder();
 
-      builder.setMaxDomains(maxDomains);
-      builder.setMaxCreates(maxCreates);
-      builder.setPackagePrice(price);
-      builder.setNextBillingDate(nextBillingDate);
-      builder.setLastNotificationSent(getLastNotificationSent(token));
-
+      Optional.ofNullable(maxDomains).ifPresent(builder::setMaxDomains);
+      Optional.ofNullable(maxCreates).ifPresent(builder::setMaxCreates);
+      Optional.ofNullable(price).ifPresent(builder::setPackagePrice);
+      Optional.ofNullable(nextBillingDate)
+          .ifPresent(nextBillingDate -> builder.setNextBillingDate(new DateTime(nextBillingDate)));
+      if (clearLastNotificationSent()) {
+        builder.setLastNotificationSent(null);
+      }
       PackagePromotion newPackage = builder.build();
       stageEntityChange(oldPackage, newPackage);
     }

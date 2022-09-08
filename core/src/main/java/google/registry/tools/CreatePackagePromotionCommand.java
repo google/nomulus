@@ -23,7 +23,6 @@ import google.registry.model.domain.token.PackagePromotion;
 import google.registry.persistence.VKey;
 import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
-import org.joda.time.DateTime;
 
 /** Command to create a PackagePromotion */
 @Parameters(
@@ -36,7 +35,6 @@ public final class CreatePackagePromotionCommand extends CreateOrUpdatePackagePr
   @Nullable
   @Override
   PackagePromotion getOldPackagePromotion(String tokenString) {
-    checkAllocationToken(tokenString);
     checkArgument(
         !PackagePromotion.loadByTokenString(tokenString).isPresent(),
         "PackagePromotion with token %s already exists",
@@ -45,12 +43,7 @@ public final class CreatePackagePromotionCommand extends CreateOrUpdatePackagePr
   }
 
   @Override
-  AllocationToken getAllocationToken(String tokenString) {
-    Optional<AllocationToken> allocationToken = checkAllocationToken(tokenString);
-    return allocationToken.get();
-  }
-
-  private Optional<AllocationToken> checkAllocationToken(String tokenString) {
+  AllocationToken getAndCheckAllocationToken(String tokenString) {
     Optional<AllocationToken> allocationToken =
         tm().transact(
                 () -> tm().loadByKeyIfPresent(VKey.createSql(AllocationToken.class, tokenString)));
@@ -62,12 +55,6 @@ public final class CreatePackagePromotionCommand extends CreateOrUpdatePackagePr
     checkArgument(
         allocationToken.get().getTokenType().equals(TokenType.PACKAGE),
         "The allocation token must be of the PACKAGE token type");
-    return allocationToken;
-  }
-
-  @Nullable
-  @Override
-  DateTime getLastNotificationSent(String token) {
-    return null;
+    return allocationToken.get();
   }
 }

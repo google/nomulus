@@ -17,6 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
@@ -50,7 +51,7 @@ public class CreatePackagePromotionCommandTest
         "--max_domains=100",
         "--max_creates=500",
         "--price=USD 1000.00",
-        "--next_billing_date=2012-03-17T05:00:00Z",
+        "--next_billing_date=2012-03-17",
         "abc123");
 
     Optional<PackagePromotion> packagePromotionOptional =
@@ -61,7 +62,7 @@ public class CreatePackagePromotionCommandTest
     assertThat(packagePromotion.getMaxCreates()).isEqualTo(500);
     assertThat(packagePromotion.getPackagePrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
     assertThat(packagePromotion.getNextBillingDate())
-        .isEqualTo(DateTime.parse("2012-03-17T05:00:00Z"));
+        .isEqualTo(DateTime.parse("2012-03-17T00:00:00Z"));
     assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
   }
 
@@ -141,5 +142,80 @@ public class CreatePackagePromotionCommandTest
                     "--next_billing_date=2012-03-17T05:00:00Z",
                     "abc123"));
     assertThat(thrown.getMessage()).isEqualTo("PackagePromotion with token abc123 already exists");
+  }
+
+  @Test
+  void testSuccess_missingMaxDomainsAndCreatesInitializesToZero() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(TokenType.PACKAGE)
+            .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+            .setAllowedTlds(ImmutableSet.of("foo"))
+            .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setDiscountFraction(1)
+            .build());
+    runCommandForced("--price=USD 1000.00", "--next_billing_date=2012-03-17", "abc123");
+    Optional<PackagePromotion> packagePromotionOptional =
+        PackagePromotion.loadByTokenString("abc123");
+    assertThat(packagePromotionOptional).isPresent();
+    PackagePromotion packagePromotion = packagePromotionOptional.get();
+    assertThat(packagePromotion.getMaxDomains()).isEqualTo(0);
+    assertThat(packagePromotion.getMaxCreates()).isEqualTo(0);
+    assertThat(packagePromotion.getPackagePrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
+    assertThat(packagePromotion.getNextBillingDate())
+        .isEqualTo(DateTime.parse("2012-03-17T00:00:00Z"));
+    assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
+  }
+
+  @Test
+  void testSuccess_missingNextBillingDateInitializesToEndOfTime() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(TokenType.PACKAGE)
+            .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+            .setAllowedTlds(ImmutableSet.of("foo"))
+            .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setDiscountFraction(1)
+            .build());
+    runCommandForced("--max_domains=100", "--max_creates=500", "--price=USD 1000.00", "abc123");
+
+    Optional<PackagePromotion> packagePromotionOptional =
+        PackagePromotion.loadByTokenString("abc123");
+    assertThat(packagePromotionOptional).isPresent();
+    PackagePromotion packagePromotion = packagePromotionOptional.get();
+    assertThat(packagePromotion.getMaxDomains()).isEqualTo(100);
+    assertThat(packagePromotion.getMaxCreates()).isEqualTo(500);
+    assertThat(packagePromotion.getPackagePrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
+    assertThat(packagePromotion.getNextBillingDate()).isEqualTo(END_OF_TIME);
+    assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
+  }
+
+  @Test
+  void testFailure_missingPrice() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(TokenType.PACKAGE)
+            .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+            .setAllowedTlds(ImmutableSet.of("foo"))
+            .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setDiscountFraction(1)
+            .build());
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--max_domains=100",
+                    "--max_creates=500",
+                    "--next_billing_date=2012-03-17T05:00:00Z",
+                    "abc123"));
+    assertThat(thrown.getMessage())
+        .isEqualTo("PackagePrice is required when creating a new package");
   }
 }

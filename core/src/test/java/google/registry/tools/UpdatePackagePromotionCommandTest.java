@@ -66,7 +66,7 @@ public class UpdatePackagePromotionCommandTest
         "--max_domains=200",
         "--max_creates=1000",
         "--price=USD 2000.00",
-        "--next_billing_date=2013-03-17T05:00:00Z",
+        "--next_billing_date=2013-03-17",
         "--clear_last_notification_sent",
         "abc123");
 
@@ -79,7 +79,7 @@ public class UpdatePackagePromotionCommandTest
     Truth.assertThat(packagePromotion.getPackagePrice())
         .isEqualTo(Money.of(CurrencyUnit.USD, 2000));
     Truth.assertThat(packagePromotion.getNextBillingDate())
-        .isEqualTo(DateTime.parse("2013-03-17T05:00:00Z"));
+        .isEqualTo(DateTime.parse("2013-03-17T00:00:00Z"));
     assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
   }
 
@@ -103,9 +103,93 @@ public class UpdatePackagePromotionCommandTest
                     "--max_domains=100",
                     "--max_creates=500",
                     "--price=USD 1000.00",
-                    "--next_billing_date=2012-03-17T05:00:00Z",
+                    "--next_billing_date=2012-03-17",
                     "nullPackage"));
     Truth.assertThat(thrown.getMessage())
         .isEqualTo("PackagePromotion with token nullPackage does not exist");
+  }
+
+  @Test
+  void testSuccess_missingMaxDomains() throws Exception {
+    runCommandForced(
+        "--max_creates=1000",
+        "--price=USD 2000.00",
+        "--next_billing_date=2013-03-17",
+        "--clear_last_notification_sent",
+        "abc123");
+
+    Optional<PackagePromotion> packagePromotionOptional =
+        PackagePromotion.loadByTokenString("abc123");
+    assertThat(packagePromotionOptional).isPresent();
+    PackagePromotion packagePromotion = packagePromotionOptional.get();
+    Truth.assertThat(packagePromotion.getMaxDomains()).isEqualTo(100);
+    Truth.assertThat(packagePromotion.getMaxCreates()).isEqualTo(1000);
+    Truth.assertThat(packagePromotion.getPackagePrice())
+        .isEqualTo(Money.of(CurrencyUnit.USD, 2000));
+    Truth.assertThat(packagePromotion.getNextBillingDate())
+        .isEqualTo(DateTime.parse("2013-03-17T00:00:00Z"));
+    assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
+  }
+
+  @Test
+  void testSuccess_missingNextBillingDate() throws Exception {
+    runCommandForced(
+        "--max_domains=200",
+        "--max_creates=1000",
+        "--price=USD 2000.00",
+        "--clear_last_notification_sent",
+        "abc123");
+
+    Optional<PackagePromotion> packagePromotionOptional =
+        PackagePromotion.loadByTokenString("abc123");
+    assertThat(packagePromotionOptional).isPresent();
+    PackagePromotion packagePromotion = packagePromotionOptional.get();
+    Truth.assertThat(packagePromotion.getMaxDomains()).isEqualTo(200);
+    Truth.assertThat(packagePromotion.getMaxCreates()).isEqualTo(1000);
+    Truth.assertThat(packagePromotion.getPackagePrice())
+        .isEqualTo(Money.of(CurrencyUnit.USD, 2000));
+    Truth.assertThat(packagePromotion.getNextBillingDate())
+        .isEqualTo(DateTime.parse("2012-11-12T05:00:00Z"));
+    assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
+  }
+
+  @Test
+  void testSuccess_missingPrice() throws Exception {
+    runCommandForced(
+        "--max_domains=200",
+        "--max_creates=1000",
+        "--next_billing_date=2013-03-17",
+        "--clear_last_notification_sent",
+        "abc123");
+
+    Optional<PackagePromotion> packagePromotionOptional =
+        PackagePromotion.loadByTokenString("abc123");
+    assertThat(packagePromotionOptional).isPresent();
+    PackagePromotion packagePromotion = packagePromotionOptional.get();
+    Truth.assertThat(packagePromotion.getMaxDomains()).isEqualTo(200);
+    Truth.assertThat(packagePromotion.getMaxCreates()).isEqualTo(1000);
+    Truth.assertThat(packagePromotion.getPackagePrice())
+        .isEqualTo(Money.of(CurrencyUnit.USD, 1000));
+    Truth.assertThat(packagePromotion.getNextBillingDate())
+        .isEqualTo(DateTime.parse("2013-03-17T00:00:00Z"));
+    assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
+  }
+
+  @Test
+  void testSuccess_dontClearLastNotificationSent() throws Exception {
+    runCommandForced("--max_domains=200", "--max_creates=1000", "--price=USD 2000.00", "abc123");
+
+    Optional<PackagePromotion> packagePromotionOptional =
+        PackagePromotion.loadByTokenString("abc123");
+    assertThat(packagePromotionOptional).isPresent();
+    PackagePromotion packagePromotion = packagePromotionOptional.get();
+    Truth.assertThat(packagePromotion.getMaxDomains()).isEqualTo(200);
+    Truth.assertThat(packagePromotion.getMaxCreates()).isEqualTo(1000);
+    Truth.assertThat(packagePromotion.getPackagePrice())
+        .isEqualTo(Money.of(CurrencyUnit.USD, 2000));
+    Truth.assertThat(packagePromotion.getNextBillingDate())
+        .isEqualTo(DateTime.parse("2012-11-12T05:00:00Z"));
+    Truth.assertThat(packagePromotion.getLastNotificationSent().get())
+        .isEqualTo(DateTime.parse("2010-11-12T05:00:00.000Z"));
   }
 }
