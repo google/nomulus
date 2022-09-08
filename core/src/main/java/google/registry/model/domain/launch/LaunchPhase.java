@@ -16,7 +16,6 @@ package google.registry.model.domain.launch;
 
 import static java.util.Objects.hash;
 
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
 import java.util.Objects;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -47,7 +46,6 @@ import javax.xml.bind.annotation.XmlValue;
  * sets it is the one that needs to make sure the domain isn't a trademark and that the fields are
  * correct.
  */
-@Embed
 public class LaunchPhase extends ImmutableObject {
 
   /**

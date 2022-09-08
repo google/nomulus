@@ -14,8 +14,6 @@
 
 package google.registry.model.domain.secdns;
 
-import com.googlecode.objectify.annotation.Embed;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import javax.persistence.Access;
@@ -29,12 +27,11 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /** Base class for {@link DelegationSignerData} and {@link DomainDsDataHistory}. */
-@Embed
 @MappedSuperclass
 @Access(AccessType.FIELD)
 public abstract class DomainDsDataBase extends ImmutableObject implements UnsafeSerializable {
 
-  @Ignore @XmlTransient @Transient String domainRepoId;
+  @XmlTransient @Transient String domainRepoId;
 
   /** The identifier for this particular key in the domain. */
   @Transient int keyTag;

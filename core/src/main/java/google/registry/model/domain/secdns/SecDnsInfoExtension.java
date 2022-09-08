@@ -15,14 +15,12 @@
 package google.registry.model.domain.secdns;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /** The EPP secDNS extension to be returned with domain info commands. */
 @XmlRootElement(name = "infData")
-@Embed
 public class SecDnsInfoExtension extends ImmutableObject implements ResponseExtension {
 
   /** Signatures for this domain. */

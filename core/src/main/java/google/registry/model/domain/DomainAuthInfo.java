@@ -14,12 +14,11 @@
 
 package google.registry.model.domain;
 
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.eppcommon.AuthInfo;
+import javax.persistence.Embeddable;
 
 /** A version of authInfo specifically for domains. */
-@Embed
-@javax.persistence.Embeddable
+@Embeddable
 public class DomainAuthInfo extends AuthInfo {
   public static DomainAuthInfo create(PasswordAuth pw) {
     DomainAuthInfo instance = new DomainAuthInfo();

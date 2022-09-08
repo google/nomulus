@@ -14,9 +14,9 @@
 
 package google.registry.model.domain;
 
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
+import javax.persistence.Embeddable;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -24,8 +24,7 @@ import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlValue;
 
 /** The "periodType" from <a href="http://tools.ietf.org/html/rfc5731">RFC5731</a>. */
-@Embed
-@javax.persistence.Embeddable
+@Embeddable
 public class Period extends ImmutableObject implements UnsafeSerializable {
 
   @Enumerated(EnumType.STRING)

@@ -23,12 +23,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
 import com.google.common.primitives.Ints;
-import com.googlecode.objectify.annotation.Embed;
-import com.googlecode.objectify.annotation.IgnoreSave;
-import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import java.util.Optional;
+import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
@@ -37,17 +35,15 @@ import javax.xml.bind.annotation.XmlValue;
 import org.joda.time.DateTime;
 
 /** The claims notice id from the claims phase. */
-@Embed
 @XmlType(propOrder = {"noticeId", "expirationTime", "acceptedTime"})
-@javax.persistence.Embeddable
+@Embeddable
 public class LaunchNotice extends ImmutableObject implements UnsafeSerializable {
 
   /** An empty instance to use in place of null. */
   private static final NoticeIdType EMPTY_NOTICE_ID = new NoticeIdType();
 
   /** An id with a validator-id attribute. */
-  @Embed
-  @javax.persistence.Embeddable
+  @Embeddable
   public static class NoticeIdType extends ImmutableObject implements UnsafeSerializable {
 
     /**
@@ -57,7 +53,6 @@ public class LaunchNotice extends ImmutableObject implements UnsafeSerializable 
     @XmlValue String tcnId;
 
     /** The identifier of the TMDB provider to use, defaulting to the TMCH. */
-    @IgnoreSave(IfNull.class)
     @XmlAttribute(name = "validatorID")
     String validatorId;
 

@@ -18,8 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.annotation.Embed;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
@@ -43,15 +41,13 @@ import org.joda.time.DateTime;
  * only exception is for reportField = TRANSFER_LOSING_SUCCESSFUL or TRANSFER_LOSING_NACKED, which
  * uses HistoryEntry.otherClientId because the losing party in a transfer is always the otherClient.
  */
-@Embed
 @Entity
 public class DomainTransactionRecord extends ImmutableObject
     implements Buildable, UnsafeSerializable {
 
   @Id
-  @Ignore
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @ImmutableObject.Insignificant
+  @Insignificant
   Long id;
 
   /** The TLD this record operates on. */
@@ -62,9 +58,9 @@ public class DomainTransactionRecord extends ImmutableObject
   // Datastore-SQL validation. They are excluded from equality check since they are not set in
   // Datastore.
   // TODO(b/203609782): post migration, decide whether to keep these two fields.
-  @Ignore @ImmutableObject.Insignificant String domainRepoId;
+  @Insignificant String domainRepoId;
 
-  @Ignore @ImmutableObject.Insignificant Long historyRevisionId;
+  @Insignificant Long historyRevisionId;
 
   /**
    * The time this Transaction takes effect (counting grace periods and other nuances).

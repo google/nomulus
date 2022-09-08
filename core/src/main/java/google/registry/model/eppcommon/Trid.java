@@ -16,11 +16,11 @@ package google.registry.model.eppcommon;
 
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import javax.persistence.Embeddable;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
@@ -30,9 +30,8 @@ import javax.xml.bind.annotation.XmlType;
  * is formed using the {@code clTRID} associated with the command if supplied by the client and a
  * {@code svTRID} (server transaction identifier) that is assigned by and unique to the server."
  */
-@Embed
 @XmlType(propOrder = {"clientTransactionId", "serverTransactionId"})
-@javax.persistence.Embeddable
+@Embeddable
 public class Trid extends ImmutableObject implements UnsafeSerializable {
 
   /** The server transaction id. */

@@ -17,7 +17,6 @@ package google.registry.model.domain;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
@@ -45,7 +44,6 @@ import javax.xml.bind.annotation.XmlEnumValue;
  * @see <a href="http://tools.ietf.org/html/rfc5731#section-2.2">RFC 5731 - EPP Domain Name Mapping
  *     - Contact and Client Identifiers</a>
  */
-@Embed
 @Embeddable
 public class DesignatedContact extends ImmutableObject implements UnsafeSerializable {
 

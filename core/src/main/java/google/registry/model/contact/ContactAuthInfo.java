@@ -14,13 +14,12 @@
 
 package google.registry.model.contact;
 
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.eppcommon.AuthInfo;
+import javax.persistence.Embeddable;
 import javax.xml.bind.annotation.XmlType;
 
 /** A version of authInfo specifically for contacts. */
-@Embed
-@javax.persistence.Embeddable
+@Embeddable
 @XmlType(namespace = "urn:ietf:params:xml:ns:contact-1.0")
 public class ContactAuthInfo extends AuthInfo {
   public static ContactAuthInfo create(PasswordAuth pw) {
