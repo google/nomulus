@@ -107,7 +107,7 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
 
   @Override
   public Builder copyConstantFieldsToBuilder() {
-    return super.copyConstantFieldsToBuilder().setTransferPeriod(this.transferPeriod);
+    return super.copyConstantFieldsToBuilder().setTransferPeriod(transferPeriod);
   }
 
   public Period getTransferPeriod() {
@@ -180,7 +180,7 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   }
 
   public static class Builder extends TransferData.Builder<DomainTransferData, Builder> {
-    /** Create a {@link DomainTransferData.Builder} wrapping a new instance. */
+    /** Create a {@link Builder} wrapping a new instance. */
     public Builder() {}
 
     /** Create a {@link Builder} wrapping the given instance. */

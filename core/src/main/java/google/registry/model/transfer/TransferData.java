@@ -21,7 +21,6 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.eppcommon.Trid;
@@ -43,7 +42,8 @@ import javax.persistence.MappedSuperclass;
  */
 @MappedSuperclass
 public abstract class TransferData<
-        B extends TransferData.Builder<? extends TransferData, ? extends TransferData.Builder>>
+        B extends
+            TransferData.Builder<? extends TransferData<?>, ? extends TransferData.Builder<?, ?>>>
     extends BaseTransferObject implements Buildable {
 
   /** The transaction id of the most recent transfer request (or null if there never was one). */
@@ -58,11 +58,9 @@ public abstract class TransferData<
   })
   Trid transferRequestTrid;
 
-  @Ignore
   @Column(name = "transfer_repo_id")
   String repoId;
 
-  @Ignore
   @Column(name = "transfer_history_entry_id")
   Long historyEntryId;
 
@@ -71,15 +69,12 @@ public abstract class TransferData<
   //
   // In addition, there may be a third poll message for the autorenew poll message on domain
   // transfer if applicable.
-  @Ignore
   @Column(name = "transfer_poll_message_id_1")
   Long pollMessageId1;
 
-  @Ignore
   @Column(name = "transfer_poll_message_id_2")
   Long pollMessageId2;
 
-  @Ignore
   @Column(name = "transfer_poll_message_id_3")
   Long pollMessageId3;
 
@@ -105,7 +100,7 @@ public abstract class TransferData<
   }
 
   @Override
-  public abstract Builder asBuilder();
+  public abstract Builder<?, ?> asBuilder();
 
   /**
    * Returns a fresh Builder populated only with the constant fields of this TransferData, i.e.
@@ -124,17 +119,17 @@ public abstract class TransferData<
   public B copyConstantFieldsToBuilder() {
     B newBuilder = new TypeInstantiator<B>(getClass()) {}.instantiate();
     newBuilder
-        .setTransferRequestTrid(this.transferRequestTrid)
-        .setTransferRequestTime(this.transferRequestTime)
-        .setGainingRegistrarId(this.gainingClientId)
-        .setLosingRegistrarId(this.losingClientId);
+        .setTransferRequestTrid(transferRequestTrid)
+        .setTransferRequestTime(transferRequestTime)
+        .setGainingRegistrarId(gainingClientId)
+        .setLosingRegistrarId(losingClientId);
     return newBuilder;
   }
 
   /** Maps serverApproveEntities set to the individual fields. */
   static void mapServerApproveEntitiesToFields(
       Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities,
-      TransferData transferData) {
+      TransferData<?> transferData) {
     if (isNullOrEmpty(serverApproveEntities)) {
       transferData.pollMessageId1 = null;
       transferData.pollMessageId2 = null;
@@ -166,11 +161,11 @@ public abstract class TransferData<
   }
 
   /** Builder for {@link TransferData} because it is immutable. */
-  public abstract static class Builder<T extends TransferData, B extends Builder<T, B>>
+  public abstract static class Builder<T extends TransferData<?>, B extends Builder<T, B>>
       extends BaseTransferObject.Builder<T, B> {
 
     /** Create a {@link Builder} wrapping a new instance. */
-    public Builder() {}
+    protected Builder() {}
 
     /** Create a {@link Builder} wrapping the given instance. */
     protected Builder(T instance) {
