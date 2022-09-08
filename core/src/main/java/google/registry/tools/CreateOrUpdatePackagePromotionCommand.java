@@ -58,15 +58,15 @@ abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
       description = "The next date that the package should be billed for its annual fee")
   Date nextBillingDate;
 
-  /** Returns the existing PackagePromotion. */
+  /** Returns the existing PackagePromotion. Subclasses can override this. */
   @Nullable
   PackagePromotion getOldPackagePromotion(String token) {
     Optional<PackagePromotion> oldPackage = PackagePromotion.loadByTokenString(token);
     checkArgument(oldPackage.isPresent(), "PackagePromotion with token %s does not exist", token);
     return oldPackage.get();
   }
-  ;
 
+  /** Returns the allocation token object. Subclasses can override this to add different checks. */
   AllocationToken getAndCheckAllocationToken(String token) {
     Optional<AllocationToken> allocationToken =
         tm().transact(() -> tm().loadByKeyIfPresent(VKey.createSql(AllocationToken.class, token)));
@@ -77,6 +77,7 @@ abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
     return allocationToken.get();
   }
 
+  /** Does not clear the lastNotificationSent field. Subclasses can override this. */
   boolean clearLastNotificationSent() {
     return false;
   }
