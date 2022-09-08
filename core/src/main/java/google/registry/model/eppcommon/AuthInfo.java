@@ -14,7 +14,6 @@
 
 package google.registry.model.eppcommon;
 
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import javax.persistence.Embeddable;
@@ -45,7 +44,6 @@ public abstract class AuthInfo extends ImmutableObject implements UnsafeSerializ
   }
 
   /** The "pwAuthInfoType" complex type. */
-  @Embed
   @XmlType(namespace = "urn:ietf:params:xml:ns:eppcom-1.0")
   @Embeddable
   public static class PasswordAuth extends ImmutableObject implements UnsafeSerializable {

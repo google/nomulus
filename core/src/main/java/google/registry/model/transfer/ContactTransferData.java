@@ -14,13 +14,9 @@
 
 package google.registry.model.transfer;
 
-import com.googlecode.objectify.annotation.Embed;
-import com.googlecode.objectify.annotation.Unindex;
 import javax.persistence.Embeddable;
 
 /** Transfer data for contact. */
-@Embed
-@Unindex
 @Embeddable
 public class ContactTransferData extends TransferData<ContactTransferData.Builder> {
   public static final ContactTransferData EMPTY = new ContactTransferData();

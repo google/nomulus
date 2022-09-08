@@ -129,7 +129,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   @Index String searchName;
 
   /** Contact’s voice number. Personal info; cleared by {@link Contact.Builder#wipeOut}. */
-  @IgnoreSave(IfNull.class)
+  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "phoneNumber", column = @Column(name = "voice_phone_number")),
@@ -138,7 +138,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   ContactPhoneNumber voice;
 
   /** Contact’s fax number. Personal info; cleared by {@link Contact.Builder#wipeOut}. */
-  @IgnoreSave(IfNull.class)
+  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "phoneNumber", column = @Column(name = "fax_phone_number")),
@@ -151,6 +151,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   String email;
 
   /** Authorization info (aka transfer secret) of the contact. */
+  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "pw.value", column = @Column(name = "auth_info_value")),
@@ -159,7 +160,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   ContactAuthInfo authInfo;
 
   /** Data about any pending or past transfers on this contact. */
-  ContactTransferData transferData;
+  @Ignore ContactTransferData transferData;
 
   /**
    * The time that this resource was last transferred.
@@ -172,6 +173,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   // the wipeOut() function, so that data is not kept around for deleted contacts.
 
   /** Disclosure policy. */
+  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "name", column = @Column(name = "disclose_types_name")),

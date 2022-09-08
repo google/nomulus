@@ -16,7 +16,6 @@ package google.registry.model.domain.secdns;
 
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.secdns.DelegationSignerData.DomainDsDataId;
 import java.io.Serializable;
@@ -37,7 +36,6 @@ import javax.xml.bind.annotation.XmlType;
  * @see <a href="http://tools.ietf.org/html/rfc4034">RFC 4034</a>
  *     <p>TODO(b/177567432): Rename this class to DomainDsData.
  */
-@Embed
 @XmlType(name = "dsData")
 @Entity
 @IdClass(DomainDsDataId.class)

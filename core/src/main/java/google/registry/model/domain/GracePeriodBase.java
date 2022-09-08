@@ -14,8 +14,6 @@
 
 package google.registry.model.domain;
 
-import com.googlecode.objectify.annotation.Embed;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.billing.BillingEvent;
@@ -31,7 +29,6 @@ import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /** Base class containing common fields and methods for {@link GracePeriod}. */
-@Embed
 @MappedSuperclass
 @Access(AccessType.FIELD)
 public class GracePeriodBase extends ImmutableObject implements UnsafeSerializable {
@@ -40,7 +37,6 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
   @Transient long gracePeriodId;
 
   /** Repository id for the domain which this grace period belongs to. */
-  @Ignore
   @Column(nullable = false)
   String domainRepoId;
 
@@ -65,7 +61,6 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Access(AccessType.FIELD)
   @Column(name = "billing_event_id")
-  @Ignore
   VKey<BillingEvent.OneTime> billingEventOneTime = null;
 
   /**
@@ -75,7 +70,6 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Access(AccessType.FIELD)
   @Column(name = "billing_recurrence_id")
-  @Ignore
   VKey<BillingEvent.Recurring> billingEventRecurring = null;
 
   public long getGracePeriodId() {

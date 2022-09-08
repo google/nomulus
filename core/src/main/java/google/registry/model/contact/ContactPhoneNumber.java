@@ -14,7 +14,6 @@
 
 package google.registry.model.contact;
 
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.eppcommon.PhoneNumber;
 import javax.persistence.Embeddable;
 
@@ -27,7 +26,6 @@ import javax.persistence.Embeddable;
  *
  * @see Contact
  */
-@Embed
 @Embeddable
 public class ContactPhoneNumber extends PhoneNumber {
 

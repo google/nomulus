@@ -15,7 +15,6 @@
 package google.registry.model.poll;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.eppcommon.Trid;
@@ -36,7 +35,6 @@ public class PendingActionNotificationResponse extends ImmutableObject
     implements ResponseData, UnsafeSerializable {
 
   /** The inner name type that contains a name and the result boolean. */
-  @Embed
   @Embeddable
   static class NameOrId extends ImmutableObject implements UnsafeSerializable {
     @XmlValue
@@ -80,7 +78,6 @@ public class PendingActionNotificationResponse extends ImmutableObject
   }
 
   /** An adapter to output the XML in response to resolving a pending command on a domain. */
-  @Embed
   @XmlRootElement(name = "panData", namespace = "urn:ietf:params:xml:ns:domain-1.0")
   @XmlType(
       propOrder = {"name", "trid", "processedDate"},
@@ -105,7 +102,6 @@ public class PendingActionNotificationResponse extends ImmutableObject
   }
 
   /** An adapter to output the XML in response to resolving a pending command on a contact. */
-  @Embed
   @XmlRootElement(name = "panData", namespace = "urn:ietf:params:xml:ns:contact-1.0")
   @XmlType(
       propOrder = {"id", "trid", "processedDate"},
@@ -130,7 +126,6 @@ public class PendingActionNotificationResponse extends ImmutableObject
   }
 
   /** An adapter to output the XML in response to resolving a pending command on a host. */
-  @Embed
   @XmlRootElement(name = "panData", namespace = "urn:ietf:params:xml:ns:domain-1.0")
   @XmlType(
     propOrder = {"name", "trid", "processedDate"},

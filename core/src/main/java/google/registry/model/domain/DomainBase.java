@@ -136,6 +136,7 @@ public class DomainBase extends EppResource
   VKey<Contact> registrantContact;
 
   /** Authorization info (aka transfer secret) of the domain. */
+  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "pw.value", column = @Column(name = "auth_info_value")),
@@ -144,13 +145,14 @@ public class DomainBase extends EppResource
   DomainAuthInfo authInfo;
 
   /** Data used to construct DS records for this domain. */
-  @Transient Set<DelegationSignerData> dsData;
+  @Ignore @Transient Set<DelegationSignerData> dsData;
 
   /**
    * The claims notice supplied when this domain was created, if there was one.
    *
    * <p>It's {@literal @}XmlTransient because it's not returned in an info response.
    */
+  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "noticeId.tcnId", column = @Column(name = "launch_notice_tcn_id")),
@@ -214,7 +216,7 @@ public class DomainBase extends EppResource
   VKey<PollMessage.Autorenew> autorenewPollMessage;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
-  @Transient Set<GracePeriod> gracePeriods;
+  @Ignore @Transient Set<GracePeriod> gracePeriods;
 
   /**
    * The id of the signed mark that was used to create this domain in sunrise.
@@ -225,7 +227,7 @@ public class DomainBase extends EppResource
   String smdId;
 
   /** Data about any pending or past transfers on this domain. */
-  DomainTransferData transferData;
+  @Ignore DomainTransferData transferData;
 
   /**
    * The time that this resource was last transferred.

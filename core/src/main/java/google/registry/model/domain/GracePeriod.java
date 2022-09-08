@@ -19,7 +19,6 @@ import static google.registry.model.IdService.allocateId;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
@@ -40,7 +39,6 @@ import org.joda.time.DateTime;
  * <p>When a grace period expires, it is lazily removed from the {@link Domain} the next time the
  * resource is loaded from Datastore.
  */
-@Embed
 @Entity
 @Table(
     indexes = {

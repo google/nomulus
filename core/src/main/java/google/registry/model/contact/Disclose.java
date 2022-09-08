@@ -17,7 +17,6 @@ package google.registry.model.contact;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
@@ -30,7 +29,6 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
 
 /** The "discloseType" from <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. */
-@Embed
 @Embeddable
 @XmlType(propOrder = {"name", "org", "addr", "voice", "fax", "email"})
 public class Disclose extends ImmutableObject implements UnsafeSerializable {
@@ -79,7 +77,6 @@ public class Disclose extends ImmutableObject implements UnsafeSerializable {
   }
 
   /** The "intLocType" from <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. */
-  @Embed
   public static class PostalInfoChoice extends ImmutableObject implements Serializable {
     @XmlAttribute
     PostalInfo.Type type;

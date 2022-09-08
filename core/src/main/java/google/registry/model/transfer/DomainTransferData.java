@@ -17,11 +17,6 @@ package google.registry.model.transfer;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.annotation.Embed;
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.IgnoreSave;
-import com.googlecode.objectify.annotation.Unindex;
-import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
@@ -38,8 +33,6 @@ import javax.persistence.Embedded;
 import org.joda.time.DateTime;
 
 /** Transfer data for domain. */
-@Embed
-@Unindex
 @Embeddable
 public class DomainTransferData extends TransferData<DomainTransferData.Builder> {
   public static final DomainTransferData EMPTY = new DomainTransferData();
@@ -75,7 +68,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @Column(name = "transfer_registration_expiration_time")
   DateTime transferredRegistrationExpirationTime;
 
-  @Ignore
   @Column(name = "transfer_billing_cancellation_id")
   public VKey<BillingEvent.Cancellation> billingCancellationId;
 
@@ -86,7 +78,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
    * being transferred is not a domain.
    */
   @Column(name = "transfer_billing_event_id")
-  @Ignore
   VKey<BillingEvent.OneTime> serverApproveBillingEvent;
 
   /**
@@ -96,7 +87,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
    * being transferred is not a domain.
    */
   @Column(name = "transfer_billing_recurrence_id")
-  @Ignore
   VKey<BillingEvent.Recurring> serverApproveAutorenewEvent;
 
   /**
@@ -105,7 +95,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
    * <p>This field should be null if there is not currently a pending transfer or if the object
    * being transferred is not a domain.
    */
-  @IgnoreSave(IfNull.class)
   @Column(name = "transfer_autorenew_poll_message_id")
   VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage;
 
@@ -113,7 +102,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
    * Autorenew history, which we need to preserve because it's often used in contexts where we
    * haven't loaded the autorenew object.
    */
-  @Ignore
   @Column(name = "transfer_autorenew_poll_message_history_id")
   Long serverApproveAutorenewPollMessageHistoryId;
 

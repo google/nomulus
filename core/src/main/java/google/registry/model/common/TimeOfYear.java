@@ -25,7 +25,6 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.Range;
-import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
@@ -44,7 +43,6 @@ import org.joda.time.DateTime;
  * allows it to be embeddable with no translation needed and also delays parsing of the string on
  * load until it's actually needed.
  */
-@Embed
 @Embeddable
 public class TimeOfYear extends ImmutableObject implements UnsafeSerializable {
 

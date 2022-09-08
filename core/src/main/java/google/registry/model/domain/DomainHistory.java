@@ -20,6 +20,7 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
+import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
@@ -133,6 +134,7 @@ public class DomainHistory extends HistoryEntry {
         updatable = false)
   })
   // HashSet rather than ImmutableSet so that Hibernate can fill them out lazily on request
+  @Ignore
   Set<DomainDsDataHistory> dsDataHistories = new HashSet<>();
 
   @DoNotCompare
@@ -153,6 +155,7 @@ public class DomainHistory extends HistoryEntry {
         updatable = false)
   })
   // HashSet rather than ImmutableSet so that Hibernate can fill them out lazily on request
+  @Ignore
   Set<GracePeriodHistory> gracePeriodHistories = new HashSet<>();
 
   @Override

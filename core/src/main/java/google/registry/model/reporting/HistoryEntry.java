@@ -25,10 +25,9 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.IgnoreSave;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
-import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
@@ -155,8 +154,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
    * The length of time that a create, allocate, renewal, or transfer request was issued for. Will
    * be null for all other types.
    */
-  @IgnoreSave(IfNull.class)
-  @Transient // domain-specific
+  @Ignore @Transient // domain-specific
   Period period;
 
   /**
@@ -189,6 +187,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
 
   /** Transaction id that made this change, or null if the entry was not created by a flow. */
   @Nullable
+  @Ignore
   @AttributeOverrides({
     @AttributeOverride(
         name = "clientTransactionId",
@@ -218,6 +217,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
    * also be empty if the HistoryEntry refers to an EPP mutation that does not affect domain
    * transaction counts (such as contact or host mutations).
    */
+  @Ignore
   @Transient // domain-specific
   @ImmutableObject.EmptySetToNull
   protected Set<DomainTransactionRecord> domainTransactionRecords;

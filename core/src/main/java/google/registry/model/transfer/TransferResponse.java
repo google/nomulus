@@ -14,7 +14,6 @@
 
 package google.registry.model.transfer;
 
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.EppResource;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
 import javax.persistence.Embeddable;
@@ -33,7 +32,6 @@ import org.joda.time.DateTime;
 public class TransferResponse extends BaseTransferObject implements ResponseData {
 
   /** An adapter to output the XML in response to a transfer command on a domain. */
-  @Embed
   @XmlRootElement(name = "trnData", namespace = "urn:ietf:params:xml:ns:domain-1.0")
   @XmlType(propOrder = {
       "fullyQualifiedDomainName",
@@ -82,7 +80,6 @@ public class TransferResponse extends BaseTransferObject implements ResponseData
   }
 
   /** An adapter to output the XML in response to a transfer command on a contact. */
-  @Embed
   @XmlRootElement(name = "trnData", namespace = "urn:ietf:params:xml:ns:contact-1.0")
   @XmlType(propOrder = {
       "contactId",

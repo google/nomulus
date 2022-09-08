@@ -18,7 +18,6 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.io.BaseEncoding.base64;
 
 import com.google.appengine.api.datastore.Text;
-import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -31,7 +30,6 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * @see <a href="http://tools.ietf.org/html/draft-lozano-tmch-smd-02#section-2.4">
  *       draft-lozano-tmch-smd-02 § 2.4</a>
  */
-@Embed
 @XmlRootElement(name = "encodedSignedMark")
 public class EncodedSignedMark extends ImmutableObject implements AbstractSignedMark {
 
@@ -42,8 +40,9 @@ public class EncodedSignedMark extends ImmutableObject implements AbstractSigned
   String encoding;
 
   /**
-   * Encoded data. This is stored in a Text field rather than a String because Objectify cannot
-   * autoconvert Strings greater than 500 characters to Text within {@link Embed} collections.
+   * Encoded data. This is stored in a Text field rather than a String due to historical reasons,
+   * namely that Objectify cannot autoconvert Strings greater than 500 characters to Text within
+   * {@code Embed} collections.
    */
   @XmlValue
   @XmlJavaTypeAdapter(RemoveWhitespaceTextAdapter.class)
