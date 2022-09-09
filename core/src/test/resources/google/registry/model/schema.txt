@@ -188,8 +188,3 @@ enum google.registry.model.reporting.HistoryEntry$Type {
   RDE_IMPORT;
   SYNTHETIC;
 }
-class google.registry.model.server.ServerSecret {
-  @Id long id;
-  long leastSignificant;
-  long mostSignificant;
-}

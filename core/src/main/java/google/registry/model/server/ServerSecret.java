@@ -19,27 +19,16 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Longs;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.OnLoad;
-import com.googlecode.objectify.annotation.Unindex;
 import google.registry.model.CacheUtils;
-import google.registry.model.annotations.NotBackedUp;
-import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.CrossTldSingleton;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.Column;
-import javax.persistence.PostLoad;
-import javax.persistence.Transient;
+import javax.persistence.Entity;
 
 /** A secret number used for generating tokens (such as XSRF tokens). */
 @Entity
-@javax.persistence.Entity
-@Unindex
-@NotBackedUp(reason = Reason.AUTO_GENERATED)
-// TODO(b/27427316): Replace this with an entry in KMSKeyring
 public class ServerSecret extends CrossTldSingleton {
 
   /**
@@ -52,13 +41,6 @@ public class ServerSecret extends CrossTldSingleton {
       CacheUtils.newCacheBuilder().build(singletonClazz -> retrieveAndSaveSecret());
 
   private static ServerSecret retrieveAndSaveSecret() {
-    if (tm().isOfy()) {
-      // Attempt a quick load if we're in ofy first to short-circuit sans transaction
-      Optional<ServerSecret> secretWithoutTransaction = tm().loadSingleton(ServerSecret.class);
-      if (secretWithoutTransaction.isPresent()) {
-        return secretWithoutTransaction.get();
-      }
-    }
     return tm().transact(
             () -> {
               // Make sure we're in a transaction and attempt to load any existing secret, then
@@ -77,35 +59,13 @@ public class ServerSecret extends CrossTldSingleton {
     return CACHE.get(ServerSecret.class);
   }
 
-  /** Most significant 8 bytes of the UUID value (stored separately for legacy purposes). */
-  @Transient long mostSignificant;
-
-  /** Least significant 8 bytes of the UUID value (stored separately for legacy purposes). */
-  @Transient long leastSignificant;
-
   /** The UUID value itself. */
   @Column(columnDefinition = "uuid")
-  @Ignore
   UUID secret;
-
-  /** Convert the Datastore representation to SQL. */
-  @OnLoad
-  void onLoad() {
-    secret = new UUID(mostSignificant, leastSignificant);
-  }
-
-  /** Convert the SQL representation to Datastore. */
-  @PostLoad
-  void postLoad() {
-    mostSignificant = secret.getMostSignificantBits();
-    leastSignificant = secret.getLeastSignificantBits();
-  }
 
   @VisibleForTesting
   static ServerSecret create(UUID uuid) {
     ServerSecret secret = new ServerSecret();
-    secret.mostSignificant = uuid.getMostSignificantBits();
-    secret.leastSignificant = uuid.getLeastSignificantBits();
     secret.secret = uuid;
     return secret;
   }
@@ -113,8 +73,8 @@ public class ServerSecret extends CrossTldSingleton {
   /** Returns the value of this ServerSecret as a byte array. */
   public byte[] asBytes() {
     return ByteBuffer.allocate(Longs.BYTES * 2)
-        .putLong(mostSignificant)
-        .putLong(leastSignificant)
+        .putLong(secret.getMostSignificantBits())
+        .putLong(secret.getLeastSignificantBits())
         .array();
   }
 

@@ -24,7 +24,6 @@ import google.registry.model.host.Host;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.server.ServerSecret;
 import google.registry.testing.TestObject;
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +47,6 @@ public class ClassPathManagerTest {
         .isEqualTo(EppResourceIndexBucket.class);
     assertThat(ClassPathManager.getClass("Domain")).isEqualTo(Domain.class);
     assertThat(ClassPathManager.getClass("HistoryEntry")).isEqualTo(HistoryEntry.class);
-    assertThat(ClassPathManager.getClass("ServerSecret")).isEqualTo(ServerSecret.class);
     assertThat(ClassPathManager.getClass("EppResourceIndex")).isEqualTo(EppResourceIndex.class);
   }
 
@@ -90,7 +88,6 @@ public class ClassPathManagerTest {
         .isEqualTo("EppResourceIndexBucket");
     assertThat(ClassPathManager.getClassName(Domain.class)).isEqualTo("Domain");
     assertThat(ClassPathManager.getClassName(HistoryEntry.class)).isEqualTo("HistoryEntry");
-    assertThat(ClassPathManager.getClassName(ServerSecret.class)).isEqualTo("ServerSecret");
     assertThat(ClassPathManager.getClassName(EppResourceIndex.class)).isEqualTo("EppResourceIndex");
   }
 
