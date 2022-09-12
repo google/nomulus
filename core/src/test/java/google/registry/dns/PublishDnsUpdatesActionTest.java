@@ -23,6 +23,7 @@ import static google.registry.dns.DnsModule.PARAM_LOCK_INDEX;
 import static google.registry.dns.DnsModule.PARAM_NUM_PUBLISH_LOCKS;
 import static google.registry.dns.DnsModule.PARAM_PUBLISH_TASK_ENQUEUED;
 import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_CREATED;
+import static google.registry.dns.PublishDnsUpdatesAction.RETRIES_BEFORE_PERMANENT_FAILURE;
 import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -392,10 +393,13 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
-  void testTaskFailsAfterTenRetries_doesNotRetry() {
+  void testTaskFailsAfterMaxRetries_doesNotRetry() {
     action =
         createAction(
-            "xn--q9jyb4c", ImmutableSet.of(), ImmutableSet.of("ns1.example.xn--q9jyb4c"), 10);
+            "xn--q9jyb4c",
+            ImmutableSet.of(),
+            ImmutableSet.of("ns1.example.xn--q9jyb4c"),
+            RETRIES_BEFORE_PERMANENT_FAILURE);
     doThrow(new RuntimeException()).when(dnsWriter).commit();
     action.run();
     cloudTasksHelper.assertNoTasksEnqueued(DNS_PUBLISH_PUSH_QUEUE_NAME);
@@ -405,7 +409,11 @@ public class PublishDnsUpdatesActionTest {
   @Test
   void testDomainDnsUpdateRetriesExhausted_emailIsSent() {
     action =
-        createAction("xn--q9jyb4c", ImmutableSet.of("example.xn--q9jyb4c"), ImmutableSet.of(), 10);
+        createAction(
+            "xn--q9jyb4c",
+            ImmutableSet.of("example.xn--q9jyb4c"),
+            ImmutableSet.of(),
+            RETRIES_BEFORE_PERMANENT_FAILURE);
     doThrow(new RuntimeException()).when(dnsWriter).commit();
     action.run();
     ArgumentCaptor<EmailMessage> contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);
@@ -423,7 +431,10 @@ public class PublishDnsUpdatesActionTest {
   void testHostDnsUpdateRetriesExhausted_emailIsSent() {
     action =
         createAction(
-            "xn--q9jyb4c", ImmutableSet.of(), ImmutableSet.of("ns1.example.xn--q9jyb4c"), 10);
+            "xn--q9jyb4c",
+            ImmutableSet.of(),
+            ImmutableSet.of("ns1.example.xn--q9jyb4c"),
+            RETRIES_BEFORE_PERMANENT_FAILURE);
     doThrow(new RuntimeException()).when(dnsWriter).commit();
     action.run();
     ArgumentCaptor<EmailMessage> contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);

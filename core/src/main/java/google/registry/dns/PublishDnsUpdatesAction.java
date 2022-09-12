@@ -81,7 +81,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   // tasks.
   public static final String APP_ENGINE_RETRY_HEADER = "X-AppEngine-TaskRetryCount";
   public static final String CLOUD_TASKS_RETRY_HEADER = "X-CloudTasks-TaskRetryCount";
-  public static final int RETRIES_BEFORE_PERMANENT_FAILURE = 10;
+  public static final int RETRIES_BEFORE_PERMANENT_FAILURE = 20;
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
