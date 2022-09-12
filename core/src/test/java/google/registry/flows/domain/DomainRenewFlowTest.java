@@ -1294,4 +1294,32 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     Domain domain = reloadResourceByForeignKey();
     Truth8.assertThat(domain.getCurrentPackageToken()).isEmpty();
   }
+
+  @Test
+  void testDryRunRemovePackageToken() throws Exception {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(PACKAGE)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setRenewalPriceBehavior(SPECIFIED)
+                .build());
+    persistDomain(SPECIFIED, Money.of(USD, 2));
+    persistResource(
+        reloadResourceByForeignKey()
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+
+    setEppInput(
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEPACKAGE__"));
+
+    dryRunFlowAssertResponse(
+        loadFile(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+  }
 }
