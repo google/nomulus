@@ -32,7 +32,7 @@ import google.registry.keyring.kms.KmsModule;
 import google.registry.module.frontend.FrontendRequestComponent.FrontendRequestComponentModule;
 import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.privileges.secretmanager.SecretManagerModule;
-import google.registry.request.Modules.Jackson2Module;
+import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.NetHttpTransportModule;
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.request.auth.AuthModule;
@@ -56,7 +56,7 @@ import javax.inject.Singleton;
       FrontendRequestComponentModule.class,
       GroupsModule.class,
       GroupssettingsModule.class,
-      Jackson2Module.class,
+      GsonModule.class,
       KeyModule.class,
       KeyringModule.class,
       KmsModule.class,

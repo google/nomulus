@@ -36,7 +36,7 @@ import google.registry.persistence.PersistenceModule.ReadOnlyReplicaJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.rde.RdeModule;
-import google.registry.request.Modules.Jackson2Module;
+import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.Modules.UrlFetchServiceModule;
 import google.registry.request.Modules.UserServiceModule;
@@ -65,7 +65,7 @@ import javax.inject.Singleton;
       CloudTasksUtilsModule.class,
       DummyKeyringModule.class,
       DnsUpdateWriterModule.class,
-      Jackson2Module.class,
+      GsonModule.class,
       KeyModule.class,
       KeyringModule.class,
       KmsModule.class,

@@ -32,7 +32,7 @@ import google.registry.module.pubapi.PubApiRequestComponent.PubApiRequestCompone
 import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.privileges.secretmanager.SecretManagerModule;
-import google.registry.request.Modules.Jackson2Module;
+import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.NetHttpTransportModule;
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.request.auth.AuthModule;
@@ -51,7 +51,7 @@ import javax.inject.Singleton;
       DummyKeyringModule.class,
       GroupsModule.class,
       GroupssettingsModule.class,
-      Jackson2Module.class,
+      GsonModule.class,
       KeyModule.class,
       KeyringModule.class,
       KmsModule.class,

@@ -39,7 +39,7 @@ import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.rde.JSchModule;
-import google.registry.request.Modules.Jackson2Module;
+import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.NetHttpTransportModule;
 import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.Modules.UrlFetchServiceModule;
@@ -67,7 +67,7 @@ import javax.inject.Singleton;
       GroupsModule.class,
       GroupssettingsModule.class,
       JSchModule.class,
-      Jackson2Module.class,
+      GsonModule.class,
       KeyModule.class,
       KeyringModule.class,
       KmsModule.class,
