@@ -42,11 +42,7 @@ class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
     persistActiveHost("ns1.example.tld");
     runCommand("ns1.example.tld");
     assertInStdout("fullyQualifiedHostName=ns1.example.tld");
-    assertInStdout(
-        "Websafe key: "
-            + "kind:Host"
-            + "@sql:rO0ABXQABjItUk9JRA"
-            + "@ofy:agR0ZXN0chALEgRIb3N0IgYyLVJPSUQM");
+    assertInStdout("Websafe key: " + "kind:Host" + "@sql:rO0ABXQABjItUk9JRA");
   }
 
   @Test
@@ -54,11 +50,7 @@ class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
     persistActiveHost("ns1.example.tld");
     runCommand("ns1.example.tld", "--expand");
     assertInStdout("fullyQualifiedHostName=ns1.example.tld");
-    assertInStdout(
-        "Websafe key: "
-            + "kind:Host"
-            + "@sql:rO0ABXQABjItUk9JRA"
-            + "@ofy:agR0ZXN0chALEgRIb3N0IgYyLVJPSUQM");
+    assertInStdout("Websafe key: " + "kind:Host" + "@sql:rO0ABXQABjItUk9JRA");
     assertNotInStdout("LiveRef");
   }
 
@@ -69,16 +61,8 @@ class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
     runCommand("ns1.example.tld", "ns2.example.tld");
     assertInStdout("fullyQualifiedHostName=ns1.example.tld");
     assertInStdout("fullyQualifiedHostName=ns2.example.tld");
-    assertInStdout(
-        "Websafe key: "
-            + "kind:Host"
-            + "@sql:rO0ABXQABjItUk9JRA"
-            + "@ofy:agR0ZXN0chALEgRIb3N0IgYyLVJPSUQM");
-    assertInStdout(
-        "Websafe key: "
-            + "kind:Host"
-            + "@sql:rO0ABXQABjMtUk9JRA"
-            + "@ofy:agR0ZXN0chALEgRIb3N0IgYzLVJPSUQM");
+    assertInStdout("Websafe key: " + "kind:Host" + "@sql:rO0ABXQABjItUk9JRA");
+    assertInStdout("Websafe key: " + "kind:Host" + "@sql:rO0ABXQABjMtUk9JRA");
   }
 
   @Test

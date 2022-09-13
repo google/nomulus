@@ -14,7 +14,6 @@
 
 package google.registry.model.contact;
 
-import com.googlecode.objectify.Key;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
@@ -46,13 +45,13 @@ import org.joda.time.DateTime;
       @Index(columnList = "searchName")
     })
 @ExternalMessagingName("contact")
-@WithStringVKey
+@WithStringVKey(compositeKey = true)
 @Access(AccessType.FIELD)
 public class Contact extends ContactBase implements ForeignKeyedEppResource {
 
   @Override
   public VKey<Contact> createVKey() {
-    return VKey.create(Contact.class, getRepoId(), Key.create(this));
+    return VKey.createSql(Contact.class, getRepoId());
   }
 
   @Override

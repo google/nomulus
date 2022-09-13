@@ -19,10 +19,10 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.base.Ascii;
 import com.google.common.base.Strings;
 import google.registry.model.EppResource;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
 
@@ -42,7 +42,7 @@ class CommandUtilities {
     }
 
     public VKey<? extends EppResource> getKey(String uniqueId, DateTime now) {
-      return ForeignKeyIndex.loadAndGetKey(clazz, uniqueId, now);
+      return ForeignKeyUtils.load(clazz, uniqueId, now);
     }
   }
 

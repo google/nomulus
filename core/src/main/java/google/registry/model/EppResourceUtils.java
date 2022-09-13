@@ -36,7 +36,6 @@ import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.model.tld.Registry;
@@ -117,20 +116,19 @@ public final class EppResourceUtils {
   }
 
   /**
-   * Loads the last created version of an {@link EppResource} from Datastore by foreign key, using a
-   * cache.
+   * Loads the last created version of an {@link EppResource} from the database by foreign key,
+   * using a cache.
    *
    * <p>Returns null if no resource with this foreign key was ever created, or if the most recently
    * created resource was deleted before time "now".
    *
    * <p>Loading an {@link EppResource} by itself is not sufficient to know its current state since
    * it may have various expirable conditions and status values that might implicitly change its
-   * state as time progresses even if it has not been updated in Datastore. Rather, the resource
+   * state as time progresses even if it has not been updated in the database. Rather, the resource
    * must be combined with a timestamp to view its current state. We use a global last updated
-   * timestamp on the resource's entity group (which is essentially free since all writes to the
-   * entity group must be serialized anyways) to guarantee monotonically increasing write times, and
-   * forward our projected time to the greater of this timestamp or "now". This guarantees that
-   * we're not projecting into the past.
+   * timestamp to guarantee monotonically increasing write times, and forward our projected time to
+   * the greater of this timestamp or "now". This guarantees that we're not projecting into the
+   * past.
    *
    * <p>Do not call this cached version for anything that needs transactional consistency. It should
    * only be used when it's OK if the data is potentially being out of date, e.g. WHOIS.
@@ -150,19 +148,18 @@ public final class EppResourceUtils {
     checkArgument(
         ForeignKeyedEppResource.class.isAssignableFrom(clazz),
         "loadByForeignKey may only be called for foreign keyed EPP resources");
-    ForeignKeyIndex<T> fki =
+    VKey<T> key =
         useCache
-            ? ForeignKeyIndex.loadCached(clazz, ImmutableList.of(foreignKey), now)
-                .getOrDefault(foreignKey, null)
-            : ForeignKeyIndex.load(clazz, foreignKey, now);
-    // The value of fki.getResourceKey() might be null for hard-deleted prober data.
-    if (fki == null || isAtOrAfter(now, fki.getDeletionTime()) || fki.getResourceKey() == null) {
+            ? ForeignKeyUtils.loadCached(clazz, ImmutableList.of(foreignKey), now).get(foreignKey)
+            : ForeignKeyUtils.load(clazz, foreignKey, now);
+    // The returned key is null if the resource is hard deleted or soft deleted by the given time.
+    if (key == null) {
       return Optional.empty();
     }
     T resource =
         useCache
-            ? EppResource.loadCached(fki.getResourceKey())
-            : tm().transact(() -> tm().loadByKeyIfPresent(fki.getResourceKey()).orElse(null));
+            ? EppResource.loadCached(key)
+            : tm().transact(() -> tm().loadByKeyIfPresent(key).orElse(null));
     if (resource == null || isAtOrAfter(now, resource.getDeletionTime())) {
       return Optional.empty();
     }
@@ -178,7 +175,7 @@ public final class EppResourceUtils {
   }
 
   /**
-   * Checks multiple {@link EppResource} objects from Datastore by unique ids.
+   * Checks multiple {@link EppResource} objects from the database by unique ids.
    *
    * <p>There are currently no resources that support checks and do not use foreign keys. If we need
    * to support that case in the future, we can loosen the type to allow any {@link EppResource} and
@@ -190,7 +187,7 @@ public final class EppResourceUtils {
    */
   public static <T extends EppResource> ImmutableSet<String> checkResourcesExist(
       Class<T> clazz, List<String> uniqueIds, final DateTime now) {
-    return ForeignKeyIndex.load(clazz, uniqueIds, now).keySet();
+    return ForeignKeyUtils.load(clazz, uniqueIds, now).keySet();
   }
 
   /**

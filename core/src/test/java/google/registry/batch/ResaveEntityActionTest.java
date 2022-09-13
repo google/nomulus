@@ -98,7 +98,7 @@ public class ResaveEntityActionTest {
     clock.advanceOneMilli();
     assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("TheRegistrar");
     runAction(
-        domain.createVKey().getOfyKey().getString(),
+        domain.createVKey().stringify(),
         DateTime.parse("2016-02-06T10:00:01Z"),
         ImmutableSortedSet.of());
     Domain resavedDomain = loadByEntity(domain);
@@ -128,7 +128,7 @@ public class ResaveEntityActionTest {
 
     assertThat(domain.getGracePeriods()).isNotEmpty();
     runAction(
-        domain.createVKey().getOfyKey().getString(),
+        domain.createVKey().stringify(),
         requestedTime,
         ImmutableSortedSet.of(requestedTime.plusDays(5)));
     Domain resavedDomain = loadByEntity(domain);

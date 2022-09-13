@@ -17,7 +17,6 @@ package google.registry.flows;
 import static com.google.common.collect.Sets.intersection;
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -38,6 +37,7 @@ import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
@@ -45,7 +45,6 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import java.util.List;
@@ -70,22 +69,17 @@ public final class ResourceFlowUtils {
   /**
    * Check whether if there are domains linked to the resource to be deleted. Throws an exception if
    * so.
-   *
-   * <p>Note that in datastore this is a smoke test as the query for linked domains is eventually
-   * consistent, so we only check a few domains to fail fast.
    */
   public static <R extends EppResource> void checkLinkedDomains(
       final String targetId, final DateTime now, final Class<R> resourceClass) throws EppException {
     EppException failfastException =
         tm().transact(
                 () -> {
-                  final ForeignKeyIndex<R> fki = ForeignKeyIndex.load(resourceClass, targetId, now);
-                  if (fki == null) {
+                  VKey<R> key = ForeignKeyUtils.load(resourceClass, targetId, now);
+                  if (key == null) {
                     return new ResourceDoesNotExistException(resourceClass, targetId);
                   }
-                  return isLinked(fki.getResourceKey(), now)
-                      ? new ResourceToDeleteIsReferencedException()
-                      : null;
+                  return isLinked(key, now) ? new ResourceToDeleteIsReferencedException() : null;
                 });
     if (failfastException != null) {
       throw failfastException;
@@ -118,7 +112,7 @@ public final class ResourceFlowUtils {
 
   public static <R extends EppResource> void verifyResourceDoesNotExist(
       Class<R> clazz, String targetId, DateTime now, String registrarId) throws EppException {
-    VKey<R> key = loadAndGetKey(clazz, targetId, now);
+    VKey<R> key = ForeignKeyUtils.load(clazz, targetId, now);
     if (key != null) {
       R resource = tm().loadByKey(key);
       // These are similar exceptions, but we can track them internally as log-based metrics.

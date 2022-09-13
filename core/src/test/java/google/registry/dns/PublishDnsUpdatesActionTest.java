@@ -104,7 +104,7 @@ public class PublishDnsUpdatesActionTest {
     persistActiveSubordinateHost("ns1.example.xn--q9jyb4c", domain1);
     persistActiveSubordinateHost("ns2.example.xn--q9jyb4c", domain1);
     Domain domain2 = persistActiveDomain("example2.xn--q9jyb4c");
-    persistActiveSubordinateHost("ns1.example.xn--q9jyb4c", domain2);
+    persistActiveSubordinateHost("ns1.example2.xn--q9jyb4c", domain2);
     clock.advanceOneMilli();
   }
 
