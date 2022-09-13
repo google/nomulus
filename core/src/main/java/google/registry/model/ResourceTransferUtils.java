@@ -64,7 +64,7 @@ public final class ResourceTransferUtils {
       DomainTransferData domainTransferData = (DomainTransferData) transferData;
       builder =
           new DomainTransferResponse.Builder()
-              .setFullyQualifiedDomainName(eppResource.getForeignKey())
+              .setDomainName(eppResource.getForeignKey())
               .setExtendedRegistrationExpirationTime(
                   ADD_EXDATE_STATUSES.contains(domainTransferData.getTransferStatus())
                       ? domainTransferData.getTransferredRegistrationExpirationTime()

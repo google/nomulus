@@ -34,7 +34,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.DomainTransactionRecord;
@@ -116,7 +116,7 @@ public class DomainHistoryTest extends EntityTestCase {
         newDomain("example.tld", "domainRepoId", contact)
             .asBuilder()
             .setNameservers(host.createVKey())
-            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+            .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .setDnsRefreshRequestTime(Optional.of(DateTime.parse("2020-03-09T16:40:00Z")))
             .build();
     insertInDb(domain);

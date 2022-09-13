@@ -44,7 +44,7 @@ public final class ListHostsAction extends ListObjectsAction<Host> {
 
   @Override
   public ImmutableSet<String> getPrimaryKeyFields() {
-    return ImmutableSet.of("fullyQualifiedHostName");
+    return ImmutableSet.of("hostName");
   }
 
   @Override

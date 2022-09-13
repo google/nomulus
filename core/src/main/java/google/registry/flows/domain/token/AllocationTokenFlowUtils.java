@@ -175,11 +175,7 @@ public class AllocationTokenFlowUtils {
       return Optional.empty();
     }
     AllocationToken tokenEntity = loadToken(extension.get().getAllocationToken());
-    validateToken(
-        InternetDomainName.from(command.getFullyQualifiedDomainName()),
-        tokenEntity,
-        registrarId,
-        now);
+    validateToken(InternetDomainName.from(command.getDomainName()), tokenEntity, registrarId, now);
     return Optional.of(
         tokenCustomLogic.validateToken(command, tokenEntity, registry, registrarId, now));
   }

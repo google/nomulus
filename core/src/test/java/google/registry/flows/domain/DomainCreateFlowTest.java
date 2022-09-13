@@ -161,7 +161,7 @@ import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -860,7 +860,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutDomains()
         .that(domain)
         .hasExactlyDsData(
-            DelegationSignerData.create(
+            DomainDsData.create(
                     12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))
                 .cloneWithDomainRepoId(domain.getRepoId()));
   }
@@ -3159,15 +3159,14 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testFailure_packageToken_registrationTooLong() throws Exception {
-    AllocationToken token =
-        persistResource(
-            new AllocationToken.Builder()
-                .setToken("abc123")
-                .setTokenType(PACKAGE)
-                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
-                .setAllowedTlds(ImmutableSet.of("tld"))
-                .setRenewalPriceBehavior(SPECIFIED)
-                .build());
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(PACKAGE)
+            .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+            .setAllowedTlds(ImmutableSet.of("tld"))
+            .setRenewalPriceBehavior(SPECIFIED)
+            .build());
     persistContactsAndHosts();
     setEppInput(
         "domain_create_allocationtoken.xml",

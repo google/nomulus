@@ -64,7 +64,7 @@ import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
@@ -335,8 +335,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
             .asBuilder()
             .setDsData(
                 ImmutableSet.of(
-                    DelegationSignerData.create(
-                        12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC"))))
+                    DomainDsData.create(12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC"))))
             .setNameservers(ImmutableSet.of(host1.createVKey(), host3.createVKey()))
             .build());
     doSuccessfulTest("domain_info_response_dsdata.xml", false);
@@ -541,8 +540,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                     null))
             .setDsData(
                 ImmutableSet.of(
-                    DelegationSignerData.create(
-                        12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC"))))
+                    DomainDsData.create(12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC"))))
             .build());
     doSuccessfulTest("domain_info_response_dsdata_addperiod.xml", false);
   }

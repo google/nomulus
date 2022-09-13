@@ -89,13 +89,13 @@ public class Spec11RegistrarThreatMatchesParserTest {
                     "threatType", "MALWARE",
                     "platformType", "ANY_PLATFORM",
                     "threatEntryMetaData", "NONE",
-                    "fullyQualifiedDomainName", "c.com")));
+                    "domainName", "c.com")));
     ThreatMatch objectWithoutExtraFields =
         ThreatMatch.fromJSON(
             new JSONObject(
                 ImmutableMap.of(
                     "threatType", "MALWARE",
-                    "fullyQualifiedDomainName", "c.com")));
+                    "domainName", "c.com")));
 
     assertThat(objectWithExtraFields).isEqualTo(objectWithoutExtraFields);
   }
@@ -113,7 +113,7 @@ public class Spec11RegistrarThreatMatchesParserTest {
                 new JSONObject(
                     ImmutableMap.of(
                         "threatType", "MALWARE",
-                        "fullyQualifiedDomainName", "a.com")))));
+                        "domainName", "a.com")))));
   }
 
   static RegistrarThreatMatches getMatchB() throws Exception {
@@ -124,12 +124,12 @@ public class Spec11RegistrarThreatMatchesParserTest {
                 new JSONObject(
                     ImmutableMap.of(
                         "threatType", "MALWARE",
-                        "fullyQualifiedDomainName", "b.com"))),
+                        "domainName", "b.com"))),
             ThreatMatch.fromJSON(
                 new JSONObject(
                     ImmutableMap.of(
                         "threatType", "MALWARE",
-                        "fullyQualifiedDomainName", "c.com")))));
+                        "domainName", "c.com")))));
   }
 
   private void setupFile(String fileWithContent, String fileDate) {

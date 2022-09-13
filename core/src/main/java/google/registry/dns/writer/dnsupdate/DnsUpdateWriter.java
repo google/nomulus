@@ -28,7 +28,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.writer.BaseDnsWriter;
 import google.registry.dns.writer.DnsWriterZone;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
 import google.registry.model.tld.Registries;
 import google.registry.util.Clock;
@@ -185,7 +185,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
 
   private RRset makeDelegationSignerSet(Domain domain) {
     RRset signerSet = new RRset();
-    for (DelegationSignerData signerData : domain.getDsData()) {
+    for (DomainDsData signerData : domain.getDsData()) {
       DSRecord dsRecord =
           new DSRecord(
               toAbsoluteName(domain.getDomainName()),

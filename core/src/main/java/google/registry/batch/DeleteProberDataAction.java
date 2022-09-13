@@ -91,7 +91,7 @@ public class DeleteProberDataAction implements Runnable {
   // Note: creationTime must be compared to a Java object (CreateAutoTimestamp) but deletionTime can
   // be compared directly to the SQL timestamp (it's a DateTime)
   private static final String DOMAIN_QUERY_STRING =
-      "FROM Domain d WHERE d.tld IN :tlds AND d.fullyQualifiedDomainName NOT LIKE 'nic.%' AND"
+      "FROM Domain d WHERE d.tld IN :tlds AND d.domainName NOT LIKE 'nic.%' AND"
           + " (d.subordinateHosts IS EMPTY OR d.subordinateHosts IS NULL) AND d.creationTime <"
           + " :creationTimeCutoff AND ((d.creationTime <= :nowAutoTimestamp AND d.deletionTime >"
           + " current_timestamp()) OR d.deletionTime < :nowMinusSoftDeleteDelay) ORDER BY d.repoId";
@@ -220,7 +220,7 @@ public class DeleteProberDataAction implements Runnable {
   private void hardDeleteDomainsAndHosts(
       ImmutableList<String> domainRepoIds, ImmutableList<String> hostNames) {
     jpaTm()
-        .query("DELETE FROM Host WHERE fullyQualifiedHostName IN :hostNames")
+        .query("DELETE FROM Host WHERE hostName IN :hostNames")
         .setParameter("hostNames", hostNames)
         .executeUpdate();
     jpaTm()

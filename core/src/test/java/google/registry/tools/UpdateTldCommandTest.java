@@ -354,7 +354,8 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testSuccess_setAllowedNameserversOverwrites() throws Exception {
     persistResource(
-        Registry.get("xn--q9jyb4c").asBuilder()
+        Registry.get("xn--q9jyb4c")
+            .asBuilder()
             .setAllowedFullyQualifiedHostNames(
                 ImmutableSet.of("ns1.example.tld", "ns2.example.tld"))
             .build());
@@ -366,7 +367,8 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testSuccess_addAllowedNameservers() throws Exception {
     persistResource(
-        Registry.get("xn--q9jyb4c").asBuilder()
+        Registry.get("xn--q9jyb4c")
+            .asBuilder()
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("ns1.example.com"))
             .build());
     runCommandForced("--add_allowed_nameservers=ns2.example.com", "xn--q9jyb4c");
@@ -377,7 +379,8 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testSuccess_removeAllAllowedNameservers() throws Exception {
     persistResource(
-        Registry.get("xn--q9jyb4c").asBuilder()
+        Registry.get("xn--q9jyb4c")
+            .asBuilder()
             .setAllowedFullyQualifiedHostNames(
                 ImmutableSet.of("ns1.example.com", "ns2.example.com"))
             .build());
@@ -388,7 +391,8 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testSuccess_removeSomeAllowedNameservers() throws Exception {
     persistResource(
-        Registry.get("xn--q9jyb4c").asBuilder()
+        Registry.get("xn--q9jyb4c")
+            .asBuilder()
             .setAllowedFullyQualifiedHostNames(
                 ImmutableSet.of("ns1.example.com", "ns2.example.com"))
             .build());
@@ -782,7 +786,8 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testFailure_cantAddDuplicateAllowedNameservers() {
     persistResource(
-        Registry.get("xn--q9jyb4c").asBuilder()
+        Registry.get("xn--q9jyb4c")
+            .asBuilder()
             .setAllowedFullyQualifiedHostNames(
                 ImmutableSet.of("ns1.example.com", "ns2.example.com"))
             .build());
@@ -796,9 +801,9 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testFailure_cantRemoveAllowedNameserverThatIsntPresent() {
     persistResource(
-        Registry.get("xn--q9jyb4c").asBuilder()
-            .setAllowedFullyQualifiedHostNames(
-                ImmutableSet.of("ns1.example.com"))
+        Registry.get("xn--q9jyb4c")
+            .asBuilder()
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("ns1.example.com"))
             .build());
     IllegalArgumentException thrown =
         assertThrows(

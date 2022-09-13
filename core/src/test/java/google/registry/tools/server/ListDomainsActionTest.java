@@ -149,7 +149,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         Optional.empty(),
         Optional.of(true),
         Optional.empty(),
-        "^fullyQualifiedDomainName$",
+        "^domainName$",
         "^-+\\s*$",
         "^example1.foo\\s*$",
         "^example2.foo\\s*$");
@@ -165,7 +165,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         Optional.of("repoId"),
         Optional.empty(),
         Optional.empty(),
-        "^fullyQualifiedDomainName\\s+repoId\\s*$",
+        "^domainName\\s+repoId\\s*$",
         "^-+\\s+-+\\s*$",
         "^example1.foo\\s+2-FOO\\s*$",
         "^example3.foo\\s+4-FOO\\s*$");
@@ -195,7 +195,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         Optional.of("repoId"),
         Optional.of(true),
         Optional.empty(),
-        "^fullyQualifiedDomainName\\s+repoId\\s*$",
+        "^domainName\\s+repoId\\s*$",
         "^-+\\s+-+\\s*$",
         "^example1.foo\\s+2-FOO\\s*$",
         "^example3.foo\\s+4-FOO\\s*$");
@@ -211,7 +211,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         Optional.of("*"),
         Optional.empty(),
         Optional.empty(),
-        "^fullyQualifiedDomainName\\s+.*repoId",
+        "^domainName\\s+.*repoId",
         "^-+\\s+-+",
         "^example1.foo\\s+.*2-FOO",
         "^example3.foo\\s+.*4-FOO");
@@ -227,7 +227,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         Optional.of("*,repoId"),
         Optional.empty(),
         Optional.empty(),
-        "^fullyQualifiedDomainName\\s+.*repoId",
+        "^domainName\\s+.*repoId",
         "^-+\\s+-+",
         "^example1.foo\\s+.*2-FOO",
         "^example3.foo\\s+.*4-FOO");

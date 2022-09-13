@@ -25,7 +25,7 @@ import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
@@ -44,7 +44,7 @@ class UniformRapidSuspensionCommandTest
   private Host urs1;
   private Host urs2;
   private Domain defaultDomain;
-  private ImmutableSet<DelegationSignerData> defaultDsData;
+  private ImmutableSet<DomainDsData> defaultDsData;
 
   @BeforeEach
   void beforeEach() {
@@ -58,12 +58,12 @@ class UniformRapidSuspensionCommandTest
     defaultDomain = DatabaseHelper.newDomain("evil.tld");
     defaultDsData =
         ImmutableSet.of(
-            DelegationSignerData.create(1, 2, 3, new HexBinaryAdapter().unmarshal("dead")),
-            DelegationSignerData.create(4, 5, 6, new HexBinaryAdapter().unmarshal("beef")));
+            DomainDsData.create(1, 2, 3, new HexBinaryAdapter().unmarshal("dead")),
+            DomainDsData.create(4, 5, 6, new HexBinaryAdapter().unmarshal("beef")));
   }
 
   private void persistDomainWithHosts(
-      Domain domain, ImmutableSet<DelegationSignerData> dsData, Host... hosts) {
+      Domain domain, ImmutableSet<DomainDsData> dsData, Host... hosts) {
     ImmutableSet.Builder<VKey<Host>> hostRefs = new ImmutableSet.Builder<>();
     for (Host host : hosts) {
       hostRefs.add(host.createVKey());

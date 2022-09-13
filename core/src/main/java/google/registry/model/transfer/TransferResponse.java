@@ -33,22 +33,24 @@ public class TransferResponse extends BaseTransferObject implements ResponseData
 
   /** An adapter to output the XML in response to a transfer command on a domain. */
   @XmlRootElement(name = "trnData", namespace = "urn:ietf:params:xml:ns:domain-1.0")
-  @XmlType(propOrder = {
-      "fullyQualifiedDomainName",
-      "transferStatus",
-      "gainingClientId",
-      "transferRequestTime",
-      "losingClientId",
-      "pendingTransferExpirationTime",
-      "extendedRegistrationExpirationTime"},
-    namespace = "urn:ietf:params:xml:ns:domain-1.0")
+  @XmlType(
+      propOrder = {
+        "domainName",
+        "transferStatus",
+        "gainingClientId",
+        "transferRequestTime",
+        "losingClientId",
+        "pendingTransferExpirationTime",
+        "extendedRegistrationExpirationTime"
+      },
+      namespace = "urn:ietf:params:xml:ns:domain-1.0")
   public static class DomainTransferResponse extends TransferResponse {
 
     @XmlElement(name = "name")
-    String fullyQualifiedDomainName;
+    String domainName;
 
-    public String getFullyQualifiedDomainName() {
-      return fullyQualifiedDomainName;
+    public String getDomainName() {
+      return domainName;
     }
 
     /**
@@ -65,8 +67,8 @@ public class TransferResponse extends BaseTransferObject implements ResponseData
     /** Builder for {@link DomainTransferResponse}. */
     public static class Builder
         extends BaseTransferObject.Builder<DomainTransferResponse, Builder> {
-      public Builder setFullyQualifiedDomainName(String fullyQualifiedDomainName) {
-        getInstance().fullyQualifiedDomainName = fullyQualifiedDomainName;
+      public Builder setDomainName(String domainName) {
+        getInstance().domainName = domainName;
         return this;
       }
 

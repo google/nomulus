@@ -140,10 +140,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   DateTime lastEppUpdateTime;
 
   /** Status values associated with this resource. */
-  @Ignore
-  @Column(name = "statuses")
-  // TODO(b/177567432): rename to "statuses" once we're off datastore.
-  Set<StatusValue> status;
+  @Ignore Set<StatusValue> statuses;
 
   public String getRepoId() {
     return repoId;
@@ -189,7 +186,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   }
 
   public final ImmutableSet<StatusValue> getStatusValues() {
-    return nullToEmptyImmutableCopy(status);
+    return nullToEmptyImmutableCopy(statuses);
   }
 
   public DateTime getDeletionTime() {
@@ -307,7 +304,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
             statusValue,
             resourceClass.getSimpleName());
       }
-      getInstance().status = statusValues;
+      getInstance().statuses = statusValues;
       return thisCastToDerived();
     }
 

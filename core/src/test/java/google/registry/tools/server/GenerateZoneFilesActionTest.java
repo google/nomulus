@@ -32,7 +32,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.gcs.GcsUtils;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
@@ -82,7 +82,7 @@ class GenerateZoneFilesActionTest {
         DatabaseHelper.newDomain("ns-and-ds.tld")
             .asBuilder()
             .addNameservers(nameservers)
-            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+            .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .build());
     persistResource(
         DatabaseHelper.newDomain("ns-only.tld").asBuilder().addNameservers(nameservers).build());
@@ -110,7 +110,7 @@ class GenerateZoneFilesActionTest {
     persistResource(
         DatabaseHelper.newDomain("ds-only.tld")
             .asBuilder()
-            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+            .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .build());
     persistActiveContact("ignored_contact");
     persistActiveHost("ignored.host.tld");  // No ips.
@@ -120,7 +120,7 @@ class GenerateZoneFilesActionTest {
         DatabaseHelper.newDomain("ignored.com")
             .asBuilder()
             .addNameservers(nameservers)
-            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+            .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .build());
 
     GenerateZoneFilesAction action = new GenerateZoneFilesAction();

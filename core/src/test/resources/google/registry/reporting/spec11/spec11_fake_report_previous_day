@@ -1,3 +1,3 @@
 Map from registrar email to detected subdomain threats:
-{"threatMatches":[{"threatEntryMetadata":"NONE","threatType":"MALWARE","fullyQualifiedDomainName":"a.dev","platformType":"ANY_PLATFORM"}],"registrarEmailAddress":"a@fake.com"}
-{"threatMatches":[{"threatEntryMetadata":"NONE","threatType":"MALWARE","fullyQualifiedDomainName":"b.com","platformType":"ANY_PLATFORM"},{"threatEntryMetadata":"NONE","threatType":"MALWARE","fullyQualifiedDomainName":"c.com","platformType":"ANY_PLATFORM"}],"registrarEmailAddress":"b@fake.com"}
+{"threatMatches":[{"threatEntryMetadata":"NONE","threatType":"MALWARE","domainName":"a.dev","platformType":"ANY_PLATFORM"}],"registrarEmailAddress":"a@fake.com"}
+{"threatMatches":[{"threatEntryMetadata":"NONE","threatType":"MALWARE","domainName":"b.com","platformType":"ANY_PLATFORM"},{"threatEntryMetadata":"NONE","threatType":"MALWARE","domainName":"c.com","platformType":"ANY_PLATFORM"}],"registrarEmailAddress":"b@fake.com"}

@@ -31,7 +31,7 @@ import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
@@ -268,7 +268,7 @@ class DomainWhoisResponseTest {
                         DesignatedContact.create(DesignatedContact.Type.ADMIN, adminResourceKey),
                         DesignatedContact.create(DesignatedContact.Type.TECH, techResourceKey)))
                 .setNameservers(ImmutableSet.of(host1VKey, host2VKey))
-                .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, "deadface")))
+                .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, "deadface")))
                 .setGracePeriods(
                     ImmutableSet.of(
                         GracePeriod.create(

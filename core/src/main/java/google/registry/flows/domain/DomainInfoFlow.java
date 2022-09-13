@@ -109,7 +109,7 @@ public final class DomainInfoFlow implements Flow {
     // This is a policy decision that is left up to us by the rfcs.
     DomainInfoData.Builder infoBuilder =
         DomainInfoData.newBuilder()
-            .setFullyQualifiedDomainName(domain.getDomainName())
+            .setDomainName(domain.getDomainName())
             .setRepoId(domain.getRepoId())
             .setCurrentSponsorClientId(domain.getCurrentSponsorRegistrarId())
             .setRegistrant(

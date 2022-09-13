@@ -91,10 +91,10 @@ public class ExportDomainListsAction implements Runnable {
                           // field that compares with the substituted value.
                           jpaTm()
                               .query(
-                                  "SELECT fullyQualifiedDomainName FROM Domain "
+                                  "SELECT domainName FROM Domain "
                                       + "WHERE tld = :tld "
                                       + "AND deletionTime > :now "
-                                      + "ORDER by fullyQualifiedDomainName ASC",
+                                      + "ORDER by domainName ASC",
                                   String.class)
                               .setParameter("tld", tld)
                               .setParameter("now", clock.nowUtc())

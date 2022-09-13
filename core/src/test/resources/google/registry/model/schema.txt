@@ -49,7 +49,7 @@ class google.registry.model.domain.Domain {
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
-  java.lang.String fullyQualifiedDomainName;
+  java.lang.String domainName;
   java.lang.String idnTableName;
   java.lang.String lastEppUpdateClientId;
   java.lang.String smdId;
@@ -72,7 +72,7 @@ class google.registry.model.domain.DomainBase {
   google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
-  java.lang.String fullyQualifiedDomainName;
+  java.lang.String domainName;
   java.lang.String idnTableName;
   java.lang.String lastEppUpdateClientId;
   java.lang.String smdId;
@@ -104,7 +104,7 @@ class google.registry.model.host.Host {
   google.registry.persistence.VKey<google.registry.model.domain.Domain> superordinateDomain;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
-  java.lang.String fullyQualifiedHostName;
+  java.lang.String hostName;
   java.lang.String lastEppUpdateClientId;
   java.util.Set<java.net.InetAddress> inetAddresses;
   org.joda.time.DateTime deletionTime;
@@ -117,7 +117,7 @@ class google.registry.model.host.HostBase {
   google.registry.persistence.VKey<google.registry.model.domain.Domain> superordinateDomain;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
-  java.lang.String fullyQualifiedHostName;
+  java.lang.String hostName;
   java.lang.String lastEppUpdateClientId;
   java.util.Set<java.net.InetAddress> inetAddresses;
   org.joda.time.DateTime deletionTime;

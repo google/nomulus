@@ -43,7 +43,7 @@ import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
@@ -122,7 +122,7 @@ public class DomainSqlTest {
             .setPersistedCurrentSponsorRegistrarId("registrar3")
             .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
-            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+            .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .setLaunchNotice(
                 LaunchNotice.create("tcnid", "validatorId", START_OF_TIME, START_OF_TIME))
             .setSmdId("smdid")
@@ -346,12 +346,11 @@ public class DomainSqlTest {
   @Test
   void testModifyDsData_addThenRemoveSuccessfully() {
     persistDomain();
-    DelegationSignerData extraDsData =
-        DelegationSignerData.create(2, 2, 3, new byte[] {0, 1, 2}, "4-COM");
-    ImmutableSet<DelegationSignerData> unionDsData =
+    DomainDsData extraDsData = DomainDsData.create(2, 2, 3, new byte[] {0, 1, 2}, "4-COM");
+    ImmutableSet<DomainDsData> unionDsData =
         Sets.union(domain.getDsData(), ImmutableSet.of(extraDsData)).immutableCopy();
 
-    // Add an extra DelegationSignerData to dsData set.
+    // Add an extra DomainDsData to dsData set.
     jpaTm()
         .transact(
             () -> {
@@ -361,7 +360,7 @@ public class DomainSqlTest {
               jpaTm().put(modified);
             });
 
-    // Verify that the persisted domain entity contains both DelegationSignerData records.
+    // Verify that the persisted domain entity contains both DomainDsData records.
     jpaTm()
         .transact(
             () -> {
@@ -370,7 +369,7 @@ public class DomainSqlTest {
               assertEqualDomainExcept(persisted, "dsData");
             });
 
-    // Remove the extra DelegationSignerData record from dsData set.
+    // Remove the extra DomainDsData record from dsData set.
     jpaTm()
         .transact(
             () -> {
@@ -604,8 +603,7 @@ public class DomainSqlTest {
                       persisted
                           .asBuilder()
                           .setDsData(
-                              ImmutableSet.of(
-                                  DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+                              ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
                           .build();
                   updateInDb(domain);
                   return jpaTm().getTransactionTime();

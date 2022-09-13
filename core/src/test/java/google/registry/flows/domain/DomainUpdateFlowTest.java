@@ -97,7 +97,7 @@ import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
@@ -115,8 +115,8 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link DomainUpdateFlow}. */
 class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain> {
 
-  private static final DelegationSignerData SOME_DSDATA =
-      DelegationSignerData.create(
+  private static final DomainDsData SOME_DSDATA =
+      DomainDsData.create(
           1,
           2,
           2,
@@ -467,16 +467,16 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
 
   private void doSecDnsSuccessfulTest(
       String xmlFilename,
-      ImmutableSet<DelegationSignerData> originalDsData,
-      ImmutableSet<DelegationSignerData> expectedDsData)
+      ImmutableSet<DomainDsData> originalDsData,
+      ImmutableSet<DomainDsData> expectedDsData)
       throws Exception {
     doSecDnsSuccessfulTest(xmlFilename, originalDsData, expectedDsData, OTHER_DSDATA_TEMPLATE_MAP);
   }
 
   private void doSecDnsSuccessfulTest(
       String xmlFilename,
-      ImmutableSet<DelegationSignerData> originalDsData,
-      ImmutableSet<DelegationSignerData> expectedDsData,
+      ImmutableSet<DomainDsData> originalDsData,
+      ImmutableSet<DomainDsData> expectedDsData,
       ImmutableMap<String, String> substitutions)
       throws Exception {
     setEppInput(xmlFilename, substitutions);
@@ -504,7 +504,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_add.xml",
         null,
         ImmutableSet.of(
-            DelegationSignerData.create(
+            DomainDsData.create(
                 12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
         ImmutableMap.of(
             "KEY_TAG",
@@ -524,7 +524,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         ImmutableSet.of(SOME_DSDATA),
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(
+            DomainDsData.create(
                 12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
         ImmutableMap.of(
             "KEY_TAG",
@@ -561,7 +561,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         ImmutableSet.of(SOME_DSDATA),
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(
+            DomainDsData.create(
                 1,
                 8,
                 4,
@@ -579,7 +579,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             "768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9"));
   }
 
-  // Changing any of the four fields in DelegationSignerData should result in a new object
+  // Changing any of the four fields in DomainDsData should result in a new object
   @Test
   void testSuccess_secDnsAddOnlyChangeKeyTag() throws Exception {
     doSecDnsSuccessfulTest(
@@ -587,7 +587,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         ImmutableSet.of(SOME_DSDATA),
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(
+            DomainDsData.create(
                 12346,
                 2,
                 2,
@@ -611,7 +611,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         ImmutableSet.of(SOME_DSDATA),
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(
+            DomainDsData.create(
                 1,
                 8,
                 2,
@@ -635,7 +635,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         ImmutableSet.of(SOME_DSDATA),
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(
+            DomainDsData.create(
                 1,
                 2,
                 4,
@@ -660,7 +660,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         ImmutableSet.of(SOME_DSDATA),
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(
+            DomainDsData.create(
                 1,
                 2,
                 2,
@@ -679,16 +679,16 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
 
   @Test
   void testSuccess_secDnsAddToMaxRecords() throws Exception {
-    ImmutableSet.Builder<DelegationSignerData> builder = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<DomainDsData> builder = new ImmutableSet.Builder<>();
     for (int i = 0; i < 7; ++i) {
       builder.add(
-          DelegationSignerData.create(
+          DomainDsData.create(
               i,
               2,
               2,
               base16().decode("9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08")));
     }
-    ImmutableSet<DelegationSignerData> commonDsData = builder.build();
+    ImmutableSet<DomainDsData> commonDsData = builder.build();
 
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_add.xml",
@@ -697,7 +697,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             union(
                 commonDsData,
                 ImmutableSet.of(
-                    DelegationSignerData.create(
+                    DomainDsData.create(
                         12346,
                         3,
                         1,
@@ -710,7 +710,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_rem.xml",
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(
+            DomainDsData.create(
                 12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
         ImmutableSet.of(SOME_DSDATA));
   }
@@ -722,7 +722,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_rem_all.xml",
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(
+            DomainDsData.create(
                 12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
         ImmutableSet.of());
   }
@@ -733,26 +733,26 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_add_rem.xml",
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(
+            DomainDsData.create(
                 12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(
+            DomainDsData.create(
                 12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))));
   }
 
   @Test
   void testSuccess_secDnsAddRemoveToMaxRecords() throws Exception {
-    ImmutableSet.Builder<DelegationSignerData> builder = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<DomainDsData> builder = new ImmutableSet.Builder<>();
     for (int i = 0; i < 7; ++i) {
       builder.add(
-          DelegationSignerData.create(
+          DomainDsData.create(
               i,
               2,
               2,
               base16().decode("9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08")));
     }
-    ImmutableSet<DelegationSignerData> commonDsData = builder.build();
+    ImmutableSet<DomainDsData> commonDsData = builder.build();
 
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_add_rem.xml",
@@ -760,7 +760,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             union(
                 commonDsData,
                 ImmutableSet.of(
-                    DelegationSignerData.create(
+                    DomainDsData.create(
                         12345,
                         3,
                         1,
@@ -769,7 +769,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             union(
                 commonDsData,
                 ImmutableSet.of(
-                    DelegationSignerData.create(
+                    DomainDsData.create(
                         12346,
                         3,
                         1,
@@ -783,11 +783,11 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_add_rem_same.xml",
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(
+            DomainDsData.create(
                 12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
         ImmutableSet.of(
             SOME_DSDATA,
-            DelegationSignerData.create(
+            DomainDsData.create(
                 12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))));
   }
 
@@ -934,7 +934,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
-            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+            .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .build());
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -948,8 +948,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .asBuilder()
             .setDsData(
                 ImmutableSet.of(
-                    DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2}),
-                    DelegationSignerData.create(2, 2, 6, new byte[] {0, 1, 2})))
+                    DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2}),
+                    DomainDsData.create(2, 2, 6, new byte[] {0, 1, 2})))
             .build());
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains("digestType=3");
@@ -963,7 +963,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
-            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 1, new byte[] {0, 1, 2})))
+            .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 1, new byte[] {0, 1, 2})))
             .build());
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -980,8 +980,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .asBuilder()
             .setDsData(
                 ImmutableSet.of(
-                    DelegationSignerData.create(1, 2, 1, new byte[] {0, 1, 2, 3, 4}),
-                    DelegationSignerData.create(2, 2, 2, new byte[] {5, 6, 7})))
+                    DomainDsData.create(1, 2, 1, new byte[] {0, 1, 2, 3, 4}),
+                    DomainDsData.create(2, 2, 2, new byte[] {5, 6, 7})))
             .build());
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains("0, 1, 2, 3, 4");
@@ -998,7 +998,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
-            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 99, 2, new byte[] {0, 1, 2})))
+            .setDsData(ImmutableSet.of(DomainDsData.create(1, 99, 2, new byte[] {0, 1, 2})))
             .build());
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1012,8 +1012,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .asBuilder()
             .setDsData(
                 ImmutableSet.of(
-                    DelegationSignerData.create(1, 998, 2, new byte[] {0, 1, 2}),
-                    DelegationSignerData.create(2, 99, 2, new byte[] {0, 1, 2})))
+                    DomainDsData.create(1, 998, 2, new byte[] {0, 1, 2}),
+                    DomainDsData.create(2, 99, 2, new byte[] {0, 1, 2})))
             .build());
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains("algorithm=998");
@@ -1023,9 +1023,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
 
   @Test
   void testFailure_secDnsTooManyDsRecords() throws Exception {
-    ImmutableSet.Builder<DelegationSignerData> builder = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<DomainDsData> builder = new ImmutableSet.Builder<>();
     for (int i = 0; i < 8; ++i) {
-      builder.add(DelegationSignerData.create(i, 2, 2, new byte[] {0, 1, 2}));
+      builder.add(DomainDsData.create(i, 2, 2, new byte[] {0, 1, 2}));
     }
 
     setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);

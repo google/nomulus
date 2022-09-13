@@ -43,7 +43,7 @@ import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -267,8 +267,7 @@ public class DomainToXjcConverterTest {
             .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
             .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
             .setDsData(
-                ImmutableSet.of(
-                    DelegationSignerData.create(123, 200, 230, base16().decode("1234567890"))))
+                ImmutableSet.of(DomainDsData.create(123, 200, 230, base16().decode("1234567890"))))
             .setDomainName(Idn.toASCII("love.みんな"))
             .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
             .setLastEppUpdateRegistrarId("TheRegistrar")

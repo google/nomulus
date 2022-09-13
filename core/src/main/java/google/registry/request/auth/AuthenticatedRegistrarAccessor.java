@@ -316,7 +316,7 @@ public class AuthenticatedRegistrarAccessor {
                   jpaTm()
                       .query(
                           "SELECT r FROM Registrar r INNER JOIN RegistrarPoc rp ON "
-                              + "r.clientIdentifier = rp.registrarId WHERE rp.gaeUserId = "
+                              + "r.registrarId = rp.registrarId WHERE rp.gaeUserId = "
                               + ":gaeUserId AND r.state != :state",
                           Registrar.class)
                       .setParameter("gaeUserId", user.getUserId())

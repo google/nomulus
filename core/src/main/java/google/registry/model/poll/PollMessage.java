@@ -386,7 +386,7 @@ public abstract class PollMessage extends ImmutableObject
     TransferResponse transferResponse;
 
     @Column(name = "transfer_response_domain_name")
-    String fullyQualifiedDomainName;
+    String domainName;
 
     @Column(name = "transfer_response_domain_expiration_time")
     DateTime extendedRegistrationExpirationTime;
@@ -427,7 +427,7 @@ public abstract class PollMessage extends ImmutableObject
                   pendingActionNotificationResponse.getActionResult(),
                   pendingActionNotificationResponse.getTrid(),
                   pendingActionNotificationResponse.processedDate);
-        } else if (fullyQualifiedDomainName != null) {
+        } else if (domainName != null) {
           pendingActionNotificationResponse =
               DomainPendingActionNotificationResponse.create(
                   pendingActionNotificationResponse.nameOrId.value,
@@ -457,10 +457,10 @@ public abstract class PollMessage extends ImmutableObject
                   .setPendingTransferExpirationTime(
                       transferResponse.getPendingTransferExpirationTime())
                   .build();
-        } else if (fullyQualifiedDomainName != null) {
+        } else if (domainName != null) {
           transferResponse =
               new DomainTransferResponse.Builder()
-                  .setFullyQualifiedDomainName(fullyQualifiedDomainName)
+                  .setDomainName(domainName)
                   .setGainingRegistrarId(transferResponse.getGainingRegistrarId())
                   .setLosingRegistrarId(transferResponse.getLosingRegistrarId())
                   .setTransferStatus(transferResponse.getTransferStatus())
@@ -486,7 +486,7 @@ public abstract class PollMessage extends ImmutableObject
         OneTime instance = getInstance();
         // Note: In its current form, the code will basically just ignore everything but the first
         // PendingActionNotificationResponse and TransferResponse in responseData, and will override
-        // any identifier fields (e.g. contactId, fullyQualifiedDomainName) obtained from the
+        // any identifier fields (e.g. contactId, domainName) obtained from the
         // PendingActionNotificationResponse if a TransferResponse is found with different values
         // for those fields.  It is not clear what the constraints should be on this data or
         // whether we should enforce them here, though historically we have not, so the current
@@ -507,8 +507,7 @@ public abstract class PollMessage extends ImmutableObject
           instance.contactId = instance.pendingActionNotificationResponse.nameOrId.value;
         } else if (instance.pendingActionNotificationResponse
             instanceof DomainPendingActionNotificationResponse) {
-          instance.fullyQualifiedDomainName =
-              instance.pendingActionNotificationResponse.nameOrId.value;
+          instance.domainName = instance.pendingActionNotificationResponse.nameOrId.value;
         } else if (instance.pendingActionNotificationResponse
             instanceof HostPendingActionNotificationResponse) {
           instance.hostId = instance.pendingActionNotificationResponse.nameOrId.value;
@@ -527,7 +526,7 @@ public abstract class PollMessage extends ImmutableObject
           instance.contactId = ((ContactTransferResponse) instance.transferResponse).getContactId();
         } else if (instance.transferResponse instanceof DomainTransferResponse) {
           DomainTransferResponse response = (DomainTransferResponse) instance.transferResponse;
-          instance.fullyQualifiedDomainName = response.getFullyQualifiedDomainName();
+          instance.domainName = response.getDomainName();
           instance.extendedRegistrationExpirationTime =
               response.getExtendedRegistrationExpirationTime();
         }

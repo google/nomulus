@@ -58,8 +58,8 @@ public final class ForeignKeyUtils {
       RESOURCE_TYPE_TO_FK_PROPERTY =
           ImmutableMap.of(
               Contact.class, "contactId",
-              Domain.class, "fullyQualifiedDomainName",
-              Host.class, "fullyQualifiedHostName");
+              Domain.class, "domainName",
+              Host.class, "hostName");
 
   /**
    * Loads a {@link VKey} to an {@link EppResource} from the database by foreign key.

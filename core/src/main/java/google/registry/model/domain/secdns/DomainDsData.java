@@ -17,7 +17,7 @@ package google.registry.model.domain.secdns;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.ImmutableObject;
-import google.registry.model.domain.secdns.DelegationSignerData.DomainDsDataId;
+import google.registry.model.domain.secdns.DomainDsData.DomainDsDataId;
 import java.io.Serializable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -34,15 +34,14 @@ import javax.xml.bind.annotation.XmlType;
  *
  * @see <a href="http://tools.ietf.org/html/rfc5910">RFC 5910</a>
  * @see <a href="http://tools.ietf.org/html/rfc4034">RFC 4034</a>
- *     <p>TODO(b/177567432): Rename this class to DomainDsData.
  */
 @XmlType(name = "dsData")
 @Entity
 @IdClass(DomainDsDataId.class)
-@Table(indexes = @Index(columnList = "domainRepoId"))
-public class DelegationSignerData extends DomainDsDataBase {
+@Table(name = "DelegationSignerData", indexes = @Index(columnList = "domainRepoId"))
+public class DomainDsData extends DomainDsDataBase {
 
-  private DelegationSignerData() {}
+  private DomainDsData() {}
 
   @Override
   @Id
@@ -79,21 +78,21 @@ public class DelegationSignerData extends DomainDsDataBase {
     return super.getDigest();
   }
 
-  public DelegationSignerData cloneWithDomainRepoId(String domainRepoId) {
-    DelegationSignerData clone = clone(this);
+  public DomainDsData cloneWithDomainRepoId(String domainRepoId) {
+    DomainDsData clone = clone(this);
     clone.domainRepoId = checkArgumentNotNull(domainRepoId);
     return clone;
   }
 
-  public DelegationSignerData cloneWithoutDomainRepoId() {
-    DelegationSignerData clone = clone(this);
+  public DomainDsData cloneWithoutDomainRepoId() {
+    DomainDsData clone = clone(this);
     clone.domainRepoId = null;
     return clone;
   }
 
-  public static DelegationSignerData create(
+  public static DomainDsData create(
       int keyTag, int algorithm, int digestType, byte[] digest, String domainRepoId) {
-    DelegationSignerData instance = new DelegationSignerData();
+    DomainDsData instance = new DomainDsData();
     instance.keyTag = keyTag;
     instance.algorithm = algorithm;
     instance.digestType = digestType;
@@ -102,17 +101,15 @@ public class DelegationSignerData extends DomainDsDataBase {
     return instance;
   }
 
-  public static DelegationSignerData create(
-      int keyTag, int algorithm, int digestType, byte[] digest) {
+  public static DomainDsData create(int keyTag, int algorithm, int digestType, byte[] digest) {
     return create(keyTag, algorithm, digestType, digest, null);
   }
 
-  public static DelegationSignerData create(
-      int keyTag, int algorithm, int digestType, String digestAsHex) {
+  public static DomainDsData create(int keyTag, int algorithm, int digestType, String digestAsHex) {
     return create(keyTag, algorithm, digestType, DatatypeConverter.parseHexBinary(digestAsHex));
   }
 
-  public static DelegationSignerData create(DomainDsDataHistory history) {
+  public static DomainDsData create(DomainDsDataHistory history) {
     return create(
         history.keyTag,
         history.algorithm,
@@ -121,7 +118,7 @@ public class DelegationSignerData extends DomainDsDataBase {
         history.domainRepoId);
   }
 
-  /** Class to represent the composite primary key of {@link DelegationSignerData} entity. */
+  /** Class to represent the composite primary key of {@link DomainDsData} entity. */
   static class DomainDsDataId extends ImmutableObject implements Serializable {
 
     String domainRepoId;

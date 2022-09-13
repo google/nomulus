@@ -37,7 +37,7 @@ import google.registry.dns.writer.BaseDnsWriter;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.dns.writer.DnsWriterZone;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
 import google.registry.model.tld.Registries;
 import google.registry.util.Clock;
@@ -134,10 +134,10 @@ public class CloudDnsWriter extends BaseDnsWriter {
     ImmutableSet.Builder<ResourceRecordSet> domainRecords = new ImmutableSet.Builder<>();
 
     // Construct DS records (if any).
-    Set<DelegationSignerData> dsData = domain.get().getDsData();
+    Set<DomainDsData> dsData = domain.get().getDsData();
     if (!dsData.isEmpty()) {
       HashSet<String> dsRrData = new HashSet<>();
-      for (DelegationSignerData ds : dsData) {
+      for (DomainDsData ds : dsData) {
         dsRrData.add(ds.toRrData());
       }
 

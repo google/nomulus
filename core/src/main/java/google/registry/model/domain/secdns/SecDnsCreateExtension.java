@@ -36,13 +36,13 @@ public class SecDnsCreateExtension extends ImmutableObject implements CommandExt
   Long maxSigLife;
 
   /** Signatures for this domain. */
-  Set<DelegationSignerData> dsData;
+  Set<DomainDsData> dsData;
 
   public Long getMaxSigLife() {
     return maxSigLife;
   }
 
-  public ImmutableSet<DelegationSignerData> getDsData() {
+  public ImmutableSet<DomainDsData> getDsData() {
     return nullSafeImmutableCopy(dsData);
   }
 }

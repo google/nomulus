@@ -1,7 +1,7 @@
 The following changes were made in registry unittest environment to the registrar TheRegistrar by user user@email.com:
 
 whoisServer: null -> foo.bar.baz
-ipAddressWhitelist: null -> [1.1.1.1/32, 2.2.2.2/32, 4.4.4.4/32]
+ipAddressAllowList: null -> [1.1.1.1/32, 2.2.2.2/32, 4.4.4.4/32]
 localizedAddress.street.0: 123 Example Bőulevard -> 123 Street Rd
 localizedAddress.street.1: null -> Ste 156
 localizedAddress.city: Williamsburg -> New York

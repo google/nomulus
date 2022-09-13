@@ -26,7 +26,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-/** Base class for {@link DelegationSignerData} and {@link DomainDsDataHistory}. */
+/** Base class for {@link DomainDsData} and {@link DomainDsDataHistory}. */
 @MappedSuperclass
 @Access(AccessType.FIELD)
 public abstract class DomainDsDataBase extends ImmutableObject implements UnsafeSerializable {

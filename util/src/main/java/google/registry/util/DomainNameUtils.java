@@ -61,14 +61,12 @@ public final class DomainNameUtils {
    * google.registry.model.tld.Registries#findTldForName(InternetDomainName)
    * Registries#findTldForName}, which will work on hostnames in addition to domains.
    *
-   * @param fullyQualifiedDomainName must be a punycode SLD (not a host or unicode)
+   * @param domainName must be a punycode SLD (not a host or unicode)
    * @throws IllegalArgumentException if there is no TLD
    */
-  public static String getTldFromDomainName(String fullyQualifiedDomainName) {
-    checkArgument(
-        !Strings.isNullOrEmpty(fullyQualifiedDomainName),
-        "fullyQualifiedDomainName cannot be null or empty");
-    return getTldFromDomainName(InternetDomainName.from(fullyQualifiedDomainName));
+  public static String getTldFromDomainName(String domainName) {
+    checkArgument(!Strings.isNullOrEmpty(domainName), "domainName cannot be null or empty");
+    return getTldFromDomainName(InternetDomainName.from(domainName));
   }
 
   /**

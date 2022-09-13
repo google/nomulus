@@ -36,7 +36,7 @@ public class HostCommand {
   @XmlTransient
   abstract static class HostCreateOrChange extends AbstractSingleResourceCommand
       implements ResourceCreateOrChange<Host.Builder> {
-    public String getFullyQualifiedHostName() {
+    public String getHostName() {
       return getTargetId();
     }
   }

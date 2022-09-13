@@ -72,11 +72,9 @@ public class ClaimsList extends ImmutableObject {
    * <p>Note that the value of this field is parsed from the claims list file(See this <a
    * href="https://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.1">RFC</>), it is
    * the DNL List creation datetime from the rfc.
-   *
-   * <p>TODO(b/177567432): Rename this field to tmdbGenerationTime.
    */
-  @Column(name = "tmdb_generation_time", nullable = false)
-  DateTime creationTime;
+  @Column(nullable = false)
+  DateTime tmdbGenerationTime;
 
   /**
    * A map from labels to claims keys.
@@ -143,7 +141,7 @@ public class ClaimsList extends ImmutableObject {
    *     creation datetime</a>
    */
   public DateTime getTmdbGenerationTime() {
-    return creationTime;
+    return tmdbGenerationTime;
   }
 
   /** Returns the creation time of this claims list. */
@@ -225,7 +223,7 @@ public class ClaimsList extends ImmutableObject {
   public static ClaimsList create(
       DateTime tmdbGenerationTime, ImmutableMap<String, String> labelsToKeys) {
     ClaimsList instance = new ClaimsList();
-    instance.creationTime = checkNotNull(tmdbGenerationTime);
+    instance.tmdbGenerationTime = checkNotNull(tmdbGenerationTime);
     instance.labelsToKeys = checkNotNull(labelsToKeys);
     return instance;
   }

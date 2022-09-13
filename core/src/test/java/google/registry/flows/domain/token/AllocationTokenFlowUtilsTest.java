@@ -406,7 +406,7 @@ class AllocationTokenFlowUtilsTest {
 
   private static DomainCommand.Create createCommand(String domainName) {
     DomainCommand.Create command = mock(DomainCommand.Create.class);
-    when(command.getFullyQualifiedDomainName()).thenReturn(domainName);
+    when(command.getDomainName()).thenReturn(domainName);
     return command;
   }
 

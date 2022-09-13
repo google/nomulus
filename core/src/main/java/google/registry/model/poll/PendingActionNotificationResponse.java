@@ -91,10 +91,10 @@ public class PendingActionNotificationResponse extends ImmutableObject
     }
 
     public static DomainPendingActionNotificationResponse create(
-        String fullyQualifiedDomainName, boolean actionResult, Trid trid, DateTime processedDate) {
+        String domainName, boolean actionResult, Trid trid, DateTime processedDate) {
       return init(
           new DomainPendingActionNotificationResponse(),
-          fullyQualifiedDomainName,
+          domainName,
           actionResult,
           trid,
           processedDate);
@@ -140,13 +140,9 @@ public class PendingActionNotificationResponse extends ImmutableObject
     }
 
     public static HostPendingActionNotificationResponse create(
-        String fullyQualifiedHostName, boolean actionResult, Trid trid, DateTime processedDate) {
+        String hostName, boolean actionResult, Trid trid, DateTime processedDate) {
       return init(
-          new HostPendingActionNotificationResponse(),
-          fullyQualifiedHostName,
-          actionResult,
-          trid,
-          processedDate);
+          new HostPendingActionNotificationResponse(), hostName, actionResult, trid, processedDate);
     }
   }
 }

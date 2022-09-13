@@ -134,7 +134,7 @@ public final class HostCreateFlow implements TransactionalFlow {
               superordinateDomain
                   .get()
                   .asBuilder()
-                  .addSubordinateHost(command.getFullyQualifiedHostName())
+                  .addSubordinateHost(command.getHostName())
                   .build());
       // Only update DNS if this is a subordinate host. External hosts have no glue to write, so
       // they are only written as NS records from the referencing domain.

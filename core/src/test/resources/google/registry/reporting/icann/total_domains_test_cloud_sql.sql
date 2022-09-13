@@ -15,7 +15,7 @@
 
   -- Determine the number of domains each registrar sponsors per tld.
 
-  -- This is just the number of fullyQualifiedDomainNames under each
+  -- This is just the number of domainNames under each
   -- tld-registrar pair.
 
 SELECT
