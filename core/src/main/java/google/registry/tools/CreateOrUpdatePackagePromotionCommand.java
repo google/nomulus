@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.beust.jcommander.Parameter;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.PackagePromotion;
 import google.registry.persistence.VKey;
 import java.util.Date;
@@ -58,22 +59,22 @@ abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
       description = "The next date that the package should be billed for its annual fee")
   Date nextBillingDate;
 
-  /** Returns the existing PackagePromotion. Subclasses can override this. */
+  /** Returns the existing PackagePromotion or null if it does not exist. */
   @Nullable
-  PackagePromotion getOldPackagePromotion(String token) {
-    Optional<PackagePromotion> oldPackage = PackagePromotion.loadByTokenString(token);
-    checkArgument(oldPackage.isPresent(), "PackagePromotion with token %s does not exist", token);
-    return oldPackage.get();
-  }
+  abstract PackagePromotion getOldPackagePromotion(String token);
 
-  /** Returns the allocation token object. Subclasses can override this to add different checks. */
+  /** Returns the allocation token object. */
   AllocationToken getAndCheckAllocationToken(String token) {
     Optional<AllocationToken> allocationToken =
         tm().transact(() -> tm().loadByKeyIfPresent(VKey.createSql(AllocationToken.class, token)));
     checkArgument(
         allocationToken.isPresent(),
-        "An allocation token with the token String %s does not exist",
+        "An allocation token with the token String %s does not exist. The package token must be"
+            + " created first before it can be used to create a PackagePromotion",
         token);
+    checkArgument(
+        allocationToken.get().getTokenType().equals(TokenType.PACKAGE),
+        "The allocation token must be of the PACKAGE token type");
     return allocationToken.get();
   }
 

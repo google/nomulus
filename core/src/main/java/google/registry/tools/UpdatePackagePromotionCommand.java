@@ -13,8 +13,12 @@
 // limitations under the License.
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import google.registry.model.domain.token.PackagePromotion;
+import java.util.Optional;
 
 /** Command to update a PackagePromotion */
 @Parameters(separators = " =", commandDescription = "Update package promotion object(s)")
@@ -26,6 +30,13 @@ public final class UpdatePackagePromotionCommand extends CreateOrUpdatePackagePr
           "Clear the date last max-domain non-compliance notification was sent? (This should be"
               + " cleared whenever a tier is upgraded)")
   boolean clearLastNotificationSent;
+
+  @Override
+  PackagePromotion getOldPackagePromotion(String token) {
+    Optional<PackagePromotion> oldPackage = PackagePromotion.loadByTokenString(token);
+    checkArgument(oldPackage.isPresent(), "PackagePromotion with token %s does not exist", token);
+    return oldPackage.get();
+  }
 
   @Override
   boolean clearLastNotificationSent() {

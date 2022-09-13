@@ -14,14 +14,9 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameters;
-import google.registry.model.domain.token.AllocationToken;
-import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.PackagePromotion;
-import google.registry.persistence.VKey;
-import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
 /** Command to create a PackagePromotion */
@@ -40,21 +35,5 @@ public final class CreatePackagePromotionCommand extends CreateOrUpdatePackagePr
         "PackagePromotion with token %s already exists",
         tokenString);
     return null;
-  }
-
-  @Override
-  AllocationToken getAndCheckAllocationToken(String tokenString) {
-    Optional<AllocationToken> allocationToken =
-        tm().transact(
-                () -> tm().loadByKeyIfPresent(VKey.createSql(AllocationToken.class, tokenString)));
-    checkArgument(
-        allocationToken.isPresent(),
-        "An allocation token with the token String %s does not exist. The package token must be"
-            + " created first before it can be used to create a PackagePromotion",
-        tokenString);
-    checkArgument(
-        allocationToken.get().getTokenType().equals(TokenType.PACKAGE),
-        "The allocation token must be of the PACKAGE token type");
-    return allocationToken.get();
   }
 }
