@@ -27,7 +27,6 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
 import google.registry.util.NullIgnoringCollectionBuilder;
-import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
@@ -41,10 +40,7 @@ import javax.persistence.MappedSuperclass;
  * are implicitly transferred with their superordinate domain.
  */
 @MappedSuperclass
-public abstract class TransferData<
-        B extends
-            TransferData.Builder<? extends TransferData<?>, ? extends TransferData.Builder<?, ?>>>
-    extends BaseTransferObject implements Buildable {
+public abstract class TransferData extends BaseTransferObject implements Buildable {
 
   /** The transaction id of the most recent transfer request (or null if there never was one). */
   @Embedded
@@ -102,6 +98,8 @@ public abstract class TransferData<
   @Override
   public abstract Builder<?, ?> asBuilder();
 
+  protected abstract Builder<?, ?> createEmptyBuilder();
+
   /**
    * Returns a fresh Builder populated only with the constant fields of this TransferData, i.e.
    * those that are fixed and unchanging throughout the transfer process.
@@ -116,8 +114,8 @@ public abstract class TransferData<
    *   <li>transferPeriod
    * </ul>
    */
-  public B copyConstantFieldsToBuilder() {
-    B newBuilder = new TypeInstantiator<B>(getClass()) {}.instantiate();
+  public Builder<?, ?> copyConstantFieldsToBuilder() {
+    Builder<?, ?> newBuilder = createEmptyBuilder();
     newBuilder
         .setTransferRequestTrid(transferRequestTrid)
         .setTransferRequestTime(transferRequestTime)
@@ -129,7 +127,7 @@ public abstract class TransferData<
   /** Maps serverApproveEntities set to the individual fields. */
   static void mapServerApproveEntitiesToFields(
       Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities,
-      TransferData<?> transferData) {
+      TransferData transferData) {
     if (isNullOrEmpty(serverApproveEntities)) {
       transferData.pollMessageId1 = null;
       transferData.pollMessageId2 = null;
@@ -161,7 +159,7 @@ public abstract class TransferData<
   }
 
   /** Builder for {@link TransferData} because it is immutable. */
-  public abstract static class Builder<T extends TransferData<?>, B extends Builder<T, B>>
+  public abstract static class Builder<T extends TransferData, B extends Builder<T, B>>
       extends BaseTransferObject.Builder<T, B> {
 
     /** Create a {@link Builder} wrapping a new instance. */

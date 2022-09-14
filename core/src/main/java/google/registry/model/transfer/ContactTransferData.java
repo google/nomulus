@@ -18,12 +18,17 @@ import javax.persistence.Embeddable;
 
 /** Transfer data for contact. */
 @Embeddable
-public class ContactTransferData extends TransferData<ContactTransferData.Builder> {
+public class ContactTransferData extends TransferData {
   public static final ContactTransferData EMPTY = new ContactTransferData();
 
   @Override
   public boolean isEmpty() {
     return EMPTY.equals(this);
+  }
+
+  @Override
+  protected Builder createEmptyBuilder() {
+    return new Builder();
   }
 
   @Override

@@ -34,7 +34,7 @@ import org.joda.time.DateTime;
 
 /** Transfer data for domain. */
 @Embeddable
-public class DomainTransferData extends TransferData<DomainTransferData.Builder> {
+public class DomainTransferData extends TransferData {
   public static final DomainTransferData EMPTY = new DomainTransferData();
 
   /**
@@ -107,7 +107,7 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
 
   @Override
   public Builder copyConstantFieldsToBuilder() {
-    return super.copyConstantFieldsToBuilder().setTransferPeriod(transferPeriod);
+    return ((Builder) super.copyConstantFieldsToBuilder()).setTransferPeriod(transferPeriod);
   }
 
   public Period getTransferPeriod() {
@@ -155,6 +155,11 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @Override
   public boolean isEmpty() {
     return EMPTY.equals(this);
+  }
+
+  @Override
+  protected Builder createEmptyBuilder() {
+    return new Builder();
   }
 
   @Override
