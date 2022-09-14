@@ -153,6 +153,7 @@ import org.joda.time.Duration;
  * @error {@link DomainCreateFlow.MustHaveSignedMarksInCurrentPhaseException}
  * @error {@link DomainCreateFlow.NoGeneralRegistrationsInCurrentPhaseException}
  * @error {@link DomainCreateFlow.NoTrademarkedRegistrationsBeforeSunriseException}
+ * @error {@link DomainCreateFlow.PackageDomainRegisteredForTooManyYearsException}
  * @error {@link DomainCreateFlow.SignedMarksOnlyDuringSunriseException}
  * @error {@link DomainFlowTmchUtils.NoMarksFoundMatchingDomainException}
  * @error {@link DomainFlowTmchUtils.FoundMarkNotYetValidException}
@@ -391,6 +392,9 @@ public final class DomainCreateFlow implements TransactionalFlow {
             .build();
     if (allocationToken.isPresent()
         && allocationToken.get().getTokenType().equals(TokenType.PACKAGE)) {
+      if (years > 1) {
+        throw new PackageDomainRegisteredForTooManyYearsException(allocationToken.get().getToken());
+      }
       domain =
           domain.asBuilder().setCurrentPackageToken(allocationToken.get().createVKey()).build();
     }
@@ -753,6 +757,16 @@ public final class DomainCreateFlow implements TransactionalFlow {
           String.format(
               "Anchor tenant domain creates must be for a period of %s years, got %s instead.",
               ANCHOR_TENANT_CREATE_VALID_YEARS, invalidYears));
+    }
+  }
+
+  /** Package domain registered for too many years. */
+  static class PackageDomainRegisteredForTooManyYearsException extends CommandUseErrorException {
+    public PackageDomainRegisteredForTooManyYearsException(String token) {
+      super(
+          String.format(
+              "The package token %s cannot be used to register names for longer than 1 year.",
+              token));
     }
   }
 }

@@ -85,6 +85,7 @@ import google.registry.flows.domain.DomainCreateFlow.AnchorTenantCreatePeriodExc
 import google.registry.flows.domain.DomainCreateFlow.MustHaveSignedMarksInCurrentPhaseException;
 import google.registry.flows.domain.DomainCreateFlow.NoGeneralRegistrationsInCurrentPhaseException;
 import google.registry.flows.domain.DomainCreateFlow.NoTrademarkedRegistrationsBeforeSunriseException;
+import google.registry.flows.domain.DomainCreateFlow.PackageDomainRegisteredForTooManyYearsException;
 import google.registry.flows.domain.DomainCreateFlow.RenewalPriceInfo;
 import google.registry.flows.domain.DomainCreateFlow.SignedMarksOnlyDuringSunriseException;
 import google.registry.flows.domain.DomainFlowTmchUtils.FoundMarkExpiredException;
@@ -3142,11 +3143,40 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     setEppInput(
         "domain_create_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "1"));
     runFlowAssertResponse(
-        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
+        loadFile(
+            "domain_create_response_wildcard.xml",
+            new ImmutableMap.Builder<String, String>()
+                .put("DOMAIN", "example.tld")
+                .put("CRDATE", "1999-04-03T22:00:00.0Z")
+                .put("EXDATE", "2000-04-03T22:00:00.0Z")
+                .build()));
     Domain domain = reloadResourceByForeignKey();
     assertThat(domain.getCurrentPackageToken()).isPresent();
     Truth8.assertThat(domain.getCurrentPackageToken()).hasValue(token.createVKey());
+  }
+
+  @Test
+  void testFailure_packageToken_registrationTooLong() throws Exception {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(PACKAGE)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setRenewalPriceBehavior(SPECIFIED)
+                .build());
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    EppException thrown =
+        assertThrows(PackageDomainRegisteredForTooManyYearsException.class, this::runFlow);
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "The package token abc123 cannot be used to register names for longer than 1 year.");
   }
 }
