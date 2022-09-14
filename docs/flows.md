@@ -311,6 +311,7 @@ An EPP flow that creates a new domain resource.
     *   Registrar is not logged in.
     *   The current registry phase allows registrations only with signed marks.
     *   The current registry phase does not allow for general registrations.
+    *   Package domain registered for too many years.
     *   Signed marks are only allowed during sunrise.
     *   An allocation token was provided that is invalid for premium domains.
 *   2003

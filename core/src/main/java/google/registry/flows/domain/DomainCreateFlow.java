@@ -153,6 +153,7 @@ import org.joda.time.Duration;
  * @error {@link DomainCreateFlow.MustHaveSignedMarksInCurrentPhaseException}
  * @error {@link DomainCreateFlow.NoGeneralRegistrationsInCurrentPhaseException}
  * @error {@link DomainCreateFlow.NoTrademarkedRegistrationsBeforeSunriseException}
+ * @error {@link DomainCreateFlow.PackageDomainRegisteredForTooManyYearsException}
  * @error {@link DomainCreateFlow.SignedMarksOnlyDuringSunriseException}
  * @error {@link DomainFlowTmchUtils.NoMarksFoundMatchingDomainException}
  * @error {@link DomainFlowTmchUtils.FoundMarkNotYetValidException}
