@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.tools.javascrap.CompareEscrowDepositsCommand;
+import google.registry.tools.javascrap.CreateCancellationsForOneTimesCommand;
 
 /** Container class to create and run remote commands against a Datastore instance. */
 public final class RegistryTool {
@@ -36,6 +37,7 @@ public final class RegistryTool {
           .put("convert_idn", ConvertIdnCommand.class)
           .put("count_domains", CountDomainsCommand.class)
           .put("create_anchor_tenant", CreateAnchorTenantCommand.class)
+          .put("create_cancellations_for_one_times", CreateCancellationsForOneTimesCommand.class)
           .put("create_cdns_tld", CreateCdnsTld.class)
           .put("create_contact", CreateContactCommand.class)
           .put("create_domain", CreateDomainCommand.class)
