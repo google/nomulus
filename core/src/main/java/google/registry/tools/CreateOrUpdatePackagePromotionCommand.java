@@ -83,11 +83,8 @@ abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
     return false;
   }
 
-  protected void initPackagePromotionCommand() {}
-
   @Override
   protected final void init() throws Exception {
-    initPackagePromotionCommand();
     for (String token : mainParameters) {
       PackagePromotion oldPackage = getOldPackagePromotion(token);
       checkArgument(
