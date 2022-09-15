@@ -662,6 +662,25 @@ CREATE TABLE public."PackagePromotion" (
 
 
 --
+-- Name: Package_promotion_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."Package_promotion_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: Package_promotion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."Package_promotion_id_seq" OWNED BY public."PackagePromotion".package_promotion_id;
+
+
+--
 -- Name: PollMessage; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1102,6 +1121,13 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 --
 
 ALTER TABLE ONLY public."DomainTransactionRecord" ALTER COLUMN id SET DEFAULT nextval('public."DomainTransactionRecord_id_seq"'::regclass);
+
+
+--
+-- Name: PackagePromotion package_promotion_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PackagePromotion" ALTER COLUMN package_promotion_id SET DEFAULT nextval('public."Package_promotion_id_seq"'::regclass);
 
 
 --
