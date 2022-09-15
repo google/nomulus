@@ -44,7 +44,7 @@ import javax.inject.Inject;
 
 /**
  * Hard deletes load-test Contacts, Hosts, their subordinate history entries, and the associated
- * ForeignKey and EppResourceIndex entities.
+ * ForeignKey entities.
  *
  * <p>This only deletes contacts and hosts, NOT domains. To delete domains, use {@link
  * DeleteProberDataAction} and pass it the TLD(s) that the load test domains were created on. Note

@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntitiesIfPresent;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
@@ -30,12 +29,10 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryEnvironment;
 import google.registry.dns.DnsQueue;
 import google.registry.model.ImmutableObject;
@@ -43,8 +40,6 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.index.EppResourceIndex;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
@@ -279,8 +274,7 @@ class DeleteProberDataActionTest {
   }
 
   /**
-   * Persists and returns a domain and a descendant history entry, billing event, and poll message,
-   * along with the ForeignKeyIndex and EppResourceIndex.
+   * Persists and returns a domain and a descendant history entry, billing event, and poll message.
    */
   private static Set<ImmutableObject> persistDomainAndDescendants(String fqdn) {
     Domain domain = persistDeletedDomain(fqdn, DELETION_TIME);
@@ -318,11 +312,6 @@ class DeleteProberDataActionTest {
             .add(historyEntry)
             .add(billingEvent)
             .add(pollMessage);
-    if (tm().isOfy()) {
-      builder
-          .add(ForeignKeyIndex.load(Domain.class, fqdn, START_OF_TIME))
-          .add(loadByEntity(EppResourceIndex.create(Key.create(domain))));
-    }
     return builder.build();
   }
 

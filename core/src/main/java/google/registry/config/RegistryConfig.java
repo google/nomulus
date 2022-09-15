@@ -1482,11 +1482,6 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().registryPolicy.defaultRegistrarWhoisServer;
   }
 
-  /** Returns the number of {@code EppResourceIndex} buckets to be used. */
-  public static int getEppResourceIndexBucketCount() {
-    return CONFIG_SETTINGS.get().datastore.eppResourceIndexBucketsNum;
-  }
-
   /** Returns the base retry duration that gets doubled after each failure within {@code Ofy}. */
   public static Duration getBaseOfyRetryDuration() {
     return Duration.millis(CONFIG_SETTINGS.get().datastore.baseOfyRetryMillis);

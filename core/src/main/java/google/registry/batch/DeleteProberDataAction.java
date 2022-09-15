@@ -53,7 +53,7 @@ import org.joda.time.Duration;
 
 /**
  * Deletes all prober {@link Domain}s and their subordinate history entries, poll messages, and
- * billing events, along with their ForeignKeyDomainIndex and EppResourceIndex entities.
+ * billing events, along with their ForeignKeyDomainIndex entities.
  */
 @Action(
     service = Action.Service.BACKEND,

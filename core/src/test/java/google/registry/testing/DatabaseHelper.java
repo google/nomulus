@@ -51,7 +51,6 @@ import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -59,7 +58,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
@@ -88,8 +86,6 @@ import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
-import google.registry.model.index.EppResourceIndex;
-import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registrar.Registrar;
@@ -119,6 +115,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -127,7 +124,7 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 
 /** Static utils for setting up test resources. */
-public class DatabaseHelper {
+public final class DatabaseHelper {
 
   // If the clock is defined, it will always be advanced by one millsecond after a transaction.
   private static FakeClock clock;
@@ -321,10 +318,8 @@ public class DatabaseHelper {
   /** Persists a domain and enqueues a LORDN task of the appropriate type for it. */
   public static Domain persistDomainAndEnqueueLordn(final Domain domain) {
     final Domain persistedDomain = persistResource(domain);
-    /**
-     * Calls {@link LordnTaskUtils#enqueueDomainTask} wrapped in a transaction so that the
-     * transaction time is set correctly.
-     */
+    // Calls {@link LordnTaskUtils#enqueueDomainTask} wrapped in a transaction so that the
+    // transaction time is set correctly.
     tm().transactNew(() -> LordnTaskUtils.enqueueDomainTask(persistedDomain));
     maybeAdvanceClock();
     return persistedDomain;
@@ -995,8 +990,7 @@ public class DatabaseHelper {
       saver.accept(resource);
       if (resource instanceof EppResource) {
         EppResource eppResource = (EppResource) resource;
-        persistEppResourceExtras(
-            eppResource, EppResourceIndex.create(Key.create(eppResource)), saver);
+        persistEppResourceExtras(eppResource, saver);
       }
     } else {
       tm().put(resource);
@@ -1004,11 +998,10 @@ public class DatabaseHelper {
   }
 
   private static <R extends EppResource> void persistEppResourceExtras(
-      R resource, EppResourceIndex index, Consumer<ImmutableObject> saver) {
+      R resource, Consumer<ImmutableObject> saver) {
     assertWithMessage("Cannot persist an EppResource with a missing repoId in tests")
         .that(resource.getRepoId())
         .isNotEmpty();
-    saver.accept(index);
   }
 
   /** Persists an object in the DB for tests. */
@@ -1022,25 +1015,6 @@ public class DatabaseHelper {
     // Datastore and not from the session cache. This is needed to trigger Objectify's load process
     // (unmarshalling entity protos to POJOs, nulling out empty collections, calling @OnLoad
     // methods, etc.) which is bypassed for entities loaded from the session cache.
-    tm().clearSessionCache();
-    return tm().transact(() -> tm().loadByEntity(resource));
-  }
-
-  /** Persists an EPP resource with the {@link EppResourceIndex} always going into bucket one. */
-  public static <R extends EppResource> R persistEppResourceInFirstBucket(final R resource) {
-    final EppResourceIndex eppResourceIndex =
-        EppResourceIndex.create(Key.create(EppResourceIndexBucket.class, 1), Key.create(resource));
-    tm().transact(
-            () -> {
-              if (tm().isOfy()) {
-                Consumer<ImmutableObject> saver = tm()::put;
-                saver.accept(resource);
-                persistEppResourceExtras(resource, eppResourceIndex, saver);
-              } else {
-                tm().put(resource);
-              }
-            });
-    maybeAdvanceClock();
     tm().clearSessionCache();
     return tm().transact(() -> tm().loadByEntity(resource));
   }
@@ -1070,7 +1044,7 @@ public class DatabaseHelper {
    * <p><b>Warning:</b> If you call this multiple times in a single test, you need to inject Ofy's
    * clock field and forward it by a millisecond between each subsequent call.
    *
-   * @see #persistResource(Object)
+   * @see #persistResource(ImmutableObject)
    */
   public static <R extends EppResource> R persistEppResource(final R resource) {
     checkState(!tm().inTransaction());
@@ -1095,7 +1069,7 @@ public class DatabaseHelper {
   }
 
   /**
-   * Returns all of the history entries that are parented off the given EppResource, casted to the
+   * Returns all of the history entries that are parented off the given EppResource, cast to the
    * corresponding subclass.
    */
   public static <T extends HistoryEntry> List<T> getHistoryEntries(
@@ -1116,7 +1090,7 @@ public class DatabaseHelper {
 
   /**
    * Returns all of the history entries that are parented off the given EppResource with the given
-   * type and casted to the corresponding subclass.
+   * type and cast to the corresponding subclass.
    */
   public static <T extends HistoryEntry> ImmutableList<T> getHistoryEntriesOfType(
       EppResource resource, final HistoryEntry.Type type, Class<T> subclazz) {
@@ -1135,8 +1109,8 @@ public class DatabaseHelper {
   }
 
   /**
-   * Returns the only history entry of the given type, casted to the corresponding subtype, and
-   * throws an AssertionError if there are zero or more than one.
+   * Returns the only history entry of the given type, cast to the corresponding subtype, and throws
+   * an AssertionError if there are zero or more than one.
    */
   public static <T extends HistoryEntry> T getOnlyHistoryEntryOfType(
       EppResource resource, final HistoryEntry.Type type, Class<T> subclazz) {

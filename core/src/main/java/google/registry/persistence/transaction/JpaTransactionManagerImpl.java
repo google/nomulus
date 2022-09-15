@@ -30,7 +30,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.ImmutableObject;
-import google.registry.model.index.EppResourceIndex;
 import google.registry.persistence.JpaRetries;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
@@ -73,14 +72,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Retrier retrier = new Retrier(new SystemSleeper(), 3);
-
-  // The entity of classes in this set will be simply ignored when passed to modification
-  // operations, i.e. insert, put, update and delete. This is to help maintain a single code path
-  // when we switch from ofy to tm() for the database migration as we don't need have a condition
-  // to exclude the Datastore specific entities when the underlying tm() is jpaTm().
-  // TODO(b/176108270): Remove this property after database migration.
-  private static final ImmutableSet<Class<? extends ImmutableObject>> IGNORED_ENTITY_CLASSES =
-      ImmutableSet.of(EppResourceIndex.class);
 
   // EntityManagerFactory is thread safe.
   private final EntityManagerFactory emf;
@@ -267,9 +258,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public void insert(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
-    if (isEntityOfIgnoredClass(entity)) {
-      return;
-    }
     assertInTransaction();
     transactionInfo.get().insertObject(entity);
   }
@@ -289,9 +277,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public void put(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
-    if (isEntityOfIgnoredClass(entity)) {
-      return;
-    }
     assertInTransaction();
     transactionInfo.get().updateObject(entity);
   }
@@ -315,9 +300,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public void update(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
-    if (isEntityOfIgnoredClass(entity)) {
-      return;
-    }
     assertInTransaction();
     checkArgument(exists(entity), "Given entity does not exist");
     transactionInfo.get().updateObject(entity);
@@ -472,9 +454,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private int internalDelete(VKey<?> key) {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
-    if (IGNORED_ENTITY_CLASSES.contains(key.getKind())) {
-      return 0;
-    }
     EntityType<?> entityType = getEntityType(key.getKind());
     ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getSqlKey());
     String sql =
@@ -498,9 +477,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public <T> T delete(T entity) {
     checkArgumentNotNull(entity, "entity must be specified");
-    if (isEntityOfIgnoredClass(entity)) {
-      return entity;
-    }
     assertInTransaction();
     T managedEntity = entity;
     if (!getEntityManager().contains(entity)) {
@@ -547,10 +523,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       this.name = name;
       this.value = value;
     }
-  }
-
-  private static boolean isEntityOfIgnoredClass(Object entity) {
-    return IGNORED_ENTITY_CLASSES.contains(entity.getClass());
   }
 
   private static ImmutableSet<EntityId> getEntityIdsFromEntity(
@@ -615,12 +587,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   /** Gets the field definition from clazz or any superclass. */
-  private static Field getField(Class clazz, String fieldName) throws NoSuchFieldException {
+  private static Field getField(Class<?> clazz, String fieldName) throws NoSuchFieldException {
     try {
       // Note that we have to use getDeclaredField() for this, getField() just finds public fields.
       return clazz.getDeclaredField(fieldName);
     } catch (NoSuchFieldException e) {
-      Class base = clazz.getSuperclass();
+      Class<?> base = clazz.getSuperclass();
       if (base != null) {
         return getField(base, fieldName);
       } else {
