@@ -274,7 +274,7 @@ public final class DomainTransferUtils {
    * renewal, we must issue a cancellation for the autorenew, so that the losing registrar will not
    * be charged (essentially, the gaining registrar takes on the cost of the year of registration
    * that the autorenew just added). But, if the superuser extension is used to request a transfer
-   * without an additional year then the gaining registrar is not charged for the one year renewal
+   * without an additional year then the gaining registrar is not charged for the one-year renewal
    * and the losing registrar still needs to be charged for the auto-renew.
    *
    * <p>For details on the policy justification, see b/19430703#comment17 and <a
