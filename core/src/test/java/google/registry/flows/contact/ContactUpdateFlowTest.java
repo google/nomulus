@@ -52,7 +52,6 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
   }
 
   private void doSuccessfulTest() throws Exception {
-    persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
@@ -83,6 +82,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
 
   @Test
   void testSuccess() throws Exception {
+    persistActiveContact(getUniqueIdFromCommand());
     doSuccessfulTest();
   }
 
@@ -403,6 +403,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
   @Test
   void testSuccess_nonAsciiInLocAddress() throws Exception {
     setEppInput("contact_update_hebrew_loc.xml");
+    persistActiveContact(getUniqueIdFromCommand());
     doSuccessfulTest();
   }
 

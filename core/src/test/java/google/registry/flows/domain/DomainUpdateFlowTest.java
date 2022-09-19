@@ -1475,9 +1475,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   void testFailure_addPendingDeleteContact() throws Exception {
     persistReferencedEntities();
     persistDomain();
-    persistActiveHost("ns1.example.foo");
-    persistActiveHost("ns2.example.foo");
-    persistActiveContact("sh8013");
     persistResource(
         loadByForeignKey(Contact.class, "mak21", clock.nowUtc())
             .get()
@@ -1494,9 +1491,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   void testFailure_addPendingDeleteHost() throws Exception {
     persistReferencedEntities();
     persistDomain();
-    persistActiveHost("ns1.example.foo");
-    persistActiveContact("mak21");
-    persistActiveContact("sh8013");
     persistResource(
         loadByForeignKey(Host.class, "ns2.example.foo", clock.nowUtc())
             .get()

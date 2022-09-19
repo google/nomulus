@@ -31,6 +31,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.Domain;
@@ -38,7 +39,6 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.util.Clock;
@@ -88,7 +88,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
         new ImmutableMap.Builder<>();
 
     for (String domainName : mainParameters) {
-      if (ForeignKeyIndex.load(Domain.class, domainName, START_OF_TIME) == null) {
+      if (ForeignKeyUtils.load(Domain.class, domainName, START_OF_TIME) == null) {
         domainsNonexistentBuilder.add(domainName);
         continue;
       }

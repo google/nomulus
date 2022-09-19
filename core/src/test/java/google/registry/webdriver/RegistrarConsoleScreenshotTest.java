@@ -398,7 +398,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     server.runInAppEngineEnvironment(
         () -> {
           createTld("tld");
-          persistResource(DatabaseHelper.newDomain("example.tld"));
+          persistResource(DatabaseHelper.newDomain("example-lock.tld"));
           saveRegistryLock(
               new RegistryLock.Builder()
                   .setRegistrarPocId("johndoe@theregistrar.com")
@@ -406,7 +406,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
                   .setRegistrarId("TheRegistrar")
                   .setVerificationCode("f1be78a2-2d61-458c-80f0-9dd8f2f8625f")
                   .isSuperuser(false)
-                  .setDomainName("example.tld")
+                  .setDomainName("example-lock.tld")
                   .build());
           return null;
         });

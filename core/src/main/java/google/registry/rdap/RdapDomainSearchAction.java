@@ -16,7 +16,6 @@ package google.registry.rdap;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
-import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -36,6 +35,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Booleans;
 import com.googlecode.objectify.cmd.Query;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
@@ -331,9 +331,9 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
       return getNameserverRefsByLdhNameWithSuffix(partialStringQuery);
     }
     // If there's no suffix, query the host resources. Query the resources themselves, rather than
-    // the foreign key indexes, because then we have an index on fully qualified host name and
-    // deletion time, so we can check the deletion status in the query itself. The initial string
-    // must be present, to avoid querying every host in the system. This restriction is enforced by
+    // the foreign keys, because then we have an index on fully qualified host name and deletion
+    // time, so we can check the deletion status in the query itself. The initial string must be
+    // present, to avoid querying every host in the system. This restriction is enforced by
     // {@link queryItems}.
     //
     // Only return the first maxNameserversInFirstStage nameservers. This could result in an
@@ -400,7 +400,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
           : ImmutableList.of(host.get().createVKey());
     } else {
       VKey<Host> hostKey =
-          loadAndGetKey(
+          ForeignKeyUtils.load(
               Host.class,
               partialStringQuery.getInitialString(),
               shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
@@ -442,7 +442,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
           }
         } else {
           VKey<Host> hostKey =
-              loadAndGetKey(
+              ForeignKeyUtils.load(
                   Host.class, fqhn, shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
           if (hostKey != null) {
             builder.add(hostKey);

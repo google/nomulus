@@ -14,7 +14,6 @@
 
 package google.registry.model.host;
 
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
@@ -52,7 +51,7 @@ import javax.persistence.AccessType;
       @javax.persistence.Index(columnList = "currentSponsorRegistrarId")
     })
 @ExternalMessagingName("host")
-@WithStringVKey
+@WithStringVKey(compositeKey = true)
 @Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)
 public class Host extends HostBase implements ForeignKeyedEppResource {
 
@@ -65,7 +64,7 @@ public class Host extends HostBase implements ForeignKeyedEppResource {
 
   @Override
   public VKey<Host> createVKey() {
-    return VKey.create(Host.class, getRepoId(), Key.create(this));
+    return VKey.createSql(Host.class, getRepoId());
   }
 
   @Override

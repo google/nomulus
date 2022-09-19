@@ -15,13 +15,13 @@
 package google.registry.testing;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import google.registry.model.EppResource;
-import google.registry.model.index.ForeignKeyIndex;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.tmch.ClaimsListDao;
 import java.time.Duration;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -53,37 +53,30 @@ public class TestCacheExtension implements BeforeEachCallback, AfterEachCallback
 
   /** Builder for {@link TestCacheExtension}. */
   public static class Builder {
-    private final Map<String, TestCacheHandler> cacheHandlerMap = Maps.newHashMap();
+    private final List<TestCacheHandler> cacheHandlers = new ArrayList<>();
 
     public Builder withEppResourceCache(Duration expiry) {
-      cacheHandlerMap.put(
-          "EppResource.cacheEppResources",
-          new TestCacheHandler(EppResource::setCacheForTest, expiry));
+      cacheHandlers.add(new TestCacheHandler(EppResource::setCacheForTest, expiry));
       return this;
     }
 
-    public Builder withForeignIndexKeyCache(Duration expiry) {
-      cacheHandlerMap.put(
-          "ForeignKeyIndex.cacheForeignKeyIndexes",
-          new TestCacheHandler(ForeignKeyIndex::setCacheForTest, expiry));
+    public Builder withForeignKeyCache(Duration expiry) {
+      cacheHandlers.add(new TestCacheHandler(ForeignKeyUtils::setCacheForTest, expiry));
       return this;
     }
 
     public Builder withPremiumListsCache(Duration expiry) {
-      cacheHandlerMap.put(
-          "PremiumListSqlDao.premiumListCache",
-          new TestCacheHandler(PremiumListDao::setPremiumListCacheForTest, expiry));
+      cacheHandlers.add(new TestCacheHandler(PremiumListDao::setPremiumListCacheForTest, expiry));
       return this;
     }
 
     public Builder withClaimsListCache(Duration expiry) {
-      cacheHandlerMap.put(
-          "ClaimsListDao.CACHE", new TestCacheHandler(ClaimsListDao::setCacheForTest, expiry));
+      cacheHandlers.add(new TestCacheHandler(ClaimsListDao::setCacheForTest, expiry));
       return this;
     }
 
     public TestCacheExtension build() {
-      return new TestCacheExtension(ImmutableList.copyOf(cacheHandlerMap.values()));
+      return new TestCacheExtension(ImmutableList.copyOf(cacheHandlers));
     }
   }
 

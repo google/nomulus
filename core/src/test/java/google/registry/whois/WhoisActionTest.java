@@ -81,7 +81,7 @@ public class WhoisActionTest {
   public final TestCacheExtension testCacheExtension =
       new TestCacheExtension.Builder()
           .withEppResourceCache(Duration.ofDays(1))
-          .withForeignIndexKeyCache(Duration.ofDays(1))
+          .withForeignKeyCache(Duration.ofDays(1))
           .build();
 
   private final FakeResponse response = new FakeResponse();

@@ -160,11 +160,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             .asBuilder()
             .setNameservers(ImmutableSet.of(host1.createVKey()))
             .build());
-    persistResource(
-        DatabaseHelper.newDomain("example.tld")
-            .asBuilder()
-            .setNameservers(ImmutableSet.of(host2.createVKey()))
-            .build());
+    persistResource(domain.asBuilder().setNameservers(ImmutableSet.of(host2.createVKey())).build());
     runCommandForced(
         "--client=NewRegistrar", nsParam, "example.abc", "example.tld");
     eppVerifier
@@ -228,8 +224,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     Host host1 = persistActiveHost("ns1.zdns.google");
     Host host2 = persistActiveHost("ns2.zdns.google");
     ImmutableSet<VKey<Host>> nameservers = ImmutableSet.of(host1.createVKey(), host2.createVKey());
-    persistResource(
-        DatabaseHelper.newDomain("example.tld").asBuilder().setNameservers(nameservers).build());
+    persistResource(domain.asBuilder().setNameservers(nameservers).build());
     runCommandForced(
         "--client=NewRegistrar", "--nameservers=ns2.zdns.google,ns3.zdns.google", "example.tld");
     eppVerifier.verifySent("domain_update_set_nameservers.xml");
@@ -243,7 +238,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     VKey<Contact> techContactKey = techContact.createVKey();
 
     persistResource(
-        DatabaseHelper.newDomain("example.tld")
+        domain
             .asBuilder()
             .setContacts(
                 ImmutableSet.of(
@@ -261,7 +256,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     Host host = persistActiveHost("ns1.zdns.google");
     ImmutableSet<VKey<Host>> nameservers = ImmutableSet.of(host.createVKey());
     persistResource(
-        DatabaseHelper.newDomain("example.tld")
+        domain
             .asBuilder()
             .setStatusValues(
                 ImmutableSet.of(
@@ -370,7 +365,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     VKey<Contact> techContactKey = techContact.createVKey();
 
     persistResource(
-        DatabaseHelper.newDomain("example.tld")
+        domain
             .asBuilder()
             .setContacts(
                 ImmutableSet.of(
@@ -394,7 +389,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     Host host = persistActiveHost("ns1.zdns.google");
     ImmutableSet<VKey<Host>> nameservers = ImmutableSet.of(host.createVKey());
     persistResource(
-        DatabaseHelper.newDomain("example.tld")
+        domain
             .asBuilder()
             .setStatusValues(ImmutableSet.of(SERVER_UPDATE_PROHIBITED))
             .setNameservers(nameservers)
@@ -419,7 +414,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     Host host = persistActiveHost("ns1.zdns.google");
     ImmutableSet<VKey<Host>> nameservers = ImmutableSet.of(host.createVKey());
     persistResource(
-        DatabaseHelper.newDomain("example.tld")
+        domain
             .asBuilder()
             .setStatusValues(ImmutableSet.of(PENDING_DELETE))
             .setNameservers(nameservers)

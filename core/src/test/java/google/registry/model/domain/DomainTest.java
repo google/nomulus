@@ -168,9 +168,8 @@ public class DomainTest {
     domain =
         persistResource(
             cloneAndSetAutoTimestamps(
-                new Domain.Builder()
-                    .setDomainName("example.com")
-                    .setRepoId("4-COM")
+                domain
+                    .asBuilder()
                     .setCreationRegistrarId("TheRegistrar")
                     .setLastEppUpdateTime(fakeClock.nowUtc())
                     .setLastEppUpdateRegistrarId("NewRegistrar")

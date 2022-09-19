@@ -66,7 +66,7 @@ import org.joda.time.DateTime;
       @Index(columnList = "transfer_billing_event_id"),
       @Index(columnList = "transfer_billing_recurrence_id")
     })
-@WithStringVKey
+@WithStringVKey(compositeKey = true)
 @ExternalMessagingName("domain")
 @Access(AccessType.FIELD)
 public class Domain extends DomainBase implements ForeignKeyedEppResource {
@@ -148,7 +148,7 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
 
   @Override
   public VKey<Domain> createVKey() {
-    return VKey.create(Domain.class, getRepoId(), Key.create(this));
+    return VKey.createSql(Domain.class, getRepoId());
   }
 
   @Override

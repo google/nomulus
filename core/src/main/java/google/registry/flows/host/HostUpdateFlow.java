@@ -26,7 +26,6 @@ import static google.registry.flows.host.HostFlowUtils.lookupSuperordinateDomain
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainNotInPendingDelete;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
-import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
@@ -46,6 +45,7 @@ import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.EppResource;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.metadata.MetadataExtension;
@@ -147,7 +147,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
     EppResource owningResource = firstNonNull(oldSuperordinateDomain, existingHost);
     verifyUpdateAllowed(
         command, existingHost, newSuperordinateDomain.orElse(null), owningResource, isHostRename);
-    if (isHostRename && loadAndGetKey(Host.class, newHostName, now) != null) {
+    if (isHostRename && ForeignKeyUtils.load(Host.class, newHostName, now) != null) {
       throw new HostAlreadyExistsException(newHostName);
     }
     AddRemove add = command.getInnerAdd();

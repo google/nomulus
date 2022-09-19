@@ -17,7 +17,6 @@ package google.registry.model.domain;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getOnlyElement;
-import static com.google.common.collect.Maps.transformValues;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.util.CollectionUtils.difference;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
@@ -31,6 +30,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EppResource;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.Contact;
 import google.registry.model.eppinput.ResourceCommand.AbstractSingleResourceCommand;
@@ -39,7 +39,6 @@ import google.registry.model.eppinput.ResourceCommand.ResourceCreateOrChange;
 import google.registry.model.eppinput.ResourceCommand.ResourceUpdate;
 import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
 import google.registry.model.host.Host;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.persistence.VKey;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -445,13 +444,12 @@ public class DomainCommand {
   private static <T extends EppResource> ImmutableMap<String, VKey<T>> loadByForeignKeysCached(
       final Set<String> foreignKeys, final Class<T> clazz, final DateTime now)
       throws InvalidReferencesException {
-    ImmutableMap<String, ForeignKeyIndex<T>> fkis =
-        ForeignKeyIndex.loadCached(clazz, foreignKeys, now);
-    if (!fkis.keySet().equals(foreignKeys)) {
+    ImmutableMap<String, VKey<T>> fks = ForeignKeyUtils.loadCached(clazz, foreignKeys, now);
+    if (!fks.keySet().equals(foreignKeys)) {
       throw new InvalidReferencesException(
-          clazz, ImmutableSet.copyOf(difference(foreignKeys, fkis.keySet())));
+          clazz, ImmutableSet.copyOf(difference(foreignKeys, fks.keySet())));
     }
-    return ImmutableMap.copyOf(transformValues(fkis, ForeignKeyIndex::getResourceKey));
+    return fks;
   }
 
   /** Exception to throw when referenced objects don't exist. */

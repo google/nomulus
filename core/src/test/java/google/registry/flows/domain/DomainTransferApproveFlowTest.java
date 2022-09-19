@@ -442,7 +442,6 @@ class DomainTransferApproveFlowTest
                 .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
                 .build());
     persistResource(Registry.get("tld").asBuilder().setPremiumList(pl).build());
-    setupDomainWithPendingTransfer("example", "tld");
     domain = loadByEntity(domain);
     persistResource(
         loadByKey(domain.getAutorenewBillingEvent())
@@ -489,7 +488,6 @@ class DomainTransferApproveFlowTest
                 .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
                 .build());
     persistResource(Registry.get("tld").asBuilder().setPremiumList(pl).build());
-    setupDomainWithPendingTransfer("example", "tld");
     domain = loadByEntity(domain);
     persistResource(
         loadByKey(domain.getAutorenewBillingEvent())
