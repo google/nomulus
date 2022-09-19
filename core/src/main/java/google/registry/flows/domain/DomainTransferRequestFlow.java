@@ -32,6 +32,8 @@ import static google.registry.flows.domain.DomainTransferUtils.createLosingTrans
 import static google.registry.flows.domain.DomainTransferUtils.createPendingTransferData;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferServerApproveEntities;
+import static google.registry.flows.domain.token.AllocationTokenFlowUtils.maybeApplyPackageRemovalToken;
+import static google.registry.flows.domain.token.AllocationTokenFlowUtils.verifyTokenAllowedOnDomain;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -63,6 +65,7 @@ import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.superuser.DomainTransferRequestSuperuserExtension;
+import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
@@ -132,6 +135,8 @@ import org.joda.time.DateTime;
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException}
+ * @error {@link
+ *     google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemovePackageTokenOnPackageDomainException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_TRANSFER_REQUEST)
 public final class DomainTransferRequestFlow implements TransactionalFlow {
@@ -169,19 +174,24 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
-        existingDomain,
-        Registry.get(existingDomain.getTld()),
-        gainingClientId,
-        now,
-        eppInput.getSingleExtension(AllocationTokenExtension.class));
+    Optional<AllocationToken> allocationToken =
+        allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
+            existingDomain,
+            Registry.get(existingDomain.getTld()),
+            gainingClientId,
+            now,
+            eppInput.getSingleExtension(AllocationTokenExtension.class));
     Optional<DomainTransferRequestSuperuserExtension> superuserExtension =
         eppInput.getSingleExtension(DomainTransferRequestSuperuserExtension.class);
     Period period =
         superuserExtension.isPresent()
             ? superuserExtension.get().getRenewalPeriod()
             : ((Transfer) resourceCommand).getPeriod();
-    verifyTransferAllowed(existingDomain, period, now, superuserExtension);
+    verifyTransferAllowed(existingDomain, period, now, superuserExtension, allocationToken);
+
+    // If client passed an applicable static token this updates the domain
+    existingDomain = maybeApplyPackageRemovalToken(existingDomain, allocationToken);
+
     String tld = existingDomain.getTld();
     Registry registry = Registry.get(tld);
     // An optional extension from the client specifying what they think the transfer should cost.
@@ -293,9 +303,11 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
       Domain existingDomain,
       Period period,
       DateTime now,
-      Optional<DomainTransferRequestSuperuserExtension> superuserExtension)
+      Optional<DomainTransferRequestSuperuserExtension> superuserExtension,
+      Optional<AllocationToken> allocationToken)
       throws EppException {
     verifyNoDisallowedStatuses(existingDomain, DISALLOWED_STATUSES);
+    verifyTokenAllowedOnDomain(existingDomain, allocationToken);
     if (!isSuperuser) {
       verifyAuthInfoPresentForResourceTransfer(authInfo);
       verifyAuthInfo(authInfo.get(), existingDomain);

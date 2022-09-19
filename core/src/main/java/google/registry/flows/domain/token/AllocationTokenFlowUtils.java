@@ -293,11 +293,11 @@ public class AllocationTokenFlowUtils {
     }
   }
 
-  /** The __REMOVEPACKAGE__ token is missing on a renew package domain command */
+  /** The __REMOVEPACKAGE__ token is missing on a package domain command */
   public static class MissingRemovePackageTokenOnPackageDomainException
       extends AssociationProhibitsOperationException {
     MissingRemovePackageTokenOnPackageDomainException() {
-      super("Domains that are inside packages cannot be explicitly renewed");
+      super("Domains that are inside packages cannot be explicitly renewed or transferred");
     }
   }
 

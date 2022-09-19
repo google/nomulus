@@ -498,7 +498,7 @@ comes in at the exact millisecond that the domain would have expired.
     *   Resource status prohibits this operation.
     *   The allocation token is not currently valid.
 *   2305
-    *   The __REMOVEPACKAGE__ token is missing on a renew package domain command
+    *   The __REMOVEPACKAGE__ token is missing on a package domain command
     *   The __REMOVEPACKAGE__ token is not allowed on non package domains
     *   The allocation token is not valid for this domain.
     *   The allocation token is not valid for this registrar.
@@ -754,6 +754,7 @@ new ones with the correct approval time).
     *   The allocation token is not valid for this registrar.
     *   The allocation token is not valid for this TLD.
     *   The allocation token was already redeemed.
+    *   The __REMOVEPACKAGE__ token is missing on a package domain command
 *   2306
     *   Domain transfer period must be one year.
     *   Domain transfer period must be zero or one year when using the superuser
