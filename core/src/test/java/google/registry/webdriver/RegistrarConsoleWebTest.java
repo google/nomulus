@@ -145,7 +145,7 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
     driver.setFormFieldsById(
         new ImmutableMap.Builder<String, String>()
             .put("emailAddress", "test1@example.com")
-            .put("clientIdentifier", "ignored")
+            .put("registrarId", "ignored")
             .put("whoisServer", "foo.bar.baz")
             .put("url", "blah.blar")
             .put("phoneNumber", "+1.2125650000")

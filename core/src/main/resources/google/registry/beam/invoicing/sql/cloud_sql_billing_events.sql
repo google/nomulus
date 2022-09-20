@@ -26,7 +26,7 @@
 -- query's performance and consider switching to using a native query.
 
 SELECT b, r FROM BillingEvent b
-JOIN Registrar r ON b.clientId = r.clientIdentifier
+JOIN Registrar r ON b.clientId = r.registrarId
 JOIN Domain d ON b.domainRepoId = d.repoId
 JOIN Tld t ON t.tldStr = d.tld
 LEFT JOIN BillingCancellation c ON b.id = c.refOneTime

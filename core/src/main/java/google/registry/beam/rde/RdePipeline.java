@@ -301,7 +301,7 @@ public class RdePipeline implements Serializable {
         .apply(
             "Read all production Registrars",
             RegistryJpaIO.read(
-                "SELECT clientIdentifier FROM Registrar WHERE type NOT IN (:types)",
+                "SELECT registrarId FROM Registrar WHERE type NOT IN (:types)",
                 ImmutableMap.of("types", IGNORED_REGISTRAR_TYPES),
                 String.class,
                 id -> VKey.createSql(Registrar.class, id)))

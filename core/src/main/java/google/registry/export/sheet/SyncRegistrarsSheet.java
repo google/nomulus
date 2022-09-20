@@ -114,7 +114,7 @@ class SyncRegistrarsSheet {
                   // and you'll need to remove deleted columns probably like a week after
                   // deployment.
                   //
-                  builder.put("clientIdentifier", convert(registrar.getRegistrarId()));
+                  builder.put("registrarId", convert(registrar.getRegistrarId()));
                   builder.put("registrarName", convert(registrar.getRegistrarName()));
                   builder.put("state", convert(registrar.getState()));
                   builder.put("ianaIdentifier", convert(registrar.getIanaIdentifier()));

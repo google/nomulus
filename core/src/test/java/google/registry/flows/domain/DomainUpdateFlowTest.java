@@ -148,7 +148,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     unusedContact = persistActiveContact("unused");
   }
 
-  private Domain persistDomainWithRegistrant() throws Exception {
+  private void persistDomainWithRegistrant() throws Exception {
     Host host = loadByForeignKey(Host.class, "ns1.example.foo", clock.nowUtc()).get();
     Domain domain =
         persistResource(
@@ -170,7 +170,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setDomain(domain)
             .build());
     clock.advanceOneMilli();
-    return domain;
   }
 
   private Domain persistDomain() throws Exception {
@@ -468,16 +467,19 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   private void doSecDnsSuccessfulTest(
       String xmlFilename,
       ImmutableSet<DomainDsData> originalDsData,
-      ImmutableSet<DomainDsData> expectedDsData)
+      ImmutableSet<DomainDsData> expectedDsData,
+      boolean dnsTaskEnqueued)
       throws Exception {
-    doSecDnsSuccessfulTest(xmlFilename, originalDsData, expectedDsData, OTHER_DSDATA_TEMPLATE_MAP);
+    doSecDnsSuccessfulTest(
+        xmlFilename, originalDsData, expectedDsData, OTHER_DSDATA_TEMPLATE_MAP, dnsTaskEnqueued);
   }
 
   private void doSecDnsSuccessfulTest(
       String xmlFilename,
       ImmutableSet<DomainDsData> originalDsData,
       ImmutableSet<DomainDsData> expectedDsData,
-      ImmutableMap<String, String> substitutions)
+      ImmutableMap<String, String> substitutions,
+      boolean dnsTaskEnqueued)
       throws Exception {
     setEppInput(xmlFilename, substitutions);
     persistResource(
@@ -495,7 +497,11 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             expectedDsData.stream()
                 .map(ds -> ds.cloneWithDomainRepoId(resource.getRepoId()))
                 .collect(toImmutableSet()));
-    assertDnsTasksEnqueued("example.tld");
+    if (dnsTaskEnqueued) {
+      assertDnsTasksEnqueued("example.tld");
+    } else {
+      assertNoDnsTasksEnqueued();
+    }
   }
 
   @Test
@@ -514,7 +520,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             "DIGEST_TYPE",
             "1",
             "DIGEST",
-            "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"));
+            "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"),
+        true);
   }
 
   @Test
@@ -534,7 +541,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             "DIGEST_TYPE",
             "1",
             "DIGEST",
-            "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"));
+            "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"),
+        true);
   }
 
   @Test
@@ -551,7 +559,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             "DIGEST_TYPE",
             "2",
             "DIGEST",
-            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"));
+            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"),
+        false);
   }
 
   @Test
@@ -576,7 +585,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             "DIGEST_TYPE",
             "4",
             "DIGEST",
-            "768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9"));
+            "768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9"),
+        true);
   }
 
   // Changing any of the four fields in DomainDsData should result in a new object
@@ -601,7 +611,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             "DIGEST_TYPE",
             "2",
             "DIGEST",
-            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"));
+            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"),
+        true);
   }
 
   @Test
@@ -625,7 +636,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             "DIGEST_TYPE",
             "2",
             "DIGEST",
-            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"));
+            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"),
+        true);
   }
 
   @Test
@@ -650,7 +662,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             "DIGEST_TYPE",
             "4",
             "DIGEST",
-            "768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9"));
+            "768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9"),
+        true);
   }
 
   @Test
@@ -674,7 +687,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             "DIGEST_TYPE",
             "2",
             "DIGEST",
-            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"));
+            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"),
+        false);
   }
 
   @Test
@@ -701,7 +715,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                         12346,
                         3,
                         1,
-                        base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))))));
+                        base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))))),
+        true);
   }
 
   @Test
@@ -712,7 +727,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             SOME_DSDATA,
             DomainDsData.create(
                 12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
-        ImmutableSet.of(SOME_DSDATA));
+        ImmutableSet.of(SOME_DSDATA),
+        true);
   }
 
   @Test
@@ -724,7 +740,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             SOME_DSDATA,
             DomainDsData.create(
                 12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
-        ImmutableSet.of());
+        ImmutableSet.of(),
+        true);
   }
 
   @Test
@@ -738,7 +755,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         ImmutableSet.of(
             SOME_DSDATA,
             DomainDsData.create(
-                12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))));
+                12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
+        true);
   }
 
   @Test
@@ -773,7 +791,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                         12346,
                         3,
                         1,
-                        base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))))));
+                        base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))))),
+        true);
   }
 
   @Test
@@ -788,14 +807,18 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         ImmutableSet.of(
             SOME_DSDATA,
             DomainDsData.create(
-                12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))));
+                12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
+        false);
   }
 
   @Test
   void testSuccess_secDnsRemoveAlreadyNotThere() throws Exception {
     // Removing a dsData that isn't there is a no-op.
     doSecDnsSuccessfulTest(
-        "domain_update_dsdata_rem.xml", ImmutableSet.of(SOME_DSDATA), ImmutableSet.of(SOME_DSDATA));
+        "domain_update_dsdata_rem.xml",
+        ImmutableSet.of(SOME_DSDATA),
+        ImmutableSet.of(SOME_DSDATA),
+        false);
   }
 
   void doServerStatusBillingTest(String xmlFilename, boolean isBillable) throws Exception {
@@ -1724,7 +1747,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testDnsTaskIsNotTriggeredWhenNoDSChangeSubmitted() throws Exception {
+  void testDnsTaskIsNotTriggeredWhenNoDSChangeSubmitted() {
     setEppInput("domain_update_no_ds_change.xml");
     assertNoDnsTasksEnqueued();
   }

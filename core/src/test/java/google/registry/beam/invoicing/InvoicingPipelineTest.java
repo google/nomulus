@@ -355,7 +355,7 @@ class InvoicingPipelineTest {
         .isEqualTo(
             '\n'
                 + "SELECT b, r FROM BillingEvent b\n"
-                + "JOIN Registrar r ON b.clientId = r.clientIdentifier\n"
+                + "JOIN Registrar r ON b.clientId = r.registrarId\n"
                 + "JOIN Domain d ON b.domainRepoId = d.repoId\n"
                 + "JOIN Tld t ON t.tldStr = d.tld\n"
                 + "LEFT JOIN BillingCancellation c ON b.id = c.refOneTime\n"

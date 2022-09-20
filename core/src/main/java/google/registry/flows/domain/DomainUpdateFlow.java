@@ -87,6 +87,7 @@ import google.registry.model.poll.PendingActionNotificationResponse.DomainPendin
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Registry;
+import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -181,8 +182,8 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     DomainHistory domainHistory =
         historyBuilder.setType(DOMAIN_UPDATE).setDomain(newDomain).build();
     validateNewState(newDomain);
-    if (!newDomain.getDsData().equals(existingDomain.getDsData())
-        || !newDomain.getNsHosts().equals(existingDomain.getNsHosts())) {
+    if (!Objects.equals(newDomain.getDsData(), existingDomain.getDsData())
+        || !Objects.equals(newDomain.getNsHosts(), existingDomain.getNsHosts())) {
       dnsQueue.addDomainRefreshTask(targetId);
     }
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();

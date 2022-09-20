@@ -132,7 +132,7 @@ registry.json.Response.prototype.results;
 /**
  * @typedef {{
  *   allowedTlds: !Array<string>,
- *   clientIdentifier: string,
+ *   registrarId: string,
  *   clientCertificate: string?,
  *   clientCertificateHash: string?,
  *   failoverClientCertificate: string?,
