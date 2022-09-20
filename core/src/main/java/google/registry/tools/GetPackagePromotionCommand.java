@@ -14,6 +14,7 @@
 
 package google.registry.tools;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameter;
@@ -31,12 +32,16 @@ public class GetPackagePromotionCommand extends GetEppResourceCommand {
   @Override
   void runAndPrint() {
     for (String token : mainParameters) {
-      PackagePromotion packagePromotion =
-          checkArgumentPresent(
-              PackagePromotion.loadByTokenString(token),
-              "PackagePromotion with package token %s does not exist",
-              token);
-      System.out.println(packagePromotion);
+      jpaTm()
+          .transact(
+              () -> {
+                PackagePromotion packagePromotion =
+                    checkArgumentPresent(
+                        PackagePromotion.loadByTokenString(token),
+                        "PackagePromotion with package token %s does not exist",
+                        token);
+                System.out.println(packagePromotion);
+              });
     }
   }
 }
