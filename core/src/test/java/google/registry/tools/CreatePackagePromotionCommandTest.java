@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -55,7 +56,7 @@ public class CreatePackagePromotionCommandTest
         "abc123");
 
     Optional<PackagePromotion> packagePromotionOptional =
-        PackagePromotion.loadByTokenString("abc123");
+        jpaTm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
     assertThat(packagePromotionOptional).isPresent();
     PackagePromotion packagePromotion = packagePromotionOptional.get();
     assertThat(packagePromotion.getMaxDomains()).isEqualTo(100);
@@ -129,7 +130,7 @@ public class CreatePackagePromotionCommandTest
         "--next_billing_date=2012-03-17T05:00:00Z",
         "abc123");
     Optional<PackagePromotion> packagePromotionOptional =
-        PackagePromotion.loadByTokenString("abc123");
+        jpaTm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
     assertThat(packagePromotionOptional).isPresent();
     IllegalArgumentException thrown =
         assertThrows(
@@ -158,7 +159,7 @@ public class CreatePackagePromotionCommandTest
             .build());
     runCommandForced("--price=USD 1000.00", "--next_billing_date=2012-03-17", "abc123");
     Optional<PackagePromotion> packagePromotionOptional =
-        PackagePromotion.loadByTokenString("abc123");
+        jpaTm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
     assertThat(packagePromotionOptional).isPresent();
     PackagePromotion packagePromotion = packagePromotionOptional.get();
     assertThat(packagePromotion.getMaxDomains()).isEqualTo(0);
@@ -184,7 +185,7 @@ public class CreatePackagePromotionCommandTest
     runCommandForced("--max_domains=100", "--max_creates=500", "--price=USD 1000.00", "abc123");
 
     Optional<PackagePromotion> packagePromotionOptional =
-        PackagePromotion.loadByTokenString("abc123");
+        jpaTm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
     assertThat(packagePromotionOptional).isPresent();
     PackagePromotion packagePromotion = packagePromotionOptional.get();
     assertThat(packagePromotion.getMaxDomains()).isEqualTo(100);

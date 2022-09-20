@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
@@ -86,28 +87,34 @@ abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
   @Override
   protected final void init() throws Exception {
     for (String token : mainParameters) {
-      PackagePromotion oldPackage = getOldPackagePromotion(token);
-      checkArgument(
-          oldPackage != null || price != null,
-          "PackagePrice is required when creating a new package");
+      jpaTm()
+          .transact(
+              () -> {
+                PackagePromotion oldPackage = getOldPackagePromotion(token);
+                checkArgument(
+                    oldPackage != null || price != null,
+                    "PackagePrice is required when creating a new package");
 
-      AllocationToken allocationToken = getAndCheckAllocationToken(token);
+                AllocationToken allocationToken = getAndCheckAllocationToken(token);
 
-      PackagePromotion.Builder builder =
-          (oldPackage == null)
-              ? new PackagePromotion.Builder().setToken(allocationToken)
-              : oldPackage.asBuilder();
+                PackagePromotion.Builder builder =
+                    (oldPackage == null)
+                        ? new PackagePromotion.Builder().setToken(allocationToken)
+                        : oldPackage.asBuilder();
 
-      Optional.ofNullable(maxDomains).ifPresent(builder::setMaxDomains);
-      Optional.ofNullable(maxCreates).ifPresent(builder::setMaxCreates);
-      Optional.ofNullable(price).ifPresent(builder::setPackagePrice);
-      Optional.ofNullable(nextBillingDate)
-          .ifPresent(nextBillingDate -> builder.setNextBillingDate(new DateTime(nextBillingDate)));
-      if (clearLastNotificationSent()) {
-        builder.setLastNotificationSent(null);
-      }
-      PackagePromotion newPackage = builder.build();
-      stageEntityChange(oldPackage, newPackage);
+                Optional.ofNullable(maxDomains).ifPresent(builder::setMaxDomains);
+                Optional.ofNullable(maxCreates).ifPresent(builder::setMaxCreates);
+                Optional.ofNullable(price).ifPresent(builder::setPackagePrice);
+                Optional.ofNullable(nextBillingDate)
+                    .ifPresent(
+                        nextBillingDate ->
+                            builder.setNextBillingDate(new DateTime(nextBillingDate)));
+                if (clearLastNotificationSent()) {
+                  builder.setLastNotificationSent(null);
+                }
+                PackagePromotion newPackage = builder.build();
+                stageEntityChange(oldPackage, newPackage);
+              });
     }
   }
 }

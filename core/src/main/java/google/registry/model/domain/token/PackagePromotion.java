@@ -97,13 +97,12 @@ public class PackagePromotion extends ImmutableObject implements Buildable {
 
   /** Loads and returns a PackagePromotion entity by its token string directly from Cloud SQL. */
   public static Optional<PackagePromotion> loadByTokenString(String tokenString) {
-    return tm().transact(
-            () ->
-                jpaTm()
-                    .query("FROM PackagePromotion WHERE token = :token", PackagePromotion.class)
-                    .setParameter("token", VKey.createSql(AllocationToken.class, tokenString))
-                    .getResultStream()
-                    .findFirst());
+    jpaTm().assertInTransaction();
+    return jpaTm()
+        .query("FROM PackagePromotion WHERE token = :token", PackagePromotion.class)
+        .setParameter("token", VKey.createSql(AllocationToken.class, tokenString))
+        .getResultStream()
+        .findFirst();
   }
 
   @Override
