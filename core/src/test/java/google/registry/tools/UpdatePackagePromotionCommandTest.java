@@ -58,7 +58,7 @@ public class UpdatePackagePromotionCommandTest
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
             .build();
-    persistResource(packagePromotion);
+    jpaTm().transact(() -> jpaTm().put(packagePromotion));
   }
 
   @Test

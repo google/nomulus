@@ -15,8 +15,9 @@
 package google.registry.model.domain.token;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -57,16 +58,18 @@ public class PackagePromotionTest extends EntityTestCase {
                 .build());
 
     PackagePromotion packagePromotion =
-        persistResource(
-            new PackagePromotion.Builder()
-                .setToken(token)
-                .setPackagePrice(Money.of(CurrencyUnit.USD, 10000))
-                .setMaxCreates(40)
-                .setMaxDomains(10)
-                .setNextBillingDate(DateTime.parse("2011-11-12T05:00:00Z"))
-                .build());
+        new PackagePromotion.Builder()
+            .setToken(token)
+            .setPackagePrice(Money.of(CurrencyUnit.USD, 10000))
+            .setMaxCreates(40)
+            .setMaxDomains(10)
+            .setNextBillingDate(DateTime.parse("2011-11-12T05:00:00Z"))
+            .build();
 
-    assertThat(loadByEntity(packagePromotion)).isEqualTo(packagePromotion);
+    jpaTm().transact(() -> jpaTm().put(packagePromotion));
+    assertAboutImmutableObjects()
+        .that(jpaTm().transact(() -> PackagePromotion.loadByTokenString("abc123")).get())
+        .isEqualExceptFields(packagePromotion, "packagePromotionId");
   }
 
   @Test

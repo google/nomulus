@@ -492,7 +492,7 @@
     );
 
     create table "PackagePromotion" (
-       package_promotion_id int8 not null,
+       package_promotion_id  bigserial not null,
         last_notification_sent timestamptz,
         max_creates int4 not null,
         max_domains int4 not null,
