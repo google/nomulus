@@ -267,7 +267,7 @@
     about 2 hours to complete, so we give 11 hours to be safe. Normally, we give 24+ hours (see
     icannReportingStaging), but the invoicing team prefers receiving the e-mail on the first of
     each month. -->
-    <schedule>1 of month 17:00</schedule>
+    <schedule>1 of month 19:00</schedule>
     <target>backend</target>
   </cron>
 
