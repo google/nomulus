@@ -39,7 +39,7 @@ import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.RateLimiter;
 import google.registry.dns.writer.clouddns.CloudDnsWriter.ZoneStateException;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
@@ -267,7 +267,7 @@ public class CloudDnsWriterTest {
 
       for (int i = 0; i < dsRecords; i++) {
         dsRecordData.add(
-            DelegationSignerData.create(i, 3, 1, base16().decode("1234567890ABCDEF")).toRrData());
+            DomainDsData.create(i, 3, 1, base16().decode("1234567890ABCDEF")).toRrData());
       }
       recordSetBuilder.add(
           new ResourceRecordSet()
@@ -284,10 +284,10 @@ public class CloudDnsWriterTest {
   /** Returns a domain to be persisted in Datastore. */
   private static Domain fakeDomain(
       String domainName, ImmutableSet<Host> nameservers, int numDsRecords) {
-    ImmutableSet.Builder<DelegationSignerData> dsDataBuilder = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<DomainDsData> dsDataBuilder = new ImmutableSet.Builder<>();
 
     for (int i = 0; i < numDsRecords; i++) {
-      dsDataBuilder.add(DelegationSignerData.create(i, 3, 1, base16().decode("1234567890ABCDEF")));
+      dsDataBuilder.add(DomainDsData.create(i, 3, 1, base16().decode("1234567890ABCDEF")));
     }
 
     ImmutableSet.Builder<VKey<Host>> hostRefBuilder = new ImmutableSet.Builder<>();

@@ -39,7 +39,7 @@ public final class ListRegistrarsAction extends ListObjectsAction<Registrar> {
 
   @Override
   public ImmutableSet<String> getPrimaryKeyFields() {
-    return ImmutableSet.of("clientIdentifier");
+    return ImmutableSet.of("registrarId");
   }
 
   @Override
@@ -51,7 +51,7 @@ public final class ListRegistrarsAction extends ListObjectsAction<Registrar> {
   public ImmutableBiMap<String, String> getFieldAliases() {
     return ImmutableBiMap.of(
         "billingId", "billingIdentifier",
-        "clientId", "clientIdentifier",
+        "clientId", "registrarId",
         "premiumNames", "blockPremiumNames");
   }
 

@@ -36,7 +36,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.testing.AppEngineExtension;
@@ -177,8 +177,7 @@ public class DnsUpdateWriterTest {
             .asBuilder()
             .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
             .setDsData(
-                ImmutableSet.of(
-                    DelegationSignerData.create(1, 3, 1, base16().decode("0123456789ABCDEF"))))
+                ImmutableSet.of(DomainDsData.create(1, 3, 1, base16().decode("0123456789ABCDEF"))))
             .build();
     persistResource(domain);
 

@@ -75,8 +75,8 @@ public class SafeBrowsingTransforms {
     private final String apiKey;
 
     /**
-     * Maps a domain name's {@code fullyQualifiedDomainName} to its corresponding {@link
-     * DomainNameInfo} to facilitate batching SafeBrowsing API requests.
+     * Maps a domain name's {@code domainName} to its corresponding {@link DomainNameInfo} to
+     * facilitate batching SafeBrowsing API requests.
      */
     private final Map<String, DomainNameInfo> domainNameInfoBuffer =
         new LinkedHashMap<>(BATCH_SIZE);
@@ -186,8 +186,8 @@ public class SafeBrowsingTransforms {
     private JSONObject createRequestBody() throws JSONException {
       // Accumulate all domain names to evaluate.
       JSONArray threatArray = new JSONArray();
-      for (String fullyQualifiedDomainName : domainNameInfoBuffer.keySet()) {
-        threatArray.put(new JSONObject().put("url", fullyQualifiedDomainName));
+      for (String domainName : domainNameInfoBuffer.keySet()) {
+        threatArray.put(new JSONObject().put("url", domainName));
       }
       // Construct the JSON request body
       return new JSONObject()

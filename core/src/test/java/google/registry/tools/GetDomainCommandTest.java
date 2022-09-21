@@ -37,7 +37,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
   void testSuccess() throws Exception {
     persistActiveDomain("example.tld");
     runCommand("example.tld");
-    assertInStdout("fullyQualifiedDomainName=example.tld");
+    assertInStdout("domainName=example.tld");
     assertInStdout("Contact=VKey<Contact>(sql:3-ROID");
     assertInStdout("Websafe key: " + "kind:Domain" + "@sql:rO0ABXQABTItVExE");
   }
@@ -46,7 +46,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
   void testSuccess_expand() throws Exception {
     persistActiveDomain("example.tld");
     runCommand("example.tld", "--expand");
-    assertInStdout("fullyQualifiedDomainName=example.tld");
+    assertInStdout("domainName=example.tld");
     assertInStdout("sqlKey=3-ROID");
     assertInStdout("Websafe key: " + "kind:Domain" + "@sql:rO0ABXQABTItVExE");
     assertNotInStdout("LiveRef");
@@ -57,7 +57,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     createTld("xn--q9jyb4c");
     persistActiveDomain("xn--aualito-txac.xn--q9jyb4c");
     runCommand("çauçalito.みんな", "--expand");
-    assertInStdout("fullyQualifiedDomainName=xn--aualito-txac.xn--q9jyb4c");
+    assertInStdout("domainName=xn--aualito-txac.xn--q9jyb4c");
     assertInStdout("sqlKey=4-ROID");
   }
 
@@ -66,10 +66,10 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     persistActiveDomain("example.tld");
     persistActiveDomain("example2.tld");
     runCommand("example.tld", "example2.tld");
-    assertInStdout("fullyQualifiedDomainName=example.tld");
-    assertInStdout("fullyQualifiedDomainName=example2.tld");
-    assertInStdout("Websafe key: " + "kind:Domain" + "@sql:rO0ABXQABTItVExE");
-    assertInStdout("Websafe key: " + "kind:Domain" + "@sql:rO0ABXQABTQtVExE");
+    assertInStdout("domainName=example.tld");
+    assertInStdout("domainName=example2.tld");
+    assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTItVExE");
+    assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTQtVExE");
   }
 
   @Test
@@ -112,7 +112,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     persistActiveDomain("example.tld");
     createTld("com");
     runCommand("example.com", "example.tld");
-    assertInStdout("fullyQualifiedDomainName=example.tld");
+    assertInStdout("domainName=example.tld");
     assertInStdout("Domain 'example.com' does not exist or is deleted");
   }
 }

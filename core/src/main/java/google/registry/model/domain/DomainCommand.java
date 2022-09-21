@@ -105,9 +105,9 @@ public class DomainCommand {
   @XmlRootElement
   @XmlType(
       propOrder = {
-        "fullyQualifiedDomainName",
+        "domainName",
         "period",
-        "nameserverFullyQualifiedHostNames",
+        "nameserverHostNames",
         "registrantContactId",
         "foreignKeyedDesignatedContacts",
         "authInfo"
@@ -117,12 +117,12 @@ public class DomainCommand {
 
     /** Fully qualified domain name, which serves as a unique identifier for this domain. */
     @XmlElement(name = "name")
-    String fullyQualifiedDomainName;
+    String domainName;
 
     /** Fully qualified host names of the hosts that are the nameservers for the domain. */
     @XmlElementWrapper(name = "ns")
     @XmlElement(name = "hostObj")
-    Set<String> nameserverFullyQualifiedHostNames;
+    Set<String> nameserverHostNames;
 
     /** Resolved keys to hosts that are the nameservers for the domain. */
     @XmlTransient Set<VKey<Host>> nameservers;
@@ -144,15 +144,15 @@ public class DomainCommand {
 
     @Override
     public String getTargetId() {
-      return fullyQualifiedDomainName;
+      return domainName;
     }
 
-    public String getFullyQualifiedDomainName() {
-      return fullyQualifiedDomainName;
+    public String getDomainName() {
+      return domainName;
     }
 
-    public ImmutableSet<String> getNameserverFullyQualifiedHostNames() {
-      return nullToEmptyImmutableCopy(nameserverFullyQualifiedHostNames);
+    public ImmutableSet<String> getNameserverHostNames() {
+      return nullToEmptyImmutableCopy(nameserverHostNames);
     }
 
     public ImmutableSet<VKey<Host>> getNameservers() {
@@ -172,7 +172,7 @@ public class DomainCommand {
     @Override
     public Create cloneAndLinkReferences(DateTime now) throws InvalidReferencesException {
       Create clone = clone(this);
-      clone.nameservers = linkHosts(clone.nameserverFullyQualifiedHostNames, now);
+      clone.nameservers = linkHosts(clone.nameserverHostNames, now);
       if (registrantContactId == null) {
         clone.contacts = linkContacts(clone.foreignKeyedDesignatedContacts, now);
       } else {
@@ -205,7 +205,7 @@ public class DomainCommand {
 
     /** The name of the domain to look up, and an attribute specifying the host lookup type. */
     @XmlElement(name = "name")
-    NameWithHosts fullyQualifiedDomainName;
+    NameWithHosts domainName;
 
     DomainAuthInfo authInfo;
 
@@ -244,12 +244,12 @@ public class DomainCommand {
     /** Get the enum that specifies the requested hosts (applies only to info flows). */
     public HostsRequest getHostsRequest() {
       // Null "hosts" is implicitly ALL.
-      return MoreObjects.firstNonNull(fullyQualifiedDomainName.hosts, HostsRequest.ALL);
+      return MoreObjects.firstNonNull(domainName.hosts, HostsRequest.ALL);
     }
 
     @Override
     public String getTargetId() {
-      return fullyQualifiedDomainName.name;
+      return domainName.name;
     }
 
     @Override
@@ -337,15 +337,12 @@ public class DomainCommand {
     }
 
     /** The inner change type on a domain update command. */
-    @XmlType(propOrder = {
-        "nameserverFullyQualifiedHostNames",
-        "foreignKeyedDesignatedContacts",
-        "statusValues"})
+    @XmlType(propOrder = {"nameserverHostNames", "foreignKeyedDesignatedContacts", "statusValues"})
     public static class AddRemove extends ResourceUpdate.AddRemove {
       /** Fully qualified host names of the hosts that are the nameservers for the domain. */
       @XmlElementWrapper(name = "ns")
       @XmlElement(name = "hostObj")
-      Set<String> nameserverFullyQualifiedHostNames;
+      Set<String> nameserverHostNames;
 
       /** Resolved keys to hosts that are the nameservers for the domain. */
       @XmlTransient Set<VKey<Host>> nameservers;
@@ -358,8 +355,8 @@ public class DomainCommand {
       @XmlTransient
       Set<DesignatedContact> contacts;
 
-      public ImmutableSet<String> getNameserverFullyQualifiedHostNames() {
-        return nullSafeImmutableCopy(nameserverFullyQualifiedHostNames);
+      public ImmutableSet<String> getNameserverHostNames() {
+        return nullSafeImmutableCopy(nameserverHostNames);
       }
 
       public ImmutableSet<VKey<Host>> getNameservers() {
@@ -373,7 +370,7 @@ public class DomainCommand {
       /** Creates a copy of this {@link AddRemove} with hard links to hosts and contacts. */
       private AddRemove cloneAndLinkReferences(DateTime now) throws InvalidReferencesException {
         AddRemove clone = clone(this);
-        clone.nameservers = linkHosts(clone.nameserverFullyQualifiedHostNames, now);
+        clone.nameservers = linkHosts(clone.nameserverHostNames, now);
         clone.contacts = linkContacts(clone.foreignKeyedDesignatedContacts, now);
         return clone;
       }
@@ -412,13 +409,12 @@ public class DomainCommand {
     }
   }
 
-  private static Set<VKey<Host>> linkHosts(Set<String> fullyQualifiedHostNames, DateTime now)
+  private static Set<VKey<Host>> linkHosts(Set<String> hostNames, DateTime now)
       throws InvalidReferencesException {
-    if (fullyQualifiedHostNames == null) {
+    if (hostNames == null) {
       return null;
     }
-    return ImmutableSet.copyOf(
-        loadByForeignKeysCached(fullyQualifiedHostNames, Host.class, now).values());
+    return ImmutableSet.copyOf(loadByForeignKeysCached(hostNames, Host.class, now).values());
   }
 
   private static Set<DesignatedContact> linkContacts(

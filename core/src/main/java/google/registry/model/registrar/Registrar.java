@@ -207,11 +207,10 @@ public class Registrar extends ImmutableObject
    * Unique registrar client id. Must conform to "clIDType" as defined in RFC5730.
    *
    * @see <a href="http://tools.ietf.org/html/rfc5730#section-4.2">Shared Structure Schema</a>
-   *     <p>TODO(b/177567432): Rename this field to registrarId.
    */
   @Id
-  @Column(name = "registrarId", nullable = false)
-  String clientIdentifier;
+  @Column(nullable = false)
+  String registrarId;
 
   /**
    * Registrar name. This is a distinct from the client identifier since there are no restrictions
@@ -270,9 +269,7 @@ public class Registrar extends ImmutableObject
   String failoverClientCertificateHash;
 
   /** An allow list of netmasks (in CIDR notation) which the client is allowed to connect from. */
-  // TODO(b/177567432): Rename to ipAddressAllowList once Cloud SQL migration is complete.
-  @Column(name = "ip_address_allow_list")
-  List<CidrAddressBlock> ipAddressWhitelist;
+  List<CidrAddressBlock> ipAddressAllowList;
 
   /** A hashed password for EPP access. The hash is a base64 encoded SHA256 string. */
   String passwordHash;
@@ -408,7 +405,7 @@ public class Registrar extends ImmutableObject
   boolean registryLockAllowed = false;
 
   public String getRegistrarId() {
-    return clientIdentifier;
+    return registrarId;
   }
 
   public DateTime getCreationTime() {
@@ -498,7 +495,7 @@ public class Registrar extends ImmutableObject
   }
 
   public ImmutableList<CidrAddressBlock> getIpAddressAllowList() {
-    return nullToEmptyImmutableCopy(ipAddressWhitelist);
+    return nullToEmptyImmutableCopy(ipAddressAllowList);
   }
 
   public RegistrarAddress getLocalizedAddress() {
@@ -587,7 +584,7 @@ public class Registrar extends ImmutableObject
             () ->
                 jpaTm()
                     .query("FROM RegistrarPoc WHERE registrarId = :registrarId", RegistrarPoc.class)
-                    .setParameter("registrarId", clientIdentifier)
+                    .setParameter("registrarId", registrarId)
                     .getResultStream()
                     .collect(toImmutableList()));
   }
@@ -595,7 +592,7 @@ public class Registrar extends ImmutableObject
   @Override
   public Map<String, Object> toJsonMap() {
     return new JsonMapBuilder()
-        .put("clientIdentifier", clientIdentifier)
+        .put("registrarId", registrarId)
         .put("ianaIdentifier", ianaIdentifier)
         .putString("creationTime", creationTime.getTimestamp())
         .putString("lastUpdateTime", lastUpdateTime.getTimestamp())
@@ -655,7 +652,7 @@ public class Registrar extends ImmutableObject
   /** Creates a {@link VKey} for this instance. */
   @Override
   public VKey<Registrar> createVKey() {
-    return createVKey(clientIdentifier);
+    return createVKey(registrarId);
   }
 
   /** Creates a {@link VKey} for the given {@code registrarId}. */
@@ -678,7 +675,7 @@ public class Registrar extends ImmutableObject
       checkArgument(
           Range.closed(3, 16).contains(registrarId.length()),
           "Registrar ID must be 3-16 characters long.");
-      getInstance().clientIdentifier = registrarId;
+      getInstance().registrarId = registrarId;
       return this;
     }
 
@@ -796,7 +793,7 @@ public class Registrar extends ImmutableObject
     }
 
     public Builder setIpAddressAllowList(Iterable<CidrAddressBlock> ipAddressAllowList) {
-      getInstance().ipAddressWhitelist = ImmutableList.copyOf(ipAddressAllowList);
+      getInstance().ipAddressAllowList = ImmutableList.copyOf(ipAddressAllowList);
       return this;
     }
 

@@ -223,7 +223,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       Query<Host> query =
           queryItems(
               Host.class,
-              "fullyQualifiedHostName",
+              "hostName",
               partialStringQuery,
               cursorString,
               getDeletedItemHandling(),
@@ -237,7 +237,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
                 CriteriaQueryBuilder<Host> queryBuilder =
                     queryItemsSql(
                         Host.class,
-                        "fullyQualifiedHostName",
+                        "hostName",
                         partialStringQuery,
                         cursorString,
                         getDeletedItemHandling());

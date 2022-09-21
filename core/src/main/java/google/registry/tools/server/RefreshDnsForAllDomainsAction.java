@@ -82,7 +82,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
             () ->
                 jpaTm()
                     .query(
-                        "SELECT fullyQualifiedDomainName FROM Domain "
+                        "SELECT domainName FROM Domain "
                             + "WHERE tld IN (:tlds) "
                             + "AND deletionTime > :now",
                         String.class)

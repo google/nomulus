@@ -30,28 +30,30 @@ import org.joda.time.DateTime;
 
 /** The {@link ResponseData} returned for an EPP info flow on a domain. */
 @XmlRootElement(name = "infData")
-@XmlType(propOrder = {
-    "fullyQualifiedDomainName",
-    "repoId",
-    "statusValues",
-    "registrant",
-    "contacts",
-    "nameservers",
-    "subordinateHosts",
-    "currentSponsorClientId",
-    "creationClientId",
-    "creationTime",
-    "lastEppUpdateClientId",
-    "lastEppUpdateTime",
-    "registrationExpirationTime",
-    "lastTransferTime",
-    "authInfo"})
+@XmlType(
+    propOrder = {
+      "domainName",
+      "repoId",
+      "statusValues",
+      "registrant",
+      "contacts",
+      "nameservers",
+      "subordinateHosts",
+      "currentSponsorClientId",
+      "creationClientId",
+      "creationTime",
+      "lastEppUpdateClientId",
+      "lastEppUpdateTime",
+      "registrationExpirationTime",
+      "lastTransferTime",
+      "authInfo"
+    })
 @AutoValue
 @CopyAnnotations
 public abstract class DomainInfoData implements ResponseData {
 
   @XmlElement(name = "name")
-  abstract String getFullyQualifiedDomainName();
+  abstract String getDomainName();
 
   @XmlElement(name = "roid")
   abstract String getRepoId();
@@ -110,7 +112,8 @@ public abstract class DomainInfoData implements ResponseData {
   /** Builder for {@link DomainInfoData}. */
   @AutoValue.Builder
   public abstract static class Builder {
-    public abstract Builder setFullyQualifiedDomainName(String fullyQualifiedDomainName);
+    public abstract Builder setDomainName(String domainName);
+
     public abstract Builder setRepoId(String repoId);
     public abstract Builder setStatusValues(@Nullable ImmutableSet<StatusValue> statusValues);
     public abstract Builder setRegistrant(String registrant);

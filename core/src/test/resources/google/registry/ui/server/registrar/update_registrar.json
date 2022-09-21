@@ -2,7 +2,7 @@
   "op": "update",
   "id": "TheRegistrar",
   "args": {
-    "clientIdentifier": "theregistrar",
+    "registrarId": "theregistrar",
     "driveFolderId": null,
     "registrarName": "The Registrar",
     "lastUpdateTime": "%LAST_UPDATE_TIME%",

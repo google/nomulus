@@ -68,7 +68,7 @@ public class OteStats {
           ((DomainCommand.Create)
                   ((ResourceCommandWrapper) eppInput.getCommandWrapper().getCommand())
                       .getResourceCommand())
-              .getFullyQualifiedDomainName()
+              .getDomainName()
               .startsWith(ACE_PREFIX);
 
   private static final Predicate<EppInput> IS_SUBORDINATE =

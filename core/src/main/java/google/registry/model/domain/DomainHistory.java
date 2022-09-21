@@ -25,7 +25,7 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod.GracePeriodHistory;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.secdns.DomainDsDataHistory;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.DomainTransactionRecord;
@@ -280,7 +280,7 @@ public class DomainHistory extends HistoryEntry {
               .map(GracePeriod::createFromHistory)
               .collect(toImmutableSet());
       domainBase.dsData =
-          dsDataHistories.stream().map(DelegationSignerData::create).collect(toImmutableSet());
+          dsDataHistories.stream().map(DomainDsData::create).collect(toImmutableSet());
       // Normally Hibernate would see that the domain fields are all null and would fill
       // domainBase with a null object. Unfortunately, the updateTimestamp is never null in SQL.
       if (domainBase.getDomainName() == null) {

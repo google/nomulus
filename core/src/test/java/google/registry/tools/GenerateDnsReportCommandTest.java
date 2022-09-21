@@ -32,7 +32,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.net.InetAddresses;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.testing.DatabaseHelper;
@@ -148,10 +148,8 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
                 .setNameservers(ImmutableSet.of(nameserver1.createVKey(), nameserver2.createVKey()))
                 .setDsData(
                     ImmutableSet.of(
-                        DelegationSignerData.create(
-                            12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC")),
-                        DelegationSignerData.create(
-                            56789, 2, 4, base16().decode("69FD46E6C4A45C55D4AC"))))
+                        DomainDsData.create(12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC")),
+                        DomainDsData.create(56789, 2, 4, base16().decode("69FD46E6C4A45C55D4AC"))))
                 .build());
     persistResource(
         DatabaseHelper.newDomain("foobar.xn--q9jyb4c")

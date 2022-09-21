@@ -24,7 +24,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.GracePeriod.GracePeriodHistory;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.secdns.DomainDsDataHistory;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.persistence.VKey;
@@ -46,7 +46,7 @@ public class BulkQueryHelper {
                         .filter(gracePeriod -> gracePeriod.getDomainRepoId().equals(domainRepoId))
                         .collect(toImmutableSet()),
                     jpaTm()
-                        .loadAllOfStream(DelegationSignerData.class)
+                        .loadAllOfStream(DomainDsData.class)
                         .filter(dsData -> dsData.getDomainRepoId().equals(domainRepoId))
                         .collect(toImmutableSet()),
                     jpaTm()

@@ -33,7 +33,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.template.soy.data.SoyListData;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.tools.soy.DomainRenewSoyInfo;
@@ -232,7 +232,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
   private ImmutableList<ImmutableMap<String, Object>> getExistingDsData(Domain domain) {
     ImmutableList.Builder<ImmutableMap<String, Object>> dsDataJsons = new ImmutableList.Builder();
     HexBinaryAdapter hexBinaryAdapter = new HexBinaryAdapter();
-    for (DelegationSignerData dsData : domain.getDsData()) {
+    for (DomainDsData dsData : domain.getDsData()) {
       dsDataJsons.add(
           ImmutableMap.of(
               "keyTag", dsData.getKeyTag(),

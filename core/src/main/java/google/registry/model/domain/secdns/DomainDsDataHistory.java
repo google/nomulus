@@ -25,7 +25,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
-/** Entity class to represent a historic {@link DelegationSignerData}. */
+/** Entity class to represent a historic {@link DomainDsData}. */
 @Entity
 public class DomainDsDataHistory extends DomainDsDataBase implements UnsafeSerializable {
 
@@ -39,10 +39,9 @@ public class DomainDsDataHistory extends DomainDsDataBase implements UnsafeSeria
 
   /**
    * Creates a {@link DomainDsDataHistory} instance from given {@link #domainHistoryRevisionId} and
-   * {@link DelegationSignerData} instance.
+   * {@link DomainDsData} instance.
    */
-  public static DomainDsDataHistory createFrom(
-      long domainHistoryRevisionId, DelegationSignerData dsData) {
+  public static DomainDsDataHistory createFrom(long domainHistoryRevisionId, DomainDsData dsData) {
     DomainDsDataHistory instance = new DomainDsDataHistory();
     instance.domainHistoryRevisionId = domainHistoryRevisionId;
     instance.domainRepoId = dsData.domainRepoId;

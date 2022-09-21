@@ -24,7 +24,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.GracePeriod.GracePeriodHistory;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.secdns.DomainDsDataHistory;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.DomainTransactionRecord;
@@ -67,12 +67,12 @@ public class BulkQueryEntities {
   public static Domain assembleDomain(
       DomainLite domainLite,
       ImmutableSet<GracePeriod> gracePeriods,
-      ImmutableSet<DelegationSignerData> delegationSignerData,
+      ImmutableSet<DomainDsData> domainDsData,
       ImmutableSet<VKey<Host>> nsHosts) {
     Domain.Builder builder = new Domain.Builder();
     builder.copyFrom(domainLite);
     builder.setGracePeriods(gracePeriods);
-    builder.setDsData(delegationSignerData);
+    builder.setDsData(domainDsData);
     builder.setNameservers(nsHosts);
     // Restore the original update timestamp (this gets cleared when we set nameservers or DS data).
     builder.setUpdateTimestamp(domainLite.getUpdateTimestamp());
@@ -99,9 +99,7 @@ public class BulkQueryEntities {
                       .map(GracePeriod::createFromHistory)
                       .collect(toImmutableSet()))
               .setDsData(
-                  dsDataHistories.stream()
-                      .map(DelegationSignerData::create)
-                      .collect(toImmutableSet()))
+                  dsDataHistories.stream().map(DomainDsData::create).collect(toImmutableSet()))
               // Restore the original update timestamp (this gets cleared when we set nameservers or
               // DS data).
               .setUpdateTimestamp(domainHistoryLite.domainBase.getUpdateTimestamp())

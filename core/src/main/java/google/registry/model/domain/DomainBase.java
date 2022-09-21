@@ -53,7 +53,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
@@ -112,17 +112,14 @@ public class DomainBase extends EppResource
    * Fully qualified domain name (puny-coded), which serves as the foreign key for this domain.
    *
    * <p>This is only unique in the sense that for any given lifetime specified as the time range
-   * from (creationTime, deletionTime) there can only be one domain in Datastore with this name.
+   * from (creationTime, deletionTime) there can only be one domain in the database with this name.
    * However, there can be many domains with the same name and non-overlapping lifetimes.
    *
-   * @invariant fullyQualifiedDomainName == fullyQualifiedDomainName.toLowerCase(Locale.ENGLISH)
+   * @invariant domainName == domainName.toLowerCase(Locale.ENGLISH)
    */
-  // TODO(b/177567432): Rename this to domainName when we are off Datastore
-  @Column(name = "domainName")
-  @Index
-  String fullyQualifiedDomainName;
+  @Index String domainName;
 
-  /** The top level domain this is under, dernormalized from {@link #fullyQualifiedDomainName}. */
+  /** The top level domain this is under, dernormalized from {@link #domainName}. */
   @Index String tld;
 
   /** References to hosts that are the nameservers for the domain. */
@@ -145,7 +142,7 @@ public class DomainBase extends EppResource
   DomainAuthInfo authInfo;
 
   /** Data used to construct DS records for this domain. */
-  @Ignore @Transient Set<DelegationSignerData> dsData;
+  @Ignore @Transient Set<DomainDsData> dsData;
 
   /**
    * The claims notice supplied when this domain was created, if there was one.
@@ -340,14 +337,14 @@ public class DomainBase extends EppResource
 
   @Override
   public String getForeignKey() {
-    return fullyQualifiedDomainName;
+    return domainName;
   }
 
   public String getDomainName() {
-    return fullyQualifiedDomainName;
+    return domainName;
   }
 
-  public ImmutableSet<DelegationSignerData> getDsData() {
+  public ImmutableSet<DomainDsData> getDsData() {
     return nullToEmptyImmutableCopy(dsData);
   }
 
@@ -392,9 +389,9 @@ public class DomainBase extends EppResource
 
   // Hibernate needs this in order to populate dsData but no one else should ever use it
   @SuppressWarnings("UnusedMethod")
-  private void setInternalDelegationSignerData(Set<DelegationSignerData> dsData) {
+  private void setInternalDelegationSignerData(Set<DomainDsData> dsData) {
     if (this.dsData instanceof PersistentSet) {
-      Set<DelegationSignerData> nonNullDsData = nullToEmpty(dsData);
+      Set<DomainDsData> nonNullDsData = nullToEmpty(dsData);
       this.dsData.retainAll(nonNullDsData);
       this.dsData.addAll(nonNullDsData);
     } else {
@@ -728,9 +725,9 @@ public class DomainBase extends EppResource
       // If there is no autorenew end time, set it to END_OF_TIME.
       instance.autorenewEndTime = firstNonNull(getInstance().autorenewEndTime, END_OF_TIME);
 
-      checkArgumentNotNull(emptyToNull(instance.fullyQualifiedDomainName), "Missing domainName");
+      checkArgumentNotNull(emptyToNull(instance.domainName), "Missing domainName");
       checkArgumentNotNull(instance.getRegistrant(), "Missing registrant");
-      instance.tld = getTldFromDomainName(instance.fullyQualifiedDomainName);
+      instance.tld = getTldFromDomainName(instance.domainName);
 
       T newDomain = super.build();
       // Hibernate throws exception if gracePeriods or dsData is null because we enabled all
@@ -751,11 +748,11 @@ public class DomainBase extends EppResource
           domainName.equals(canonicalizeHostname(domainName)),
           "Domain name %s not in puny-coded, lower-case form",
           domainName);
-      getInstance().fullyQualifiedDomainName = domainName;
+      getInstance().domainName = domainName;
       return thisCastToDerived();
     }
 
-    public B setDsData(ImmutableSet<DelegationSignerData> dsData) {
+    public B setDsData(ImmutableSet<DomainDsData> dsData) {
       getInstance().dsData = dsData;
       getInstance().resetUpdateTimestamp();
       return thisCastToDerived();

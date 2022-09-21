@@ -74,7 +74,7 @@ import google.registry.model.domain.DomainCommand.Update.Change;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.fee.FeeUpdateCommandExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.secdns.SecDnsUpdateExtension;
 import google.registry.model.domain.superuser.DomainUpdateSuperuserExtension;
 import google.registry.model.eppcommon.AuthInfo;
@@ -87,6 +87,7 @@ import google.registry.model.poll.PendingActionNotificationResponse.DomainPendin
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Registry;
+import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -181,8 +182,8 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     DomainHistory domainHistory =
         historyBuilder.setType(DOMAIN_UPDATE).setDomain(newDomain).build();
     validateNewState(newDomain);
-    if (newDomain.getDsData() != existingDomain.getDsData()
-        || newDomain.getNsHosts() != existingDomain.getNsHosts()) {
+    if (!Objects.equals(newDomain.getDsData(), existingDomain.getDsData())
+        || !Objects.equals(newDomain.getNsHosts(), existingDomain.getNsHosts())) {
       dnsQueue.addDomainRefreshTask(targetId);
     }
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
@@ -232,8 +233,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     validateContactsHaveTypes(add.getContacts());
     validateContactsHaveTypes(remove.getContacts());
     validateRegistrantAllowedOnTld(tld, command.getInnerChange().getRegistrantContactId());
-    validateNameserversAllowedOnTld(
-        tld, add.getNameserverFullyQualifiedHostNames());
+    validateNameserversAllowedOnTld(tld, add.getNameserverHostNames());
   }
 
   private Domain performUpdate(Update command, Domain domain, DateTime now) throws EppException {
@@ -263,7 +263,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
                 secDnsUpdate.isPresent()
                     ? updateDsData(
                         domain.getDsData().stream()
-                            .map(DelegationSignerData::cloneWithoutDomainRepoId)
+                            .map(DomainDsData::cloneWithoutDomainRepoId)
                             .collect(toImmutableSet()),
                         secDnsUpdate.get())
                     : domain.getDsData())

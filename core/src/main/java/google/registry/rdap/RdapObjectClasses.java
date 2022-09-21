@@ -25,7 +25,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.rdap.AbstractJsonableObject.RestrictJsonNames;
 import google.registry.rdap.RdapDataStructures.Event;
 import google.registry.rdap.RdapDataStructures.EventWithoutActor;
@@ -444,7 +444,7 @@ final class RdapObjectClasses {
       @JsonableElement
       abstract int digestType();
 
-      static DsData create(DelegationSignerData dsData) {
+      static DsData create(DomainDsData dsData) {
         return new AutoValue_RdapObjectClasses_SecureDns_DsData(
             dsData.getKeyTag(),
             dsData.getAlgorithm(),
@@ -490,7 +490,7 @@ final class RdapObjectClasses {
 
       abstract ImmutableList.Builder<DsData> dsDataBuilder();
 
-      Builder addDsData(DelegationSignerData dsData) {
+      Builder addDsData(DomainDsData dsData) {
         dsDataBuilder().add(DsData.create(dsData));
         return this;
       }

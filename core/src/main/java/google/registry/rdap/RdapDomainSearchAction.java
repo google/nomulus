@@ -199,13 +199,12 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
       final RdapSearchPattern partialStringQuery) {
     // We can't query for undeleted domains as part of the query itself; that would require an
     // inequality query on deletion time, and we are already using inequality queries on
-    // fullyQualifiedDomainName. So we instead pick an arbitrary limit of
-    // RESULT_SET_SIZE_SCALING_FACTOR times the result set size limit, fetch up to that many, and
-    // weed out all deleted domains. If there still isn't a full result set's worth of domains, we
-    // give up and return just the ones we found. Don't use queryItems, because it checks that the
-    // initial string is at least a certain length, which we don't need in this case. Query the
-    // domains directly, rather than the foreign keys, because then we have an index on TLD if we
-    // need it.
+    // domainName. So we instead pick an arbitrary limit of RESULT_SET_SIZE_SCALING_FACTOR times the
+    // result set size limit, fetch up to that many, and weed out all deleted domains. If there
+    // still isn't a full result set's worth of domains, we give up and return just the ones we
+    // found. Don't use queryItems, because it checks that the initial string is at least a certain
+    // length, which we don't need in this case. Query the domains directly, rather than the foreign
+    // keys, because then we have an index on TLD if we need it.
     int querySizeLimit = RESULT_SET_SIZE_SCALING_FACTOR * rdapResultSetMaxSize;
     RdapResultSet<Domain> resultSet;
     if (tm().isOfy()) {
@@ -213,10 +212,10 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
           auditedOfy()
               .load()
               .type(Domain.class)
-              .filter("fullyQualifiedDomainName <", partialStringQuery.getNextInitialString())
-              .filter("fullyQualifiedDomainName >=", partialStringQuery.getInitialString());
+              .filter("domainName <", partialStringQuery.getNextInitialString())
+              .filter("domainName >=", partialStringQuery.getInitialString());
       if (cursorString.isPresent()) {
-        query = query.filter("fullyQualifiedDomainName >", cursorString.get());
+        query = query.filter("domainName >", cursorString.get());
       }
       if (partialStringQuery.getSuffix() != null) {
         query = query.filter("tld", partialStringQuery.getSuffix());
@@ -234,16 +233,14 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                     CriteriaQueryBuilder<Domain> queryBuilder =
                         CriteriaQueryBuilder.create(replicaJpaTm(), Domain.class)
                             .where(
-                                "fullyQualifiedDomainName",
+                                "domainName",
                                 criteriaBuilder::like,
                                 String.format("%s%%", partialStringQuery.getInitialString()))
-                            .orderByAsc("fullyQualifiedDomainName");
+                            .orderByAsc("domainName");
                     if (cursorString.isPresent()) {
                       queryBuilder =
                           queryBuilder.where(
-                              "fullyQualifiedDomainName",
-                              criteriaBuilder::greaterThan,
-                              cursorString.get());
+                              "domainName", criteriaBuilder::greaterThan, cursorString.get());
                     }
                     if (partialStringQuery.getSuffix() != null) {
                       queryBuilder =
@@ -258,18 +255,18 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
 
   /** Searches for domains by domain name with a TLD suffix. */
   private DomainSearchResponse searchByDomainNameByTld(String tld) {
-    // Even though we are not searching on fullyQualifiedDomainName, we want the results to come
-    // back ordered by name, so we are still in the same boat as
-    // searchByDomainNameWithInitialString, unable to perform an inequality query on deletion time.
-    // Don't use queryItems, because it doesn't handle pending deletes.
+    // Even though we are not searching on domainName, we want the results to come back ordered by
+    // name, so we are still in the same boat as searchByDomainNameWithInitialString, unable to
+    // perform an inequality query on deletion time. Don't use queryItems, because it doesn't handle
+    // pending deletes.
     int querySizeLimit = RESULT_SET_SIZE_SCALING_FACTOR * rdapResultSetMaxSize;
     RdapResultSet<Domain> resultSet;
     if (tm().isOfy()) {
       Query<Domain> query = auditedOfy().load().type(Domain.class).filter("tld", tld);
       if (cursorString.isPresent()) {
-        query = query.filter("fullyQualifiedDomainName >", cursorString.get());
+        query = query.filter("domainName >", cursorString.get());
       }
-      query = query.order("fullyQualifiedDomainName").limit(querySizeLimit);
+      query = query.order("domainName").limit(querySizeLimit);
       resultSet = getMatchingResources(query, true, querySizeLimit);
     } else {
       resultSet =
@@ -281,10 +278,10 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                                 Domain.class,
                                 "tld",
                                 tld,
-                                Optional.of("fullyQualifiedDomainName"),
+                                Optional.of("domainName"),
                                 cursorString,
                                 DeletedItemHandling.INCLUDE)
-                            .orderByAsc("fullyQualifiedDomainName");
+                            .orderByAsc("domainName");
                     return getMatchingResourcesSql(builder, true, querySizeLimit);
                   });
     }
@@ -344,7 +341,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
       Query<Host> query =
           queryItems(
               Host.class,
-              "fullyQualifiedHostName",
+              "hostName",
               partialStringQuery,
               Optional.empty(),
               DeletedItemHandling.EXCLUDE,
@@ -362,7 +359,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                 CriteriaQueryBuilder<Host> builder =
                     queryItemsSql(
                         Host.class,
-                        "fullyQualifiedHostName",
+                        "hostName",
                         partialStringQuery,
                         Optional.empty(),
                         DeletedItemHandling.EXCLUDE);
@@ -558,7 +555,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
           // If we are not performing an inequality query, we can filter on the cursor in the query.
           // Otherwise, we will need to filter the results afterward.
         } else if (cursorString.isPresent()) {
-          query = query.filter("fullyQualifiedDomainName >", cursorString.get());
+          query = query.filter("domainName >", cursorString.get());
         }
         Stream<Domain> stream = Streams.stream(query).filter(this::isAuthorized);
         if (cursorString.isPresent()) {
@@ -574,7 +571,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                     CriteriaQueryBuilder<Domain> queryBuilder =
                         CriteriaQueryBuilder.create(replicaJpaTm(), Domain.class)
                             .whereFieldContains("nsHosts", hostKey)
-                            .orderByAsc("fullyQualifiedDomainName");
+                            .orderByAsc("domainName");
                     CriteriaBuilder criteriaBuilder =
                         replicaJpaTm().getEntityManager().getCriteriaBuilder();
                     if (!shouldIncludeDeleted()) {
@@ -585,9 +582,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                     if (cursorString.isPresent()) {
                       queryBuilder =
                           queryBuilder.where(
-                              "fullyQualifiedDomainName",
-                              criteriaBuilder::greaterThan,
-                              cursorString.get());
+                              "domainName", criteriaBuilder::greaterThan, cursorString.get());
                     }
                     replicaJpaTm()
                         .criteriaQuery(queryBuilder.build())

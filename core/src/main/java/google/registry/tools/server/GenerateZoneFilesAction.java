@@ -30,7 +30,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
 import google.registry.request.Action;
 import google.registry.request.HttpException.BadRequestException;
@@ -241,7 +241,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
               // Load the nameservers at the export time in case they've been renamed or deleted.
               loadAtPointInTime(nameserver, exportTime).getHostName()));
     }
-    for (DelegationSignerData dsData : domain.getDsData()) {
+    for (DomainDsData dsData : domain.getDsData()) {
       result.append(
           String.format(
               DS_FORMAT,

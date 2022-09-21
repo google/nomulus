@@ -193,7 +193,7 @@ public class SyncRegistrarsSheetTest {
     assertThat(rows).hasSize(2);
 
     ImmutableMap<String, String> row = rows.get(0);
-    assertThat(row).containsEntry("clientIdentifier", "aaaregistrar");
+    assertThat(row).containsEntry("registrarId", "aaaregistrar");
     assertThat(row).containsEntry("registrarName", "AAA Registrar Inc.");
     assertThat(row).containsEntry("state", "SUSPENDED");
     assertThat(row).containsEntry("ianaIdentifier", "8");
@@ -288,7 +288,7 @@ public class SyncRegistrarsSheetTest {
     assertThat(row).containsEntry("billingAccountMap", "{JPY=JPY7890, USD=USD1234}");
 
     row = rows.get(1);
-    assertThat(row).containsEntry("clientIdentifier", "anotherregistrar");
+    assertThat(row).containsEntry("registrarId", "anotherregistrar");
     assertThat(row).containsEntry("registrarName", "Another Registrar LLC");
     assertThat(row).containsEntry("state", "ACTIVE");
     assertThat(row).containsEntry("ianaIdentifier", "1");
@@ -337,7 +337,7 @@ public class SyncRegistrarsSheetTest {
 
     verify(sheetSynchronizer).synchronize(eq("foobar"), rowsCaptor.capture());
     ImmutableMap<String, String> row = getOnlyElement(getOnlyElement(rowsCaptor.getAllValues()));
-    assertThat(row).containsEntry("clientIdentifier", "SomeRegistrar");
+    assertThat(row).containsEntry("registrarId", "SomeRegistrar");
     assertThat(row).containsEntry("registrarName", "Some Registrar");
     assertThat(row).containsEntry("state", "ACTIVE");
     assertThat(row).containsEntry("ianaIdentifier", "8");

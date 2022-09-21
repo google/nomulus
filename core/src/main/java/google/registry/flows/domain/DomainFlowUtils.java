@@ -105,7 +105,7 @@ import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.launch.LaunchNotice.InvalidChecksumException;
 import google.registry.model.domain.launch.LaunchPhase;
 import google.registry.model.domain.metadata.MetadataExtension;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.secdns.SecDnsCreateExtension;
 import google.registry.model.domain.secdns.SecDnsInfoExtension;
 import google.registry.model.domain.secdns.SecDnsUpdateExtension;
@@ -316,14 +316,14 @@ public class DomainFlowUtils {
   }
 
   /** Check that the DS data that will be set on a domain is valid. */
-  static void validateDsData(Set<DelegationSignerData> dsData) throws EppException {
+  static void validateDsData(Set<DomainDsData> dsData) throws EppException {
     if (dsData != null) {
       if (dsData.size() > MAX_DS_RECORDS_PER_DOMAIN) {
         throw new TooManyDsRecordsException(
             String.format(
                 "A maximum of %s DS records are allowed per domain.", MAX_DS_RECORDS_PER_DOMAIN));
       }
-      ImmutableList<DelegationSignerData> invalidAlgorithms =
+      ImmutableList<DomainDsData> invalidAlgorithms =
           dsData.stream()
               .filter(ds -> !validateAlgorithm(ds.getAlgorithm()))
               .collect(toImmutableList());
@@ -333,7 +333,7 @@ public class DomainFlowUtils {
                 "Domain contains DS record(s) with an invalid algorithm wire value: %s",
                 invalidAlgorithms));
       }
-      ImmutableList<DelegationSignerData> invalidDigestTypes =
+      ImmutableList<DomainDsData> invalidDigestTypes =
           dsData.stream()
               .filter(ds -> !DigestType.fromWireValue(ds.getDigestType()).isPresent())
               .collect(toImmutableList());
@@ -343,7 +343,7 @@ public class DomainFlowUtils {
                 "Domain contains DS record(s) with an invalid digest type: %s",
                 invalidDigestTypes));
       }
-      ImmutableList<DelegationSignerData> digestsWithInvalidDigestLength =
+      ImmutableList<DomainDsData> digestsWithInvalidDigestLength =
           dsData.stream()
               .filter(
                   ds ->
@@ -920,16 +920,15 @@ public class DomainFlowUtils {
    * and we are going to ignore it; clients who don't care about secDNS can just ignore it.
    */
   static void addSecDnsExtensionIfPresent(
-      ImmutableList.Builder<ResponseExtension> extensions,
-      ImmutableSet<DelegationSignerData> dsData) {
+      ImmutableList.Builder<ResponseExtension> extensions, ImmutableSet<DomainDsData> dsData) {
     if (!dsData.isEmpty()) {
       extensions.add(SecDnsInfoExtension.create(dsData));
     }
   }
 
-  /** Update {@link DelegationSignerData} based on an update extension command. */
-  static ImmutableSet<DelegationSignerData> updateDsData(
-      ImmutableSet<DelegationSignerData> oldDsData, SecDnsUpdateExtension secDnsUpdate)
+  /** Update {@link DomainDsData} based on an update extension command. */
+  static ImmutableSet<DomainDsData> updateDsData(
+      ImmutableSet<DomainDsData> oldDsData, SecDnsUpdateExtension secDnsUpdate)
       throws EppException {
     // We don't support 'urgent' because we do everything as fast as we can anyways.
     if (Boolean.TRUE.equals(secDnsUpdate.getUrgent())) { // We allow both false and null.
@@ -948,8 +947,8 @@ public class DomainFlowUtils {
     if (remove != null && Boolean.FALSE.equals(remove.getAll())) {
       throw new SecDnsAllUsageException(); // Explicit all=false is meaningless.
     }
-    Set<DelegationSignerData> toAdd = (add == null) ? ImmutableSet.of() : add.getDsData();
-    Set<DelegationSignerData> toRemove =
+    Set<DomainDsData> toAdd = (add == null) ? ImmutableSet.of() : add.getDsData();
+    Set<DomainDsData> toRemove =
         (remove == null)
             ? ImmutableSet.of()
             : (remove.getAll() == null) ? remove.getDsData() : oldDsData;
@@ -1001,9 +1000,9 @@ public class DomainFlowUtils {
     validateRegistrantAllowedOnTld(tld, command.getRegistrantContactId());
     validateNoDuplicateContacts(command.getContacts());
     validateRequiredContactsPresent(command.getRegistrant(), command.getContacts());
-    ImmutableSet<String> fullyQualifiedHostNames = command.getNameserverFullyQualifiedHostNames();
-    validateNameserversCountForTld(tld, domainName, fullyQualifiedHostNames.size());
-    validateNameserversAllowedOnTld(tld, fullyQualifiedHostNames);
+    ImmutableSet<String> hostNames = command.getNameserverHostNames();
+    validateNameserversCountForTld(tld, domainName, hostNames.size());
+    validateNameserversAllowedOnTld(tld, hostNames);
   }
 
   /** Validate the secDNS extension, if present. */
@@ -1542,11 +1541,11 @@ public class DomainFlowUtils {
   /** Nameservers are not allow-listed for this TLD. */
   public static class NameserversNotAllowedForTldException
       extends StatusProhibitsOperationException {
-    public NameserversNotAllowedForTldException(Set<String> fullyQualifiedHostNames) {
+    public NameserversNotAllowedForTldException(Set<String> hostNames) {
       super(
           String.format(
               "Nameservers '%s' are not allow-listed for this TLD",
-              Joiner.on(',').join(fullyQualifiedHostNames)));
+              Joiner.on(',').join(hostNames)));
     }
   }
 

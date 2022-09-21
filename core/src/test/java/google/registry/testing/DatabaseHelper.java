@@ -113,7 +113,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
@@ -984,32 +983,12 @@ public final class DatabaseHelper {
     return createRepoId(allocateId(), getContactAndHostRoidSuffix());
   }
 
-  private static <R extends ImmutableObject> void saveResource(R resource) {
-    if (tm().isOfy()) {
-      Consumer<ImmutableObject> saver = tm()::put;
-      saver.accept(resource);
-      if (resource instanceof EppResource) {
-        EppResource eppResource = (EppResource) resource;
-        persistEppResourceExtras(eppResource, saver);
-      }
-    } else {
-      tm().put(resource);
-    }
-  }
-
-  private static <R extends EppResource> void persistEppResourceExtras(
-      R resource, Consumer<ImmutableObject> saver) {
-    assertWithMessage("Cannot persist an EppResource with a missing repoId in tests")
-        .that(resource.getRepoId())
-        .isNotEmpty();
-  }
-
   /** Persists an object in the DB for tests. */
   public static <R extends ImmutableObject> R persistResource(final R resource) {
     assertWithMessage("Attempting to persist a Builder is almost certainly an error in test code")
         .that(resource)
         .isNotInstanceOf(Buildable.Builder.class);
-    tm().transact(() -> saveResource(resource));
+    tm().transact(() -> tm().put(resource));
     maybeAdvanceClock();
     // Force the session cache to be cleared so that when we read the resource back, we read from
     // Datastore and not from the session cache. This is needed to trigger Objectify's load process
@@ -1026,11 +1005,8 @@ public final class DatabaseHelper {
           .that(resource)
           .isNotInstanceOf(Buildable.Builder.class);
     }
-    // Persist domains ten at a time, to avoid exceeding the entity group limit.
-    for (final List<R> chunk : Iterables.partition(resources, 10)) {
-      tm().transact(() -> chunk.forEach(DatabaseHelper::saveResource));
-      maybeAdvanceClock();
-    }
+    tm().transact(() -> resources.forEach(e -> tm().put(e)));
+    maybeAdvanceClock();
     // Force the session to be cleared so that when we read it back, we read from Datastore
     // and not from the transaction's session cache.
     tm().clearSessionCache();

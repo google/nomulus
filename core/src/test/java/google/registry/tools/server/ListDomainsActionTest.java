@@ -142,17 +142,17 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_twoLinesWithIdOnlyExplicitHeader() {
     action.tlds = ImmutableSet.of("foo");
-    persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
-    persistActiveDomain("example2.foo", DateTime.parse("2011-03-04T16:00:00Z"));
+    persistActiveDomain("test1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
+    persistActiveDomain("test2.foo", DateTime.parse("2011-03-04T16:00:00Z"));
     testRunSuccess(
         action,
         Optional.empty(),
         Optional.of(true),
         Optional.empty(),
-        "^fullyQualifiedDomainName$",
+        "^domainName$",
         "^-+\\s*$",
-        "^example1.foo\\s*$",
-        "^example2.foo\\s*$");
+        "^test1.foo\\s*$",
+        "^test2.foo\\s*$");
   }
 
   @Test
@@ -165,7 +165,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         Optional.of("repoId"),
         Optional.empty(),
         Optional.empty(),
-        "^fullyQualifiedDomainName\\s+repoId\\s*$",
+        "^domainName\\s+repoId\\s*$",
         "^-+\\s+-+\\s*$",
         "^example1.foo\\s+2-FOO\\s*$",
         "^example3.foo\\s+4-FOO\\s*$");
@@ -195,7 +195,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         Optional.of("repoId"),
         Optional.of(true),
         Optional.empty(),
-        "^fullyQualifiedDomainName\\s+repoId\\s*$",
+        "^domainName\\s+repoId\\s*$",
         "^-+\\s+-+\\s*$",
         "^example1.foo\\s+2-FOO\\s*$",
         "^example3.foo\\s+4-FOO\\s*$");
@@ -211,7 +211,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         Optional.of("*"),
         Optional.empty(),
         Optional.empty(),
-        "^fullyQualifiedDomainName\\s+.*repoId",
+        "^domainName\\s+.*repoId",
         "^-+\\s+-+",
         "^example1.foo\\s+.*2-FOO",
         "^example3.foo\\s+.*4-FOO");
@@ -227,7 +227,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         Optional.of("*,repoId"),
         Optional.empty(),
         Optional.empty(),
-        "^fullyQualifiedDomainName\\s+.*repoId",
+        "^domainName\\s+.*repoId",
         "^-+\\s+-+",
         "^example1.foo\\s+.*2-FOO",
         "^example3.foo\\s+.*4-FOO");

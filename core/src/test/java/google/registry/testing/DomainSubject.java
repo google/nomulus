@@ -24,7 +24,7 @@ import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.SimpleSubjectBuilder;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.launch.LaunchNotice;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.testing.TruthChainer.And;
 import java.util.Set;
@@ -40,16 +40,15 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
     this.actual = subject;
   }
 
-  public And<DomainSubject> hasFullyQualifiedDomainName(String fullyQualifiedDomainName) {
-    return hasValue(
-        fullyQualifiedDomainName, actual.getDomainName(), "has fullyQualifiedDomainName");
+  public And<DomainSubject> hasDomainName(String domainName) {
+    return hasValue(domainName, actual.getDomainName(), "has domainName");
   }
 
-  public And<DomainSubject> hasExactlyDsData(DelegationSignerData... dsData) {
+  public And<DomainSubject> hasExactlyDsData(DomainDsData... dsData) {
     return hasExactlyDsData(ImmutableSet.copyOf(dsData));
   }
 
-  public And<DomainSubject> hasExactlyDsData(Set<DelegationSignerData> dsData) {
+  public And<DomainSubject> hasExactlyDsData(Set<DomainDsData> dsData) {
     return hasValue(dsData, actual.getDsData(), "has dsData");
   }
 

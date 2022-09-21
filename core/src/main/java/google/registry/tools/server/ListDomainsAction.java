@@ -69,7 +69,7 @@ public final class ListDomainsAction extends ListObjectsAction<Domain> {
 
   @Override
   public ImmutableSet<String> getPrimaryKeyFields() {
-    return ImmutableSet.of("fullyQualifiedDomainName");
+    return ImmutableSet.of("domainName");
   }
 
   @Override

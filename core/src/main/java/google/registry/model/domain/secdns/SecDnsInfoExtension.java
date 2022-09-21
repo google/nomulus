@@ -24,9 +24,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class SecDnsInfoExtension extends ImmutableObject implements ResponseExtension {
 
   /** Signatures for this domain. */
-  ImmutableSet<DelegationSignerData> dsData;
+  ImmutableSet<DomainDsData> dsData;
 
-  public static SecDnsInfoExtension create(ImmutableSet<DelegationSignerData> dsData) {
+  public static SecDnsInfoExtension create(ImmutableSet<DomainDsData> dsData) {
     SecDnsInfoExtension instance = new SecDnsInfoExtension();
     instance.dsData = dsData;
     return instance;

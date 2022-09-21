@@ -34,9 +34,9 @@ public final class StaticPremiumListPricingEngine implements PremiumPricingEngin
   @Inject StaticPremiumListPricingEngine() {}
 
   @Override
-  public DomainPrices getDomainPrices(String fullyQualifiedDomainName, DateTime priceTime) {
-    String tld = getTldFromDomainName(fullyQualifiedDomainName);
-    String label = InternetDomainName.from(fullyQualifiedDomainName).parts().get(0);
+  public DomainPrices getDomainPrices(String domainName, DateTime priceTime) {
+    String tld = getTldFromDomainName(domainName);
+    String label = InternetDomainName.from(domainName).parts().get(0);
     Registry registry = Registry.get(checkNotNull(tld, "tld"));
     Optional<Money> premiumPrice =
         registry.getPremiumListName().flatMap(pl -> PremiumListDao.getPremiumPrice(pl, label));

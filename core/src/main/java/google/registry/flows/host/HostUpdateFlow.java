@@ -129,7 +129,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
     extensionManager.validate();
     Update command = (Update) resourceCommand;
     Change change = command.getInnerChange();
-    String suppliedNewHostName = change.getFullyQualifiedHostName();
+    String suppliedNewHostName = change.getHostName();
     DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
     Host existingHost = loadAndVerifyExistence(Host.class, targetId, now);
@@ -260,7 +260,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
       dnsQueue.addHostRefreshTask(existingHost.getHostName());
     }
     // In case of a rename, there are many updates we need to queue up.
-    if (((Update) resourceCommand).getInnerChange().getFullyQualifiedHostName() != null) {
+    if (((Update) resourceCommand).getInnerChange().getHostName() != null) {
       // If the renamed host is also subordinate, then we must enqueue an update to write the new
       // glue.
       if (newHost.isSubordinate()) {

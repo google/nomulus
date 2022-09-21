@@ -25,7 +25,7 @@ import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.transfer.DomainTransferData;
@@ -197,7 +197,7 @@ final class DomainToXjcConverter {
         //    completely useless.
         if (!model.getDsData().isEmpty()) {
           XjcSecdnsDsOrKeyType secdns = new XjcSecdnsDsOrKeyType();
-          for (DelegationSignerData ds : model.getDsData()) {
+          for (DomainDsData ds : model.getDsData()) {
             secdns.getDsDatas().add(convertDelegationSignerData(ds));
           }
           bean.setSecDNS(secdns);
@@ -284,8 +284,8 @@ final class DomainToXjcConverter {
     return bean;
   }
 
-  /** Converts {@link DelegationSignerData} to {@link XjcSecdnsDsDataType}. */
-  private static XjcSecdnsDsDataType convertDelegationSignerData(DelegationSignerData model) {
+  /** Converts {@link DomainDsData} to {@link XjcSecdnsDsDataType}. */
+  private static XjcSecdnsDsDataType convertDelegationSignerData(DomainDsData model) {
     XjcSecdnsDsDataType bean = new XjcSecdnsDsDataType();
     bean.setKeyTag(model.getKeyTag());
     bean.setAlg((short) model.getAlgorithm());

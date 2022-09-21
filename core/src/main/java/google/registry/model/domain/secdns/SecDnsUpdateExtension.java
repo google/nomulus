@@ -70,9 +70,9 @@ public class SecDnsUpdateExtension extends ImmutableObject implements CommandExt
   @XmlTransient
   abstract static class AddRemoveBase extends ImmutableObject {
     /** Delegations to add or remove. */
-    Set<DelegationSignerData> dsData;
+    Set<DomainDsData> dsData;
 
-    public ImmutableSet<DelegationSignerData> getDsData() {
+    public ImmutableSet<DomainDsData> getDsData() {
       return nullToEmptyImmutableCopy(dsData);
     }
   }

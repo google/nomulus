@@ -28,10 +28,10 @@ public interface PremiumPricingEngine {
   /**
    * Returns the prices for the given fully qualified domain name at the given time.
    *
-   * <p>Note that the fullyQualifiedDomainName must only contain a single part left of the TLD, i.e.
-   * subdomains are not allowed, but multi-part TLDs are.
+   * <p>Note that the domainName must only contain a single part left of the TLD, i.e. subdomains
+   * are not allowed, but multi-part TLDs are.
    */
-  DomainPrices getDomainPrices(String fullyQualifiedDomainName, DateTime priceTime);
+  DomainPrices getDomainPrices(String domainName, DateTime priceTime);
 
   /**
    * A class containing information on premium prices for a specific domain name.

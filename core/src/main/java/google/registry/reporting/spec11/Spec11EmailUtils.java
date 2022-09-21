@@ -137,10 +137,7 @@ public class Spec11EmailUtils {
                           threatMatch ->
                               tm()
                                   .createQueryComposer(Domain.class)
-                                  .where(
-                                      "fullyQualifiedDomainName",
-                                      Comparator.EQ,
-                                      threatMatch.fullyQualifiedDomainName())
+                                  .where("domainName", Comparator.EQ, threatMatch.domainName())
                                   .stream()
                                   .anyMatch(Domain::shouldPublishToDns))
                       .collect(toImmutableList());
@@ -176,7 +173,7 @@ public class Spec11EmailUtils {
             .map(
                 threatMatch ->
                     ImmutableMap.of(
-                        "fullyQualifiedDomainName", threatMatch.fullyQualifiedDomainName(),
+                        "domainName", threatMatch.domainName(),
                         "threatType", threatMatch.threatType()))
             .collect(toImmutableList());
 

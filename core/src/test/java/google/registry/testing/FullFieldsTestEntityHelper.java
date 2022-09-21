@@ -31,7 +31,7 @@ import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
-import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
@@ -346,7 +346,7 @@ public final class FullFieldsTestEntityHelper {
                     StatusValue.CLIENT_RENEW_PROHIBITED,
                     StatusValue.CLIENT_TRANSFER_PROHIBITED,
                     StatusValue.SERVER_UPDATE_PROHIBITED))
-            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, "deadface")));
+            .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, "deadface")));
     if (registrant != null) {
       builder.setRegistrant(registrant.createVKey());
     }

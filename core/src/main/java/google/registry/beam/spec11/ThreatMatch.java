@@ -25,23 +25,23 @@ import org.json.JSONObject;
 public abstract class ThreatMatch implements Serializable {
 
   private static final String THREAT_TYPE_FIELD = "threatType";
-  private static final String DOMAIN_NAME_FIELD = "fullyQualifiedDomainName";
+  private static final String DOMAIN_NAME_FIELD = "domainName";
 
   /** Returns what kind of threat it is (malware, phishing etc.) */
   public abstract String threatType();
   /** Returns the fully qualified domain name [SLD].[TLD] of the matched threat. */
-  public abstract String fullyQualifiedDomainName();
+  public abstract String domainName();
 
   @VisibleForTesting
-  static ThreatMatch create(String threatType, String fullyQualifiedDomainName) {
-    return new AutoValue_ThreatMatch(threatType, fullyQualifiedDomainName);
+  static ThreatMatch create(String threatType, String domainName) {
+    return new AutoValue_ThreatMatch(threatType, domainName);
   }
 
   /** Returns a {@link JSONObject} representing a subset of this object's data. */
   JSONObject toJSON() throws JSONException {
     return new JSONObject()
         .put(THREAT_TYPE_FIELD, threatType())
-        .put(DOMAIN_NAME_FIELD, fullyQualifiedDomainName());
+        .put(DOMAIN_NAME_FIELD, domainName());
   }
 
   /** Parses a {@link JSONObject} and returns an equivalent {@link ThreatMatch}. */

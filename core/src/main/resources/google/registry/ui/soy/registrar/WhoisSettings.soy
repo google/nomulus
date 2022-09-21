@@ -18,7 +18,7 @@
 
 /** Registrar whois settings page for view and edit. */
 {template .settings}
-  {@param clientIdentifier: string}
+  {@param registrarId: string}
   {@param? ianaIdentifier: int}
   {@param? icannReferralEmail: string}
   {@param readonly: bool}
@@ -40,8 +40,8 @@
     <table>
     {call registry.soy.forms.inputFieldRowWithValue}
       {param label: 'Name' /}
-      {param name: 'clientIdentifier' /}
-      {param value: $clientIdentifier /}
+      {param name: 'registrarId' /}
+      {param value: $registrarId /}
       {param readonly: true /}
     {/call}
     {call registry.soy.forms.inputFieldRowWithValue}

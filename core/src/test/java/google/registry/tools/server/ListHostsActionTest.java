@@ -53,7 +53,7 @@ class ListHostsActionTest extends ListActionTestCase {
         Optional.of("repoId"),
         Optional.empty(),
         Optional.empty(),
-        "^fullyQualifiedHostName\\s+repoId\\s*$",
+        "^hostName\\s+repoId\\s*$",
         "^-+\\s+-+\\s*$",
         "^example1.foo\\s+3-ROID\\s*$",
         "^example2.foo\\s+2-ROID\\s*$");
@@ -68,7 +68,7 @@ class ListHostsActionTest extends ListActionTestCase {
         Optional.of("*"),
         Optional.empty(),
         Optional.empty(),
-        "^fullyQualifiedHostName\\s+.*repoId",
+        "^hostName\\s+.*repoId",
         "^-+\\s+-+",
         "^example1.foo\\s+.*2",
         "^example2.foo\\s+.*1");
@@ -83,7 +83,7 @@ class ListHostsActionTest extends ListActionTestCase {
         Optional.of("*,repoId"),
         Optional.empty(),
         Optional.empty(),
-        "^fullyQualifiedHostName\\s+.*repoId",
+        "^hostName\\s+.*repoId",
         "^-+\\s+-+",
         "^example1.foo\\s+.*2",
         "^example2.foo\\s+.*1");
