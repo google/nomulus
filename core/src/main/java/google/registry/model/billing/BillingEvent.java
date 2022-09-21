@@ -38,7 +38,7 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.persistence.VKey;
-import google.registry.persistence.WithLongVKey;
+import google.registry.persistence.WithVKey;
 import google.registry.persistence.converter.JodaMoneyType;
 import java.util.Optional;
 import java.util.Set;
@@ -295,7 +295,7 @@ public abstract class BillingEvent extends ImmutableObject
         @Index(columnList = "cancellation_matching_billing_recurrence_id")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_event_id"))
-  @WithLongVKey(compositeKey = true)
+  @WithVKey(Long.class)
   public static class OneTime extends BillingEvent {
 
     /** The billable value. */
@@ -473,7 +473,7 @@ public abstract class BillingEvent extends ImmutableObject
         @Index(columnList = "recurrence_time_of_year")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_recurrence_id"))
-  @WithLongVKey(compositeKey = true)
+  @WithVKey(Long.class)
   public static class Recurring extends BillingEvent {
 
     /**
@@ -606,7 +606,7 @@ public abstract class BillingEvent extends ImmutableObject
         @Index(columnList = "billing_recurrence_id")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_cancellation_id"))
-  @WithLongVKey(compositeKey = true)
+  @WithVKey(Long.class)
   public static class Cancellation extends BillingEvent {
 
     /** The billing time of the charge that is being cancelled. */

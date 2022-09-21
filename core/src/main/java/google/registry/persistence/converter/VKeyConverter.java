@@ -14,20 +14,34 @@
 
 package google.registry.persistence.converter;
 
-import com.googlecode.objectify.Key;
 import google.registry.persistence.VKey;
 import java.io.Serializable;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 
-/** Converts VKey to a string or long column. */
+/**
+ * Converts {@link VKey} to/from a type that can be directly stored in the database.
+ *
+ * <p>Typically the converted type is {@link String} or {@link Long}.
+ */
 public abstract class VKeyConverter<T, C extends Serializable>
     implements AttributeConverter<VKey<? extends T>, C> {
+
   @Override
   @Nullable
-  @SuppressWarnings("unchecked")
   public C convertToDatabaseColumn(@Nullable VKey<? extends T> attribute) {
-    return attribute == null ? null : (C) attribute.getSqlKey();
+    if (attribute == null) {
+      return null;
+    }
+    try {
+      return getKeyClass().cast(attribute.getSqlKey());
+    } catch (ClassCastException e) {
+      throw new RuntimeException(
+          String.format(
+              "Cannot cast SQL key %s of type %s to type %s",
+              attribute.getSqlKey(), attribute.getSqlKey().getClass(), getKeyClass()),
+          e);
+    }
   }
 
   @Override
@@ -36,27 +50,12 @@ public abstract class VKeyConverter<T, C extends Serializable>
     if (dbData == null) {
       return null;
     }
-    Class<T> clazz = getAttributeClass();
-    Key<T> ofyKey;
-    if (!hasCompositeOfyKey()) {
-      // If this isn't a composite key, we can create the Ofy key from the SQL key.
-      ofyKey =
-          dbData instanceof String
-              ? Key.create(clazz, (String) dbData)
-              : Key.create(clazz, (Long) dbData);
-      return VKey.create(clazz, dbData, ofyKey);
-    } else {
-      // We don't know how to create the Ofy key and probably don't have everything necessary to do
-      // it anyway, so just create an asymmetric key - the containing object will have to convert it
-      // into a symmetric key.
-      return VKey.createSql(clazz, dbData);
-    }
+    return VKey.createSql(getEntityClass(), dbData);
   }
 
-  protected boolean hasCompositeOfyKey() {
-    return false;
-  }
+  /** Returns the class of the entity that the VKey represents. */
+  protected abstract Class<T> getEntityClass();
 
-  /** Returns the class of the attribute. */
-  protected abstract Class<T> getAttributeClass();
+  /** Returns the class of the key that the VKey holds. */
+  protected abstract Class<C> getKeyClass();
 }

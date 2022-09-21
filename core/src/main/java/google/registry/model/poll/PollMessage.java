@@ -46,7 +46,7 @@ import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.persistence.VKey;
-import google.registry.persistence.WithLongVKey;
+import google.registry.persistence.WithVKey;
 import google.registry.util.NullIgnoringCollectionBuilder;
 import java.util.Optional;
 import javax.persistence.AttributeOverride;
@@ -342,7 +342,7 @@ public abstract class PollMessage extends ImmutableObject
    */
   @Entity
   @DiscriminatorValue("ONE_TIME")
-  @WithLongVKey(compositeKey = true)
+  @WithVKey(Long.class)
   public static class OneTime extends PollMessage {
 
     @Embedded
@@ -544,7 +544,7 @@ public abstract class PollMessage extends ImmutableObject
    */
   @Entity
   @DiscriminatorValue("AUTORENEW")
-  @WithLongVKey(compositeKey = true)
+  @WithVKey(Long.class)
   public static class Autorenew extends PollMessage {
 
     /** The target id of the autorenew event. */

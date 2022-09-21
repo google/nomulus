@@ -22,7 +22,7 @@ import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
-import google.registry.persistence.WithStringVKey;
+import google.registry.persistence.WithVKey;
 import java.util.Set;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -66,7 +66,7 @@ import org.joda.time.DateTime;
       @Index(columnList = "transfer_billing_event_id"),
       @Index(columnList = "transfer_billing_recurrence_id")
     })
-@WithStringVKey(compositeKey = true)
+@WithVKey(String.class)
 @ExternalMessagingName("domain")
 @Access(AccessType.FIELD)
 public class Domain extends DomainBase implements ForeignKeyedEppResource {
