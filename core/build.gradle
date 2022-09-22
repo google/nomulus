@@ -707,6 +707,10 @@ createToolTask(
 createToolTask(
     'jpaDemoPipeline', 'google.registry.beam.common.JpaDemoPipeline')
 
+createToolTask(
+    'createSyntheticDomainHistories',
+    'google.registry.tools.javascrap.CreateSyntheticDomainHistoriesPipeline')
+
 project.tasks.create('generateSqlSchema', JavaExec) {
   classpath = sourceSets.nonprod.runtimeClasspath
   main = 'google.registry.tools.DevTool'
