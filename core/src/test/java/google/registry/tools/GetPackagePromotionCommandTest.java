@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -54,7 +55,7 @@ public class GetPackagePromotionCommandTest extends CommandTestCase<GetPackagePr
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
             .build();
-    persistResource(packagePromotion);
+    jpaTm().transact(() -> jpaTm().put(packagePromotion));
     runCommand("abc123");
   }
 
@@ -71,15 +72,19 @@ public class GetPackagePromotionCommandTest extends CommandTestCase<GetPackagePr
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    persistResource(
-        new PackagePromotion.Builder()
-            .setToken(token)
-            .setMaxDomains(100)
-            .setMaxCreates(500)
-            .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
-            .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
-            .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
-            .build());
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .put(
+                        new PackagePromotion.Builder()
+                            .setToken(token)
+                            .setMaxDomains(100)
+                            .setMaxCreates(500)
+                            .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
+                            .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
+                            .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
+                            .build()));
     AllocationToken token2 =
         persistResource(
             new AllocationToken.Builder()
@@ -91,15 +96,19 @@ public class GetPackagePromotionCommandTest extends CommandTestCase<GetPackagePr
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    persistResource(
-        new PackagePromotion.Builder()
-            .setToken(token2)
-            .setMaxDomains(1000)
-            .setMaxCreates(700)
-            .setPackagePrice(Money.of(CurrencyUnit.USD, 3000))
-            .setNextBillingDate(DateTime.parse("2014-11-12T05:00:00Z"))
-            .setLastNotificationSent(DateTime.parse("2013-11-12T05:00:00Z"))
-            .build());
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .put(
+                        new PackagePromotion.Builder()
+                            .setToken(token2)
+                            .setMaxDomains(1000)
+                            .setMaxCreates(700)
+                            .setPackagePrice(Money.of(CurrencyUnit.USD, 3000))
+                            .setNextBillingDate(DateTime.parse("2014-11-12T05:00:00Z"))
+                            .setLastNotificationSent(DateTime.parse("2013-11-12T05:00:00Z"))
+                            .build()));
 
     runCommand("abc123", "123abc");
   }
