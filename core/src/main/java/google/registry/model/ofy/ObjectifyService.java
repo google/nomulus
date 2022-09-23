@@ -40,7 +40,6 @@ import google.registry.model.translators.BloomFilterOfStringTranslatorFactory;
 import google.registry.model.translators.CidrAddressBlockTranslatorFactory;
 import google.registry.model.translators.CurrencyUnitTranslatorFactory;
 import google.registry.model.translators.DurationTranslatorFactory;
-import google.registry.model.translators.EppHistoryVKeyTranslatorFactory;
 import google.registry.model.translators.InetAddressTranslatorFactory;
 import google.registry.model.translators.ReadableInstantUtcTranslatorFactory;
 import google.registry.model.translators.VKeyTranslatorFactory;
@@ -118,7 +117,6 @@ public class ObjectifyService {
             new CidrAddressBlockTranslatorFactory(),
             new CurrencyUnitTranslatorFactory(),
             new DurationTranslatorFactory(),
-            new EppHistoryVKeyTranslatorFactory(),
             new InetAddressTranslatorFactory(),
             new MoneyStringTranslatorFactory(),
             new ReadableInstantUtcTranslatorFactory(),

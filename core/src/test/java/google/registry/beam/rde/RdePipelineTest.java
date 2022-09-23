@@ -133,13 +133,13 @@ public class RdePipelineTest {
 
   private final ImmutableList<DepositFragment> brdaFragments =
       ImmutableList.of(
-          DepositFragment.create(RdeResourceType.DOMAIN, "<rdeDomain:domain/>\n", ""),
-          DepositFragment.create(RdeResourceType.REGISTRAR, "<rdeRegistrar:registrar/>\n", ""));
+          DepositFragment.create(DOMAIN, "<rdeDomain:domain/>\n", ""),
+          DepositFragment.create(REGISTRAR, "<rdeRegistrar:registrar/>\n", ""));
 
   private final ImmutableList<DepositFragment> rdeFragments =
       ImmutableList.of(
-          DepositFragment.create(RdeResourceType.DOMAIN, "<rdeDomain:domain/>\n", ""),
-          DepositFragment.create(RdeResourceType.REGISTRAR, "<rdeRegistrar:registrar/>\n", ""),
+          DepositFragment.create(DOMAIN, "<rdeDomain:domain/>\n", ""),
+          DepositFragment.create(REGISTRAR, "<rdeRegistrar:registrar/>\n", ""),
           DepositFragment.create(CONTACT, "<rdeContact:contact/>\n", ""),
           DepositFragment.create(HOST, "<rdeHost:host/>\n", ""));
 
@@ -183,7 +183,6 @@ public class RdePipelineTest {
             .setReason("reason")
             .setRequestedByRegistrar(true)
             .setContact(contact)
-            .setContactRepoId(contact.getRepoId())
             .build());
   }
 
@@ -207,7 +206,6 @@ public class RdePipelineTest {
             .setReason("reason")
             .setRequestedByRegistrar(true)
             .setDomain(domain)
-            .setDomainRepoId(domain.getRepoId())
             .setDomainTransactionRecords(ImmutableSet.of(transactionRecord))
             .setOtherRegistrarId("otherClient")
             .setPeriod(Period.create(1, Period.Unit.YEARS))
@@ -226,7 +224,6 @@ public class RdePipelineTest {
             .setReason("reason")
             .setRequestedByRegistrar(true)
             .setHost(hostBase)
-            .setHostRepoId(hostBase.getRepoId())
             .build());
   }
 
@@ -389,7 +386,7 @@ public class RdePipelineTest {
                         // The same registrars are attached to all the pending deposits.
                         .containsExactly("New Registrar", "The Registrar", "external_monitoring");
                     // Domain fragments.
-                    if (kv.getKey().tld().equals("soy")) {
+                    if ("soy".equals(kv.getKey().tld())) {
                       assertThat(
                               getFragmentForType(kv, DOMAIN)
                                   .map(getXmlElement(DOMAIN_NAME_PATTERN))
@@ -404,7 +401,7 @@ public class RdePipelineTest {
                     }
                     if (kv.getKey().mode().equals(FULL)) {
                       // Contact fragments for hello.soy.
-                      if (kv.getKey().tld().equals("soy")) {
+                      if ("soy".equals(kv.getKey().tld())) {
                         assertThat(
                                 getFragmentForType(kv, CONTACT)
                                     .map(getXmlElement(CONTACT_ID_PATTERN))
@@ -528,7 +525,7 @@ public class RdePipelineTest {
         decryptGhostrydeGcsFile(prefix + "soy_2000-01-01_thin_S1_" + revision + ".xml.ghostryde");
     assertThat(brdaOutputFile)
         .isEqualTo(
-            readResourceUtf8(this.getClass(), "reducer_brda.xml")
+            readResourceUtf8(getClass(), "reducer_brda.xml")
                 .replace("%RESEND%", manual ? "" : " resend=\"1\""));
     compareLength(brdaOutputFile, prefix + "soy_2000-01-01_thin_S1_" + revision + ".xml.length");
 
@@ -577,7 +574,7 @@ public class RdePipelineTest {
   }
 
   private static Function<DepositFragment, String> getXmlElement(String pattern) {
-    return (fragment) -> {
+    return fragment -> {
       Matcher matcher = Pattern.compile(pattern).matcher(fragment.xml());
       checkState(matcher.find(), "Missing %s in xml.", pattern);
       return matcher.group(1);

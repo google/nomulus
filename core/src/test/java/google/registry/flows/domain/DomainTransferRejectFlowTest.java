@@ -111,7 +111,9 @@ class DomainTransferRejectFlowTest
         .hasLastEppUpdateClientId("TheRegistrar");
     final HistoryEntry historyEntryTransferRejected =
         getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REJECT);
-    assertAboutHistoryEntries().that(historyEntryTransferRejected).hasOtherClientId("NewRegistrar");
+    assertAboutHistoryEntries()
+        .that(historyEntryTransferRejected)
+        .hasOtherRegistrarId("NewRegistrar");
     assertLastHistoryContainsResource(domain);
     // The only billing event left should be the original autorenew event, now reopened.
     assertBillingEvents(
@@ -352,7 +354,8 @@ class DomainTransferRejectFlowTest
   void testIcannTransactionRecord_noRecordsToCancel() throws Exception {
     setUpGracePeriodDurations();
     runFlow();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REJECT);
+    DomainHistory persistedEntry =
+        (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REJECT);
     // We should only produce transfer nacked records, reported now
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(DomainTransactionRecord.create("tld", clock.nowUtc(), TRANSFER_NACKED, 1));
@@ -376,7 +379,8 @@ class DomainTransferRejectFlowTest
                 ImmutableSet.of(previousSuccessRecord, notCancellableRecord))
             .build());
     runFlow();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REJECT);
+    DomainHistory persistedEntry =
+        (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REJECT);
     // We should only produce cancellation records for the original success records and nack records
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(

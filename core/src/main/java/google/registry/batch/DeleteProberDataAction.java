@@ -101,15 +101,20 @@ public class DeleteProberDataAction implements Runnable {
 
   @Inject DnsQueue dnsQueue;
 
-  @Inject @Parameter(PARAM_DRY_RUN) boolean isDryRun;
+  @Inject
+  @Parameter(PARAM_DRY_RUN)
+  boolean isDryRun;
   /** List of TLDs to work on. If empty - will work on all TLDs that end with .test. */
-  @Inject @Parameter(PARAM_TLDS) ImmutableSet<String> tlds;
+  @Inject
+  @Parameter(PARAM_TLDS)
+  ImmutableSet<String> tlds;
 
   @Inject
   @Config("registryAdminClientId")
   String registryAdminRegistrarId;
 
-  @Inject DeleteProberDataAction() {}
+  @Inject
+  DeleteProberDataAction() {}
 
   @Override
   public void run() {
@@ -151,7 +156,7 @@ public class DeleteProberDataAction implements Runnable {
     DateTime now = tm().getTransactionTime();
     // Scroll through domains, soft-deleting as necessary (very few will be soft-deleted) and
     // keeping track of which domains to hard-delete (there can be many, so we batch them up)
-    ScrollableResults scrollableResult =
+    try (ScrollableResults scrollableResult =
         jpaTm()
             .query(DOMAIN_QUERY_STRING, Domain.class)
             .setParameter("tlds", deletableTlds)
@@ -161,28 +166,30 @@ public class DeleteProberDataAction implements Runnable {
             .setParameter("nowAutoTimestamp", CreateAutoTimestamp.create(now))
             .unwrap(Query.class)
             .setCacheMode(CacheMode.IGNORE)
-            .scroll(ScrollMode.FORWARD_ONLY);
-    ImmutableList.Builder<String> domainRepoIdsToHardDelete = new ImmutableList.Builder<>();
-    ImmutableList.Builder<String> hostNamesToHardDelete = new ImmutableList.Builder<>();
-    for (int i = 1; scrollableResult.next(); i = (i + 1) % BATCH_SIZE) {
-      Domain domain = (Domain) scrollableResult.get(0);
-      processDomain(
-          domain,
-          domainRepoIdsToHardDelete,
-          hostNamesToHardDelete,
-          softDeletedDomains,
-          hardDeletedDomains);
-      // Batch the deletion and DB flush + session clearing so we don't OOM
-      if (i == 0) {
-        hardDeleteDomainsAndHosts(domainRepoIdsToHardDelete.build(), hostNamesToHardDelete.build());
-        domainRepoIdsToHardDelete = new ImmutableList.Builder<>();
-        hostNamesToHardDelete = new ImmutableList.Builder<>();
-        jpaTm().getEntityManager().flush();
-        jpaTm().getEntityManager().clear();
+            .scroll(ScrollMode.FORWARD_ONLY)) {
+      ImmutableList.Builder<String> domainRepoIdsToHardDelete = new ImmutableList.Builder<>();
+      ImmutableList.Builder<String> hostNamesToHardDelete = new ImmutableList.Builder<>();
+      for (int i = 1; scrollableResult.next(); i = (i + 1) % BATCH_SIZE) {
+        Domain domain = (Domain) scrollableResult.get(0);
+        processDomain(
+            domain,
+            domainRepoIdsToHardDelete,
+            hostNamesToHardDelete,
+            softDeletedDomains,
+            hardDeletedDomains);
+        // Batch the deletion and DB flush + session clearing, so we don't OOM
+        if (i == 0) {
+          hardDeleteDomainsAndHosts(
+              domainRepoIdsToHardDelete.build(), hostNamesToHardDelete.build());
+          domainRepoIdsToHardDelete = new ImmutableList.Builder<>();
+          hostNamesToHardDelete = new ImmutableList.Builder<>();
+          jpaTm().getEntityManager().flush();
+          jpaTm().getEntityManager().clear();
+        }
       }
+      // process the remainder
+      hardDeleteDomainsAndHosts(domainRepoIdsToHardDelete.build(), hostNamesToHardDelete.build());
     }
-    // process the remainder
-    hardDeleteDomainsAndHosts(domainRepoIdsToHardDelete.build(), hostNamesToHardDelete.build());
   }
 
   private void processDomain(
@@ -236,7 +243,7 @@ public class DeleteProberDataAction implements Runnable {
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
     jpaTm()
-        .query("DELETE FROM DomainHistory WHERE domainRepoId IN :repoIds")
+        .query("DELETE FROM DomainHistory WHERE repoId IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
     jpaTm()

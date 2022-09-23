@@ -33,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.googlecode.objectify.Key;
 import google.registry.model.Buildable;
 import google.registry.model.EntityTestCase;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
@@ -41,7 +40,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
-import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.util.SerializeUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,12 +81,12 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(loadByEntity(unlimitedUseToken)).isEqualTo(unlimitedUseToken);
 
     Domain domain = persistActiveDomain("example.foo");
-    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
+    HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 1);
     AllocationToken singleUseToken =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123Single")
-                .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
+                .setRedemptionHistoryId(historyEntryId)
                 .setDomainName("example.foo")
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setTokenType(SINGLE_USE)
@@ -119,12 +118,12 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
 
     Domain domain = persistActiveDomain("example.foo");
-    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
+    HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 1);
     AllocationToken singleUseToken =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123Single")
-                .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
+                .setRedemptionHistoryId(historyEntryId)
                 .setDomainName("example.foo")
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setTokenType(SINGLE_USE)
@@ -306,12 +305,12 @@ public class AllocationTokenTest extends EntityTestCase {
   @Test
   void testBuild_redemptionHistoryEntryOnlyInSingleUse() {
     Domain domain = persistActiveDomain("blahdomain.foo");
-    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
+    HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 1);
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken("foobar")
             .setTokenType(TokenType.UNLIMITED_USE)
-            .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey));
+            .setRedemptionHistoryId(historyEntryId);
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()

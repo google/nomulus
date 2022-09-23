@@ -14,7 +14,7 @@
 
 package google.registry.flows.domain;
 
-import static google.registry.flows.FlowUtils.createHistoryKey;
+import static google.registry.flows.FlowUtils.createHistoryEntryId;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
@@ -34,7 +34,6 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
-import com.googlecode.objectify.Key;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
@@ -52,7 +51,6 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
@@ -67,6 +65,7 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Registry;
 import java.util.Optional;
@@ -85,12 +84,12 @@ import org.joda.time.DateTime;
  *
  * <p>This flow is called a restore "request" because technically it is only supposed to signal that
  * the registrar requests the restore, which the registry can choose to process or not based on a
- * restore report that is submitted through an out of band process and details the request. However,
- * in practice this flow does the restore immediately. This is allowable because all of the fields
- * on a restore report are optional or have default values, and so by policy when the request comes
- * in we consider it to have been accompanied by a default-initialized report which we auto-approve.
+ * restore report that is submitted through an out-of-band process and details the request. However,
+ * in practice this flow does the restore immediately. This is allowable because all the fields on a
+ * restore report are optional or have default values, and so by policy when the request comes in we
+ * consider it to have been accompanied by a default-initialized report which we auto-approve.
  *
- * <p>Restores cost a fixed restore fee plus a one year renewal fee for the domain. The domain is
+ * <p>Restores cost a fixed restore fee plus a one-year renewal fee for the domain. The domain is
  * restored to a single year expiration starting at the restore time, regardless of what the
  * original expiration time was.
  *
@@ -147,10 +146,8 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     Optional<FeeUpdateCommandExtension> feeUpdate =
         eppInput.getSingleExtension(FeeUpdateCommandExtension.class);
     verifyRestoreAllowed(command, existingDomain, feeUpdate, feesAndCredits, now);
-    Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
-    historyBuilder.setId(domainHistoryKey.getId());
-    DomainHistoryId domainHistoryId =
-        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId());
+    HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
+    historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
 
     DateTime newExpirationTime =
@@ -175,9 +172,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
         newAutorenewPollMessage(existingDomain)
             .setEventTime(newExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)
-            .setDomainHistoryId(
-                new DomainHistoryId(
-                    domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
+            .setDomainHistoryId(domainHistoryId)
             .build();
     Domain newDomain =
         performRestore(
@@ -231,7 +226,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     if (!existingDomain.getGracePeriodStatuses().contains(GracePeriodStatus.REDEMPTION)) {
       throw new DomainNotEligibleForRestoreException();
     }
-    validateFeeChallenge(targetId, now, feeUpdate, feesAndCredits);
+    validateFeeChallenge(feeUpdate, feesAndCredits);
   }
 
   private static Domain performRestore(
@@ -259,17 +254,17 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
   }
 
   private OneTime createRenewBillingEvent(
-      DomainHistoryId domainHistoryId, Money renewCost, DateTime now) {
+      HistoryEntryId domainHistoryId, Money renewCost, DateTime now) {
     return prepareBillingEvent(domainHistoryId, renewCost, now).setReason(Reason.RENEW).build();
   }
 
   private BillingEvent.OneTime createRestoreBillingEvent(
-      DomainHistoryId domainHistoryId, Money restoreCost, DateTime now) {
+      HistoryEntryId domainHistoryId, Money restoreCost, DateTime now) {
     return prepareBillingEvent(domainHistoryId, restoreCost, now).setReason(Reason.RESTORE).build();
   }
 
   private OneTime.Builder prepareBillingEvent(
-      DomainHistoryId domainHistoryId, Money cost, DateTime now) {
+      HistoryEntryId domainHistoryId, Money cost, DateTime now) {
     return new BillingEvent.OneTime.Builder()
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
@@ -297,15 +292,16 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
               FeeType.RENEW,
               feesAndCredits.hasPremiumFeesOfType(FeeType.RENEW)));
     }
-    return feeUpdate.isPresent()
-        ? ImmutableList.of(
-            feeUpdate
-                .get()
-                .createResponseBuilder()
-                .setCurrency(feesAndCredits.getCurrency())
-                .setFees(fees.build())
-                .build())
-        : ImmutableList.of();
+    return feeUpdate
+        .map(
+            feeUpdateCommandExtension ->
+                ImmutableList.of(
+                    feeUpdateCommandExtension
+                        .createResponseBuilder()
+                        .setCurrency(feesAndCredits.getCurrency())
+                        .setFees(fees.build())
+                        .build()))
+        .orElseGet(ImmutableList::of);
   }
 
   /** Restore command cannot have other changes specified. */

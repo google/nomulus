@@ -61,7 +61,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
 import google.registry.batch.ResaveEntityAction;
 import google.registry.flows.EppException;
 import google.registry.flows.EppRequestSource;
@@ -114,6 +113,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
@@ -500,7 +500,7 @@ class DomainTransferRequestFlowTest
         .that(historyEntryTransferRequest)
         .hasPeriodYears(1)
         .and()
-        .hasOtherClientId("TheRegistrar");
+        .hasOtherRegistrarId("TheRegistrar");
     // Verify correct fields were set.
     assertTransferRequested(
         domain, implicitTransferTime, Period.create(1, Unit.YEARS), expectedExpirationTime);
@@ -608,7 +608,7 @@ class DomainTransferRequestFlowTest
         .that(historyEntryTransferRequest)
         .hasPeriodYears(expectedPeriod.getValue())
         .and()
-        .hasOtherClientId("TheRegistrar");
+        .hasOtherRegistrarId("TheRegistrar");
     // Verify correct fields were set.
     assertTransferRequested(domain, implicitTransferTime, expectedPeriod, expectedExpirationTime);
 
@@ -1682,7 +1682,8 @@ class DomainTransferRequestFlowTest
             .build());
     clock.advanceOneMilli();
     runTest("domain_transfer_request.xml", UserPrivileges.NORMAL);
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REQUEST);
+    DomainHistory persistedEntry =
+        (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REQUEST);
     // We should produce a transfer success record
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
@@ -1795,12 +1796,12 @@ class DomainTransferRequestFlowTest
   void testFailure_allocationTokenAlreadyRedeemed() throws Exception {
     setupDomain("example", "tld");
     Domain domain = DatabaseHelper.newDomain("foo.tld");
-    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 505L);
+    HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 505L);
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
+            .setRedemptionHistoryId(historyEntryId)
             .build());
     setEppInput("domain_transfer_request_allocation_token.xml", ImmutableMap.of("TOKEN", "abc123"));
     EppException thrown =

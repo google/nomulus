@@ -21,8 +21,8 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
@@ -63,7 +63,8 @@ public class GracePeriod extends GracePeriodBase {
       @Nullable VKey<BillingEvent.OneTime> billingEventOneTime,
       @Nullable VKey<BillingEvent.Recurring> billingEventRecurring,
       @Nullable Long gracePeriodId) {
-    checkArgument((billingEventOneTime == null) || (billingEventRecurring == null),
+    checkArgument(
+        billingEventOneTime == null || billingEventRecurring == null,
         "A grace period can have at most one billing event");
     checkArgument(
         (billingEventRecurring != null) == GracePeriodStatus.AUTO_RENEW.equals(type),
@@ -176,18 +177,6 @@ public class GracePeriod extends GracePeriodBase {
         billingEvent.createVKey());
   }
 
-  /**
-   * Returns a clone of this {@link GracePeriod} with {@link #domainRepoId} set to the given value
-   * and reconstructed history ids.
-   *
-   * <p>TODO(b/162739503): Remove this function after fully migrating to Cloud SQL.
-   */
-  GracePeriod cloneAfterOfyLoad(String domainRepoId) {
-    GracePeriod clone = clone(this);
-    clone.domainRepoId = checkArgumentNotNull(domainRepoId);
-    return clone;
-  }
-
   /** Entity class to represent a historic {@link GracePeriod}. */
   @Entity(name = "GracePeriodHistory")
   @Table(indexes = @Index(columnList = "domainRepoId"))
@@ -203,8 +192,8 @@ public class GracePeriod extends GracePeriodBase {
       return super.getGracePeriodId();
     }
 
-    public DomainHistoryId getDomainHistoryId() {
-      return new DomainHistoryId(getDomainRepoId(), domainHistoryRevisionId);
+    public HistoryEntryId getHistoryEntryId() {
+      return new HistoryEntryId(getDomainRepoId(), domainHistoryRevisionId);
     }
 
     static GracePeriodHistory createFrom(long historyRevisionId, GracePeriod gracePeriod) {

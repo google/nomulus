@@ -21,9 +21,6 @@ import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import com.googlecode.objectify.Key;
 import google.registry.model.common.ClassPathManager;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TestObject;
@@ -55,18 +52,6 @@ public class VKeyTranslatorFactoryTest {
     assertThat(vkey.getKind()).isEqualTo(Domain.class);
     assertThat(vkey.getOfyKey()).isEqualTo(key);
     assertThat(vkey.getSqlKey()).isEqualTo("ROID-1");
-  }
-
-  @Test
-  void testEntityWithAncestor() {
-    Key<Domain> domainKey = Key.create(Domain.class, "ROID-1");
-    Key<HistoryEntry> historyEntryKey = Key.create(domainKey, HistoryEntry.class, 10L);
-
-    VKey<HistoryEntry> vkey = VKeyTranslatorFactory.createVKey(historyEntryKey);
-
-    assertThat(vkey.getKind()).isEqualTo(DomainHistory.class);
-    assertThat(vkey.getOfyKey()).isEqualTo(historyEntryKey);
-    assertThat(vkey.getSqlKey()).isEqualTo(new DomainHistoryId("ROID-1", 10L));
   }
 
   @Test

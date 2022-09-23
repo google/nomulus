@@ -28,19 +28,17 @@ import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.OfyIdAllocation;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.DomainRenewData;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
 import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostHistory.HostHistoryId;
 import google.registry.model.poll.PendingActionNotificationResponse.ContactPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.HostPendingActionNotificationResponse;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
@@ -197,10 +195,10 @@ public abstract class PollMessage extends ImmutableObject
   }
 
   /**
-   * Gets the name of the underlying resource that the PollMessage is for, regardless of the type of
-   * the resource.
+   * Gets the repo ID of the underlying resource that the PollMessage is for, regardless of the type
+   * of the resource.
    */
-  public String getResourceName() {
+  public String getResourceId() {
     return domainRepoId != null ? domainRepoId : contactRepoId != null ? contactRepoId : hostRepoId;
   }
 
@@ -262,34 +260,35 @@ public abstract class PollMessage extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setDomainHistoryId(DomainHistoryId historyId) {
-      getInstance().domainRepoId = historyId.getDomainRepoId();
-      getInstance().domainHistoryRevisionId = historyId.getId();
+    public B setDomainHistoryId(HistoryEntryId historyId) {
+      getInstance().domainRepoId = historyId.getRepoId();
+      getInstance().domainHistoryRevisionId = historyId.getRevisionId();
       return thisCastToDerived();
     }
 
-    public B setContactHistoryId(ContactHistoryId historyId) {
-      getInstance().contactRepoId = historyId.getContactRepoId();
-      getInstance().contactHistoryRevisionId = historyId.getId();
+    public B setContactHistoryId(HistoryEntryId historyId) {
+      getInstance().contactRepoId = historyId.getRepoId();
+      getInstance().contactHistoryRevisionId = historyId.getRevisionId();
       return thisCastToDerived();
     }
 
-    public B setHostHistoryId(HostHistoryId historyId) {
-      getInstance().hostRepoId = historyId.getHostRepoId();
-      getInstance().hostHistoryRevisionId = historyId.getId();
+    public B setHostHistoryId(HistoryEntryId historyId) {
+      getInstance().hostRepoId = historyId.getRepoId();
+      getInstance().hostHistoryRevisionId = historyId.getRevisionId();
       return thisCastToDerived();
     }
 
     public B setHistoryEntry(HistoryEntry history) {
+      HistoryEntryId historyId = history.getHistoryEntryId();
       // Set the appropriate field based on the history entry type.
       if (history instanceof DomainHistory) {
-        return setDomainHistoryId(((DomainHistory) history).getDomainHistoryId());
+        return setDomainHistoryId(historyId);
       }
       if (history instanceof ContactHistory) {
-        return setContactHistoryId(((ContactHistory) history).getContactHistoryId());
+        return setContactHistoryId(historyId);
       }
       if (history instanceof HostHistory) {
-        return setHostHistoryId(((HostHistory) history).getHostHistoryId());
+        return setHostHistoryId(historyId);
       }
       return thisCastToDerived();
     }

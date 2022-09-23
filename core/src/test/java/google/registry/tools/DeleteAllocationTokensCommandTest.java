@@ -25,11 +25,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
-import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import java.util.Arrays;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.BeforeEach;
@@ -174,8 +173,8 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
     if (redeemed) {
       String domainToPersist = domainName != null ? domainName : "example.foo";
       Domain domain = persistActiveDomain(domainToPersist);
-      Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1051L);
-      builder.setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey));
+      HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 1051L);
+      builder.setRedemptionHistoryId(historyEntryId);
     }
     return persistResource(builder.build());
   }

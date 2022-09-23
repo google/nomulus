@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -48,6 +48,7 @@ public class DomainTransactionRecord extends ImmutableObject
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Insignificant
+  @SuppressWarnings("unused")
   Long id;
 
   /** The TLD this record operates on. */
@@ -66,8 +67,8 @@ public class DomainTransactionRecord extends ImmutableObject
    * The time this Transaction takes effect (counting grace periods and other nuances).
    *
    * <p>Net adds, renews and transfers are modificationTime + 5 days for the grace period, while
-   * Autorenews have a 45 day grace period. For deletions, this is the purge date of the domain. And
-   * for restored names, this is the modificationTime, if done in the 30 day redemption period.
+   * Autorenews have a 45-day grace period. For deletions, this is the purge date of the domain. And
+   * for restored names, this is the modificationTime, if done in the 30-day redemption period.
    *
    * @see <a
    *     href="https://www.icann.org/resources/unthemed-pages/registry-agmt-appc-10-2001-05-11-en">
@@ -178,8 +179,8 @@ public class DomainTransactionRecord extends ImmutableObject
     }
   }
 
-  public DomainHistoryId getDomainHistoryId() {
-    return new DomainHistoryId(domainRepoId, historyRevisionId);
+  public HistoryEntryId getHistoryEntryId() {
+    return new HistoryEntryId(domainRepoId, historyRevisionId);
   }
 
   public DateTime getReportingTime() {

@@ -14,6 +14,7 @@
 
 package google.registry.model;
 
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.GoldenFileTestHelper;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  *
  * <p>If the test breaks, the instructions below will be printed.
  */
+@DeleteAfterMigration
 public class SchemaVersionTest {
 
   @RegisterExtension

@@ -41,7 +41,6 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link PollMessage}. */
 public class PollMessageTest extends EntityTestCase {
 
-  private Domain domain;
   private HistoryEntry historyEntry;
   private PollMessage.OneTime oneTime;
   private PollMessage.Autorenew autoRenew;
@@ -54,7 +53,7 @@ public class PollMessageTest extends EntityTestCase {
   void setUp() {
     createTld("foobar");
     Contact contact = persistActiveContact("contact1234");
-    domain = persistResource(DatabaseHelper.newDomain("foo.foobar", contact));
+    Domain domain = persistResource(DatabaseHelper.newDomain("foo.foobar", contact));
     historyEntry =
         persistResource(
             new DomainHistory.Builder()
@@ -68,8 +67,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setBySuperuser(false)
                 .setReason("reason")
                 .setRequestedByRegistrar(false)
-                .build()
-                .toChildHistoryEntity());
+                .build());
     oneTime =
         new PollMessage.OneTime.Builder()
             .setId(100L)

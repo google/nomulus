@@ -262,7 +262,7 @@ public class BillingEventTest extends EntityTestCase {
         BillingEvent.Cancellation.forGracePeriod(
             GracePeriod.forBillingEvent(GracePeriodStatus.ADD, domain.getRepoId(), oneTime),
             domainHistory2.getModificationTime(),
-            domainHistory2.getDomainHistoryId(),
+            domainHistory2.getHistoryEntryId(),
             "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
     assertThat(newCancellation.asBuilder().setId(cancellationOneTime.getId()).build())
@@ -280,7 +280,7 @@ public class BillingEventTest extends EntityTestCase {
                 "TheRegistrar",
                 recurring.createVKey()),
             domainHistory2.getModificationTime(),
-            domainHistory2.getDomainHistoryId(),
+            domainHistory2.getHistoryEntryId(),
             "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
     assertThat(newCancellation.asBuilder().setId(cancellationRecurring.getId()).build())
@@ -300,7 +300,7 @@ public class BillingEventTest extends EntityTestCase {
                         now.plusDays(1),
                         "a registrar"),
                     domainHistory.getModificationTime(),
-                    domainHistory.getDomainHistoryId(),
+                    domainHistory.getHistoryEntryId(),
                     "foo.tld"));
     assertThat(thrown).hasMessageThat().contains("grace period without billing event");
   }

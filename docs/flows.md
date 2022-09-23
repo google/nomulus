@@ -463,7 +463,7 @@ automatic one-year renewal at the instant a domain would expire).
 
 ICANN prohibits any registration from being longer than ten years so if the
 request would result in a registration greater than ten years long it will fail.
-In practice this means it's impossible to request a ten year renewal, since that
+In practice this means it's impossible to request a ten-year renewal, since that
 will always cause the new registration to be longer than 10 years unless it
 comes in at the exact millisecond that the domain would have expired.
 
@@ -523,14 +523,14 @@ cannot be restored. After that period anyone can re-register this name.
 
 This flow is called a restore "request" because technically it is only supposed
 to signal that the registrar requests the restore, which the registry can choose
-to process or not based on a restore report that is submitted through an out of
-band process and details the request. However, in practice this flow does the
-restore immediately. This is allowable because all of the fields on a restore
+to process or not based on a restore report that is submitted through an
+out-of-band process and details the request. However, in practice this flow does
+the restore immediately. This is allowable because all the fields on a restore
 report are optional or have default values, and so by policy when the request
 comes in we consider it to have been accompanied by a default-initialized report
 which we auto-approve.
 
-Restores cost a fixed restore fee plus a one year renewal fee for the domain.
+Restores cost a fixed restore fee plus a one-year renewal fee for the domain.
 The domain is restored to a single year expiration starting at the restore time,
 regardless of what the original expiration time was.
 

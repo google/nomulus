@@ -14,7 +14,7 @@
 
 package google.registry.flows.domain;
 
-import static google.registry.flows.FlowUtils.createHistoryKey;
+import static google.registry.flows.FlowUtils.createHistoryEntryId;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.computeExDateForApprovalTime;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -38,7 +38,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -57,7 +56,6 @@ import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Transfer;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
@@ -73,6 +71,7 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
@@ -196,16 +195,16 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     // If the period is zero, then there is no fee for the transfer.
     Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     Optional<FeesAndCredits> feesAndCredits =
-        (period.getValue() == 0)
+        period.getValue() == 0
             ? Optional.empty()
             : Optional.of(
                 pricingLogic.getTransferPrice(registry, targetId, now, existingRecurring));
     if (feesAndCredits.isPresent()) {
-      validateFeeChallenge(targetId, now, feeTransfer, feesAndCredits.get());
+      validateFeeChallenge(feeTransfer, feesAndCredits.get());
     }
-    Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
+    HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder
-        .setId(domainHistoryKey.getId())
+        .setRevisionId(domainHistoryId.getRevisionId())
         .setOtherRegistrarId(existingDomain.getCurrentSponsorRegistrarId());
     DateTime automaticTransferTime =
         superuserExtension
@@ -230,7 +229,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
         createTransferServerApproveEntities(
             automaticTransferTime,
             serverApproveNewExpirationTime,
-            domainHistoryKey,
+            domainHistoryId,
             existingDomain,
             existingRecurring,
             trid,
@@ -241,7 +240,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     DomainTransferData pendingTransferData =
         createPendingTransferData(
             domainAtTransferTime.getRepoId(),
-            domainHistoryKey.getId(),
+            domainHistoryId.getRevisionId(),
             new DomainTransferData.Builder()
                 .setTransferRequestTrid(trid)
                 .setTransferRequestTime(now)
@@ -254,7 +253,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     // Create a poll message to notify the losing registrar that a transfer was requested.
     PollMessage requestPollMessage =
         createLosingTransferPollMessage(
-                targetId, pendingTransferData, serverApproveNewExpirationTime, domainHistoryKey)
+                targetId, pendingTransferData, serverApproveNewExpirationTime, domainHistoryId)
             .asBuilder()
             .setEventTime(now)
             .build();
@@ -263,10 +262,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     // cloneProjectedAtTime() will replace these old autorenew entities with the server approve ones
     // that we've created in this flow and stored in pendingTransferData.
     updateAutorenewRecurrenceEndTime(
-        existingDomain,
-        existingRecurring,
-        automaticTransferTime,
-        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()));
+        existingDomain, existingRecurring, automaticTransferTime, domainHistoryId);
     Domain newDomain =
         existingDomain
             .asBuilder()
@@ -385,7 +381,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
 
   private static ImmutableList<FeeTransformResponseExtension> createResponseExtensions(
       Optional<FeesAndCredits> feesAndCredits, Optional<FeeTransferCommandExtension> feeTransfer) {
-    return (feeTransfer.isPresent() && feesAndCredits.isPresent())
+    return feeTransfer.isPresent() && feesAndCredits.isPresent()
         ? ImmutableList.of(
             feeTransfer
                 .get()

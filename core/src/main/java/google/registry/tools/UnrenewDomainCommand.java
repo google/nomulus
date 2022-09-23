@@ -132,7 +132,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
     if (!domainsExpiringTooSoon.isEmpty()) {
       System.err.printf("Domains expiring too soon: %s\n\n", domainsExpiringTooSoon);
     }
-    checkArgument(!foundInvalidDomains, "Aborting because some domains cannot be unrewed");
+    checkArgument(!foundInvalidDomains, "Aborting because some domains cannot be unrenewed");
   }
 
   @Override
@@ -218,7 +218,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
     // End the old autorenew billing event and poll message now.
     Recurring existingRecurring = tm().loadByKey(domain.getAutorenewBillingEvent());
     updateAutorenewRecurrenceEndTime(
-        domain, existingRecurring, now, domainHistory.getDomainHistoryId());
+        domain, existingRecurring, now, domainHistory.getHistoryEntryId());
     Domain newDomain =
         domain
             .asBuilder()

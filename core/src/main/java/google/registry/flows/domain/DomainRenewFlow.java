@@ -14,7 +14,7 @@
 
 package google.registry.flows.domain;
 
-import static google.registry.flows.FlowUtils.createHistoryKey;
+import static google.registry.flows.FlowUtils.createHistoryEntryId;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -38,7 +38,6 @@ import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValueRangeErrorException;
 import google.registry.flows.ExtensionManager;
@@ -62,7 +61,6 @@ import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Renew;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.DomainRenewData;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -83,6 +81,7 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Registry;
 import java.util.Optional;
@@ -100,7 +99,7 @@ import org.joda.time.Duration;
  *
  * <p>ICANN prohibits any registration from being longer than ten years so if the request would
  * result in a registration greater than ten years long it will fail. In practice this means it's
- * impossible to request a ten year renewal, since that will always cause the new registration to be
+ * impossible to request a ten-year renewal, since that will always cause the new registration to be
  * longer than 10 years unless it comes in at the exact millisecond that the domain would have
  * expired.
  *
@@ -200,44 +199,36 @@ public final class DomainRenewFlow implements TransactionalFlow {
             now,
             years,
             existingRecurringBillingEvent);
-    validateFeeChallenge(targetId, now, feeRenew, feesAndCredits);
+    validateFeeChallenge(feeRenew, feesAndCredits);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder()
             .setExistingDomain(existingDomain)
             .setNow(now)
             .setYears(years)
             .build());
-    Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
-    historyBuilder.setId(domainHistoryKey.getId());
+    HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
+    historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
     String tld = existingDomain.getTld();
     // Bill for this explicit renew itself.
     BillingEvent.OneTime explicitRenewEvent =
         createRenewBillingEvent(
-            tld, feesAndCredits.getTotalCost(), years, domainHistoryKey, allocationToken, now);
+            tld, feesAndCredits.getTotalCost(), years, domainHistoryId, allocationToken, now);
     // Create a new autorenew billing event and poll message starting at the new expiration time.
     BillingEvent.Recurring newAutorenewEvent =
         newAutorenewBillingEvent(existingDomain)
             .setEventTime(newExpirationTime)
             .setRenewalPrice(existingRecurringBillingEvent.getRenewalPrice().orElse(null))
             .setRenewalPriceBehavior(existingRecurringBillingEvent.getRenewalPriceBehavior())
-            .setDomainHistoryId(
-                new DomainHistoryId(
-                    domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
+            .setDomainHistoryId(domainHistoryId)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
             .setEventTime(newExpirationTime)
-            .setDomainHistoryId(
-                new DomainHistoryId(
-                    domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
+            .setDomainHistoryId(domainHistoryId)
             .build();
     // End the old autorenew billing event and poll message now. This may delete the poll message.
     Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
-    updateAutorenewRecurrenceEndTime(
-        existingDomain,
-        existingRecurring,
-        now,
-        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()));
+    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, now, domainHistoryId);
     Domain newDomain =
         existingDomain
             .asBuilder()
@@ -260,7 +251,8 @@ public final class DomainRenewFlow implements TransactionalFlow {
     if (allocationToken.isPresent()
         && TokenType.SINGLE_USE.equals(allocationToken.get().getTokenType())) {
       entitiesToSave.add(
-          allocationTokenFlowUtils.redeemToken(allocationToken.get(), domainHistory.createVKey()));
+          allocationTokenFlowUtils.redeemToken(
+              allocationToken.get(), domainHistory.getHistoryEntryId()));
     }
     EntityChanges entityChanges =
         flowCustomLogic.beforeSave(
@@ -339,7 +331,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
       String tld,
       Money renewCost,
       int years,
-      Key<DomainHistory> domainHistoryKey,
+      HistoryEntryId domainHistoryId,
       Optional<AllocationToken> allocationToken,
       DateTime now) {
     return new BillingEvent.OneTime.Builder()
@@ -355,27 +347,27 @@ public final class DomainRenewFlow implements TransactionalFlow {
                 .map(AllocationToken::createVKey)
                 .orElse(null))
         .setBillingTime(now.plus(Registry.get(tld).getRenewGracePeriodLength()))
-        .setDomainHistoryId(
-            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
+        .setDomainHistoryId(domainHistoryId)
         .build();
   }
 
   private ImmutableList<FeeTransformResponseExtension> createResponseExtensions(
       FeesAndCredits feesAndCredits, Optional<FeeRenewCommandExtension> feeRenew) {
-    return feeRenew.isPresent()
-        ? ImmutableList.of(
-            feeRenew
-                .get()
-                .createResponseBuilder()
-                .setCurrency(feesAndCredits.getCurrency())
-                .setFees(
-                    ImmutableList.of(
-                        Fee.create(
-                            feesAndCredits.getRenewCost().getAmount(),
-                            FeeType.RENEW,
-                            feesAndCredits.hasPremiumFeesOfType(FeeType.RENEW))))
-                .build())
-        : ImmutableList.of();
+    return feeRenew
+        .map(
+            feeRenewCommandExtension ->
+                ImmutableList.of(
+                    feeRenewCommandExtension
+                        .createResponseBuilder()
+                        .setCurrency(feesAndCredits.getCurrency())
+                        .setFees(
+                            ImmutableList.of(
+                                Fee.create(
+                                    feesAndCredits.getRenewCost().getAmount(),
+                                    FeeType.RENEW,
+                                    feesAndCredits.hasPremiumFeesOfType(FeeType.RENEW))))
+                        .build()))
+        .orElseGet(ImmutableList::of);
   }
 
   /** The current expiration date is incorrect. */

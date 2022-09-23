@@ -86,7 +86,6 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.DomainCommand.Create;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeCreateCommandExtension;
@@ -110,6 +109,7 @@ import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
@@ -327,14 +327,14 @@ public final class DomainCreateFlow implements TransactionalFlow {
     FeesAndCredits feesAndCredits =
         pricingLogic.getCreatePrice(
             registry, targetId, now, years, isAnchorTenant, allocationToken);
-    validateFeeChallenge(targetId, now, feeCreate, feesAndCredits);
+    validateFeeChallenge(feeCreate, feesAndCredits);
     Optional<SecDnsCreateExtension> secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
     DateTime registrationExpirationTime = leapSafeAddYears(now, years);
     String repoId = createDomainRepoId(allocateId(), registry.getTldStr());
     long historyRevisionId = allocateId();
-    DomainHistoryId domainHistoryId = new DomainHistoryId(repoId, historyRevisionId);
-    historyBuilder.setId(historyRevisionId);
+    HistoryEntryId domainHistoryId = new HistoryEntryId(repoId, historyRevisionId);
+    historyBuilder.setRevisionId(historyRevisionId);
     // Bill for the create.
     BillingEvent.OneTime createBillingEvent =
         createOneTimeBillingEvent(
@@ -406,7 +406,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
     if (allocationToken.isPresent()
         && TokenType.SINGLE_USE.equals(allocationToken.get().getTokenType())) {
       entitiesToSave.add(
-          allocationTokenFlowUtils.redeemToken(allocationToken.get(), domainHistory.createVKey()));
+          allocationTokenFlowUtils.redeemToken(
+              allocationToken.get(), domainHistory.getHistoryEntryId()));
     }
     enqueueTasks(domain, hasSignedMarks, hasClaimsNotice);
 
@@ -562,7 +563,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
       boolean isReserved,
       int years,
       FeesAndCredits feesAndCredits,
-      DomainHistoryId domainHistoryId,
+      HistoryEntryId domainHistoryId,
       Optional<AllocationToken> allocationToken,
       DateTime now) {
     ImmutableSet.Builder<Flag> flagsBuilder = new ImmutableSet.Builder<>();
@@ -596,7 +597,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
   }
 
   private Recurring createAutorenewBillingEvent(
-      DomainHistoryId domainHistoryId,
+      HistoryEntryId domainHistoryId,
       DateTime registrationExpirationTime,
       RenewalPriceInfo renewalpriceInfo) {
     return new BillingEvent.Recurring.Builder()
@@ -613,7 +614,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
   }
 
   private Autorenew createAutorenewPollMessage(
-      DomainHistoryId domainHistoryId, DateTime registrationExpirationTime) {
+      HistoryEntryId domainHistoryId, DateTime registrationExpirationTime) {
     return new PollMessage.Autorenew.Builder()
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
@@ -634,7 +635,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
         .setEventTime(createBillingEvent.getEventTime())
         .setBillingTime(createBillingEvent.getBillingTime())
         .setFlags(createBillingEvent.getFlags())
-        .setDomainHistoryId(createBillingEvent.getDomainHistoryId())
+        .setDomainHistoryId(createBillingEvent.getHistoryEntryId())
         .build();
   }
 
@@ -674,11 +675,11 @@ public final class DomainCreateFlow implements TransactionalFlow {
       Optional<AllocationToken> allocationToken,
       FeesAndCredits feesAndCredits) {
     if (isAnchorTenant) {
-      if (allocationToken.isPresent()) {
-        checkArgument(
-            allocationToken.get().getRenewalPriceBehavior() != RenewalPriceBehavior.SPECIFIED,
-            "Renewal price behavior cannot be SPECIFIED for anchor tenant");
-      }
+      allocationToken.ifPresent(
+          token ->
+              checkArgument(
+                  token.getRenewalPriceBehavior() != RenewalPriceBehavior.SPECIFIED,
+                  "Renewal price behavior cannot be SPECIFIED for anchor tenant"));
       return RenewalPriceInfo.create(RenewalPriceBehavior.NONPREMIUM, null);
     } else if (allocationToken.isPresent()
         && allocationToken.get().getRenewalPriceBehavior() == RenewalPriceBehavior.SPECIFIED) {
@@ -705,9 +706,12 @@ public final class DomainCreateFlow implements TransactionalFlow {
 
   private static ImmutableList<FeeTransformResponseExtension> createResponseExtensions(
       Optional<FeeCreateCommandExtension> feeCreate, FeesAndCredits feesAndCredits) {
-    return feeCreate.isPresent()
-        ? ImmutableList.of(createFeeCreateResponse(feeCreate.get(), feesAndCredits))
-        : ImmutableList.of();
+    return feeCreate
+        .map(
+            feeCreateCommandExtension ->
+                ImmutableList.of(
+                    createFeeCreateResponse(feeCreateCommandExtension, feesAndCredits)))
+        .orElseGet(ImmutableList::of);
   }
 
   /** Signed marks are only allowed during sunrise. */

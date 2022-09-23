@@ -14,31 +14,6 @@ class google.registry.model.contact.Contact {
   org.joda.time.DateTime lastEppUpdateTime;
   org.joda.time.DateTime lastTransferTime;
 }
-class google.registry.model.contact.ContactBase {
-  @Id java.lang.String repoId;
-  java.lang.String contactId;
-  java.lang.String creationClientId;
-  java.lang.String currentSponsorClientId;
-  java.lang.String email;
-  java.lang.String lastEppUpdateClientId;
-  java.lang.String searchName;
-  org.joda.time.DateTime deletionTime;
-  org.joda.time.DateTime lastEppUpdateTime;
-  org.joda.time.DateTime lastTransferTime;
-}
-class google.registry.model.contact.ContactHistory {
-  @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<? extends google.registry.model.EppResource> parent;
-  boolean bySuperuser;
-  byte[] xmlBytes;
-  google.registry.model.contact.ContactBase contactBase;
-  google.registry.model.reporting.HistoryEntry$Type type;
-  java.lang.Boolean requestedByRegistrar;
-  java.lang.String clientId;
-  java.lang.String otherClientId;
-  java.lang.String reason;
-  org.joda.time.DateTime modificationTime;
-}
 class google.registry.model.domain.Domain {
   @Id java.lang.String repoId;
   google.registry.persistence.VKey<google.registry.model.contact.Contact> adminContact;
@@ -62,43 +37,6 @@ class google.registry.model.domain.Domain {
   org.joda.time.DateTime lastTransferTime;
   org.joda.time.DateTime registrationExpirationTime;
 }
-class google.registry.model.domain.DomainBase {
-  @Id java.lang.String repoId;
-  google.registry.persistence.VKey<google.registry.model.contact.Contact> adminContact;
-  google.registry.persistence.VKey<google.registry.model.contact.Contact> billingContact;
-  google.registry.persistence.VKey<google.registry.model.contact.Contact> registrantContact;
-  google.registry.persistence.VKey<google.registry.model.contact.Contact> techContact;
-  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
-  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
-  java.lang.String creationClientId;
-  java.lang.String currentSponsorClientId;
-  java.lang.String domainName;
-  java.lang.String idnTableName;
-  java.lang.String lastEppUpdateClientId;
-  java.lang.String smdId;
-  java.lang.String tld;
-  java.util.Set<google.registry.persistence.VKey<google.registry.model.host.Host>> nsHosts;
-  java.util.Set<java.lang.String> subordinateHosts;
-  org.joda.time.DateTime autorenewEndTime;
-  org.joda.time.DateTime deletionTime;
-  org.joda.time.DateTime lastEppUpdateTime;
-  org.joda.time.DateTime lastTransferTime;
-  org.joda.time.DateTime registrationExpirationTime;
-}
-class google.registry.model.domain.DomainHistory {
-  @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<? extends google.registry.model.EppResource> parent;
-  boolean bySuperuser;
-  byte[] xmlBytes;
-  google.registry.model.domain.DomainBase domainBase;
-  google.registry.model.reporting.HistoryEntry$Type type;
-  java.lang.Boolean requestedByRegistrar;
-  java.lang.String clientId;
-  java.lang.String otherClientId;
-  java.lang.String reason;
-  java.util.Set<google.registry.persistence.VKey<google.registry.model.host.Host>> nsHosts;
-  org.joda.time.DateTime modificationTime;
-}
 class google.registry.model.host.Host {
   @Id java.lang.String repoId;
   google.registry.persistence.VKey<google.registry.model.domain.Domain> superordinateDomain;
@@ -111,71 +49,4 @@ class google.registry.model.host.Host {
   org.joda.time.DateTime lastEppUpdateTime;
   org.joda.time.DateTime lastSuperordinateChange;
   org.joda.time.DateTime lastTransferTime;
-}
-class google.registry.model.host.HostBase {
-  @Id java.lang.String repoId;
-  google.registry.persistence.VKey<google.registry.model.domain.Domain> superordinateDomain;
-  java.lang.String creationClientId;
-  java.lang.String currentSponsorClientId;
-  java.lang.String hostName;
-  java.lang.String lastEppUpdateClientId;
-  java.util.Set<java.net.InetAddress> inetAddresses;
-  org.joda.time.DateTime deletionTime;
-  org.joda.time.DateTime lastEppUpdateTime;
-  org.joda.time.DateTime lastSuperordinateChange;
-  org.joda.time.DateTime lastTransferTime;
-}
-class google.registry.model.host.HostHistory {
-  @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<? extends google.registry.model.EppResource> parent;
-  boolean bySuperuser;
-  byte[] xmlBytes;
-  google.registry.model.host.HostBase hostBase;
-  google.registry.model.reporting.HistoryEntry$Type type;
-  java.lang.Boolean requestedByRegistrar;
-  java.lang.String clientId;
-  java.lang.String otherClientId;
-  java.lang.String reason;
-  org.joda.time.DateTime modificationTime;
-}
-class google.registry.model.reporting.HistoryEntry {
-  @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<? extends google.registry.model.EppResource> parent;
-  boolean bySuperuser;
-  byte[] xmlBytes;
-  google.registry.model.reporting.HistoryEntry$Type type;
-  java.lang.Boolean requestedByRegistrar;
-  java.lang.String clientId;
-  java.lang.String otherClientId;
-  java.lang.String reason;
-  org.joda.time.DateTime modificationTime;
-}
-enum google.registry.model.reporting.HistoryEntry$Type {
-  CONTACT_CREATE;
-  CONTACT_DELETE;
-  CONTACT_DELETE_FAILURE;
-  CONTACT_PENDING_DELETE;
-  CONTACT_TRANSFER_APPROVE;
-  CONTACT_TRANSFER_CANCEL;
-  CONTACT_TRANSFER_REJECT;
-  CONTACT_TRANSFER_REQUEST;
-  CONTACT_UPDATE;
-  DOMAIN_ALLOCATE;
-  DOMAIN_AUTORENEW;
-  DOMAIN_CREATE;
-  DOMAIN_DELETE;
-  DOMAIN_RENEW;
-  DOMAIN_RESTORE;
-  DOMAIN_TRANSFER_APPROVE;
-  DOMAIN_TRANSFER_CANCEL;
-  DOMAIN_TRANSFER_REJECT;
-  DOMAIN_TRANSFER_REQUEST;
-  DOMAIN_UPDATE;
-  HOST_CREATE;
-  HOST_DELETE;
-  HOST_DELETE_FAILURE;
-  HOST_PENDING_DELETE;
-  HOST_UPDATE;
-  RDE_IMPORT;
-  SYNTHETIC;
 }

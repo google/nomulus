@@ -45,7 +45,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
@@ -81,6 +80,7 @@ import google.registry.model.poll.PendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
@@ -207,7 +207,9 @@ class DomainTransferApproveFlowTest
             DOMAIN_CREATE, DOMAIN_TRANSFER_REQUEST, DOMAIN_TRANSFER_APPROVE);
     final HistoryEntry historyEntryTransferApproved =
         getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE);
-    assertAboutHistoryEntries().that(historyEntryTransferApproved).hasOtherClientId("NewRegistrar");
+    assertAboutHistoryEntries()
+        .that(historyEntryTransferApproved)
+        .hasOtherRegistrarId("NewRegistrar");
     assertTransferApproved(domain, originalTransferData);
     assertAboutDomains().that(domain).hasRegistrationExpirationTime(expectedExpirationTime);
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
@@ -697,7 +699,8 @@ class DomainTransferApproveFlowTest
     setUpGracePeriodDurations();
     clock.advanceOneMilli();
     runFlow();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE);
+    DomainHistory persistedEntry =
+        (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE);
     // We should only produce a transfer success record for (now + transfer grace period)
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
@@ -724,7 +727,8 @@ class DomainTransferApproveFlowTest
                 ImmutableSet.of(previousSuccessRecord, notCancellableRecord))
             .build());
     runFlow();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE);
+    DomainHistory persistedEntry =
+        (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE);
     // We should only produce cancellation records for the original reporting date (now + 1 day) and
     // success records for the new reporting date (now + transferGracePeriod=3 days)
     assertThat(persistedEntry.getDomainTransactionRecords())
@@ -884,12 +888,12 @@ class DomainTransferApproveFlowTest
   @Test
   void testFailure_allocationTokenAlreadyRedeemed() throws Exception {
     Domain domain = DatabaseHelper.newDomain("foo.tld");
-    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 505L);
+    HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 505L);
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
+            .setRedemptionHistoryId(historyEntryId)
             .build());
     setEppInput("domain_transfer_approve_allocation_token.xml");
     EppException thrown =

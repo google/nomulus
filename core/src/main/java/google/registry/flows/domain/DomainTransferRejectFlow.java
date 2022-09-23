@@ -14,7 +14,7 @@
 
 package google.registry.flows.domain;
 
-import static google.registry.flows.FlowUtils.createHistoryKey;
+import static google.registry.flows.FlowUtils.createHistoryEntryId;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyHasPendingTransfer;
@@ -34,7 +34,6 @@ import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
@@ -49,6 +48,7 @@ import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.DomainTransactionRecord;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.TransferStatus;
@@ -95,9 +95,9 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
     DateTime now = tm().getTransactionTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     Registry registry = Registry.get(existingDomain.getTld());
-    Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
+    HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder
-        .setId(domainHistoryKey.getId())
+        .setRevisionId(domainHistoryId.getRevisionId())
         .setOtherRegistrarId(existingDomain.getTransferData().getGainingRegistrarId());
 
     verifyOptionalAuthInfo(authInfo, existingDomain);
@@ -113,12 +113,12 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
             newDomain,
             domainHistory,
             createGainingTransferPollMessage(
-                targetId, newDomain.getTransferData(), null, now, domainHistoryKey));
+                targetId, newDomain.getTransferData(), null, now, domainHistoryId));
     // Reopen the autorenew event and poll message that we closed for the implicit transfer. This
     // may end up recreating the poll message if it was deleted upon the transfer request.
     Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     updateAutorenewRecurrenceEndTime(
-        existingDomain, existingRecurring, END_OF_TIME, domainHistory.getDomainHistoryId());
+        existingDomain, existingRecurring, END_OF_TIME, domainHistory.getHistoryEntryId());
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
     tm().delete(existingDomain.getTransferData().getServerApproveEntities());
