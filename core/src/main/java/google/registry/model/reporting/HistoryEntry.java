@@ -15,39 +15,25 @@
 package google.registry.model.reporting;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.googlecode.objectify.Key.getKind;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
-import google.registry.model.annotations.ReportedOn;
-import google.registry.model.contact.Contact;
+import google.registry.model.annotations.OfyIdAllocation;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactHistory.ContactHistoryId;
-import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.Host;
 import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostHistory.HostHistoryId;
-import google.registry.persistence.VKey;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -67,23 +53,13 @@ import org.joda.time.DateTime;
 /**
  * A record of an EPP command that mutated a resource.
  *
- * <p>Due to historical reasons this class is persisted only to Datastore. It has three subclasses
- * that include the parent resource itself which are persisted to Cloud SQL. During migration this
- * class cannot be made abstract in order for the class to be persisted and loaded to and from
- * Datastore. However it should never be used directly in the Java code itself. When it is loaded
- * from Datastore it should be converted to a subclass for handling and when a new history entry is
- * built it should always be a subclass, which is automatically converted to HistoryEntry when
- * persisting to Datastore.
- *
- * <p>Some care has been taken to make it close to impossible to use this class directly, but the
- * user should still exercise caution. After the migration is complete this class will be made
- * abstract.
+ * <p>This abstract class has three subclasses that include the parent resource itself and are
+ * persisted to Cloud SQL.
  */
-@ReportedOn
-@Entity
 @MappedSuperclass
 @Access(AccessType.FIELD)
-public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSerializable {
+public abstract class HistoryEntry extends ImmutableObject
+    implements Buildable, UnsafeSerializable {
 
   /** Represents the type of history entry. */
   public enum Type {
@@ -127,8 +103,8 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
     /** Resource was created by an escrow file import. */
     RDE_IMPORT,
     /**
-     * A synthetic history entry created by a tool or back-end migration script outside of the scope
-     * of usual EPP flows. These are sometimes needed to serve as parents for billing events or poll
+     * A synthetic history entry created by a tool or back-end migration script outside the scope of
+     * usual EPP flows. These are sometimes needed to serve as parents for billing events or poll
      * messages that otherwise wouldn't have a suitable parent.
      */
     SYNTHETIC
@@ -140,10 +116,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
    * DomainHistory}, uses a composite primary key which the id is part of, and Hibernate requires
    * that all the {@link javax.persistence.Id} fields must be put in the exact same class.
    */
-  @Id @Transient @VisibleForTesting public Long id;
-
-  /** The resource this event mutated. */
-  @Parent @Transient protected Key<? extends EppResource> parent;
+  @OfyIdAllocation @Transient @VisibleForTesting public Long id;
 
   /** The type of history entry. */
   @Column(nullable = false, name = "historyType")
@@ -154,7 +127,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
    * The length of time that a create, allocate, renewal, or transfer request was issued for. Will
    * be null for all other types.
    */
-  @Ignore @Transient // domain-specific
+  @Transient // domain-specific
   Period period;
 
   /**
@@ -166,12 +139,10 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
   byte[] xmlBytes;
 
   /** The time the command occurred, represented by the ofy transaction time. */
-  @Index
   @Column(nullable = false, name = "historyModificationTime")
   DateTime modificationTime;
 
   /** The id of the registrar that sent the command. */
-  @Index
   @Column(name = "historyRegistrarId")
   String clientId;
 
@@ -187,7 +158,6 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
 
   /** Transaction id that made this change, or null if the entry was not created by a flow. */
   @Nullable
-  @Ignore
   @AttributeOverrides({
     @AttributeOverride(
         name = "clientTransactionId",
@@ -213,36 +183,25 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
   /**
    * Logging field for transaction reporting.
    *
-   * <p>This will be empty for any HistoryEntry generated before this field was added. This will
-   * also be empty if the HistoryEntry refers to an EPP mutation that does not affect domain
-   * transaction counts (such as contact or host mutations).
+   * <p>This will be empty for any {@link HistoryEntry} generated before this field was added. This
+   * will also be empty if the {@link HistoryEntry} refers to an EPP mutation that does not affect
+   * domain transaction counts (such as contact or host mutations).
    */
-  @Ignore
   @Transient // domain-specific
-  @ImmutableObject.EmptySetToNull
+  @EmptySetToNull
   protected Set<DomainTransactionRecord> domainTransactionRecords;
 
-  // Make it impossible to instantiate a HistoryEntry explicitly. One should only instantiate a
-  // subtype of HistoryEntry.
-  protected HistoryEntry() {
-    super();
-  }
-
-  public long getId() {
-    // For some reason, Hibernate throws NPE during some initialization phase if we don't deal with
+  protected long getId() {
+    // For some reason, Hibernate throws NPE during some initialization phases if we don't deal with
     // the null case. Setting the id to 0L when it is null should be fine because 0L for primitive
     // type is considered as null for wrapper class in the Hibernate context.
     return id == null ? 0L : id;
   }
 
   /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
-  @SuppressWarnings("UnusedMethod")
+  @SuppressWarnings("unused")
   private void setId(long id) {
     this.id = id;
-  }
-
-  public Key<? extends EppResource> getParent() {
-    return parent;
   }
 
   public Type getType() {
@@ -291,31 +250,23 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
     return nullToEmptyImmutableCopy(domainTransactionRecords);
   }
 
-  /**
-   * Throws an error when attempting to retrieve the EppResource at this point in time.
-   *
-   * <p>Subclasses must override this to return the resource; it is non-abstract for legacy reasons
-   * and objects created prior to the Registry 3.0 migration.
-   */
-  public Optional<? extends EppResource> getResourceAtPointInTime() {
-    throw new UnsupportedOperationException(
-        "Raw HistoryEntry objects do not store the resource at that point in time.");
-  }
+  /** Throws an error when attempting to retrieve the EppResource at this point in time. */
+  public abstract Optional<? extends EppResource> getResourceAtPointInTime();
 
   /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
-  @SuppressWarnings("UnusedMethod")
+  @SuppressWarnings("unused")
   private void setPeriod(Period period) {
     this.period = period;
   }
 
   /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
-  @SuppressWarnings("UnusedMethod")
+  @SuppressWarnings("unused")
   private void setOtherRegistrarId(String otherRegistrarId) {
     this.otherClientId = otherRegistrarId;
   }
 
   /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
-  @SuppressWarnings("UnusedMethod")
+  @SuppressWarnings("unused")
   protected void setDomainTransactionRecords(
       Set<DomainTransactionRecord> domainTransactionRecords) {
     // Note: how we wish to treat this Hibernate setter depends on the current state of the object
@@ -323,7 +274,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
     // and child objects, meaning that we should keep around whichever of the two sets (the
     // parameter vs the class variable) and clear/populate that as appropriate.
     //
-    // If the class variable is a PersistentSet and we overwrite it here, Hibernate will throw
+    // If the class variable is a PersistentSet, and we overwrite it here, Hibernate will throw
     // an exception "A collection with cascade=”all-delete-orphan” was no longer referenced by the
     // owning entity instance". See https://stackoverflow.com/questions/5587482 for more details.
     if (this.domainTransactionRecords instanceof PersistentSet) {
@@ -335,36 +286,11 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
     }
   }
 
-  /**
-   * Throws an error when trying to get a builder from a bare {@link HistoryEntry}.
-   *
-   * <p>This method only exists to satisfy the requirement that the {@link HistoryEntry} is NOT
-   * abstract, it should never be called directly and all three of the subclass of {@link
-   * HistoryEntry} implements it.
-   */
   @Override
-  public Builder<? extends HistoryEntry, ?> asBuilder() {
-    throw new UnsupportedOperationException(
-        "You should never attempt to build a HistoryEntry from a raw HistoryEntry. A raw "
-            + "HistoryEntry should only exist internally when persisting to datastore. If you need "
-            + "to build from a raw HistoryEntry, use "
-            + "{Contact,Host,Domain}History.Builder.copyFrom(HistoryEntry) instead.");
-  }
-
-  /**
-   * Clones and returns a {@code HistoryEntry} objec
-   *
-   * <p>This is useful when converting a subclass to the base class to persist to Datastore.
-   */
-  public HistoryEntry asHistoryEntry() {
-    HistoryEntry historyEntry = new HistoryEntry();
-    copy(this, historyEntry);
-    return historyEntry;
-  }
+  public abstract Builder<? extends HistoryEntry, ?> asBuilder();
 
   protected static void copy(HistoryEntry src, HistoryEntry dst) {
     dst.id = src.id;
-    dst.parent = src.parent;
     dst.type = src.type;
     dst.period = src.period;
     dst.xmlBytes = src.xmlBytes;
@@ -379,54 +305,6 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
         src.domainTransactionRecords == null
             ? null
             : ImmutableSet.copyOf(src.domainTransactionRecords);
-  }
-
-  @SuppressWarnings("unchecked")
-  public HistoryEntry toChildHistoryEntity() {
-    String parentKind = getParent().getKind();
-    final HistoryEntry resultEntity;
-    // can't use a switch statement since we're calling getKind()
-    if (parentKind.equals(getKind(Domain.class))) {
-      resultEntity =
-          new DomainHistory.Builder().copyFrom(this).setDomainRepoId(parent.getName()).build();
-    } else if (parentKind.equals(getKind(Host.class))) {
-      resultEntity =
-          new HostHistory.Builder().copyFrom(this).setHostRepoId(parent.getName()).build();
-    } else if (parentKind.equals(getKind(Contact.class))) {
-      resultEntity =
-          new ContactHistory.Builder().copyFrom(this).setContactRepoId(parent.getName()).build();
-    } else {
-      throw new IllegalStateException(
-          String.format("Unknown kind of HistoryEntry parent %s", parentKind));
-    }
-    return resultEntity;
-  }
-
-  /** Creates a {@link VKey} instance from a {@link Key} instance. */
-  public static VKey<? extends HistoryEntry> createVKey(Key<HistoryEntry> key) {
-    String repoId = key.getParent().getName();
-    long id = key.getId();
-    Key<EppResource> parent = key.getParent();
-    String parentKind = parent.getKind();
-    if (parentKind.equals(getKind(Domain.class))) {
-      return VKey.create(
-          DomainHistory.class,
-          new DomainHistoryId(repoId, id),
-          Key.create(parent, DomainHistory.class, id));
-    } else if (parentKind.equals(getKind(Host.class))) {
-      return VKey.create(
-          HostHistory.class,
-          new HostHistoryId(repoId, id),
-          Key.create(parent, HostHistory.class, id));
-    } else if (parentKind.equals(getKind(Contact.class))) {
-      return VKey.create(
-          ContactHistory.class,
-          new ContactHistoryId(repoId, id),
-          Key.create(parent, ContactHistory.class, id));
-    } else {
-      throw new IllegalStateException(
-          String.format("Unknown kind of HistoryEntry parent %s", parentKind));
-    }
   }
 
   /** A builder for {@link HistoryEntry} since it is immutable */
@@ -464,17 +342,6 @@ public class HistoryEntry extends ImmutableObject implements Buildable, UnsafeSe
 
     public B setId(Long id) {
       getInstance().id = id;
-      return thisCastToDerived();
-    }
-
-    protected B setParent(EppResource parent) {
-      getInstance().parent = Key.create(parent);
-      return thisCastToDerived();
-    }
-
-    // Until we move completely to SQL, override this in subclasses (e.g. HostHistory) to set VKeys
-    protected B setParent(Key<? extends EppResource> parent) {
-      getInstance().parent = parent;
       return thisCastToDerived();
     }
 

@@ -18,12 +18,8 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.contact.Contact;
-import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.Domain;
-import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.Host;
-import google.registry.model.host.HostHistory;
-import google.registry.model.reporting.HistoryEntry;
 
 /** Sets of classes of the Objectify-registered entities in use throughout the model. */
 @DeleteAfterMigration
@@ -31,15 +27,7 @@ public final class EntityClasses {
 
   /** Set of entity classes. */
   public static final ImmutableSet<Class<? extends ImmutableObject>> ALL_CLASSES =
-      ImmutableSet.of(
-          Contact.class,
-          ContactHistory.class,
-          Domain.class,
-          DomainHistory.class,
-          GaeUserIdConverter.class,
-          HistoryEntry.class,
-          Host.class,
-          HostHistory.class);
+      ImmutableSet.of(Contact.class, Domain.class, GaeUserIdConverter.class, Host.class);
 
   private EntityClasses() {}
 }

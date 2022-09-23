@@ -14,8 +14,6 @@
 
 package google.registry.model.contact;
 
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
@@ -31,7 +29,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.PostLoad;
+import javax.persistence.Index;
+import javax.persistence.Table;
 
 /**
  * A persisted history entry representing an EPP modification to a contact.
@@ -39,53 +38,44 @@ import javax.persistence.PostLoad;
  * <p>In addition to the general history fields (e.g. action time, registrar ID) we also persist a
  * copy of the contact entity at this point in time. We persist a raw {@link ContactBase} so that
  * the foreign-keyed fields in that class can refer to this object.
- *
- * <p>This class is only marked as a Datastore entity subclass and registered with Objectify so that
- * when building it its ID can be auto-populated by Objectify. It is converted to its superclass
- * {@link HistoryEntry} when persisted to Datastore using {@link
- * google.registry.persistence.transaction.TransactionManager}.
  */
 @Entity
-@javax.persistence.Table(
+@Table(
     indexes = {
-      @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "historyRegistrarId"),
-      @javax.persistence.Index(columnList = "historyType"),
-      @javax.persistence.Index(columnList = "historyModificationTime")
+      @Index(columnList = "creationTime"),
+      @Index(columnList = "historyRegistrarId"),
+      @Index(columnList = "historyType"),
+      @Index(columnList = "historyModificationTime")
     })
-@EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(ContactHistoryId.class)
 public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
 
-  // Store ContactBase instead of Contact so we don't pick up its @Id
+  // Store ContactBase instead of Contact, so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
   @DoNotCompare @Nullable ContactBase contactBase;
 
   @Id
   @Access(AccessType.PROPERTY)
-  public String getContactRepoId() {
-    // We need to handle null case here because Hibernate sometimes accesses this method before
-    // parent gets initialized
-    return parent == null ? null : parent.getName();
+  @SuppressWarnings("unused")
+  // This method is private because it is only used by Hibernate.
+  private String getContactRepoId() {
+    return contactBase == null ? null : contactBase.getRepoId();
   }
 
-  /** This method is private because it is only used by Hibernate. */
+  // This method is private because it is only used by Hibernate.
+  // We also don't actually set anything because the information in contained in contactBase.
   @SuppressWarnings("unused")
-  private void setContactRepoId(String contactRepoId) {
-    parent = Key.create(Contact.class, contactRepoId);
-  }
+  private void setContactRepoId(String contactRepoId) {}
 
   @Id
   @Column(name = "historyRevisionId")
   @Access(AccessType.PROPERTY)
   @Override
-  public long getId() {
+  @SuppressWarnings("unused")
+  // This method is protected because it is only used by Hibernate.
+  protected long getId() {
     return super.getId();
-  }
-
-  public ContactHistoryId getContactHistoryId() {
-    return new ContactHistoryId(getContactRepoId(), getId());
   }
 
   /**
@@ -98,36 +88,15 @@ public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
     return Optional.ofNullable(contactBase);
   }
 
-  /** The key to the {@link Contact} this is based off of. */
-  public VKey<Contact> getParentVKey() {
-    return VKey.create(Contact.class, getContactRepoId());
-  }
-
   /** Creates a {@link VKey} instance for this entity. */
-  @SuppressWarnings("unchecked")
   @Override
   public VKey<ContactHistory> createVKey() {
-    return (VKey<ContactHistory>) createVKey(Key.create(this));
+    return VKey.createSql(ContactHistory.class, new ContactHistoryId(getContactRepoId(), getId()));
   }
 
   @Override
   public Optional<? extends EppResource> getResourceAtPointInTime() {
     return getContactBase().map(contactBase -> new Contact.Builder().copyFrom(contactBase).build());
-  }
-
-  @PostLoad
-  void postLoad() {
-    // Normally Hibernate would see that the contact fields are all null and would fill contactBase
-    // with a null object. Unfortunately, the updateTimestamp is never null in SQL.
-    if (contactBase != null && contactBase.getContactId() == null) {
-      contactBase = null;
-    }
-    if (contactBase != null && contactBase.getRepoId() == null) {
-      // contactBase hasn't been fully constructed yet, so it's ok to go in and mutate it.  Though
-      // the use of the Builder is not necessarily problematic in this case, this is still safer as
-      // the Builder can do things like comparisons that compute the hash code.
-      contactBase.setRepoId(parent.getName());
-    }
   }
 
   /** Class to represent the composite primary key of {@link ContactHistory} entity. */
@@ -138,6 +107,7 @@ public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
     private Long id;
 
     /** Hibernate requires this default constructor. */
+    @SuppressWarnings("unused")
     private ContactHistoryId() {}
 
     public ContactHistoryId(String contactRepoId, long id) {
@@ -205,12 +175,7 @@ public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
         return this;
       }
       getInstance().contactBase = contactBase;
-      return super.setParent(contactBase);
-    }
-
-    public Builder setContactRepoId(String contactRepoId) {
-      getInstance().parent = Key.create(Contact.class, contactRepoId);
-      return this;
+      return thisCastToDerived();
     }
 
     public Builder wipeOutPii() {

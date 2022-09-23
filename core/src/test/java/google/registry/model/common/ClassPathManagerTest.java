@@ -21,7 +21,6 @@ import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.Host;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.TestObject;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +41,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClass("Contact")).isEqualTo(Contact.class);
     assertThat(ClassPathManager.getClass("GaeUserIdConverter")).isEqualTo(GaeUserIdConverter.class);
     assertThat(ClassPathManager.getClass("Domain")).isEqualTo(Domain.class);
-    assertThat(ClassPathManager.getClass("HistoryEntry")).isEqualTo(HistoryEntry.class);
   }
 
   @Test
@@ -80,7 +78,6 @@ public class ClassPathManagerTest {
     assertThat(ClassPathManager.getClassName(GaeUserIdConverter.class))
         .isEqualTo("GaeUserIdConverter");
     assertThat(ClassPathManager.getClassName(Domain.class)).isEqualTo("Domain");
-    assertThat(ClassPathManager.getClassName(HistoryEntry.class)).isEqualTo("HistoryEntry");
   }
 
   @Test

@@ -14,8 +14,6 @@
 
 package google.registry.model.host;
 
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
@@ -31,7 +29,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.PostLoad;
+import javax.persistence.Index;
+import javax.persistence.Table;
 
 /**
  * A persisted history entry representing an EPP modification to a host.
@@ -39,54 +38,41 @@ import javax.persistence.PostLoad;
  * <p>In addition to the general history fields (e.g. action time, registrar ID) we also persist a
  * copy of the host entity at this point in time. We persist a raw {@link HostBase} so that the
  * foreign-keyed fields in that class can refer to this object.
- *
- * <p>This class is only marked as a Datastore entity subclass and registered with Objectify so that
- * when building it its ID can be auto-populated by Objectify. It is converted to its superclass
- * {@link HistoryEntry} when persisted to Datastore using {@link
- * google.registry.persistence.transaction.TransactionManager}.
  */
 @Entity
-@javax.persistence.Table(
+@Table(
     indexes = {
-      @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "historyRegistrarId"),
-      @javax.persistence.Index(columnList = "hostName"),
-      @javax.persistence.Index(columnList = "historyType"),
-      @javax.persistence.Index(columnList = "historyModificationTime")
+      @Index(columnList = "creationTime"),
+      @Index(columnList = "historyRegistrarId"),
+      @Index(columnList = "hostName"),
+      @Index(columnList = "historyType"),
+      @Index(columnList = "historyModificationTime")
     })
-@EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(HostHistoryId.class)
 public class HostHistory extends HistoryEntry implements UnsafeSerializable {
 
-  // Store HostBase instead of Host so we don't pick up its @Id
+  // Store HostBase instead of Host, so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
   @DoNotCompare @Nullable HostBase hostBase;
 
   @Id
   @Access(AccessType.PROPERTY)
-  public String getHostRepoId() {
-    // We need to handle null case here because Hibernate sometimes accesses this method before
-    // parent gets initialized
-    return parent == null ? null : parent.getName();
+  private String getHostRepoId() {
+    return hostBase == null ? null : hostBase.getRepoId();
   }
 
-  /** This method is private because it is only used by Hibernate. */
+  // This method is private because it is only used by Hibernate.
+  // We also don't actually set anything because the information in contained in hostBase.
   @SuppressWarnings("unused")
-  private void setHostRepoId(String hostRepoId) {
-    parent = Key.create(Host.class, hostRepoId);
-  }
+  private void setHostRepoId(String hostRepoId) {}
 
   @Id
   @Column(name = "historyRevisionId")
   @Access(AccessType.PROPERTY)
   @Override
-  public long getId() {
+  protected long getId() {
     return super.getId();
-  }
-
-  public HostHistoryId getHostHistoryId() {
-    return new HostHistoryId(getHostRepoId(), getId());
   }
 
   /**
@@ -99,36 +85,15 @@ public class HostHistory extends HistoryEntry implements UnsafeSerializable {
     return Optional.ofNullable(hostBase);
   }
 
-  /** The key to the {@link Host} this is based off of. */
-  public VKey<Host> getParentVKey() {
-    return VKey.create(Host.class, getHostRepoId());
-  }
-
   /** Creates a {@link VKey} instance for this entity. */
-  @SuppressWarnings("unchecked")
   @Override
   public VKey<HostHistory> createVKey() {
-    return (VKey<HostHistory>) createVKey(Key.create(this));
+    return VKey.createSql(HostHistory.class, new HostHistoryId(getHostRepoId(), getId()));
   }
 
   @Override
   public Optional<? extends EppResource> getResourceAtPointInTime() {
     return getHostBase().map(hostBase -> new Host.Builder().copyFrom(hostBase).build());
-  }
-
-  @PostLoad
-  void postLoad() {
-    // Normally Hibernate would see that the host fields are all null and would fill hostBase
-    // with a null object. Unfortunately, the updateTimestamp is never null in SQL.
-    if (hostBase != null && hostBase.getHostName() == null) {
-      hostBase = null;
-    }
-    if (hostBase != null && hostBase.getRepoId() == null) {
-      // hostBase hasn't been fully constructed yet, so it's ok to go in and mutate it.  Though the
-      // use of the Builder is not necessarily problematic in this case, this is still safer as the
-      // Builder can do things like comparisons that compute the hash code.
-      hostBase.setRepoId(parent.getName());
-    }
   }
 
   /** Class to represent the composite primary key of {@link HostHistory} entity. */
@@ -139,6 +104,7 @@ public class HostHistory extends HistoryEntry implements UnsafeSerializable {
     private Long id;
 
     /** Hibernate requires this default constructor. */
+    @SuppressWarnings("unused")
     private HostHistoryId() {}
 
     public HostHistoryId(String hostRepoId, long id) {
@@ -206,12 +172,7 @@ public class HostHistory extends HistoryEntry implements UnsafeSerializable {
         return this;
       }
       getInstance().hostBase = hostBase;
-      return super.setParent(hostBase);
-    }
-
-    public Builder setHostRepoId(String hostRepoId) {
-      getInstance().parent = Key.create(Host.class, hostRepoId);
-      return this;
+      return thisCastToDerived();
     }
   }
 }
