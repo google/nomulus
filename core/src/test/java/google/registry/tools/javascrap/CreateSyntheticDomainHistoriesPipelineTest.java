@@ -16,21 +16,24 @@ package google.registry.tools.javascrap;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
-import static google.registry.testing.DatabaseHelper.newDomain;
+import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 
-import com.google.common.collect.Iterables;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.testing.DatastoreEntityExtension;
+import google.registry.testing.FakeClock;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -38,9 +41,11 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Tests for {@link CreateSyntheticDomainHistoriesPipeline}. */
 public class CreateSyntheticDomainHistoriesPipelineTest {
 
+  private final FakeClock fakeClock = new FakeClock(DateTime.parse("2022-09-01T00:00:00.000Z"));
+
   @RegisterExtension
   JpaTestExtensions.JpaIntegrationTestExtension jpaEextension =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
 
   @RegisterExtension
   DatastoreEntityExtension datastoreEntityExtension =
@@ -56,23 +61,48 @@ public class CreateSyntheticDomainHistoriesPipelineTest {
     persistNewRegistrar("NewRegistrar");
     createTld("tld");
     domain =
+        persistDomainWithDependentResources(
+            "example",
+            "tld",
+            persistResource(newContact("contact1234")),
+            fakeClock.nowUtc(),
+            DateTime.parse("2022-09-01T00:00:00.000Z"),
+            DateTime.parse("2024-09-01T00:00:00.000Z"));
+    domain =
         persistSimpleResource(
-            newDomain("example.tld")
+            domain
                 .asBuilder()
                 .setNameservers(persistActiveHost("external.com").createVKey())
                 .build());
+    fakeClock.setTo(DateTime.parse("2022-09-20T00:00:00.000Z"));
+    // shouldn't create any history objects for this domain
+    persistDomainWithDependentResources(
+        "ignored-example",
+        "tld",
+        persistResource(newContact("contact12345")),
+        fakeClock.nowUtc(),
+        DateTime.parse("2022-09-20T00:00:00.000Z"),
+        DateTime.parse("2024-09-20T00:00:00.000Z"));
   }
 
   @Test
   void testSuccess() {
-    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(DomainHistory.class))).isEmpty();
+    assertThat(loadAllOf(DomainHistory.class)).hasSize(2);
     CreateSyntheticDomainHistoriesPipeline.setup(pipeline, "NewRegistrar");
     pipeline.run().waitUntilFinish();
-    DomainHistory domainHistory = Iterables.getOnlyElement(loadAllOf(DomainHistory.class));
-    assertThat(domainHistory.getType()).isEqualTo(HistoryEntry.Type.SYNTHETIC);
-    assertThat(domainHistory.getRegistrarId()).isEqualTo("NewRegistrar");
+    DomainHistory syntheticHistory =
+        HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey(), DomainHistory.class)
+            .get(1);
+    assertThat(syntheticHistory.getType()).isEqualTo(HistoryEntry.Type.SYNTHETIC);
+    assertThat(syntheticHistory.getRegistrarId()).isEqualTo("NewRegistrar");
     assertAboutImmutableObjects()
-        .that(domainHistory.getDomainBase().get())
-        .hasFieldsEqualTo(domain);
+        .that(syntheticHistory.getDomainBase().get())
+        .isEqualExceptFields(domain, "updateTimestamp");
+
+    // shouldn't create any entries on re-run
+    pipeline.run().waitUntilFinish();
+    assertThat(HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey())).hasSize(2);
+    // three total histories, two CREATE and one SYNTHETIC
+    assertThat(loadAllOf(DomainHistory.class)).hasSize(3);
   }
 }
