@@ -60,15 +60,22 @@ public class CreateSyntheticDomainHistoriesPipeline implements Serializable {
   private static final String HISTORY_REASON =
       "Create synthetic domain histories to fix RDE for b/248112997";
   private static final DateTime BAD_PIPELINE_START_TIME =
-      DateTime.parse("2022-09-05T00:00:00.000Z");
+      DateTime.parse("2022-09-05T09:00:00.000Z");
+  private static final DateTime BAD_PIPELINE_END_TIME = DateTime.parse("2022-09-10T12:00:00.000Z");
 
   static void setup(Pipeline pipeline, String registryAdminRegistrarId) {
     pipeline
         .apply(
             "Read all domain repo IDs",
             RegistryJpaIO.read(
-                "SELECT repoId FROM Domain WHERE deletionTime > :badPipelineStartTime",
-                ImmutableMap.of("badPipelineStartTime", BAD_PIPELINE_START_TIME),
+                "SELECT d.repoId FROM Domain d WHERE deletionTime > :badPipelineStartTime AND NOT"
+                    + " EXISTS (SELECT 1 FROM DomainHistory dh WHERE dh.domainRepoId = d.repoId"
+                    + " AND dh.modificationTime > :badPipelineEndTime)",
+                ImmutableMap.of(
+                    "badPipelineStartTime",
+                    BAD_PIPELINE_START_TIME,
+                    "badPipelineEndTime",
+                    BAD_PIPELINE_END_TIME),
                 String.class,
                 repoId -> VKey.createSql(Domain.class, repoId)))
         .apply(
