@@ -711,6 +711,10 @@ createToolTask(
     'createSyntheticDomainHistories',
     'google.registry.tools.javascrap.CreateSyntheticDomainHistoriesPipeline')
 
+createToolTask(
+    'resetDomainsToBeforeResave',
+    'google.registry.tools.javascrap.ResetDomainsToBeforeResavePipeline')
+
 project.tasks.create('generateSqlSchema', JavaExec) {
   classpath = sourceSets.nonprod.runtimeClasspath
   main = 'google.registry.tools.DevTool'
