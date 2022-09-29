@@ -71,6 +71,7 @@ public final class RegistryTool {
           .put("get_history_entries", GetHistoryEntriesCommand.class)
           .put("get_host", GetHostCommand.class)
           .put("get_keyring_secret", GetKeyringSecretCommand.class)
+          .put("get_package_promotion", GetPackagePromotionCommand.class)
           .put("get_premium_list", GetPremiumListCommand.class)
           .put("get_registrar", GetRegistrarCommand.class)
           .put("get_reserved_list", GetReservedListCommand.class)
