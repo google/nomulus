@@ -86,6 +86,7 @@
     <target>backend</target>
   </cron>
 
+  <!-- TODO(b/249863289): disable until it is safe to run this pipeline
   <cron>
     <url><![CDATA[/_dr/task/resaveAllEppResourcesPipeline?fast=true]]></url>
     <description>
@@ -94,6 +95,7 @@
     <schedule>1st monday of month 09:00</schedule>
     <target>backend</target>
   </cron>
+  -->
 
   <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/exportDomainLists&runInEmpty]]></url>
