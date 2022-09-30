@@ -117,7 +117,7 @@ public class CreateSyntheticDomainHistoriesPipeline implements Serializable {
     RegistryPipelineOptions options =
         PipelineOptionsFactory.fromArgs(args).withValidation().as(RegistryPipelineOptions.class);
     RegistryPipelineOptions.validateRegistryPipelineOptions(options);
-    options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
+    options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ);
     String registryAdminRegistrarId =
         DaggerCreateSyntheticDomainHistoriesPipeline_ConfigComponent.create()
             .getRegistryAdminRegistrarId();

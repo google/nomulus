@@ -91,7 +91,6 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
   }
 
   void setupPipeline(Pipeline pipeline) {
-    options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
     if (options.getFast()) {
       fastResaveContacts(pipeline);
       fastResaveDomains(pipeline);
@@ -194,6 +193,7 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
         PipelineOptionsFactory.fromArgs(args)
             .withValidation()
             .as(ResaveAllEppResourcesPipelineOptions.class);
+    options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ);
     new ResaveAllEppResourcesPipeline(options).run();
   }
 }
