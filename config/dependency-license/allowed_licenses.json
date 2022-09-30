@@ -207,6 +207,9 @@
     {
       "moduleLicense": "GNU Library General Public License v2.1 or later"
     },
+    {
+      "moduleLicense": "GNU Lesser General Public License v3.0"
+    },
     // This is just 3-clause BSD.
     {
       "moduleLicense": "Go License"
