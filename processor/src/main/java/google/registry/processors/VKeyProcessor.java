@@ -48,7 +48,7 @@ import javax.lang.model.util.Types;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-/** Abstract processor to generate {@link AttributeConverter} for {@code VKey} type. */
+/** Processor to generate {@link AttributeConverter} for {@code VKey} type. */
 @SupportedAnnotationTypes("google.registry.persistence.WithVKey")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class VKeyProcessor extends AbstractProcessor {
