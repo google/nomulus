@@ -20,6 +20,7 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
@@ -415,5 +416,22 @@ public abstract class HistoryEntry extends ImmutableObject
           String.format(
               "Class %s does not have an associated HistoryEntry", parent.getClass().getName()));
     }
+  }
+
+  public abstract static class HistoryEntryId extends ImmutableObject
+      implements UnsafeSerializable {
+
+    private long id;
+
+    protected HistoryEntryId() {}
+
+    public long getId() {
+      return id;
+    }
+
+    public void setId(long id) {
+    this.id = id;
+    }
+
   }
 }

@@ -283,7 +283,7 @@ public abstract class PollMessage extends ImmutableObject
     public B setHistoryEntry(HistoryEntry history) {
       // Set the appropriate field based on the history entry type.
       if (history instanceof DomainHistory) {
-        return setDomainHistoryId(((DomainHistory) history).getDomainHistoryId());
+        return setDomainHistoryId(history.createVKey().getSqlKey());
       }
       if (history instanceof ContactHistory) {
         return setContactHistoryId(((ContactHistory) history).getContactHistoryId());

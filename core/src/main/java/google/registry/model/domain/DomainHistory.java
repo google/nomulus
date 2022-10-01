@@ -208,10 +208,6 @@ public class DomainHistory extends HistoryEntry {
     return super.getId();
   }
 
-  public DomainHistoryId getDomainHistoryId() {
-    return new DomainHistoryId(getDomainRepoId(), getId());
-  }
-
   /** Returns keys to the {@link Host} that are the nameservers for the domain. */
   public Set<VKey<Host>> getNsHosts() {
     return nsHosts;
