@@ -28,10 +28,16 @@ import google.registry.model.domain.token.PackagePromotion;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetPackagePromotionCommand}. */
 public class GetPackagePromotionCommandTest extends CommandTestCase<GetPackagePromotionCommand> {
+
+  @BeforeEach
+  void beforeEach() {
+    command.clock = fakeClock;
+  }
 
   @Test
   void testSuccess() throws Exception {

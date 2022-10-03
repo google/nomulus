@@ -19,7 +19,6 @@ import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.JCommander;
 import com.google.common.base.Joiner;
@@ -63,7 +62,7 @@ public abstract class CommandTestCase<C extends Command> {
 
   protected C command;
 
-  protected final FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  protected final FakeClock fakeClock = new FakeClock(DateTime.parse("2022-09-01T00:00:00.000Z"));
 
   @RegisterExtension
   public final AppEngineExtension appEngine =

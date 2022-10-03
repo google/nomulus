@@ -21,7 +21,6 @@ import static google.registry.model.EppResourceUtils.checkResourcesExist;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -38,11 +37,13 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.tools.soy.UniformRapidSuspensionSoyInfo;
+import google.registry.util.Clock;
 import google.registry.util.DomainNameUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import javax.inject.Inject;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -119,10 +120,12 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
   /** Set of status values to remove. */
   ImmutableSet<String> removeStatuses;
 
+  @Inject Clock clock;
+
   @Override
   protected void initMutatingEppToolCommand() {
     superuser = true;
-    DateTime now = DateTime.now(UTC);
+    DateTime now = clock.nowUtc();
     ImmutableList<String> newCanonicalHosts =
         newHosts.stream().map(DomainNameUtils::canonicalizeHostname).collect(toImmutableList());
     ImmutableSet<String> newHostsSet = ImmutableSet.copyOf(newCanonicalHosts);

@@ -19,22 +19,19 @@ import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDeletedContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetContactCommand}. */
 class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
 
-  private DateTime now = DateTime.now(UTC);
-
   @BeforeEach
   void beforeEach() {
     createTld("tld");
+    command.clock = fakeClock;
   }
 
   @Test
@@ -67,7 +64,7 @@ class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
 
   @Test
   void testSuccess_deletedContact() throws Exception {
-    persistDeletedContact("sh8013", now.minusDays(1));
+    persistDeletedContact("sh8013", fakeClock.nowUtc().minusDays(1));
     runCommand("sh8013");
     assertInStdout("Contact 'sh8013' does not exist or is deleted");
   }
@@ -85,8 +82,9 @@ class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
 
   @Test
   void testSuccess_contactDeletedInFuture() throws Exception {
-    persistResource(newContact("sh8013").asBuilder().setDeletionTime(now.plusDays(1)).build());
-    runCommand("sh8013", "--read_timestamp=" + now.plusMonths(1));
+    persistResource(
+        newContact("sh8013").asBuilder().setDeletionTime(fakeClock.nowUtc().plusDays(1)).build());
+    runCommand("sh8013", "--read_timestamp=" + fakeClock.nowUtc().plusMonths(1));
     assertInStdout("Contact 'sh8013' does not exist or is deleted");
   }
 }
