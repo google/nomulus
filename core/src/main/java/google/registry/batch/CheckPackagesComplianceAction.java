@@ -27,7 +27,7 @@ import java.util.List;
 
 /**
  * An action that checks all {@link PackagePromotion} objects for compliance with their max create
- * and active domain limits.
+ * limit.
  */
 @Action(
     service = Service.BACKEND,
@@ -51,10 +51,11 @@ public class CheckPackagesComplianceAction implements Runnable {
                       jpaTm()
                           .query(
                               "FROM DomainHistory WHERE current_package_token = :token AND"
-                                  + " modificationTime >= :creation AND type = 'DOMAIN_CREATE'",
+                                  + " modificationTime >= :lastBilling AND type = 'DOMAIN_CREATE'",
                               DomainHistory.class)
                           .setParameter("token", packagePromo.getToken().getSqlKey().toString())
-                          .setParameter("creation", packagePromo.getNextBillingDate().minusYears(1))
+                          .setParameter(
+                              "lastBilling", packagePromo.getNextBillingDate().minusYears(1))
                           .getResultList());
 
       if (creates.size() > packagePromo.getMaxCreates()) {
