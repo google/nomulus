@@ -301,6 +301,9 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
               || getInstance().renewalPriceBehavior.equals(RenewalPriceBehavior.SPECIFIED),
           "Package tokens must have renewalPriceBehavior set to SPECIFIED");
       checkArgument(
+          !getInstance().tokenType.equals(TokenType.PACKAGE) || !getInstance().discountPremiums,
+          "Package tokens cannot discount premium names");
+      checkArgument(
           getInstance().domainName == null || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Domain name can only be specified for SINGLE_USE tokens");
       checkArgument(
