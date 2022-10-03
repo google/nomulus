@@ -98,11 +98,13 @@ public class CreateSyntheticDomainHistoriesPipelineTest {
     assertAboutImmutableObjects()
         .that(syntheticHistory.getDomainBase().get())
         .isEqualExceptFields(domain, "updateTimestamp");
+    // four total histories, two CREATE and two SYNTHETIC
+    assertThat(loadAllOf(DomainHistory.class)).hasSize(4);
 
-    // shouldn't create any entries on re-run
+    // can create multiple entries if we run it multiple times
     pipeline.run().waitUntilFinish();
-    assertThat(HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey())).hasSize(2);
-    // three total histories, two CREATE and one SYNTHETIC
-    assertThat(loadAllOf(DomainHistory.class)).hasSize(3);
+    assertThat(HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey())).hasSize(3);
+    // six total histories, two CREATE and four SYNTHETIC
+    assertThat(loadAllOf(DomainHistory.class)).hasSize(6);
   }
 }
