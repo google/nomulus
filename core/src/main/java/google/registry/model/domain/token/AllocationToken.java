@@ -41,7 +41,7 @@ import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.DomainHistoryVKey;
 import google.registry.persistence.VKey;
-import google.registry.persistence.WithStringVKey;
+import google.registry.persistence.WithVKey;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -58,7 +58,7 @@ import org.joda.time.DateTime;
 
 /** An entity representing an allocation token. */
 @Entity
-@WithStringVKey(compositeKey = true)
+@WithVKey(String.class)
 @Table(
     indexes = {
       @Index(columnList = "token", name = "allocation_token_token_idx", unique = true),

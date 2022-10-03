@@ -19,7 +19,7 @@ import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.persistence.VKey;
-import google.registry.persistence.WithStringVKey;
+import google.registry.persistence.WithVKey;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 
@@ -51,7 +51,7 @@ import javax.persistence.AccessType;
       @javax.persistence.Index(columnList = "currentSponsorRegistrarId")
     })
 @ExternalMessagingName("host")
-@WithStringVKey(compositeKey = true)
+@WithVKey(String.class)
 @Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)
 public class Host extends HostBase implements ForeignKeyedEppResource {
 
