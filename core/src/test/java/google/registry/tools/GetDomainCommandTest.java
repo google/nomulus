@@ -31,6 +31,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
   @BeforeEach
   void beforeEach() {
     createTld("tld");
+    command.clock = fakeClock;
   }
 
   @Test

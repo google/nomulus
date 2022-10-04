@@ -15,29 +15,30 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.EppResource;
+import google.registry.util.Clock;
 import java.util.Optional;
+import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** Abstract command to print one or more resources to stdout. */
 @Parameters(separators = " =")
 abstract class GetEppResourceCommand implements CommandWithRemoteApi {
 
-  private final DateTime now = DateTime.now(UTC);
-
   @Parameter(
       names = "--read_timestamp",
       description = "Timestamp to use when reading. May not be in the past.")
-  protected DateTime readTimestamp = now;
+  protected DateTime readTimestamp;
 
   @Parameter(
       names = "--expand",
       description = "Fully expand the requested resource. NOTE: Output may be lengthy.")
   boolean expand;
+
+  @Inject Clock clock;
 
   /** Runs the command's own logic that calls {@link #printResource}. */
   abstract void runAndPrint();
@@ -59,7 +60,11 @@ abstract class GetEppResourceCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() {
-    checkArgument(!readTimestamp.isBefore(now), "--read_timestamp may not be in the past");
+    if (readTimestamp == null) {
+      readTimestamp = clock.nowUtc();
+    }
+    checkArgument(
+        !readTimestamp.isBefore(clock.nowUtc()), "--read_timestamp may not be in the past");
     runAndPrint();
   }
 }

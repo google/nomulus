@@ -48,6 +48,7 @@ class UniformRapidSuspensionCommandTest
 
   @BeforeEach
   void beforeEach() {
+    command.clock = fakeClock;
     // Since the command's history client ID must be CharlestonRoad, resave TheRegistrar that way.
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setRegistrarId("CharlestonRoad").build());
