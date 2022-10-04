@@ -100,6 +100,24 @@ public class Spec11RegistrarThreatMatchesParserTest {
     assertThat(objectWithExtraFields).isEqualTo(objectWithoutExtraFields);
   }
 
+  @Test
+  void testSuccess_worksWithOutdatedField() throws Exception {
+    ThreatMatch objectWithOutdatedField =
+        ThreatMatch.fromJSON(
+            new JSONObject(
+                ImmutableMap.of(
+                    "threatType", "MALWARE",
+                    "fullyQualifiedDomainName", "c.com")));
+    ThreatMatch objectWithoutOutdatedFields =
+        ThreatMatch.fromJSON(
+            new JSONObject(
+                ImmutableMap.of(
+                    "threatType", "MALWARE",
+                    "domainName", "c.com")));
+
+    assertThat(objectWithOutdatedField).isEqualTo(objectWithoutOutdatedFields);
+  }
+
   /** The expected contents of the sample spec11 report file */
   public static ImmutableSet<RegistrarThreatMatches> sampleThreatMatches() throws Exception {
     return ImmutableSet.of(getMatchA(), getMatchB());

@@ -26,6 +26,7 @@ public abstract class ThreatMatch implements Serializable {
 
   private static final String THREAT_TYPE_FIELD = "threatType";
   private static final String DOMAIN_NAME_FIELD = "domainName";
+  private static final String OUTDATED_NAME_FIELD = "fullyQualifiedDomainName";
 
   /** Returns what kind of threat it is (malware, phishing etc.) */
   public abstract String threatType();
@@ -46,7 +47,12 @@ public abstract class ThreatMatch implements Serializable {
 
   /** Parses a {@link JSONObject} and returns an equivalent {@link ThreatMatch}. */
   public static ThreatMatch fromJSON(JSONObject threatMatch) throws JSONException {
+    // TODO: delete OUTDATED_NAME_FIELD once we no longer process reports saved with
+    // fullyQualifiedDomainName in them, likely 2023
     return new AutoValue_ThreatMatch(
-        threatMatch.getString(THREAT_TYPE_FIELD), threatMatch.getString(DOMAIN_NAME_FIELD));
+        threatMatch.getString(THREAT_TYPE_FIELD),
+        threatMatch.has(OUTDATED_NAME_FIELD)
+            ? threatMatch.getString(OUTDATED_NAME_FIELD)
+            : threatMatch.getString(DOMAIN_NAME_FIELD));
   }
 }
