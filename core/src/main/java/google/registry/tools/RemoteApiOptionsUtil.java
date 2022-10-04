@@ -28,8 +28,8 @@ import java.lang.reflect.Method;
  * {@link RemoteApiOptions} with a JSON representing a user credential.
  */
 public class RemoteApiOptionsUtil {
-  static RemoteApiOptions useGoogleCredentialStream(RemoteApiOptions options, InputStream stream)
-      throws Exception {
+  public static RemoteApiOptions useGoogleCredentialStream(
+      RemoteApiOptions options, InputStream stream) throws Exception {
     Method method =
         options.getClass().getDeclaredMethod("useGoogleCredentialStream", InputStream.class);
     checkState(
