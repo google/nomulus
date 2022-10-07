@@ -47,6 +47,7 @@ import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
+import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -496,13 +497,11 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             expectedDsData.stream()
                 .map(ds -> ds.cloneWithDomainRepoId(resource.getRepoId()))
                 .collect(toImmutableSet()));
-
-    // TODO: REENABLE AFTER PROPER FIX FOR DNS PUBLISHING TASKS IS FOUND
-    // if (dnsTaskEnqueued) {
-    //   assertDnsTasksEnqueued("example.tld");
-    // } else {
-    //   assertNoDnsTasksEnqueued();
-    // }
+    if (dnsTaskEnqueued) {
+      assertDnsTasksEnqueued("example.tld");
+    } else {
+      assertNoDnsTasksEnqueued();
+    }
   }
 
   @Test
@@ -1747,4 +1746,51 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertAboutDomains().that(reloadResourceByForeignKey()).hasNoAutorenewEndTime();
   }
 
+  @Test
+  void testAddDnsPublishStatus_enqueueDnsTask() throws Exception {
+    setEppInput(
+        "domain_update_status_change.xml",
+        ImmutableMap.of("STATUS_ADD", "clientHold", "STATUS_REM", "clientTransferProhibited"));
+    persistReferencedEntities();
+    persistResource(
+        persistDomain()
+            .asBuilder()
+            .setDomainName("example.tld")
+            .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_TRANSFER_PROHIBITED))
+            .build());
+    runFlowAsSuperuser();
+    assertDnsTasksEnqueued("example.tld");
+  }
+
+  @Test
+  void testRemoveEveryDnsPublishStatus_enqueueDnsTask() throws Exception {
+    setEppInput(
+        "domain_update_status_change.xml",
+        ImmutableMap.of("STATUS_REM", "serverHold", "STATUS_ADD", "clientTransferProhibited"));
+    persistReferencedEntities();
+    persistResource(
+        persistDomain()
+            .asBuilder()
+            .setDomainName("example.tld")
+            .setStatusValues(ImmutableSet.of(StatusValue.SERVER_HOLD))
+            .build());
+    runFlowAsSuperuser();
+    assertDnsTasksEnqueued("example.tld");
+  }
+
+  @Test
+  void testChangeSomeOrNoChangeDnsPublishStatus_doNotEnqueueDnsTask() throws Exception {
+    setEppInput(
+        "domain_update_status_change.xml",
+        ImmutableMap.of("STATUS_ADD", "clientUpdateProhibited", "STATUS_REM", "pendingDelete"));
+    persistReferencedEntities();
+    persistResource(
+        persistDomain()
+            .asBuilder()
+            .setDomainName("example.tld")
+            .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE, StatusValue.SERVER_HOLD))
+            .build());
+    runFlowAsSuperuser();
+    assertNoDnsTasksEnqueued();
+  }
 }
