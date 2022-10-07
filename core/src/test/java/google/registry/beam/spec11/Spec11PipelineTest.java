@@ -283,7 +283,7 @@ class Spec11PipelineTest {
               ImmutableList<Spec11ThreatMatch> sqlThreatMatches =
                   Spec11ThreatMatchDao.loadEntriesByDate(tm(), new LocalDate(2020, 1, 27));
               assertThat(sqlThreatMatches)
-                  .comparingElementsUsing(immutableObjectCorrespondence("id"))
+                  .comparingElementsUsing(immutableObjectCorrespondence())
                   .containsExactlyElementsIn(sqlThreatMatches);
             });
   }

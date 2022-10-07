@@ -26,6 +26,7 @@ import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.RegistryConfig.ConfigModule;
+import google.registry.model.IdService;
 import google.registry.model.domain.Domain;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
@@ -45,6 +46,7 @@ import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.Reshuffle;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.TypeDescriptor;
@@ -154,25 +156,36 @@ public class Spec11Pipeline implements Serializable {
 
   static void saveToSql(
       PCollection<KV<DomainNameInfo, ThreatMatch>> threatMatches, Spec11PipelineOptions options) {
-    String transformId = "Spec11 Threat Matches";
     LocalDate date = LocalDate.parse(options.getDate(), ISODateTimeFormat.date());
-    threatMatches.apply(
-        "Write to Sql: " + transformId,
-        RegistryJpaIO.<KV<DomainNameInfo, ThreatMatch>>write()
-            .withName(transformId)
-            .withBatchSize(options.getSqlWriteBatchSize())
-            .withJpaConverter(
-                (kv) -> {
-                  DomainNameInfo domainNameInfo = kv.getKey();
-                  return new Spec11ThreatMatch.Builder()
-                      .setThreatTypes(
-                          ImmutableSet.of(ThreatType.valueOf(kv.getValue().threatType())))
-                      .setCheckDate(date)
-                      .setDomainName(domainNameInfo.domainName())
-                      .setDomainRepoId(domainNameInfo.domainRepoId())
-                      .setRegistrarId(domainNameInfo.registrarId())
-                      .build();
-                }));
+    String transformId = "Spec11 Threat Matches";
+    threatMatches
+        .apply(
+            "Construct objects",
+            ParDo.of(
+                new DoFn<KV<DomainNameInfo, ThreatMatch>, Spec11ThreatMatch>() {
+                  @ProcessElement
+                  public void processElement(
+                      @Element KV<DomainNameInfo, ThreatMatch> input,
+                      OutputReceiver<Spec11ThreatMatch> output) {
+                    Spec11ThreatMatch spec11ThreatMatch =
+                        new Spec11ThreatMatch.Builder()
+                            .setThreatTypes(
+                                ImmutableSet.of(ThreatType.valueOf(input.getValue().threatType())))
+                            .setCheckDate(date)
+                            .setDomainName(input.getKey().domainName())
+                            .setDomainRepoId(input.getKey().domainRepoId())
+                            .setRegistrarId(input.getKey().registrarId())
+                            .setId(IdService.allocateId())
+                            .build();
+                    output.output(spec11ThreatMatch);
+                  }
+                }))
+        .apply("Prevent Fusing", Reshuffle.viaRandomKey())
+        .apply(
+            "Write to Sql: " + transformId,
+            RegistryJpaIO.<Spec11ThreatMatch>write()
+                .withName(transformId)
+                .withBatchSize(options.getSqlWriteBatchSize()));
   }
 
   static void saveToGcs(
