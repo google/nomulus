@@ -118,6 +118,14 @@ interface RegistryToolComponent {
 
   void inject(GenerateEscrowDepositCommand command);
 
+  void inject(GetContactCommand command);
+
+  void inject(GetDomainCommand command);
+
+  void inject(GetHostCommand command);
+
+  void inject(GetPackagePromotionCommand command);
+
   void inject(GetKeyringSecretCommand command);
 
   void inject(GetSqlCredentialCommand command);
@@ -143,6 +151,8 @@ interface RegistryToolComponent {
   void inject(SetNumInstancesCommand command);
 
   void inject(SetupOteCommand command);
+
+  void inject(UniformRapidSuspensionCommand command);
 
   void inject(UnlockDomainCommand command);
 
