@@ -40,35 +40,41 @@ public class CheckPackagesComplianceAction implements Runnable {
 
   @Override
   public void run() {
-    ImmutableList<PackagePromotion> packages =
-        tm().transact(() -> tm().loadAllOf(PackagePromotion.class));
-    ImmutableList.Builder<PackagePromotion> packagesOverCreateLimit = new ImmutableList.Builder<>();
-    for (PackagePromotion packagePromo : packages) {
-      List<DomainHistory> creates =
-          jpaTm()
-              .transact(
-                  () ->
-                      jpaTm()
-                          .query(
-                              "FROM DomainHistory WHERE current_package_token = :token AND"
-                                  + " modificationTime >= :lastBilling AND type = 'DOMAIN_CREATE'",
-                              DomainHistory.class)
-                          .setParameter("token", packagePromo.getToken().getSqlKey().toString())
-                          .setParameter(
-                              "lastBilling", packagePromo.getNextBillingDate().minusYears(1))
-                          .getResultList());
+    tm().transact(
+            () -> {
+              ImmutableList<PackagePromotion> packages = tm().loadAllOf(PackagePromotion.class);
+              ImmutableList.Builder<PackagePromotion> packagesOverCreateLimit =
+                  new ImmutableList.Builder<>();
+              for (PackagePromotion packagePromo : packages) {
+                List<DomainHistory> creates =
+                    jpaTm()
+                        .query(
+                            "FROM DomainHistory WHERE current_package_token = :token AND"
+                                + " modificationTime >= :lastBilling AND type = 'DOMAIN_CREATE'",
+                            DomainHistory.class)
+                        .setParameter("token", packagePromo.getToken().getSqlKey().toString())
+                        .setParameter(
+                            "lastBilling", packagePromo.getNextBillingDate().minusYears(1))
+                        .getResultList();
 
-      if (creates.size() > packagePromo.getMaxCreates()) {
-        packagesOverCreateLimit.add(packagePromo);
-      }
-    }
-    if (packagesOverCreateLimit.build().isEmpty()) {
-      logger.atInfo().log("Found no packages over their create limit.");
-    } else {
-      logger.atInfo().log(
-          "Found %d packages over their create limit.", packagesOverCreateLimit.build().size());
-      // TODO(sarahbot@) Send email to registrar and registry informing of creation overage once
-      // email template is finalized.
-    }
+                if (creates.size() > packagePromo.getMaxCreates()) {
+                  int overage = creates.size() - packagePromo.getMaxCreates();
+                  logger.atInfo().log(
+                      "Package with package token %s has exceeded their max domain creation limit"
+                          + " by %d name(s).",
+                      packagePromo.getToken().getSqlKey(), overage);
+                  packagesOverCreateLimit.add(packagePromo);
+                }
+              }
+              if (packagesOverCreateLimit.build().isEmpty()) {
+                logger.atInfo().log("Found no packages over their create limit.");
+              } else {
+                logger.atInfo().log(
+                    "Found %d packages over their create limit.",
+                    packagesOverCreateLimit.build().size());
+                // TODO(sarahbot@) Send email to registrar and registry informing of creation
+                // overage once email template is finalized.
+              }
+            });
   }
 }

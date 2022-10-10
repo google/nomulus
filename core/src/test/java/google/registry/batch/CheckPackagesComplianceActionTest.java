@@ -127,6 +127,12 @@ public class CheckPackagesComplianceActionTest {
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(Level.INFO, "Found 1 packages over their create limit.");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "Package with package token abc123 has exceeded their max domain creation limit by 1"
+                + " name(s).");
   }
 
   @Test
@@ -178,6 +184,20 @@ public class CheckPackagesComplianceActionTest {
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(Level.INFO, "Found 2 packages over their create limit.");
+
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "Package with package token abc123 has exceeded their max domain creation limit by 1"
+                + " name(s).");
+
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "Package with package token token has exceeded their max domain creation limit by 1"
+                + " name(s).");
   }
 
   @Test
