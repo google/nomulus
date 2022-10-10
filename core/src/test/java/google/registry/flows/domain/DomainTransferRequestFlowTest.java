@@ -21,9 +21,6 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
-import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
@@ -64,7 +61,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
-import com.google.common.truth.Truth8;
 import com.googlecode.objectify.Key;
 import google.registry.batch.ResaveEntityAction;
 import google.registry.flows.EppException;
@@ -89,7 +85,6 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTok
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemovePackageTokenOnPackageDomainException;
 import google.registry.flows.exceptions.AlreadyPendingTransferException;
 import google.registry.flows.exceptions.InvalidTransferPeriodValueException;
 import google.registry.flows.exceptions.MissingTransferRequestAuthInfoException;
@@ -1811,85 +1806,5 @@ class DomainTransferRequestFlowTest
     EppException thrown =
         assertThrows(AlreadyRedeemedAllocationTokenException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testFailsPackageDomainInvalidAllocationToken() throws Exception {
-    AllocationToken token =
-        persistResource(
-            new AllocationToken.Builder()
-                .setToken("abc123")
-                .setTokenType(PACKAGE)
-                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
-                .setAllowedTlds(ImmutableSet.of("example", "tld"))
-                .setRenewalPriceBehavior(SPECIFIED)
-                .build());
-    setupDomain("example", "tld");
-    persistResource(
-        reloadResourceByForeignKey()
-            .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
-            .build());
-
-    setEppInput("domain_transfer_request_allocation_token.xml", ImmutableMap.of("TOKEN", "abc123"));
-    assertThrows(MissingRemovePackageTokenOnPackageDomainException.class, this::runFlow);
-  }
-
-  @Test
-  void testFailsToTransferPackageDomainNoRemovePackageToken() throws Exception {
-    AllocationToken token =
-        persistResource(
-            new AllocationToken.Builder()
-                .setToken("abc123")
-                .setTokenType(PACKAGE)
-                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
-                .setAllowedTlds(ImmutableSet.of("example", "tld"))
-                .setRenewalPriceBehavior(SPECIFIED)
-                .build());
-    setupDomain("example", "tld");
-    persistResource(
-        reloadResourceByForeignKey()
-            .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
-            .build());
-
-    setEppInput("domain_transfer_request.xml");
-    assertThrows(MissingRemovePackageTokenOnPackageDomainException.class, this::runFlow);
-  }
-
-  @Test
-  void testSuccesfullyAppliesRemovePackageToken() throws Exception {
-    setupDomain("example", "tld");
-    AllocationToken token =
-        persistResource(
-            new AllocationToken.Builder()
-                .setToken("abc123")
-                .setTokenType(PACKAGE)
-                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
-                .setAllowedTlds(ImmutableSet.of("tld"))
-                .setRenewalPriceBehavior(SPECIFIED)
-                .build());
-    domain = loadByEntity(domain);
-    persistResource(
-        loadByKey(domain.getAutorenewBillingEvent())
-            .asBuilder()
-            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
-            .setRenewalPrice(Money.of(USD, new BigDecimal("10.00")))
-            .build());
-    persistResource(
-        reloadResourceByForeignKey()
-            .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
-            .build());
-
-    doSuccessfulTest(
-        "domain_transfer_request_allocation_token.xml",
-        "domain_transfer_request_response.xml",
-        ImmutableMap.of("TOKEN", "__REMOVEPACKAGE__"));
-    Domain domain = reloadResourceByForeignKey();
-    Truth8.assertThat(domain.getCurrentPackageToken()).isEmpty();
-    RenewalPriceBehavior priceBehavior =
-        loadByKey(domain.getAutorenewBillingEvent()).getRenewalPriceBehavior();
-    assertThat(priceBehavior).isEqualTo(DEFAULT);
   }
 }
