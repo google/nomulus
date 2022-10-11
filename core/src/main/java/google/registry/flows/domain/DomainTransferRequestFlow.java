@@ -32,8 +32,6 @@ import static google.registry.flows.domain.DomainTransferUtils.createLosingTrans
 import static google.registry.flows.domain.DomainTransferUtils.createPendingTransferData;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferServerApproveEntities;
-import static google.registry.flows.domain.token.AllocationTokenFlowUtils.maybeApplyPackageRemovalToken;
-import static google.registry.flows.domain.token.AllocationTokenFlowUtils.verifyTokenAllowedOnDomain;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -135,8 +133,6 @@ import org.joda.time.DateTime;
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException}
- * @error {@link
- *     google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemovePackageTokenOnPackageDomainException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_TRANSFER_REQUEST)
 public final class DomainTransferRequestFlow implements TransactionalFlow {
@@ -188,9 +184,6 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             ? superuserExtension.get().getRenewalPeriod()
             : ((Transfer) resourceCommand).getPeriod();
     verifyTransferAllowed(existingDomain, period, now, superuserExtension, allocationToken);
-
-    // If client passed an applicable static token this updates the domain
-    existingDomain = maybeApplyPackageRemovalToken(existingDomain, allocationToken);
 
     String tld = existingDomain.getTld();
     Registry registry = Registry.get(tld);
@@ -307,7 +300,6 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
       Optional<AllocationToken> allocationToken)
       throws EppException {
     verifyNoDisallowedStatuses(existingDomain, DISALLOWED_STATUSES);
-    verifyTokenAllowedOnDomain(existingDomain, allocationToken);
     if (!isSuperuser) {
       verifyAuthInfoPresentForResourceTransfer(authInfo);
       verifyAuthInfo(authInfo.get(), existingDomain);
