@@ -48,7 +48,7 @@ import org.json.simple.JSONValue;
  * <p>By default - connects to the TOOLS service. To create a Connection to another service, call
  * the {@link #withService} function.
  */
-class AppEngineConnection {
+public class AppEngineConnection {
 
   /** Pattern to heuristically extract title tag contents in HTML responses. */
   private static final Pattern HTML_TITLE_TAG_PATTERN = Pattern.compile("<title>(.*?)</title>");
