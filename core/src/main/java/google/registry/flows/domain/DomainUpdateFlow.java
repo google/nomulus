@@ -87,6 +87,7 @@ import google.registry.model.poll.PendingActionNotificationResponse.DomainPendin
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Registry;
+import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -181,7 +182,9 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     DomainHistory domainHistory =
         historyBuilder.setType(DOMAIN_UPDATE).setDomain(newDomain).build();
     validateNewState(newDomain);
-    dnsQueue.addDomainRefreshTask(targetId);
+    if (requiresDnsUpdate(existingDomain, newDomain)) {
+      dnsQueue.addDomainRefreshTask(targetId);
+    }
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
     entitiesToSave.add(newDomain, domainHistory);
     Optional<BillingEvent.OneTime> statusUpdateBillingEvent =
@@ -201,6 +204,16 @@ public final class DomainUpdateFlow implements TransactionalFlow {
                 .build());
     persistEntityChanges(entityChanges);
     return responseBuilder.build();
+  }
+
+  /** Determines if any of the changes to new domain should trigger DNS update. */
+  private boolean requiresDnsUpdate(Domain existingDomain, Domain newDomain) {
+    if (existingDomain.shouldPublishToDns() != newDomain.shouldPublishToDns()
+        || !Objects.equals(newDomain.getDsData(), existingDomain.getDsData())
+        || !Objects.equals(newDomain.getNsHosts(), existingDomain.getNsHosts())) {
+      return true;
+    }
+    return false;
   }
 
   /** Fail if the object doesn't exist or was deleted. */
@@ -267,12 +280,18 @@ public final class DomainUpdateFlow implements TransactionalFlow {
             .setLastEppUpdateRegistrarId(registrarId)
             .addStatusValues(add.getStatusValues())
             .removeStatusValues(remove.getStatusValues())
-            .addNameservers(add.getNameservers().stream().collect(toImmutableSet()))
-            .removeNameservers(remove.getNameservers().stream().collect(toImmutableSet()))
             .removeContacts(remove.getContacts())
             .addContacts(add.getContacts())
             .setRegistrant(firstNonNull(change.getRegistrant(), domain.getRegistrant()))
             .setAuthInfo(firstNonNull(change.getAuthInfo(), domain.getAuthInfo()));
+
+    if (!add.getNameservers().isEmpty()) {
+      domainBuilder.addNameservers(add.getNameservers().stream().collect(toImmutableSet()));
+    }
+    if (!remove.getNameservers().isEmpty()) {
+      domainBuilder.removeNameservers(remove.getNameservers().stream().collect(toImmutableSet()));
+    }
+
     Optional<DomainUpdateSuperuserExtension> superuserExt =
         eppInput.getSingleExtension(DomainUpdateSuperuserExtension.class);
     if (superuserExt.isPresent()) {
