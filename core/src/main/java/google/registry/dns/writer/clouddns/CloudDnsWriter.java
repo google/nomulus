@@ -348,7 +348,10 @@ public class CloudDnsWriter extends BaseDnsWriter {
     // TODO(b/70217860): do we want to use a retrier here?
     try {
       Dns.ResourceRecordSets.List listRecordsRequest =
-          dnsConnection.resourceRecordSets().list(projectId, zoneName).setName(domainName);
+          dnsConnection
+              .resourceRecordSets()
+              .list(projectId, "global", zoneName)
+              .setName(domainName);
 
       rateLimiter.acquire();
       return listRecordsRequest.execute().getRrsets();
@@ -363,8 +366,8 @@ public class CloudDnsWriter extends BaseDnsWriter {
    * <p>This call should be used in conjunction with {@link #getResourceRecordsForDomains} in a
    * get-and-set retry loop.
    *
-   * <p>See {@link "https://cloud.google.com/dns/troubleshooting"} for a list of errors produced by
-   * the Google Cloud DNS API.
+   * <p>See <a href="https://cloud.google.com/dns/troubleshooting">Troubleshooting</a> for a list of
+   * errors produced by the Google Cloud DNS API.
    *
    * @throws ZoneStateException if the operation could not be completely successfully because the
    *     records to delete do not exist, already exist or have been modified with different
@@ -394,7 +397,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
 
     rateLimiter.acquire();
     try {
-      dnsConnection.changes().create(projectId, zoneName, change).execute();
+      dnsConnection.changes().create(projectId, "global", zoneName, change).execute();
     } catch (GoogleJsonResponseException e) {
       GoogleJsonError err = e.getDetails();
       // We did something really wrong here, just give up and re-throw

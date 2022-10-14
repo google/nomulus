@@ -94,7 +94,8 @@ final class CreateCdnsTld extends ConfirmingCommand {
   @Override
   public String execute() throws IOException {
     validateDnsService();
-    Dns.ManagedZones.Create request = dnsService.managedZones().create(projectId, managedZone);
+    Dns.ManagedZones.Create request =
+        dnsService.managedZones().create(projectId, "global", managedZone);
     ManagedZone response = request.execute();
     return String.format("Created managed zone: %s", response);
   }

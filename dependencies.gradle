@@ -38,7 +38,7 @@ ext {
 
       // Breaking changes causing compilation error.
       'com.beust:jcommander:1.60',
-      'com.google.apis:google-api-services-dns:v2beta1-rev99-1.25.0',
+      'com.google.apis:google-api-services-dns:v2-rev20220505-1.32.1',
       'com.google.apis:google-api-services-admin-directory:directory_v1-rev118-1.25.0',
       'com.google.apis:google-api-services-drive:v2-rev393-1.25.0',
       'com.thoughtworks.qdox:qdox:1.12.1',

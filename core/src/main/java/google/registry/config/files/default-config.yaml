@@ -247,7 +247,7 @@ cloudDns:
 
   # The service endpoint path for the Cloud DNS API.  Set this to a non-null
   # value to override the default API path used by the googleapis library.
-  servicePath: dns/v2beta1_staging/projects/
+  servicePath: dns/v2/projects/
 
 caching:
   # Length of time that a singleton should be cached before expiring.
