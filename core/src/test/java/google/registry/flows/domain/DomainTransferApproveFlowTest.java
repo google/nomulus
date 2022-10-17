@@ -45,6 +45,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
+import com.google.common.truth.Truth8;
+import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
@@ -375,8 +377,86 @@ class DomainTransferApproveFlowTest
   }
 
   @Test
+  void testDryRun_PackageDomain() throws Exception {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("example.tld")
+                .build());
+    domain = reloadResourceByForeignKey();
+    persistResource(
+        loadByKey(domain.getAutorenewBillingEvent())
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, new BigDecimal("10.00")))
+            .build());
+    persistResource(
+        domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+    clock.advanceOneMilli();
+    setEppInput("domain_transfer_approve_wildcard.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    dryRunFlowAssertResponse(loadFile("domain_transfer_approve_response.xml"));
+  }
+
+  @Test
   void testSuccess() throws Exception {
     doSuccessfulTest("tld", "domain_transfer_approve.xml", "domain_transfer_approve_response.xml");
+  }
+
+  @Test
+  void testSuccess_removesPackageToken() throws Exception {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("example.tld")
+                .build());
+    domain = reloadResourceByForeignKey();
+    persistResource(
+        loadByKey(domain.getAutorenewBillingEvent())
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, new BigDecimal("10.00")))
+            .build());
+    persistResource(
+        domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+    clock.advanceOneMilli();
+    setEppInput("domain_transfer_approve_wildcard.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    DateTime now = clock.nowUtc();
+    runFlowAssertResponse(loadFile("domain_transfer_approve_response.xml"));
+    domain = reloadResourceByForeignKey();
+    DomainHistory acceptHistory =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE, DomainHistory.class);
+    assertBillingEventsForResource(
+        domain,
+        new BillingEvent.OneTime.Builder()
+            .setBillingTime(now.plusDays(5))
+            .setEventTime(now)
+            .setRegistrarId("NewRegistrar")
+            .setCost(Money.of(USD, new BigDecimal("11.00")))
+            .setDomainHistory(acceptHistory)
+            .setReason(Reason.TRANSFER)
+            .setPeriodYears(1)
+            .setTargetId("example.tld")
+            .build(),
+        getGainingClientAutorenewEvent()
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
+            .setRenewalPrice(null)
+            .setDomainHistory(acceptHistory)
+            .build(),
+        getLosingClientAutorenewEvent()
+            .asBuilder()
+            .setRecurrenceEndTime(now)
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, new BigDecimal("10.00")))
+            .build());
+    Truth8.assertThat(domain.getCurrentPackageToken()).isEmpty();
+    assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("NewRegistrar");
+    assertThat(loadByKey(domain.getAutorenewBillingEvent()).getRenewalPriceBehavior())
+        .isEqualTo(RenewalPriceBehavior.DEFAULT);
   }
 
   @Test
@@ -756,7 +836,7 @@ class DomainTransferApproveFlowTest
         domain.getRegistrationExpirationTime().plusYears(0));
     assertHistoryEntriesDoNotContainTransferBillingEventsOrGracePeriods();
   }
-
+  
   @Test
   void testSuccess_superuserExtension_transferPeriodZero_autorenewGraceActive() throws Exception {
     Domain domain = reloadResourceByForeignKey();
