@@ -16,7 +16,6 @@ package google.registry.config;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
@@ -36,6 +35,36 @@ import javax.inject.Singleton;
 /** Dagger module that provides all {@link GoogleCredentials} used in the application. */
 @Module
 public abstract class CredentialModule {
+
+  /**
+   * Provides a {@link GoogleCredentialsBundle} backed by the application default credential from
+   * the Google Cloud Runtime. This credential may be used to access GCP APIs that are NOT part of
+   * the Google Workspace.
+   *
+   * <p>The credential returned by the Cloud Runtime depends on the runtime environment:
+   *
+   * <ul>
+   *   <li>On AppEngine, returns a scope-less {@code ComputeEngineCredentials} for
+   *       PROJECT_ID@appspot.gserviceaccount.com
+   *   <li>On Compute Engine, returns a scope-less {@code ComputeEngineCredentials} for
+   *       PROJECT_NUMBER-compute@developer.gserviceaccount.com
+   *   <li>On end user host, this returns the credential downloaded by gcloud. Please refer to <a
+   *       href="https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login">Cloud
+   *       SDK documentation</a> for details.
+   * </ul>
+   */
+  @ApplicationDefaultCredential
+  @Provides
+  @Singleton
+  public static GoogleCredentialsBundle provideApplicationDefaultCredential() {
+    GoogleCredentials credential;
+    try {
+      credential = GoogleCredentials.getApplicationDefault();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return GoogleCredentialsBundle.create(credential);
+  }
 
   /**
    * Provides the default {@link GoogleCredentialsBundle} from the Google Cloud runtime.
@@ -70,26 +99,19 @@ public abstract class CredentialModule {
   }
 
   /**
-   * Provides the default {@link GoogleCredential} from the Google Cloud runtime for G Suite
-   * Drive API.
-   * TODO(b/138195359): Deprecate this credential once we figure out how to use
-   * {@link GoogleCredentials} for G Suite Drive API.
+   * Provides a {@link GoogleCredentialsBundle} for accessing Google Workspace APIs, such as Drive
+   * and Sheets.
    */
-  @GSuiteDriveCredential
+  @GoogleWorkspaceCredential
   @Provides
   @Singleton
-  public static GoogleCredential provideGSuiteDriveCredential(
+  public static GoogleCredentialsBundle provideGSuiteDriveCredential(
+      @ApplicationDefaultCredential GoogleCredentialsBundle applicationDefaultCredential,
       @Config("defaultCredentialOauthScopes") ImmutableList<String> requiredScopes) {
-    GoogleCredential credential;
-    try {
-      credential = GoogleCredential.getApplicationDefault();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    if (credential.createScopedRequired()) {
-      credential = credential.createScoped(requiredScopes);
-    }
-    return credential;
+    GoogleCredentials credential = applicationDefaultCredential.getGoogleCredentials();
+    // Although credential is scope-less, its `createScopedRequired` method still returns false.
+    credential = credential.createScoped(requiredScopes);
+    return GoogleCredentialsBundle.create(credential);
   }
 
   /**
@@ -136,18 +158,24 @@ public abstract class CredentialModule {
         .createScoped(requiredScopes));
   }
 
+  /** Dagger qualifier for the Application Default Credential with default scopes. */
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface ApplicationDefaultCredential {}
+
   /** Dagger qualifier for the Application Default Credential. */
   @Qualifier
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
+  @Deprecated // Switching to @ApplicationDefaultCredential
   public @interface DefaultCredential {}
-
 
   /** Dagger qualifier for the credential for G Suite Drive API. */
   @Qualifier
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
-  public @interface GSuiteDriveCredential {}
+  public @interface GoogleWorkspaceCredential {}
 
   /**
    * Dagger qualifier for a credential from a service account's JSON key, to be used in non-request

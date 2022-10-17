@@ -19,7 +19,7 @@ import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
 import com.google.cloud.secretmanager.v1.SecretManagerServiceSettings;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.config.CredentialModule.DefaultCredential;
+import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
@@ -33,7 +33,7 @@ public abstract class SecretManagerModule {
   @Provides
   @Singleton
   static SecretManagerServiceSettings provideSecretManagerSetting(
-      @DefaultCredential GoogleCredentialsBundle credentialsBundle) {
+      @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle) {
     try {
       return SecretManagerServiceSettings.newBuilder()
           .setCredentialsProvider(() -> credentialsBundle.getGoogleCredentials())

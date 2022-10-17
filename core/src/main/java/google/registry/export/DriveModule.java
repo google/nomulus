@@ -14,16 +14,16 @@
 
 package google.registry.export;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.drive.Drive;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.CredentialModule;
-import google.registry.config.CredentialModule.GSuiteDriveCredential;
+import google.registry.config.CredentialModule.GoogleWorkspaceCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.storage.drive.DriveConnection;
+import google.registry.util.GoogleCredentialsBundle;
 import javax.inject.Singleton;
 
 /** Dagger module for Google {@link Drive} service connection objects. */
@@ -32,13 +32,13 @@ public final class DriveModule {
 
   @Provides
   static Drive provideDrive(
-      @GSuiteDriveCredential GoogleCredential googleCredential,
+      @GoogleWorkspaceCredential GoogleCredentialsBundle googleCredential,
       @Config("projectId") String projectId) {
 
     return new Drive.Builder(
-            googleCredential.getTransport(),
+            googleCredential.getHttpTransport(),
             googleCredential.getJsonFactory(),
-            googleCredential)
+            googleCredential.getHttpRequestInitializer())
         .setApplicationName(projectId)
         .build();
   }

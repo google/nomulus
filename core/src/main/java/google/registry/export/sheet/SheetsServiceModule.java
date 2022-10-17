@@ -17,7 +17,7 @@ package google.registry.export.sheet;
 import com.google.api.services.sheets.v4.Sheets;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.config.CredentialModule.JsonCredential;
+import google.registry.config.CredentialModule.GoogleWorkspaceCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
 
@@ -27,7 +27,7 @@ public final class SheetsServiceModule {
 
   @Provides
   static Sheets provideSheets(
-      @JsonCredential GoogleCredentialsBundle credentialsBundle,
+      @GoogleWorkspaceCredential GoogleCredentialsBundle credentialsBundle,
       @Config("projectId") String projectId) {
     return new Sheets.Builder(
             credentialsBundle.getHttpTransport(),
