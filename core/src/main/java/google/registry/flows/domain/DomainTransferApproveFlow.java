@@ -170,15 +170,20 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .setDomainHistoryId(domainHistoryId)
                     .build());
 
-    Domain existingDomainWithoutPackage = existingDomain;
-    Recurring existingRecurringWithoutPackage = existingRecurring;
+    // Close the old autorenew event and poll message at the transfer time (aka now). This may end
+    // up deleting the poll message.
+    updateAutorenewRecurrenceEndTime(
+        existingDomain,
+        existingRecurring,
+        now,
+        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()));
+
     // If domain was in a package, remove it from the package and reset the renewal price behavior
     // to default
     if (existingDomain.getCurrentPackageToken().isPresent()) {
-      existingDomainWithoutPackage =
-          existingDomainWithoutPackage.asBuilder().setCurrentPackageToken(null).build();
-      existingRecurringWithoutPackage =
-          existingRecurringWithoutPackage
+      existingDomain = existingDomain.asBuilder().setCurrentPackageToken(null).build();
+      existingRecurring =
+          existingRecurring
               .asBuilder()
               .setRenewalPrice(null)
               .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
@@ -196,7 +201,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                                 Registry.get(tld),
                                 targetId,
                                 transferData.getTransferRequestTime(),
-                                existingRecurringWithoutPackage)
+                                existingRecurring)
                             .getRenewCost())
                     .build());
       }
@@ -232,8 +237,8 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setTargetId(targetId)
             .setRegistrarId(gainingRegistrarId)
             .setEventTime(newExpirationTime)
-            .setRenewalPriceBehavior(existingRecurringWithoutPackage.getRenewalPriceBehavior())
-            .setRenewalPrice(existingRecurringWithoutPackage.getRenewalPrice().orElse(null))
+            .setRenewalPriceBehavior(existingRecurring.getRenewalPriceBehavior())
+            .setRenewalPrice(existingRecurring.getRenewalPrice().orElse(null))
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistoryId(domainHistoryId)
             .build();
@@ -249,7 +254,8 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .build();
     // Construct the post-transfer domain.
     Domain partiallyApprovedDomain =
-        approvePendingTransfer(existingDomainWithoutPackage, TransferStatus.CLIENT_APPROVED, now);
+        approvePendingTransfer(existingDomain, TransferStatus.CLIENT_APPROVED, now);
+    String repoId = existingDomain.getRepoId();
     Domain newDomain =
         partiallyApprovedDomain
             .asBuilder()
@@ -271,9 +277,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                         oneTime ->
                             ImmutableSet.of(
                                 GracePeriod.forBillingEvent(
-                                    GracePeriodStatus.TRANSFER,
-                                    existingDomain.getRepoId(),
-                                    oneTime)))
+                                    GracePeriodStatus.TRANSFER, repoId, oneTime)))
                     .orElseGet(ImmutableSet::of))
             .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(registrarId)
