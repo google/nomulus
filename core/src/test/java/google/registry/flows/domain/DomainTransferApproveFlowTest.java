@@ -458,7 +458,7 @@ class DomainTransferApproveFlowTest
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.DEFAULT);
   }
-
+ 
   @Test
   void testSuccess_nonDefaultTransferGracePeriod() throws Exception {
     // We have to set up a new domain in a different TLD so that the billing event will be persisted
@@ -836,7 +836,7 @@ class DomainTransferApproveFlowTest
         domain.getRegistrationExpirationTime().plusYears(0));
     assertHistoryEntriesDoNotContainTransferBillingEventsOrGracePeriods();
   }
-  
+
   @Test
   void testSuccess_superuserExtension_transferPeriodZero_autorenewGraceActive() throws Exception {
     Domain domain = reloadResourceByForeignKey();
