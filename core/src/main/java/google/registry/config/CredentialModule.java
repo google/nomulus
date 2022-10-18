@@ -44,7 +44,7 @@ public abstract class CredentialModule {
    * <p>The credential returned by the Cloud Runtime depends on the runtime environment:
    *
    * <ul>
-   *   <li>On AppEngine, returns a scope-less {@code ComputeEngineCredentials} for
+   *   <li>On App Engine, returns a scope-less {@code ComputeEngineCredentials} for
    *       PROJECT_ID@appspot.gserviceaccount.com
    *   <li>On Compute Engine, returns a scope-less {@code ComputeEngineCredentials} for
    *       PROJECT_NUMBER-compute@developer.gserviceaccount.com
@@ -158,7 +158,7 @@ public abstract class CredentialModule {
         .createScoped(requiredScopes));
   }
 
-  /** Dagger qualifier for the Application Default Credential with default scopes. */
+  /** Dagger qualifier for the scope-less Application Default Credential. */
   @Qualifier
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
@@ -171,7 +171,7 @@ public abstract class CredentialModule {
   @Deprecated // Switching to @ApplicationDefaultCredential
   public @interface DefaultCredential {}
 
-  /** Dagger qualifier for the credential for G Suite Drive API. */
+  /** Dagger qualifier for the credential for Google Workspace APIs. */
   @Qualifier
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
