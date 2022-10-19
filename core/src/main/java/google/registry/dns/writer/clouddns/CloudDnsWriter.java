@@ -348,10 +348,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
     // TODO(b/70217860): do we want to use a retrier here?
     try {
       Dns.ResourceRecordSets.List listRecordsRequest =
-          dnsConnection
-              .resourceRecordSets()
-              .list(projectId, "global", zoneName)
-              .setName(domainName);
+          dnsConnection.resourceRecordSets().list(projectId, zoneName).setName(domainName);
 
       rateLimiter.acquire();
       return listRecordsRequest.execute().getRrsets();
@@ -397,7 +394,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
 
     rateLimiter.acquire();
     try {
-      dnsConnection.changes().create(projectId, "global", zoneName, change).execute();
+      dnsConnection.changes().create(projectId, zoneName, change).execute();
     } catch (GoogleJsonResponseException e) {
       GoogleJsonError err = e.getDetails();
       // We did something really wrong here, just give up and re-throw

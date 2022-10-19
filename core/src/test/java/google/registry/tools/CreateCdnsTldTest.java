@@ -42,8 +42,7 @@ class CreateCdnsTldTest extends CommandTestCase<CreateCdnsTld> {
   @BeforeEach
   void beforeEach() throws Exception {
     when(dnsService.managedZones()).thenReturn(managedZones);
-    when(managedZones.create(projectId.capture(), "global", requestBody.capture()))
-        .thenReturn(request);
+    when(managedZones.create(projectId.capture(), requestBody.capture())).thenReturn(request);
     command = new CreateCdnsTld();
     command.projectId = "test-project";
     command.dnsService = dnsService;
