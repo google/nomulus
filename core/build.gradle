@@ -268,7 +268,7 @@ dependencies {
   testImplementation deps['org.apache.sshd:sshd-sftp']
   testImplementation deps['org.apache.tomcat:tomcat-annotations-api']
   implementation deps['org.bouncycastle:bcpg-jdk15on']
-  testImplementation deps['org.bouncycastle:bcpkix-jdk15on']
+  implementation deps['org.bouncycastle:bcpkix-jdk15on']
   implementation deps['org.bouncycastle:bcprov-jdk15on']
   testImplementation deps['com.fasterxml.jackson.core:jackson-databind']
   runtime deps['org.glassfish.jaxb:jaxb-runtime']
