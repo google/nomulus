@@ -35,6 +35,7 @@ import dagger.Binds;
 import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.CredentialModule.DefaultCredential;
 import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.CredentialModule.LocalCredentialJson;
@@ -227,6 +228,11 @@ public class AuthModule {
     @Binds
     @DefaultCredential
     abstract GoogleCredentialsBundle provideLocalCredentialAsDefaultCredential(
+        @LocalCredential GoogleCredentialsBundle credential);
+
+    @Binds
+    @ApplicationDefaultCredential
+    abstract GoogleCredentialsBundle provideLocalCredentialAsApplicationDefaultCredential(
         @LocalCredential GoogleCredentialsBundle credential);
   }
 
