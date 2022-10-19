@@ -20,7 +20,6 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.EppResource;
-import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod.GracePeriodHistory;
 import google.registry.model.domain.secdns.DomainDsData;
@@ -29,7 +28,6 @@ import google.registry.model.host.Host;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -93,23 +91,16 @@ public class DomainHistory extends HistoryEntry {
   // TODO(b/166776754): Investigate if we can reuse domainBase.nsHosts for storing host keys.
   @DoNotCompare
   @ElementCollection
-  @JoinTable(
-      name = "DomainHistoryHost",
-      indexes = {
-        @Index(
-            columnList =
-                "domain_history_history_revision_id,domain_history_domain_repo_id,host_repo_id",
-            unique = true),
-      })
+  @JoinTable(name = "DomainHistoryHost", indexes = @Index(
+      columnList =
+          "domain_history_history_revision_id,domain_history_domain_repo_id,host_repo_id",
+      unique = true))
   @EmptySetToNull
   @Column(name = "host_repo_id")
   Set<VKey<Host>> nsHosts;
 
   @DoNotCompare
-  @OneToMany(
-      cascade = {CascadeType.ALL},
-      fetch = FetchType.EAGER,
-      orphanRemoval = true)
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
   @JoinColumns({
     @JoinColumn(
         name = "domainHistoryRevisionId",
@@ -127,10 +118,7 @@ public class DomainHistory extends HistoryEntry {
   Set<DomainDsDataHistory> dsDataHistories = new HashSet<>();
 
   @DoNotCompare
-  @OneToMany(
-      cascade = {CascadeType.ALL},
-      fetch = FetchType.EAGER,
-      orphanRemoval = true)
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
   @JoinColumns({
     @JoinColumn(
         name = "domainHistoryRevisionId",
@@ -182,10 +170,7 @@ public class DomainHistory extends HistoryEntry {
    * #getDomainTransactionRecords()}.
    */
   @Access(AccessType.PROPERTY)
-  @OneToMany(
-      cascade = {CascadeType.ALL},
-      fetch = FetchType.EAGER,
-      orphanRemoval = true)
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
   @JoinColumn(name = "historyRevisionId", referencedColumnName = "historyRevisionId")
   @JoinColumn(name = "domainRepoId", referencedColumnName = "domainRepoId")
   @SuppressWarnings("unused")
@@ -197,7 +182,7 @@ public class DomainHistory extends HistoryEntry {
   @SuppressWarnings("unused")
   private void setInternalDomainTransactionRecords(
       Set<DomainTransactionRecord> domainTransactionRecords) {
-    super.setDomainTransactionRecords(domainTransactionRecords);
+    setDomainTransactionRecords(domainTransactionRecords);
   }
 
   @Id
@@ -280,11 +265,9 @@ public class DomainHistory extends HistoryEntry {
   }
 
   /** Class to represent the composite primary key of {@link DomainHistory} entity. */
-  public static class DomainHistoryId extends ImmutableObject implements Serializable {
+  public static class DomainHistoryId extends HistoryEntryId {
 
     private String domainRepoId;
-
-    private Long id;
 
     /** Hibernate requires this default constructor. */
     @SuppressWarnings("unused")
@@ -292,17 +275,12 @@ public class DomainHistory extends HistoryEntry {
 
     public DomainHistoryId(String domainRepoId, long id) {
       this.domainRepoId = domainRepoId;
-      this.id = id;
+      setId(id);
     }
 
     /** Returns the domain repository id. */
     public String getDomainRepoId() {
       return domainRepoId;
-    }
-
-    /** Returns the history revision id. */
-    public long getId() {
-      return id;
     }
 
     /**
@@ -314,17 +292,6 @@ public class DomainHistory extends HistoryEntry {
     @SuppressWarnings("unused")
     private void setDomainRepoId(String domainRepoId) {
       this.domainRepoId = domainRepoId;
-    }
-
-    /**
-     * Sets the history revision id.
-     *
-     * <p>This method is private because it is only used by Hibernate and should not be used
-     * externally to keep immutability.
-     */
-    @SuppressWarnings("unused")
-    private void setId(long id) {
-      this.id = id;
     }
   }
 

@@ -20,7 +20,6 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
@@ -214,7 +213,7 @@ public abstract class HistoryEntry extends ImmutableObject
   }
 
   public byte[] getXmlBytes() {
-    return xmlBytes;
+    return xmlBytes.clone();
   }
 
   public DateTime getModificationTime() {
@@ -263,7 +262,7 @@ public abstract class HistoryEntry extends ImmutableObject
   /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
   @SuppressWarnings("unused")
   private void setOtherRegistrarId(String otherRegistrarId) {
-    this.otherClientId = otherRegistrarId;
+    otherClientId = otherRegistrarId;
   }
 
   /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
@@ -418,20 +417,17 @@ public abstract class HistoryEntry extends ImmutableObject
     }
   }
 
-  public abstract static class HistoryEntryId extends ImmutableObject
+  protected abstract static class HistoryEntryId extends ImmutableObject
       implements UnsafeSerializable {
 
     private long id;
-
-    protected HistoryEntryId() {}
 
     public long getId() {
       return id;
     }
 
     public void setId(long id) {
-    this.id = id;
+      this.id = id;
     }
-
   }
 }

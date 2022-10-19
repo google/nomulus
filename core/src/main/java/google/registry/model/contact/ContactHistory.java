@@ -16,7 +16,6 @@ package google.registry.model.contact;
 
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
-import google.registry.model.UnsafeSerializable;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
@@ -49,7 +48,7 @@ import javax.persistence.Table;
     })
 @Access(AccessType.FIELD)
 @IdClass(ContactHistoryId.class)
-public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
+public class ContactHistory extends HistoryEntry {
 
   // Store ContactBase instead of Contact, so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
@@ -59,7 +58,7 @@ public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
   @Access(AccessType.PROPERTY)
   @SuppressWarnings("unused")
   // This method is private because it is only used by Hibernate.
-  private String getContactRepoId() {
+  public String getContactRepoId() {
     return contactBase == null ? null : contactBase.getRepoId();
   }
 
