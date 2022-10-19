@@ -57,8 +57,7 @@ public final class IdService {
    *
    * <p>Because the provided supplier is not guaranteed to be globally unique and compatible with
    * existing IDs in the database, one should proceed with great care. It is safe to use an
-   *
-   * <p>arbitrary supplier when the resulting IDs are not significant and not persisted back to the
+   * arbitrary supplier when the resulting IDs are not significant and not persisted back to the
    * database, i.e. the IDs are only required by the {@link Buildable} contract but are not used in
    * any meaningful way. One example is the RDE pipeline where we project EPP resource entities from
    * history entries to watermark time, which are then marshalled into XML elements in the RDE
@@ -84,7 +83,7 @@ public final class IdService {
 
     /**
      * A placeholder String passed into {@code DatastoreService.allocateIds} that ensures that all
-     * ids are initialized from the same ID pool.
+     * IDs are initialized from the same ID pool.
      */
     private static final String APP_WIDE_ALLOCATION_KIND = "common";
 
