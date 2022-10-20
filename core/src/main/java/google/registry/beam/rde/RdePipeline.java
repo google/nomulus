@@ -128,7 +128,7 @@ import org.joda.time.DateTime;
  * <h2>{@link EppResource}</h2>
  *
  * All EPP resources are loaded from the corresponding {@link HistoryEntry}, which has the resource
- * embedded. In general we find most recent history entry before watermark and filter out the ones
+ * embedded. In general, we find most recent history entry before watermark and filter out the ones
  * that are soft-deleted by watermark. The history is emitted as pairs of (resource repo ID: history
  * revision ID) from the SQL query.
  *
@@ -164,7 +164,7 @@ import org.joda.time.DateTime;
  *
  * The (pending deposit: deposit fragment) pairs from different resources are combined and grouped
  * by pending deposit. For each pending deposit, all the relevant deposit fragments are written into
- * a encrypted file stored on GCS. The filename is uniquely determined by the Beam job ID so there
+ * an encrypted file stored on GCS. The filename is uniquely determined by the Beam job ID so there
  * is no need to lock the GCS write operation to prevent stomping. The cursor for staging the
  * pending deposit is then rolled forward, and the next action is enqueued. The latter two
  * operations are performed in a transaction so the cursor is rolled back if enqueueing failed.
@@ -698,8 +698,8 @@ public class RdePipeline implements Serializable {
   }
 
   /**
-   * Encodes the pending deposit set in an URL safe string that is sent to the pipeline worker by
-   * the pipeline launcher as a pipeline option.
+   * Encodes the pending deposit set in a URL safe string that is sent to the pipeline worker by the
+   * pipeline launcher as a pipeline option.
    */
   public static String encodePendingDeposits(ImmutableSet<PendingDeposit> pendingDeposits)
       throws IOException {
@@ -715,6 +715,12 @@ public class RdePipeline implements Serializable {
     PipelineOptionsFactory.register(RdePipelineOptions.class);
     RdePipelineOptions options =
         PipelineOptionsFactory.fromArgs(args).withValidation().as(RdePipelineOptions.class);
+    // We need to self allocate the IDs because the pipeline creates EPP resources from history
+    // entries and projects them to watermark. These buildable entities would otherwise request an
+    // ID from datastore, which Beam does not have access to. The IDs are not included in the
+    // deposits or are these entities persisted back to the database, so it is OK to use a self
+    // allocated ID to get around the limitations of beam.
+    options.setUseSelfAllocatedId(true);
     RegistryPipelineOptions.validateRegistryPipelineOptions(options);
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
     DaggerRdePipeline_RdePipelineComponent.builder().options(options).build().rdePipeline().run();

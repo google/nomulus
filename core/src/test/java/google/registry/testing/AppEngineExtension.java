@@ -40,7 +40,7 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyFilter;
-import google.registry.model.IdService;
+import google.registry.model.IdService.SelfAllocatedIdSupplier;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
@@ -441,7 +441,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
 
     ObjectifyService.initOfy();
     // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
-    IdService.resetSelfAllocatedId();
+    SelfAllocatedIdSupplier.getInstance().reset();
     this.ofyTestEntities.forEach(AppEngineExtension::register);
   }
 
