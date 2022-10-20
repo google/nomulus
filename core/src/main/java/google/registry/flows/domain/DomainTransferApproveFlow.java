@@ -68,6 +68,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 
 /**
@@ -170,25 +171,11 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .setDomainHistoryId(domainHistoryId)
                     .build());
 
-    // Close the old autorenew event and poll message at the transfer time (aka now). This may end
-    // up deleting the poll message.
-    updateAutorenewRecurrenceEndTime(
-        existingDomain,
-        existingRecurring,
-        now,
-        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()));
-
-    // If domain was in a package, remove it from the package and reset the renewal price behavior
-    // to default
+    boolean wasPackageName = existingDomain.getCurrentPackageToken().isPresent();
+    Money renewalPrice = existingRecurring.getRenewalPrice().orElse(null);
+    // If domain was in a package, reset the transfer price
     if (existingDomain.getCurrentPackageToken().isPresent()) {
-      existingDomain = existingDomain.asBuilder().setCurrentPackageToken(null).build();
-      existingRecurring =
-          existingRecurring
-              .asBuilder()
-              .setRenewalPrice(null)
-              .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
-              .build();
-      // Reset the transfer billing cost to the correct amount if it is present
+      renewalPrice = null;
       if (billingEvent.isPresent()) {
         billingEvent =
             Optional.of(
@@ -201,11 +188,23 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                                 Registry.get(tld),
                                 targetId,
                                 transferData.getTransferRequestTime(),
-                                existingRecurring)
+                                existingRecurring
+                                    .asBuilder()
+                                    .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
+                                    .setRenewalPrice(renewalPrice)
+                                    .build())
                             .getRenewCost())
                     .build());
       }
     }
+
+    // Close the old autorenew event and poll message at the transfer time (aka now). This may end
+    // up deleting the poll message.
+    updateAutorenewRecurrenceEndTime(
+        existingDomain,
+        existingRecurring,
+        now,
+        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()));
 
     ImmutableList.Builder<ImmutableObject> entitiesToSave = new ImmutableList.Builder<>();
     // If we are within an autorenew grace period, cancel the autorenew billing event and don't
@@ -237,8 +236,11 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setTargetId(targetId)
             .setRegistrarId(gainingRegistrarId)
             .setEventTime(newExpirationTime)
-            .setRenewalPriceBehavior(existingRecurring.getRenewalPriceBehavior())
-            .setRenewalPrice(existingRecurring.getRenewalPrice().orElse(null))
+            .setRenewalPriceBehavior(
+                wasPackageName
+                    ? RenewalPriceBehavior.DEFAULT
+                    : existingRecurring.getRenewalPriceBehavior())
+            .setRenewalPrice(wasPackageName ? null : renewalPrice)
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistoryId(domainHistoryId)
             .build();
@@ -281,6 +283,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .orElseGet(ImmutableSet::of))
             .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(registrarId)
+            // Even if the existing domain had a package token, that package token should be removed
+            // on transfer
+            .setCurrentPackageToken(null)
             .build();
 
     Registry registry = Registry.get(existingDomain.getTld());

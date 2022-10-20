@@ -16,6 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.NET_ADDS_4_YR;
@@ -45,7 +46,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
-import com.google.common.truth.Truth8;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
@@ -453,12 +453,12 @@ class DomainTransferApproveFlowTest
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(USD, new BigDecimal("10.00")))
             .build());
-    Truth8.assertThat(domain.getCurrentPackageToken()).isEmpty();
+    assertThat(domain.getCurrentPackageToken()).isEmpty();
     assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("NewRegistrar");
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.DEFAULT);
   }
- 
+
   @Test
   void testSuccess_nonDefaultTransferGracePeriod() throws Exception {
     // We have to set up a new domain in a different TLD so that the billing event will be persisted
