@@ -14,17 +14,13 @@
 
 package google.registry.model;
 
-import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Maps.transformValues;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.Maps;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.persistence.VKey;
@@ -55,15 +51,6 @@ public abstract class ImmutableObject implements Cloneable {
   @Retention(RUNTIME)
   @Target(FIELD)
   public @interface DoNotHydrate {}
-
-  /**
-   * Indicates that the field should be ignored when comparing an object in the datastore to the
-   * corresponding object in Cloud SQL.
-   */
-  @Documented
-  @Retention(RUNTIME)
-  @Target(FIELD)
-  public @interface DoNotCompare {}
 
   /**
    * Indicates that the field stores a null value to indicate an empty set. This is also used in
@@ -105,7 +92,7 @@ public abstract class ImmutableObject implements Cloneable {
    */
   protected Map<Field, Object> getSignificantFields() {
     // Can't use streams or ImmutableMap because we can have null values.
-    Map<Field, Object> result = new LinkedHashMap();
+    Map<Field, Object> result = new LinkedHashMap<>();
     for (Map.Entry<Field, Object> entry : ModelUtils.getFieldValues(this).entrySet()) {
       if (!entry.getKey().isAnnotationPresent(Insignificant.class)) {
         result.put(entry.getKey(), entry.getValue());
@@ -190,15 +177,15 @@ public abstract class ImmutableObject implements Cloneable {
   /** Helper function to recursively hydrate an ImmutableObject. */
   private static Object hydrate(Object value) {
     if (value instanceof Key) {
-      if (tm().isOfy()) {
-        return hydrate(auditedOfy().load().key((Key<?>) value).now());
-      }
       return value;
-    } else if (value instanceof Map) {
+    }
+    if (value instanceof Map) {
       return transformValues((Map<?, ?>) value, ImmutableObject::hydrate);
-    } else if (value instanceof Collection) {
-      return transform((Collection<?>) value, ImmutableObject::hydrate);
-    } else if (value instanceof ImmutableObject) {
+    }
+    if (value instanceof Collection) {
+      return ((Collection<?>) value).stream().map(ImmutableObject::hydrate);
+    }
+    if (value instanceof ImmutableObject) {
       return ((ImmutableObject) value).toHydratedString();
     }
     return value;
@@ -220,7 +207,7 @@ public abstract class ImmutableObject implements Cloneable {
       }
       return result;
     } else if (o instanceof Map) {
-      return Maps.transformValues((Map<?, ?>) o, ImmutableObject::toMapRecursive);
+      return transformValues((Map<?, ?>) o, ImmutableObject::toMapRecursive);
     } else if (o instanceof Set) {
       return ((Set<?>) o)
           .stream()

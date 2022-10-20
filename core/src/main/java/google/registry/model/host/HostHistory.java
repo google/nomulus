@@ -61,7 +61,7 @@ public class HostHistory extends HistoryEntry implements UnsafeSerializable {
 
   // Store HostBase instead of Host so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
-  @DoNotCompare @Nullable HostBase hostBase;
+  @Nullable HostBase hostBase;
 
   @Id
   @Access(AccessType.PROPERTY)

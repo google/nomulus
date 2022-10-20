@@ -60,7 +60,7 @@ public class ContactHistory extends HistoryEntry implements UnsafeSerializable {
 
   // Store ContactBase instead of Contact so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
-  @DoNotCompare @Nullable ContactBase contactBase;
+  @Nullable ContactBase contactBase;
 
   @Id
   @Access(AccessType.PROPERTY)
