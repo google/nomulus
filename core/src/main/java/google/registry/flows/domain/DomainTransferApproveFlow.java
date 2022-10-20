@@ -174,7 +174,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     boolean wasPackageName = existingDomain.getCurrentPackageToken().isPresent();
     Money renewalPrice = existingRecurring.getRenewalPrice().orElse(null);
     // If domain was in a package, reset the transfer price
-    if (existingDomain.getCurrentPackageToken().isPresent()) {
+    if (wasPackageName) {
       renewalPrice = null;
       if (billingEvent.isPresent()) {
         billingEvent =
@@ -197,14 +197,6 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .build());
       }
     }
-
-    // Close the old autorenew event and poll message at the transfer time (aka now). This may end
-    // up deleting the poll message.
-    updateAutorenewRecurrenceEndTime(
-        existingDomain,
-        existingRecurring,
-        now,
-        new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()));
 
     ImmutableList.Builder<ImmutableObject> entitiesToSave = new ImmutableList.Builder<>();
     // If we are within an autorenew grace period, cancel the autorenew billing event and don't
@@ -240,7 +232,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                 wasPackageName
                     ? RenewalPriceBehavior.DEFAULT
                     : existingRecurring.getRenewalPriceBehavior())
-            .setRenewalPrice(wasPackageName ? null : renewalPrice)
+            .setRenewalPrice(renewalPrice)
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistoryId(domainHistoryId)
             .build();
@@ -257,7 +249,6 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     // Construct the post-transfer domain.
     Domain partiallyApprovedDomain =
         approvePendingTransfer(existingDomain, TransferStatus.CLIENT_APPROVED, now);
-    String repoId = existingDomain.getRepoId();
     Domain newDomain =
         partiallyApprovedDomain
             .asBuilder()
@@ -279,7 +270,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                         oneTime ->
                             ImmutableSet.of(
                                 GracePeriod.forBillingEvent(
-                                    GracePeriodStatus.TRANSFER, repoId, oneTime)))
+                                    GracePeriodStatus.TRANSFER,
+                                    existingDomain.getRepoId(),
+                                    oneTime)))
                     .orElseGet(ImmutableSet::of))
             .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(registrarId)
