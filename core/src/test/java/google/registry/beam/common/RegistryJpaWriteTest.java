@@ -17,9 +17,12 @@ package google.registry.beam.common;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.newContact;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.model.contact.Contact;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -28,6 +31,7 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import java.io.Serializable;
+import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
 import org.apache.beam.sdk.transforms.Create;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Order;
@@ -65,8 +69,32 @@ class RegistryJpaWriteTest implements Serializable {
         .apply(RegistryJpaIO.<Contact>write().withName("Contact").withBatchSize(4).withShards(2));
     testPipeline.run().waitUntilFinish();
 
-    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Contact.class)))
+    assertThat(loadAllOf(Contact.class))
         .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
         .containsExactlyElementsIn(contacts);
+  }
+
+  @Test
+  void testFailure_writeExistingEntity() {
+    // RegistryJpaIO.Write actions should not write existing objects to the database because the
+    // object could have been mutated in between creation and when the Write actually occurs,
+    // causing a race condition
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().put(AppEngineExtension.makeRegistrar2());
+              jpaTm().put(newContact("contact"));
+            });
+    Contact contact = Iterables.getOnlyElement(loadAllOf(Contact.class));
+    testPipeline
+        .apply(Create.of(contact))
+        .apply(RegistryJpaIO.<Contact>write().withName("Contact"));
+    // PipelineExecutionException caused by a RuntimeException caused by an IllegalArgumentException
+    assertThat(
+            assertThrows(
+                PipelineExecutionException.class, () -> testPipeline.run().waitUntilFinish()))
+        .hasCauseThat()
+        .hasCauseThat()
+        .isInstanceOf(IllegalArgumentException.class);
   }
 }
