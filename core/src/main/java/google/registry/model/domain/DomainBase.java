@@ -920,13 +920,17 @@ public class DomainBase extends EppResource
     }
 
     public B setCurrentPackageToken(@Nullable VKey<AllocationToken> currentPackageToken) {
-      if(currentPackageToken == null) {
+      if (currentPackageToken == null) {
+        getInstance().currentPackageToken = currentPackageToken;
         return thisCastToDerived();
       }
-      Optional<AllocationToken> token = tm().transact(() -> tm().loadByKeyIfPresent(currentPackageToken));
+      Optional<AllocationToken> token =
+          tm().transact(() -> tm().loadByKeyIfPresent(currentPackageToken));
       token.ifPresent(
-          allocationToken -> checkArgument(allocationToken.getTokenType().equals(TokenType.PACKAGE),
-              "The currentPackageToken must have a PACKAGE TokenType"));
+          allocationToken ->
+              checkArgument(
+                  allocationToken.getTokenType().equals(TokenType.PACKAGE),
+                  "The currentPackageToken must have a PACKAGE TokenType"));
       getInstance().currentPackageToken = currentPackageToken;
       return thisCastToDerived();
     }
