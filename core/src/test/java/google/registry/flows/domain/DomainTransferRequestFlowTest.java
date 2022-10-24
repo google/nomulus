@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
+import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
@@ -1311,6 +1312,65 @@ class DomainTransferRequestFlowTest
             .asBuilder()
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(USD, new BigDecimal("18.79")))
+            .setDomainHistory(requestHistory)
+            .build(),
+        getLosingClientAutorenewEvent()
+            .asBuilder()
+            .setRecurrenceEndTime(now.plusDays(5))
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, new BigDecimal("18.79")))
+            .build());
+  }
+
+  @Test
+  void testSuccess_specifiedRenewalPrice_notCarriedOverForPackageName() throws Exception {
+    setupDomain("example", "tld");
+    persistResource(Registry.get("tld").asBuilder().build());
+    domain = loadByEntity(domain);
+    persistResource(
+        loadByKey(domain.getAutorenewBillingEvent())
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, new BigDecimal("18.79")))
+            .build());
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(PACKAGE)
+                .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .build());
+    domain =
+        persistResource(
+            domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+    DateTime now = clock.nowUtc();
+
+    setEppInput("domain_transfer_request.xml");
+    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
+    runFlowAssertResponse(loadFile("domain_transfer_request_response.xml"));
+    domain = loadByEntity(domain);
+
+    DomainHistory requestHistory =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REQUEST, DomainHistory.class);
+    // Check that the server approve billing recurrence (which will reify after 5 days if the
+    // transfer is not explicitly acked) maintains the non-premium behavior.
+    assertBillingEventsForResource(
+        domain,
+        new BillingEvent.OneTime.Builder()
+            .setBillingTime(now.plusDays(10)) // 5 day pending transfer + 5 day billing grace period
+            .setEventTime(now.plusDays(5))
+            .setRegistrarId("NewRegistrar")
+            .setCost(Money.of(USD, new BigDecimal("11.00")))
+            .setDomainHistory(requestHistory)
+            .setReason(Reason.TRANSFER)
+            .setPeriodYears(1)
+            .setTargetId("example.tld")
+            .build(),
+        getGainingClientAutorenewEvent()
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
+            .setRenewalPrice(null)
             .setDomainHistory(requestHistory)
             .build(),
         getLosingClientAutorenewEvent()

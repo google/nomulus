@@ -24,6 +24,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -141,10 +142,19 @@ public final class DomainTransferUtils {
     createOptionalAutorenewCancellation(
             automaticTransferTime, now, domainHistoryId, targetId, existingDomain, transferCost)
         .ifPresent(builder::add);
+    Recurring existingRecurringWithoutPackage = existingRecurring;
+    if (existingDomain.getCurrentPackageToken().isPresent()) {
+      existingRecurringWithoutPackage =
+          existingRecurring
+              .asBuilder()
+              .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
+              .setRenewalPrice(null)
+              .build();
+    }
     return builder
         .add(
             createGainingClientAutorenewEvent(
-                existingRecurring,
+                existingRecurringWithoutPackage,
                 serverApproveNewExpirationTime,
                 domainHistoryId,
                 targetId,
