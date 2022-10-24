@@ -76,9 +76,6 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
 
   @Nullable
   protected R reloadResourceByForeignKey(DateTime now) throws Exception {
-    // Force the session to be cleared so that when we read it back, we read from Datastore and not
-    // from the transaction's session cache.
-    tm().clearSessionCache();
     return loadByForeignKey(getResourceClass(), getUniqueIdFromCommand(), now).orElse(null);
   }
 
@@ -88,8 +85,6 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
   }
 
   protected <T extends EppResource> T reloadResourceAndCloneAtTime(T resource, DateTime now) {
-    // Force the session to be cleared.
-    tm().clearSessionCache();
     @SuppressWarnings("unchecked")
     T refreshedResource =
         (T) tm().transact(() -> tm().loadByEntity(resource)).cloneProjectedAtTime(now);

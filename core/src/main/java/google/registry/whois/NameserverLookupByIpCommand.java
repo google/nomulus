@@ -16,9 +16,7 @@ package google.registry.whois;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -52,35 +50,26 @@ final class NameserverLookupByIpCommand implements WhoisCommand {
   @SuppressWarnings("unchecked")
   public WhoisResponse executeQuery(DateTime now) throws WhoisException {
     Iterable<Host> hostsFromDb;
-    if (tm().isOfy()) {
-      hostsFromDb =
-          auditedOfy()
-              .load()
-              .type(Host.class)
-              .filter("inetAddresses", ipAddress)
-              .filter("deletionTime >", now.toDate());
-    } else {
-      hostsFromDb =
-          jpaTm()
-              .transact(
-                  () ->
-                      // We cannot query @Convert-ed fields in HQL so we must use native Postgres.
-                      jpaTm()
-                          .getEntityManager()
-                          /**
-                           * Using array_operator <@ (contained-by) with gin index on inet_address.
-                           * Without gin index, this is slightly slower than the alternative form of
-                           * ':address = ANY(inet_address)'.
-                           */
-                          .createNativeQuery(
-                              "SELECT * From \"Host\" WHERE "
-                                  + "ARRAY[ CAST(:address AS TEXT) ] <@ inet_addresses AND "
-                                  + "deletion_time > CAST(:now AS timestamptz)",
-                              Host.class)
-                          .setParameter("address", InetAddresses.toAddrString(ipAddress))
-                          .setParameter("now", now.toString())
-                          .getResultList());
-    }
+    hostsFromDb =
+        jpaTm()
+            .transact(
+                () ->
+                    // We cannot query @Convert-ed fields in HQL, so we must use native Postgres.
+                    jpaTm()
+                        .getEntityManager()
+                        /*
+                         * Using array_operator <@ (contained-by) with gin index on inet_address.
+                         * Without gin index, this is slightly slower than the alternative form of
+                         * ':address = ANY(inet_address)'.
+                         */
+                        .createNativeQuery(
+                            "SELECT * From \"Host\" WHERE "
+                                + "ARRAY[ CAST(:address AS TEXT) ] <@ inet_addresses AND "
+                                + "deletion_time > CAST(:now AS timestamptz)",
+                            Host.class)
+                        .setParameter("address", InetAddresses.toAddrString(ipAddress))
+                        .setParameter("now", now.toString())
+                        .getResultList());
     ImmutableList<Host> hosts =
         Streams.stream(hostsFromDb)
             .filter(

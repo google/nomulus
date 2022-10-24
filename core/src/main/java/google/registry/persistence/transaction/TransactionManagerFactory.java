@@ -109,7 +109,7 @@ public final class TransactionManagerFactory {
    * however, this will be a reference to the read-only replica database if one is configured.
    */
   public static TransactionManager replicaTm() {
-    return tm().isOfy() ? tm() : replicaJpaTm();
+    return replicaJpaTm();
   }
 
   /** Sets the return of {@link #jpaTm()} to the given instance of {@link JpaTransactionManager}. */
@@ -118,7 +118,7 @@ public final class TransactionManagerFactory {
     checkState(
         RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
             || RegistryToolEnvironment.get() != null,
-        "setJpamTm() should only be called by tools and tests.");
+        "setJpaTm() should only be called by tools and tests.");
     jpaTm = Suppliers.memoize(jpaTmSupplier::get);
   }
 

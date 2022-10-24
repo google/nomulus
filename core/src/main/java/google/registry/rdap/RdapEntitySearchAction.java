@@ -16,7 +16,6 @@ package google.registry.rdap;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.rdap.RdapUtils.getRegistrarByIanaIdentifier;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
@@ -27,7 +26,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.google.common.primitives.Booleans;
 import com.google.common.primitives.Longs;
-import com.googlecode.objectify.cmd.Query;
 import google.registry.model.contact.Contact;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.VKey;
@@ -261,39 +259,24 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
           || (cursorType == CursorType.REGISTRAR)) {
         resultSet = RdapResultSet.create(ImmutableList.of());
       } else {
-        if (tm().isOfy()) {
-          Query<Contact> query =
-              queryItems(
-                  Contact.class,
-                  "searchName",
-                  partialStringQuery,
-                  cursorQueryString, // if we get here and there's a cursor, it must be a contact
-                  DeletedItemHandling.EXCLUDE,
-                  rdapResultSetMaxSize + 1);
-          if (!rdapAuthorization.role().equals(Role.ADMINISTRATOR)) {
-            query = query.filter("currentSponsorClientId in", rdapAuthorization.registrarIds());
-          }
-          resultSet = getMatchingResources(query, false, rdapResultSetMaxSize + 1);
-        } else {
-          resultSet =
-              replicaJpaTm()
-                  .transact(
-                      () -> {
-                        CriteriaQueryBuilder<Contact> builder =
-                            queryItemsSql(
-                                Contact.class,
-                                "searchName",
-                                partialStringQuery,
-                                cursorQueryString,
-                                DeletedItemHandling.EXCLUDE);
-                        if (!rdapAuthorization.role().equals(Role.ADMINISTRATOR)) {
-                          builder =
-                              builder.whereFieldIsIn(
-                                  "currentSponsorClientId", rdapAuthorization.registrarIds());
-                        }
-                        return getMatchingResourcesSql(builder, false, rdapResultSetMaxSize + 1);
-                      });
-        }
+        resultSet =
+            replicaJpaTm()
+                .transact(
+                    () -> {
+                      CriteriaQueryBuilder<Contact> builder =
+                          queryItems(
+                              Contact.class,
+                              "searchName",
+                              partialStringQuery,
+                              cursorQueryString,
+                              DeletedItemHandling.EXCLUDE);
+                      if (!rdapAuthorization.role().equals(Role.ADMINISTRATOR)) {
+                        builder =
+                            builder.whereFieldIsIn(
+                                "currentSponsorClientId", rdapAuthorization.registrarIds());
+                      }
+                      return getMatchingResources(builder, false, rdapResultSetMaxSize + 1);
+                    });
       }
     }
     return makeSearchResults(resultSet, registrars, QueryType.FULL_NAME);
@@ -386,31 +369,18 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
       if (subtype == Subtype.REGISTRARS) {
         contactResultSet = RdapResultSet.create(ImmutableList.of());
       } else {
-        if (tm().isOfy()) {
-          contactResultSet =
-              getMatchingResources(
-                  queryItemsByKey(
-                      Contact.class,
-                      partialStringQuery,
-                      cursorQueryString,
-                      getDeletedItemHandling(),
-                      querySizeLimit),
-                  shouldIncludeDeleted(),
-                  querySizeLimit);
-        } else {
-          contactResultSet =
-              replicaJpaTm()
-                  .transact(
-                      () ->
-                          getMatchingResourcesSql(
-                              queryItemsByKeySql(
-                                  Contact.class,
-                                  partialStringQuery,
-                                  cursorQueryString,
-                                  getDeletedItemHandling()),
-                              shouldIncludeDeleted(),
-                              querySizeLimit));
-        }
+        contactResultSet =
+            replicaJpaTm()
+                .transact(
+                    () ->
+                        getMatchingResources(
+                            queryItemsByKey(
+                                Contact.class,
+                                partialStringQuery,
+                                cursorQueryString,
+                                getDeletedItemHandling()),
+                            shouldIncludeDeleted(),
+                            querySizeLimit));
       }
       return makeSearchResults(contactResultSet, registrars, QueryType.HANDLE);
     }

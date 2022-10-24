@@ -16,25 +16,19 @@ package google.registry.tools;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.flows.poll.PollFlowUtils.createPollMessageQuery;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.LIKE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.cmd.QueryKeys;
 import google.registry.flows.poll.PollFlowUtils;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.persistence.transaction.QueryComposer;
 import google.registry.util.Clock;
-import java.util.List;
 import javax.inject.Inject;
 
 /**
@@ -80,40 +74,9 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
 
   @Inject Clock clock;
 
-  private static final int BATCH_SIZE = 20;
-
   @Override
   public void run() {
-    if (tm().isOfy()) {
-      ackPollMessagesDatastore();
-    } else {
       ackPollMessagesSql();
-    }
-  }
-
-  /**
-   * Loads and acks the matching poll messages from Datastore.
-   *
-   * <p>We have to first load the poll message keys then batch-load the objects themselves due to
-   * the Datastore size limits.
-   */
-  private void ackPollMessagesDatastore() {
-    QueryKeys<PollMessage> query =
-        auditedOfy()
-            .load()
-            .type(PollMessage.class)
-            .filter("clientId", clientId)
-            .filter("eventTime <=", clock.nowUtc())
-            .order("eventTime")
-            .keys();
-    for (List<Key<PollMessage>> keys : Iterables.partition(query, BATCH_SIZE)) {
-      tm().transact(
-              () ->
-                  // Load poll messages and filter to just those of interest.
-                  auditedOfy().load().keys(keys).values().stream()
-                      .filter(pm -> isNullOrEmpty(message) || pm.getMsg().contains(message))
-                      .forEach(this::actOnPollMessage));
-    }
   }
 
   /** Loads and acks all matching poll messages from SQL in one transaction. */

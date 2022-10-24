@@ -163,7 +163,7 @@ public final class SyncGroupMembersAction implements Runnable {
         registrarsToSave.add(result.getKey().asBuilder().setContactsRequireSyncing(false).build());
       }
     }
-    tm().transactNew(() -> tm().updateAll(registrarsToSave.build()));
+    tm().transact(() -> tm().updateAll(registrarsToSave.build()));
     return errors;
   }
 

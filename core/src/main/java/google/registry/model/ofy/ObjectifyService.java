@@ -56,11 +56,6 @@ public class ObjectifyService {
   /** A singleton instance of our Ofy wrapper. */
   private static final Ofy OFY = new Ofy(null);
 
-  /** Returns the singleton {@link Ofy} instance. */
-  public static Ofy ofy() {
-    return OFY;
-  }
-
   /**
    * Returns the singleton {@link Ofy} instance, signifying that the caller has been audited for the
    * Registry 3.0 conversion.

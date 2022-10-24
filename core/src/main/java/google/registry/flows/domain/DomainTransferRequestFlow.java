@@ -170,6 +170,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
+    @SuppressWarnings("unused")
     Optional<AllocationToken> allocationToken =
         allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
             existingDomain,
@@ -183,7 +184,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
         superuserExtension.isPresent()
             ? superuserExtension.get().getRenewalPeriod()
             : ((Transfer) resourceCommand).getPeriod();
-    verifyTransferAllowed(existingDomain, period, now, superuserExtension, allocationToken);
+    verifyTransferAllowed(existingDomain, period, now, superuserExtension);
 
     String tld = existingDomain.getTld();
     Registry registry = Registry.get(tld);
@@ -296,8 +297,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
       Domain existingDomain,
       Period period,
       DateTime now,
-      Optional<DomainTransferRequestSuperuserExtension> superuserExtension,
-      Optional<AllocationToken> allocationToken)
+      Optional<DomainTransferRequestSuperuserExtension> superuserExtension)
       throws EppException {
     verifyNoDisallowedStatuses(existingDomain, DISALLOWED_STATUSES);
     if (!isSuperuser) {

@@ -52,42 +52,6 @@ public interface TransactionManager {
   /** Executes the work in a transaction. */
   void transact(Runnable work);
 
-  /**
-   * Pauses the current transaction (if any), executes the work in a new transaction and returns the
-   * result.
-   *
-   * <p>Note that this function is kept for backward compatibility. We will review the use case
-   * later when adding the cloud sql implementation.
-   */
-  <T> T transactNew(Supplier<T> work);
-
-  /**
-   * Pauses the current transaction (if any) and executes the work in a new transaction.
-   *
-   * <p>Note that this function is kept for backward compatibility. We will review the use case
-   * later when adding the cloud sql implementation.
-   */
-  void transactNew(Runnable work);
-
-  /**
-   * Executes the work in a read-only transaction and returns the result.
-   *
-   * <p>Note that this function is kept for backward compatibility. We will review the use case
-   * later when adding the cloud sql implementation.
-   */
-  <R> R transactNewReadOnly(Supplier<R> work);
-
-  /**
-   * Executes the work in a read-only transaction.
-   *
-   * <p>Note that this function is kept for backward compatibility. We will review the use case
-   * later when adding the cloud sql implementation.
-   */
-  void transactNewReadOnly(Runnable work);
-
-  /** Executes the work in a transactionless context. */
-  <R> R doTransactionless(Supplier<R> work);
-
   /** Returns the time associated with the start of this particular transaction attempt. */
   DateTime getTransactionTime();
 
@@ -210,10 +174,4 @@ public interface TransactionManager {
 
   /** Returns a QueryComposer which can be used to perform queries against the current database. */
   <T> QueryComposer<T> createQueryComposer(Class<T> entity);
-
-  /** Clears the session cache if the underlying database is Datastore, otherwise it is a no-op. */
-  void clearSessionCache();
-
-  /** Returns true if the transaction manager is DatastoreTransactionManager, false otherwise. */
-  boolean isOfy();
 }

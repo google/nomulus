@@ -16,7 +16,6 @@ package google.registry.rdap;
 
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -26,7 +25,6 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Booleans;
-import com.googlecode.objectify.cmd.Query;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
@@ -90,7 +88,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
     }
     NameserverSearchResponse results;
     if (nameParam.isPresent()) {
-      // RDAP Technical Implementation Guilde 2.2.3 - we MAY support nameserver search queries based
+      // RDAP Technical Implementation Guide 2.2.3 - we MAY support nameserver search queries based
       // on a "nameserver search pattern" as defined in RFC 9082
       //
       // syntax: /rdap/nameservers?name=exam*.com
@@ -219,33 +217,20 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
   private NameserverSearchResponse searchByNameUsingPrefix(RdapSearchPattern partialStringQuery) {
     // Add 1 so we can detect truncation.
     int querySizeLimit = getStandardQuerySizeLimit();
-    if (tm().isOfy()) {
-      Query<Host> query =
-          queryItems(
-              Host.class,
-              "hostName",
-              partialStringQuery,
-              cursorString,
-              getDeletedItemHandling(),
-              querySizeLimit);
-      return makeSearchResults(
-          getMatchingResources(query, shouldIncludeDeleted(), querySizeLimit), CursorType.NAME);
-    } else {
-      return replicaJpaTm()
-          .transact(
-              () -> {
-                CriteriaQueryBuilder<Host> queryBuilder =
-                    queryItemsSql(
-                        Host.class,
-                        "hostName",
-                        partialStringQuery,
-                        cursorString,
-                        getDeletedItemHandling());
-                return makeSearchResults(
-                    getMatchingResourcesSql(queryBuilder, shouldIncludeDeleted(), querySizeLimit),
-                    CursorType.NAME);
-              });
-    }
+    return replicaJpaTm()
+        .transact(
+            () -> {
+              CriteriaQueryBuilder<Host> queryBuilder =
+                  queryItems(
+                      Host.class,
+                      "hostName",
+                      partialStringQuery,
+                      cursorString,
+                      getDeletedItemHandling());
+              return makeSearchResults(
+                  getMatchingResources(queryBuilder, shouldIncludeDeleted(), querySizeLimit),
+                  CursorType.NAME);
+            });
   }
 
   /** Searches for nameservers by IP address, returning a JSON array of nameserver info maps. */
@@ -253,18 +238,6 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
     // Add 1 so we can detect truncation.
     int querySizeLimit = getStandardQuerySizeLimit();
     RdapResultSet<Host> rdapResultSet;
-    if (tm().isOfy()) {
-      Query<Host> query =
-          queryItems(
-              Host.class,
-              "inetAddresses",
-              inetAddress.getHostAddress(),
-              Optional.empty(),
-              cursorString,
-              getDeletedItemHandling(),
-              querySizeLimit);
-      rdapResultSet = getMatchingResources(query, shouldIncludeDeleted(), querySizeLimit);
-    } else {
       // Hibernate does not allow us to query @Converted array fields directly, either in the
       // CriteriaQuery or the raw text format. However, Postgres does -- so we use native queries to
       // find hosts where any of the inetAddresses match.
@@ -301,7 +274,6 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
                     List<Host> resultList = query.getResultList();
                     return filterResourcesByVisibility(resultList, querySizeLimit);
                   });
-    }
     return makeSearchResults(rdapResultSet, CursorType.ADDRESS);
   }
 

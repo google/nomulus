@@ -23,7 +23,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.bigquery.BigqueryConnection;
-import google.registry.persistence.transaction.TransactionManager;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import java.util.Optional;
@@ -44,7 +43,6 @@ public final class IcannReportingModule {
   static final String PARAM_SUBDIR = "subdir";
   static final String PARAM_REPORT_TYPES = "reportTypes";
   static final String ICANN_REPORTING_DATA_SET = "icannReportingDataSet";
-  static final String DATASTORE_EXPORT_DATA_SET = "latest_datastore_export";
   static final String MANIFEST_FILE_NAME = "MANIFEST.txt";
 
   /** Provides an optional subdirectory to store/upload reports to, extracted from the request. */
@@ -104,7 +102,7 @@ public final class IcannReportingModule {
 
   @Provides
   @Named(ICANN_REPORTING_DATA_SET)
-  static String provideIcannReportingDataSet(TransactionManager tm) {
-    return tm.isOfy() ? "icann_reporting" : "cloud_sql_icann_reporting";
+  static String provideIcannReportingDataSet() {
+    return "cloud_sql_icann_reporting";
   }
 }

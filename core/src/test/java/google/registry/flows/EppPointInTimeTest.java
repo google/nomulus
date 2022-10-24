@@ -17,7 +17,6 @@ package google.registry.flows;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
@@ -94,7 +93,6 @@ class EppPointInTimeTest {
     clock.setTo(timeAtCreate);
     eppLoader = new EppLoader(this, "domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlow();
-    tm().clearSessionCache();
     Domain domainAfterCreate = Iterables.getOnlyElement(loadAllOf(Domain.class));
     assertThat(domainAfterCreate.getDomainName()).isEqualTo("example.tld");
 
@@ -102,7 +100,6 @@ class EppPointInTimeTest {
     DateTime timeAtFirstUpdate = clock.nowUtc();
     eppLoader = new EppLoader(this, "domain_update_dsdata_add.xml");
     runFlow();
-    tm().clearSessionCache();
 
     Domain domainAfterFirstUpdate = loadByEntity(domainAfterCreate);
     assertThat(domainAfterCreate).isNotEqualTo(domainAfterFirstUpdate);
@@ -111,14 +108,12 @@ class EppPointInTimeTest {
     DateTime timeAtSecondUpdate = clock.nowUtc();
     eppLoader = new EppLoader(this, "domain_update_dsdata_rem.xml");
     runFlow();
-    tm().clearSessionCache();
     Domain domainAfterSecondUpdate = loadByEntity(domainAfterCreate);
 
     clock.advanceBy(standardDays(2));
     DateTime timeAtDelete = clock.nowUtc(); // before 'add' grace period ends
     eppLoader = new EppLoader(this, "domain_delete.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlow();
-    tm().clearSessionCache();
 
     assertThat(domainAfterFirstUpdate).isNotEqualTo(domainAfterSecondUpdate);
 
@@ -126,17 +121,14 @@ class EppPointInTimeTest {
     Domain latest = loadByEntity(domainAfterCreate);
 
     // Creation time has millisecond granularity due to isActive() check.
-    tm().clearSessionCache();
     assertThat(loadAtPointInTime(latest, timeAtCreate.minusMillis(1))).isNull();
     assertThat(loadAtPointInTime(latest, timeAtCreate)).isNotNull();
     assertThat(loadAtPointInTime(latest, timeAtCreate.plusMillis(1))).isNotNull();
 
-    tm().clearSessionCache();
     assertAboutImmutableObjects()
         .that(loadAtPointInTime(latest, timeAtCreate.plusDays(1)))
         .isEqualExceptFields(domainAfterCreate, "updateTimestamp");
 
-    tm().clearSessionCache();
     // In SQL, we are not limited by the day granularity, so when we request the object
     // at timeAtFirstUpdate we should receive the object at that first update, even though the
     // second update occurred one millisecond later.
@@ -144,18 +136,15 @@ class EppPointInTimeTest {
         .that(loadAtPointInTime(latest, timeAtFirstUpdate))
         .isEqualExceptFields(domainAfterFirstUpdate, "updateTimestamp");
 
-    tm().clearSessionCache();
     assertAboutImmutableObjects()
         .that(loadAtPointInTime(latest, timeAtSecondUpdate))
         .isEqualExceptFields(domainAfterSecondUpdate, "updateTimestamp");
 
-    tm().clearSessionCache();
     assertAboutImmutableObjects()
         .that(loadAtPointInTime(latest, timeAtSecondUpdate.plusDays(1)))
         .isEqualExceptFields(domainAfterSecondUpdate, "updateTimestamp");
 
     // Deletion time has millisecond granularity due to isActive() check.
-    tm().clearSessionCache();
     assertThat(loadAtPointInTime(latest, timeAtDelete.minusMillis(1))).isNotNull();
     assertThat(loadAtPointInTime(latest, timeAtDelete)).isNull();
     assertThat(loadAtPointInTime(latest, timeAtDelete.plusMillis(1))).isNull();

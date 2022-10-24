@@ -108,7 +108,7 @@ public final class PollAckFlow implements TransactionalFlow {
     // acked, then we return a special status code indicating that. Note that the query will
     // include the message being acked.
 
-    int messageCount = tm().doTransactionless(() -> getPollMessageCount(registrarId, now));
+    int messageCount = tm().transact(() -> getPollMessageCount(registrarId, now));
     if (messageCount <= 0) {
       return responseBuilder.setResultFromCode(SUCCESS_WITH_NO_MESSAGES).build();
     }

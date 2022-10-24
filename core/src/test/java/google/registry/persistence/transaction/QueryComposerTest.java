@@ -320,10 +320,7 @@ public class QueryComposerTest {
   }
 
   private static <T> T assertDetachedIfJpa(T entity) {
-    if (!tm().isOfy()) {
-      return DatabaseHelper.assertDetachedFromEntityManager(entity);
-    }
-    return entity;
+    return DatabaseHelper.assertDetachedFromEntityManager(entity);
   }
 
   @javax.persistence.Entity

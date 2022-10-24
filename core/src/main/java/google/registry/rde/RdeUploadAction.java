@@ -103,7 +103,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   //
   // This prevents making an unnecessary time-expensive (and potentially failing) API call to the
   // external KMS system when the RdeUploadAction ends up not being used (if the EscrowTaskRunner
-  // determins this EscrowTask was already completed today).
+  // determines this EscrowTask was already completed today).
   @Inject Lazy<JSch> lazyJsch;
 
   @Inject JSchSshSessionFactory jschSshSessionFactory;
@@ -128,9 +128,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     runner.lockRunAndRollForward(this, Registry.get(tld), timeout, CursorType.RDE_UPLOAD, interval);
     HashMultimap<String, String> params = HashMultimap.create();
     params.put(RequestParameters.PARAM_TLD, tld);
-    if (prefix.isPresent()) {
-      params.put(RdeModule.PARAM_PREFIX, prefix.get());
-    }
+    prefix.ifPresent(s -> params.put(RdeModule.PARAM_PREFIX, s));
     cloudTasksUtils.enqueue(
         RDE_REPORT_QUEUE,
         cloudTasksUtils.createPostTask(
@@ -142,7 +140,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     // If a prefix is not provided, but we are in SQL mode, try to determine the prefix. This should
     // only happen when the RDE upload cron job runs to catch up any un-retried (i. e. expected)
     // RDE failures.
-    if (!prefix.isPresent() && !tm().isOfy()) {
+    if (!prefix.isPresent()) {
       // The prefix is always in the format of: rde-2022-02-21t00-00-00z-2022-02-21t00-07-33z, where
       // the first datetime is the watermark and the second one is the time when the RDE beam job
       // launched. We search for the latest folder that starts with "rde-[watermark]".
@@ -246,7 +244,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
    * }</pre>
    */
   @VisibleForTesting
-  protected void upload(
+  private void upload(
       BlobId xmlFile, long xmlLength, DateTime watermark, String name, String nameWithoutPrefix)
       throws Exception {
     logger.atInfo().log("Uploading XML file '%s' to remote path '%s'.", xmlFile, uploadUrl);

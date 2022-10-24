@@ -14,8 +14,6 @@
 
 package google.registry.reporting.icann;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.reporting.icann.IcannReportingModule.DATASTORE_EXPORT_DATA_SET;
 import static google.registry.reporting.icann.IcannReportingModule.ICANN_REPORTING_DATA_SET;
 import static google.registry.reporting.icann.QueryBuilderUtils.getQueryFromFile;
 import static google.registry.reporting.icann.QueryBuilderUtils.getTableName;
@@ -72,19 +70,10 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
 
     ImmutableMap.Builder<String, String> queriesBuilder = ImmutableMap.builder();
     String operationalRegistrarsQuery;
-    if (tm().isOfy()) {
-      operationalRegistrarsQuery =
-          SqlTemplate.create(getQueryFromFile("registrar_operating_status.sql"))
-              .put("PROJECT_ID", projectId)
-              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
-              .put("REGISTRAR_TABLE", "Registrar")
-              .build();
-    } else {
       operationalRegistrarsQuery =
           SqlTemplate.create(getQueryFromFile("cloud_sql_registrar_operating_status.sql"))
               .put("PROJECT_ID", projectId)
               .build();
-    }
     queriesBuilder.put(
         getTableName(REGISTRAR_OPERATING_STATUS, yearMonth), operationalRegistrarsQuery);
 
@@ -125,11 +114,7 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
     queriesBuilder.put(getTableName(WHOIS_COUNTS, yearMonth), whoisQuery);
 
     SqlTemplate aggregateQuery =
-        SqlTemplate.create(
-                getQueryFromFile(
-                    tm().isOfy()
-                        ? "activity_report_aggregation.sql"
-                        : "cloud_sql_activity_report_aggregation.sql"))
+        SqlTemplate.create(getQueryFromFile("cloud_sql_activity_report_aggregation.sql"))
             .put("PROJECT_ID", projectId)
             .put(
                 "REGISTRAR_OPERATING_STATUS_TABLE",
@@ -138,13 +123,6 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
             .put("DNS_COUNTS_TABLE", getTableName(DNS_COUNTS, yearMonth))
             .put("EPP_METRICS_TABLE", getTableName(EPP_METRICS, yearMonth))
             .put("WHOIS_COUNTS_TABLE", getTableName(WHOIS_COUNTS, yearMonth));
-
-    if (tm().isOfy()) {
-      aggregateQuery =
-          aggregateQuery
-              .put("REGISTRY_TABLE", "Registry")
-              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET);
-    }
 
     queriesBuilder.put(
         getTableName(ACTIVITY_REPORT_AGGREGATION, yearMonth), aggregateQuery.build());

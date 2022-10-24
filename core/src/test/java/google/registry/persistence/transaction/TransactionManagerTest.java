@@ -112,22 +112,6 @@ public class TransactionManagerTest {
   }
 
   @Test
-  void transactNew_succeeds() {
-    assertEntityNotExist(theEntity);
-    tm().transactNew(() -> tm().insert(theEntity));
-    assertEntityExists(theEntity);
-  }
-
-  @Test
-  void transactNewReadOnly_succeeds() {
-    assertEntityNotExist(theEntity);
-    tm().transact(() -> tm().insert(theEntity));
-    assertEntityExists(theEntity);
-    TestEntity persisted = tm().transactNewReadOnly(() -> tm().loadByKey(theEntity.key()));
-    assertThat(persisted).isEqualTo(theEntity);
-  }
-
-  @Test
   void saveNew_succeeds() {
     assertEntityNotExist(theEntity);
     tm().transact(() -> tm().insert(theEntity));

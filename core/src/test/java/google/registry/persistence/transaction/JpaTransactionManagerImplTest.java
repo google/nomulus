@@ -38,7 +38,6 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.io.Serializable;
 import java.math.BigInteger;
-import java.sql.SQLException;
 import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 import javax.persistence.Entity;
@@ -47,7 +46,6 @@ import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.OptimisticLockException;
 import javax.persistence.RollbackException;
-import org.hibernate.exception.JDBCConnectionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -203,59 +201,6 @@ class JpaTransactionManagerImplTest {
         };
     assertThrows(RuntimeException.class, () -> spyJpaTm.transact(supplier));
     verify(spyJpaTm, times(6)).delete(theEntityKey);
-  }
-
-  @Test
-  void transactNewReadOnly_retriesJdbcConnectionExceptions() {
-    JpaTransactionManager spyJpaTm = spy(jpaTm());
-    doThrow(JDBCConnectionException.class).when(spyJpaTm).loadByKey(any(VKey.class));
-    spyJpaTm.transact(() -> spyJpaTm.insert(theEntity));
-    assertThrows(
-        JDBCConnectionException.class,
-        () -> spyJpaTm.transactNewReadOnly(() -> spyJpaTm.loadByKey(theEntityKey)));
-    verify(spyJpaTm, times(3)).loadByKey(theEntityKey);
-    Supplier<Runnable> supplier =
-        () -> {
-          Runnable work = () -> spyJpaTm.loadByKey(theEntityKey);
-          work.run();
-          return null;
-        };
-    assertThrows(JDBCConnectionException.class, () -> spyJpaTm.transactNewReadOnly(supplier));
-    verify(spyJpaTm, times(6)).loadByKey(theEntityKey);
-  }
-
-  @Test
-  void transactNewReadOnly_retriesNestedJdbcConnectionExceptions() {
-    JpaTransactionManager spyJpaTm = spy(jpaTm());
-    doThrow(
-            new RuntimeException(
-                new JDBCConnectionException("connection exception", new SQLException())))
-        .when(spyJpaTm)
-        .loadByKey(any(VKey.class));
-    spyJpaTm.transact(() -> spyJpaTm.insert(theEntity));
-    assertThrows(
-        RuntimeException.class,
-        () -> spyJpaTm.transactNewReadOnly(() -> spyJpaTm.loadByKey(theEntityKey)));
-    verify(spyJpaTm, times(3)).loadByKey(theEntityKey);
-    Supplier<Runnable> supplier =
-        () -> {
-          Runnable work = () -> spyJpaTm.loadByKey(theEntityKey);
-          work.run();
-          return null;
-        };
-    assertThrows(RuntimeException.class, () -> spyJpaTm.transactNewReadOnly(supplier));
-    verify(spyJpaTm, times(6)).loadByKey(theEntityKey);
-  }
-
-  @Test
-  void doTransactionless_retriesJdbcConnectionExceptions() {
-    JpaTransactionManager spyJpaTm = spy(jpaTm());
-    doThrow(JDBCConnectionException.class).when(spyJpaTm).loadByKey(any(VKey.class));
-    spyJpaTm.transact(() -> spyJpaTm.insert(theEntity));
-    assertThrows(
-        RuntimeException.class,
-        () -> spyJpaTm.doTransactionless(() -> spyJpaTm.loadByKey(theEntityKey)));
-    verify(spyJpaTm, times(3)).loadByKey(theEntityKey);
   }
 
   @Test
@@ -787,6 +732,7 @@ class JpaTransactionManagerImplTest {
     String name;
     int age;
 
+    @SuppressWarnings("unused")
     private CompoundId() {}
 
     private CompoundId(String name, int age) {
@@ -834,6 +780,7 @@ class JpaTransactionManagerImplTest {
     String nameField;
     int ageField;
 
+    @SuppressWarnings("unused")
     private NamedCompoundId() {}
 
     private NamedCompoundId(String nameField, int ageField) {

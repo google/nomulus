@@ -102,6 +102,6 @@ public class LordnTaskUtilsTest {
   void test_enqueueDomainTask_throwsNpeOnNullDomain() {
     assertThrows(
         NullPointerException.class,
-        () -> tm().transactNew(() -> LordnTaskUtils.enqueueDomainTask(null)));
+        () -> tm().transact(() -> LordnTaskUtils.enqueueDomainTask(null)));
   }
 }
