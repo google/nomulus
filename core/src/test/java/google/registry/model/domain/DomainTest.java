@@ -19,6 +19,7 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -47,6 +48,7 @@ import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
@@ -993,5 +995,37 @@ public class DomainTest {
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("The currentPackageToken must have a PACKAGE TokenType");
+  }
+
+  @Test
+  void testFailure_packageTokenDoesNotExist() {
+    AllocationToken allocationToken =
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(PACKAGE)
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+            .build();
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+    assertThat(thrown).hasMessageThat().isEqualTo("The package token abc123 does not exist");
+  }
+
+  @Test
+  void testSuccess_removeCurrentPackageToken() {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(PACKAGE)
+                .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .build());
+    domain = domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build();
+    assertThat(domain.getCurrentPackageToken().get()).isEqualTo(allocationToken.createVKey());
+    domain = domain.asBuilder().setCurrentPackageToken(null).build();
+    assertThat(domain.getCurrentPackageToken()).isEmpty();
   }
 }

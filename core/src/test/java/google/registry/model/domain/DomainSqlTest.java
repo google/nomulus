@@ -17,7 +17,7 @@ package google.registry.model.domain;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
-import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
+import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
@@ -39,6 +39,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
@@ -144,13 +145,11 @@ public class DomainSqlTest {
     allocationToken =
         new AllocationToken.Builder()
             .setToken("abc123Unlimited")
-            .setTokenType(UNLIMITED_USE)
+            .setTokenType(PACKAGE)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("dev", "app"))
-            .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar, NewRegistrar"))
-            .setDiscountFraction(0.5)
-            .setDiscountPremiums(true)
-            .setDiscountYears(3)
+            .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
                     .put(START_OF_TIME, NOT_STARTED)
@@ -168,8 +167,8 @@ public class DomainSqlTest {
 
   @Test
   void testDomainBasePersistenceWithCurrentPackageToken() {
-    domain = domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build();
     persistResource(allocationToken);
+    domain = domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build();
     persistDomain();
     assertEqualDomainExcept(loadByKey(domain.createVKey()));
   }
@@ -178,13 +177,6 @@ public class DomainSqlTest {
   void testHostForeignKeyConstraints() {
     // Persist the domain without the associated host object.
     assertThrowForeignKeyViolation(() -> insertInDb(contact, contact2, domain));
-  }
-
-  @Test
-  void testCurrentPackageTokenForeignKeyConstraints() {
-    // Persist the domain without the associated allocation token object.
-    domain = domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build();
-    assertThrowForeignKeyViolation(() -> persistDomain());
   }
 
   @Test

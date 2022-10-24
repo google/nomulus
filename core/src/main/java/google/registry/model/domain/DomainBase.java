@@ -924,13 +924,17 @@ public class DomainBase extends EppResource
         getInstance().currentPackageToken = currentPackageToken;
         return thisCastToDerived();
       }
-      Optional<AllocationToken> token =
-          tm().transact(() -> tm().loadByKeyIfPresent(currentPackageToken));
-      token.ifPresent(
-          allocationToken ->
-              checkArgument(
-                  allocationToken.getTokenType().equals(TokenType.PACKAGE),
-                  "The currentPackageToken must have a PACKAGE TokenType"));
+      AllocationToken token =
+          tm().transact(() -> tm().loadByKeyIfPresent(currentPackageToken))
+              .orElseThrow(
+                  () ->
+                      new IllegalArgumentException(
+                          String.format(
+                              "The package token %s does not exist",
+                              currentPackageToken.getSqlKey())));
+      checkArgument(
+          token.getTokenType().equals(TokenType.PACKAGE),
+          "The currentPackageToken must have a PACKAGE TokenType");
       getInstance().currentPackageToken = currentPackageToken;
       return thisCastToDerived();
     }
