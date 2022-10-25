@@ -55,6 +55,7 @@ import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
@@ -919,6 +920,21 @@ public class DomainBase extends EppResource
     }
 
     public B setCurrentPackageToken(@Nullable VKey<AllocationToken> currentPackageToken) {
+      if (currentPackageToken == null) {
+        getInstance().currentPackageToken = currentPackageToken;
+        return thisCastToDerived();
+      }
+      AllocationToken token =
+          tm().transact(() -> tm().loadByKeyIfPresent(currentPackageToken))
+              .orElseThrow(
+                  () ->
+                      new IllegalArgumentException(
+                          String.format(
+                              "The package token %s does not exist",
+                              currentPackageToken.getSqlKey())));
+      checkArgument(
+          token.getTokenType().equals(TokenType.PACKAGE),
+          "The currentPackageToken must have a PACKAGE TokenType");
       getInstance().currentPackageToken = currentPackageToken;
       return thisCastToDerived();
     }
