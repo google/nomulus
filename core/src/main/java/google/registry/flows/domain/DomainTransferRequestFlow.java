@@ -63,7 +63,6 @@ import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.superuser.DomainTransferRequestSuperuserExtension;
-import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
@@ -170,20 +169,19 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    Optional<AllocationToken> allocationToken =
-        allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
-            existingDomain,
-            Registry.get(existingDomain.getTld()),
-            gainingClientId,
-            now,
-            eppInput.getSingleExtension(AllocationTokenExtension.class));
+    allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
+        existingDomain,
+        Registry.get(existingDomain.getTld()),
+        gainingClientId,
+        now,
+        eppInput.getSingleExtension(AllocationTokenExtension.class));
     Optional<DomainTransferRequestSuperuserExtension> superuserExtension =
         eppInput.getSingleExtension(DomainTransferRequestSuperuserExtension.class);
     Period period =
         superuserExtension.isPresent()
             ? superuserExtension.get().getRenewalPeriod()
             : ((Transfer) resourceCommand).getPeriod();
-    verifyTransferAllowed(existingDomain, period, now, superuserExtension, allocationToken);
+    verifyTransferAllowed(existingDomain, period, now, superuserExtension);
 
     String tld = existingDomain.getTld();
     Registry registry = Registry.get(tld);
@@ -296,8 +294,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
       Domain existingDomain,
       Period period,
       DateTime now,
-      Optional<DomainTransferRequestSuperuserExtension> superuserExtension,
-      Optional<AllocationToken> allocationToken)
+      Optional<DomainTransferRequestSuperuserExtension> superuserExtension)
       throws EppException {
     verifyNoDisallowedStatuses(existingDomain, DISALLOWED_STATUSES);
     if (!isSuperuser) {

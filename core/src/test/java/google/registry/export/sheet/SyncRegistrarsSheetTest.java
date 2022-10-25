@@ -74,12 +74,8 @@ public class SyncRegistrarsSheetTest {
   void beforeEach() {
     createTld("example");
     // Remove Registrar entities created by AppEngineExtension (and RegistrarContact's, for jpa).
-    // We don't do this for ofy because ofy's loadAllOf() can't be called in a transaction but
-    // _must_ be called in a transaction in JPA.
-    if (!tm().isOfy()) {
       tm().transact(() -> tm().loadAllOf(RegistrarPoc.class))
           .forEach(DatabaseHelper::deleteResource);
-    }
     Registrar.loadAll().forEach(DatabaseHelper::deleteResource);
   }
 

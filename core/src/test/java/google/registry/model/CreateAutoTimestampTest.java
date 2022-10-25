@@ -58,7 +58,6 @@ public class CreateAutoTimestampTest {
                   tm().put(object);
                   return tm().getTransactionTime();
                 });
-    tm().clearSessionCache();
     assertThat(reload().createTime.getTimestamp()).isEqualTo(transactionTime);
   }
 
@@ -71,7 +70,6 @@ public class CreateAutoTimestampTest {
               object.createTime = CreateAutoTimestamp.create(oldCreateTime);
               tm().put(object);
             });
-    tm().clearSessionCache();
     assertThat(reload().createTime.getTimestamp()).isEqualTo(oldCreateTime);
   }
 }

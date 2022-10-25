@@ -16,9 +16,7 @@ package google.registry.rdap;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -30,11 +28,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Booleans;
-import com.googlecode.objectify.cmd.Query;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
@@ -58,7 +54,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import javax.inject.Inject;
 import javax.persistence.criteria.CriteriaBuilder;
 import org.hibernate.Hibernate;
@@ -207,49 +202,31 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // keys, because then we have an index on TLD if we need it.
     int querySizeLimit = RESULT_SET_SIZE_SCALING_FACTOR * rdapResultSetMaxSize;
     RdapResultSet<Domain> resultSet;
-    if (tm().isOfy()) {
-      Query<Domain> query =
-          auditedOfy()
-              .load()
-              .type(Domain.class)
-              .filter("domainName <", partialStringQuery.getNextInitialString())
-              .filter("domainName >=", partialStringQuery.getInitialString());
-      if (cursorString.isPresent()) {
-        query = query.filter("domainName >", cursorString.get());
-      }
-      if (partialStringQuery.getSuffix() != null) {
-        query = query.filter("tld", partialStringQuery.getSuffix());
-      }
-      query = query.limit(querySizeLimit);
-      // Always check for visibility, because we couldn't look at the deletionTime in the query.
-      resultSet = getMatchingResources(query, true, querySizeLimit);
-    } else {
-      resultSet =
-          replicaJpaTm()
-              .transact(
-                  () -> {
-                    CriteriaBuilder criteriaBuilder =
-                        replicaJpaTm().getEntityManager().getCriteriaBuilder();
-                    CriteriaQueryBuilder<Domain> queryBuilder =
-                        CriteriaQueryBuilder.create(replicaJpaTm(), Domain.class)
-                            .where(
-                                "domainName",
-                                criteriaBuilder::like,
-                                String.format("%s%%", partialStringQuery.getInitialString()))
-                            .orderByAsc("domainName");
-                    if (cursorString.isPresent()) {
-                      queryBuilder =
-                          queryBuilder.where(
-                              "domainName", criteriaBuilder::greaterThan, cursorString.get());
-                    }
-                    if (partialStringQuery.getSuffix() != null) {
-                      queryBuilder =
-                          queryBuilder.where(
-                              "tld", criteriaBuilder::equal, partialStringQuery.getSuffix());
-                    }
-                    return getMatchingResourcesSql(queryBuilder, true, querySizeLimit);
-                  });
-    }
+    resultSet =
+        replicaJpaTm()
+            .transact(
+                () -> {
+                  CriteriaBuilder criteriaBuilder =
+                      replicaJpaTm().getEntityManager().getCriteriaBuilder();
+                  CriteriaQueryBuilder<Domain> queryBuilder =
+                      CriteriaQueryBuilder.create(replicaJpaTm(), Domain.class)
+                          .where(
+                              "domainName",
+                              criteriaBuilder::like,
+                              String.format("%s%%", partialStringQuery.getInitialString()))
+                          .orderByAsc("domainName");
+                  if (cursorString.isPresent()) {
+                    queryBuilder =
+                        queryBuilder.where(
+                            "domainName", criteriaBuilder::greaterThan, cursorString.get());
+                  }
+                  if (partialStringQuery.getSuffix() != null) {
+                    queryBuilder =
+                        queryBuilder.where(
+                            "tld", criteriaBuilder::equal, partialStringQuery.getSuffix());
+                  }
+                  return getMatchingResources(queryBuilder, true, querySizeLimit);
+                });
     return makeSearchResults(resultSet);
   }
 
@@ -261,30 +238,21 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // pending deletes.
     int querySizeLimit = RESULT_SET_SIZE_SCALING_FACTOR * rdapResultSetMaxSize;
     RdapResultSet<Domain> resultSet;
-    if (tm().isOfy()) {
-      Query<Domain> query = auditedOfy().load().type(Domain.class).filter("tld", tld);
-      if (cursorString.isPresent()) {
-        query = query.filter("domainName >", cursorString.get());
-      }
-      query = query.order("domainName").limit(querySizeLimit);
-      resultSet = getMatchingResources(query, true, querySizeLimit);
-    } else {
-      resultSet =
-          replicaJpaTm()
-              .transact(
-                  () -> {
-                    CriteriaQueryBuilder<Domain> builder =
-                        queryItemsSql(
-                                Domain.class,
-                                "tld",
-                                tld,
-                                Optional.of("domainName"),
-                                cursorString,
-                                DeletedItemHandling.INCLUDE)
-                            .orderByAsc("domainName");
-                    return getMatchingResourcesSql(builder, true, querySizeLimit);
-                  });
-    }
+    resultSet =
+        replicaJpaTm()
+            .transact(
+                () -> {
+                  CriteriaQueryBuilder<Domain> builder =
+                      queryItems(
+                              Domain.class,
+                              "tld",
+                              tld,
+                              Optional.of("domainName"),
+                              cursorString,
+                              DeletedItemHandling.INCLUDE)
+                          .orderByAsc("domainName");
+                  return getMatchingResources(builder, true, querySizeLimit);
+                });
     return makeSearchResults(resultSet);
   }
 
@@ -337,46 +305,29 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // incomplete result set if a search asks for something like "ns*", but we need to enforce a
     // limit in order to avoid arbitrarily long-running queries.
     Optional<String> desiredRegistrar = getDesiredRegistrar();
-    if (tm().isOfy()) {
-      Query<Host> query =
-          queryItems(
-              Host.class,
-              "hostName",
-              partialStringQuery,
-              Optional.empty(),
-              DeletedItemHandling.EXCLUDE,
-              maxNameserversInFirstStage);
-      if (desiredRegistrar.isPresent()) {
-        query = query.filter("currentSponsorClientId", desiredRegistrar.get());
-      }
-      return StreamSupport.stream(query.keys().spliterator(), false)
-          .map(VKey::from)
-          .collect(toImmutableSet());
-    } else {
-      return replicaJpaTm()
-          .transact(
-              () -> {
-                CriteriaQueryBuilder<Host> builder =
-                    queryItemsSql(
-                        Host.class,
-                        "hostName",
-                        partialStringQuery,
-                        Optional.empty(),
-                        DeletedItemHandling.EXCLUDE);
-                if (desiredRegistrar.isPresent()) {
-                  builder =
-                      builder.where(
-                          "currentSponsorClientId",
-                          replicaJpaTm().getEntityManager().getCriteriaBuilder()::equal,
-                          desiredRegistrar.get());
-                }
-                return getMatchingResourcesSql(builder, true, maxNameserversInFirstStage)
-                    .resources()
-                    .stream()
-                    .map(Host::createVKey)
-                    .collect(toImmutableSet());
-              });
-    }
+    return replicaJpaTm()
+        .transact(
+            () -> {
+              CriteriaQueryBuilder<Host> builder =
+                  queryItems(
+                      Host.class,
+                      "hostName",
+                      partialStringQuery,
+                      Optional.empty(),
+                      DeletedItemHandling.EXCLUDE);
+              if (desiredRegistrar.isPresent()) {
+                builder =
+                    builder.where(
+                        "currentSponsorClientId",
+                        replicaJpaTm().getEntityManager().getCriteriaBuilder()::equal,
+                        desiredRegistrar.get());
+              }
+              return getMatchingResources(builder, true, maxNameserversInFirstStage)
+                  .resources()
+                  .stream()
+                  .map(Host::createVKey)
+                  .collect(toImmutableSet());
+            });
   }
 
   /** Assembles a list of {@link Host} keys by name when the pattern has no wildcard. */
@@ -471,24 +422,6 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
   private DomainSearchResponse searchByNameserverIp(final InetAddress inetAddress) {
     Optional<String> desiredRegistrar = getDesiredRegistrar();
     ImmutableSet<VKey<Host>> hostKeys;
-    if (tm().isOfy()) {
-      Query<Host> query =
-          queryItems(
-              Host.class,
-              "inetAddresses",
-              inetAddress.getHostAddress(),
-              Optional.empty(),
-              Optional.empty(),
-              DeletedItemHandling.EXCLUDE,
-              maxNameserversInFirstStage);
-      if (desiredRegistrar.isPresent()) {
-        query = query.filter("currentSponsorClientId", desiredRegistrar.get());
-      }
-      hostKeys =
-          StreamSupport.stream(query.keys().spliterator(), false)
-              .map(VKey::from)
-              .collect(toImmutableSet());
-    } else {
       // Hibernate does not allow us to query @Converted array fields directly, either
       // in the CriteriaQuery or the raw text format. However, Postgres does -- so we
       // use native queries to find hosts where any of the inetAddresses match.
@@ -520,7 +453,6 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                         .map(repoId -> VKey.create(Host.class, repoId))
                         .collect(toImmutableSet());
                   });
-    }
     return searchByNameserverRefs(hostKeys);
   }
 
@@ -543,27 +475,6 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     int numHostKeysSearched = 0;
     for (List<VKey<Host>> chunk : Iterables.partition(hostKeys, 30)) {
       numHostKeysSearched += chunk.size();
-      if (tm().isOfy()) {
-        Query<Domain> query =
-            auditedOfy()
-                .load()
-                .type(Domain.class)
-                .filter(
-                    "nsHosts in", chunk.stream().map(VKey::getOfyKey).collect(toImmutableSet()));
-        if (!shouldIncludeDeleted()) {
-          query = query.filter("deletionTime >", getRequestTime());
-          // If we are not performing an inequality query, we can filter on the cursor in the query.
-          // Otherwise, we will need to filter the results afterward.
-        } else if (cursorString.isPresent()) {
-          query = query.filter("domainName >", cursorString.get());
-        }
-        Stream<Domain> stream = Streams.stream(query).filter(this::isAuthorized);
-        if (cursorString.isPresent()) {
-          stream =
-              stream.filter(domain -> (domain.getDomainName().compareTo(cursorString.get()) > 0));
-        }
-        stream.forEach(domainSetBuilder::add);
-      } else {
         replicaJpaTm()
             .transact(
                 () -> {
@@ -595,7 +506,6 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                             });
                   }
                 });
-      }
     }
     List<Domain> domains = domainSetBuilder.build().asList();
     metricInformationBuilder.setNumHostsRetrieved(numHostKeysSearched);

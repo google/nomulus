@@ -210,9 +210,6 @@ public class Lock extends ImmutableObject implements Serializable {
       RequestStatusChecker requestStatusChecker,
       boolean checkThreadRunning) {
     String scope = tld != null ? tld : GLOBAL;
-    // It's important to use transactNew rather than transact, because a Lock can be used to control
-    // access to resources like GCS that can't be transactionally rolled back. Therefore, the lock
-    // must be definitively acquired before it is used, even when called inside another transaction.
     Supplier<AcquireResult> lockAcquirer =
         () -> {
           DateTime now = jpaTm().getTransactionTime();

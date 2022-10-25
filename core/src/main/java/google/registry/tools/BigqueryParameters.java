@@ -22,7 +22,7 @@ import org.joda.time.Duration;
 
 /** Parameter delegate class to handle flag settings for a command's BigqueryConnection object. */
 @Parameters(separators = " =")
-final class BigqueryParameters {
+public final class BigqueryParameters {
 
   /**
    * Default to 20 threads to stay within Bigquery's rate limit of 20 concurrent queries.

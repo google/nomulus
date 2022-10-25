@@ -21,7 +21,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.rdap.RdapIcannStandardInformation.CONTACT_REDACTED_VALUE;
 import static google.registry.util.CollectionUtils.union;
 
@@ -91,8 +90,9 @@ import org.joda.time.DateTime;
  *
  * <p>The JSON format specifies that entities should be supplied with links indicating how to fetch
  * them via RDAP, which requires the URL to the RDAP server. The linkBase parameter, passed to many
- * of the methods, is used as the first part of the link URL. For instance, if linkBase is
- * "http://rdap.org/dir/", the link URLs will look like "http://rdap.org/dir/domain/XXXX", etc.
+ * of the methods, is used as the first part of the link URL. For instance, if linkBase is <a
+ * href="http://rdap.org/dir/"></a>, the link URLs will look like <a
+ * href="http://rdap.org/dir/domain/XXXX"></a>, etc.
  *
  * @see <a href="https://tools.ietf.org/html/rfc9083">RFC 9083: JSON Responses for the Registration
  *     Data Access Protocol (RDAP)</a>
@@ -211,15 +211,15 @@ public class RdapJsonFormatter {
               .put(HistoryEntry.Type.CONTACT_DELETE, EventAction.DELETION)
               .put(HistoryEntry.Type.CONTACT_TRANSFER_APPROVE, EventAction.TRANSFER)
 
-              /** Not in the Response Profile. */
+              /* Not in the Response Profile. */
               .put(HistoryEntry.Type.DOMAIN_AUTORENEW, EventAction.REREGISTRATION)
-              /** Not in the Response Profile. */
+              /* Not in the Response Profile. */
               .put(HistoryEntry.Type.DOMAIN_DELETE, EventAction.DELETION)
-              /** Not in the Response Profile. */
+              /* Not in the Response Profile. */
               .put(HistoryEntry.Type.DOMAIN_RENEW, EventAction.REREGISTRATION)
-              /** Not in the Response Profile. */
+              /* Not in the Response Profile. */
               .put(HistoryEntry.Type.DOMAIN_RESTORE, EventAction.REINSTANTIATION)
-              /** Section 2.3.2.3, optional. */
+              /* Section 2.3.2.3, optional. */
               .put(HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE, EventAction.TRANSFER)
               .put(HistoryEntry.Type.HOST_CREATE, EventAction.REGISTRATION)
               .put(HistoryEntry.Type.HOST_DELETE, EventAction.DELETION)
@@ -533,7 +533,7 @@ public class RdapJsonFormatter {
     // state/province, postal code, country
     //
     // Note that in theory we have to show the Organization and state/province and country for the
-    // REGISTRANT. For now we won't do that until we make sure it's really OK for GDPR
+    // REGISTRANT. For now, we won't do that until we make sure it's really OK for GDPR
     //
     if (!isAuthorized) {
       // RDAP Response Profile 2.7.4.3: if we redact values from the contact, we MUST include a
@@ -749,9 +749,9 @@ public class RdapJsonFormatter {
     if (outputDataType != OutputDataType.SUMMARY) {
       ImmutableList<RdapContactEntity> registrarContacts =
           registrar.getContacts().stream()
-              .map(registrarContact -> makeRdapJsonForRegistrarContact(registrarContact))
-              .filter(optional -> optional.isPresent())
-              .map(optional -> optional.get())
+              .map(RdapJsonFormatter::makeRdapJsonForRegistrarContact)
+              .filter(Optional::isPresent)
+              .map(Optional::get)
               .filter(
                   contact ->
                       outputDataType == OutputDataType.FULL
@@ -886,10 +886,6 @@ public class RdapJsonFormatter {
     // 2.3.2.3 An event of *eventAction* type *transfer*, with the last date and time that the
     // domain was transferred. The event of *eventAction* type *transfer* MUST be omitted if the
     // domain name has not been transferred since it was created.
-    Iterable<? extends HistoryEntry> historyEntries;
-    if (tm().isOfy()) {
-      historyEntries = HistoryEntryDao.loadHistoryObjectsForResource(resource.createVKey());
-    } else {
       VKey<? extends EppResource> resourceVkey = resource.createVKey();
       Class<? extends HistoryEntry> historyClass =
           HistoryEntryDao.getHistoryClassFromParent(resourceVkey.getKind());
@@ -903,10 +899,14 @@ public class RdapJsonFormatter {
               .replace("%entityName%", entityName)
               .replace("%repoIdField%", repoIdFieldName)
               .replace("%repoIdValue%", resourceVkey.getSqlKey().toString());
-      historyEntries =
-          replicaJpaTm()
-              .transact(() -> replicaJpaTm().getEntityManager().createQuery(jpql).getResultList());
-    }
+    Iterable<HistoryEntry> historyEntries =
+        replicaJpaTm()
+            .transact(
+                () ->
+                    replicaJpaTm()
+                        .getEntityManager()
+                        .createQuery(jpql, HistoryEntry.class)
+                        .getResultList());
     for (HistoryEntry historyEntry : historyEntries) {
       EventAction rdapEventAction =
           HISTORY_ENTRY_TYPE_TO_RDAP_EVENT_ACTION_MAP.get(historyEntry.getType());
@@ -1131,7 +1131,7 @@ public class RdapJsonFormatter {
    * all these objects are projected to the same "now".
    *
    * <p>This "now" will also be considered the time of the "last update of RDAP database" event that
-   * RDAP sepc requires.
+   * RDAP spec requires.
    *
    * <p>We would have set this during the constructor, but the clock is injected after construction.
    * So instead we set the time during the first call to this function.

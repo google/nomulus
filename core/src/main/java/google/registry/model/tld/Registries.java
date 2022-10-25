@@ -22,22 +22,21 @@ import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.filterValues;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
-import com.googlecode.objectify.Key;
 import google.registry.model.tld.Registry.TldType;
+import google.registry.util.DomainNameUtils;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 
@@ -58,32 +57,17 @@ public final class Registries {
   private static Supplier<ImmutableMap<String, TldType>> createFreshCache() {
     return memoizeWithShortExpiration(
         () ->
-            tm().doTransactionless(
+            tm().transact(
                     () -> {
-                      if (tm().isOfy()) {
-                        ImmutableSet<String> tlds =
-                            auditedOfy()
-                                .load()
-                                .type(Registry.class)
-                                .keys()
-                                .list()
-                                .stream()
-                                .map(Key::getName)
-                                .collect(toImmutableSet());
-                        return Registry.get(tlds).stream()
-                            .map(e -> Maps.immutableEntry(e.getTldStr(), e.getTldType()))
-                            .collect(entriesToImmutableMap());
-                      } else {
-                        EntityManager entityManager = jpaTm().getEntityManager();
-                        Stream<?> resultStream =
-                            entityManager
-                                .createQuery("SELECT tldStr, tldType FROM Tld")
-                                .getResultStream();
-                        return resultStream
-                            .map(e -> ((Object[]) e))
-                            .map(e -> Maps.immutableEntry((String) e[0], ((TldType) e[1])))
-                            .collect(entriesToImmutableMap());
-                      }
+                      EntityManager entityManager = jpaTm().getEntityManager();
+                      Stream<?> resultStream =
+                          entityManager
+                              .createQuery("SELECT tldStr, tldType FROM Tld")
+                              .getResultStream();
+                      return resultStream
+                          .map(e -> ((Object[]) e))
+                          .map(e -> Maps.immutableEntry((String) e[0], ((TldType) e[1])))
+                          .collect(entriesToImmutableMap());
                     }));
   }
 
@@ -143,8 +127,7 @@ public final class Registries {
    *
    * <p><b>Note:</b> This routine will only work on names under TLDs for which this registry is
    * authoritative. To extract TLDs from domains (not hosts) that other registries control, use
-   * {@link google.registry.util.DomainNameUtils#getTldFromDomainName(String)
-   * DomainNameUtils#getTldFromDomainName}.
+   * {@link DomainNameUtils#getTldFromDomainName(String) DomainNameUtils#getTldFromDomainName}.
    *
    * @param domainName domain name or host name (but not TLD) under an authoritative TLD
    * @return TLD or absent if {@code domainName} has no labels under an authoritative TLD

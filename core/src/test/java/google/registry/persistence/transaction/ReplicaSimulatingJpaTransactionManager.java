@@ -129,31 +129,6 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
   }
 
   @Override
-  public <T> T transactNew(Supplier<T> work) {
-    return transact(work);
-  }
-
-  @Override
-  public void transactNew(Runnable work) {
-    transact(work);
-  }
-
-  @Override
-  public <T> T transactNewReadOnly(Supplier<T> work) {
-    return transact(work);
-  }
-
-  @Override
-  public void transactNewReadOnly(Runnable work) {
-    transact(work);
-  }
-
-  @Override
-  public <T> T doTransactionless(Supplier<T> work) {
-    return delegate.doTransactionless(work);
-  }
-
-  @Override
   public DateTime getTransactionTime() {
     return delegate.getTransactionTime();
   }
@@ -283,16 +258,6 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
   @Override
   public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
     return delegate.createQueryComposer(entity);
-  }
-
-  @Override
-  public void clearSessionCache() {
-    delegate.clearSessionCache();
-  }
-
-  @Override
-  public boolean isOfy() {
-    return delegate.isOfy();
   }
 
   @Override

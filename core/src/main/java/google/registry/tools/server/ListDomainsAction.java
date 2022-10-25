@@ -16,20 +16,15 @@ package google.registry.tools.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.tld.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
-import static java.util.Comparator.comparing;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import google.registry.model.EppResource;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.domain.Domain;
 import google.registry.request.Action;
@@ -37,9 +32,7 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
-import java.util.List;
 import javax.inject.Inject;
-import org.joda.time.DateTime;
 
 /** An action that lists domains, for use by the {@code nomulus list_domains} command. */
 @Action(
@@ -76,38 +69,11 @@ public final class ListDomainsAction extends ListObjectsAction<Domain> {
   public ImmutableSet<Domain> loadObjects() {
     checkArgument(!tlds.isEmpty(), "Must specify TLDs to query");
     assertTldsExist(tlds);
-    ImmutableList<Domain> domains = tm().isOfy() ? loadDomainsOfy() : loadDomainsSql();
+    ImmutableList<Domain> domains = loadDomains();
     return ImmutableSet.copyOf(domains.reverse());
   }
 
-  private ImmutableList<Domain> loadDomainsOfy() {
-    DateTime now = clock.nowUtc();
-    ImmutableList.Builder<Domain> domainsBuilder = new ImmutableList.Builder<>();
-    // Combine the batches together by sorting all domains together with newest first, applying the
-    // limit, and then reversing for display order.
-    for (List<String> tldsBatch : Lists.partition(tlds.asList(), maxNumSubqueries)) {
-      auditedOfy()
-          .load()
-          .type(Domain.class)
-          .filter("tld in", tldsBatch)
-          // Get the N most recently created domains (requires ordering in descending order).
-          .order("-creationTime")
-          .limit(limit)
-          .list()
-          .stream()
-          .map(EppResourceUtils.transformAtTime(now))
-          // Deleted entities must be filtered out post-query because queries don't allow
-          // ordering with two filters.
-          .filter(d -> d.getDeletionTime().isAfter(now))
-          .forEach(domainsBuilder::add);
-    }
-    return domainsBuilder.build().stream()
-        .sorted(comparing(EppResource::getCreationTime).reversed())
-        .limit(limit)
-        .collect(toImmutableList());
-  }
-
-  private ImmutableList<Domain> loadDomainsSql() {
+  private ImmutableList<Domain> loadDomains() {
     return jpaTm()
         .transact(
             () ->

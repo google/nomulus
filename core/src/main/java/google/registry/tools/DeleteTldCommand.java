@@ -71,7 +71,7 @@ final class DeleteTldCommand extends ConfirmingCommand implements CommandWithRem
 
   @Override
   protected String execute() {
-    tm().transactNew(() -> tm().delete(registry));
+    tm().transact(() -> tm().delete(registry));
     registry.invalidateInCache();
     return String.format("Deleted TLD '%s'.\n", tld);
   }

@@ -15,7 +15,6 @@
 package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -79,7 +78,6 @@ public class EscrowTaskRunnerTest {
     runner.lockRunAndRollForward(
         task, registry, standardSeconds(30), CursorType.RDE_STAGING, standardDays(1));
     verify(task).runWithLock(DateTime.parse("2006-06-06TZ"));
-    tm().clearSessionCache();
     Cursor cursor = loadByKey(Cursor.createScopedVKey(CursorType.RDE_STAGING, registry));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-06-07TZ"));
   }

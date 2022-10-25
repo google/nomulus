@@ -100,9 +100,6 @@ public abstract class CommandTestCase<C extends Command> {
       jcommander.parse(args);
       command.run();
     } finally {
-      // Clear the session cache so that subsequent reads for verification purposes hit Datastore.
-      // This primarily matters for AutoTimestamp fields, which otherwise won't have updated values.
-      tm().clearSessionCache();
       // Reset back to UNITTEST environment.
       RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     }

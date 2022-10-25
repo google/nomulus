@@ -277,8 +277,6 @@ public abstract class FlowTestCase<F extends Flow> {
               Arrays.toString(marshal(output, ValidationMode.LENIENT))),
           e);
     }
-    // Clear the cache so that we don't see stale results in tests.
-    tm().clearSessionCache();
     return output;
   }
 

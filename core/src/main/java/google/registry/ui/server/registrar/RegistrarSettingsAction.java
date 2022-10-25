@@ -104,7 +104,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    * by default. Enqueuing is allowed only if the value of isInTestDriver is false. It's set to true
    * in start() and set to false in stop() inside TestDriver.java, a class used in testing.
    */
-  private static ThreadLocal<Boolean> isInTestDriver = ThreadLocal.withInitial(() -> false);
+  private static final ThreadLocal<Boolean> isInTestDriver = ThreadLocal.withInitial(() -> false);
 
   @Inject JsonActionRunner jsonActionRunner;
   @Inject RegistrarConsoleMetrics registrarConsoleMetrics;
@@ -231,21 +231,19 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   private RegistrarResult update(final Map<String, ?> args, String registrarId) {
     // Email the updates
     sendExternalUpdatesIfNecessary(tm().transact(() -> saveUpdates(args, registrarId)));
-    // Reload the result outside of the transaction to get the most recent version
+    // Reload the result outside the transaction to get the most recent version
     return RegistrarResult.create("Saved " + registrarId, loadRegistrarUnchecked(registrarId));
   }
 
   /** Saves the updates and returns info needed for the update email */
   private EmailInfo saveUpdates(final Map<String, ?> args, String registrarId) {
-    // We load the registrar here rather than outside of the transaction - to make
+    // We load the registrar here rather than outside the transaction - to make
     // sure we have the latest version. This one is loaded inside the transaction, so it's
     // guaranteed to not change before we update it.
     Registrar registrar = loadRegistrarUnchecked(registrarId);
     // Detach the registrar to avoid Hibernate object-updates, since we wish to email
     // out the diffs between the existing and updated registrar objects
-    if (!tm().isOfy()) {
-      jpaTm().getEntityManager().detach(registrar);
-    }
+    jpaTm().getEntityManager().detach(registrar);
     // Verify that the registrar hasn't been changed.
     // To do that - we find the latest update time (or null if the registrar has been
     // deleted) and compare to the update time from the args. The update time in the args
@@ -262,7 +260,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
           "Registrar has been changed by someone else. Please reload and retry.");
     }
 
-    // Keep the current contacts so we can later check that no required contact was
+    // Keep the current contacts, so we can later check that no required contact was
     // removed, email the changes to the contacts
     ImmutableSet<RegistrarPoc> contacts = registrar.getContacts();
 
@@ -297,7 +295,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     ImmutableSet<Map<String, Object>> expandedContacts =
         Streams.stream(contacts)
             .map(RegistrarPoc::toDiffableFieldMap)
-            // Note: per the javadoc, toDiffableFieldMap includes sensitive data but we don't want
+            // Note: per the javadoc, toDiffableFieldMap includes sensitive data, but we don't want
             // to display it here
             .peek(
                 map -> {
@@ -416,7 +414,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       throw new ForbiddenException("Can't remove allowed TLDs using the console.");
     }
     if (!Sets.difference(updatedAllowedTlds, initialRegistrar.getAllowedTlds()).isEmpty()) {
-      // If a REAL registrar isn't in compliance with regards to having an abuse contact set,
+      // If a REAL registrar isn't in compliance with regard to having an abuse contact set,
       // prevent addition of allowed TLDs until that's fixed.
       if (Registrar.Type.REAL.equals(initialRegistrar.getType())
           && PRODUCTION.equals(RegistryEnvironment.get())) {
@@ -430,7 +428,8 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   }
 
   /**
-   * Makes sure builder.build is different than originalRegistrar only if we have the correct role.
+   * Makes sure {@code builder.build}is different from {@code originalRegistrar} only if we have the
+   * correct role.
    *
    * <p>On success, returns {@code builder.build()}.
    */
@@ -610,7 +609,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    * query as abuse contact (if any).
    *
    * <p>Frontend processing ensures that only one contact can be set as abuse contact in domain
-   * WHOIS record. Therefore it is possible to return inside the loop once one such contact is
+   * WHOIS record. Therefore, it is possible to return inside the loop once one such contact is
    * found.
    */
   private static Optional<RegistrarPoc> getDomainWhoisVisibleAbuseContact(

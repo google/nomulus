@@ -14,12 +14,10 @@
 
 package google.registry.persistence;
 
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
 import java.sql.SQLException;
 import java.util.function.Predicate;
 import javax.persistence.OptimisticLockException;
-import org.hibernate.exception.JDBCConnectionException;
 
 /** Helpers for identifying retriable database operations. */
 public final class JpaRetries {
@@ -35,35 +33,16 @@ public final class JpaRetries {
           );
 
   private static final Predicate<Throwable> RETRIABLE_TXN_PREDICATE =
-      Predicates.or(
-          OptimisticLockException.class::isInstance,
-          e ->
-              e instanceof SQLException
-                  && RETRIABLE_TXN_SQL_STATE.contains(((SQLException) e).getSQLState()));
-
-  private static final Predicate<Throwable> RETRIABLE_QUERY_PREDICATE =
-      Predicates.or(
-          JDBCConnectionException.class::isInstance,
-          e ->
-              e instanceof SQLException
-                  && RETRIABLE_TXN_SQL_STATE.contains(((SQLException) e).getSQLState()));
+      ((Predicate<Throwable>) OptimisticLockException.class::isInstance)
+          .or(
+              e ->
+                  e instanceof SQLException
+                      && RETRIABLE_TXN_SQL_STATE.contains(((SQLException) e).getSQLState()));
 
   public static boolean isFailedTxnRetriable(Throwable throwable) {
     Throwable t = throwable;
     while (t != null) {
       if (RETRIABLE_TXN_PREDICATE.test(t)) {
-        return true;
-      }
-      t = t.getCause();
-    }
-    return false;
-  }
-
-  public static boolean isFailedQueryRetriable(Throwable throwable) {
-    // TODO(weiminyu): check for more error codes.
-    Throwable t = throwable;
-    while (t != null) {
-      if (RETRIABLE_QUERY_PREDICATE.test(t)) {
         return true;
       }
       t = t.getCause();

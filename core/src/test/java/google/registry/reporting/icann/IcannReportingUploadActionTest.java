@@ -15,7 +15,6 @@
 package google.registry.reporting.icann;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -179,7 +178,6 @@ class IcannReportingUploadActionTest {
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-activity-200606.csv")).thenReturn(true);
     IcannReportingUploadAction action = createAction();
     action.run();
-    tm().clearSessionCache();
     Cursor cursor =
         loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
@@ -190,7 +188,6 @@ class IcannReportingUploadActionTest {
     clock.setTo(DateTime.parse("2006-5-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
     action.run();
-    tm().clearSessionCache();
     verifyNoMoreInteractions(mockReporter);
     verifyNoMoreInteractions(emailService);
   }
@@ -238,7 +235,6 @@ class IcannReportingUploadActionTest {
   void testFailure_cursorIsNotAdvancedForward() throws Exception {
     runTest_nonRetryableException(
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
-    tm().clearSessionCache();
     Cursor cursor =
         loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
@@ -249,7 +245,6 @@ class IcannReportingUploadActionTest {
     clock.setTo(DateTime.parse("2006-05-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
     action.run();
-    tm().clearSessionCache();
     Cursor cursor =
         loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("foo")));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));

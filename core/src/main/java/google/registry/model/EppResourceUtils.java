@@ -16,7 +16,6 @@ package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -67,7 +66,7 @@ public final class EppResourceUtils {
           + "AND deletionTime > :now";
 
   // We have to use the native SQL query here because DomainHost table doesn't have its entity
-  // class so we cannot reference its property like domainHost.hostRepoId in a JPQL query.
+  // class, so we cannot reference its property like domainHost.hostRepoId in a JPQL query.
   private static final String HOST_LINKED_DOMAIN_QUERY =
       "SELECT d.repo_id FROM \"Domain\" d "
           + "JOIN \"DomainHost\" dh ON dh.domain_repo_id = d.repo_id "
@@ -260,7 +259,7 @@ public final class EppResourceUtils {
   /**
    * Rewinds an {@link EppResource} object to a given point in time.
    *
-   * <p>This method costs nothing if {@code resource} is already current. Otherwise it needs to
+   * <p>This method costs nothing if {@code resource} is already current. Otherwise, it needs to
    * perform a single fetch operation.
    *
    * <p><b>Warning:</b> A resource can only be rolled backwards in time, not forwards; therefore
@@ -292,7 +291,7 @@ public final class EppResourceUtils {
   /**
    * Rewinds an {@link EppResource} object to a given point in time.
    *
-   * <p>This method costs nothing if {@code resource} is already current. Otherwise it returns an
+   * <p>This method costs nothing if {@code resource} is already current. Otherwise, it returns an
    * async operation that performs a single fetch operation.
    *
    * @return an asynchronous operation returning resource at {@code timestamp} or {@code null} if
@@ -346,50 +345,37 @@ public final class EppResourceUtils {
         "key must be either VKey<Contact> or VKey<Host>, but it is %s",
         key);
     boolean isContactKey = key.getKind().equals(Contact.class);
-    if (tm().isOfy()) {
-      com.googlecode.objectify.cmd.Query<Domain> query =
-          auditedOfy()
-              .load()
-              .type(Domain.class)
-              .filter(isContactKey ? "allContacts.contact" : "nsHosts", key.getOfyKey())
-              .filter("deletionTime >", now);
-      if (limit != null) {
-        query.limit(limit);
-      }
-      return query.keys().list().stream().map(Domain::createVKey).collect(toImmutableSet());
-    } else {
-      return tm().transact(
-              () -> {
-                Query query;
-                if (isContactKey) {
-                  query =
-                      jpaTm()
-                          .query(CONTACT_LINKED_DOMAIN_QUERY, String.class)
-                          .setParameter("fkRepoId", key)
-                          .setParameter("now", now);
-                } else {
-                  query =
-                      jpaTm()
-                          .getEntityManager()
-                          .createNativeQuery(HOST_LINKED_DOMAIN_QUERY)
-                          .setParameter("fkRepoId", key.getSqlKey())
-                          .setParameter("now", now.toDate());
-                }
-                if (limit != null) {
-                  query.setMaxResults(limit);
-                }
-                @SuppressWarnings("unchecked")
-                ImmutableSet<VKey<Domain>> domainKeySet =
-                    (ImmutableSet<VKey<Domain>>)
-                        query
-                            .getResultStream()
-                            .map(
-                                repoId ->
-                                    Domain.createVKey(Key.create(Domain.class, (String) repoId)))
-                            .collect(toImmutableSet());
-                return domainKeySet;
-              });
-    }
+    return tm().transact(
+            () -> {
+              Query query;
+              if (isContactKey) {
+                query =
+                    jpaTm()
+                        .query(CONTACT_LINKED_DOMAIN_QUERY, String.class)
+                        .setParameter("fkRepoId", key)
+                        .setParameter("now", now);
+              } else {
+                query =
+                    jpaTm()
+                        .getEntityManager()
+                        .createNativeQuery(HOST_LINKED_DOMAIN_QUERY)
+                        .setParameter("fkRepoId", key.getSqlKey())
+                        .setParameter("now", now.toDate());
+              }
+              if (limit != null) {
+                query.setMaxResults(limit);
+              }
+              @SuppressWarnings("unchecked")
+              ImmutableSet<VKey<Domain>> domainKeySet =
+                  (ImmutableSet<VKey<Domain>>)
+                      query
+                          .getResultStream()
+                          .map(
+                              repoId ->
+                                  Domain.createVKey(Key.create(Domain.class, (String) repoId)))
+                          .collect(toImmutableSet());
+              return domainKeySet;
+            });
   }
 
   /**

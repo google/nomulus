@@ -65,7 +65,6 @@ public class UpdateAutoTimestampTest {
                   tm().insert(object);
                   return tm().getTransactionTime();
                 });
-    tm().clearSessionCache();
     assertThat(reload().updateTime.getTimestamp()).isEqualTo(transactionTime);
   }
 
@@ -106,7 +105,6 @@ public class UpdateAutoTimestampTest {
                   tm().insert(object);
                   return tm().getTransactionTime();
                 });
-    tm().clearSessionCache();
     assertThat(reload().updateTime.getTimestamp()).isEqualTo(transactionTime);
   }
 

@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3_HASH;
@@ -88,9 +87,6 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
     DateTime after = fakeClock.nowUtc();
-
-    // Clear the cache so that the CreateAutoTimestamp field gets reloaded.
-    tm().clearSessionCache();
 
     Optional<Registrar> registrarOptional = Registrar.loadByRegistrarId("clientz");
     assertThat(registrarOptional).isPresent();

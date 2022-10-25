@@ -208,43 +208,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         });
   }
 
-  // TODO(b/177674699): Remove all transactNew methods as they are same as transact after the
-  // database migration.
-  @Override
-  public <T> T transactNew(Supplier<T> work) {
-    return transact(work);
-  }
-
-  @Override
-  public void transactNew(Runnable work) {
-    transact(work);
-  }
-
-  // For now, read-only transactions and "transactNew" methods only create (or use existing)
-  // standard transactions. Attempting to use a read-only transaction can break larger transactions
-  // (if we were already in one) so we don't set read-only mode.
-  //
-  // TODO(gbrodman): If necessary, implement transactNew and readOnly transactions using Postgres
-  // savepoints, see https://www.postgresql.org/docs/8.1/sql-savepoint.html
-  @Override
-  public <T> T transactNewReadOnly(Supplier<T> work) {
-    return retrier.callWithRetry(() -> transact(work), JpaRetries::isFailedQueryRetriable);
-  }
-
-  @Override
-  public void transactNewReadOnly(Runnable work) {
-    transactNewReadOnly(
-        () -> {
-          work.run();
-          return null;
-        });
-  }
-
-  @Override
-  public <T> T doTransactionless(Supplier<T> work) {
-    return retrier.callWithRetry(() -> transact(work), JpaRetries::isFailedQueryRetriable);
-  }
-
   @Override
   public DateTime getTransactionTime() {
     assertInTransaction();
@@ -494,16 +457,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void clearSessionCache() {
-    // This is an intended no-op method as there is no session cache in Postgresql.
-  }
-
-  @Override
-  public boolean isOfy() {
-    return false;
-  }
-
-  @Override
   public <T> void assertDelete(VKey<T> key) {
     if (internalDelete(key) != 1) {
       throw new IllegalArgumentException(
@@ -516,8 +469,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   private static class EntityId {
-    private String name;
-    private Object value;
+    private final String name;
+    private final Object value;
 
     private EntityId(String name, Object value) {
       this.name = name;

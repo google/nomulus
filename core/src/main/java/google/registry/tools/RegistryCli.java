@@ -263,7 +263,7 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
         ObjectifyService.initOfy();
         // Make sure we start the command with a clean cache, so that any previous command won't
         // interfere with this one.
-        ObjectifyService.ofy().clearSessionCache();
+        ObjectifyService.auditedOfy().clearSessionCache();
 
         // Enable Cloud SQL for command that needs remote API as they will very likely use
         // Cloud SQL after the database migration. Note that the DB password is stored in Datastore

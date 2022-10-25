@@ -32,7 +32,6 @@ import static google.registry.model.IdService.allocateId;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.ResourceTransferUtils.createTransferResponse;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -319,7 +318,7 @@ public final class DatabaseHelper {
     final Domain persistedDomain = persistResource(domain);
     // Calls {@link LordnTaskUtils#enqueueDomainTask} wrapped in a transaction so that the
     // transaction time is set correctly.
-    tm().transactNew(() -> LordnTaskUtils.enqueueDomainTask(persistedDomain));
+    tm().transact(() -> LordnTaskUtils.enqueueDomainTask(persistedDomain));
     maybeAdvanceClock();
     return persistedDomain;
   }
@@ -399,7 +398,7 @@ public final class DatabaseHelper {
                         toImmutableMap(Map.Entry::getKey, entry -> entry.getValue().getValue())))
             .build();
     // Since we used to persist a PremiumList to Datastore here, it is necessary to allocate an ID
-    // here to prevent breaking some of the hard-coded flow tests. IDs in tests are allocated in a
+    // here to prevent breaking some hard-coded flow tests. IDs in tests are allocated in a
     // strictly increasing sequence, if we don't pad out the ID here, we would have to renumber
     // hundreds of unit tests.
     allocateId();
@@ -990,11 +989,6 @@ public final class DatabaseHelper {
         .isNotInstanceOf(Buildable.Builder.class);
     tm().transact(() -> tm().put(resource));
     maybeAdvanceClock();
-    // Force the session cache to be cleared so that when we read the resource back, we read from
-    // Datastore and not from the session cache. This is needed to trigger Objectify's load process
-    // (unmarshalling entity protos to POJOs, nulling out empty collections, calling @OnLoad
-    // methods, etc.) which is bypassed for entities loaded from the session cache.
-    tm().clearSessionCache();
     return tm().transact(() -> tm().loadByEntity(resource));
   }
 
@@ -1007,9 +1001,6 @@ public final class DatabaseHelper {
     }
     tm().transact(() -> resources.forEach(e -> tm().put(e)));
     maybeAdvanceClock();
-    // Force the session to be cleared so that when we read it back, we read from Datastore
-    // and not from the transaction's session cache.
-    tm().clearSessionCache();
   }
 
   /**
@@ -1017,8 +1008,6 @@ public final class DatabaseHelper {
    *
    * <p>This was coded for testing RDE since its queries depend on the associated entries.
    *
-   * <p><b>Warning:</b> If you call this multiple times in a single test, you need to inject Ofy's
-   * clock field and forward it by a millisecond between each subsequent call.
    *
    * @see #persistResource(ImmutableObject)
    */
@@ -1035,17 +1024,16 @@ public final class DatabaseHelper {
                           .build());
             });
     maybeAdvanceClock();
-    tm().clearSessionCache();
     return tm().transact(() -> tm().loadByEntity(resource));
   }
 
-  /** Returns all of the history entries that are parented off the given EppResource. */
+  /** Returns all the history entries that are parented off the given EppResource. */
   public static List<HistoryEntry> getHistoryEntries(EppResource resource) {
     return HistoryEntryDao.loadHistoryObjectsForResource(resource.createVKey());
   }
 
   /**
-   * Returns all of the history entries that are parented off the given EppResource, cast to the
+   * Returns all the history entries that are parented off the given EppResource, cast to the
    * corresponding subclass.
    */
   public static <T extends HistoryEntry> List<T> getHistoryEntries(
@@ -1054,7 +1042,7 @@ public final class DatabaseHelper {
   }
 
   /**
-   * Returns all of the history entries that are parented off the given EppResource with the given
+   * Returns all the history entries that are parented off the given EppResource with the given
    * type.
    */
   public static ImmutableList<HistoryEntry> getHistoryEntriesOfType(
@@ -1065,8 +1053,8 @@ public final class DatabaseHelper {
   }
 
   /**
-   * Returns all of the history entries that are parented off the given EppResource with the given
-   * type and cast to the corresponding subclass.
+   * Returns all the history entries that are parented off the given EppResource with the given type
+   * and cast to the corresponding subclass.
    */
   public static <T extends HistoryEntry> ImmutableList<T> getHistoryEntriesOfType(
       EppResource resource, final HistoryEntry.Type type, Class<T> subclazz) {
@@ -1161,16 +1149,10 @@ public final class DatabaseHelper {
   public static <R> void insertSimpleResources(final Iterable<R> resources) {
     tm().transact(() -> tm().putAll(ImmutableList.copyOf(resources)));
     maybeAdvanceClock();
-    // Force the session to be cleared so that when we read it back, we read from Datastore
-    // and not from the transaction's session cache.
-    tm().clearSessionCache();
   }
 
   public static void deleteResource(final Object resource) {
     tm().transact(() -> tm().delete(resource));
-    // Force the session to be cleared so that when we read it back, we read from Datastore and
-    // not from the transaction's session cache.
-    tm().clearSessionCache();
   }
 
   /** Force the create and update timestamps to get written into the resource. */
@@ -1201,14 +1183,11 @@ public final class DatabaseHelper {
    * Loads all entities from all classes stored in the database.
    *
    * <p>This is not performant (it requires initializing and detaching all Hibernate entities so
-   * that they can be used outside of the transaction in which they're loaded) and it should only be
+   * that they can be used outside the transaction in which they're loaded) and it should only be
    * used in situations where we need to verify that, for instance, a dry run flow hasn't affected
    * the database at all.
    */
   public static List<Object> loadAllEntities() {
-    if (tm().isOfy()) {
-      return auditedOfy().load().list();
-    } else {
       return jpaTm()
           .transact(
               () -> {
@@ -1224,14 +1203,13 @@ public final class DatabaseHelper {
                 }
                 return result.build();
               });
-    }
   }
 
   /**
    * Loads (i.e. reloads) the specified entity from the DB.
    *
    * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
-   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   * convenience, so you don't need to wrap it in a transaction at the call site.
    */
   public static <T> T loadByEntity(T entity) {
     return tm().transact(() -> tm().loadByEntity(entity));
@@ -1241,7 +1219,7 @@ public final class DatabaseHelper {
    * Loads the specified entity by its key from the DB.
    *
    * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
-   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   * convenience, so you don't need to wrap it in a transaction at the call site.
    */
   public static <T> T loadByKey(VKey<T> key) {
     return tm().transact(() -> tm().loadByKey(key));
@@ -1251,7 +1229,7 @@ public final class DatabaseHelper {
    * Loads the specified entity by its key from the DB or empty if it doesn't exist.
    *
    * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
-   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   * convenience, so you don't need to wrap it in a transaction at the call site.
    */
   public static <T> Optional<T> loadByKeyIfPresent(VKey<T> key) {
     return tm().transact(() -> tm().loadByKeyIfPresent(key));
@@ -1261,17 +1239,17 @@ public final class DatabaseHelper {
    * Loads the specified entities by their keys from the DB.
    *
    * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
-   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   * convenience, so you don't need to wrap it in a transaction at the call site.
    */
   public static <T> ImmutableCollection<T> loadByKeys(Iterable<? extends VKey<? extends T>> keys) {
     return tm().transact(() -> tm().loadByKeys(keys).values());
   }
 
   /**
-   * Loads all of the entities of the specified type from the DB.
+   * Loads all the entities of the specified type from the DB.
    *
    * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
-   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   * convenience, so you don't need to wrap it in a transaction at the call site.
    */
   public static <T> ImmutableList<T> loadAllOf(Class<T> clazz) {
     return tm().transact(() -> tm().loadAllOf(clazz));
@@ -1281,7 +1259,7 @@ public final class DatabaseHelper {
    * Loads the set of entities by their keys from the DB.
    *
    * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
-   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   * convenience, so you don't need to wrap it in a transaction at the call site.
    *
    * <p>Nonexistent keys / entities are absent from the resulting map, but no {@link
    * NoSuchElementException} will be thrown.
@@ -1295,7 +1273,7 @@ public final class DatabaseHelper {
    * Loads all given entities from the database if possible.
    *
    * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
-   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   * convenience, so you don't need to wrap it in a transaction at the call site.
    *
    * <p>Nonexistent entities are absent from the resulting list, but no {@link
    * NoSuchElementException} will be thrown.
