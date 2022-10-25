@@ -226,7 +226,8 @@ CREATE TABLE public."Contact" (
     update_timestamp timestamp with time zone,
     transfer_history_entry_id bigint,
     transfer_repo_id text,
-    transfer_poll_message_id_3 bigint
+    transfer_poll_message_id_3 bigint,
+    last_update_time_via_epp timestamp with time zone
 );
 
 
@@ -302,7 +303,8 @@ CREATE TABLE public."ContactHistory" (
     update_timestamp timestamp with time zone,
     transfer_history_entry_id bigint,
     transfer_repo_id text,
-    transfer_poll_message_id_3 bigint
+    transfer_poll_message_id_3 bigint,
+    last_update_time_via_epp timestamp with time zone
 );
 
 
@@ -420,7 +422,8 @@ CREATE TABLE public."Domain" (
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
     current_package_token text,
-    lordn_phase text DEFAULT 'NONE'::text NOT NULL
+    lordn_phase text DEFAULT 'NONE'::text NOT NULL,
+    last_update_time_via_epp timestamp with time zone
 );
 
 
@@ -509,7 +512,8 @@ CREATE TABLE public."DomainHistory" (
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
     current_package_token text,
-    lordn_phase text DEFAULT 'NONE'::text NOT NULL
+    lordn_phase text DEFAULT 'NONE'::text NOT NULL,
+    last_update_time_via_epp timestamp with time zone
 );
 
 
@@ -619,7 +623,8 @@ CREATE TABLE public."Host" (
     superordinate_domain text,
     inet_addresses text[],
     update_timestamp timestamp with time zone,
-    transfer_poll_message_id_3 bigint
+    transfer_poll_message_id_3 bigint,
+    last_update_time_via_epp timestamp with time zone
 );
 
 
@@ -652,7 +657,8 @@ CREATE TABLE public."HostHistory" (
     statuses text[],
     host_repo_id text NOT NULL,
     update_timestamp timestamp with time zone,
-    transfer_poll_message_id_3 bigint
+    transfer_poll_message_id_3 bigint,
+    last_update_time_via_epp timestamp with time zone
 );
 
 
