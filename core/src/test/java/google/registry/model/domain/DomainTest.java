@@ -50,7 +50,6 @@ import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact.Type;

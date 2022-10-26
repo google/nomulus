@@ -204,7 +204,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     // behavior
     if (existingDomain.getCurrentPackageToken().isPresent()) {
       feesAndCredits =
-          (period.getValue() == 0)
+          period.getValue() == 0
               ? Optional.empty()
               : Optional.of(
                   pricingLogic.getTransferPrice(

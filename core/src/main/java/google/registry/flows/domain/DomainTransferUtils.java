@@ -142,19 +142,16 @@ public final class DomainTransferUtils {
     createOptionalAutorenewCancellation(
             automaticTransferTime, now, domainHistoryId, targetId, existingDomain, transferCost)
         .ifPresent(builder::add);
-    Recurring existingRecurringWithoutPackage = existingRecurring;
-    if (existingDomain.getCurrentPackageToken().isPresent()) {
-      existingRecurringWithoutPackage =
-          existingRecurring
-              .asBuilder()
-              .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
-              .setRenewalPrice(null)
-              .build();
-    }
     return builder
         .add(
             createGainingClientAutorenewEvent(
-                existingRecurringWithoutPackage,
+                existingDomain.getCurrentPackageToken().isPresent()
+                    ? existingRecurring
+                        .asBuilder()
+                        .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
+                        .setRenewalPrice(null)
+                        .build()
+                    : existingRecurring,
                 serverApproveNewExpirationTime,
                 domainHistoryId,
                 targetId,
