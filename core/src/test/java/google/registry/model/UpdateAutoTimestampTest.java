@@ -69,32 +69,6 @@ public class UpdateAutoTimestampTest {
   }
 
   @Test
-  void testDisabledUpdates() throws Exception {
-    DateTime initialTime =
-        tm().transact(
-                () -> {
-                  clock.advanceOneMilli();
-                  tm().insert(new UpdateAutoTimestampTestObject());
-                  return tm().getTransactionTime();
-                });
-
-    UpdateAutoTimestampTestObject object = reload();
-    clock.advanceOneMilli();
-
-    try (UpdateAutoTimestamp.DisableAutoUpdateResource ignoredDisabler =
-        new UpdateAutoTimestamp.DisableAutoUpdateResource()) {
-      DateTime secondTransactionTime =
-          tm().transact(
-                  () -> {
-                    tm().put(object);
-                    return tm().getTransactionTime();
-                  });
-      assertThat(secondTransactionTime).isGreaterThan(initialTime);
-    }
-    assertThat(reload().updateTime.getTimestamp()).isEqualTo(initialTime);
-  }
-
-  @Test
   void testResavingOverwritesOriginalTime() {
     DateTime transactionTime =
         tm().transact(

@@ -61,7 +61,7 @@ class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
     assertThat(response).containsEntry("results", ImmutableList.of(modifiedJsonMap));
     assertAboutImmutableObjects()
         .that(loadRegistrar(CLIENT_ID))
-        .isEqualExceptFields(modified, "lastUpdateTime");
+        .isEqualExceptFields(modified, "updateTimestamp");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
     verifyNotificationEmailsSent();
   }

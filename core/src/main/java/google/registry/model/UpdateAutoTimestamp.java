@@ -29,12 +29,7 @@ import org.joda.time.DateTime;
 @Embeddable
 public class UpdateAutoTimestamp extends ImmutableObject implements UnsafeSerializable {
 
-  // When set to true, database converters/translators should do the auto update.  When set to
-  // false, auto update should be suspended (this exists to allow us to preserve the original value
-  // during a replay).
-  private static final ThreadLocal<Boolean> autoUpdateEnabled = ThreadLocal.withInitial(() -> true);
-
-  @Column(nullable = false)
+  @Column(name = "updateTimestamp")
   DateTime lastUpdateTime;
 
   // Unfortunately, we cannot use the @UpdateTimestamp annotation on "lastUpdateTime" in this class
@@ -43,9 +38,7 @@ public class UpdateAutoTimestamp extends ImmutableObject implements UnsafeSerial
   @PrePersist
   @PreUpdate
   void setTimestamp() {
-    if (autoUpdateEnabled() || lastUpdateTime == null) {
-      lastUpdateTime = jpaTm().getTransactionTime();
-    }
+    lastUpdateTime = jpaTm().getTransactionTime();
   }
 
   /** Returns the timestamp, or {@code START_OF_TIME} if it's null. */
@@ -57,31 +50,5 @@ public class UpdateAutoTimestamp extends ImmutableObject implements UnsafeSerial
     UpdateAutoTimestamp instance = new UpdateAutoTimestamp();
     instance.lastUpdateTime = timestamp;
     return instance;
-  }
-
-  // TODO(b/175610935): Remove the auto-update disabling code below after migration.
-
-  /** Class to allow us to safely disable auto-update in a try-with-resources block. */
-  public static class DisableAutoUpdateResource implements AutoCloseable {
-    DisableAutoUpdateResource() {
-      autoUpdateEnabled.set(false);
-    }
-
-    @Override
-    public void close() {
-      autoUpdateEnabled.set(true);
-    }
-  }
-
-  /**
-   * Resturns a resource that disables auto-updates on all {@link UpdateAutoTimestamp}s in the
-   * current thread, suitable for use with in a try-with-resources block.
-   */
-  public static DisableAutoUpdateResource disableAutoUpdate() {
-    return new DisableAutoUpdateResource();
-  }
-
-  public static boolean autoUpdateEnabled() {
-    return autoUpdateEnabled.get();
   }
 }

@@ -56,7 +56,7 @@ import org.joda.time.DateTime;
 /** An EPP entity object (i.e. a domain, contact, or host). */
 @MappedSuperclass
 @Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)
-public abstract class EppResource extends BackupGroupRoot implements Buildable {
+public abstract class EppResource extends UpdateAutoTimestampEntity implements Buildable {
 
   private static final long serialVersionUID = -252782773382339534L;
 
@@ -339,7 +339,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     /**
      * Set the update timestamp.
      *
-     * <p>This is provided at EppResource since BackupGroupRoot doesn't have a Builder.
+     * <p>This is provided at EppResource since UpdateAutoTimestampEntity doesn't have a Builder.
      */
     public B setUpdateTimestamp(UpdateAutoTimestamp updateTimestamp) {
       getInstance().setUpdateTimestamp(updateTimestamp);

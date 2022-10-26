@@ -54,11 +54,10 @@ import com.google.common.collect.Streams;
 import com.google.re2j.Pattern;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
-import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
-import google.registry.model.UnsafeSerializable;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.persistence.VKey;
@@ -95,8 +94,10 @@ import org.joda.time.DateTime;
       @Index(columnList = "registrarName", name = "registrar_name_idx"),
       @Index(columnList = "ianaIdentifier", name = "registrar_iana_identifier_idx"),
     })
-public class Registrar extends ImmutableObject
-    implements Buildable, Jsonifiable, UnsafeSerializable {
+@AttributeOverride(
+    name = "updateTimestamp.lastUpdateTime",
+    column = @Column(nullable = false, name = "lastUpdateTime"))
+public class Registrar extends UpdateAutoTimestampEntity implements Buildable, Jsonifiable {
 
   /** Represents the type of a registrar entity. */
   public enum Type {
@@ -378,9 +379,6 @@ public class Registrar extends ImmutableObject
   /** The time when this registrar was created. */
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
-  /** An automatically managed last-saved timestamp. */
-  UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
-
   /** The time that the certificate was last updated. */
   DateTime lastCertificateUpdateTime;
 
@@ -428,7 +426,7 @@ public class Registrar extends ImmutableObject
   }
 
   public DateTime getLastUpdateTime() {
-    return lastUpdateTime.getTimestamp();
+    return getUpdateTimestamp().getTimestamp();
   }
 
   public DateTime getLastCertificateUpdateTime() {
@@ -595,7 +593,7 @@ public class Registrar extends ImmutableObject
         .put("registrarId", registrarId)
         .put("ianaIdentifier", ianaIdentifier)
         .putString("creationTime", creationTime.getTimestamp())
-        .putString("lastUpdateTime", lastUpdateTime.getTimestamp())
+        .putString("lastUpdateTime", getUpdateTimestamp().getTimestamp())
         .putString("lastCertificateUpdateTime", lastCertificateUpdateTime)
         .putString("lastExpiringCertNotificationSentDate", lastExpiringCertNotificationSentDate)
         .putString(
@@ -886,7 +884,7 @@ public class Registrar extends ImmutableObject
      */
     @VisibleForTesting
     public Builder setLastUpdateTime(DateTime timestamp) {
-      getInstance().lastUpdateTime = UpdateAutoTimestamp.create(timestamp);
+      getInstance().setUpdateTimestamp(UpdateAutoTimestamp.create(timestamp));
       return this;
     }
 

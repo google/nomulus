@@ -37,6 +37,8 @@ import java.io.Serializable;
 import javax.inject.Singleton;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
+import org.apache.beam.sdk.coders.KvCoder;
+import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -112,11 +114,12 @@ public class Spec11Pipeline implements Serializable {
   static PCollection<DomainNameInfo> readFromCloudSql(Pipeline pipeline) {
     Read<Object[], KV<String, String>> read =
         RegistryJpaIO.read(
-            "select d.repoId, r.emailAddress from Domain d join Registrar r on"
-                + " d.currentSponsorClientId = r.registrarId where r.type = 'REAL' and"
-                + " d.deletionTime > now()",
-            false,
-            Spec11Pipeline::parseRow);
+                "select d.repoId, r.emailAddress from Domain d join Registrar r on"
+                    + " d.currentSponsorClientId = r.registrarId where r.type = 'REAL' and"
+                    + " d.deletionTime > now()",
+                false,
+                Spec11Pipeline::parseRow)
+            .withCoder(KvCoder.of(StringUtf8Coder.of(), StringUtf8Coder.of()));
 
     return pipeline
         .apply("Read active domains from Cloud SQL", read)
@@ -214,8 +217,7 @@ public class Spec11Pipeline implements Serializable {
                         return output.toString();
                       } catch (JSONException e) {
                         throw new RuntimeException(
-                            String.format(
-                                "Encountered an error constructing the JSON for %s", kv.toString()),
+                            String.format("Encountered an error constructing the JSON for %s", kv),
                             e);
                       }
                     }))

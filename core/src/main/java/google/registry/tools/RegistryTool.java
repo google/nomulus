@@ -79,7 +79,6 @@ public final class RegistryTool {
           .put("get_reserved_list", GetReservedListCommand.class)
           .put("get_routing_map", GetRoutingMapCommand.class)
           .put("get_schema", GetSchemaCommand.class)
-          .put("get_schema_tree", GetSchemaTreeCommand.class)
           .put("get_sql_credential", GetSqlCredentialCommand.class)
           .put("get_tld", GetTldCommand.class)
           .put("ghostryde", GhostrydeCommand.class)

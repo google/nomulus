@@ -16,7 +16,7 @@ package google.registry.model.ofy;
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Objectify;
-import google.registry.model.BackupGroupRoot;
+import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Arrays;
 import java.util.Map;
@@ -34,7 +34,7 @@ class TimestampInversionException extends RuntimeException {
   }
 
   TimestampInversionException(
-      DateTime transactionTime, Map<Key<BackupGroupRoot>, DateTime> problematicRoots) {
+      DateTime transactionTime, Map<Key<UpdateAutoTimestampEntity>, DateTime> problematicRoots) {
     this(transactionTime, "entities rooted under:\n" + problematicRoots);
   }
 

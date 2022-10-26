@@ -18,21 +18,16 @@ import com.googlecode.objectify.annotation.Ignore;
 import google.registry.util.PreconditionsUtils;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
-import javax.persistence.AttributeOverride;
-import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.xml.bind.annotation.XmlTransient;
 
 /**
- * Base class for entities that are the root of a Registry 2.0 entity group that gets enrolled in
- * commit logs for backup purposes.
- *
- * <p>The commit log system needs to preserve the ordering of closely timed mutations to entities in
- * a single entity group. We require an {@link UpdateAutoTimestamp} field on the root of a group so
- * that we can enforce strictly increasing timestamps.
+ * Base class for entities that contains an {@link UpdateAutoTimestamp} which is updated every time
+ * the entity is persisted.
  */
 @MappedSuperclass
-public abstract class BackupGroupRoot extends ImmutableObject implements UnsafeSerializable {
+public abstract class UpdateAutoTimestampEntity extends ImmutableObject
+    implements UnsafeSerializable {
 
   /**
    * An automatically managed timestamp of when this object was last written to Datastore.
@@ -44,7 +39,6 @@ public abstract class BackupGroupRoot extends ImmutableObject implements UnsafeS
   // Prevents subclasses from unexpectedly accessing as property (e.g., Host), which would
   // require an unnecessary non-private setter method.
   @Access(AccessType.FIELD)
-  @AttributeOverride(name = "lastUpdateTime", column = @Column(name = "updateTimestamp"))
   @Ignore
   UpdateAutoTimestamp updateTimestamp = UpdateAutoTimestamp.create(null);
 
@@ -59,7 +53,7 @@ public abstract class BackupGroupRoot extends ImmutableObject implements UnsafeS
    * <p>This method is for the few cases when {@code updateTimestamp} is copied between different
    * types of entities. Use {@link #clone} for same-type copying.
    */
-  protected void copyUpdateTimestamp(BackupGroupRoot other) {
+  protected void copyUpdateTimestamp(UpdateAutoTimestampEntity other) {
     this.updateTimestamp = PreconditionsUtils.checkArgumentNotNull(other, "other").updateTimestamp;
   }
 

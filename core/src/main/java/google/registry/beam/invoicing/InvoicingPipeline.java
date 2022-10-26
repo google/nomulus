@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
+import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.TextIO;
@@ -93,8 +94,9 @@ public class InvoicingPipeline implements Serializable {
   static PCollection<BillingEvent> readFromCloudSql(
       InvoicingPipelineOptions options, Pipeline pipeline) {
     Read<Object[], BillingEvent> read =
-        RegistryJpaIO.read(
-            makeCloudSqlQuery(options.getYearMonth()), false, row -> parseRow(row).orElse(null));
+        RegistryJpaIO.<Object[], BillingEvent>read(
+                makeCloudSqlQuery(options.getYearMonth()), false, row -> parseRow(row).orElse(null))
+            .withCoder(SerializableCoder.of(BillingEvent.class));
 
     PCollection<BillingEvent> billingEventsWithNulls =
         pipeline.apply("Read BillingEvents from Cloud SQL", read);
