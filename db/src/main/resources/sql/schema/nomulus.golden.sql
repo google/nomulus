@@ -1110,6 +1110,18 @@ ALTER SEQUENCE public."User_id_seq" OWNED BY public."User".id;
 
 
 --
+-- Name: project_wide_unique_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_wide_unique_id_seq
+    START WITH 59880480006
+    INCREMENT BY 1
+    MINVALUE 59880480005
+    NO MAXVALUE
+    CACHE 10;
+
+
+--
 -- Name: ClaimsList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
