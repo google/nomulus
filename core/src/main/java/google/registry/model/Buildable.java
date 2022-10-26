@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.IdService.allocateId;
 import static google.registry.model.ModelUtils.getAllFields;
 
-import google.registry.model.annotations.OfyIdAllocation;
+import google.registry.model.annotations.IdAllocation;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.lang.reflect.Field;
 import java.util.Optional;
@@ -55,10 +55,10 @@ public interface Buildable {
     /** Build the instance. */
     public S build() {
       try {
-        // If this object has a Long or long @OfyIdAllocation field that is not set, set it now.
+        // If this object has a Long or long @IdAllocation field that is not set, set it now.
         Field idField =
             getAllFields(instance.getClass()).values().stream()
-                .filter(field -> field.isAnnotationPresent(OfyIdAllocation.class))
+                .filter(field -> field.isAnnotationPresent(IdAllocation.class))
                 .findFirst()
                 .orElse(null);
         if (idField != null

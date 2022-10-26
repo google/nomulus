@@ -25,7 +25,7 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.ExternalMessagingName;
-import google.registry.model.annotations.OfyIdAllocation;
+import google.registry.model.annotations.IdAllocation;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.Domain;
@@ -120,7 +120,7 @@ public abstract class PollMessage extends ImmutableObject
 
   /** Entity id. */
   @Id
-  @OfyIdAllocation
+  @IdAllocation
   @Column(name = "poll_message_id")
   Long id;
 

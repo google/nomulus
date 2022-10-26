@@ -17,6 +17,7 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.insertSimpleResources;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
@@ -40,7 +41,6 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyFilter;
-import google.registry.model.IdService.SelfAllocatedIdSupplier;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
@@ -378,6 +378,17 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
         jpaIntegrationTestExtension = builder.buildIntegrationTestExtension();
         jpaIntegrationTestExtension.beforeEach(context);
       }
+
+      // Reset SQL Sequence based id allocation so that ids are deterministic in tests.
+      jpaTm()
+          .transact(
+              () ->
+                  jpaTm()
+                      .getEntityManager()
+                      .createNativeQuery(
+                          "alter sequence if exists project_wide_unique_id_seq start 1 minvalue 1"
+                              + " restart with 1")
+                      .executeUpdate());
     }
     if (withCloudSql) {
       if (!withoutCannedData && !withJpaUnitTest) {
@@ -440,8 +451,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     helper.setUp();
 
     ObjectifyService.initOfy();
-    // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
-    SelfAllocatedIdSupplier.getInstance().reset();
     this.ofyTestEntities.forEach(AppEngineExtension::register);
   }
 

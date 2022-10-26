@@ -689,12 +689,7 @@ public class RdePipeline implements Serializable {
     PipelineOptionsFactory.register(RdePipelineOptions.class);
     RdePipelineOptions options =
         PipelineOptionsFactory.fromArgs(args).withValidation().as(RdePipelineOptions.class);
-    // We need to self allocate the IDs because the pipeline creates EPP resources from history
-    // entries and projects them to watermark. These buildable entities would otherwise request an
-    // ID from datastore, which Beam does not have access to. The IDs are not included in the
-    // deposits or are these entities persisted back to the database, so it is OK to use a self
-    // allocated ID to get around the limitations of beam.
-    options.setUseSelfAllocatedId(true);
+
     RegistryPipelineOptions.validateRegistryPipelineOptions(options);
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
     DaggerRdePipeline_RdePipelineComponent.builder().options(options).build().rdePipeline().run();

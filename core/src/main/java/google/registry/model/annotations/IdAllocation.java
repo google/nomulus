@@ -21,16 +21,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to indicate an ID field that needs to be allocated by Ofy.
- *
- * <p>This annotation is only used for the field of a {@link google.registry.model.Buildable} class
- * that was previously annotated by both Ofy's and JPA's {@code @Id} annotations, of which the Ofy
- * annotation has been removed. The field still needs to be allocated automatically by the builder,
- * via the {@link IdService#allocateId()}.
- *
- * <p>It should be removed after we switch to using SQL to directly allocate IDs.
+ * This annotation is needed for any ID field that needs to be allocated with {@link IdService}
+ * class
  */
-@DeleteAfterMigration
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface OfyIdAllocation {}
+public @interface IdAllocation {}
