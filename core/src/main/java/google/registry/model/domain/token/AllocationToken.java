@@ -109,13 +109,15 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
     ANCHOR_TENANT
   }
 
-  /**
-   * Single-use tokens are invalid after use. Infinite-use tokens, predictably, are not. Package
-   * tokens are used in package promotions.
-   */
+  /** Type of the token that indicates how and where it should be used. */
   public enum TokenType {
+    /** Token saved on a TLD to use if no other token is passed from the client */
+    DEFAULT_PROMO,
+    /** Token used for package pricing */
     PACKAGE,
+    /** Invalid after use */
     SINGLE_USE,
+    /** Do not expire after use */
     UNLIMITED_USE,
   }
 
