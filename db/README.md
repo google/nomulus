@@ -235,7 +235,7 @@ $ mkdir -p release/schema-deployer/flyway/jars release/schema-deployer/secrets
 $ gcloud secrets versions access latest \
     --secret nomulus-tool-cloudbuild-credential \
     --project domain-registry-alpha \
-    > release/schema-deployer/secrets
+    > release/schema-deployer/secrets/cloud_sql_credential.json
 $ nomulus -e ${TARGET_ENV} \
     --credential release/schema-deployer/secrets/cloud_sql_credential.json \
     get_sql_credential --user schema_deployer \
