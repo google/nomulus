@@ -55,7 +55,7 @@ following steps:
     one. The generated SQL file from the previous step should help. New create
     table statements can be used as is, whereas alter table statements should be
     written to change any existing tables.
-    
+ 
     Note that each incremental file MUST be limited to changes to a single
     table (otherwise it may hit deadlock when applying on sandbox/production
     where it'll be competing against live traffic that may also be locking said
@@ -219,6 +219,35 @@ following command to deploy the local schema,
 
 ```shell
 ./nom_build :db:flywayMigrate --dbServer=[alpha|crash] --environment=[alpha|crash]
+```
+
+#### Alternative way to push to non-production
+
+The following method can be used to deploy schema to ALPHA and CRASH
+environments. Use this only when the Flyway task is broken.
+
+From the root of the repository:
+
+```
+$ TARGET_ENV=[alpha|crash]
+$ ./nom_build :db:schema
+$ mkdir -p release/schema-deployer/flyway/jars release/schema-deployer/secrets
+$ gcloud secrets versions access latest \
+    --secret nomulus-tool-cloudbuild-credential \
+    --project domain-registry-alpha \
+    > release/schema-deployer/secrets
+$ nomulus -e ${TARGET_ENV} \
+    --credential release/schema-deployer/secrets/cloud_sql_credential.json \
+    get_sql_credential --user schema_deployer \
+    --output release/schema-deployer/secrets/schema_deployer_credential.dec
+$ cp db/build/libs/schema.jar release/schema-deployer/flyway/jars
+$ cd release/schema-deployer
+$ docker build -t schema_deployer .
+$ docker run  -v `pwd`/secrets:/secrets \
+    -v `pwd`/flyway/jars:/flyway/jars -w `pwd` \
+    schema_deployer:latest \
+    migrate
+$ rm -r -f secrets flyway
 ```
 
 #### Glass breaking
