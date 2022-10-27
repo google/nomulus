@@ -14,6 +14,7 @@
 
 package google.registry.beam.common;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static org.apache.beam.sdk.values.TypeDescriptors.integers;
 
@@ -405,7 +406,13 @@ public final class RegistryJpaIO {
               .filter(Objects::nonNull)
               .collect(ImmutableList.toImmutableList());
       try {
-        jpaTm().transact(() -> jpaTm().putAll(entities));
+        jpaTm()
+            .transact(
+                () -> {
+                  // Don't modify existing objects as it could lead to race conditions
+                  entities.forEach(this::verifyObjectNonexistence);
+                  jpaTm().putAll(entities);
+                });
         counter.inc(entities.size());
       } catch (RuntimeException e) {
         processSingly(entities);
@@ -419,7 +426,13 @@ public final class RegistryJpaIO {
     private void processSingly(ImmutableList<Object> entities) {
       for (Object entity : entities) {
         try {
-          jpaTm().transact(() -> jpaTm().put(entity));
+          jpaTm()
+              .transact(
+                  () -> {
+                    // Don't modify existing objects as it could lead to race conditions
+                    verifyObjectNonexistence(entity);
+                    jpaTm().put(entity);
+                  });
           counter.inc();
         } catch (RuntimeException e) {
           throw new RuntimeException(toEntityKeyString(entity), e);
@@ -444,6 +457,17 @@ public final class RegistryJpaIO {
       } catch (IllegalArgumentException e) {
         return "Non-SqlEntity: " + entity;
       }
+    }
+
+    /** SqlBatchWriter should not re-write existing entities due to potential race conditions. */
+    private void verifyObjectNonexistence(Object obj) {
+      // We cannot rely on calling "insert" on the objects because the underlying JPA persist call
+      // adds the input object to the persistence context, meaning that any modifications (e.g.
+      // updateTimestamp) are reflected in the input object. Beam doesn't allow modification of
+      // input objects, so this throws an exception.
+      // TODO(go/non-datastore-allocateid): also check that all the objects have IDs
+      checkArgument(
+          !jpaTm().exists(obj), "Entities created in SqlBatchWriter must not already exist");
     }
   }
 }
