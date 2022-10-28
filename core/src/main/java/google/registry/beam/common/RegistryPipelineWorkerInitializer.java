@@ -55,9 +55,6 @@ public class RegistryPipelineWorkerInitializer implements JvmInitializer {
         toRegistryPipelineComponent(registryOptions);
     Lazy<JpaTransactionManager> transactionManagerLazy;
     switch (registryOptions.getJpaTransactionManagerType()) {
-      case BULK_QUERY:
-        transactionManagerLazy = registryPipelineComponent.getBulkQueryJpaTransactionManager();
-        break;
       case READ_ONLY_REPLICA:
         transactionManagerLazy =
             registryPipelineComponent.getReadOnlyReplicaJpaTransactionManager();

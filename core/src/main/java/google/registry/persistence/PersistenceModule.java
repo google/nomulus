@@ -243,15 +243,6 @@ public abstract class PersistenceModule {
 
   @Provides
   @Singleton
-  @BeamBulkQueryJpaTm
-  static JpaTransactionManager provideBeamBulkQueryJpaTm(
-      @BeamPipelineCloudSqlConfigs ImmutableMap<String, String> beamCloudSqlConfigs, Clock clock) {
-    return new JpaTransactionManagerImpl(
-        BulkQueryJpaFactory.createBulkQueryEntityManagerFactory(beamCloudSqlConfigs), clock);
-  }
-
-  @Provides
-  @Singleton
   @NomulusToolJpaTm
   static JpaTransactionManager provideNomulusToolJpaTm(
       SqlCredentialStore credentialStore,
@@ -372,11 +363,6 @@ public abstract class PersistenceModule {
     /** The regular {@link JpaTransactionManager} for general use. */
     REGULAR,
     /**
-     * The {@link JpaTransactionManager} optimized for bulk loading multi-level JPA entities. Please
-     * see {@link google.registry.model.bulkquery.BulkQueryEntities} for more information.
-     */
-    BULK_QUERY,
-    /**
      * The {@link JpaTransactionManager} that uses the read-only Postgres replica if configured, or
      * the standard DB if not.
      */
@@ -397,14 +383,6 @@ public abstract class PersistenceModule {
   @Qualifier
   @Documented
   public @interface BeamJpaTm {}
-
-  /**
-   * Dagger qualifier for {@link JpaTransactionManager} that uses an alternative entity model for
-   * faster bulk queries.
-   */
-  @Qualifier
-  @Documented
-  public @interface BeamBulkQueryJpaTm {}
 
   /**
    * Dagger qualifier for {@link JpaTransactionManager} used inside BEAM pipelines that uses the
