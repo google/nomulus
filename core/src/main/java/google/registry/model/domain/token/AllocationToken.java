@@ -33,9 +33,9 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Range;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
-import google.registry.model.BackupGroupRoot;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
+import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.reporting.HistoryEntry;
@@ -66,7 +66,7 @@ import org.joda.time.DateTime;
       @Index(columnList = "tokenType"),
       @Index(columnList = "redemption_domain_repo_id")
     })
-public class AllocationToken extends BackupGroupRoot implements Buildable {
+public class AllocationToken extends UpdateAutoTimestampEntity implements Buildable {
 
   private static final long serialVersionUID = -3954475393220876903L;
   private static final String REMOVE_PACKAGE = "__REMOVEPACKAGE__";

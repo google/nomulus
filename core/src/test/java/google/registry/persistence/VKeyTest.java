@@ -57,7 +57,7 @@ class VKeyTest {
   void testCreateById_failsWhenParentIsNullButShouldntBe() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> VKey.create(OneTime.class, 134L));
-    assertThat(thrown).hasMessageThat().contains("BackupGroupRoot");
+    assertThat(thrown).hasMessageThat().contains("UpdateAutoTimestampEntity");
   }
 
   @Test
@@ -66,7 +66,7 @@ class VKeyTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> VKey.create(RegistrarPoc.class, "fake@example.com"));
-    assertThat(thrown).hasMessageThat().contains("BackupGroupRoot");
+    assertThat(thrown).hasMessageThat().contains("UpdateAutoTimestampEntity");
   }
 
   @Test

@@ -22,18 +22,14 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import google.registry.beam.common.RegistryQuery.CriteriaQuerySupplier;
-import google.registry.model.UpdateAutoTimestamp;
-import google.registry.model.UpdateAutoTimestamp.DisableAutoUpdateResource;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nullable;
 import javax.persistence.criteria.CriteriaQuery;
 import org.apache.beam.sdk.coders.Coder;
-import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.metrics.Counter;
 import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.transforms.Create;
@@ -136,6 +132,7 @@ public final class RegistryJpaIO {
 
     abstract SerializableFunction<R, T> resultMapper();
 
+    @Nullable
     abstract Coder<T> coder();
 
     @Nullable
@@ -146,13 +143,16 @@ public final class RegistryJpaIO {
     @Override
     @SuppressWarnings("deprecation") // Reshuffle still recommended by GCP.
     public PCollection<T> expand(PBegin input) {
-      return input
-          .apply("Starting " + name(), Create.of((Void) null))
-          .apply(
-              "Run query for " + name(),
-              ParDo.of(new QueryRunner<>(query(), resultMapper(), snapshotId())))
-          .setCoder(coder())
-          .apply("Reshuffle", Reshuffle.viaRandomKey());
+      PCollection<T> output =
+          input
+              .apply("Starting " + name(), Create.of((Void) null))
+              .apply(
+                  "Run query for " + name(),
+                  ParDo.of(new QueryRunner<>(query(), resultMapper(), snapshotId())));
+      if (coder() != null) {
+        output = output.setCoder(coder());
+      }
+      return output.apply("Reshuffle", Reshuffle.viaRandomKey());
     }
 
     public Read<R, T> withName(String name) {
@@ -180,9 +180,7 @@ public final class RegistryJpaIO {
     }
 
     static <R, T> Builder<R, T> builder() {
-      return new AutoValue_RegistryJpaIO_Read.Builder<R, T>()
-          .name(DEFAULT_NAME)
-          .coder(SerializableCoder.of(Serializable.class));
+      return new AutoValue_RegistryJpaIO_Read.Builder<R, T>().name(DEFAULT_NAME);
     }
 
     @AutoValue.Builder
@@ -194,7 +192,7 @@ public final class RegistryJpaIO {
 
       abstract Builder<R, T> resultMapper(SerializableFunction<R, T> mapper);
 
-      abstract Builder<R, T> coder(Coder coder);
+      abstract Builder<R, T> coder(Coder<T> coder);
 
       abstract Builder<R, T> snapshotId(@Nullable String sharedSnapshotId);
 
@@ -299,12 +297,6 @@ public final class RegistryJpaIO {
 
     public abstract SerializableFunction<T, Object> jpaConverter();
 
-    /**
-     * Signal to the writer that the {@link UpdateAutoTimestamp} property should be allowed to
-     * manipulate its value before persistence. The default value is {@code true}.
-     */
-    abstract boolean withUpdateAutoTimestamp();
-
     public Write<T> withName(String name) {
       return toBuilder().name(name).build();
     }
@@ -325,10 +317,6 @@ public final class RegistryJpaIO {
       return toBuilder().jpaConverter(jpaConverter).build();
     }
 
-    public Write<T> disableUpdateAutoTimestamp() {
-      return toBuilder().withUpdateAutoTimestamp(false).build();
-    }
-
     abstract Builder<T> toBuilder();
 
     @Override
@@ -345,7 +333,7 @@ public final class RegistryJpaIO {
               GroupIntoBatches.<Integer, T>ofSize(batchSize()).withShardedKey())
           .apply(
               "Write in batch for " + name(),
-              ParDo.of(new SqlBatchWriter<>(name(), jpaConverter(), withUpdateAutoTimestamp())));
+              ParDo.of(new SqlBatchWriter<>(name(), jpaConverter())));
     }
 
     static <T> Builder<T> builder() {
@@ -353,8 +341,7 @@ public final class RegistryJpaIO {
           .name(DEFAULT_NAME)
           .batchSize(DEFAULT_BATCH_SIZE)
           .shards(DEFAULT_SHARDS)
-          .jpaConverter(x -> x)
-          .withUpdateAutoTimestamp(true);
+          .jpaConverter(x -> x);
     }
 
     @AutoValue.Builder
@@ -368,8 +355,6 @@ public final class RegistryJpaIO {
 
       abstract Builder<T> jpaConverter(SerializableFunction<T, Object> jpaConverter);
 
-      abstract Builder<T> withUpdateAutoTimestamp(boolean withUpdateAutoTimestamp);
-
       abstract Write<T> build();
     }
   }
@@ -378,24 +363,15 @@ public final class RegistryJpaIO {
   private static class SqlBatchWriter<T> extends DoFn<KV<ShardedKey<Integer>, Iterable<T>>, Void> {
     private final Counter counter;
     private final SerializableFunction<T, Object> jpaConverter;
-    private final boolean withAutoTimestamp;
 
-    SqlBatchWriter(
-        String type, SerializableFunction<T, Object> jpaConverter, boolean withAutoTimestamp) {
+    SqlBatchWriter(String type, SerializableFunction<T, Object> jpaConverter) {
       counter = Metrics.counter("SQL_WRITE", type);
       this.jpaConverter = jpaConverter;
-      this.withAutoTimestamp = withAutoTimestamp;
     }
 
     @ProcessElement
     public void processElement(@Element KV<ShardedKey<Integer>, Iterable<T>> kv) {
-      if (withAutoTimestamp) {
-        actuallyProcessElement(kv);
-        return;
-      }
-      try (DisableAutoUpdateResource disable = UpdateAutoTimestamp.disableAutoUpdate()) {
-        actuallyProcessElement(kv);
-      }
+      actuallyProcessElement(kv);
     }
 
     private void actuallyProcessElement(@Element KV<ShardedKey<Integer>, Iterable<T>> kv) {

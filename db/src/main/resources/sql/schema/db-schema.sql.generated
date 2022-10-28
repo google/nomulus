@@ -234,8 +234,8 @@
     create table "Cursor" (
        scope text not null,
         type text not null,
-        cursor_time timestamptz not null,
         last_update_time timestamptz not null,
+        cursor_time timestamptz not null,
         primary key (scope, type)
     );
 
@@ -561,6 +561,7 @@
 
     create table "Registrar" (
        registrar_id text not null,
+        last_update_time timestamptz not null,
         allowed_tlds text[],
         billing_account_map hstore,
         block_premium_names boolean not null,
@@ -586,7 +587,6 @@
         last_certificate_update_time timestamptz,
         last_expiring_cert_notification_sent_date timestamptz,
         last_expiring_failover_cert_notification_sent_date timestamptz,
-        last_update_time timestamptz not null,
         localized_address_city text,
         localized_address_country_code text,
         localized_address_state text,
@@ -629,9 +629,9 @@
 
     create table "RegistryLock" (
        revision_id  bigserial not null,
+        last_update_time timestamptz not null,
         domain_name text not null,
         is_superuser boolean not null,
-        last_update_time timestamptz not null,
         lock_completion_time timestamptz,
         lock_request_time timestamptz not null,
         registrar_id text not null,

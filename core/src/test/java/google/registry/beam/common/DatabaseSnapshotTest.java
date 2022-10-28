@@ -30,6 +30,7 @@ import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import javax.persistence.Persistence;
+import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.values.PCollection;
 import org.hibernate.cfg.Environment;
@@ -161,6 +162,7 @@ public class DatabaseSnapshotTest {
 
       Read<Registry, Registry> read =
           RegistryJpaIO.read(() -> CriteriaQueryBuilder.create(Registry.class).build(), x -> x)
+              .withCoder(SerializableCoder.of(Registry.class))
               .withSnapshot(databaseSnapshot.getSnapshotId());
       PCollection<Registry> registries = testPipeline.apply(read);
 

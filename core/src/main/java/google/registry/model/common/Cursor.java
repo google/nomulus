@@ -20,11 +20,12 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
-import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.common.Cursor.CursorId;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import java.util.Optional;
+import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -41,7 +42,10 @@ import org.joda.time.DateTime;
  */
 @Entity
 @IdClass(CursorId.class)
-public class Cursor extends ImmutableObject implements UnsafeSerializable {
+@AttributeOverride(
+    name = "updateTimestamp.lastUpdateTime",
+    column = @Column(nullable = false, name = "lastUpdateTime"))
+public class Cursor extends UpdateAutoTimestampEntity {
 
   private static final long serialVersionUID = 5777891565780594961L;
 
@@ -122,10 +126,6 @@ public class Cursor extends ImmutableObject implements UnsafeSerializable {
   @Column(nullable = false)
   DateTime cursorTime = START_OF_TIME;
 
-  /** An automatically managed timestamp of when this object was last written to Datastore. */
-  @Column(nullable = false)
-  UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
-
   @Override
   public VKey<Cursor> createVKey() {
     return createVKey(type, scope);
@@ -145,8 +145,9 @@ public class Cursor extends ImmutableObject implements UnsafeSerializable {
   }
 
   public DateTime getLastUpdateTime() {
-    return lastUpdateTime.getTimestamp();
+    return getUpdateTimestamp().getTimestamp();
   }
+
 
   public String getScope() {
     return scope;

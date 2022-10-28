@@ -289,7 +289,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
     assertAboutImmutableObjects()
         .that(updatedRegistrar)
         .isEqualExceptFields(
-            setter.apply(registrar.asBuilder(), newValue).build(), "lastUpdateTime");
+            setter.apply(registrar.asBuilder(), newValue).build(), "updateTimestamp");
     // We increased the correct metric
     assertMetric(CLIENT_ID, "update", String.format("[%s]", role), "SUCCESS");
   }

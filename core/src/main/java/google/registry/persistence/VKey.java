@@ -16,14 +16,13 @@ package google.registry.persistence;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ImmutableObject.Insignificant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
-import google.registry.model.BackupGroupRoot;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.common.ClassPathManager;
 import google.registry.model.translators.VKeyTranslatorFactory;
 import google.registry.util.SerializeUtils;
@@ -104,9 +103,9 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    */
   public static <T> VKey<T> create(Class<T> kind, long id) {
     checkArgument(
-        BackupGroupRoot.class.isAssignableFrom(kind),
-        "The kind %s is not a BackupGroupRoot and thus needs its entire entity group chain"
-            + " specified in a parent",
+        UpdateAutoTimestampEntity.class.isAssignableFrom(kind),
+        "The kind %s is not a UpdateAutoTimestampEntity and thus needs its entire entity group"
+            + " chain specified in a parent",
         kind.getCanonicalName());
     return new VKey<T>(kind, Key.create(kind, id), id);
   }
@@ -122,9 +121,9 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    */
   public static <T> VKey<T> create(Class<T> kind, String name) {
     checkArgument(
-        BackupGroupRoot.class.isAssignableFrom(kind),
-        "The kind %s is not a BackupGroupRoot and thus needs its entire entity group chain"
-            + " specified in a parent",
+        UpdateAutoTimestampEntity.class.isAssignableFrom(kind),
+        "The kind %s is not a UpdateAutoTimestampEntity and thus needs its entire entity group"
+            + " chain specified in a parent",
         kind.getCanonicalName());
     return new VKey<T>(kind, Key.create(kind, name), name);
   }

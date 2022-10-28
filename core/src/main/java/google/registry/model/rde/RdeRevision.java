@@ -19,8 +19,8 @@ import static google.registry.model.rde.RdeNamingUtils.makePartialName;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.VerifyException;
-import google.registry.model.BackupGroupRoot;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.rde.RdeRevision.RdeRevisionId;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.LocalDateConverter;
@@ -45,7 +45,7 @@ import org.joda.time.LocalDate;
  */
 @Entity
 @IdClass(RdeRevisionId.class)
-public final class RdeRevision extends BackupGroupRoot {
+public final class RdeRevision extends UpdateAutoTimestampEntity {
 
   @Id String tld;
 

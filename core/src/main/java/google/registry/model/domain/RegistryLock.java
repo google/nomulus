@@ -20,10 +20,11 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
-import google.registry.model.ImmutableObject;
-import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.UpdateAutoTimestampEntity;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
@@ -48,7 +49,7 @@ import org.joda.time.Duration;
  * the completion time will remain null and the lock will have no effect. The same applies for
  * unlock actions.
  *
- * <p>Note that there will be at most one row per domain with a null copmleted time -- this means
+ * <p>Note that there will be at most one row per domain with a null completed time -- this means
  * that there is at most one pending action per domain. This is enforced at the logic level.
  *
  * <p>Note as well that in the case of a retry of a write after an unexpected success, the unique
@@ -56,12 +57,12 @@ import org.joda.time.Duration;
  */
 @Entity
 @Table(
-    /**
+    /*
      * Unique constraint to get around Hibernate's failure to handle auto-increment field in
      * composite primary key.
      *
-     * <p>Note: indexes use the camelCase version of the field names because the {@link
-     * google.registry.persistence.NomulusNamingStrategy} does not translate the field name into the
+     * Note: indexes use the camelCase version of the field names because
+     * google.registry.persistence.NomulusNamingStrategy does not translate the field name into the
      * snake_case column name until the write itself.
      */
     indexes = {
@@ -72,7 +73,11 @@ import org.joda.time.Duration;
       @Index(name = "idx_registry_lock_verification_code", columnList = "verificationCode"),
       @Index(name = "idx_registry_lock_registrar_id", columnList = "registrarId")
     })
-public final class RegistryLock extends ImmutableObject implements Buildable {
+@Access(AccessType.FIELD)
+@AttributeOverride(
+    name = "updateTimestamp.lastUpdateTime",
+    column = @Column(nullable = false, name = "lastUpdateTime"))
+public final class RegistryLock extends UpdateAutoTimestampEntity implements Buildable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -103,7 +108,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
         name = "creationTime",
         column = @Column(name = "lockRequestTime", nullable = false))
   })
-  private CreateAutoTimestamp lockRequestTime = CreateAutoTimestamp.create(null);
+  private final CreateAutoTimestamp lockRequestTime = CreateAutoTimestamp.create(null);
 
   /** When the unlock is first requested. */
   private DateTime unlockRequestTime;
@@ -139,9 +144,6 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
 
   /** The duration after which we will re-lock this domain after it is unlocked. */
   private Duration relockDuration;
-
-  /** Time that this entity was last updated. */
-  private UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
 
   public String getRepoId() {
     return repoId;
@@ -189,7 +191,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   }
 
   public DateTime getLastUpdateTime() {
-    return lastUpdateTime.getTimestamp();
+    return getUpdateTimestamp().getTimestamp();
   }
 
   public Long getRevisionId() {
@@ -199,7 +201,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   /**
    * The lock that undoes this lock, if this lock has been unlocked and the domain locked again.
    *
-   * <p>Note: this is lazily loaded, so it may not be initialized if referenced outside of the
+   * <p>Note: this is lazily loaded, so it may not be initialized if referenced outside the
    * transaction in which this lock is loaded.
    */
   public RegistryLock getRelock() {

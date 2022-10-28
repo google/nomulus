@@ -36,6 +36,7 @@ import java.io.Serializable;
 import java.util.concurrent.ThreadLocalRandom;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
+import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.GroupIntoBatches;
@@ -103,10 +104,11 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
   private void fastResaveContacts(Pipeline pipeline) {
     Read<String, String> repoIdRead =
         RegistryJpaIO.read(
-            "SELECT repoId FROM Contact WHERE transferData.transferStatus = 'PENDING' AND"
-                + " transferData.pendingTransferExpirationTime < current_timestamp()",
-            String.class,
-            r -> r);
+                "SELECT repoId FROM Contact WHERE transferData.transferStatus = 'PENDING' AND"
+                    + " transferData.pendingTransferExpirationTime < current_timestamp()",
+                String.class,
+                r -> r)
+            .withCoder(StringUtf8Coder.of());
     projectAndResaveResources(pipeline, Contact.class, repoIdRead);
   }
 
@@ -120,10 +122,11 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
   private void fastResaveDomains(Pipeline pipeline) {
     Read<String, String> repoIdRead =
         RegistryJpaIO.read(
-            DOMAINS_TO_PROJECT_QUERY,
-            ImmutableMap.of("END_OF_TIME", DateTimeUtils.END_OF_TIME),
-            String.class,
-            r -> r);
+                DOMAINS_TO_PROJECT_QUERY,
+                ImmutableMap.of("END_OF_TIME", DateTimeUtils.END_OF_TIME),
+                String.class,
+                r -> r)
+            .withCoder(StringUtf8Coder.of());
     projectAndResaveResources(pipeline, Domain.class, repoIdRead);
   }
 
@@ -131,8 +134,9 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
   private <T extends EppResource> void forceResaveAllResources(Pipeline pipeline, Class<T> clazz) {
     Read<String, String> repoIdRead =
         RegistryJpaIO.read(
-            // Note: cannot use SQL parameters for the table name
-            String.format("SELECT repoId FROM %s", clazz.getSimpleName()), String.class, r -> r);
+                // Note: cannot use SQL parameters for the table name
+                String.format("SELECT repoId FROM %s", clazz.getSimpleName()), String.class, r -> r)
+            .withCoder(StringUtf8Coder.of());
     projectAndResaveResources(pipeline, clazz, repoIdRead);
   }
 
