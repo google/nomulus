@@ -403,19 +403,5 @@ public class DomainHistory extends HistoryEntry {
       fillAuxiliaryFieldsFromDomain(instance);
       return instance;
     }
-
-    public DomainHistory buildAndAssemble(
-        ImmutableSet<DomainDsDataHistory> dsDataHistories,
-        ImmutableSet<VKey<Host>> domainHistoryHosts,
-        ImmutableSet<GracePeriodHistory> gracePeriodHistories,
-        ImmutableSet<DomainTransactionRecord> transactionRecords) {
-      DomainHistory instance = super.build();
-      instance.dsDataHistories = dsDataHistories;
-      instance.nsHosts = domainHistoryHosts;
-      instance.gracePeriodHistories = gracePeriodHistories;
-      instance.domainTransactionRecords = transactionRecords;
-      instance.hashCode = null;
-      return instance;
-    }
   }
 }

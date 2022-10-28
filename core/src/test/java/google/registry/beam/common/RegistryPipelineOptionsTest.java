@@ -145,16 +145,4 @@ class RegistryPipelineOptionsTest {
             .as(RegistryPipelineOptions.class);
     assertThat(options.getJpaTransactionManagerType()).isEqualTo(JpaTransactionManagerType.REGULAR);
   }
-
-  @Test
-  void jpaTransactionManagerType_bulkQueryJpa() {
-    RegistryPipelineOptions options =
-        PipelineOptionsFactory.fromArgs(
-                "--registryEnvironment=" + RegistryEnvironment.UNITTEST.name(),
-                "--jpaTransactionManagerType=BULK_QUERY")
-            .withValidation()
-            .as(RegistryPipelineOptions.class);
-    assertThat(options.getJpaTransactionManagerType())
-        .isEqualTo(JpaTransactionManagerType.BULK_QUERY);
-  }
 }
