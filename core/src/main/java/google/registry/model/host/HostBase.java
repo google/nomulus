@@ -22,9 +22,6 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.annotation.IgnoreSave;
-import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.EppResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.transfer.TransferData;
@@ -63,14 +60,12 @@ public class HostBase extends EppResource {
    * from (creationTime, deletionTime) there can only be one host in Datastore with this name.
    * However, there can be many hosts with the same name and non-overlapping lifetimes.
    */
-  @Index String hostName;
+  String hostName;
 
   /** IP Addresses for this host. Can be null if this is an external host. */
-  @Index Set<InetAddress> inetAddresses;
+  Set<InetAddress> inetAddresses;
 
   /** The superordinate domain of this host, or null if this is an external host. */
-  @Index
-  @IgnoreSave(IfNull.class)
   @DoNotHydrate
   VKey<Domain> superordinateDomain;
 
@@ -144,7 +139,8 @@ public class HostBase extends EppResource {
    * superordinate was transferred. If the last superordinate change was before this time, then the
    * host was attached to this superordinate domain during that transfer.
    *
-   * <p>If the host is not subordinate the domain can be null and we just return last transfer time.
+   * <p>If the host is not subordinate the domain can be null, and we just return last transfer
+   * time.
    *
    * @param superordinateDomain the loaded superordinate domain, which must match the key in the
    *     {@link #superordinateDomain} field. Passing it as a parameter allows the caller to control

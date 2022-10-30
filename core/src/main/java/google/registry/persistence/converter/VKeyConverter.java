@@ -34,12 +34,12 @@ public abstract class VKeyConverter<T, C extends Serializable>
       return null;
     }
     try {
-      return getKeyClass().cast(attribute.getSqlKey());
+      return getKeyClass().cast(attribute.getKey());
     } catch (ClassCastException e) {
       throw new RuntimeException(
           String.format(
               "Cannot cast SQL key %s of type %s to type %s",
-              attribute.getSqlKey(), attribute.getSqlKey().getClass(), getKeyClass()),
+              attribute.getKey(), attribute.getKey().getClass(), getKeyClass()),
           e);
     }
   }
@@ -50,7 +50,7 @@ public abstract class VKeyConverter<T, C extends Serializable>
     if (dbData == null) {
       return null;
     }
-    return VKey.createSql(getEntityClass(), dbData);
+    return VKey.create(getEntityClass(), dbData);
   }
 
   /** Returns the class of the entity that the VKey represents. */

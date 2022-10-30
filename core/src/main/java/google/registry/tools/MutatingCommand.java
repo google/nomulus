@@ -89,7 +89,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
 
     /** Returns a human-readable ID string for the entity being changed. */
     String getEntityId() {
-      return String.format("%s@%s", vKey.getKind().getSimpleName(), vKey.getSqlKey().toString());
+      return String.format("%s@%s", vKey.getKind().getSimpleName(), vKey.getKey().toString());
     }
 
     /** Returns a string representation of this entity change. */

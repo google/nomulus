@@ -46,9 +46,9 @@ public class VKeyConverterTest {
   @Test
   void testRoundTrip() {
     TestStringEntity stringEntity = new TestStringEntity("TheRealSpartacus");
-    VKey<TestStringEntity> stringKey = VKey.createSql(TestStringEntity.class, "TheRealSpartacus");
+    VKey<TestStringEntity> stringKey = VKey.create(TestStringEntity.class, "TheRealSpartacus");
     TestLongEntity longEntity = new TestLongEntity(300L);
-    VKey<TestLongEntity> longKey = VKey.createSql(TestLongEntity.class, 300L);
+    VKey<TestLongEntity> longKey = VKey.create(TestLongEntity.class, 300L);
     TestEntity original = new TestEntity(1984L, stringKey, longKey);
     insertInDb(stringEntity, longEntity, original);
 

@@ -163,7 +163,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
     if (desiredRegistrar.isPresent()) {
       builder =
           builder.where(
-              "currentSponsorClientId",
+              "currentSponsorRegistrarId",
               replicaJpaTm().getEntityManager().getCriteriaBuilder()::equal,
               desiredRegistrar.get());
     }

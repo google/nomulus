@@ -49,7 +49,7 @@ public class RegistrarDaoTest {
   JpaIntegrationWithCoverageExtension jpa =
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
-  private final VKey<Registrar> registrarKey = VKey.createSql(Registrar.class, "registrarId");
+  private final VKey<Registrar> registrarKey = VKey.create(Registrar.class, "registrarId");
 
   private Registrar testRegistrar;
 

@@ -905,7 +905,7 @@ public class RdapJsonFormatter {
     String jpql =
         GET_LAST_HISTORY_BY_TYPE_JPQL_TEMPLATE
             .replace("%entityName%", entityName)
-            .replace("%repoIdValue%", resourceVkey.getSqlKey().toString());
+            .replace("%repoIdValue%", resourceVkey.getKey().toString());
     Iterable<HistoryEntry> historyEntries =
         replicaJpaTm()
             .transact(

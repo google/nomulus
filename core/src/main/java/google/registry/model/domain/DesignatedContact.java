@@ -16,9 +16,7 @@ package google.registry.model.domain;
 
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.contact.Contact;
@@ -66,13 +64,11 @@ public class DesignatedContact extends ImmutableObject implements UnsafeSerializ
     DesignatedContact instance = new DesignatedContact();
     instance.type = type;
     instance.contactVKey = checkArgumentNotNull(contact, "Must specify contact key");
-    instance.contact = contact.maybeGetOfyKey().orElse(null);
     return instance;
   }
 
   Type type;
 
-  @Index Key<Contact> contact;
   @Ignore VKey<Contact> contactVKey;
 
   public Type getType() {
@@ -81,9 +77,5 @@ public class DesignatedContact extends ImmutableObject implements UnsafeSerializ
 
   public VKey<Contact> getContactKey() {
     return contactVKey;
-  }
-
-  public DesignatedContact reconstitute() {
-    return create(type, VKey.from(contact));
   }
 }

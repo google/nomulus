@@ -145,7 +145,7 @@ public class CreateCancellationsForOneTimesCommandTest
   private void assertBillingEventCancelled(long oneTimeId) {
     assertThat(
             DatabaseHelper.loadAllOf(Cancellation.class).stream()
-                .anyMatch(c -> c.getEventKey().equals(VKey.createSql(OneTime.class, oneTimeId))))
+                .anyMatch(c -> c.getEventKey().equals(VKey.create(OneTime.class, oneTimeId))))
         .isTrue();
   }
 }

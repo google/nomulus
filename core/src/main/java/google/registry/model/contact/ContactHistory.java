@@ -68,7 +68,7 @@ public class ContactHistory extends HistoryEntry {
   /** Creates a {@link VKey} instance for this entity. */
   @Override
   public VKey<ContactHistory> createVKey() {
-    return VKey.createSql(ContactHistory.class, getHistoryEntryId());
+    return VKey.create(ContactHistory.class, getHistoryEntryId());
   }
 
   @Override

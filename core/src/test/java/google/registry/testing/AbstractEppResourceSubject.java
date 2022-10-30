@@ -161,7 +161,7 @@ abstract class AbstractEppResourceSubject<
     return andChainer();
   }
 
-  public And<S> hasLastEppUpdateClientId(String registrarId) {
+  public And<S> hasLastEppUpdateRegistrarId(String registrarId) {
     return hasValue(
         registrarId, actual.getLastEppUpdateRegistrarId(), "getLastEppUpdateRegistrarId()");
   }

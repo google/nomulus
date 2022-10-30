@@ -382,7 +382,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     Domain domainAtRedemptionTime = domain.cloneProjectedAtTime(redemptionEndTime);
     assertAboutDomains()
         .that(domainAtRedemptionTime)
-        .hasLastEppUpdateClientId("TheRegistrar")
+        .hasLastEppUpdateRegistrarId("TheRegistrar")
         .and()
         .hasLastEppUpdateTime(redemptionEndTime);
   }
@@ -930,7 +930,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .and()
         .hasLastEppUpdateTime(clock.nowUtc())
         .and()
-        .hasLastEppUpdateClientId("TheRegistrar");
+        .hasLastEppUpdateRegistrarId("TheRegistrar");
     assertAboutHistoryEntries()
         .that(getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE))
         .hasType(DOMAIN_DELETE)

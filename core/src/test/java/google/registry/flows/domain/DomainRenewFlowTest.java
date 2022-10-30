@@ -267,7 +267,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         .and()
         .hasLastEppUpdateTime(clock.nowUtc())
         .and()
-        .hasLastEppUpdateClientId(renewalClientId);
+        .hasLastEppUpdateRegistrarId(renewalClientId);
     assertAboutHistoryEntries().that(historyEntryDomainRenew).hasPeriodYears(renewalYears);
     BillingEvent.OneTime renewBillingEvent =
         new BillingEvent.OneTime.Builder()
@@ -332,7 +332,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   private void assertAllocationTokenWasNotRedeemed(String token) {
     AllocationToken reloadedToken =
-        tm().transact(() -> tm().loadByKey(VKey.createSql(AllocationToken.class, token)));
+        tm().transact(() -> tm().loadByKey(VKey.create(AllocationToken.class, token)));
     assertThat(reloadedToken.isRedeemed()).isFalse();
   }
 

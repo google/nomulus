@@ -88,9 +88,9 @@ public abstract class TransferData extends BaseTransferObject implements Buildab
   public ImmutableSet<VKey<? extends TransferServerApproveEntity>> getServerApproveEntities() {
     return NullIgnoringCollectionBuilder.create(
             new ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>>())
-        .add(pollMessageId1 != null ? VKey.createSql(PollMessage.class, pollMessageId1) : null)
-        .add(pollMessageId2 != null ? VKey.createSql(PollMessage.class, pollMessageId2) : null)
-        .add(pollMessageId3 != null ? VKey.createSql(PollMessage.class, pollMessageId3) : null)
+        .add(pollMessageId1 != null ? VKey.create(PollMessage.class, pollMessageId1) : null)
+        .add(pollMessageId2 != null ? VKey.create(PollMessage.class, pollMessageId2) : null)
+        .add(pollMessageId3 != null ? VKey.create(PollMessage.class, pollMessageId3) : null)
         .getBuilder()
         .build();
   }
@@ -153,7 +153,7 @@ public abstract class TransferData extends BaseTransferObject implements Buildab
       Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
     return nullToEmpty(serverApproveEntities).stream()
         .filter(vKey -> PollMessage.class.isAssignableFrom(vKey.getKind()))
-        .map(vKey -> (long) vKey.getSqlKey())
+        .map(vKey -> (long) vKey.getKey())
         .sorted()
         .collect(toImmutableList());
   }

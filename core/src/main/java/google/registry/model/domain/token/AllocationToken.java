@@ -273,7 +273,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       throw new IllegalArgumentException(
           String.format("%s tokens are not stored in the database", getTokenBehavior()));
     }
-    return VKey.createSql(AllocationToken.class, getToken());
+    return VKey.create(AllocationToken.class, getToken());
   }
 
   @Override

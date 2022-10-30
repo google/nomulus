@@ -54,8 +54,8 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
 
   @BeforeEach
   void setUp() {
-    VKey<Host> hostVKey = VKey.createSql(Host.class, "host");
-    VKey<Contact> registrantContactVKey = VKey.createSql(Contact.class, "contact_id");
+    VKey<Host> hostVKey = VKey.create(Host.class, "host");
+    VKey<Contact> registrantContactVKey = VKey.create(Contact.class, "contact_id");
     String domainRepoId = "4-TLD";
     createTld("tld");
 

@@ -39,10 +39,10 @@ import org.joda.time.DateTime;
       "contacts",
       "nameservers",
       "subordinateHosts",
-      "currentSponsorClientId",
-      "creationClientId",
+      "currentSponsorRegistrarId",
+      "creationRegistrarId",
       "creationTime",
-      "lastEppUpdateClientId",
+      "lastEppUpdateRegistrarId",
       "lastEppUpdateTime",
       "registrationExpirationTime",
       "lastTransferTime",
@@ -79,11 +79,11 @@ public abstract class DomainInfoData implements ResponseData {
   abstract ImmutableSet<String> getSubordinateHosts();
 
   @XmlElement(name = "clID")
-  abstract String getCurrentSponsorClientId();
+  abstract String getCurrentSponsorRegistrarId();
 
   @XmlElement(name = "crID")
   @Nullable
-  abstract String getCreationClientId();
+  abstract String getCreationRegistrarId();
 
   @XmlElement(name = "crDate")
   @Nullable
@@ -91,7 +91,7 @@ public abstract class DomainInfoData implements ResponseData {
 
   @XmlElement(name = "upID")
   @Nullable
-  abstract String getLastEppUpdateClientId();
+  abstract String getLastEppUpdateRegistrarId();
 
   @XmlElement(name = "upDate")
   @Nullable
@@ -121,10 +121,15 @@ public abstract class DomainInfoData implements ResponseData {
         @Nullable ImmutableSet<ForeignKeyedDesignatedContact> contacts);
     public abstract Builder setNameservers(@Nullable ImmutableSet<String> nameservers);
     public abstract Builder setSubordinateHosts(@Nullable ImmutableSet<String> subordinateHosts);
-    public abstract Builder setCurrentSponsorClientId(String currentSponsorClientId);
-    public abstract Builder setCreationClientId(@Nullable String creationClientId);
+
+    public abstract Builder setCurrentSponsorRegistrarId(String currentSponsorRegistrarId);
+
+    public abstract Builder setCreationRegistrarId(@Nullable String creationRegistrarId);
+
     public abstract Builder setCreationTime(@Nullable DateTime creationTime);
-    public abstract Builder setLastEppUpdateClientId(@Nullable String lastEppUpdateClientId);
+
+    public abstract Builder setLastEppUpdateRegistrarId(@Nullable String lastEppUpdateRegistrarId);
+
     public abstract Builder setLastEppUpdateTime(@Nullable DateTime lastEppUpdateTime);
     public abstract Builder setRegistrationExpirationTime(
         @Nullable DateTime registrationExpirationTime);

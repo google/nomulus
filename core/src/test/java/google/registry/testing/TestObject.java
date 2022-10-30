@@ -18,12 +18,13 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.persistence.VKey;
 
 /** A test model object that can be persisted in any entity group. */
+@DeleteAfterMigration
 @Entity
-@javax.persistence.Entity
 public class TestObject extends ImmutableObject {
 
   @Id @javax.persistence.Id String id;
@@ -39,11 +40,7 @@ public class TestObject extends ImmutableObject {
   }
 
   public VKey<TestObject> key() {
-    return VKey.create(TestObject.class, id, Key.create(this));
-  }
-
-  public static VKey<TestObject> createVKey(Key<TestObject> key) {
-    return VKey.create(TestObject.class, key.getName(), key);
+    return VKey.create(TestObject.class, id);
   }
 
   public static TestObject create(String id) {

@@ -51,8 +51,8 @@ public class TransferDataTest {
     transferBillingEventKey = OneTime.createVKey(12345L);
     otherServerApproveBillingEventKey = Cancellation.createVKey(2468L);
     recurringBillingEventKey = Recurring.createVKey(13579L);
-    autorenewPollMessageKey = VKey.createSql(PollMessage.Autorenew.class, 67890L);
-    otherServerApprovePollMessageKey = VKey.createSql(PollMessage.OneTime.class, 314159L);
+    autorenewPollMessageKey = VKey.create(PollMessage.Autorenew.class, 67890L);
+    otherServerApprovePollMessageKey = VKey.create(PollMessage.OneTime.class, 314159L);
   }
 
   @Test

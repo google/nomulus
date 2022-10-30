@@ -108,7 +108,7 @@ class DomainTransferRejectFlowTest
         .and()
         .hasLastEppUpdateTime(clock.nowUtc())
         .and()
-        .hasLastEppUpdateClientId("TheRegistrar");
+        .hasLastEppUpdateRegistrarId("TheRegistrar");
     final HistoryEntry historyEntryTransferRejected =
         getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REJECT);
     assertAboutHistoryEntries()

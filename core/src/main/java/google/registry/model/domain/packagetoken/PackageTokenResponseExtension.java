@@ -38,7 +38,7 @@ public class PackageTokenResponseExtension extends ImmutableObject implements Re
     PackageTokenResponseExtension instance = new PackageTokenResponseExtension();
     instance.token = "";
     if (tokenKey.isPresent()) {
-      instance.token = tokenKey.get().getSqlKey().toString();
+      instance.token = tokenKey.get().getKey().toString();
     }
     return instance;
   }

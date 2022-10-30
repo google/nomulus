@@ -34,10 +34,10 @@ import org.joda.time.DateTime;
       "repoId",
       "statusValues",
       "inetAddresses",
-      "currentSponsorClientId",
-      "creationClientId",
+      "currentSponsorRegistrarId",
+      "creationRegistrarId",
       "creationTime",
-      "lastEppUpdateClientId",
+      "lastEppUpdateRegistrarId",
       "lastEppUpdateTime",
       "lastTransferTime"
     })
@@ -58,17 +58,17 @@ public abstract class HostInfoData implements ResponseData {
   abstract ImmutableSet<InetAddress> getInetAddresses();
 
   @XmlElement(name = "clID")
-  abstract String getCurrentSponsorClientId();
+  abstract String getCurrentSponsorRegistrarId();
 
   @XmlElement(name = "crID")
-  abstract String getCreationClientId();
+  abstract String getCreationRegistrarId();
 
   @XmlElement(name = "crDate")
   abstract DateTime getCreationTime();
 
   @XmlElement(name = "upID")
   @Nullable
-  abstract String getLastEppUpdateClientId();
+  abstract String getLastEppUpdateRegistrarId();
 
   @XmlElement(name = "upDate")
   @Nullable
@@ -86,10 +86,15 @@ public abstract class HostInfoData implements ResponseData {
     public abstract Builder setRepoId(String repoId);
     public abstract Builder setStatusValues(ImmutableSet<StatusValue> statusValues);
     public abstract Builder setInetAddresses(ImmutableSet<InetAddress> inetAddresses);
-    public abstract Builder setCurrentSponsorClientId(String currentSponsorClientId);
-    public abstract Builder setCreationClientId(String creationClientId);
+
+    public abstract Builder setCurrentSponsorRegistrarId(String currentSponsorRegistrarId);
+
+    public abstract Builder setCreationRegistrarId(String creationRegistrarId);
+
     public abstract Builder setCreationTime(DateTime creationTime);
-    public abstract Builder setLastEppUpdateClientId(@Nullable String lastEppUpdateClientId);
+
+    public abstract Builder setLastEppUpdateRegistrarId(@Nullable String lastEppUpdateRegistrarId);
+
     public abstract Builder setLastEppUpdateTime(@Nullable DateTime lastEppUpdateTime);
     public abstract Builder setLastTransferTime(@Nullable DateTime lastTransferTime);
     public abstract HostInfoData build();

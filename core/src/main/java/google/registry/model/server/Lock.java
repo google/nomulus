@@ -217,7 +217,7 @@ public class Lock extends ImmutableObject implements Serializable {
           // Checking if an unexpired lock still exists - if so, the lock can't be acquired.
           Lock lock =
               jpaTm()
-                  .loadByKeyIfPresent(VKey.createSql(Lock.class, new LockId(resourceName, scope)))
+                  .loadByKeyIfPresent(VKey.create(Lock.class, new LockId(resourceName, scope)))
                   .orElse(null);
           if (lock != null) {
             logger.atInfo().log(
@@ -257,7 +257,7 @@ public class Lock extends ImmutableObject implements Serializable {
           // delete it. If the lock in the database was different, then this lock is gone already;
           // this can happen if release() is called around the expiration time and the lock
           // expires underneath us.
-          VKey<Lock> key = VKey.createSql(Lock.class, new LockId(resourceName, scope));
+          VKey<Lock> key = VKey.create(Lock.class, new LockId(resourceName, scope));
           Lock loadedLock = jpaTm().loadByKeyIfPresent(key).orElse(null);
           if (equals(loadedLock)) {
             // Use deleteIgnoringReadOnly() so that we don't create a commit log entry for deleting

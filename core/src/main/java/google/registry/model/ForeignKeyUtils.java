@@ -89,7 +89,7 @@ public final class ForeignKeyUtils {
       Class<E> clazz, Collection<String> foreignKeys, final DateTime now) {
     return load(clazz, foreignKeys, false).entrySet().stream()
         .filter(e -> now.isBefore(e.getValue().deletionTime()))
-        .collect(toImmutableMap(Entry::getKey, e -> VKey.createSql(clazz, e.getValue().repoId())));
+        .collect(toImmutableMap(Entry::getKey, e -> VKey.create(clazz, e.getValue().repoId())));
   }
 
   /**
@@ -146,16 +146,14 @@ public final class ForeignKeyUtils {
               // called, it is always passed with a list of VKeys with the same type.
               Class<? extends EppResource> clazz = keys.iterator().next().getKind();
               ImmutableList<String> foreignKeys =
-                  Streams.stream(keys)
-                      .map(key -> (String) key.getSqlKey())
-                      .collect(toImmutableList());
+                  Streams.stream(keys).map(key -> (String) key.getKey()).collect(toImmutableList());
               ImmutableMap<String, MostRecentResource> existingKeys =
                   ForeignKeyUtils.load(clazz, foreignKeys, true);
               // The above map only contains keys that exist in the database, so we re-add the
               // missing ones with Optional.empty() values for caching.
               return Maps.asMap(
                   ImmutableSet.copyOf(keys),
-                  key -> Optional.ofNullable(existingKeys.get((String) key.getSqlKey())));
+                  key -> Optional.ofNullable(existingKeys.get((String) key.getKey())));
             }
           };
 
@@ -211,15 +209,14 @@ public final class ForeignKeyUtils {
       return load(clazz, foreignKeys, now);
     }
     return foreignKeyCache
-        .getAll(
-            foreignKeys.stream().map(fk -> VKey.createSql(clazz, fk)).collect(toImmutableList()))
+        .getAll(foreignKeys.stream().map(fk -> VKey.create(clazz, fk)).collect(toImmutableList()))
         .entrySet()
         .stream()
         .filter(e -> e.getValue().isPresent() && now.isBefore(e.getValue().get().deletionTime()))
         .collect(
             toImmutableMap(
-                e -> (String) e.getKey().getSqlKey(),
-                e -> VKey.createSql(clazz, e.getValue().get().repoId())));
+                e -> (String) e.getKey().getKey(),
+                e -> VKey.create(clazz, e.getValue().get().repoId())));
   }
 
   @AutoValue

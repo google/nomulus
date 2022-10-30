@@ -186,7 +186,7 @@ public class DomainHistory extends HistoryEntry {
   /** Creates a {@link VKey} instance for this entity. */
   @Override
   public VKey<DomainHistory> createVKey() {
-    return VKey.createSql(DomainHistory.class, getHistoryEntryId());
+    return VKey.create(DomainHistory.class, getHistoryEntryId());
   }
 
   @Override

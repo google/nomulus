@@ -273,7 +273,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
                       if (!rdapAuthorization.role().equals(Role.ADMINISTRATOR)) {
                         builder =
                             builder.whereFieldIsIn(
-                                "currentSponsorClientId", rdapAuthorization.registrarIds());
+                                "currentSponsorRegistrarId", rdapAuthorization.registrarIds());
                       }
                       return getMatchingResources(builder, false, rdapResultSetMaxSize + 1);
                     });

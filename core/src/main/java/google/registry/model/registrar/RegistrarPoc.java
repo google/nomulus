@@ -319,7 +319,7 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
 
   @Override
   public VKey<RegistrarPoc> createVKey() {
-    return VKey.createSql(RegistrarPoc.class, new RegistrarPocId(emailAddress, registrarId));
+    return VKey.create(RegistrarPoc.class, new RegistrarPocId(emailAddress, registrarId));
   }
 
   /** Class to represent the composite primary key for {@link RegistrarPoc} entity. */

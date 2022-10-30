@@ -66,7 +66,7 @@ public class HostHistory extends HistoryEntry {
   /** Creates a {@link VKey} instance for this entity. */
   @Override
   public VKey<HostHistory> createVKey() {
-    return VKey.createSql(HostHistory.class, getHistoryEntryId());
+    return VKey.create(HostHistory.class, getHistoryEntryId());
   }
 
   @Override

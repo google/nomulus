@@ -112,7 +112,7 @@ public class RegistryJpaReadTest {
     Read<Object[], String> read =
         RegistryJpaIO.read(
                 "select d, r.emailAddress from Domain d join Registrar r on"
-                    + " d.currentSponsorClientId = r.registrarId where r.type = :type"
+                    + " d.currentSponsorRegistrarId = r.registrarId where r.type = :type"
                     + " and d.deletionTime > now()",
                 ImmutableMap.of("type", Registrar.Type.REAL),
                 false,
@@ -156,7 +156,7 @@ public class RegistryJpaReadTest {
     Read<Domain, String> read =
         RegistryJpaIO.read(
                 "select d from Domain d join Registrar r on"
-                    + " d.currentSponsorClientId = r.registrarId where r.type = :type"
+                    + " d.currentSponsorRegistrarId = r.registrarId where r.type = :type"
                     + " and d.deletionTime > now()",
                 ImmutableMap.of("type", Registrar.Type.REAL),
                 Domain.class,

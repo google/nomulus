@@ -60,11 +60,11 @@ class JpaTransactionManagerImplTest {
 
   private final FakeClock fakeClock = new FakeClock();
   private final TestEntity theEntity = new TestEntity("theEntity", "foo");
-  private final VKey<TestEntity> theEntityKey = VKey.createSql(TestEntity.class, "theEntity");
+  private final VKey<TestEntity> theEntityKey = VKey.create(TestEntity.class, "theEntity");
   private final TestCompoundIdEntity compoundIdEntity =
       new TestCompoundIdEntity("compoundIdEntity", 10, "foo");
   private final VKey<TestCompoundIdEntity> compoundIdEntityKey =
-      VKey.createSql(TestCompoundIdEntity.class, new CompoundId("compoundIdEntity", 10));
+      VKey.create(TestCompoundIdEntity.class, new CompoundId("compoundIdEntity", 10));
   private final ImmutableList<TestEntity> moreEntities =
       ImmutableList.of(
           new TestEntity("entity1", "foo"),
@@ -228,8 +228,7 @@ class JpaTransactionManagerImplTest {
     jpaTm().transact(() -> jpaTm().insert(entity));
     assertThat(existsInDb(entity)).isTrue();
     assertThat(
-            loadByKey(
-                VKey.createSql(TestNamedCompoundIdEntity.class, new NamedCompoundId("foo", 1))))
+            loadByKey(VKey.create(TestNamedCompoundIdEntity.class, new NamedCompoundId("foo", 1))))
         .isEqualTo(entity);
   }
 
@@ -289,7 +288,7 @@ class JpaTransactionManagerImplTest {
   void update_succeeds() {
     insertInDb(theEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestEntity.class, "theEntity")));
+        jpaTm().transact(() -> jpaTm().loadByKey(VKey.create(TestEntity.class, "theEntity")));
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
     jpaTm().transact(() -> jpaTm().update(theEntity));
@@ -415,7 +414,7 @@ class JpaTransactionManagerImplTest {
                   jpaTm()
                       .loadByKeysIfPresent(
                           ImmutableList.of(
-                              theEntityKey, VKey.createSql(TestEntity.class, "does-not-exist")));
+                              theEntityKey, VKey.create(TestEntity.class, "does-not-exist")));
 
               assertThat(results).containsExactly(theEntityKey, theEntity);
               assertDetachedFromEntityManager(results.get(theEntityKey));

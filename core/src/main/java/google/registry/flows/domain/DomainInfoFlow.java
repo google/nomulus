@@ -111,7 +111,7 @@ public final class DomainInfoFlow implements Flow {
         DomainInfoData.newBuilder()
             .setDomainName(domain.getDomainName())
             .setRepoId(domain.getRepoId())
-            .setCurrentSponsorClientId(domain.getCurrentSponsorRegistrarId())
+            .setCurrentSponsorRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setRegistrant(
                 tm().transact(() -> tm().loadByKey(domain.getRegistrant())).getContactId());
     // If authInfo is non-null, then the caller is authorized to see the full information since we
@@ -125,9 +125,9 @@ public final class DomainInfoFlow implements Flow {
           .setNameservers(hostsRequest.requestDelegated() ? domain.loadNameserverHostNames() : null)
           .setSubordinateHosts(
               hostsRequest.requestSubordinate() ? domain.getSubordinateHosts() : null)
-          .setCreationClientId(domain.getCreationRegistrarId())
+          .setCreationRegistrarId(domain.getCreationRegistrarId())
           .setCreationTime(domain.getCreationTime())
-          .setLastEppUpdateClientId(domain.getLastEppUpdateRegistrarId())
+          .setLastEppUpdateRegistrarId(domain.getLastEppUpdateRegistrarId())
           .setLastEppUpdateTime(domain.getLastEppUpdateTime())
           .setRegistrationExpirationTime(domain.getRegistrationExpirationTime())
           .setLastTransferTime(domain.getLastTransferTime())

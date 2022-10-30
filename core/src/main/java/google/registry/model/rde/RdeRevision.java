@@ -85,7 +85,7 @@ public final class RdeRevision extends UpdateAutoTimestampEntity {
   public static int getNextRevision(String tld, DateTime date, RdeMode mode) {
     RdeRevisionId sqlKey = RdeRevisionId.create(tld, date.toLocalDate(), mode);
     Optional<RdeRevision> revisionOptional =
-        tm().transact(() -> tm().loadByKeyIfPresent(VKey.createSql(RdeRevision.class, sqlKey)));
+        tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, sqlKey)));
     return revisionOptional.map(rdeRevision -> rdeRevision.revision + 1).orElse(0);
   }
 
@@ -112,7 +112,7 @@ public final class RdeRevision extends UpdateAutoTimestampEntity {
     tm().assertInTransaction();
     RdeRevisionId sqlKey = RdeRevisionId.create(tld, date.toLocalDate(), mode);
     Optional<RdeRevision> revisionOptional =
-        tm().loadByKeyIfPresent(VKey.createSql(RdeRevision.class, sqlKey));
+        tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, sqlKey));
     if (revision == 0) {
       revisionOptional.ifPresent(
           rdeRevision -> {

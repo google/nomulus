@@ -47,12 +47,12 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
     for (List<String> tokens : Lists.partition(mainParameters, BATCH_SIZE)) {
       ImmutableList<VKey<AllocationToken>> tokenKeys =
           tokens.stream()
-              .map(t -> VKey.createSql(AllocationToken.class, t))
+              .map(t -> VKey.create(AllocationToken.class, t))
               .collect(toImmutableList());
       tm().transact(
               () ->
                   tm().loadByKeysIfPresent(tokenKeys)
-                      .forEach((k, v) -> builder.put(k.getSqlKey().toString(), v)));
+                      .forEach((k, v) -> builder.put(k.getKey().toString(), v)));
     }
     ImmutableMap<String, AllocationToken> loadedTokens = builder.build();
     ImmutableMap<VKey<Domain>, Domain> domains =
@@ -66,7 +66,7 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
           System.out.printf("Token %s was not redeemed.\n", token);
         } else {
           VKey<Domain> domainKey =
-              VKey.createSql(Domain.class, loadedToken.getRedemptionHistoryId().get().getRepoId());
+              VKey.create(Domain.class, loadedToken.getRedemptionHistoryId().get().getRepoId());
           Domain domain = domains.get(domainKey);
           if (domain == null) {
             System.out.printf("ERROR: Token %s was redeemed but domain can't be loaded.\n", token);
@@ -91,8 +91,8 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
             .map(AllocationToken::getRedemptionHistoryId)
             .filter(Optional::isPresent)
             .map(Optional::get)
-            .map(hi -> tm().loadByKey(VKey.createSql(DomainHistory.class, hi)))
-            .map(dh -> VKey.createSql(Domain.class, dh.getRepoId()))
+            .map(hi -> tm().loadByKey(VKey.create(DomainHistory.class, hi)))
+            .map(dh -> VKey.create(Domain.class, dh.getRepoId()))
             .collect(toImmutableList());
     ImmutableMap.Builder<VKey<Domain>, Domain> domainsBuilder = new ImmutableMap.Builder<>();
     for (List<VKey<Domain>> keys : Lists.partition(domainKeys, BATCH_SIZE)) {

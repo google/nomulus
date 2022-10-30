@@ -608,7 +608,7 @@ public class DomainFlowUtils {
           historyId, "Cannot create a new autorenew poll message without a domain history id");
       updatedAutorenewPollMessage =
           newAutorenewPollMessage(domain)
-              .setId((Long) domain.getAutorenewPollMessage().getSqlKey())
+              .setId((Long) domain.getAutorenewPollMessage().getKey())
               .setAutorenewEndTime(newEndTime)
               .setDomainHistoryId(historyId)
               .build();

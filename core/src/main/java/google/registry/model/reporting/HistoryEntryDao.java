@@ -149,7 +149,7 @@ public class HistoryEntryDao {
         CriteriaQueryBuilder.create(historyClass)
             .where("modificationTime", criteriaBuilder::greaterThanOrEqualTo, afterTime)
             .where("modificationTime", criteriaBuilder::lessThanOrEqualTo, beforeTime)
-            .where("repoId", criteriaBuilder::equal, resourceKey.getSqlKey().toString())
+            .where("repoId", criteriaBuilder::equal, resourceKey.getKey().toString())
             .orderByAsc("revisionId")
             .orderByAsc("modificationTime")
             .build();

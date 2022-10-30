@@ -138,7 +138,7 @@ public class CreateSyntheticDomainHistoriesCommand extends ConfirmingCommand
                     .transact(
                         () -> {
                           Domain domain =
-                              jpaTm().loadByKey(VKey.createSql(Domain.class, domainRepoId));
+                              jpaTm().loadByKey(VKey.create(Domain.class, domainRepoId));
                           jpaTm()
                               .put(
                                   HistoryEntry.createBuilderForResource(domain)

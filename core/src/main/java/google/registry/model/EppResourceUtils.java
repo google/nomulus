@@ -26,7 +26,6 @@ import static google.registry.util.DateTimeUtils.latestOf;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
 import google.registry.model.EppResource.BuilderWithTransferData;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
@@ -359,7 +358,7 @@ public final class EppResourceUtils {
                     jpaTm()
                         .getEntityManager()
                         .createNativeQuery(HOST_LINKED_DOMAIN_QUERY)
-                        .setParameter("fkRepoId", key.getSqlKey())
+                        .setParameter("fkRepoId", key.getKey())
                         .setParameter("now", now.toDate());
               }
               if (limit != null) {
@@ -370,9 +369,7 @@ public final class EppResourceUtils {
                   (ImmutableSet<VKey<Domain>>)
                       query
                           .getResultStream()
-                          .map(
-                              repoId ->
-                                  Domain.createVKey(Key.create(Domain.class, (String) repoId)))
+                          .map(repoId -> Domain.createVKey((String) repoId))
                           .collect(toImmutableSet());
               return domainKeySet;
             });

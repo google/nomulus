@@ -52,7 +52,7 @@ public class CheckPackagesComplianceAction implements Runnable {
                             "FROM DomainHistory WHERE current_package_token = :token AND"
                                 + " modificationTime >= :lastBilling AND type = 'DOMAIN_CREATE'",
                             DomainHistory.class)
-                        .setParameter("token", packagePromo.getToken().getSqlKey().toString())
+                        .setParameter("token", packagePromo.getToken().getKey().toString())
                         .setParameter(
                             "lastBilling", packagePromo.getNextBillingDate().minusYears(1))
                         .getResultList();
@@ -62,7 +62,7 @@ public class CheckPackagesComplianceAction implements Runnable {
                   logger.atInfo().log(
                       "Package with package token %s has exceeded their max domain creation limit"
                           + " by %d name(s).",
-                      packagePromo.getToken().getSqlKey(), overage);
+                      packagePromo.getToken().getKey(), overage);
                   packagesOverCreateLimit.add(packagePromo);
                 }
               }

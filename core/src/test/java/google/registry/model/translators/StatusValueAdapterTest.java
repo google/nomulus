@@ -51,9 +51,9 @@ public class StatusValueAdapterTest {
                     new EppResponse.Builder()
                         .setResData(
                             HostInfoData.newBuilder()
-                                .setCreationClientId("")
+                                .setCreationRegistrarId("")
                                 .setCreationTime(START_OF_TIME)
-                                .setCurrentSponsorClientId("")
+                                .setCurrentSponsorRegistrarId("")
                                 .setHostName("")
                                 .setInetAddresses(ImmutableSet.of())
                                 .setRepoId("")

@@ -16,7 +16,6 @@ package google.registry.model.contact;
 
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
-import google.registry.model.annotations.ReportedOn;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
 import javax.persistence.Access;
@@ -32,9 +31,7 @@ import org.joda.time.DateTime;
  *
  * @see <a href="https://tools.ietf.org/html/rfc5733">RFC 5733</a>
  */
-@ReportedOn
 @Entity
-@com.googlecode.objectify.annotation.Entity
 @Table(
     name = "Contact",
     indexes = {
@@ -51,7 +48,7 @@ public class Contact extends ContactBase implements ForeignKeyedEppResource {
 
   @Override
   public VKey<Contact> createVKey() {
-    return VKey.createSql(Contact.class, getRepoId());
+    return VKey.create(Contact.class, getRepoId());
   }
 
   @Override

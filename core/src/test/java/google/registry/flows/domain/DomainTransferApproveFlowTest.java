@@ -138,7 +138,7 @@ class DomainTransferApproveFlowTest
         .and()
         .hasLastEppUpdateTime(clock.nowUtc())
         .and()
-        .hasLastEppUpdateClientId("TheRegistrar");
+        .hasLastEppUpdateRegistrarId("TheRegistrar");
     // The domain TransferData should reflect the approved transfer as we expect, with
     // all the speculative server-approve fields nulled out.
     assertThat(domain.getTransferData())

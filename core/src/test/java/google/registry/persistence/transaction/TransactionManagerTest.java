@@ -23,18 +23,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.truth.Truth8;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.testing.FakeClock;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Stream;
 import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,13 +52,11 @@ public class TransactionManagerTest {
           new TestEntity("entity3", "qux"));
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
+  public final JpaUnitTestExtension jpa =
+      new JpaTestExtensions.Builder()
           .withClock(fakeClock)
-          .withCloudSql()
-          .withOfyTestEntities(TestEntity.class)
-          .withJpaUnitTestEntities(TestEntity.class, TestEntityBase.class)
-          .build();
+          .withEntityClass(TestEntity.class, TestEntityBase.class)
+          .buildUnitTestExtension();
 
   TransactionManagerTest() {}
 
@@ -116,7 +113,7 @@ public class TransactionManagerTest {
     assertEntityNotExist(theEntity);
     tm().transact(() -> tm().insert(theEntity));
     assertEntityExists(theEntity);
-    assertThat(tm().transact(() -> tm().loadByKey(theEntity.key()))).isEqualTo(theEntity);
+    assertThat(tm().transact(() -> tm().loadByKey(theEntity.createVKey()))).isEqualTo(theEntity);
   }
 
   @Test
@@ -131,17 +128,17 @@ public class TransactionManagerTest {
     assertEntityNotExist(theEntity);
     tm().transact(() -> tm().put(theEntity));
     assertEntityExists(theEntity);
-    assertThat(tm().transact(() -> tm().loadByKey(theEntity.key()))).isEqualTo(theEntity);
+    assertThat(tm().transact(() -> tm().loadByKey(theEntity.createVKey()))).isEqualTo(theEntity);
   }
 
   @Test
   void saveNewOrUpdate_updatesExistingEntity() {
     tm().transact(() -> tm().insert(theEntity));
-    TestEntity persisted = tm().transact(() -> tm().loadByKey(theEntity.key()));
+    TestEntity persisted = tm().transact(() -> tm().loadByKey(theEntity.createVKey()));
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
     tm().transact(() -> tm().put(theEntity));
-    persisted = tm().transact(() -> tm().loadByKey(theEntity.key()));
+    persisted = tm().transact(() -> tm().loadByKey(theEntity.createVKey()));
     assertThat(persisted.data).isEqualTo("bar");
   }
 
@@ -156,14 +153,11 @@ public class TransactionManagerTest {
   void update_succeeds() {
     tm().transact(() -> tm().insert(theEntity));
     TestEntity persisted =
-        tm().transact(
-                () ->
-                    tm().loadByKey(
-                            VKey.create(TestEntity.class, theEntity.name, Key.create(theEntity))));
+        tm().transact(() -> tm().loadByKey(VKey.create(TestEntity.class, theEntity.name)));
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
     tm().transact(() -> tm().update(theEntity));
-    persisted = tm().transact(() -> tm().loadByKey(theEntity.key()));
+    persisted = tm().transact(() -> tm().loadByKey(theEntity.createVKey()));
     assertThat(persisted.data).isEqualTo("bar");
   }
 
@@ -171,7 +165,7 @@ public class TransactionManagerTest {
   void load_succeeds() {
     assertEntityNotExist(theEntity);
     tm().transact(() -> tm().insert(theEntity));
-    TestEntity persisted = tm().transact(() -> tm().loadByKey(theEntity.key()));
+    TestEntity persisted = tm().transact(() -> tm().loadByKey(theEntity.createVKey()));
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
   }
@@ -180,14 +174,16 @@ public class TransactionManagerTest {
   void load_throwsOnMissingElement() {
     assertEntityNotExist(theEntity);
     assertThrows(
-        NoSuchElementException.class, () -> tm().transact(() -> tm().loadByKey(theEntity.key())));
+        NoSuchElementException.class,
+        () -> tm().transact(() -> tm().loadByKey(theEntity.createVKey())));
   }
 
   @Test
   void maybeLoad_succeeds() {
     assertEntityNotExist(theEntity);
     tm().transact(() -> tm().insert(theEntity));
-    TestEntity persisted = tm().transact(() -> tm().loadByKeyIfPresent(theEntity.key()).get());
+    TestEntity persisted =
+        tm().transact(() -> tm().loadByKeyIfPresent(theEntity.createVKey()).get());
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
   }
@@ -195,21 +191,22 @@ public class TransactionManagerTest {
   @Test
   void maybeLoad_nonExistentObject() {
     assertEntityNotExist(theEntity);
-    assertThat(tm().transact(() -> tm().loadByKeyIfPresent(theEntity.key())).isPresent()).isFalse();
+    assertThat(tm().transact(() -> tm().loadByKeyIfPresent(theEntity.createVKey())).isPresent())
+        .isFalse();
   }
 
   @Test
   void delete_succeeds() {
     tm().transact(() -> tm().insert(theEntity));
     assertEntityExists(theEntity);
-    tm().transact(() -> tm().delete(theEntity.key()));
+    tm().transact(() -> tm().delete(theEntity.createVKey()));
     assertEntityNotExist(theEntity);
   }
 
   @Test
   void delete_doNothingWhenEntityNotExist() {
     assertEntityNotExist(theEntity);
-    tm().transact(() -> tm().delete(theEntity.key()));
+    tm().transact(() -> tm().delete(theEntity.createVKey()));
     assertEntityNotExist(theEntity);
   }
 
@@ -218,7 +215,7 @@ public class TransactionManagerTest {
     assertAllEntitiesNotExist(moreEntities);
     tm().transact(() -> tm().insertAll(moreEntities));
     Set<VKey<TestEntity>> keys =
-        moreEntities.stream().map(TestEntity::key).collect(toImmutableSet());
+        moreEntities.stream().map(TestEntity::createVKey).collect(toImmutableSet());
     assertAllEntitiesExist(moreEntities);
     tm().transact(() -> tm().delete(keys));
     assertAllEntitiesNotExist(moreEntities);
@@ -229,7 +226,7 @@ public class TransactionManagerTest {
     assertAllEntitiesNotExist(moreEntities);
     tm().transact(() -> tm().insertAll(moreEntities));
     List<VKey<TestEntity>> keys =
-        moreEntities.stream().map(TestEntity::key).collect(toImmutableList());
+        moreEntities.stream().map(TestEntity::createVKey).collect(toImmutableList());
     assertAllEntitiesExist(moreEntities);
     tm().transact(() -> tm().delete(keys.get(0)));
     assertEntityNotExist(moreEntities.get(0));
@@ -250,9 +247,9 @@ public class TransactionManagerTest {
     assertAllEntitiesNotExist(moreEntities);
     tm().transact(() -> tm().insertAll(moreEntities));
     List<VKey<TestEntity>> keys =
-        moreEntities.stream().map(TestEntity::key).collect(toImmutableList());
+        moreEntities.stream().map(TestEntity::createVKey).collect(toImmutableList());
     assertThat(tm().transact(() -> tm().loadByKeys(keys)))
-        .isEqualTo(Maps.uniqueIndex(moreEntities, TestEntity::key));
+        .isEqualTo(Maps.uniqueIndex(moreEntities, TestEntity::createVKey));
   }
 
   @Test
@@ -260,11 +257,11 @@ public class TransactionManagerTest {
     assertAllEntitiesNotExist(moreEntities);
     tm().transact(() -> tm().insertAll(moreEntities));
     ImmutableList<VKey<TestEntity>> keys =
-        moreEntities.stream().map(TestEntity::key).collect(toImmutableList());
+        moreEntities.stream().map(TestEntity::createVKey).collect(toImmutableList());
     ImmutableList<VKey<TestEntity>> doubleKeys =
         Stream.concat(keys.stream(), keys.stream()).collect(toImmutableList());
     assertThat(tm().transact(() -> tm().loadByKeys(doubleKeys)))
-        .isEqualTo(Maps.uniqueIndex(moreEntities, TestEntity::key));
+        .isEqualTo(Maps.uniqueIndex(moreEntities, TestEntity::createVKey));
   }
 
   @Test
@@ -273,7 +270,7 @@ public class TransactionManagerTest {
     tm().transact(() -> tm().insertAll(moreEntities));
     List<VKey<TestEntity>> keys =
         Stream.concat(moreEntities.stream(), Stream.of(new TestEntity("dark", "matter")))
-            .map(TestEntity::key)
+            .map(TestEntity::createVKey)
             .collect(toImmutableList());
     assertThat(
             assertThrows(
@@ -288,10 +285,10 @@ public class TransactionManagerTest {
     tm().transact(() -> tm().insertAll(moreEntities));
     List<VKey<TestEntity>> keys =
         Stream.concat(moreEntities.stream(), Stream.of(new TestEntity("dark", "matter")))
-            .map(TestEntity::key)
+            .map(TestEntity::createVKey)
             .collect(toImmutableList());
     assertThat(tm().transact(() -> tm().loadByKeysIfPresent(keys)))
-        .isEqualTo(Maps.uniqueIndex(moreEntities, TestEntity::key));
+        .isEqualTo(Maps.uniqueIndex(moreEntities, TestEntity::createVKey));
   }
 
   @Test
@@ -322,8 +319,8 @@ public class TransactionManagerTest {
             tm().transact(
                     () ->
                         tm().loadByEntitiesIfPresent(moreEntities).stream()
-                            .map(TestEntity::key)
-                            .map(VKey::getSqlKey)
+                            .map(TestEntity::createVKey)
+                            .map(VKey::getKey)
                             .collect(toImmutableList())))
         .containsExactly("entity2", "entity3");
   }
@@ -355,10 +352,10 @@ public class TransactionManagerTest {
     tm().transact(() -> tm().insert(theEntity));
     tm().transact(
             () -> {
-              TestEntity e = tm().loadByKey(theEntity.key());
+              TestEntity e = tm().loadByKey(theEntity.createVKey());
               e.data = "some other data!";
             });
-    assertThat(tm().transact(() -> tm().loadByKey(theEntity.key())).data).isEqualTo("foo");
+    assertThat(tm().transact(() -> tm().loadByKey(theEntity.createVKey())).data).isEqualTo("foo");
   }
 
   private static void assertEntityExists(TestEntity entity) {
@@ -383,7 +380,7 @@ public class TransactionManagerTest {
   @MappedSuperclass
   @Embeddable
   private static class TestEntityBase extends ImmutableObject {
-    @Id @javax.persistence.Id protected String name;
+    @Id protected String name;
 
     TestEntityBase(String name) {
       this.name = name;
@@ -392,8 +389,7 @@ public class TransactionManagerTest {
     TestEntityBase() {}
   }
 
-  @Entity(name = "TxnMgrTestEntity")
-  @javax.persistence.Entity(name = "TestEntity")
+  @Entity(name = "TestEntity")
   private static class TestEntity extends TestEntityBase {
 
     private String data;
@@ -405,8 +401,9 @@ public class TransactionManagerTest {
       this.data = data;
     }
 
-    public VKey<TestEntity> key() {
-      return VKey.create(TestEntity.class, name, Key.create(this));
+    @Override
+    public VKey<TestEntity> createVKey() {
+      return VKey.create(TestEntity.class, name);
     }
   }
 }
