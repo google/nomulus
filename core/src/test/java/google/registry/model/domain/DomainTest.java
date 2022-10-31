@@ -25,7 +25,6 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.SINGL
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
-import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -50,7 +49,6 @@ import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
@@ -70,7 +68,6 @@ import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
-import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -909,13 +906,6 @@ public class DomainTest {
                 .setRenewalPriceBehavior(SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
-    Recurring recurring =
-        persistResource(
-            loadByKey(domain.getAutorenewBillingEvent())
-                .asBuilder()
-                .setRenewalPriceBehavior(SPECIFIED)
-                .setRenewalPrice(Money.of(USD, new BigDecimal("10.00")))
-                .build());
     domain =
         persistResource(
             domain
@@ -928,7 +918,6 @@ public class DomainTest {
     Domain clonedDomain = domain.cloneProjectedAtTime(now);
     assertThat(clonedDomain.getRegistrationExpirationTime()).isEqualTo(previousExpiration);
     assertThat(clonedDomain.getCurrentPackageToken().get()).isEqualTo(allocationToken.createVKey());
-    assertThat(loadByKey(clonedDomain.getAutorenewBillingEvent())).isEqualTo(recurring);
   }
 
   @Test
