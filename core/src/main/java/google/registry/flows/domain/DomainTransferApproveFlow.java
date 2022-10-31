@@ -149,6 +149,8 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
+    boolean hasPackageToken = existingDomain.getCurrentPackageToken().isPresent();
+    Money renewalPrice = hasPackageToken ? null : existingRecurring.getRenewalPrice().orElse(null);
     Optional<BillingEvent.OneTime> billingEvent =
         transferData.getTransferPeriod().getValue() == 0
             ? Optional.empty()
@@ -164,39 +166,18 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                                 Registry.get(tld),
                                 targetId,
                                 transferData.getTransferRequestTime(),
-                                existingRecurring)
+                                hasPackageToken
+                                    ? existingRecurring
+                                        .asBuilder()
+                                        .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
+                                        .setRenewalPrice(renewalPrice)
+                                        .build()
+                                    : existingRecurring)
                             .getRenewCost())
                     .setEventTime(now)
                     .setBillingTime(now.plus(Registry.get(tld).getTransferGracePeriodLength()))
                     .setDomainHistoryId(domainHistoryId)
                     .build());
-
-    boolean wasPackageName = existingDomain.getCurrentPackageToken().isPresent();
-    Money renewalPrice = existingRecurring.getRenewalPrice().orElse(null);
-    // If domain was in a package, reset the transfer price
-    if (wasPackageName) {
-      renewalPrice = null;
-      if (billingEvent.isPresent()) {
-        billingEvent =
-            Optional.of(
-                billingEvent
-                    .get()
-                    .asBuilder()
-                    .setCost(
-                        pricingLogic
-                            .getTransferPrice(
-                                Registry.get(tld),
-                                targetId,
-                                transferData.getTransferRequestTime(),
-                                existingRecurring
-                                    .asBuilder()
-                                    .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
-                                    .setRenewalPrice(renewalPrice)
-                                    .build())
-                            .getRenewCost())
-                    .build());
-      }
-    }
 
     ImmutableList.Builder<ImmutableObject> entitiesToSave = new ImmutableList.Builder<>();
     // If we are within an autorenew grace period, cancel the autorenew billing event and don't
@@ -229,7 +210,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setRegistrarId(gainingRegistrarId)
             .setEventTime(newExpirationTime)
             .setRenewalPriceBehavior(
-                wasPackageName
+                hasPackageToken
                     ? RenewalPriceBehavior.DEFAULT
                     : existingRecurring.getRenewalPriceBehavior())
             .setRenewalPrice(renewalPrice)
