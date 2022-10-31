@@ -218,8 +218,21 @@ To test unsubmitted schema changes in the alpha or crash environments, use the
 following command to deploy the local schema,
 
 ```shell
-./nom_build :db:flywayMigrate --dbServer=[alpha|crash] --environment=[alpha|crash]
+./nom_build :db:flywayMigrate --dbServer=[alpha|crash] \
+    --environment=[alpha|crash]
 ```
+
+If you run into problems due to incompatible dependency versions, you may try
+the dependencies used by our releases:
+
+```
+./nom_build :db:flywayMigrate --dbServer=[alpha|crash] \
+    --environment=[alpha|crash] \
+    --mavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven \
+    --pluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins
+```
+
+
 
 #### Alternative way to push to non-production
 
