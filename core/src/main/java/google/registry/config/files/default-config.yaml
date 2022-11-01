@@ -535,3 +535,21 @@ sslCertificateValidation:
   allowedEcdsaCurves:
     - secp256r1
     - secp384r1
+
+# Configuration options for the package compliance monitoring
+packageMonitoring:
+  # Email subject text to notify partners their package has exceeded the limit for domain creates
+  packageCreateLimitEmailSubjectText: "NOTICE: Your Package Is Being Upgraded"
+  # Email body text template notify partners their package has exceeded the limit for domain creates
+  packageCreateLimitEmailBodyText: >
+    Dear %1$s,
+    
+    We are contacting you to inform you that your package with the package token 
+    %2$s has exceeded its limit for annual domain creations.
+    Your package will now be upgraded to the next tier. 
+    
+    If you have any questions or require additional support, please contact us
+    at %3$s.
+    
+    Regards,
+    Example Registry

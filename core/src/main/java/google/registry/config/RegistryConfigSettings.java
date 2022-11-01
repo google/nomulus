@@ -43,6 +43,7 @@ public class RegistryConfigSettings {
   public SslCertificateValidation sslCertificateValidation;
   public ContactHistory contactHistory;
   public DnsUpdate dnsUpdate;
+  public PackageMonitoring packageMonitoring;
 
   /** Configuration options that apply to the entire App Engine project. */
   public static class AppEngine {
@@ -255,5 +256,11 @@ public class RegistryConfigSettings {
     public String dnsUpdateFailRegistryName;
     public String registrySupportEmail;
     public String registryCcEmail;
+  }
+
+  /** Configuration for package compliance monitoring. */
+  public static class PackageMonitoring {
+    public String packageCreateLimitEmailSubjectText;
+    public String packageCreateLimitEmailBodyText;
   }
 }

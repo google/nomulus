@@ -120,6 +120,34 @@ class SendEmailUtilsTest {
   }
 
   @Test
+  void testSuccess_bcc() throws Exception {
+    setRecipients(ImmutableList.of("johnny@fakesite.tld"));
+    assertThat(sendEmailUtils.hasRecipients()).isTrue();
+    sendEmailUtils.sendEmail(
+        "Welcome to the Internet",
+        "It is a dark and scary place.",
+        "bar@example.com",
+        ImmutableList.of("baz@example.com"));
+
+    ArgumentCaptor<EmailMessage> contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);
+    verify(emailService).sendEmail(contentCaptor.capture());
+    EmailMessage emailMessage = contentCaptor.getValue();
+    ImmutableList.Builder<InternetAddress> recipientBuilder = ImmutableList.builder();
+    for (String expectedRecipient : ImmutableList.of("johnny@fakesite.tld", "baz@example.com")) {
+      recipientBuilder.add(new InternetAddress(expectedRecipient));
+    }
+    EmailMessage expectedContent =
+        EmailMessage.newBuilder()
+            .setSubject("Welcome to the Internet")
+            .setBody("It is a dark and scary place.")
+            .setFrom(new InternetAddress("outgoing@registry.example"))
+            .addBcc(new InternetAddress("bar@example.com"))
+            .setRecipients(recipientBuilder.build())
+            .build();
+    assertThat(emailMessage).isEqualTo(expectedContent);
+  }
+
+  @Test
   void testAdditionalRecipients() throws Exception {
     setRecipients(ImmutableList.of("foo@example.com"));
     assertThat(sendEmailUtils.hasRecipients()).isTrue();

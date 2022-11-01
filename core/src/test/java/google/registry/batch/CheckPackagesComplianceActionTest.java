@@ -13,13 +13,19 @@
 // limitations under the License.
 package google.registry.batch;
 
+import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.testing.TestLogHandler;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.contact.Contact;
@@ -29,8 +35,12 @@ import google.registry.model.domain.token.PackagePromotion;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import google.registry.ui.server.SendEmailUtils;
+import google.registry.util.EmailMessage;
+import google.registry.util.SendEmailService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.mail.internet.InternetAddress;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -38,12 +48,16 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.mockito.ArgumentCaptor;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
 /** Unit tests for {@link CheckPackagesComplianceAction}. */
 public class CheckPackagesComplianceActionTest {
   // This is the default creation time for test data.
   private final FakeClock clock = new FakeClock(DateTime.parse("2012-03-25TZ"));
+  private static final String CREATE_LIMIT_EMAIL_SUBJECT = "create limit subject";
+  private static final String CREATE_LIMIT_EMAIL_BODY = "create limit body %1$s %2$s %3$s";
+  private static final String SUPPORT_EMAIL = "registry@test.com";
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
@@ -54,15 +68,26 @@ public class CheckPackagesComplianceActionTest {
   private final TestLogHandler logHandler = new TestLogHandler();
   private final Logger loggerToIntercept =
       Logger.getLogger(CheckPackagesComplianceAction.class.getCanonicalName());
+  private final SendEmailService emailService = mock(SendEmailService.class);
 
   private Contact contact;
   private PackagePromotion packagePromotion;
+  private SendEmailUtils sendEmailUtils;
+  private ArgumentCaptor<EmailMessage> emailCaptor = ArgumentCaptor.forClass(EmailMessage.class);
 
   @BeforeEach
-  void beforeEach() {
+  void beforeEach() throws Exception {
     loggerToIntercept.addHandler(logHandler);
+    sendEmailUtils =
+        new SendEmailUtils(
+            new InternetAddress("outgoing@registry.example"),
+            "UnitTest Registry",
+            ImmutableList.of("notification@test.example", "notification2@test.example"),
+            emailService);
     createTld("tld");
-    action = new CheckPackagesComplianceAction();
+    action =
+        new CheckPackagesComplianceAction(
+            sendEmailUtils, CREATE_LIMIT_EMAIL_SUBJECT, CREATE_LIMIT_EMAIL_BODY, SUPPORT_EMAIL);
     token =
         persistResource(
             new AllocationToken.Builder()
@@ -102,13 +127,14 @@ public class CheckPackagesComplianceActionTest {
             .build());
 
     action.run();
+    verifyNoInteractions(emailService);
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(Level.INFO, "Found no packages over their create limit.");
   }
 
   @Test
-  void testSuccess_onePackageOverCreateLimit() {
+  void testSuccess_onePackageOverCreateLimit() throws Exception {
     // Create limit is 1, creating 2 domains to go over the limit
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
@@ -131,6 +157,12 @@ public class CheckPackagesComplianceActionTest {
             Level.INFO,
             "Package with package token abc123 has exceeded their max domain creation limit by 1"
                 + " name(s).");
+    verify(emailService).sendEmail(emailCaptor.capture());
+    EmailMessage emailMessage = emailCaptor.getValue();
+    assertThat(emailMessage.subject()).isEqualTo(CREATE_LIMIT_EMAIL_SUBJECT);
+    assertThat(emailMessage.body())
+        .isEqualTo(
+            String.format(CREATE_LIMIT_EMAIL_BODY, "The Registrar", "abc123", SUPPORT_EMAIL));
   }
 
   @Test
@@ -196,6 +228,7 @@ public class CheckPackagesComplianceActionTest {
             Level.INFO,
             "Package with package token token has exceeded their max domain creation limit by 1"
                 + " name(s).");
+    verify(emailService, times(2)).sendEmail(emailCaptor.capture());
   }
 
   @Test
@@ -237,5 +270,6 @@ public class CheckPackagesComplianceActionTest {
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(Level.INFO, "Found no packages over their create limit.");
+    verifyNoInteractions(emailService);
   }
 }
