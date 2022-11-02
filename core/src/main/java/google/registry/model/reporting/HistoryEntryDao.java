@@ -40,12 +40,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import org.joda.time.DateTime;
 
-/**
- * Retrieves {@link HistoryEntry} descendants (e.g. {@link DomainHistory}).
- *
- * <p>This class is configured to retrieve either from Datastore or SQL, depending on which database
- * is currently considered the primary database.
- */
+/** Retrieves {@link HistoryEntry} descendants (e.g. {@link DomainHistory}). */
 public class HistoryEntryDao {
 
   public static ImmutableMap<Class<? extends EppResource>, Class<? extends HistoryEntry>>
@@ -58,15 +53,6 @@ public class HistoryEntryDao {
               Host.class,
               HostHistory.class);
 
-  public static ImmutableMap<Class<? extends HistoryEntry>, String> REPO_ID_FIELD_NAMES =
-      ImmutableMap.of(
-          ContactHistory.class,
-          "contactRepoId",
-          DomainHistory.class,
-          "domainRepoId",
-          HostHistory.class,
-          "hostRepoId");
-
   /** Loads all history objects in the times specified, including all types. */
   public static ImmutableList<HistoryEntry> loadAllHistoryObjects(
       DateTime afterTime, DateTime beforeTime) {
@@ -74,59 +60,58 @@ public class HistoryEntryDao {
         .transact(
             () ->
                 new ImmutableList.Builder<HistoryEntry>()
-                    .addAll(
-                        loadAllHistoryObjectsFromSql(ContactHistory.class, afterTime, beforeTime))
-                    .addAll(
-                        loadAllHistoryObjectsFromSql(DomainHistory.class, afterTime, beforeTime))
-                    .addAll(loadAllHistoryObjectsFromSql(HostHistory.class, afterTime, beforeTime))
+                    .addAll(loadAllHistoryObjects(ContactHistory.class, afterTime, beforeTime))
+                    .addAll(loadAllHistoryObjects(DomainHistory.class, afterTime, beforeTime))
+                    .addAll(loadAllHistoryObjects(HostHistory.class, afterTime, beforeTime))
                     .build());
   }
 
   /** Loads all history objects corresponding to the given {@link EppResource}. */
   public static ImmutableList<HistoryEntry> loadHistoryObjectsForResource(
-      VKey<? extends EppResource> parentKey) {
-    return loadHistoryObjectsForResource(parentKey, START_OF_TIME, END_OF_TIME);
+      VKey<? extends EppResource> resourceKey) {
+    return loadHistoryObjectsForResource(resourceKey, START_OF_TIME, END_OF_TIME);
   }
 
   /**
-   * Loads all history objects corresponding to the given {@link EppResource} and casted to the
+   * Loads all history objects corresponding to the given {@link EppResource} and cast to the
    * appropriate subclass.
    */
   public static <T extends HistoryEntry> ImmutableList<T> loadHistoryObjectsForResource(
-      VKey<? extends EppResource> parentKey, Class<T> subclazz) {
-    return loadHistoryObjectsForResource(parentKey, START_OF_TIME, END_OF_TIME, subclazz);
+      VKey<? extends EppResource> resourceKey, Class<T> subclazz) {
+    return loadHistoryObjectsForResource(resourceKey, START_OF_TIME, END_OF_TIME, subclazz);
   }
 
   /** Loads all history objects in the time period specified for the given {@link EppResource}. */
   public static ImmutableList<HistoryEntry> loadHistoryObjectsForResource(
-      VKey<? extends EppResource> parentKey, DateTime afterTime, DateTime beforeTime) {
+      VKey<? extends EppResource> resourceKey, DateTime afterTime, DateTime beforeTime) {
     return jpaTm()
-        .transact(() -> loadHistoryObjectsForResourceFromSql(parentKey, afterTime, beforeTime));
+        .transact(() -> loadHistoryObjectsForResourceInternal(resourceKey, afterTime, beforeTime));
   }
 
   /**
    * Loads all history objects in the time period specified for the given {@link EppResource} and
-   * casted to the appropriate subclass.
+   * cast to the appropriate subclass.
    *
-   * <p>Note that the subclass must be explicitly provided because we need the compile time
-   * information of T to return an {@code ImmutableList<T>}, even though at runtime we can call
-   * {@link #getHistoryClassFromParent(Class)} to obtain it, which we also did to confirm that the
-   * provided subclass is indeed correct.
+   * <p>Note that the subclass must be explicitly provided because we need compile time information
+   * of T to return an {@code ImmutableList<T>}, even though at runtime we can call {@link
+   * #getHistoryClassFromParent(Class)} to obtain it, which we also did to confirm that the provided
+   * subclass is indeed correct.
    */
-  public static <T extends HistoryEntry> ImmutableList<T> loadHistoryObjectsForResource(
-      VKey<? extends EppResource> parentKey,
+  private static <T extends HistoryEntry> ImmutableList<T> loadHistoryObjectsForResource(
+      VKey<? extends EppResource> resourceKey,
       DateTime afterTime,
       DateTime beforeTime,
       Class<T> subclazz) {
-    Class<? extends HistoryEntry> expectedSubclazz = getHistoryClassFromParent(parentKey.getKind());
+    Class<? extends HistoryEntry> expectedSubclazz =
+        getHistoryClassFromParent(resourceKey.getKind());
     checkArgument(
         subclazz.equals(expectedSubclazz),
         "The supplied HistoryEntry subclass %s is incompatible with the EppResource %s, "
             + "use %s instead",
         subclazz.getSimpleName(),
-        parentKey.getKind().getSimpleName(),
+        resourceKey.getKind().getSimpleName(),
         expectedSubclazz.getSimpleName());
-    return loadHistoryObjectsForResource(parentKey, afterTime, beforeTime).stream()
+    return loadHistoryObjectsForResource(resourceKey, afterTime, beforeTime).stream()
         .map(subclazz::cast)
         .collect(toImmutableList());
   }
@@ -138,14 +123,14 @@ public class HistoryEntryDao {
         .transact(
             () ->
                 Streams.concat(
-                        loadHistoryObjectFromSqlByRegistrars(ContactHistory.class, registrarIds),
-                        loadHistoryObjectFromSqlByRegistrars(DomainHistory.class, registrarIds),
-                        loadHistoryObjectFromSqlByRegistrars(HostHistory.class, registrarIds))
+                        loadHistoryObjectByRegistrarsInternal(ContactHistory.class, registrarIds),
+                        loadHistoryObjectByRegistrarsInternal(DomainHistory.class, registrarIds),
+                        loadHistoryObjectByRegistrarsInternal(HostHistory.class, registrarIds))
                     .sorted(Comparator.comparing(HistoryEntry::getModificationTime))
                     .collect(toImmutableList()));
   }
 
-  private static <T extends HistoryEntry> Stream<T> loadHistoryObjectFromSqlByRegistrars(
+  private static <T extends HistoryEntry> Stream<T> loadHistoryObjectByRegistrarsInternal(
       Class<T> historyClass, ImmutableCollection<String> registrarIds) {
     return jpaTm()
         .criteriaQuery(
@@ -155,45 +140,33 @@ public class HistoryEntryDao {
         .getResultStream();
   }
 
-  private static ImmutableList<HistoryEntry> loadHistoryObjectsForResourceFromSql(
-      VKey<? extends EppResource> parentKey, DateTime afterTime, DateTime beforeTime) {
-    // The class we're searching from is based on which parent type (e.g. Domain) we have
-    Class<? extends HistoryEntry> historyClass = getHistoryClassFromParent(parentKey.getKind());
-    // The field representing repo ID unfortunately varies by history class
-    String repoIdFieldName = getRepoIdFieldNameFromHistoryClass(historyClass);
+  private static ImmutableList<HistoryEntry> loadHistoryObjectsForResourceInternal(
+      VKey<? extends EppResource> resourceKey, DateTime afterTime, DateTime beforeTime) {
+    // The class we're searching from is based on which resource type (e.g. Domain) we have
+    Class<? extends HistoryEntry> historyClass = getHistoryClassFromParent(resourceKey.getKind());
     CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
     CriteriaQuery<? extends HistoryEntry> criteriaQuery =
         CriteriaQueryBuilder.create(historyClass)
             .where("modificationTime", criteriaBuilder::greaterThanOrEqualTo, afterTime)
             .where("modificationTime", criteriaBuilder::lessThanOrEqualTo, beforeTime)
-            .where(repoIdFieldName, criteriaBuilder::equal, parentKey.getSqlKey().toString())
-            .orderByAsc("id")
+            .where("repoId", criteriaBuilder::equal, resourceKey.getSqlKey().toString())
+            .orderByAsc("revisionId")
+            .orderByAsc("modificationTime")
             .build();
 
-    return ImmutableList.sortedCopyOf(
-        Comparator.comparing(HistoryEntry::getModificationTime),
-        jpaTm().criteriaQuery(criteriaQuery).getResultList());
+    return ImmutableList.copyOf(jpaTm().criteriaQuery(criteriaQuery).getResultList());
   }
 
   public static Class<? extends HistoryEntry> getHistoryClassFromParent(
-      Class<? extends EppResource> parent) {
-    if (!RESOURCE_TYPES_TO_HISTORY_TYPES.containsKey(parent)) {
+      Class<? extends EppResource> resourceType) {
+    if (!RESOURCE_TYPES_TO_HISTORY_TYPES.containsKey(resourceType)) {
       throw new IllegalArgumentException(
-          String.format("Unknown history type for parent %s", parent.getName()));
+          String.format("Unknown history type for resourceType %s", resourceType.getName()));
     }
-    return RESOURCE_TYPES_TO_HISTORY_TYPES.get(parent);
+    return RESOURCE_TYPES_TO_HISTORY_TYPES.get(resourceType);
   }
 
-  public static String getRepoIdFieldNameFromHistoryClass(
-      Class<? extends HistoryEntry> historyClass) {
-    if (!REPO_ID_FIELD_NAMES.containsKey(historyClass)) {
-      throw new IllegalArgumentException(
-          String.format("Unknown history type %s", historyClass.getName()));
-    }
-    return REPO_ID_FIELD_NAMES.get(historyClass);
-  }
-
-  private static <T extends HistoryEntry> List<T> loadAllHistoryObjectsFromSql(
+  private static <T extends HistoryEntry> List<T> loadAllHistoryObjects(
       Class<T> historyClass, DateTime afterTime, DateTime beforeTime) {
     CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
     return jpaTm()

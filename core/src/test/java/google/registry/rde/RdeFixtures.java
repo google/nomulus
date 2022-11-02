@@ -205,8 +205,8 @@ final class RdeFixtures {
                                     .build())
                             .createVKey())
                     .setServerApproveEntities(
-                        historyEntry.getDomainRepoId(),
-                        historyEntry.getId(),
+                        historyEntry.getRepoId(),
+                        historyEntry.getRevisionId(),
                         ImmutableSet.of(billingEvent.createVKey()))
                     .setTransferRequestTime(DateTime.parse("1991-01-01T00:00:00Z"))
                     .setTransferStatus(TransferStatus.PENDING)

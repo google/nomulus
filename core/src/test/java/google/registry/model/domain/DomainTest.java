@@ -109,7 +109,7 @@ public class DomainTest {
     domainHistory =
         persistResource(
             new DomainHistory.Builder()
-                .setDomainRepoId(domain.getRepoId())
+                .setDomain(domain)
                 .setModificationTime(fakeClock.nowUtc())
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setRegistrarId("TheRegistrar")
@@ -129,11 +129,11 @@ public class DomainTest {
             .createVKey();
     DomainHistory historyEntry =
         new DomainHistory.Builder()
-            .setId(100L)
+            .setRevisionId(100L)
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setPeriod(Period.create(1, Period.Unit.YEARS))
             .setModificationTime(DateTime.now(UTC))
-            .setDomainRepoId(domain.getRepoId())
+            .setDomain(domain)
             .setRegistrarId(domain.getCurrentSponsorRegistrarId())
             // These are non-null, but I don't think some tests set them.
             .setReason("felt like it")
@@ -202,8 +202,8 @@ public class DomainTest {
                             .setLosingRegistrarId("NewRegistrar")
                             .setPendingTransferExpirationTime(fakeClock.nowUtc())
                             .setServerApproveEntities(
-                                historyEntry.getDomainRepoId(),
-                                historyEntry.getId(),
+                                historyEntry.getRepoId(),
+                                historyEntry.getRevisionId(),
                                 ImmutableSet.of(oneTimeBillKey, recurringBillKey, autorenewPollKey))
                             .setServerApproveBillingEvent(oneTimeBillKey)
                             .setServerApproveAutorenewEvent(recurringBillKey)
@@ -438,7 +438,7 @@ public class DomainTest {
                     .setServerApproveBillingEvent(transferBillingEvent.createVKey())
                     .setServerApproveEntities(
                         domain.getRepoId(),
-                        historyEntry.getId(),
+                        historyEntry.getRevisionId(),
                         ImmutableSet.of(transferBillingEvent.createVKey()))
                     .build())
             .addGracePeriod(

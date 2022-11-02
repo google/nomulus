@@ -50,7 +50,7 @@ public class HostHistoryTest extends EntityTestCase {
             () -> {
               HostHistory fromDatabase = jpaTm().loadByKey(hostHistory.createVKey());
               assertHostHistoriesEqual(fromDatabase, hostHistory);
-              assertThat(fromDatabase.getParentVKey()).isEqualTo(hostHistory.getParentVKey());
+              assertThat(fromDatabase.getRepoId()).isEqualTo(hostHistory.getRepoId());
             });
   }
 
@@ -65,29 +65,11 @@ public class HostHistoryTest extends EntityTestCase {
     assertThat(SerializeUtils.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 
-  @Test
-  void testLegacyPersistence_nullHostBase() {
-    Host host = newHostWithRoid("ns1.example.com", "host1");
-    insertInDb(host);
-
-    Host hostFromDb = loadByEntity(host);
-    HostHistory hostHistory = createHostHistory(hostFromDb).asBuilder().setHost(null).build();
-    insertInDb(hostHistory);
-
-    jpaTm()
-        .transact(
-            () -> {
-              HostHistory fromDatabase = jpaTm().loadByKey(hostHistory.createVKey());
-              assertHostHistoriesEqual(fromDatabase, hostHistory);
-              assertThat(fromDatabase.getParentVKey()).isEqualTo(hostHistory.getParentVKey());
-            });
-  }
-
-  private void assertHostHistoriesEqual(HostHistory one, HostHistory two) {
-    assertAboutImmutableObjects().that(one).isEqualExceptFields(two, "hostBase");
+  private static void assertHostHistoriesEqual(HostHistory one, HostHistory two) {
+    assertAboutImmutableObjects().that(one).isEqualExceptFields(two, "resource");
     assertAboutImmutableObjects()
-        .that(one.getHostBase().orElse(null))
-        .isEqualExceptFields(two.getHostBase().orElse(null), "repoId");
+        .that(one.getHostBase().get())
+        .isEqualExceptFields(two.getHostBase().get(), "repoId");
   }
 
   private HostHistory createHostHistory(HostBase hostBase) {
@@ -101,7 +83,6 @@ public class HostHistoryTest extends EntityTestCase {
         .setReason("reason")
         .setRequestedByRegistrar(true)
         .setHost(hostBase)
-        .setHostRepoId(hostBase.getRepoId())
         .build();
   }
 }

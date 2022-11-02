@@ -22,8 +22,8 @@ import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.persistence.VKey;
 import java.util.Collection;
@@ -62,13 +62,12 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
       if (loadedTokens.containsKey(token)) {
         AllocationToken loadedToken = loadedTokens.get(token);
         System.out.println(loadedToken.toString());
-        if (!loadedToken.getRedemptionHistoryEntry().isPresent()) {
+        if (!loadedToken.getRedemptionHistoryId().isPresent()) {
           System.out.printf("Token %s was not redeemed.\n", token);
         } else {
-          Key<Domain> domainOfyKey =
-              loadedToken.getRedemptionHistoryEntry().get().getOfyKey().getParent();
-          Domain domain =
-              domains.get(VKey.create(Domain.class, domainOfyKey.getName(), domainOfyKey));
+          VKey<Domain> domainKey =
+              VKey.createSql(Domain.class, loadedToken.getRedemptionHistoryId().get().getRepoId());
+          Domain domain = domains.get(domainKey);
           if (domain == null) {
             System.out.printf("ERROR: Token %s was redeemed but domain can't be loaded.\n", token);
           } else {
@@ -89,12 +88,11 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
       Collection<AllocationToken> tokens) {
     ImmutableList<VKey<Domain>> domainKeys =
         tokens.stream()
-            .map(AllocationToken::getRedemptionHistoryEntry)
+            .map(AllocationToken::getRedemptionHistoryId)
             .filter(Optional::isPresent)
             .map(Optional::get)
-            .map(key -> tm().loadByKey(key))
-            .map(he -> (Key<Domain>) he.getParent())
-            .map(key -> VKey.create(Domain.class, key.getName(), key))
+            .map(hi -> tm().loadByKey(VKey.createSql(DomainHistory.class, hi)))
+            .map(dh -> VKey.createSql(Domain.class, dh.getRepoId()))
             .collect(toImmutableList());
     ImmutableMap.Builder<VKey<Domain>, Domain> domainsBuilder = new ImmutableMap.Builder<>();
     for (List<VKey<Domain>> keys : Lists.partition(domainKeys, BATCH_SIZE)) {

@@ -14,7 +14,7 @@
 
 package google.registry.flows.domain;
 
-import static google.registry.flows.FlowUtils.createHistoryKey;
+import static google.registry.flows.FlowUtils.createHistoryEntryId;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyHasPendingTransfer;
@@ -32,7 +32,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
@@ -47,6 +46,7 @@ import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.DomainTransactionRecord;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.TransferStatus;
@@ -83,7 +83,9 @@ public final class DomainTransferCancelFlow implements TransactionalFlow {
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
-  @Inject DomainTransferCancelFlow() {}
+
+  @Inject
+  DomainTransferCancelFlow() {}
 
   @Override
   public EppResponse run() throws EppException {
@@ -100,9 +102,9 @@ public final class DomainTransferCancelFlow implements TransactionalFlow {
     }
     Registry registry = Registry.get(existingDomain.getTld());
 
-    Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
+    HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder
-        .setId(domainHistoryKey.getId())
+        .setRevisionId(domainHistoryId.getRevisionId())
         .setOtherRegistrarId(existingDomain.getTransferData().getLosingRegistrarId());
 
     Domain newDomain =
@@ -112,12 +114,12 @@ public final class DomainTransferCancelFlow implements TransactionalFlow {
             newDomain,
             domainHistory,
             createLosingTransferPollMessage(
-                targetId, newDomain.getTransferData(), null, domainHistoryKey));
+                targetId, newDomain.getTransferData(), null, domainHistoryId));
     // Reopen the autorenew event and poll message that we closed for the implicit transfer. This
     // may recreate the autorenew poll message if it was deleted when the transfer request was made.
     Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     updateAutorenewRecurrenceEndTime(
-        existingDomain, existingRecurring, END_OF_TIME, domainHistory.getDomainHistoryId());
+        existingDomain, existingRecurring, END_OF_TIME, domainHistory.getHistoryEntryId());
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
     tm().delete(existingDomain.getTransferData().getServerApproveEntities());

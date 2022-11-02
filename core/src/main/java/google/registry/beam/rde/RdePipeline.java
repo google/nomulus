@@ -55,7 +55,7 @@ import google.registry.model.rde.RdeMode;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.reporting.HistoryEntryDao;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
 import google.registry.rde.DepositFragment;
@@ -71,11 +71,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.persistence.IdClass;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.KvCoder;
@@ -172,6 +170,7 @@ import org.joda.time.DateTime;
  * @see <a href="https://cloud.google.com/dataflow/docs/guides/templates/using-flex-templates">Using
  *     Flex Templates</a>
  */
+@SuppressWarnings("ALL")
 @Singleton
 public class RdePipeline implements Serializable {
 
@@ -190,16 +189,6 @@ public class RdePipeline implements Serializable {
   // if sneaks into production we would get an extra signal.
   private static final ImmutableSet<Type> IGNORED_REGISTRAR_TYPES =
       Sets.immutableEnumSet(Registrar.Type.MONITORING, Registrar.Type.TEST);
-
-  // The field name of the EPP resource embedded in its corresponding history entry.
-  private static final ImmutableMap<Class<? extends HistoryEntry>, String> EPP_RESOURCE_FIELD_NAME =
-      ImmutableMap.of(
-          DomainHistory.class,
-          "domainBase",
-          ContactHistory.class,
-          "contactBase",
-          HostHistory.class,
-          "hostBase");
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -337,26 +326,20 @@ public class RdePipeline implements Serializable {
    */
   private <T extends HistoryEntry> PCollection<KV<String, Long>> getMostRecentHistoryEntries(
       Pipeline pipeline, Class<T> historyClass) {
-    String repoIdFieldName = HistoryEntryDao.REPO_ID_FIELD_NAMES.get(historyClass);
-    String resourceFieldName = EPP_RESOURCE_FIELD_NAME.get(historyClass);
     return pipeline.apply(
         String.format("Load most recent %s", historyClass.getSimpleName()),
         RegistryJpaIO.read(
-                ("SELECT %repoIdField%, id FROM %entity% WHERE (%repoIdField%, modificationTime)"
-                     + " IN (SELECT %repoIdField%, MAX(modificationTime) FROM %entity% WHERE"
-                     + " modificationTime <= :watermark GROUP BY %repoIdField%) AND"
-                     + " %resourceField%.deletionTime > :watermark AND"
-                     + " COALESCE(%resourceField%.creationClientId, '') NOT LIKE 'prober-%' AND"
-                     + " COALESCE(%resourceField%.currentSponsorClientId, '') NOT LIKE 'prober-%'"
-                     + " AND COALESCE(%resourceField%.lastEppUpdateClientId, '') NOT LIKE"
+                ("SELECT repoId, revisionId FROM %entity% WHERE (repoId, modificationTime) IN"
+                     + " (SELECT repoId, MAX(modificationTime) FROM %entity% WHERE"
+                     + " modificationTime <= :watermark GROUP BY repoId) AND resource.deletionTime"
+                     + " > :watermark AND COALESCE(resource.creationClientId, '') NOT LIKE"
+                     + " 'prober-%' AND COALESCE(resource.currentSponsorClientId, '') NOT LIKE"
+                     + " 'prober-%' AND COALESCE(resource.lastEppUpdateClientId, '') NOT LIKE"
                      + " 'prober-%' "
                         + (historyClass == DomainHistory.class
-                            ? "AND %resourceField%.tld IN "
-                                + "(SELECT id FROM Tld WHERE tldType = 'REAL')"
+                            ? "AND resource.tld IN " + "(SELECT id FROM Tld WHERE tldType = 'REAL')"
                             : ""))
-                    .replace("%entity%", historyClass.getSimpleName())
-                    .replace("%repoIdField%", repoIdFieldName)
-                    .replace("%resourceField%", resourceFieldName),
+                    .replace("%entity%", historyClass.getSimpleName()),
                 ImmutableMap.of("watermark", watermark),
                 Object[].class,
                 row -> KV.of((String) row[0], (long) row[1]))
@@ -380,38 +363,28 @@ public class RdePipeline implements Serializable {
       checkState(
           dedupedIds.size() == 1,
           "Multiple unique revision IDs detected for %s repo ID %s: %s",
-          EPP_RESOURCE_FIELD_NAME.get(historyEntryClazz),
+          historyEntryClazz.getSimpleName(),
           repoId,
           ids);
       logger.atSevere().log(
           "Duplicate revision IDs detected for %s repo ID %s: %s",
-          EPP_RESOURCE_FIELD_NAME.get(historyEntryClazz), repoId, ids);
+          historyEntryClazz.getSimpleName(), repoId, ids);
     }
     return loadResourceByHistoryEntryId(historyEntryClazz, repoId, ids.get(0));
   }
 
   private <T extends HistoryEntry> EppResource loadResourceByHistoryEntryId(
       Class<T> historyEntryClazz, String repoId, long revisionId) {
-    try {
-      Class<?> idClazz = historyEntryClazz.getAnnotation(IdClass.class).value();
-      Serializable idObject =
-          (Serializable)
-              idClazz.getConstructor(String.class, long.class).newInstance(repoId, revisionId);
-      return jpaTm()
-          .transact(() -> jpaTm().loadByKey(VKey.createSql(historyEntryClazz, idObject)))
-          .getResourceAtPointInTime()
-          .map(resource -> resource.cloneProjectedAtTime(watermark))
-          .get();
-    } catch (NoSuchMethodException
-        | InvocationTargetException
-        | InstantiationException
-        | IllegalAccessException e) {
-      throw new RuntimeException(
-          String.format(
-              "Cannot load resource from %s with repoId %s and revisionId %s",
-              historyEntryClazz.getSimpleName(), repoId, revisionId),
-          e);
-    }
+
+    return jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .loadByKey(
+                        VKey.createSql(historyEntryClazz, new HistoryEntryId(repoId, revisionId))))
+        .getResourceAtPointInTime()
+        .map(resource -> resource.cloneProjectedAtTime(watermark))
+        .get();
   }
 
   /**

@@ -36,7 +36,7 @@ import google.registry.model.domain.token.AllocationToken.TokenBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.AllocationTokenExtension;
-import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import java.util.List;
@@ -95,12 +95,11 @@ public class AllocationTokenFlowUtils {
   }
 
   /** Redeems a SINGLE_USE {@link AllocationToken}, returning the redeemed copy. */
-  public AllocationToken redeemToken(
-      AllocationToken token, VKey<? extends HistoryEntry> redemptionHistoryEntry) {
+  public AllocationToken redeemToken(AllocationToken token, HistoryEntryId redemptionHistoryId) {
     checkArgument(
         TokenType.SINGLE_USE.equals(token.getTokenType()),
         "Only SINGLE_USE tokens can be marked as redeemed");
-    return token.asBuilder().setRedemptionHistoryEntry(redemptionHistoryEntry).build();
+    return token.asBuilder().setRedemptionHistoryId(redemptionHistoryId).build();
   }
 
   /**
@@ -110,7 +109,7 @@ public class AllocationTokenFlowUtils {
    *
    * @throws EppException if the token is invalid in any way
    */
-  private void validateToken(
+  private static void validateToken(
       InternetDomainName domainName, AllocationToken token, String registrarId, DateTime now)
       throws EppException {
 
@@ -138,7 +137,7 @@ public class AllocationTokenFlowUtils {
   }
 
   /** Loads a given token and validates that it is not redeemed */
-  private AllocationToken loadToken(String token) throws EppException {
+  private static AllocationToken loadToken(String token) throws EppException {
     if (Strings.isNullOrEmpty(token)) {
       // We load the token directly from the input XML. If it's null or empty we should throw
       // an InvalidAllocationTokenException before the database load attempt fails.

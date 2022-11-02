@@ -145,7 +145,7 @@ class DomainTransferCancelFlowTest
         .that(historyEntryTransferCancel)
         .hasRegistrarId("NewRegistrar")
         .and()
-        .hasOtherClientId("TheRegistrar");
+        .hasOtherRegistrarId("TheRegistrar");
     // The only billing event left should be the original autorenew event, now reopened.
     assertBillingEvents(
         getLosingClientAutorenewEvent().asBuilder().setRecurrenceEndTime(END_OF_TIME).build());
@@ -381,7 +381,8 @@ class DomainTransferCancelFlowTest
   void testIcannTransactionRecord_noRecordsToCancel() throws Exception {
     clock.advanceOneMilli();
     runFlow();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL);
+    DomainHistory persistedEntry =
+        (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL);
     // No cancellation records should be produced
     assertThat(persistedEntry.getDomainTransactionRecords()).isEmpty();
   }
@@ -410,7 +411,8 @@ class DomainTransferCancelFlowTest
                 ImmutableSet.of(previousSuccessRecord, notCancellableRecord))
             .build());
     runFlow();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL);
+    DomainHistory persistedEntry =
+        (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL);
     // We should only produce a cancellation record for the original transfer success
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(previousSuccessRecord.asBuilder().setReportAmount(-1).build());

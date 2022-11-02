@@ -30,6 +30,7 @@ import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
@@ -381,16 +382,19 @@ public final class FullFieldsTestEntityHelper {
       Period period,
       String reason,
       DateTime modificationTime) {
-    return HistoryEntry.createBuilderForResource(resource)
-        .setType(type)
-        .setPeriod(period)
-        .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-        .setModificationTime(modificationTime)
-        .setRegistrarId(resource.getPersistedCurrentSponsorRegistrarId())
-        .setTrid(Trid.create("ABC-123", "server-trid"))
-        .setBySuperuser(false)
-        .setReason(reason)
-        .setRequestedByRegistrar(false)
-        .build();
+    HistoryEntry.Builder<?, ?> builder =
+        HistoryEntry.createBuilderForResource(resource)
+            .setType(type)
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .setModificationTime(modificationTime)
+            .setRegistrarId(resource.getPersistedCurrentSponsorRegistrarId())
+            .setTrid(Trid.create("ABC-123", "server-trid"))
+            .setBySuperuser(false)
+            .setReason(reason)
+            .setRequestedByRegistrar(false);
+    if (builder instanceof DomainHistory.Builder) {
+      ((DomainHistory.Builder) builder).setPeriod(period);
+    }
+    return builder.build();
   }
 }

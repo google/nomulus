@@ -22,8 +22,8 @@
         discount_premiums boolean not null,
         discount_years int4 not null,
         domain_name text,
-        redemption_domain_history_id int8,
         redemption_domain_repo_id text,
+        redemption_domain_history_id int8,
         registration_behavior text not null,
         renewal_price_behavior text not null,
         token_status_transitions hstore,
@@ -333,6 +333,9 @@
         history_server_transaction_id text,
         history_type text not null,
         history_xml_bytes bytea,
+        history_other_registrar_id text,
+        history_period_unit text,
+        history_period_value int4,
         admin_contact text,
         auth_info_repo_id text,
         auth_info_value text,
@@ -384,9 +387,6 @@
         last_epp_update_time timestamptz,
         statuses text[],
         update_timestamp timestamptz,
-        history_other_registrar_id text,
-        history_period_unit text,
-        history_period_value int4,
         primary key (domain_repo_id, history_revision_id)
     );
 

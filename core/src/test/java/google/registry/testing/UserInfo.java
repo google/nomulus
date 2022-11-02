@@ -17,7 +17,7 @@ package google.registry.testing;
 import com.google.auto.value.AutoValue;
 
 /**
- * Container for values passed to {@link AppEngineExtension} to set the logged in user for tests.
+ * Container for values passed to {@link AppEngineExtension} to set the logged-in user for tests.
  */
 @AutoValue
 public abstract class UserInfo {

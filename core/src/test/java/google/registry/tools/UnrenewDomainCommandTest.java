@@ -212,7 +212,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
                     "valid.tld"));
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Aborting because some domains cannot be unrewed");
+        .isEqualTo("Aborting because some domains cannot be unrenewed");
     assertInStderr(
         "Found domains that cannot be unrenewed for the following reasons:",
         "Domains that don't exist: [nonexistent.tld]",

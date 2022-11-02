@@ -119,7 +119,7 @@ public class DomainPricingLogicTest {
                 .setId(2L)
                 .setReason(Reason.RENEW)
                 .setRenewalPriceBehavior(renewalPriceBehavior)
-                .setRenewalPrice(renewalPrice.isPresent() ? renewalPrice.get() : null)
+                .setRenewalPrice(renewalPrice.orElse(null))
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setTargetId(domain.getDomainName())
                 .build());

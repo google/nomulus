@@ -286,13 +286,12 @@ class WipeOutContactHistoryPiiActionTest {
   void wipeOutContactHistoryData_wipesOutNoEntity() {
     jpaTm()
         .transact(
-            () -> {
-              assertThat(
-                      action.wipeOutContactHistoryData(
-                          action.getNextContactHistoryEntitiesWithPiiBatch(
-                              clock.nowUtc().minusMonths(MIN_MONTHS_BEFORE_WIPE_OUT))))
-                  .isEqualTo(0);
-            });
+            () ->
+                assertThat(
+                        action.wipeOutContactHistoryData(
+                            action.getNextContactHistoryEntitiesWithPiiBatch(
+                                clock.nowUtc().minusMonths(MIN_MONTHS_BEFORE_WIPE_OUT))))
+                    .isEqualTo(0));
   }
 
   @Test
@@ -317,9 +316,9 @@ class WipeOutContactHistoryPiiActionTest {
   /** persists a number of ContactHistory entities for load and query testing. */
   ImmutableList<ContactHistory> persistLotsOfContactHistoryEntities(
       int numOfEntities, int minusMonths, int minusDays, Contact contact) {
-    ImmutableList.Builder<ContactHistory> expectedEntitesBuilder = new ImmutableList.Builder<>();
+    ImmutableList.Builder<ContactHistory> expectedEntitiesBuilder = new ImmutableList.Builder<>();
     for (int i = 0; i < numOfEntities; i++) {
-      expectedEntitesBuilder.add(
+      expectedEntitiesBuilder.add(
           persistResource(
               new ContactHistory()
                   .asBuilder()
@@ -329,7 +328,7 @@ class WipeOutContactHistoryPiiActionTest {
                   .setContact(persistResource(contact))
                   .build()));
     }
-    return expectedEntitesBuilder.build();
+    return expectedEntitiesBuilder.build();
   }
 
   boolean areAllPiiFieldsWiped(ContactBase contactBase) {

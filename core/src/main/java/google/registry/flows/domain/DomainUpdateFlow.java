@@ -208,12 +208,9 @@ public final class DomainUpdateFlow implements TransactionalFlow {
 
   /** Determines if any of the changes to new domain should trigger DNS update. */
   private boolean requiresDnsUpdate(Domain existingDomain, Domain newDomain) {
-    if (existingDomain.shouldPublishToDns() != newDomain.shouldPublishToDns()
+    return existingDomain.shouldPublishToDns() != newDomain.shouldPublishToDns()
         || !Objects.equals(newDomain.getDsData(), existingDomain.getDsData())
-        || !Objects.equals(newDomain.getNsHosts(), existingDomain.getNsHosts())) {
-      return true;
-    }
-    return false;
+        || !Objects.equals(newDomain.getNsHosts(), existingDomain.getNsHosts());
   }
 
   /** Fail if the object doesn't exist or was deleted. */
@@ -363,7 +360,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
             .map(StatusValue::getXmlName)
             .collect(toImmutableSortedSet(Ordering.natural()));
 
-    String msg = "";
+    String msg;
     if (addedServerStatuses.size() > 0 && removedServerStatuses.size() > 0) {
       msg =
           String.format(

@@ -16,7 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static google.registry.flows.FlowUtils.createHistoryKey;
+import static google.registry.flows.FlowUtils.createHistoryEntryId;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -43,7 +43,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
-import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
@@ -66,7 +65,6 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Credit;
@@ -88,6 +86,7 @@ import google.registry.model.poll.PendingActionNotificationResponse.DomainPendin
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
@@ -181,8 +180,8 @@ public final class DomainDeleteFlow implements TransactionalFlow {
             ? Duration.ZERO
             // By default, this should be 30 days of grace, and 5 days of pending delete.
             : redemptionGracePeriodLength.plus(pendingDeleteLength);
-    Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
-    historyBuilder.setId(domainHistoryKey.getId());
+    HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
+    historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
     DateTime deletionTime = now.plus(durationUntilDelete);
     if (durationUntilDelete.equals(Duration.ZERO)) {
       builder.setDeletionTime(now).setStatusValues(null);
@@ -214,7 +213,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     // it is synchronous).
     if (durationUntilDelete.isLongerThan(Duration.ZERO) || isSuperuser) {
       PollMessage.OneTime deletePollMessage =
-          createDeletePollMessage(existingDomain, domainHistoryKey, deletionTime);
+          createDeletePollMessage(existingDomain, domainHistoryId, deletionTime);
       entitiesToSave.add(deletePollMessage);
       builder.setDeletePollMessage(deletePollMessage.createVKey());
     }
@@ -224,7 +223,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     if (durationUntilDelete.isLongerThan(Duration.ZERO)
         && !registrarId.equals(existingDomain.getPersistedCurrentSponsorRegistrarId())) {
       entitiesToSave.add(
-          createImmediateDeletePollMessage(existingDomain, domainHistoryKey, now, deletionTime));
+          createImmediateDeletePollMessage(existingDomain, domainHistoryId, now, deletionTime));
     }
 
     // Cancel any grace periods that were still active, and set the expiration time accordingly.
@@ -233,14 +232,9 @@ public final class DomainDeleteFlow implements TransactionalFlow {
       // No cancellation is written if the grace period was not for a billable event.
       if (gracePeriod.hasBillingEvent()) {
         entitiesToSave.add(
-            BillingEvent.Cancellation.forGracePeriod(
-                gracePeriod,
-                now,
-                new DomainHistoryId(
-                    domainHistoryKey.getParent().getName(), domainHistoryKey.getId()),
-                targetId));
+            BillingEvent.Cancellation.forGracePeriod(gracePeriod, now, domainHistoryId, targetId));
         if (gracePeriod.getOneTimeBillingEvent() != null) {
-          // Take the amount of amount of registration time being refunded off the expiration time.
+          // Take the amount of registration time being refunded off the expiration time.
           // This can be either add grace periods or renew grace periods.
           BillingEvent.OneTime oneTime = tm().loadByKey(gracePeriod.getOneTimeBillingEvent());
           newExpirationTime = newExpirationTime.minusYears(oneTime.getPeriodYears());
@@ -262,7 +256,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     BillingEvent.Recurring recurringBillingEvent =
         updateAutorenewRecurrenceEndTime(
-            existingDomain, existingRecurring, now, domainHistory.getDomainHistoryId());
+            existingDomain, existingRecurring, now, domainHistory.getHistoryEntryId());
     // If there's a pending transfer, the gaining client's autorenew billing
     // event and poll message will already have been deleted in
     // ResourceDeleteFlow since it's listed in serverApproveEntities.
@@ -343,7 +337,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
   }
 
   private PollMessage.OneTime createDeletePollMessage(
-      Domain existingDomain, Key<DomainHistory> domainHistoryKey, DateTime deletionTime) {
+      Domain existingDomain, HistoryEntryId domainHistoryId, DateTime deletionTime) {
     Optional<MetadataExtension> metadataExtension =
         eppInput.getSingleExtension(MetadataExtension.class);
     boolean hasMetadataMessage =
@@ -362,21 +356,16 @@ public final class DomainDeleteFlow implements TransactionalFlow {
             ImmutableList.of(
                 DomainPendingActionNotificationResponse.create(
                     existingDomain.getDomainName(), true, trid, deletionTime)))
-        .setDomainHistoryId(
-            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
+        .setDomainHistoryId(domainHistoryId)
         .build();
   }
 
   private PollMessage.OneTime createImmediateDeletePollMessage(
-      Domain existingDomain,
-      Key<DomainHistory> domainHistoryKey,
-      DateTime now,
-      DateTime deletionTime) {
+      Domain existingDomain, HistoryEntryId domainHistoryId, DateTime now, DateTime deletionTime) {
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(existingDomain.getPersistedCurrentSponsorRegistrarId())
         .setEventTime(now)
-        .setDomainHistoryId(
-            new DomainHistoryId(domainHistoryKey.getParent().getName(), domainHistoryKey.getId()))
+        .setDomainHistoryId(domainHistoryId)
         .setMsg(
             String.format(
                 "Domain %s was deleted by registry administrator with final deletion effective: %s",

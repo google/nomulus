@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -76,7 +75,7 @@ class HistoryEntryDaoTest extends EntityTestCase {
   @Test
   void testSimpleLoadAll() {
     assertThat(HistoryEntryDao.loadAllHistoryObjects(START_OF_TIME, END_OF_TIME))
-        .comparingElementsUsing(immutableObjectCorrespondence("nsHosts", "domainBase"))
+        .comparingElementsUsing(immutableObjectCorrespondence("nsHosts", "resource"))
         .containsExactly(domainHistory);
   }
 
@@ -98,7 +97,7 @@ class HistoryEntryDaoTest extends EntityTestCase {
     tm().transact(
             () ->
                 assertThat(HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey()))
-                    .comparingElementsUsing(immutableObjectCorrespondence("nsHosts", "domainBase"))
+                    .comparingElementsUsing(immutableObjectCorrespondence("nsHosts", "resource"))
                     .containsExactly(domainHistory));
   }
 

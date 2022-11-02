@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertAbout;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.SimpleSubjectBuilder;
 import com.google.common.truth.Subject;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.TruthChainer.And;
@@ -55,8 +56,12 @@ public class HistoryEntrySubject extends Subject {
     return hasValue(registrarId, actual.getRegistrarId(), "getRegistrarId()");
   }
 
-  public And<HistoryEntrySubject> hasOtherClientId(String otherClientId) {
-    return hasValue(otherClientId, actual.getOtherRegistrarId(), "getOtherRegistrarId()");
+  public And<HistoryEntrySubject> hasOtherRegistrarId(String otherRegistrarId) {
+    if (!(actual instanceof DomainHistory)) {
+      failWithActual(simpleFact("expected to be DomainHistory"));
+    }
+    return hasValue(
+        otherRegistrarId, ((DomainHistory) actual).getOtherRegistrarId(), "getOtherRegistrarId()");
   }
 
   public And<HistoryEntrySubject> hasModificationTime(DateTime modificationTime) {
@@ -68,18 +73,25 @@ public class HistoryEntrySubject extends Subject {
   }
 
   public And<HistoryEntrySubject> hasPeriod() {
-    if (actual.getPeriod() == null) {
+    if (!(actual instanceof DomainHistory)) {
+      failWithActual(simpleFact("expected to be DomainHistory"));
+    }
+    if (((DomainHistory) actual).getPeriod() == null) {
       failWithActual(simpleFact("expected to have a period"));
     }
     return new And<>(this);
   }
 
   public And<HistoryEntrySubject> hasPeriodYears(int years) {
+    if (!(actual instanceof DomainHistory)) {
+      failWithActual(simpleFact("expected to be DomainHistory"));
+    }
+    Period actualPeriod = ((DomainHistory) actual).getPeriod();
     return hasPeriod()
         .and()
-        .hasValue(Period.Unit.YEARS, actual.getPeriod().getUnit(), "getPeriod().getUnit()")
+        .hasValue(Period.Unit.YEARS, actualPeriod.getUnit(), "getPeriod().getUnit()")
         .and()
-        .hasValue(years, actual.getPeriod().getValue(), "getPeriod().getValue()");
+        .hasValue(years, actualPeriod.getValue(), "getPeriod().getValue()");
   }
 
   public And<HistoryEntrySubject> hasNoXml() {
@@ -93,8 +105,7 @@ public class HistoryEntrySubject extends Subject {
     return hasValue(reason, actual.getReason(), "getReason()");
   }
 
-  public And<HistoryEntrySubject> hasMetadataRequestedByRegistrar(
-        boolean requestedByRegistrar) {
+  public And<HistoryEntrySubject> hasMetadataRequestedByRegistrar(boolean requestedByRegistrar) {
     return hasValue(
         requestedByRegistrar, actual.getRequestedByRegistrar(), "getRequestedByRegistrar()");
   }

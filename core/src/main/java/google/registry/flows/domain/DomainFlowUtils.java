@@ -88,7 +88,6 @@ import google.registry.model.domain.DomainCommand.CreateOrUpdate;
 import google.registry.model.domain.DomainCommand.InvalidReferencesException;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.ForeignKeyedDesignatedContact;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.BaseFee;
@@ -121,7 +120,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
-import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.Registry.TldType;
@@ -429,7 +428,7 @@ public class DomainFlowUtils {
         contacts.stream()
             .collect(
                 toImmutableSetMultimap(
-                    DesignatedContact::getType, contact -> contact.getContactKey()));
+                    DesignatedContact::getType, DesignatedContact::getContactKey));
 
     // If any contact type has multiple contacts:
     if (contactsByType.asMap().values().stream().anyMatch(v -> v.size() > 1)) {
@@ -590,7 +589,7 @@ public class DomainFlowUtils {
       Domain domain,
       Recurring existingRecurring,
       DateTime newEndTime,
-      @Nullable DomainHistoryId historyId) {
+      @Nullable HistoryEntryId historyId) {
     Optional<PollMessage.Autorenew> autorenewPollMessage =
         tm().loadByKeyIfPresent(domain.getAutorenewPollMessage());
 
@@ -773,8 +772,6 @@ public class DomainFlowUtils {
    * domain names.
    */
   public static void validateFeeChallenge(
-      String domainName,
-      DateTime priceTime,
       final Optional<? extends FeeTransformCommandExtension> feeCommand,
       FeesAndCredits feesAndCredits)
       throws EppException {
@@ -1135,9 +1132,9 @@ public class DomainFlowUtils {
       Duration maxSearchPeriod,
       final ImmutableSet<TransactionReportField> cancelableFields) {
 
-    List<? extends HistoryEntry> recentHistoryEntries =
+    List<DomainHistory> recentHistoryEntries =
         findRecentHistoryEntries(domain, now, maxSearchPeriod);
-    Optional<? extends HistoryEntry> entryToCancel =
+    Optional<DomainHistory> entryToCancel =
         Streams.findLast(
             recentHistoryEntries.stream()
                 .filter(
@@ -1174,11 +1171,11 @@ public class DomainFlowUtils {
     return recordsBuilder.build();
   }
 
-  private static List<? extends HistoryEntry> findRecentHistoryEntries(
+  private static List<DomainHistory> findRecentHistoryEntries(
       Domain domain, DateTime now, Duration maxSearchPeriod) {
     return jpaTm()
         .query(
-            "FROM DomainHistory WHERE modificationTime >= :beginning AND domainRepoId = "
+            "FROM DomainHistory WHERE modificationTime >= :beginning AND repoId = "
                 + ":repoId ORDER BY modificationTime ASC",
             DomainHistory.class)
         .setParameter("beginning", now.minus(maxSearchPeriod))

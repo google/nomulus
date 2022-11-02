@@ -32,10 +32,10 @@ import google.registry.model.annotations.OfyIdAllocation;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.TimeOfYear;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
@@ -204,8 +204,8 @@ public abstract class BillingEvent extends ImmutableObject
     return targetId;
   }
 
-  public DomainHistoryId getDomainHistoryId() {
-    return new DomainHistoryId(domainRepoId, domainHistoryRevisionId);
+  public HistoryEntryId getHistoryEntryId() {
+    return new HistoryEntryId(domainRepoId, domainHistoryRevisionId);
   }
 
   public ImmutableSet<Flag> getFlags() {
@@ -259,14 +259,14 @@ public abstract class BillingEvent extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setDomainHistoryId(DomainHistoryId domainHistoryId) {
-      getInstance().domainHistoryRevisionId = domainHistoryId.getId();
-      getInstance().domainRepoId = domainHistoryId.getDomainRepoId();
+    public B setDomainHistoryId(HistoryEntryId domainHistoryId) {
+      getInstance().domainHistoryRevisionId = domainHistoryId.getRevisionId();
+      getInstance().domainRepoId = domainHistoryId.getRepoId();
       return thisCastToDerived();
     }
 
     public B setDomainHistory(DomainHistory domainHistory) {
-      return setDomainHistoryId(domainHistory.getDomainHistoryId());
+      return setDomainHistoryId(domainHistory.getHistoryEntryId());
     }
 
     @Override
@@ -653,7 +653,7 @@ public abstract class BillingEvent extends ImmutableObject
     public static Cancellation forGracePeriod(
         GracePeriod gracePeriod,
         DateTime eventTime,
-        DomainHistoryId domainHistoryId,
+        HistoryEntryId domainHistoryId,
         String targetId) {
       checkArgument(
           gracePeriod.hasBillingEvent(),

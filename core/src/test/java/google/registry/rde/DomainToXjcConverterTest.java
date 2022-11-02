@@ -365,7 +365,7 @@ public class DomainToXjcConverterTest {
                             .createVKey())
                     .setServerApproveEntities(
                         domain.getRepoId(),
-                        domainHistory.getId(),
+                        domainHistory.getRevisionId(),
                         ImmutableSet.of(billingEvent.createVKey()))
                     .setTransferRequestTime(DateTime.parse("1919-01-01T00:00:00Z"))
                     .setTransferStatus(TransferStatus.PENDING)

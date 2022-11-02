@@ -103,7 +103,7 @@ public class CreateCancellationsForOneTimesCommand extends ConfirmingCommand
                             new Cancellation.Builder()
                                 .setOneTimeEventKey(oneTime.createVKey())
                                 .setBillingTime(oneTime.getBillingTime())
-                                .setDomainHistoryId(oneTime.getDomainHistoryId())
+                                .setDomainHistoryId(oneTime.getHistoryEntryId())
                                 .setRegistrarId(oneTime.getRegistrarId())
                                 .setEventTime(oneTime.getEventTime())
                                 .setReason(BillingEvent.Reason.ERROR)

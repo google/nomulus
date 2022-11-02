@@ -103,12 +103,21 @@ public class RdapJsonFormatter {
 
   private DateTime requestTime = null;
 
-  @Inject @Config("rdapTos") ImmutableList<String> rdapTos;
-  @Inject @Config("rdapTosStaticUrl") @Nullable String rdapTosStaticUrl;
+  @Inject
+  @Config("rdapTos")
+  ImmutableList<String> rdapTos;
+
+  @Inject
+  @Config("rdapTosStaticUrl")
+  @Nullable
+  String rdapTosStaticUrl;
+
   @Inject @FullServletPath String fullServletPath;
   @Inject RdapAuthorization rdapAuthorization;
   @Inject Clock clock;
-  @Inject RdapJsonFormatter() {}
+
+  @Inject
+  RdapJsonFormatter() {}
 
   /**
    * What type of data to generate.
@@ -156,15 +165,15 @@ public class RdapJsonFormatter {
   /**
    * JPQL query template for finding the latest history entry per event type for an EPP entity.
    *
-   * <p>User should replace '%entityName%', '%repoIdField%', and '%repoIdValue%' with valid values.
-   * A DomainHistory query may look like below: {@code select e from DomainHistory e where
+   * <p>User should replace '%entityName%' and '%repoIdValue%' with valid values. A {@code
+   * DomainHistory} query may look like below: {@code select e from DomainHistory e where
    * domainRepoId = '17-Q9JYB4C' and modificationTime in (select max(modificationTime) from
    * DomainHistory where domainRepoId = '17-Q9JYB4C' and type is not null group by type)}
    */
   private static final String GET_LAST_HISTORY_BY_TYPE_JPQL_TEMPLATE =
-      "select e from %entityName% e where %repoIdField% = '%repoIdValue%' and modificationTime in "
+      "select e from %entityName% e where repoId = '%repoIdValue%' and modificationTime in "
           + " (select max(modificationTime) from %entityName% where "
-          + " %repoIdField% = '%repoIdValue%' and type is not null group by type)";
+          + " repoId = '%repoIdValue%' and type is not null group by type)";
 
   /** Map of EPP status values to the RDAP equivalents. */
   private static final ImmutableMap<StatusValue, RdapStatus> STATUS_TO_RDAP_STATUS_MAP =
@@ -886,19 +895,17 @@ public class RdapJsonFormatter {
     // 2.3.2.3 An event of *eventAction* type *transfer*, with the last date and time that the
     // domain was transferred. The event of *eventAction* type *transfer* MUST be omitted if the
     // domain name has not been transferred since it was created.
-      VKey<? extends EppResource> resourceVkey = resource.createVKey();
-      Class<? extends HistoryEntry> historyClass =
-          HistoryEntryDao.getHistoryClassFromParent(resourceVkey.getKind());
-      String entityName = historyClass.getAnnotation(Entity.class).name();
-      if (Strings.isNullOrEmpty(entityName)) {
-        entityName = historyClass.getSimpleName();
-      }
-      String repoIdFieldName = HistoryEntryDao.getRepoIdFieldNameFromHistoryClass(historyClass);
-      String jpql =
-          GET_LAST_HISTORY_BY_TYPE_JPQL_TEMPLATE
-              .replace("%entityName%", entityName)
-              .replace("%repoIdField%", repoIdFieldName)
-              .replace("%repoIdValue%", resourceVkey.getSqlKey().toString());
+    VKey<? extends EppResource> resourceVkey = resource.createVKey();
+    Class<? extends HistoryEntry> historyClass =
+        HistoryEntryDao.getHistoryClassFromParent(resourceVkey.getKind());
+    String entityName = historyClass.getAnnotation(Entity.class).name();
+    if (Strings.isNullOrEmpty(entityName)) {
+      entityName = historyClass.getSimpleName();
+    }
+    String jpql =
+        GET_LAST_HISTORY_BY_TYPE_JPQL_TEMPLATE
+            .replace("%entityName%", entityName)
+            .replace("%repoIdValue%", resourceVkey.getSqlKey().toString());
     Iterable<HistoryEntry> historyEntries =
         replicaJpaTm()
             .transact(
@@ -974,9 +981,7 @@ public class RdapJsonFormatter {
   /** Creates an RDAP event object as defined by RFC 9083. */
   private static Event makeEvent(
       EventAction eventAction, @Nullable String eventActor, DateTime eventDate) {
-    Event.Builder builder = Event.builder()
-        .setEventAction(eventAction)
-        .setEventDate(eventDate);
+    Event.Builder builder = Event.builder().setEventAction(eventAction).setEventDate(eventDate);
     if (eventActor != null) {
       builder.setEventActor(eventActor);
     }
@@ -1042,10 +1047,7 @@ public class RdapJsonFormatter {
     addressArray.add(
         new Locale("en", nullToEmpty(address.getCountryCode()))
             .getDisplayCountry(new Locale("en")));
-    vcardArrayBuilder.add(Vcard.create(
-        "adr",
-        "text",
-        addressArray));
+    vcardArrayBuilder.add(Vcard.create("adr", "text", addressArray));
   }
 
   /** Creates a vCard phone number entry. */
@@ -1074,8 +1076,7 @@ public class RdapJsonFormatter {
   private static ImmutableSet<RdapStatus> makeStatusValueList(
       ImmutableSet<StatusValue> statusValues, boolean isRedacted, boolean isDeleted) {
     Stream<RdapStatus> stream =
-        statusValues
-            .stream()
+        statusValues.stream()
             .map(status -> STATUS_TO_RDAP_STATUS_MAP.getOrDefault(status, RdapStatus.OBSCURED));
     if (isRedacted) {
       stream = Streams.concat(stream, Stream.of(RdapStatus.REMOVED));
@@ -1083,24 +1084,19 @@ public class RdapJsonFormatter {
     if (isDeleted) {
       stream =
           Streams.concat(
-              stream.filter(not(RdapStatus.ACTIVE::equals)),
-              Stream.of(RdapStatus.INACTIVE));
+              stream.filter(not(RdapStatus.ACTIVE::equals)), Stream.of(RdapStatus.INACTIVE));
     }
     return stream
         .sorted(Ordering.natural().onResultOf(RdapStatus::getDisplayName))
         .collect(toImmutableSet());
   }
 
-  /**
-   * Create a link relative to the RDAP server endpoint.
-   */
+  /** Create a link relative to the RDAP server endpoint. */
   String makeRdapServletRelativeUrl(String part, String... moreParts) {
     return makeServerRelativeUrl(fullServletPath, part, moreParts);
   }
 
-  /**
-   * Create a link relative to some base server
-   */
+  /** Create a link relative to some base server */
   static String makeServerRelativeUrl(String baseServer, String part, String... moreParts) {
     String relativePath = Paths.get(part, moreParts).toString();
     if (baseServer.endsWith("/")) {
@@ -1117,11 +1113,7 @@ public class RdapJsonFormatter {
    */
   private Link makeSelfLink(String type, String name) {
     String url = makeRdapServletRelativeUrl(type, name);
-    return Link.builder()
-        .setRel("self")
-        .setHref(url)
-        .setType("application/rdap+json")
-        .build();
+    return Link.builder().setRel("self").setHref(url).setType("application/rdap+json").build();
   }
 
   /**

@@ -38,8 +38,7 @@ import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.common.TimedTransitionProperty;
-import google.registry.model.reporting.HistoryEntry;
-import google.registry.persistence.DomainHistoryVKey;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
 import java.util.Optional;
@@ -154,11 +153,9 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   @Nullable
   @AttributeOverrides({
     @AttributeOverride(name = "repoId", column = @Column(name = "redemption_domain_repo_id")),
-    @AttributeOverride(
-        name = "historyRevisionId",
-        column = @Column(name = "redemption_domain_history_id"))
+    @AttributeOverride(name = "revisionId", column = @Column(name = "redemption_domain_history_id"))
   })
-  DomainHistoryVKey redemptionHistoryEntry;
+  HistoryEntryId redemptionHistoryId;
 
   /** The fully-qualified domain name that this token is limited to, if any. */
   @Nullable String domainName;
@@ -212,13 +209,12 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     return token;
   }
 
-  public Optional<VKey<? extends HistoryEntry>> getRedemptionHistoryEntry() {
-    return Optional.ofNullable(
-        redemptionHistoryEntry == null ? null : redemptionHistoryEntry.createDomainHistoryVKey());
+  public Optional<HistoryEntryId> getRedemptionHistoryId() {
+    return Optional.ofNullable(redemptionHistoryId);
   }
 
   public boolean isRedeemed() {
-    return redemptionHistoryEntry != null;
+    return redemptionHistoryId != null;
   }
 
   public Optional<String> getDomainName() {
@@ -309,7 +305,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
           getInstance().domainName == null || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Domain name can only be specified for SINGLE_USE tokens");
       checkArgument(
-          getInstance().redemptionHistoryEntry == null
+          getInstance().redemptionHistoryId == null
               || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Redemption history entry can only be specified for SINGLE_USE tokens");
       checkArgument(
@@ -345,10 +341,9 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       return this;
     }
 
-    public Builder setRedemptionHistoryEntry(VKey<? extends HistoryEntry> redemptionHistoryEntry) {
-      checkArgumentNotNull(redemptionHistoryEntry, "Redemption history entry must not be null");
-      getInstance().redemptionHistoryEntry =
-          DomainHistoryVKey.create(redemptionHistoryEntry.getOfyKey());
+    public Builder setRedemptionHistoryId(HistoryEntryId redemptionHistoryId) {
+      checkArgumentNotNull(redemptionHistoryId, "Redemption history entry ID must not be null");
+      getInstance().redemptionHistoryId = redemptionHistoryId;
       return this;
     }
 

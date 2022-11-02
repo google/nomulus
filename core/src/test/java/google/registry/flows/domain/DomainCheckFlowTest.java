@@ -42,7 +42,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
@@ -78,6 +77,7 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.label.ReservedList;
@@ -192,12 +192,12 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   void testSuccess_oneExists_allocationTokenIsRedeemed() throws Exception {
     setEppInput("domain_check_allocationtoken.xml");
     Domain domain = persistActiveDomain("example1.tld");
-    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1L);
+    HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 1L);
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
+            .setRedemptionHistoryId(historyEntryId)
             .build());
     doCheckTest(
         create(false, "example1.tld", "In use"),

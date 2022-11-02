@@ -30,7 +30,7 @@ public abstract class UpdateAutoTimestampEntity extends ImmutableObject
     implements UnsafeSerializable {
 
   /**
-   * An automatically managed timestamp of when this object was last written to Datastore.
+   * An automatically managed timestamp of when this object was last written to the database.
    *
    * <p>Note that this is distinct from the EPP-specified {@link EppResource#lastEppUpdateTime}, in
    * that this is updated on every save, rather than only in response to an {@code <update>} command

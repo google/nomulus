@@ -23,7 +23,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Throwables;
 import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.ParameterValueRangeErrorException;
 import google.registry.flows.EppException.SyntaxErrorException;
@@ -34,7 +33,7 @@ import google.registry.model.eppcommon.EppXmlTransformer;
 import google.registry.model.eppinput.EppInput.WrongProtocolVersionException;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.host.InetAddressAdapter.IpVersionMismatchException;
-import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.translators.CurrencyUnitAdapter.UnknownCurrencyException;
 import google.registry.xml.XmlException;
 import java.util.List;
@@ -103,9 +102,8 @@ public final class FlowUtils {
     }
   }
 
-  public static <H extends HistoryEntry> Key<H> createHistoryKey(
-      EppResource parent, Class<H> clazz) {
-    return Key.create(Key.create(parent), clazz, allocateId());
+  public static HistoryEntryId createHistoryEntryId(EppResource parent) {
+    return new HistoryEntryId(parent.getRepoId(), allocateId());
   }
 
   /** Registrar is not logged in. */
@@ -118,7 +116,7 @@ public final class FlowUtils {
   /** IP address version mismatch. */
   public static class IpAddressVersionMismatchException extends ParameterValueRangeErrorException {
     public IpAddressVersionMismatchException() {
-      super("IP adddress version mismatch");
+      super("IP address version mismatch");
     }
   }
 

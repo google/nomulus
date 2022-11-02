@@ -14,7 +14,7 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.createHistoryKey;
+import static google.registry.flows.FlowUtils.createHistoryEntryId;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyAuthInfo;
@@ -28,7 +28,6 @@ import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_TRANSFER
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -46,6 +45,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.PollMessage;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferStatus;
@@ -74,21 +74,27 @@ import org.joda.time.Duration;
 @ReportingSpec(ActivityReportField.CONTACT_TRANSFER_REQUEST)
 public final class ContactTransferRequestFlow implements TransactionalFlow {
 
-  private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES = ImmutableSet.of(
-      StatusValue.CLIENT_TRANSFER_PROHIBITED,
-      StatusValue.PENDING_DELETE,
-      StatusValue.SERVER_TRANSFER_PROHIBITED);
+  private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES =
+      ImmutableSet.of(
+          StatusValue.CLIENT_TRANSFER_PROHIBITED,
+          StatusValue.PENDING_DELETE,
+          StatusValue.SERVER_TRANSFER_PROHIBITED);
 
   @Inject ExtensionManager extensionManager;
   @Inject Optional<AuthInfo> authInfo;
   @Inject @RegistrarId String gainingClientId;
   @Inject @TargetId String targetId;
-  @Inject @Config("contactAutomaticTransferLength") Duration automaticTransferLength;
+
+  @Inject
+  @Config("contactAutomaticTransferLength")
+  Duration automaticTransferLength;
 
   @Inject ContactHistory.Builder historyBuilder;
   @Inject Trid trid;
   @Inject EppResponse.Builder responseBuilder;
-  @Inject ContactTransferRequestFlow() {}
+
+  @Inject
+  ContactTransferRequestFlow() {}
 
   @Override
   public EppResponse run() throws EppException {
@@ -120,29 +126,31 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.SERVER_APPROVED)
             .build();
-    Key<ContactHistory> contactHistoryKey = createHistoryKey(existingContact, ContactHistory.class);
-    historyBuilder.setId(contactHistoryKey.getId()).setType(CONTACT_TRANSFER_REQUEST);
+    HistoryEntryId contactHistoryId = createHistoryEntryId(existingContact);
+    historyBuilder
+        .setRevisionId(contactHistoryId.getRevisionId())
+        .setType(CONTACT_TRANSFER_REQUEST);
     // If the transfer is server approved, this message will be sent to the losing registrar. */
     PollMessage serverApproveLosingPollMessage =
-        createLosingTransferPollMessage(targetId, serverApproveTransferData, contactHistoryKey);
+        createLosingTransferPollMessage(targetId, serverApproveTransferData, contactHistoryId);
     // If the transfer is server approved, this message will be sent to the gaining registrar. */
     PollMessage serverApproveGainingPollMessage =
         createGainingTransferPollMessage(
-            targetId, serverApproveTransferData, now, contactHistoryKey);
+            targetId, serverApproveTransferData, now, contactHistoryId);
     ContactTransferData pendingTransferData =
         serverApproveTransferData
             .asBuilder()
             .setTransferStatus(TransferStatus.PENDING)
             .setServerApproveEntities(
                 serverApproveGainingPollMessage.getContactRepoId(),
-                contactHistoryKey.getId(),
+                contactHistoryId.getRevisionId(),
                 ImmutableSet.of(
                     serverApproveGainingPollMessage.createVKey(),
                     serverApproveLosingPollMessage.createVKey()))
             .build();
     // When a transfer is requested, a poll message is created to notify the losing registrar.
     PollMessage requestPollMessage =
-        createLosingTransferPollMessage(targetId, pendingTransferData, contactHistoryKey)
+        createLosingTransferPollMessage(targetId, pendingTransferData, contactHistoryId)
             .asBuilder()
             .setEventTime(now) // Unlike the serverApprove messages, this applies immediately.
             .build();
@@ -165,4 +173,3 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
         .build();
   }
 }
-

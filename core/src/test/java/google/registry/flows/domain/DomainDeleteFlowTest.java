@@ -975,7 +975,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                             "tld", TIME_BEFORE_FLOW.plusDays(1), NET_ADDS_1_YR, 1)))
                 .build());
     runFlow();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
+    DomainHistory persistedEntry = (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
     // No transaction records should be recorded for test TLDs
     assertThat(persistedEntry.getDomainTransactionRecords()).isEmpty();
   }
@@ -997,7 +997,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                             "tld", TIME_BEFORE_FLOW.plusDays(1), NET_ADDS_1_YR, 1)))
                 .build());
     runFlow();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
+    DomainHistory persistedEntry = (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
     // Transaction record should just be the non-grace period delete
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
@@ -1023,7 +1023,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                             "tld", TIME_BEFORE_FLOW.plusDays(1), RESTORED_DOMAINS, 1)))
                 .build());
     runFlow();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
+    DomainHistory persistedEntry = (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
     // Transaction record should just be the non-grace period delete
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
@@ -1051,7 +1051,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 .setDomainTransactionRecords(ImmutableSet.of(renewRecord, notCancellableRecord))
                 .build());
     runFlow();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
+    DomainHistory persistedEntry = (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
     // We should only see the non-grace period delete record and the renew cancellation record
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
@@ -1073,7 +1073,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     setUpGracePeriodDurations();
     clock.advanceOneMilli();
     runFlow();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
+    DomainHistory persistedEntry = (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
     // Transaction record should just be the grace period delete
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
@@ -1115,7 +1115,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setDomainTransactionRecords(ImmutableSet.of(existingRecord))
             .build());
     runFlow();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
+    DomainHistory persistedEntry = (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
     // Transaction record should be the grace period delete, and the more recent cancellation record
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(

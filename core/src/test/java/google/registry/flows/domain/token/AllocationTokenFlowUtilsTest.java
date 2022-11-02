@@ -37,7 +37,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Maps;
 import com.google.common.net.InternetDomainName;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
@@ -48,7 +47,7 @@ import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationTokenExtension;
-import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
@@ -256,7 +255,7 @@ class AllocationTokenFlowUtilsTest {
 
   @Test
   void test_validateTokenCreate_promoCancelled() {
-    // the promo would be valid but it was cancelled 12 hours ago
+    // the promo would be valid, but it was cancelled 12 hours ago
     persistResource(
         createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
             .setTokenStatusTransitions(
@@ -271,7 +270,7 @@ class AllocationTokenFlowUtilsTest {
 
   @Test
   void test_validateTokenExistingDomain_promoCancelled() {
-    // the promo would be valid but it was cancelled 12 hours ago
+    // the promo would be valid, but it was cancelled 12 hours ago
     persistResource(
         createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
             .setTokenStatusTransitions(
@@ -306,12 +305,12 @@ class AllocationTokenFlowUtilsTest {
   @Test
   void test_checkDomainsWithToken_showsFailureMessageForRedeemedToken() {
     Domain domain = persistActiveDomain("example.tld");
-    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1051L);
+    HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 1051L);
     persistResource(
         new AllocationToken.Builder()
             .setToken("tokeN")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
+            .setRedemptionHistoryId(historyEntryId)
             .build());
     assertThat(
             flowUtils

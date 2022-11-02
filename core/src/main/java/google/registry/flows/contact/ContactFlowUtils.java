@@ -20,17 +20,15 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
-import google.registry.model.contact.ContactHistory;
-import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.poll.PendingActionNotificationResponse.ContactPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import java.util.Set;
@@ -69,10 +67,7 @@ public class ContactFlowUtils {
 
   /** Create a poll message for the gaining client in a transfer. */
   static PollMessage createGainingTransferPollMessage(
-      String targetId,
-      TransferData transferData,
-      DateTime now,
-      Key<ContactHistory> contactHistoryKey) {
+      String targetId, TransferData transferData, DateTime now, HistoryEntryId contactHistoryId) {
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(transferData.getGainingRegistrarId())
         .setEventTime(transferData.getPendingTransferExpirationTime())
@@ -85,23 +80,19 @@ public class ContactFlowUtils {
                     transferData.getTransferStatus().isApproved(),
                     transferData.getTransferRequestTrid(),
                     now)))
-        .setContactHistoryId(
-            new ContactHistoryId(
-                contactHistoryKey.getParent().getName(), contactHistoryKey.getId()))
+        .setContactHistoryId(contactHistoryId)
         .build();
   }
 
   /** Create a poll message for the losing client in a transfer. */
   static PollMessage createLosingTransferPollMessage(
-      String targetId, TransferData transferData, Key<ContactHistory> contactHistoryKey) {
+      String targetId, TransferData transferData, HistoryEntryId contactHistoryId) {
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(transferData.getLosingRegistrarId())
         .setEventTime(transferData.getPendingTransferExpirationTime())
         .setMsg(transferData.getTransferStatus().getMessage())
         .setResponseData(ImmutableList.of(createTransferResponse(targetId, transferData)))
-        .setContactHistoryId(
-            new ContactHistoryId(
-                contactHistoryKey.getParent().getName(), contactHistoryKey.getId()))
+        .setContactHistoryId(contactHistoryId)
         .build();
   }
 

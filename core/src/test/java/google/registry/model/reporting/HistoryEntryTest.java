@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -25,6 +26,7 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
+import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -36,15 +38,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HistoryEntry}. */
-
 class HistoryEntryTest extends EntityTestCase {
 
   private DomainHistory domainHistory;
+  private Contact contact;
 
   @BeforeEach
   void setUp() {
     createTld("foobar");
     Domain domain = persistActiveDomain("foo.foobar");
+    contact = persistActiveContact("someone");
     DomainTransactionRecord transactionRecord =
         new DomainTransactionRecord.Builder()
             .setTld("foobar")
@@ -78,8 +81,24 @@ class HistoryEntryTest extends EntityTestCase {
               DomainHistory fromDatabase = tm().loadByEntity(domainHistory);
               assertAboutImmutableObjects()
                   .that(fromDatabase)
-                  .isEqualExceptFields(domainHistory, "domainBase");
+                  .isEqualExceptFields(domainHistory, "resource");
             });
+  }
+
+  @Test
+  void testBuilder_resourceMustBeSpecified() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new ContactHistory.Builder()
+                    .setRevisionId(5L)
+                    .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))
+                    .setRegistrarId("TheRegistrar")
+                    .setReason("Reason")
+                    .setType(HistoryEntry.Type.CONTACT_CREATE)
+                    .build());
+    assertThat(thrown).hasMessageThat().isEqualTo("EPP resource must be specified");
   }
 
   @Test
@@ -89,7 +108,8 @@ class HistoryEntryTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new ContactHistory.Builder()
-                    .setId(5L)
+                    .setContact(contact)
+                    .setRevisionId(5L)
                     .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))
                     .setRegistrarId("TheRegistrar")
                     .setReason("Reason")
@@ -104,7 +124,8 @@ class HistoryEntryTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new ContactHistory.Builder()
-                    .setId(5L)
+                    .setContact(contact)
+                    .setRevisionId(5L)
                     .setType(HistoryEntry.Type.CONTACT_CREATE)
                     .setRegistrarId("TheRegistrar")
                     .setReason("Reason")
@@ -119,7 +140,8 @@ class HistoryEntryTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new ContactHistory.Builder()
-                    .setId(5L)
+                    .setRevisionId(5L)
+                    .setContact(contact)
                     .setType(HistoryEntry.Type.CONTACT_CREATE)
                     .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))
                     .setReason("Reason")
@@ -134,7 +156,8 @@ class HistoryEntryTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new ContactHistory.Builder()
-                    .setId(5L)
+                    .setContact(contact)
+                    .setRevisionId(5L)
                     .setType(HistoryEntry.Type.SYNTHETIC)
                     .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))
                     .setRegistrarId("TheRegistrar")

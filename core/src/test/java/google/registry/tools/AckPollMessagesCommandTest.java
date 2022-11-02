@@ -24,7 +24,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
@@ -54,10 +53,9 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         persistResource(
             new DomainHistory.Builder()
                 .setModificationTime(clock.nowUtc())
-                .setDomainRepoId(domain.getRepoId())
+                .setDomain(domain)
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                .setId(2406L)
                 .build());
     clock.advanceOneMilli();
   }
@@ -195,7 +193,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     return persistResource(
         new PollMessage.OneTime.Builder()
             .setId(id)
-            .setDomainHistoryId(new DomainHistoryId("FSDGS-TLD", domainHistory.getId()))
+            .setHistoryEntry(domainHistory)
             .setRegistrarId("TheRegistrar")
             .setEventTime(eventTime)
             .setMsg(message)

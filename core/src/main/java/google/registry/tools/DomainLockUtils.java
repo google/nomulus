@@ -47,7 +47,7 @@ import org.joda.time.Duration;
 /**
  * Utility functions for validating and applying {@link RegistryLock}s.
  *
- * <p>For both locks and unlocks, a lock must be requested via the createRegistry*Requst methods
+ * <p>For both locks and unlocks, a lock must be requested via the createRegistry*Request methods
  * then verified through the verifyAndApply* methods. These methods will verify that the domain in
  * question is in a lock/unlockable state and will return the lock object.
  */
@@ -57,7 +57,7 @@ public final class DomainLockUtils {
 
   private final StringGenerator stringGenerator;
   private final String registryAdminRegistrarId;
-  private CloudTasksUtils cloudTasksUtils;
+  private final CloudTasksUtils cloudTasksUtils;
 
   @Inject
   public DomainLockUtils(
@@ -152,7 +152,7 @@ public final class DomainLockUtils {
                   tm().transact(() -> removeLockStatuses(newLock, isAdmin, now));
                   return newLock;
                 });
-    // Submit relock outside of the transaction to make sure that it fully succeeded
+    // Submit relock outside the transaction to make sure that it fully succeeded
     submitRelockIfNecessary(lock);
     return lock;
   }
@@ -200,7 +200,7 @@ public final class DomainLockUtils {
                   tm().transact(() -> removeLockStatuses(result, isAdmin, now));
                   return result;
                 });
-    // Submit relock outside of the transaction to make sure that it fully succeeded
+    // Submit relock outside the transaction to make sure that it fully succeeded
     submitRelockIfNecessary(lock);
     return lock;
   }

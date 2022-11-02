@@ -72,7 +72,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.common.truth.Truth8;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
@@ -172,6 +171,7 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.Registry.TldType;
@@ -530,12 +530,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistContactsAndHosts();
     Domain domain = persistActiveDomain("foo.tld");
-    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 505L);
+    HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 505L);
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
+            .setRedemptionHistoryId(historyEntryId)
             .build());
     clock.advanceOneMilli();
     EppException thrown =
@@ -556,8 +556,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     runFlow();
     assertSuccessfulCreate("tld", ImmutableSet.of(), token);
     HistoryEntry historyEntry = getHistoryEntries(reloadResourceByForeignKey()).get(0);
-    assertThat(tm().transact(() -> tm().loadByEntity(token)).getRedemptionHistoryEntry())
-        .hasValue(HistoryEntry.createVKey(Key.create(historyEntry)));
+    assertThat(tm().transact(() -> tm().loadByEntity(token)).getRedemptionHistoryId())
+        .hasValue(historyEntry.getHistoryEntryId());
   }
 
   // DomainTransactionRecord is not propagated.
@@ -1355,10 +1355,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     AllocationToken reloadedToken =
         tm().transact(() -> tm().loadByKey(VKey.createSql(AllocationToken.class, token)));
     assertThat(reloadedToken.isRedeemed()).isTrue();
-    assertThat(reloadedToken.getRedemptionHistoryEntry())
-        .hasValue(
-            HistoryEntry.createVKey(
-                Key.create(getHistoryEntries(reloadResourceByForeignKey()).get(0))));
+    assertThat(reloadedToken.getRedemptionHistoryId())
+        .hasValue(getHistoryEntries(reloadResourceByForeignKey()).get(0).getHistoryEntryId());
   }
 
   private void assertAllocationTokenWasNotRedeemed(String token) {
@@ -2570,7 +2568,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-dom-create");
     assertTldsFieldLogged("tld");
-    // Ensure we log the client ID for srs-dom-create so we can also use it for attempted-adds.
+    // Ensure we log the client ID for srs-dom-create, so we can also use it for attempted-adds.
     assertClientIdFieldLogged("TheRegistrar");
   }
 
@@ -2584,7 +2582,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .build());
     runFlow();
     Domain domain = reloadResourceByForeignKey();
-    HistoryEntry historyEntry = getHistoryEntries(domain).get(0);
+    DomainHistory historyEntry = (DomainHistory) getHistoryEntries(domain).get(0);
     assertThat(historyEntry.getDomainTransactionRecords())
         .containsExactly(
             DomainTransactionRecord.create(
@@ -2600,7 +2598,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(Registry.get("tld").asBuilder().setTldType(TldType.TEST).build());
     runFlow();
     Domain domain = reloadResourceByForeignKey();
-    HistoryEntry historyEntry = getHistoryEntries(domain).get(0);
+    DomainHistory historyEntry = (DomainHistory) getHistoryEntries(domain).get(0);
     // No transaction records should be stored for test TLDs
     assertThat(historyEntry.getDomainTransactionRecords()).isEmpty();
   }

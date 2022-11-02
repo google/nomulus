@@ -50,7 +50,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth8;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.FlowUtils.NotLoggedInException;
@@ -95,6 +94,7 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
@@ -609,8 +609,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         loadFile(
             "domain_renew_response.xml",
             ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
-    assertThat(DatabaseHelper.loadByEntity(allocationToken).getRedemptionHistoryEntry())
-        .isPresent();
+    assertThat(DatabaseHelper.loadByEntity(allocationToken).getRedemptionHistoryId()).isPresent();
   }
 
   @Test
@@ -745,12 +744,12 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
     persistDomain();
     Domain domain = persistActiveDomain("foo.tld");
-    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 505L);
+    HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 505L);
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
+            .setRedemptionHistoryId(historyEntryId)
             .build());
     clock.advanceOneMilli();
     EppException thrown =
@@ -1188,7 +1187,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .build());
     runFlow();
     Domain domain = reloadResourceByForeignKey();
-    HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RENEW);
+    DomainHistory historyEntry =
+        (DomainHistory) getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RENEW);
     assertThat(historyEntry.getDomainTransactionRecords())
         .containsExactly(
             DomainTransactionRecord.create(
