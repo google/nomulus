@@ -198,7 +198,10 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     Optional<FeesAndCredits> feesAndCredits;
     if (period.getValue() == 0) {
       feesAndCredits = Optional.empty();
-    } else if (existingDomain.getCurrentPackageToken().isPresent()) {
+    } else if (!existingDomain.getCurrentPackageToken().isPresent()) {
+      feesAndCredits =
+          Optional.of(pricingLogic.getTransferPrice(registry, targetId, now, existingRecurring));
+    } else {
       // If existing domain is in a package, calculate the transfer price with default renewal price
       // behavior
       feesAndCredits =
@@ -214,9 +217,6 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
                           .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
                           .setRenewalPrice(null)
                           .build()));
-    } else {
-      feesAndCredits =
-          Optional.of(pricingLogic.getTransferPrice(registry, targetId, now, existingRecurring));
     }
 
     if (feesAndCredits.isPresent()) {
