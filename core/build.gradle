@@ -186,7 +186,6 @@ dependencies {
   implementation deps['com.google.apis:google-api-services-admin-directory']
   implementation deps['com.google.apis:google-api-services-appengine']
   implementation deps['com.google.apis:google-api-services-bigquery']
-  implementation deps['com.google.apis:google-api-services-cloudkms']
   implementation deps['com.google.apis:google-api-services-dataflow']
   implementation deps['com.google.apis:google-api-services-dns']
   implementation deps['com.google.apis:google-api-services-drive']

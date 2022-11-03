@@ -21,9 +21,8 @@ import dagger.Component;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
-import google.registry.keyring.kms.KmsModule;
+import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
-import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.util.UtilsModule;
 import java.util.Optional;
@@ -89,9 +88,9 @@ class PersistenceModuleTest {
       modules = {
         ConfigModule.class,
         CredentialModule.class,
-        KmsModule.class,
+        SecretManagerKeyringModule.class,
         PersistenceModule.class,
-        SecretManagerModule.class,
+        google.registry.privileges.secretmanager.SecretManagerModule.class,
         UtilsModule.class
       })
   public interface BeamConfigTestComponent {

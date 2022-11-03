@@ -27,7 +27,7 @@ import google.registry.groups.GroupssettingsModule;
 import google.registry.keyring.KeyringModule;
 import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.keyring.api.KeyModule;
-import google.registry.keyring.kms.KmsModule;
+import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
 import google.registry.module.pubapi.PubApiRequestComponent.PubApiRequestComponentModule;
 import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.persistence.PersistenceModule;
@@ -54,10 +54,10 @@ import javax.inject.Singleton;
       GsonModule.class,
       KeyModule.class,
       KeyringModule.class,
-      KmsModule.class,
       NetHttpTransportModule.class,
       PersistenceModule.class,
       PubApiRequestComponentModule.class,
+      SecretManagerKeyringModule.class,
       SecretManagerModule.class,
       ServerTridProviderModule.class,
       StackdriverModule.class,

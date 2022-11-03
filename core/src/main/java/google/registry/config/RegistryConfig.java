@@ -1076,24 +1076,6 @@ public final class RegistryConfig {
       return config.keyring.activeKeyring;
     }
 
-    /**
-     * The name to use for the Cloud KMS KeyRing containing encryption keys for Nomulus secrets.
-     *
-     * @see <a
-     *     href="https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings#KeyRing">projects.locations.keyRings</a>
-     */
-    @Provides
-    @Config("cloudKmsKeyRing")
-    public static String provideCloudKmsKeyRing(RegistryConfigSettings config) {
-      return config.keyring.kms.keyringName;
-    }
-
-    @Provides
-    @Config("cloudKmsProjectId")
-    public static String provideCloudKmsProjectId(RegistryConfigSettings config) {
-      return config.keyring.kms.projectId;
-    }
-
     @Provides
     @Config("customLogicFactoryClass")
     public static String provideCustomLogicFactoryClass(RegistryConfigSettings config) {

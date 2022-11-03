@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.keyring.kms;
+package google.registry.keyring.secretmanager;
 
 import static com.google.common.base.CaseFormat.LOWER_HYPHEN;
 import static com.google.common.base.CaseFormat.UPPER_UNDERSCORE;
@@ -29,8 +29,7 @@ import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 
 /** A {@link Keyring} implementation which stores sensitive data in the Secret Manager. */
-// TODO(2021-08-01): rename this class to SecretManagerKeyring and update config files.
-public class KmsKeyring implements Keyring {
+public class SecretManagerKeyring implements Keyring {
 
   /** Key labels for private key secrets. */
   enum PrivateKeyLabel {
@@ -75,7 +74,7 @@ public class KmsKeyring implements Keyring {
   private final KeyringSecretStore secretStore;
 
   @Inject
-  KmsKeyring(KeyringSecretStore secretStore) {
+  SecretManagerKeyring(KeyringSecretStore secretStore) {
     this.secretStore = secretStore;
   }
 

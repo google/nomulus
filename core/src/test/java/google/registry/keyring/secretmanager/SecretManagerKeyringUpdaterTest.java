@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.keyring.kms;
+package google.registry.keyring.secretmanager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -28,22 +28,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for {@link KmsKeyring} and {@link KmsUpdater} */
+/** Unit tests for {@link SecretManagerKeyring} and {@link SecretManagerKeyringUpdater} */
 // TODO(2021-07-01): Rename this class along with KmsKeyring
-public class KmsUpdaterTest {
+public class SecretManagerKeyringUpdaterTest {
 
   @RegisterExtension
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   private KeyringSecretStore secretStore;
-  private KmsUpdater updater;
-  private KmsKeyring keyring;
+  private SecretManagerKeyringUpdater updater;
+  private SecretManagerKeyring keyring;
 
   @BeforeEach
   void beforeEach() {
     secretStore = new KeyringSecretStore(new FakeSecretManagerClient());
-    updater = new KmsUpdater(secretStore);
-    keyring = new KmsKeyring(secretStore);
+    updater = new SecretManagerKeyringUpdater(secretStore);
+    keyring = new SecretManagerKeyring(secretStore);
   }
 
   @Test
@@ -66,7 +66,7 @@ public class KmsUpdaterTest {
 
   @Test
   void brdaReceiverKey() throws Exception {
-    PGPPublicKey publicKey = KmsTestHelper.getPublicKey();
+    PGPPublicKey publicKey = SecretManagerKeyringTestHelper.getPublicKey();
     updater.setBrdaReceiverPublicKey(publicKey).update();
 
     assertThat(keyring.getBrdaReceiverKey().getFingerprint()).isEqualTo(publicKey.getFingerprint());
@@ -75,12 +75,14 @@ public class KmsUpdaterTest {
 
   @Test
   void brdaSigningKey() throws Exception {
-    PGPKeyPair keyPair = KmsTestHelper.getKeyPair();
+    PGPKeyPair keyPair = SecretManagerKeyringTestHelper.getKeyPair();
     updater.setBrdaSigningKey(keyPair).update();
 
     assertThat(serializeKeyPair(keyring.getBrdaSigningKey())).isEqualTo(serializeKeyPair(keyPair));
-    verifyPersistedSecret("brda-signing-private", serializeKeyPair(KmsTestHelper.getKeyPair()));
-    verifyPersistedSecret("brda-signing-public", serializePublicKey(KmsTestHelper.getPublicKey()));
+    verifyPersistedSecret(
+        "brda-signing-private", serializeKeyPair(SecretManagerKeyringTestHelper.getKeyPair()));
+    verifyPersistedSecret(
+        "brda-signing-public", serializePublicKey(SecretManagerKeyringTestHelper.getPublicKey()));
   }
 
   @Test
@@ -130,16 +132,17 @@ public class KmsUpdaterTest {
 
   @Test
   void rdeReceiverKey() throws Exception {
-    PGPPublicKey publicKey = KmsTestHelper.getPublicKey();
+    PGPPublicKey publicKey = SecretManagerKeyringTestHelper.getPublicKey();
     updater.setRdeReceiverPublicKey(publicKey).update();
 
     assertThat(keyring.getRdeReceiverKey().getFingerprint()).isEqualTo(publicKey.getFingerprint());
-    verifyPersistedSecret("rde-receiver-public", serializePublicKey(KmsTestHelper.getPublicKey()));
+    verifyPersistedSecret(
+        "rde-receiver-public", serializePublicKey(SecretManagerKeyringTestHelper.getPublicKey()));
   }
 
   @Test
   void rdeSigningKey() throws Exception {
-    PGPKeyPair keyPair = KmsTestHelper.getKeyPair();
+    PGPKeyPair keyPair = SecretManagerKeyringTestHelper.getKeyPair();
     updater.setRdeSigningKey(keyPair).update();
 
     assertThat(serializeKeyPair(keyring.getRdeSigningKey())).isEqualTo(serializeKeyPair(keyPair));
@@ -168,7 +171,7 @@ public class KmsUpdaterTest {
 
   @Test
   void rdeStagingKey() throws Exception {
-    PGPKeyPair keyPair = KmsTestHelper.getKeyPair();
+    PGPKeyPair keyPair = SecretManagerKeyringTestHelper.getKeyPair();
     updater.setRdeStagingKey(keyPair).update();
 
     assertThat(serializePublicKey(keyring.getRdeStagingEncryptionKey()))
@@ -181,7 +184,8 @@ public class KmsUpdaterTest {
                     keyring.getRdeStagingEncryptionKey(), keyring.getRdeStagingDecryptionKey())))
         .isEqualTo(serializeKeyPair(keyPair));
     verifyPersistedSecret("rde-staging-private", serializeKeyPair(keyPair));
-    verifyPersistedSecret("rde-staging-public", serializePublicKey(KmsTestHelper.getPublicKey()));
+    verifyPersistedSecret(
+        "rde-staging-public", serializePublicKey(SecretManagerKeyringTestHelper.getPublicKey()));
   }
 
   private void verifyPersistedSecret(String secretName, String expectedPlainTextValue) {

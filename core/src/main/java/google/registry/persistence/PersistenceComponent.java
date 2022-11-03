@@ -17,11 +17,10 @@ package google.registry.persistence;
 import dagger.Component;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
-import google.registry.keyring.kms.KmsModule;
+import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
 import google.registry.persistence.PersistenceModule.AppEngineJpaTm;
 import google.registry.persistence.PersistenceModule.ReadOnlyReplicaJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
-import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.util.UtilsModule;
 import javax.inject.Singleton;
 import javax.persistence.EntityManagerFactory;
@@ -32,9 +31,9 @@ import javax.persistence.EntityManagerFactory;
     modules = {
       ConfigModule.class,
       CredentialModule.class,
-      KmsModule.class,
+      SecretManagerKeyringModule.class,
       PersistenceModule.class,
-      SecretManagerModule.class,
+      google.registry.privileges.secretmanager.SecretManagerModule.class,
       UtilsModule.class
     })
 public interface PersistenceComponent {

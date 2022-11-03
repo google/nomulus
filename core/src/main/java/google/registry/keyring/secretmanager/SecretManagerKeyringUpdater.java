@@ -12,33 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.keyring.kms;
+package google.registry.keyring.secretmanager;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.keyring.kms.KmsKeyring.PrivateKeyLabel.BRDA_SIGNING_PRIVATE;
-import static google.registry.keyring.kms.KmsKeyring.PrivateKeyLabel.RDE_SIGNING_PRIVATE;
-import static google.registry.keyring.kms.KmsKeyring.PrivateKeyLabel.RDE_STAGING_PRIVATE;
-import static google.registry.keyring.kms.KmsKeyring.PublicKeyLabel.BRDA_RECEIVER_PUBLIC;
-import static google.registry.keyring.kms.KmsKeyring.PublicKeyLabel.BRDA_SIGNING_PUBLIC;
-import static google.registry.keyring.kms.KmsKeyring.PublicKeyLabel.RDE_RECEIVER_PUBLIC;
-import static google.registry.keyring.kms.KmsKeyring.PublicKeyLabel.RDE_SIGNING_PUBLIC;
-import static google.registry.keyring.kms.KmsKeyring.PublicKeyLabel.RDE_STAGING_PUBLIC;
-import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.ICANN_REPORTING_PASSWORD_STRING;
-import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.JSON_CREDENTIAL_STRING;
-import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.MARKSDB_DNL_LOGIN_STRING;
-import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.MARKSDB_LORDN_PASSWORD_STRING;
-import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.MARKSDB_SMDRL_LOGIN_STRING;
-import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.RDE_SSH_CLIENT_PRIVATE_STRING;
-import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.RDE_SSH_CLIENT_PUBLIC_STRING;
-import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.SAFE_BROWSING_API_KEY;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.PrivateKeyLabel.BRDA_SIGNING_PRIVATE;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.PrivateKeyLabel.RDE_SIGNING_PRIVATE;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.PrivateKeyLabel.RDE_STAGING_PRIVATE;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.PublicKeyLabel.BRDA_RECEIVER_PUBLIC;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.PublicKeyLabel.BRDA_SIGNING_PUBLIC;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.PublicKeyLabel.RDE_RECEIVER_PUBLIC;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.PublicKeyLabel.RDE_SIGNING_PUBLIC;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.PublicKeyLabel.RDE_STAGING_PUBLIC;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.ICANN_REPORTING_PASSWORD_STRING;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.JSON_CREDENTIAL_STRING;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.MARKSDB_DNL_LOGIN_STRING;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.MARKSDB_LORDN_PASSWORD_STRING;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.MARKSDB_SMDRL_LOGIN_STRING;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.RDE_SSH_CLIENT_PRIVATE_STRING;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.RDE_SSH_CLIENT_PUBLIC_STRING;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.SAFE_BROWSING_API_KEY;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.keyring.api.KeySerializer;
-import google.registry.keyring.kms.KmsKeyring.PrivateKeyLabel;
-import google.registry.keyring.kms.KmsKeyring.PublicKeyLabel;
-import google.registry.keyring.kms.KmsKeyring.StringKeyLabel;
+import google.registry.keyring.secretmanager.SecretManagerKeyring.PrivateKeyLabel;
+import google.registry.keyring.secretmanager.SecretManagerKeyring.PublicKeyLabel;
+import google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel;
 import google.registry.privileges.secretmanager.KeyringSecretStore;
 import java.io.IOException;
 import java.util.HashMap;
@@ -50,73 +50,77 @@ import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
 
 /**
- * The {@link KmsUpdater} accumulates updates to a {@link KmsKeyring} and persists them to KMS and
- * Datastore when closed.
+ * The {@link SecretManagerKeyringUpdater} accumulates updates to a {@link SecretManagerKeyring} and
+ * persists them to KMS and Datastore when closed.
  */
-// TODO(2021-06-01): rename this class to SecretManagerKeyringUpdater
-public final class KmsUpdater {
+public final class SecretManagerKeyringUpdater {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final KeyringSecretStore secretStore;
   private final HashMap<String, byte[]> secretValues;
 
   @Inject
-  public KmsUpdater(KeyringSecretStore secretStore) {
+  public SecretManagerKeyringUpdater(KeyringSecretStore secretStore) {
     this.secretStore = secretStore;
 
     // Use LinkedHashMap to preserve insertion order on update() to simplify testing and debugging
     this.secretValues = new LinkedHashMap<>();
   }
 
-  public KmsUpdater setRdeSigningKey(PGPKeyPair keyPair) throws IOException, PGPException {
+  public SecretManagerKeyringUpdater setRdeSigningKey(PGPKeyPair keyPair)
+      throws IOException, PGPException {
     return setKeyPair(keyPair, RDE_SIGNING_PRIVATE, RDE_SIGNING_PUBLIC);
   }
 
-  public KmsUpdater setRdeStagingKey(PGPKeyPair keyPair) throws IOException, PGPException {
+  public SecretManagerKeyringUpdater setRdeStagingKey(PGPKeyPair keyPair)
+      throws IOException, PGPException {
     return setKeyPair(keyPair, RDE_STAGING_PRIVATE, RDE_STAGING_PUBLIC);
   }
 
-  public KmsUpdater setRdeReceiverPublicKey(PGPPublicKey publicKey) throws IOException {
+  public SecretManagerKeyringUpdater setRdeReceiverPublicKey(PGPPublicKey publicKey)
+      throws IOException {
     return setPublicKey(publicKey, RDE_RECEIVER_PUBLIC);
   }
 
-  public KmsUpdater setBrdaSigningKey(PGPKeyPair keyPair) throws IOException, PGPException {
+  public SecretManagerKeyringUpdater setBrdaSigningKey(PGPKeyPair keyPair)
+      throws IOException, PGPException {
     return setKeyPair(keyPair, BRDA_SIGNING_PRIVATE, BRDA_SIGNING_PUBLIC);
   }
 
-  public KmsUpdater setBrdaReceiverPublicKey(PGPPublicKey publicKey) throws IOException {
+  public SecretManagerKeyringUpdater setBrdaReceiverPublicKey(PGPPublicKey publicKey)
+      throws IOException {
     return setPublicKey(publicKey, BRDA_RECEIVER_PUBLIC);
   }
 
-  public KmsUpdater setRdeSshClientPublicKey(String asciiPublicKey) {
+  public SecretManagerKeyringUpdater setRdeSshClientPublicKey(String asciiPublicKey) {
     return setString(asciiPublicKey, RDE_SSH_CLIENT_PUBLIC_STRING);
   }
 
-  public KmsUpdater setRdeSshClientPrivateKey(String asciiPrivateKey) {
+  public SecretManagerKeyringUpdater setRdeSshClientPrivateKey(String asciiPrivateKey) {
     return setString(asciiPrivateKey, RDE_SSH_CLIENT_PRIVATE_STRING);
   }
 
-  public KmsUpdater setSafeBrowsingAPIKey(String apiKey) {
+  public SecretManagerKeyringUpdater setSafeBrowsingAPIKey(String apiKey) {
     return setString(apiKey, SAFE_BROWSING_API_KEY);
   }
 
-  public KmsUpdater setIcannReportingPassword(String password) {
+  public SecretManagerKeyringUpdater setIcannReportingPassword(String password) {
     return setString(password, ICANN_REPORTING_PASSWORD_STRING);
   }
 
-  public KmsUpdater setMarksdbDnlLoginAndPassword(String login) {
+  public SecretManagerKeyringUpdater setMarksdbDnlLoginAndPassword(String login) {
     return setString(login, MARKSDB_DNL_LOGIN_STRING);
   }
 
-  public KmsUpdater setMarksdbLordnPassword(String password) {
+  public SecretManagerKeyringUpdater setMarksdbLordnPassword(String password) {
     return setString(password, MARKSDB_LORDN_PASSWORD_STRING);
   }
 
-  public KmsUpdater setMarksdbSmdrlLoginAndPassword(String login) {
+  public SecretManagerKeyringUpdater setMarksdbSmdrlLoginAndPassword(String login) {
     return setString(login, MARKSDB_SMDRL_LOGIN_STRING);
   }
 
-  public KmsUpdater setJsonCredential(String credential) {
+  public SecretManagerKeyringUpdater setJsonCredential(String credential) {
     return setString(credential, JSON_CREDENTIAL_STRING);
   }
 
@@ -144,22 +148,22 @@ public final class KmsUpdater {
     }
   }
 
-  private KmsUpdater setString(String key, StringKeyLabel stringKeyLabel) {
+  private SecretManagerKeyringUpdater setString(String key, StringKeyLabel stringKeyLabel) {
     checkArgumentNotNull(key);
 
     setSecret(stringKeyLabel.getLabel(), KeySerializer.serializeString(key));
     return this;
   }
 
-  private KmsUpdater setPublicKey(PGPPublicKey publicKey, PublicKeyLabel publicKeyLabel)
-      throws IOException {
+  private SecretManagerKeyringUpdater setPublicKey(
+      PGPPublicKey publicKey, PublicKeyLabel publicKeyLabel) throws IOException {
     checkArgumentNotNull(publicKey);
 
     setSecret(publicKeyLabel.getLabel(), KeySerializer.serializePublicKey(publicKey));
     return this;
   }
 
-  private KmsUpdater setKeyPair(
+  private SecretManagerKeyringUpdater setKeyPair(
       PGPKeyPair keyPair, PrivateKeyLabel privateKeyLabel, PublicKeyLabel publicKeyLabel)
       throws IOException, PGPException {
     checkArgumentNotNull(keyPair);

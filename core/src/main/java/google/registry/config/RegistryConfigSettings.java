@@ -214,6 +214,7 @@ public class RegistryConfigSettings {
   /** Configuration for keyrings (used to store secrets outside of source). */
   public static class Keyring {
     public String activeKeyring;
+    // TODO(b/257276342): Remove after config files in nomulus-internal are updated.
     public Kms kms;
   }
 
