@@ -71,11 +71,13 @@ import org.apache.commons.codec.binary.Base64;
  *
  * <p>The main body of this class is adapted from {@link
  * com.google.auth.oauth2.ServiceAccountCredentials} with cosmetic changes. The important changes
- * include the removal of private key references and the way the JWT is signed. We choose not to
- * extend {@code ServiceAccountCredentials} because it would add dependency to the non-public
- * details of the parent class.
+ * include the removal of all uses of the private key and the signing of the JWT (in {@link
+ * #signAssertion}). We choose not to extend {@code ServiceAccountCredentials} because it would add
+ * dependency to the non-public details of that class.
  */
 public class DelegatedCredentials extends GoogleCredentials {
+
+  private static final long serialVersionUID = 617127523756785546L;
 
   private static final String DEFAULT_TOKEN_URI = "https://accounts.google.com/o/oauth2/token";
   private static final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:jwt-bearer";
@@ -222,7 +224,7 @@ public class DelegatedCredentials extends GoogleCredentials {
             + "."
             + Base64.encodeBase64URLSafeString(jsonFactory.toByteArray(payload));
     byte[] contentBytes = StringUtils.getBytesUtf8(content);
-    byte[] signature = signer.sign(contentBytes);
+    byte[] signature = signer.sign(contentBytes); // Changed from ServiceAccountCredentials.
     return content + "." + Base64.encodeBase64URLSafeString(signature);
   }
 
