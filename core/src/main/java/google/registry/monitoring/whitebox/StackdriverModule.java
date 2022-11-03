@@ -24,7 +24,7 @@ import com.google.monitoring.metrics.MetricWriter;
 import com.google.monitoring.metrics.stackdriver.StackdriverWriter;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.config.CredentialModule.JsonCredential;
+import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
 import org.joda.time.Duration;
@@ -39,7 +39,7 @@ public final class StackdriverModule {
 
   @Provides
   static Monitoring provideMonitoring(
-      @JsonCredential GoogleCredentialsBundle credentialsBundle,
+      @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle,
       @Config("projectId") String projectId) {
     return new Monitoring.Builder(
             credentialsBundle.getHttpTransport(),
