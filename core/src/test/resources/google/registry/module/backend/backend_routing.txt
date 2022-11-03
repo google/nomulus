@@ -7,6 +7,7 @@ PATH                                               CLASS                        
 /_dr/task/deleteExpiredDomains                     DeleteExpiredDomainsAction                     GET      n  INTERNAL,API APP ADMIN
 /_dr/task/deleteLoadTestData                       DeleteLoadTestDataAction                       POST     n  INTERNAL,API APP ADMIN
 /_dr/task/deleteProberData                         DeleteProberDataAction                         POST     n  INTERNAL,API APP ADMIN
+/_dr/task/executeCannedScript                      CannedScriptExecutionAction                    POST     y  INTERNAL,API APP ADMIN
 /_dr/task/expandRecurringBillingEvents             ExpandRecurringBillingEventsAction             GET      n  INTERNAL,API APP ADMIN
 /_dr/task/exportDomainLists                        ExportDomainListsAction                        POST     n  INTERNAL,API APP ADMIN
 /_dr/task/exportPremiumTerms                       ExportPremiumTermsAction                       POST     n  INTERNAL,API APP ADMIN

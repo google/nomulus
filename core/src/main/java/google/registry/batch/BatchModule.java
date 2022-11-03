@@ -21,6 +21,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
+import static google.registry.batch.CannedScriptExecutionAction.SCRIPT_PARAM;
 import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
 import static google.registry.request.RequestParameters.extractLongParameter;
@@ -144,5 +145,12 @@ public class BatchModule {
   @Named(QUEUE_ASYNC_HOST_RENAME)
   static Queue provideAsyncHostRenamePullQueue() {
     return getQueue(QUEUE_ASYNC_HOST_RENAME);
+  }
+
+  // TODO(b/234424397): remove method after credential changes are rolled out.
+  @Provides
+  @Parameter(SCRIPT_PARAM)
+  static String provideScriptName(HttpServletRequest req) {
+    return extractRequiredParameter(req, SCRIPT_PARAM);
   }
 }

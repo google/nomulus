@@ -293,6 +293,12 @@ have been in the database for a certain period of time. -->
     <url-pattern>/_dr/task/wipeOutCloudSql</url-pattern>
   </servlet-mapping>
 
+  <!-- Action to execute canned scripts -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/executeCannedScript</url-pattern>
+  </servlet-mapping>
+
   <!-- Security config -->
   <security-constraint>
     <web-resource-collection>

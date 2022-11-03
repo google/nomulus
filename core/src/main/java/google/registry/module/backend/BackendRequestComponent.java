@@ -17,6 +17,7 @@ package google.registry.module.backend;
 import dagger.Module;
 import dagger.Subcomponent;
 import google.registry.batch.BatchModule;
+import google.registry.batch.CannedScriptExecutionAction;
 import google.registry.batch.DeleteExpiredDomainsAction;
 import google.registry.batch.DeleteLoadTestDataAction;
 import google.registry.batch.DeleteProberDataAction;
@@ -101,6 +102,8 @@ import google.registry.tmch.TmchSmdrlAction;
 interface BackendRequestComponent {
 
   BrdaCopyAction brdaCopyAction();
+
+  CannedScriptExecutionAction cannedScriptExecutionAction();
 
   CopyDetailReportsAction copyDetailReportAction();
 

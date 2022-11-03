@@ -1223,6 +1223,12 @@ public final class RegistryConfig {
       return ImmutableList.copyOf(config.credentialOAuth.localCredentialOauthScopes);
     }
 
+    @Provides
+    @Config("tokenRefreshDelay")
+    public static java.time.Duration provideTokenRefreshDelay(RegistryConfigSettings config) {
+      return java.time.Duration.ofSeconds(config.credentialOAuth.tokenRefreshDelaySeconds);
+    }
+
     /** OAuth client ID used by the nomulus tool. */
     @Provides
     @Config("toolsClientId")
