@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -39,6 +40,12 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
   @BeforeEach
   void beforeEach() {
     fakeClock.setTo(DateTime.parse("1984-12-21T06:07:08.789Z"));
+  }
+
+  @Test
+  void testlistCursors_globalScoped() throws Exception {
+    createTld("com");
+    runCommand("--type=RECURRING_BILLING");
   }
 
   @Test
