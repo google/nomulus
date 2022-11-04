@@ -30,22 +30,24 @@ import org.joda.time.DateTime;
 
 /** The {@link ResponseData} returned for an EPP info flow on a contact. */
 @XmlRootElement(name = "infData")
-@XmlType(propOrder = {
-    "contactId",
-    "repoId",
-    "statusValues",
-    "postalInfos",
-    "voiceNumber",
-    "faxNumber",
-    "emailAddress",
-    "currentSponsorClientId",
-    "creationClientId",
-    "creationTime",
-    "lastEppUpdateClientId",
-    "lastEppUpdateTime",
-    "lastTransferTime",
-    "authInfo",
-    "disclose" })
+@XmlType(
+    propOrder = {
+      "contactId",
+      "repoId",
+      "statusValues",
+      "postalInfos",
+      "voiceNumber",
+      "faxNumber",
+      "emailAddress",
+      "currentSponsorRegistrarId",
+      "creationRegistrarId",
+      "creationTime",
+      "lastEppUpdateRegistrarId",
+      "lastEppUpdateTime",
+      "lastTransferTime",
+      "authInfo",
+      "disclose"
+    })
 @AutoValue
 @CopyAnnotations
 public abstract class ContactInfoData implements ResponseData {
@@ -76,17 +78,17 @@ public abstract class ContactInfoData implements ResponseData {
   abstract String getEmailAddress();
 
   @XmlElement(name = "clID")
-  abstract String getCurrentSponsorClientId();
+  abstract String getCurrentSponsorRegistrarId();
 
   @XmlElement(name = "crID")
-  abstract String getCreationClientId();
+  abstract String getCreationRegistrarId();
 
   @XmlElement(name = "crDate")
   abstract DateTime getCreationTime();
 
   @XmlElement(name = "upID")
   @Nullable
-  abstract String getLastEppUpdateClientId();
+  abstract String getLastEppUpdateRegistrarId();
 
   @XmlElement(name = "upDate")
   @Nullable
@@ -114,10 +116,15 @@ public abstract class ContactInfoData implements ResponseData {
     public abstract Builder setVoiceNumber(@Nullable ContactPhoneNumber voiceNumber);
     public abstract Builder setFaxNumber(@Nullable ContactPhoneNumber faxNumber);
     public abstract Builder setEmailAddress(@Nullable String emailAddress);
-    public abstract Builder setCurrentSponsorClientId(String currentSponsorClientId);
-    public abstract Builder setCreationClientId(String creationClientId);
+
+    public abstract Builder setCurrentSponsorRegistrarId(String currentSponsorRegistrarId);
+
+    public abstract Builder setCreationRegistrarId(String creationRegistrarId);
+
     public abstract Builder setCreationTime(DateTime creationTime);
-    public abstract Builder setLastEppUpdateClientId(@Nullable String lastEppUpdateClientId);
+
+    public abstract Builder setLastEppUpdateRegistrarId(@Nullable String lastEppUpdateRegistrarId);
+
     public abstract Builder setLastEppUpdateTime(@Nullable DateTime lastEppUpdateTime);
     public abstract Builder setLastTransferTime(@Nullable DateTime lastTransferTime);
     public abstract Builder setAuthInfo(@Nullable ContactAuthInfo authInfo);

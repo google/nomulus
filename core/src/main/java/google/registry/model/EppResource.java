@@ -31,11 +31,9 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.Index;
 import google.registry.config.RegistryConfig;
 import google.registry.model.CacheUtils.AppEngineEnvironmentCacheLoader;
+import google.registry.model.annotations.OfyIdAllocation;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
@@ -47,7 +45,6 @@ import java.util.Set;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
@@ -55,7 +52,7 @@ import org.joda.time.DateTime;
 
 /** An EPP entity object (i.e. a domain, contact, or host). */
 @MappedSuperclass
-@Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)
+@Access(AccessType.FIELD) // otherwise it'll use the default of the repoId (property)
 public abstract class EppResource extends UpdateAutoTimestampEntity implements Buildable {
 
   private static final long serialVersionUID = -252782773382339534L;
@@ -70,7 +67,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    *
    * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 5730</a>
    */
-  @Id @Transient String repoId;
+  @OfyIdAllocation @Transient String repoId;
 
   /**
    * The ID of the registrar that is currently sponsoring this resource.
@@ -78,9 +75,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
    * resource fields.
    */
-  @Index
-  @Column(name = "currentSponsorRegistrarId")
-  String currentSponsorClientId;
+  String currentSponsorRegistrarId;
 
   /**
    * The ID of the registrar that created this resource.
@@ -88,8 +83,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
    * resource fields.
    */
-  @Column(name = "creationRegistrarId")
-  String creationClientId;
+  String creationRegistrarId;
 
   /**
    * The ID of the registrar that last updated this resource.
@@ -98,8 +92,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * edits; it only includes EPP-visible modifications such as {@literal <update>}. Can be null if
    * the resource has never been modified.
    */
-  @Column(name = "lastEppUpdateRegistrarId")
-  String lastEppUpdateClientId;
+  String lastEppUpdateRegistrarId;
 
   /**
    * The time when this resource was created.
@@ -111,8 +104,8 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
    * resource fields.
    */
-  @AttributeOverrides(@AttributeOverride(name = "creationTime", column = @Column))
-  @Ignore
+  // Need to override the default non-null column attribute.
+  @AttributeOverride(name = "creationTime", column = @Column)
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /**
@@ -128,7 +121,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * out of the index at that time, as long as we query for resources whose deletion time is before
    * now.
    */
-  @Index DateTime deletionTime;
+  DateTime deletionTime;
 
   /**
    * The time that this resource was last updated.
@@ -140,7 +133,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   DateTime lastEppUpdateTime;
 
   /** Status values associated with this resource. */
-  @Ignore Set<StatusValue> statuses;
+  Set<StatusValue> statuses;
 
   public String getRepoId() {
     return repoId;
@@ -164,7 +157,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   }
 
   public String getCreationRegistrarId() {
-    return creationClientId;
+    return creationRegistrarId;
   }
 
   public DateTime getLastEppUpdateTime() {
@@ -172,17 +165,17 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   }
 
   public String getLastEppUpdateRegistrarId() {
-    return lastEppUpdateClientId;
+    return lastEppUpdateRegistrarId;
   }
 
   /**
-   * Get the stored value of {@link #currentSponsorClientId}.
+   * Get the stored value of {@link #currentSponsorRegistrarId}.
    *
    * <p>For subordinate hosts, this value may not represent the actual current client id, which is
    * the client id of the superordinate host. For all other resources this is the true client id.
    */
   public final String getPersistedCurrentSponsorRegistrarId() {
-    return currentSponsorClientId;
+    return currentSponsorRegistrarId;
   }
 
   public final ImmutableSet<StatusValue> getStatusValues() {
@@ -272,13 +265,13 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
 
     /** Set the current sponsoring registrar. */
     public B setPersistedCurrentSponsorRegistrarId(String currentSponsorRegistrarId) {
-      getInstance().currentSponsorClientId = currentSponsorRegistrarId;
+      getInstance().currentSponsorRegistrarId = currentSponsorRegistrarId;
       return thisCastToDerived();
     }
 
     /** Set the registrar that created this resource. */
     public B setCreationRegistrarId(String creationRegistrarId) {
-      getInstance().creationClientId = creationRegistrarId;
+      getInstance().creationRegistrarId = creationRegistrarId;
       return thisCastToDerived();
     }
 
@@ -290,7 +283,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
 
     /** Set the registrar who last performed a {@literal <update>} on this resource. */
     public B setLastEppUpdateRegistrarId(String lastEppUpdateRegistrarId) {
-      getInstance().lastEppUpdateClientId = lastEppUpdateRegistrarId;
+      getInstance().lastEppUpdateRegistrarId = lastEppUpdateRegistrarId;
       return thisCastToDerived();
     }
 
@@ -320,14 +313,14 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
 
     /** Add to this resource's status values. */
     public B addStatusValues(ImmutableSet<StatusValue> statusValues) {
-      return setStatusValues(ImmutableSet.copyOf(
-          union(getInstance().getStatusValues(), statusValues)));
+      return setStatusValues(
+          ImmutableSet.copyOf(union(getInstance().getStatusValues(), statusValues)));
     }
 
     /** Remove from this resource's status values. */
     public B removeStatusValues(ImmutableSet<StatusValue> statusValues) {
-      return setStatusValues(ImmutableSet.copyOf(
-          difference(getInstance().getStatusValues(), statusValues)));
+      return setStatusValues(
+          ImmutableSet.copyOf(difference(getInstance().getStatusValues(), statusValues)));
     }
 
     /** Set this resource's repoId. */

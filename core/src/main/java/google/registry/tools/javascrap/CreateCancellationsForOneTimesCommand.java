@@ -56,7 +56,7 @@ public class CreateCancellationsForOneTimesCommand extends ConfirmingCommand
     tm().transact(
             () -> {
               for (Long billingEventId : ImmutableSet.copyOf(mainParameters)) {
-                VKey<OneTime> key = VKey.createSql(OneTime.class, billingEventId);
+                VKey<OneTime> key = VKey.create(OneTime.class, billingEventId);
                 if (tm().exists(key)) {
                   OneTime oneTime = tm().loadByKey(key);
                   if (alreadyCancelled(oneTime)) {

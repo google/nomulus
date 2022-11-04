@@ -284,7 +284,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> boolean exists(VKey<T> key) {
     checkArgumentNotNull(key, "key must be specified");
     EntityType<?> entityType = getEntityType(key.getKind());
-    ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getSqlKey());
+    ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getKey());
     return exists(entityType.getName(), entityIds);
   }
 
@@ -311,7 +311,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> Optional<T> loadByKeyIfPresent(VKey<T> key) {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
-    return Optional.ofNullable(getEntityManager().find(key.getKind(), key.getSqlKey()))
+    return Optional.ofNullable(getEntityManager().find(key.getKind(), key.getKey()))
         .map(this::detach);
   }
 
@@ -326,7 +326,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         .map(
             key ->
                 new SimpleEntry<VKey<? extends T>, T>(
-                    key, detach(getEntityManager().find(key.getKind(), key.getSqlKey()))))
+                    key, detach(getEntityManager().find(key.getKind(), key.getKey()))))
         .filter(entry -> entry.getValue() != null)
         .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
   }
@@ -343,7 +343,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> T loadByKey(VKey<T> key) {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
-    T result = getEntityManager().find(key.getKind(), key.getSqlKey());
+    T result = getEntityManager().find(key.getKind(), key.getKey());
     if (result == null) {
       throw new NoSuchElementException(key.toString());
     }
@@ -372,7 +372,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     T returnValue =
         (T)
             loadByKey(
-                VKey.createSql(
+                VKey.create(
                     entity.getClass(),
                     // Casting to Serializable is safe according to JPA (JSR 338 sec. 2.4).
                     (Serializable) emf.getPersistenceUnitUtil().getIdentifier(entity)));
@@ -418,7 +418,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
     EntityType<?> entityType = getEntityType(key.getKind());
-    ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getSqlKey());
+    ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getKey());
     String sql =
         String.format("DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
     Query query = query(sql);
@@ -460,7 +460,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> void assertDelete(VKey<T> key) {
     if (internalDelete(key) != 1) {
       throw new IllegalArgumentException(
-          String.format("Error deleting the entity of the key: %s", key.getSqlKey()));
+          String.format("Error deleting the entity of the key: %s", key.getKey()));
     }
   }
 

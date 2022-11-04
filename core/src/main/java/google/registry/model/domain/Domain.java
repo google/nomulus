@@ -14,11 +14,9 @@
 
 package google.registry.model.domain;
 
-import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
-import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
@@ -31,6 +29,7 @@ import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
@@ -45,8 +44,6 @@ import org.joda.time.DateTime;
  *
  * @see <a href="https://tools.ietf.org/html/rfc5731">RFC 5731</a>
  */
-@ReportedOn
-@com.googlecode.objectify.annotation.Entity
 @Entity
 @Table(
     name = "Domain",
@@ -72,7 +69,7 @@ import org.joda.time.DateTime;
 public class Domain extends DomainBase implements ForeignKeyedEppResource {
 
   @Override
-  @javax.persistence.Id
+  @Id
   @Access(AccessType.PROPERTY)
   public String getRepoId() {
     return super.getRepoId();
@@ -110,7 +107,7 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
       referencedColumnName = "repoId",
       insertable = false,
       updatable = false)
-  @SuppressWarnings("UnusedMethod")
+  @SuppressWarnings("unused")
   private Set<GracePeriod> getInternalGracePeriods() {
     return gracePeriods;
   }
@@ -132,7 +129,7 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
       referencedColumnName = "repoId",
       insertable = false,
       updatable = false)
-  @SuppressWarnings("UnusedMethod")
+  @SuppressWarnings("unused")
   private Set<DomainDsData> getInternalDelegationSignerData() {
     return dsData;
   }
@@ -147,7 +144,7 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
 
   @Override
   public VKey<Domain> createVKey() {
-    return VKey.createSql(Domain.class, getRepoId());
+    return VKey.create(Domain.class, getRepoId());
   }
 
   @Override
@@ -155,8 +152,8 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
     return cloneDomainProjectedAtTime(this, now);
   }
 
-  public static VKey<Domain> createVKey(Key<Domain> key) {
-    return VKey.create(Domain.class, key.getName(), key);
+  public static VKey<Domain> createVKey(String repoId) {
+    return VKey.create(Domain.class, repoId);
   }
 
   /** An override of {@link EppResource#asBuilder} with tighter typing. */

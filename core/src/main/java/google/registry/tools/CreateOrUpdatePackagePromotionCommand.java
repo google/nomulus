@@ -67,7 +67,7 @@ abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
   /** Returns the allocation token object. */
   AllocationToken getAndCheckAllocationToken(String token) {
     Optional<AllocationToken> allocationToken =
-        tm().transact(() -> tm().loadByKeyIfPresent(VKey.createSql(AllocationToken.class, token)));
+        tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token)));
     checkArgument(
         allocationToken.isPresent(),
         "An allocation token with the token String %s does not exist. The package token must be"

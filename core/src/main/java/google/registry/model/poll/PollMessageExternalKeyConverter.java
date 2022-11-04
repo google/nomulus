@@ -61,7 +61,7 @@ public final class PollMessageExternalKeyConverter {
     }
     try {
       Long id = Long.parseLong(idComponents.get(0));
-      return VKey.createSql(PollMessage.class, id);
+      return VKey.create(PollMessage.class, id);
       // Note that idComponents.get(1) is entirely ignored; we never use the year field internally.
     } catch (NumberFormatException e) {
       throw new PollMessageExternalKeyParseException();

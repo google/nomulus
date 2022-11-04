@@ -91,13 +91,12 @@ public class PollMessageTest extends EntityTestCase {
   @Test
   void testCloudSqlSupportForPolymorphicVKey() {
     insertInDb(oneTime);
-    PollMessage persistedOneTime = loadByKey(VKey.createSql(PollMessage.class, oneTime.getId()));
+    PollMessage persistedOneTime = loadByKey(VKey.create(PollMessage.class, oneTime.getId()));
     assertThat(persistedOneTime).isInstanceOf(PollMessage.OneTime.class);
     assertThat(persistedOneTime).isEqualTo(oneTime);
 
     insertInDb(autoRenew);
-    PollMessage persistedAutoRenew =
-        loadByKey(VKey.createSql(PollMessage.class, autoRenew.getId()));
+    PollMessage persistedAutoRenew = loadByKey(VKey.create(PollMessage.class, autoRenew.getId()));
     assertThat(persistedAutoRenew).isInstanceOf(PollMessage.Autorenew.class);
     assertThat(persistedAutoRenew).isEqualTo(autoRenew);
   }

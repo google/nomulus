@@ -192,7 +192,7 @@ class DomainTransferRequestFlowTest
         .and()
         .hasLastEppUpdateTime(clock.nowUtc())
         .and()
-        .hasLastEppUpdateClientId("NewRegistrar");
+        .hasLastEppUpdateRegistrarId("NewRegistrar");
     Trid expectedTrid =
         Trid.create(
             getClientTrid(),
@@ -449,7 +449,7 @@ class DomainTransferRequestFlowTest
         .and()
         .hasLastEppUpdateTime(implicitTransferTime)
         .and()
-        .hasLastEppUpdateClientId("NewRegistrar");
+        .hasLastEppUpdateRegistrarId("NewRegistrar");
     assertThat(loadByKey(domainAfterAutomaticTransfer.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(expectedExpirationTime);
     // And after the expected grace time, the grace period should be gone.

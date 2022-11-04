@@ -16,7 +16,6 @@ package google.registry.model.ofy;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.initOfy;
-import static google.registry.testing.DatabaseHelper.newContact;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
@@ -27,7 +26,7 @@ import com.googlecode.objectify.ObjectifyFilter;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import google.registry.model.contact.Contact;
+import google.registry.model.common.GaeUserIdConverter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,8 +80,9 @@ class OfyFilterTest {
   @Test
   void testKeyCreateAfterFilter() {
     new OfyFilter().init(null);
-    Contact contact = newContact("contact1234");
-    Key.create(contact);
+    GaeUserIdConverter userIdConverter = new GaeUserIdConverter();
+    userIdConverter.id = 1;
+    Key.create(userIdConverter);
   }
 
   @Entity

@@ -401,7 +401,7 @@ public class DomainSqlTest {
   }
 
   private <T> VKey<T> createKey(Class<T> clazz, String key) {
-    return VKey.createSql(clazz, key);
+    return VKey.create(clazz, key);
   }
 
   private void assertEqualDomainExcept(Domain thatDomain, String... excepts) {

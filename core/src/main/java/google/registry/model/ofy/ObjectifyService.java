@@ -33,16 +33,15 @@ import com.googlecode.objectify.impl.translate.TranslatorFactory;
 import com.googlecode.objectify.impl.translate.opt.joda.MoneyStringTranslatorFactory;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.Buildable;
-import google.registry.model.EntityClasses;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.DeleteAfterMigration;
+import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.translators.BloomFilterOfStringTranslatorFactory;
 import google.registry.model.translators.CidrAddressBlockTranslatorFactory;
 import google.registry.model.translators.CurrencyUnitTranslatorFactory;
 import google.registry.model.translators.DurationTranslatorFactory;
 import google.registry.model.translators.InetAddressTranslatorFactory;
 import google.registry.model.translators.ReadableInstantUtcTranslatorFactory;
-import google.registry.model.translators.VKeyTranslatorFactory;
 
 /**
  * An instance of Ofy, obtained via {@code #auditedOfy()}, should be used to access all persistable
@@ -106,7 +105,7 @@ public class ObjectifyService {
 
     // Translators must be registered before any entities can be registered.
     registerTranslators();
-    registerEntityClasses(EntityClasses.ALL_CLASSES);
+    registerEntityClasses(ImmutableSet.of(GaeUserIdConverter.class));
   }
 
   /** Register translators that allow less common types to be stored directly in Datastore. */
@@ -119,8 +118,7 @@ public class ObjectifyService {
             new DurationTranslatorFactory(),
             new InetAddressTranslatorFactory(),
             new MoneyStringTranslatorFactory(),
-            new ReadableInstantUtcTranslatorFactory(),
-            new VKeyTranslatorFactory())) {
+            new ReadableInstantUtcTranslatorFactory())) {
       factory().getTranslators().add(translatorFactory);
     }
   }

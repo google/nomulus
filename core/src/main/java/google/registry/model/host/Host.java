@@ -64,7 +64,7 @@ public class Host extends HostBase implements ForeignKeyedEppResource {
 
   @Override
   public VKey<Host> createVKey() {
-    return VKey.createSql(Host.class, getRepoId());
+    return VKey.create(Host.class, getRepoId());
   }
 
   @Override

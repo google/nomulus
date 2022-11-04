@@ -375,7 +375,7 @@ public abstract class BillingEvent extends ImmutableObject
     }
 
     public static VKey<OneTime> createVKey(long id) {
-      return VKey.createSql(OneTime.class, id);
+      return VKey.create(OneTime.class, id);
     }
 
     @Override
@@ -538,7 +538,7 @@ public abstract class BillingEvent extends ImmutableObject
     }
 
     public static VKey<Recurring> createVKey(Long id) {
-      return VKey.createSql(Recurring.class, id);
+      return VKey.create(Recurring.class, id);
     }
 
     @Override
@@ -682,7 +682,7 @@ public abstract class BillingEvent extends ImmutableObject
     }
 
     public static VKey<Cancellation> createVKey(long id) {
-      return VKey.createSql(Cancellation.class, id);
+      return VKey.create(Cancellation.class, id);
     }
 
     @Override

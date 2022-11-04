@@ -253,7 +253,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
     final ImmutableSet<DateTime> billingTimes =
         getBillingTimesInScope(eventTimes, cursorTime, executeTime, tld);
 
-    VKey<Domain> domainKey = VKey.createSql(Domain.class, recurring.getDomainRepoId());
+    VKey<Domain> domainKey = VKey.create(Domain.class, recurring.getDomainRepoId());
     Iterable<OneTime> oneTimesForDomain;
     oneTimesForDomain =
         tm().createQueryComposer(OneTime.class)

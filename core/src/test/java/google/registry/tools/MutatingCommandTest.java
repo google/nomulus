@@ -101,7 +101,7 @@ public class MutatingCommandTest {
                 + "lastEppUpdateTime: null -> 2014-09-09T09:09:09.000Z\n"
                 + "\n"
                 + "Update Host@3-ROID\n"
-                + "currentSponsorClientId: TheRegistrar -> Registrar2\n"
+                + "currentSponsorRegistrarId: TheRegistrar -> Registrar2\n"
                 + "\n"
                 + "Update Registrar@Registrar1\n"
                 + "poNumber: null -> 23\n"
@@ -246,7 +246,7 @@ public class MutatingCommandTest {
                 + "\n"
                 + "\n"
                 + "Update Host@3-ROID\n"
-                + "currentSponsorClientId: TheRegistrar -> Registrar2\n"
+                + "currentSponsorRegistrarId: TheRegistrar -> Registrar2\n"
                 + "\n"
                 + "Delete Registrar@Registrar1\n"
                 + registrar1
@@ -289,7 +289,7 @@ public class MutatingCommandTest {
                 + "\n"
                 + "\n"
                 + "Update Host@3-ROID\n"
-                + "currentSponsorClientId: TheRegistrar -> Registrar2\n"
+                + "currentSponsorRegistrarId: TheRegistrar -> Registrar2\n"
                 + "\n"
                 + "Delete Registrar@Registrar1\n"
                 + registrar1

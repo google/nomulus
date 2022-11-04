@@ -656,7 +656,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   /** Creates a {@link VKey} for the given {@code registrarId}. */
   public static VKey<Registrar> createVKey(String registrarId) {
     checkArgumentNotNull(registrarId, "registrarId must be specified");
-    return VKey.createSql(Registrar.class, registrarId);
+    return VKey.create(Registrar.class, registrarId);
   }
 
   /** A builder for constructing {@link Registrar}, since it is immutable. */

@@ -140,6 +140,6 @@ public class PollMessageExternalKeyConverterTest {
             one.getKind().isAssignableFrom(two.getKind())
                 || two.getKind().isAssignableFrom(one.getKind()))
         .isTrue();
-    assertThat(one.getSqlKey()).isEqualTo(two.getSqlKey());
+    assertThat(one.getKey()).isEqualTo(two.getKey());
   }
 }

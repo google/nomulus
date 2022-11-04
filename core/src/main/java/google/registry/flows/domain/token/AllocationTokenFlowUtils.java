@@ -151,7 +151,7 @@ public class AllocationTokenFlowUtils {
     }
 
     maybeTokenEntity =
-        tm().transact(() -> tm().loadByKeyIfPresent(VKey.createSql(AllocationToken.class, token)));
+        tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token)));
 
     if (!maybeTokenEntity.isPresent()) {
       throw new InvalidAllocationTokenException();

@@ -104,14 +104,14 @@ public class PackagePromotion extends ImmutableObject implements Buildable {
     jpaTm().assertInTransaction();
     return jpaTm()
         .query("FROM PackagePromotion WHERE token = :token", PackagePromotion.class)
-        .setParameter("token", VKey.createSql(AllocationToken.class, tokenString))
+        .setParameter("token", VKey.create(AllocationToken.class, tokenString))
         .getResultStream()
         .findFirst();
   }
 
   @Override
   public VKey<PackagePromotion> createVKey() {
-    return VKey.createSql(PackagePromotion.class, packagePromotionId);
+    return VKey.create(PackagePromotion.class, packagePromotionId);
   }
 
   @Override

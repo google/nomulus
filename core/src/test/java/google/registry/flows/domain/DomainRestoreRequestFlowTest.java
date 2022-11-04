@@ -186,7 +186,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         .and()
         .hasLastEppUpdateTime(clock.nowUtc())
         .and()
-        .hasLastEppUpdateClientId("TheRegistrar");
+        .hasLastEppUpdateRegistrarId("TheRegistrar");
     assertThat(domain.getGracePeriods()).isEmpty();
     assertDnsTasksEnqueued("example.tld");
     // The poll message for the delete should now be gone. The only poll message should be the new
@@ -255,7 +255,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         .and()
         .hasLastEppUpdateTime(clock.nowUtc())
         .and()
-        .hasLastEppUpdateClientId("TheRegistrar");
+        .hasLastEppUpdateRegistrarId("TheRegistrar");
     assertThat(domain.getGracePeriods()).isEmpty();
     assertDnsTasksEnqueued("example.tld");
     // The poll message for the delete should now be gone. The only poll message should be the new

@@ -19,11 +19,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.EppResourceUtils.projectResourceOntoBuilderAtTime;
 
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.IgnoreSave;
-import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.annotation.OnLoad;
-import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.transfer.ContactTransferData;
@@ -54,7 +49,8 @@ import org.joda.time.DateTime;
 @MappedSuperclass
 @Embeddable
 @Access(AccessType.FIELD)
-public class ContactBase extends EppResource implements ResourceWithTransferData {
+public class ContactBase extends EppResource
+    implements ResourceWithTransferData<ContactTransferData> {
 
   /**
    * Unique identifier for this contact.
@@ -69,7 +65,6 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
    * Localized postal info for the contact. All contained values must be representable in the 7-bit
    * US-ASCII character set. Personal info; cleared by {@link Contact.Builder#wipeOut}.
    */
-  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "name", column = @Column(name = "addr_local_name")),
@@ -97,7 +92,6 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
    * Internationalized postal info for the contact. Personal info; cleared by {@link
    * Contact.Builder#wipeOut}.
    */
-  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "name", column = @Column(name = "addr_i18n_name")),
@@ -126,10 +120,9 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
    * postal name, or if null, the localized postal name, or if that is null as well, null. Personal
    * info; cleared by {@link Contact.Builder#wipeOut}.
    */
-  @Index String searchName;
+  String searchName;
 
   /** Contact’s voice number. Personal info; cleared by {@link Contact.Builder#wipeOut}. */
-  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "phoneNumber", column = @Column(name = "voice_phone_number")),
@@ -138,7 +131,6 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   ContactPhoneNumber voice;
 
   /** Contact’s fax number. Personal info; cleared by {@link Contact.Builder#wipeOut}. */
-  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "phoneNumber", column = @Column(name = "fax_phone_number")),
@@ -147,11 +139,9 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   ContactPhoneNumber fax;
 
   /** Contact’s email address. Personal info; cleared by {@link Contact.Builder#wipeOut}. */
-  @IgnoreSave(IfNull.class)
   String email;
 
   /** Authorization info (aka transfer secret) of the contact. */
-  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "pw.value", column = @Column(name = "auth_info_value")),
@@ -160,7 +150,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   ContactAuthInfo authInfo;
 
   /** Data about any pending or past transfers on this contact. */
-  @Ignore ContactTransferData transferData;
+  ContactTransferData transferData;
 
   /**
    * The time that this resource was last transferred.
@@ -173,7 +163,6 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   // the wipeOut() function, so that data is not kept around for deleted contacts.
 
   /** Disclosure policy. */
-  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "name", column = @Column(name = "disclose_types_name")),
@@ -191,17 +180,6 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
     throw new UnsupportedOperationException(
         "ContactBase is not an actual persisted entity you can create a key to;"
             + " use Contact instead");
-  }
-
-  @OnLoad
-  void onLoad() {
-    if (voice != null && voice.hasNullFields()) {
-      voice = null;
-    }
-
-    if (fax != null && fax.hasNullFields()) {
-      fax = null;
-    }
   }
 
   public String getContactId() {

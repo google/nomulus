@@ -303,7 +303,7 @@ public class RdePipeline implements Serializable {
                         TypeDescriptor.of(DepositFragment.class)))
                 .via(
                     (String registrarRepoId) -> {
-                      VKey<Registrar> key = VKey.createSql(Registrar.class, registrarRepoId);
+                      VKey<Registrar> key = VKey.create(Registrar.class, registrarRepoId);
                       includedRegistrarCounter.inc();
                       Registrar registrar = jpaTm().transact(() -> jpaTm().loadByKey(key));
                       DepositFragment fragment = marshaller.marshalRegistrar(registrar);
@@ -332,9 +332,9 @@ public class RdePipeline implements Serializable {
                 ("SELECT repoId, revisionId FROM %entity% WHERE (repoId, modificationTime) IN"
                      + " (SELECT repoId, MAX(modificationTime) FROM %entity% WHERE"
                      + " modificationTime <= :watermark GROUP BY repoId) AND resource.deletionTime"
-                     + " > :watermark AND COALESCE(resource.creationClientId, '') NOT LIKE"
-                     + " 'prober-%' AND COALESCE(resource.currentSponsorClientId, '') NOT LIKE"
-                     + " 'prober-%' AND COALESCE(resource.lastEppUpdateClientId, '') NOT LIKE"
+                     + " > :watermark AND COALESCE(resource.creationRegistrarId, '') NOT LIKE"
+                     + " 'prober-%' AND COALESCE(resource.currentSponsorRegistrarId, '') NOT LIKE"
+                     + " 'prober-%' AND COALESCE(resource.lastEppUpdateRegistrarId, '') NOT LIKE"
                      + " 'prober-%' "
                         + (historyClass == DomainHistory.class
                             ? "AND resource.tld IN " + "(SELECT id FROM Tld WHERE tldType = 'REAL')"
@@ -381,7 +381,7 @@ public class RdePipeline implements Serializable {
             () ->
                 jpaTm()
                     .loadByKey(
-                        VKey.createSql(historyEntryClazz, new HistoryEntryId(repoId, revisionId))))
+                        VKey.create(historyEntryClazz, new HistoryEntryId(repoId, revisionId))))
         .getResourceAtPointInTime()
         .map(resource -> resource.cloneProjectedAtTime(watermark))
         .get();
@@ -469,12 +469,12 @@ public class RdePipeline implements Serializable {
                               // Contacts and hosts are only deposited in RDE, not BRDA.
                               if (pendingDeposit.mode() == RdeMode.FULL) {
                                 HashSet<Serializable> contacts = new HashSet<>();
-                                contacts.add(domain.getAdminContact().getSqlKey());
-                                contacts.add(domain.getTechContact().getSqlKey());
-                                contacts.add(domain.getRegistrant().getSqlKey());
+                                contacts.add(domain.getAdminContact().getKey());
+                                contacts.add(domain.getTechContact().getKey());
+                                contacts.add(domain.getRegistrant().getKey());
                                 // Billing contact is not mandatory.
                                 if (domain.getBillingContact() != null) {
-                                  contacts.add(domain.getBillingContact().getSqlKey());
+                                  contacts.add(domain.getBillingContact().getKey());
                                 }
                                 referencedContactCounter.inc(contacts.size());
                                 contacts.forEach(
@@ -492,7 +492,7 @@ public class RdePipeline implements Serializable {
                                                   .get(REFERENCED_HOSTS)
                                                   .output(
                                                       KV.of(
-                                                          (String) hostKey.getSqlKey(),
+                                                          (String) hostKey.getKey(),
                                                           pendingDeposit)));
                                 }
                               }
@@ -565,7 +565,7 @@ public class RdePipeline implements Serializable {
                                   // The output are pairs of
                                   // (superordinateDomainRepoId,
                                   //   (subordinateHostRepoId, (pendingDeposit, revisionId))).
-                                  KV.of((String) host.getSuperordinateDomain().getSqlKey(), kv));
+                                  KV.of((String) host.getSuperordinateDomain().getKey(), kv));
                         } else {
                           externalHostCounter.inc();
                           DepositFragment fragment = marshaller.marshalExternalHost(host);

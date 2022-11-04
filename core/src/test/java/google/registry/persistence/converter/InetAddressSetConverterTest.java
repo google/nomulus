@@ -66,8 +66,7 @@ public class InetAddressSetConverterTest {
     insertInDb(testEntity);
     InetAddressSetTestEntity persisted =
         jpaTm()
-            .transact(
-                () -> jpaTm().loadByKey(VKey.createSql(InetAddressSetTestEntity.class, "id")));
+            .transact(() -> jpaTm().loadByKey(VKey.create(InetAddressSetTestEntity.class, "id")));
     assertThat(persisted.addresses).isEqualTo(inetAddresses);
   }
 

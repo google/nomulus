@@ -27,11 +27,11 @@ public class TransferServerApproveEntitySetConverter
 
   @Override
   String toString(VKey<? extends TransferServerApproveEntity> element) {
-    return String.valueOf(element.getSqlKey());
+    return String.valueOf(element.getKey());
   }
 
   @Override
   VKey<? extends TransferServerApproveEntity> fromString(String value) {
-    return VKey.createSql(TransferServerApproveEntity.class, Long.parseLong(value));
+    return VKey.create(TransferServerApproveEntity.class, Long.parseLong(value));
   }
 }

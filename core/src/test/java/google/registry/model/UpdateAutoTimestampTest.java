@@ -51,7 +51,7 @@ public class UpdateAutoTimestampTest {
 
   private static UpdateAutoTimestampTestObject reload() {
     return tm().transact(
-            () -> tm().loadByKey(VKey.createSql(UpdateAutoTimestampTestObject.class, 1L)));
+            () -> tm().loadByKey(VKey.create(UpdateAutoTimestampTestObject.class, 1L)));
   }
 
   @Test

@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.EppResource;
-import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
@@ -75,14 +74,11 @@ public class ResaveEntityAction implements Runnable {
         "Re-saving entity %s which was enqueued at %s.", resourceKey, requestedTime);
     tm().transact(
             () -> {
-              ImmutableObject entity = tm().loadByKey(VKey.create(resourceKey));
-              tm().put(
-                      (entity instanceof EppResource)
-                          ? ((EppResource) entity).cloneProjectedAtTime(tm().getTransactionTime())
-                          : entity);
+              EppResource entity = tm().loadByKey(VKey.createEppVKeyFromString(resourceKey));
+              tm().put(entity.cloneProjectedAtTime(tm().getTransactionTime()));
               if (!resaveTimes.isEmpty()) {
                 asyncTaskEnqueuer.enqueueAsyncResave(
-                    VKey.create(resourceKey), requestedTime, resaveTimes);
+                    VKey.createEppVKeyFromString(resourceKey), requestedTime, resaveTimes);
               }
             });
     response.setPayload("Entity re-saved.");

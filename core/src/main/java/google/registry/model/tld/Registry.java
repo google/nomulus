@@ -210,12 +210,12 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
               });
 
   public static VKey<Registry> createVKey(String tld) {
-    return VKey.createSql(Registry.class, tld);
+    return VKey.create(Registry.class, tld);
   }
 
   @Override
   public VKey<Registry> createVKey() {
-    return VKey.createSql(Registry.class, tldStr);
+    return VKey.create(Registry.class, tldStr);
   }
 
   /**

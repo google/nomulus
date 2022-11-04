@@ -138,7 +138,7 @@ class DomainTransferCancelFlowTest
         .and()
         .hasLastEppUpdateTime(clock.nowUtc())
         .and()
-        .hasLastEppUpdateClientId("NewRegistrar");
+        .hasLastEppUpdateRegistrarId("NewRegistrar");
     final HistoryEntry historyEntryTransferCancel =
         getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL);
     assertAboutHistoryEntries()

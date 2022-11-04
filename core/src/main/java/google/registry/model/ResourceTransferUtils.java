@@ -183,11 +183,11 @@ public final class ResourceTransferUtils {
    * sets the last EPP update client id to the given client id.
    */
   public static <R extends EppResource & ResourceWithTransferData> R denyPendingTransfer(
-      R resource, TransferStatus transferStatus, DateTime now, String lastEppUpdateClientId) {
+      R resource, TransferStatus transferStatus, DateTime now, String lastEppUpdateRegistrarId) {
     checkArgument(transferStatus.isDenied(), "Not a denial transfer status");
     return resolvePendingTransfer(resource, transferStatus, now)
         .setLastEppUpdateTime(now)
-        .setLastEppUpdateRegistrarId(lastEppUpdateClientId)
+        .setLastEppUpdateRegistrarId(lastEppUpdateRegistrarId)
         .build();
   }
 }

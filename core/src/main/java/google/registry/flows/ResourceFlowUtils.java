@@ -163,7 +163,7 @@ public final class ResourceFlowUtils {
     // The roid should match one of the contacts.
     Optional<VKey<Contact>> foundContact =
         domain.getReferencedContacts().stream()
-            .filter(key -> key.getSqlKey().equals(authRepoId))
+            .filter(key -> key.getKey().equals(authRepoId))
             .findFirst();
     if (!foundContact.isPresent()) {
       throw new BadAuthInfoForResourceException();

@@ -561,7 +561,7 @@ public class RdePipelineTest {
     return tm().transact(
             () ->
                 tm().loadByKey(
-                        VKey.createSql(
+                        VKey.create(
                             RdeRevision.class,
                             RdeRevisionId.create("soy", now.toLocalDate(), mode)))
                     .getRevision());

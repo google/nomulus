@@ -80,14 +80,14 @@ public final class HostInfoFlow implements Flow {
           tm().transact(
                   () -> tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtTime(now));
       hostInfoDataBuilder
-          .setCurrentSponsorClientId(superordinateDomain.getCurrentSponsorRegistrarId())
+          .setCurrentSponsorRegistrarId(superordinateDomain.getCurrentSponsorRegistrarId())
           .setLastTransferTime(host.computeLastTransferTime(superordinateDomain));
       if (superordinateDomain.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
         statusValues.add(StatusValue.PENDING_TRANSFER);
       }
     } else {
       hostInfoDataBuilder
-          .setCurrentSponsorClientId(host.getPersistedCurrentSponsorRegistrarId())
+          .setCurrentSponsorRegistrarId(host.getPersistedCurrentSponsorRegistrarId())
           .setLastTransferTime(host.getLastTransferTime());
     }
     return responseBuilder
@@ -97,9 +97,9 @@ public final class HostInfoFlow implements Flow {
                 .setRepoId(host.getRepoId())
                 .setStatusValues(statusValues.build())
                 .setInetAddresses(host.getInetAddresses())
-                .setCreationClientId(host.getCreationRegistrarId())
+                .setCreationRegistrarId(host.getCreationRegistrarId())
                 .setCreationTime(host.getCreationTime())
-                .setLastEppUpdateClientId(host.getLastEppUpdateRegistrarId())
+                .setLastEppUpdateRegistrarId(host.getLastEppUpdateRegistrarId())
                 .setLastEppUpdateTime(host.getLastEppUpdateTime())
                 .build())
         .build();

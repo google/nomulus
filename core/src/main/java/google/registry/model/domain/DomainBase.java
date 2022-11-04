@@ -36,20 +36,15 @@ import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.IgnoreSave;
-import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.condition.IfNull;
 import google.registry.dns.RefreshDnsAction;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
-import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -59,16 +54,20 @@ import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
+import google.registry.model.poll.PollMessage.Autorenew;
+import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.tldconfig.idn.IdnLabelValidator;
 import google.registry.util.CollectionUtils;
 import google.registry.util.DateTimeUtils;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -77,6 +76,7 @@ import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
+import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 import org.hibernate.collection.internal.PersistentSet;
@@ -86,9 +86,9 @@ import org.joda.time.Interval;
 /**
  * A persistable domain resource including mutable and non-mutable fields.
  *
- * <p>This class deliberately does not include an {@link javax.persistence.Id} so that any
- * foreign-keyed fields can refer to the proper parent entity's ID, whether we're storing this in
- * the DB itself or as part of another entity.
+ * <p>This class deliberately does not include an {@link Id} so that any foreign-keyed fields can
+ * refer to the proper parent entity's ID, whether we're storing this in the DB itself or as part of
+ * another entity.
  *
  * @see <a href="https://tools.ietf.org/html/rfc5731">RFC 5731</a>
  */
@@ -118,13 +118,13 @@ public class DomainBase extends EppResource
    *
    * @invariant domainName == domainName.toLowerCase(Locale.ENGLISH)
    */
-  @Index String domainName;
+  String domainName;
 
-  /** The top level domain this is under, dernormalized from {@link #domainName}. */
-  @Index String tld;
+  /** The top level domain this is under, de-normalized from {@link #domainName}. */
+  String tld;
 
   /** References to hosts that are the nameservers for the domain. */
-  @EmptySetToNull @Index @Transient Set<VKey<Host>> nsHosts;
+  @EmptySetToNull @Transient Set<VKey<Host>> nsHosts;
 
   /** Contacts. */
   VKey<Contact> adminContact;
@@ -134,7 +134,6 @@ public class DomainBase extends EppResource
   VKey<Contact> registrantContact;
 
   /** Authorization info (aka transfer secret) of the domain. */
-  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "pw.value", column = @Column(name = "auth_info_value")),
@@ -143,14 +142,13 @@ public class DomainBase extends EppResource
   DomainAuthInfo authInfo;
 
   /** Data used to construct DS records for this domain. */
-  @Ignore @Transient Set<DomainDsData> dsData;
+  @Transient Set<DomainDsData> dsData;
 
   /**
    * The claims notice supplied when this domain was created, if there was one.
    *
    * <p>It's {@literal @}XmlTransient because it's not returned in an info response.
    */
-  @Ignore
   @Embedded
   @AttributeOverrides({
     @AttributeOverride(name = "noticeId.tcnId", column = @Column(name = "launch_notice_tcn_id")),
@@ -169,9 +167,8 @@ public class DomainBase extends EppResource
   /**
    * Name of first IDN table associated with TLD that matched the characters in this domain label.
    *
-   * @see google.registry.tldconfig.idn.IdnLabelValidator#findValidIdnTableForTld
+   * @see IdnLabelValidator#findValidIdnTableForTld
    */
-  @IgnoreSave(IfNull.class)
   String idnTableName;
 
   /** Fully qualified host names of this domain's active subordinate hosts. */
@@ -188,44 +185,42 @@ public class DomainBase extends EppResource
    * restored, the message should be deleted.
    */
   @Column(name = "deletion_poll_message_id")
-  VKey<PollMessage.OneTime> deletePollMessage;
+  VKey<OneTime> deletePollMessage;
 
   /**
    * The recurring billing event associated with this domain's autorenewals.
    *
-   * <p>The recurrence should be open ended unless the domain is in pending delete or fully deleted,
+   * <p>The recurrence should be open-ended unless the domain is in pending delete or fully deleted,
    * in which case it should be closed at the time the delete was requested. Whenever the domain's
    * {@link #registrationExpirationTime} is changed the recurrence should be closed, a new one
    * should be created, and this field should be updated to point to the new one.
    */
   @Column(name = "billing_recurrence_id")
-  @Ignore
-  VKey<BillingEvent.Recurring> autorenewBillingEvent;
+  VKey<Recurring> autorenewBillingEvent;
 
   /**
    * The recurring poll message associated with this domain's autorenewals.
    *
-   * <p>The recurrence should be open ended unless the domain is in pending delete or fully deleted,
+   * <p>The recurrence should be open-ended unless the domain is in pending delete or fully deleted,
    * in which case it should be closed at the time the delete was requested. Whenever the domain's
    * {@link #registrationExpirationTime} is changed the recurrence should be closed, a new one
    * should be created, and this field should be updated to point to the new one.
    */
   @Column(name = "autorenew_poll_message_id")
-  VKey<PollMessage.Autorenew> autorenewPollMessage;
+  VKey<Autorenew> autorenewPollMessage;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
-  @Ignore @Transient Set<GracePeriod> gracePeriods;
+  @Transient Set<GracePeriod> gracePeriods;
 
   /**
    * The id of the signed mark that was used to create this domain in sunrise.
    *
    * <p>Will only be populated for domains created in sunrise.
    */
-  @IgnoreSave(IfNull.class)
   String smdId;
 
   /** Data about any pending or past transfers on this domain. */
-  @Ignore DomainTransferData transferData;
+  DomainTransferData transferData;
 
   /**
    * The time that this resource was last transferred.
@@ -249,12 +244,12 @@ public class DomainBase extends EppResource
    * difference domains that have reached their life and must be deleted now, and domains that
    * happen to be in the autorenew grace period now but should be deleted in roughly a year.
    */
-  @Index DateTime autorenewEndTime;
+  DateTime autorenewEndTime;
 
   /**
    * When this domain's DNS was requested to be refreshed, or null if its DNS is up-to-date.
    *
-   * <p>This will almost always be null except in the couple minutes' interval between when a
+   * <p>This will almost always be null except in the couple of minutes' interval between when a
    * DNS-affecting create or update operation takes place and when the {@link RefreshDnsAction}
    * runs, which resets this back to null upon completion of the DNS refresh task. This is a {@link
    * DateTime} rather than a simple dirty boolean so that the DNS refresh action can order by the
@@ -271,10 +266,10 @@ public class DomainBase extends EppResource
    * it remains as a permanent record of which actions were DNS-affecting and which were not.
    */
   // TODO(mcilwain): Start using this field once we are further along in the DB migration.
-  @Ignore DateTime dnsRefreshRequestTime;
+  DateTime dnsRefreshRequestTime;
 
   /** The {@link AllocationToken} for the package this domain is currently a part of. */
-  @Ignore @Nullable VKey<AllocationToken> currentPackageToken;
+  @Nullable VKey<AllocationToken> currentPackageToken;
 
   /**
    * Returns the DNS refresh request time iff this domain's DNS needs refreshing, otherwise absent.
@@ -291,15 +286,15 @@ public class DomainBase extends EppResource
     return registrationExpirationTime;
   }
 
-  public VKey<PollMessage.OneTime> getDeletePollMessage() {
+  public VKey<OneTime> getDeletePollMessage() {
     return deletePollMessage;
   }
 
-  public VKey<BillingEvent.Recurring> getAutorenewBillingEvent() {
+  public VKey<Recurring> getAutorenewBillingEvent() {
     return autorenewBillingEvent;
   }
 
-  public VKey<PollMessage.Autorenew> getAutorenewPollMessage() {
+  public VKey<Autorenew> getAutorenewPollMessage() {
     return autorenewPollMessage;
   }
 
@@ -362,7 +357,7 @@ public class DomainBase extends EppResource
   }
 
   // Hibernate needs this in order to populate nsHosts but no one else should ever use it
-  @SuppressWarnings("UnusedMethod")
+  @SuppressWarnings("unused")
   private void setNsHosts(Set<VKey<Host>> nsHosts) {
     this.nsHosts = forceEmptyToNull(nsHosts);
   }
@@ -370,14 +365,14 @@ public class DomainBase extends EppResource
   // Note: for the two methods below, how we wish to treat the Hibernate setters depends on the
   // current state of the object and what's passed in. The key principle is that we wish to maintain
   // the link between parent and child objects, meaning that we should keep around whichever of the
-  // two sets (the parameter vs the class variable and clear/populate that as appropriate.
+  // two sets (the parameter vs the class variable and clear/populate that as appropriate).
   //
-  // If the class variable is a PersistentSet and we overwrite it here, Hibernate will throw
+  // If the class variable is a PersistentSet, and we overwrite it here, Hibernate will throw
   // an exception "A collection with cascade=”all-delete-orphan” was no longer referenced by the
   // owning entity instance". See https://stackoverflow.com/questions/5587482 for more details.
 
   // Hibernate needs this in order to populate gracePeriods but no one else should ever use it
-  @SuppressWarnings("UnusedMethod")
+  @SuppressWarnings("unused")
   private void setInternalGracePeriods(Set<GracePeriod> gracePeriods) {
     if (this.gracePeriods instanceof PersistentSet) {
       Set<GracePeriod> nonNullGracePeriods = nullToEmpty(gracePeriods);
@@ -389,7 +384,7 @@ public class DomainBase extends EppResource
   }
 
   // Hibernate needs this in order to populate dsData but no one else should ever use it
-  @SuppressWarnings("UnusedMethod")
+  @SuppressWarnings("unused")
   private void setInternalDelegationSignerData(Set<DomainDsData> dsData) {
     if (this.dsData instanceof PersistentSet) {
       Set<DomainDsData> nonNullDsData = nullToEmpty(dsData);
@@ -488,7 +483,7 @@ public class DomainBase extends EppResource
               .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
               .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage());
       if (transferData.getTransferPeriod().getValue() == 1) {
-        // Set the grace period using a key to the prescheduled transfer billing event.  Not using
+        // Set the grace period using a key to the pre-scheduled transfer billing event.  Not using
         // GracePeriod.forBillingEvent() here in order to avoid the actual Datastore fetch.
         builder.setGracePeriods(
             ImmutableSet.of(
@@ -551,7 +546,7 @@ public class DomainBase extends EppResource
       }
     }
 
-    // It is possible that the lastEppUpdateClientId is different from current sponsor client
+    // It is possible that the lastEppUpdateRegistrarId is different from current sponsor client
     // id, so we have to do the comparison instead of having one variable just storing the most
     // recent time.
     if (newLastEppUpdateTime.isPresent()) {
@@ -656,7 +651,7 @@ public class DomainBase extends EppResource
     if (includeRegistrant) {
       registrantContact = null;
     }
-    HashSet<DesignatedContact.Type> contactsDiscovered = new HashSet<DesignatedContact.Type>();
+    HashSet<DesignatedContact.Type> contactsDiscovered = new HashSet<>();
     for (DesignatedContact contact : contacts) {
       checkArgument(
           !contactsDiscovered.contains(contact.getType()),
@@ -851,17 +846,17 @@ public class DomainBase extends EppResource
       return thisCastToDerived();
     }
 
-    public B setDeletePollMessage(VKey<PollMessage.OneTime> deletePollMessage) {
+    public B setDeletePollMessage(VKey<OneTime> deletePollMessage) {
       getInstance().deletePollMessage = deletePollMessage;
       return thisCastToDerived();
     }
 
-    public B setAutorenewBillingEvent(VKey<BillingEvent.Recurring> autorenewBillingEvent) {
+    public B setAutorenewBillingEvent(VKey<Recurring> autorenewBillingEvent) {
       getInstance().autorenewBillingEvent = autorenewBillingEvent;
       return thisCastToDerived();
     }
 
-    public B setAutorenewPollMessage(@Nullable VKey<PollMessage.Autorenew> autorenewPollMessage) {
+    public B setAutorenewPollMessage(@Nullable VKey<Autorenew> autorenewPollMessage) {
       getInstance().autorenewPollMessage = autorenewPollMessage;
       return thisCastToDerived();
     }
@@ -931,7 +926,7 @@ public class DomainBase extends EppResource
                       new IllegalArgumentException(
                           String.format(
                               "The package token %s does not exist",
-                              currentPackageToken.getSqlKey())));
+                              currentPackageToken.getKey())));
       checkArgument(
           token.getTokenType().equals(TokenType.PACKAGE),
           "The currentPackageToken must have a PACKAGE TokenType");

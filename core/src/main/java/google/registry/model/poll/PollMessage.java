@@ -398,7 +398,7 @@ public abstract class PollMessage extends ImmutableObject
 
     @Override
     public VKey<OneTime> createVKey() {
-      return VKey.createSql(OneTime.class, getId());
+      return VKey.create(OneTime.class, getId());
     }
 
     @Override
@@ -563,7 +563,7 @@ public abstract class PollMessage extends ImmutableObject
 
     @Override
     public VKey<Autorenew> createVKey() {
-      return VKey.createSql(Autorenew.class, getId());
+      return VKey.create(Autorenew.class, getId());
     }
 
     @Override

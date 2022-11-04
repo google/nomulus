@@ -65,7 +65,7 @@ public final class AsyncTaskEnqueuer {
   private final Queue asyncDnsRefreshPullQueue;
   private final Retrier retrier;
 
-  private CloudTasksUtils cloudTasksUtils;
+  private final CloudTasksUtils cloudTasksUtils;
 
   @Inject
   public AsyncTaskEnqueuer(
@@ -82,7 +82,8 @@ public final class AsyncTaskEnqueuer {
   }
 
   /** Enqueues a task to asynchronously re-save an entity at some point in the future. */
-  public void enqueueAsyncResave(VKey<?> entityToResave, DateTime now, DateTime whenToResave) {
+  public void enqueueAsyncResave(
+      VKey<? extends EppResource> entityToResave, DateTime now, DateTime whenToResave) {
     enqueueAsyncResave(entityToResave, now, ImmutableSortedSet.of(whenToResave));
   }
 
@@ -93,7 +94,9 @@ public final class AsyncTaskEnqueuer {
    * itself to run at the next time if there are remaining re-saves scheduled.
    */
   public void enqueueAsyncResave(
-      VKey<?> entityKey, DateTime now, ImmutableSortedSet<DateTime> whenToResave) {
+      VKey<? extends EppResource> entityKey,
+      DateTime now,
+      ImmutableSortedSet<DateTime> whenToResave) {
     DateTime firstResave = whenToResave.first();
     checkArgument(isBeforeOrAt(now, firstResave), "Can't enqueue a resave to run in the past");
     Duration etaDuration = new Duration(now, firstResave);

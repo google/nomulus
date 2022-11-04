@@ -68,14 +68,14 @@ class EntityCallbacksListenerTest {
     checkAll(updated, 0, 1, 0, 1);
 
     TestEntity testLoad =
-        jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id")));
+        jpaTm().transact(() -> jpaTm().loadByKey(VKey.create(TestEntity.class, "id")));
     checkAll(testLoad, 0, 0, 0, 1);
 
     TestEntity testRemove =
         jpaTm()
             .transact(
                 () -> {
-                  TestEntity removed = jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id"));
+                  TestEntity removed = jpaTm().loadByKey(VKey.create(TestEntity.class, "id"));
                   return jpaTm().delete(removed);
                 });
     checkAll(testRemove, 0, 0, 1, 1);
@@ -105,10 +105,10 @@ class EntityCallbacksListenerTest {
     insertInDb(new TestEntity());
 
     TestEntity testLoad =
-        jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id")));
+        jpaTm().transact(() -> jpaTm().loadByKey(VKey.create(TestEntity.class, "id")));
     assertThat(testLoad.entityPreUpdate).isEqualTo(0);
 
-    testLoad = jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id")));
+    testLoad = jpaTm().transact(() -> jpaTm().loadByKey(VKey.create(TestEntity.class, "id")));
 
     // Verify that post-load happened but pre-update didn't.
     assertThat(testLoad.entityPostLoad).isEqualTo(1);
