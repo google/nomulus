@@ -20,7 +20,6 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets.Details;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.util.store.AbstractDataStoreFactory;
@@ -94,16 +93,14 @@ public class AuthModule {
     }
   }
 
-  // TODO(b/138195359): Deprecate this credential once Cloud SQL socket library uses the new auth
-  // library.
   @Provides
   @CloudSqlClientCredential
-  public static Credential providesLocalCredentialForCloudSqlClient(
+  public static GoogleCredentials providesLocalCredentialForCloudSqlClient(
       @LocalCredentialJson String credentialJson,
       @Config("localCredentialOauthScopes") ImmutableList<String> credentialScopes) {
     try {
-      GoogleCredential credential =
-          GoogleCredential.fromStream(new ByteArrayInputStream(credentialJson.getBytes(UTF_8)));
+      GoogleCredentials credential =
+          GoogleCredentials.fromStream(new ByteArrayInputStream(credentialJson.getBytes(UTF_8)));
       if (credential.createScopedRequired()) {
         credential = credential.createScoped(credentialScopes);
       }
