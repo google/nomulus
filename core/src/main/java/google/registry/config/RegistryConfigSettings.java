@@ -207,7 +207,6 @@ public class RegistryConfigSettings {
     public String alertRecipientEmailAddress;
     public String spec11OutgoingEmailAddress;
     public List<String> spec11BccEmailAddresses;
-    public int asyncDeleteDelaySeconds;
     public int transientFailureRetries;
   }
 

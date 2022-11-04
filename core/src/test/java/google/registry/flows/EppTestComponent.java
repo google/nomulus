@@ -14,8 +14,6 @@
 
 package google.registry.flows;
 
-import static org.joda.time.Duration.standardSeconds;
-
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
@@ -73,8 +71,7 @@ public interface EppTestComponent {
       FakesAndMocksModule instance = new FakesAndMocksModule();
       CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
       instance.asyncTaskEnqueuer =
-          AsyncTaskEnqueuerTest.createForTesting(
-              cloudTasksHelper.getTestCloudTasksUtils(), clock, standardSeconds(90));
+          AsyncTaskEnqueuerTest.createForTesting(cloudTasksHelper.getTestCloudTasksUtils());
       instance.clock = clock;
       instance.domainFlowTmchUtils =
           new DomainFlowTmchUtils(
