@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link SecretManagerKeyring} and {@link SecretManagerKeyringUpdater} */
-// TODO(2021-07-01): Rename this class along with KmsKeyring
 public class SecretManagerKeyringUpdaterTest {
 
   @RegisterExtension

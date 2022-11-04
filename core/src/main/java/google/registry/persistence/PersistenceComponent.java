@@ -21,6 +21,7 @@ import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
 import google.registry.persistence.PersistenceModule.AppEngineJpaTm;
 import google.registry.persistence.PersistenceModule.ReadOnlyReplicaJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.util.UtilsModule;
 import javax.inject.Singleton;
 import javax.persistence.EntityManagerFactory;
@@ -31,9 +32,9 @@ import javax.persistence.EntityManagerFactory;
     modules = {
       ConfigModule.class,
       CredentialModule.class,
-      SecretManagerKeyringModule.class,
       PersistenceModule.class,
-      google.registry.privileges.secretmanager.SecretManagerModule.class,
+      SecretManagerKeyringModule.class,
+      SecretManagerModule.class,
       UtilsModule.class
     })
 public interface PersistenceComponent {
