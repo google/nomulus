@@ -20,7 +20,7 @@ import static google.registry.keyring.api.KeySerializer.deserializeString;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import google.registry.keyring.kms.KmsUpdater;
+import google.registry.keyring.secretmanager.SecretManagerKeyringUpdater;
 import google.registry.tools.params.KeyringKeyName;
 import google.registry.tools.params.PathParameter;
 import java.nio.file.Files;
@@ -33,7 +33,7 @@ import javax.inject.Inject;
 @Parameters(separators = " =", commandDescription = "Update values of secret in the keyring.")
 final class UpdateKeyringSecretCommand implements CommandWithRemoteApi {
 
-  @Inject KmsUpdater kmsUpdater;
+  @Inject SecretManagerKeyringUpdater secretManagerKeyringUpdater;
 
   @Inject
   UpdateKeyringSecretCommand() {}
@@ -55,35 +55,35 @@ final class UpdateKeyringSecretCommand implements CommandWithRemoteApi {
 
     switch (keyringKeyName) {
       case BRDA_RECEIVER_PUBLIC_KEY:
-        kmsUpdater.setBrdaReceiverPublicKey(deserializePublicKey(input));
+        secretManagerKeyringUpdater.setBrdaReceiverPublicKey(deserializePublicKey(input));
         break;
       case BRDA_SIGNING_KEY_PAIR:
-        kmsUpdater.setBrdaSigningKey(deserializeKeyPair(input));
+        secretManagerKeyringUpdater.setBrdaSigningKey(deserializeKeyPair(input));
         break;
       case BRDA_SIGNING_PUBLIC_KEY:
         throw new IllegalArgumentException(
             "Can't update BRDA_SIGNING_PUBLIC_KEY directly."
             + " Must update public and private keys together using BRDA_SIGNING_KEY_PAIR.");
       case ICANN_REPORTING_PASSWORD:
-        kmsUpdater.setIcannReportingPassword(deserializeString(input));
+        secretManagerKeyringUpdater.setIcannReportingPassword(deserializeString(input));
         break;
       case JSON_CREDENTIAL:
-        kmsUpdater.setJsonCredential(deserializeString(input));
+        secretManagerKeyringUpdater.setJsonCredential(deserializeString(input));
         break;
       case MARKSDB_DNL_LOGIN_AND_PASSWORD:
-        kmsUpdater.setMarksdbDnlLoginAndPassword(deserializeString(input));
+        secretManagerKeyringUpdater.setMarksdbDnlLoginAndPassword(deserializeString(input));
         break;
       case MARKSDB_LORDN_PASSWORD:
-        kmsUpdater.setMarksdbLordnPassword(deserializeString(input));
+        secretManagerKeyringUpdater.setMarksdbLordnPassword(deserializeString(input));
         break;
       case MARKSDB_SMDRL_LOGIN_AND_PASSWORD:
-        kmsUpdater.setMarksdbSmdrlLoginAndPassword(deserializeString(input));
+        secretManagerKeyringUpdater.setMarksdbSmdrlLoginAndPassword(deserializeString(input));
         break;
       case RDE_RECEIVER_PUBLIC_KEY:
-        kmsUpdater.setRdeReceiverPublicKey(deserializePublicKey(input));
+        secretManagerKeyringUpdater.setRdeReceiverPublicKey(deserializePublicKey(input));
         break;
       case RDE_SIGNING_KEY_PAIR:
-        kmsUpdater.setRdeSigningKey(deserializeKeyPair(input));
+        secretManagerKeyringUpdater.setRdeSigningKey(deserializeKeyPair(input));
         break;
       case RDE_SIGNING_PUBLIC_KEY:
         throw new IllegalArgumentException(
@@ -95,16 +95,16 @@ final class UpdateKeyringSecretCommand implements CommandWithRemoteApi {
       //
       // Hence we can and need to update the private and public keys individually.
       case RDE_SSH_CLIENT_PRIVATE_KEY:
-        kmsUpdater.setRdeSshClientPrivateKey(deserializeString(input));
+        secretManagerKeyringUpdater.setRdeSshClientPrivateKey(deserializeString(input));
         break;
       case RDE_SSH_CLIENT_PUBLIC_KEY:
-        kmsUpdater.setRdeSshClientPublicKey(deserializeString(input));
+        secretManagerKeyringUpdater.setRdeSshClientPublicKey(deserializeString(input));
         break;
       case RDE_STAGING_KEY_PAIR:
-        kmsUpdater.setRdeStagingKey(deserializeKeyPair(input));
+        secretManagerKeyringUpdater.setRdeStagingKey(deserializeKeyPair(input));
         break;
       case SAFE_BROWSING_API_KEY:
-        kmsUpdater.setSafeBrowsingAPIKey(deserializeString(input));
+        secretManagerKeyringUpdater.setSafeBrowsingAPIKey(deserializeString(input));
         break;
       case RDE_STAGING_PUBLIC_KEY:
         throw new IllegalArgumentException(
@@ -112,7 +112,7 @@ final class UpdateKeyringSecretCommand implements CommandWithRemoteApi {
             + " Must update public and private keys together using RDE_STAGING_KEY_PAIR.");
     }
 
-    kmsUpdater.update();
+    secretManagerKeyringUpdater.update();
   }
 }
 

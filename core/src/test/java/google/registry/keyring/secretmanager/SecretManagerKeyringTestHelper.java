@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.keyring.kms;
+package google.registry.keyring.secretmanager;
 
 import static com.google.common.io.Resources.getResource;
 
@@ -26,15 +26,16 @@ import org.bouncycastle.openpgp.bc.BcPGPSecretKeyRing;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 
-/** Stores dummy values for test use in {@link KmsUpdaterTest}. */
-final class KmsTestHelper {
+/** Stores dummy values for test use in {@link SecretManagerKeyringUpdaterTest}. */
+final class SecretManagerKeyringTestHelper {
 
   static final String DUMMY_CRYPTO_KEY_VERSION = "cheeseburger";
   static final String DUMMY_ENCRYPTED_VALUE = "meow";
 
   /** The contents of a dummy PGP private key stored in a file. */
   private static final ByteSource PGP_PRIVATE_KEYRING =
-      Resources.asByteSource(getResource(KmsTestHelper.class, "pgp-private-keyring-registry.asc"));
+      Resources.asByteSource(
+          getResource(SecretManagerKeyringTestHelper.class, "pgp-private-keyring-registry.asc"));
 
   private static BcPGPSecretKeyRing getPrivateKeyring() throws Exception {
     return new BcPGPSecretKeyRing(PGPUtil.getDecoderStream(PGP_PRIVATE_KEYRING.openStream()));
@@ -53,5 +54,5 @@ final class KmsTestHelper {
             .build(new char[0])));
   }
 
-  private KmsTestHelper() {}
+  private SecretManagerKeyringTestHelper() {}
 }

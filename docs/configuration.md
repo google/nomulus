@@ -164,18 +164,16 @@ allows the codebase to compile and run, but of course any actions that attempt
 to connect to external services will fail because none of the keys are real.
 
 To configure a production registry system, you will need to either use the
-KmsKeyring or write your own replacement module using `DummyKeyringModule` for
-guidance.  Such a module should provide either an instance of
-`InMemoryKeyring` or your own custom implementation of `Keyring`.
+SecretManagerKeyring or write your own replacement module using
+`DummyKeyringModule` for guidance.  Such a module should provide either an
+instance of `InMemoryKeyring` or your own custom implementation of `Keyring`.
 
 In either case, configure the `keyring` section of the config file with the
-appropriate parameters.  Use an `activeKeyring` of "KMS" with a project id for
-KMS to configure accordingly, for example:
+appropriate parameters.  Use an `activeKeyring` of "CSM" with a project id for
+SecretManager to configure accordingly, for example:
 
     keyring:
-      activeKeyring: KMS
-      kms:
-        projectId: acme-registry-keys
+      activeKeyring: CSM
 
 ## Per-TLD configuration
 
@@ -316,35 +314,13 @@ connect to your database with gcloud:
 From this, you should have a postgres prompt and be able to enter the "GRANT"
 command specified above.
 
-### Cloud KMS
+### Cloud SecretManager
 
-You'll need to choose a project to host the KMS keyring. Best practice is to
-create a separate project with a strict IAM policy. However, you can use your
-current project when experimenting.
-
-You need to create a KMS keyring in the chosen project. The default keyring
-name is 'nomulus', though you can override it in the config file.
-
-    $ gcloud kms keyrings create "nomulus" --location "global" \
-        --project $KEYS_PROJECT_ID
-
-Next, you need to create two keys in the keyring:
-
-    $ gcloud kms keys create "cloud-sql-password-string" \
-        --project $KEYS_PROJECT_ID \
-        --location "global" \
-        --keyring "nomulus" \
-        --purpose "encryption"
-
-    $ gcloud kms keys create "tools-cloud-sql-password-string" \
-        --project $KEYS_PROJECT_ID \
-        --location "global" \
-        --keyring "nomulus" \
-        --purpose "encryption"
+You'll need to enable the SecretManager API in your project.
 
 #### Install Cloud SQL Passwords in Nomulus Server
 
-Use the update_kms_keyring command to upload the Cloud SQL passwords to the
+Use the update_keyring_secret command to upload the Cloud SQL passwords to the
 Nomulus server.  We'll use the password same set of passwords we specified
 above when creating database user accounts.  These should currently be stored
 in `/tmp/server.pass`.
@@ -353,12 +329,12 @@ Paste the password for the Registry server user to a file, say
 /tmp/server.pass. Make sure to avoid any trailing '\n' inserted by the editor.
 
     $ set ENV=alpha
-    $ nomulus -e $ENV update_kms_keyring --keyname CLOUD_SQL_PASSWORD \
+    $ nomulus -e $ENV update_keyring_secret --keyname CLOUD_SQL_PASSWORD \
         --input /tmp/server.pass
 
 Repeat the steps for the tools sql password:
 
-    $ nomulus -e $ENV update_kms_keyring --keyname TOOLS_CLOUD_SQL_PASSWORD \
+    $ nomulus -e $ENV update_keyring_secret --keyname TOOLS_CLOUD_SQL_PASSWORD \
         --input /tmp/tools.pass
 
 Use get_keyring_secret command to verify the data you put in:
@@ -376,9 +352,7 @@ Use get_keyring_secret command to verify the data you put in:
       instanceConnectionName: THE_NAME_SHOWN_ON_THE_DB_INFO_PAGE
 
     keyring:
-      activeKeyring: KMS
-      kms:
-        projectId: KEYS_PROJECT_ID
+      activeKeyring: CSM
 
     registryTool:
       clientId: TOOLS_OAUTH_CLIENT_ID

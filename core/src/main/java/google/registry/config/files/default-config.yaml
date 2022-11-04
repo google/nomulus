@@ -449,7 +449,8 @@ beam:
   stagingBucketUrl: gcs-bucket-with-staged-templates
 
 keyring:
-  # The name of the active keyring, either "KMS" or "Dummy".
+  # The name of the active keyring, either "Dummy" or "CSM". The latter stands
+  # for Cloud SecretManager.
   activeKeyring: Dummy
 
   # Configuration options specific to Google Cloud KMS.
