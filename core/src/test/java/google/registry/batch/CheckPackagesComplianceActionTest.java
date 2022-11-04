@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -228,7 +229,7 @@ public class CheckPackagesComplianceActionTest {
             Level.INFO,
             "Package with package token token has exceeded their max domain creation limit by 1"
                 + " name(s).");
-    verify(emailService, times(2)).sendEmail(emailCaptor.capture());
+    verify(emailService, times(2)).sendEmail(any(EmailMessage.class));
   }
 
   @Test

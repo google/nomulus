@@ -20,7 +20,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.PackagePromotion;
 import google.registry.model.registrar.Registrar;
@@ -29,7 +28,6 @@ import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.auth.Auth;
 import google.registry.ui.server.SendEmailUtils;
-import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 
@@ -70,19 +68,19 @@ public class CheckPackagesComplianceAction implements Runnable {
               ImmutableList.Builder<PackagePromotion> packagesOverCreateLimit =
                   new ImmutableList.Builder<>();
               for (PackagePromotion packagePromo : packages) {
-                List<DomainHistory> creates =
-                    jpaTm()
-                        .query(
-                            "FROM DomainHistory WHERE current_package_token = :token AND"
-                                + " modificationTime >= :lastBilling AND type = 'DOMAIN_CREATE'",
-                            DomainHistory.class)
-                        .setParameter("token", packagePromo.getToken().getKey().toString())
-                        .setParameter(
-                            "lastBilling", packagePromo.getNextBillingDate().minusYears(1))
-                        .getResultList();
-
-                if (creates.size() > packagePromo.getMaxCreates()) {
-                  int overage = creates.size() - packagePromo.getMaxCreates();
+                Long creates =
+                    (Long)
+                        jpaTm()
+                            .query(
+                                "SELECT COUNT(*) FROM DomainHistory WHERE current_package_token ="
+                                    + " :token AND modificationTime >= :lastBilling AND type ="
+                                    + " 'DOMAIN_CREATE'")
+                            .setParameter("token", packagePromo.getToken().getSqlKey().toString())
+                            .setParameter(
+                                "lastBilling", packagePromo.getNextBillingDate().minusYears(1))
+                            .getSingleResult();
+                if (creates > packagePromo.getMaxCreates()) {
+                  int overage = creates.intValue() - packagePromo.getMaxCreates();
                   logger.atInfo().log(
                       "Package with package token %s has exceeded their max domain creation limit"
                           + " by %d name(s).",
