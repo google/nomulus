@@ -65,9 +65,10 @@ ext {
       'com.google.javascript:closure-compiler:v20210505',
       'com.google.closure-stylesheets:closure-stylesheets:1.5.0',
 
-      // 5.6.12.Final: breaking change regarding joda-money
-      'org.hibernate:hibernate-core:5.6.10.Final!!',
-      'org.hibernate:hibernate-hikaricp:5.6.10.Final!!',
+      // 5.6.12.Final is buggy wrt immutable CompositeUserTypes.
+      // 6.0+ requires Java 11.
+      'org.hibernate:hibernate-core:[5.6.14.Final, 6.0)',
+      'org.hibernate:hibernate-hikaricp:[5.6.14.Final, 6.0)',
       // Latest version of the following are Java11-only
       'com.zaxxer:HikariCP:3.4.5',
       'com.github.ben-manes.caffeine:caffeine:[2.9.3,3.0)',
