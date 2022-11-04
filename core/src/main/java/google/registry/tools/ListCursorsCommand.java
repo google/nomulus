@@ -51,31 +51,31 @@ final class ListCursorsCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() {
-    Map<Registry, VKey<Cursor>> registries =
-        Registries.getTlds().stream()
-            .map(Registry::get)
-            .filter(r -> r.getTldType() == filterTldType)
-            .filter(r -> !filterEscrowEnabled || r.getEscrowEnabled())
-            .collect(toImmutableMap(r -> r, r -> Cursor.createScopedVKey(cursorType, r)));
+    Map<String, VKey<Cursor>> cursorKeys =
+        cursorType.isScoped()
+            ? Registries.getTlds().stream()
+                .map(Registry::get)
+                .filter(r -> r.getTldType() == filterTldType)
+                .filter(r -> !filterEscrowEnabled || r.getEscrowEnabled())
+                .collect(
+                    toImmutableMap(r -> r.getTldStr(), r -> Cursor.createScopedVKey(cursorType, r)))
+            : ImmutableMap.of(cursorType.name(), Cursor.createGlobalVKey(cursorType));
     ImmutableMap<VKey<? extends Cursor>, Cursor> cursors =
-        tm().transact(() -> tm().loadByKeysIfPresent(registries.values()));
-    if (!registries.isEmpty()) {
+        tm().transact(() -> tm().loadByKeysIfPresent(cursorKeys.values()));
+    if (!cursorKeys.isEmpty()) {
       String header = String.format(OUTPUT_FMT, "TLD", "Cursor Time", "Last Update Time");
       System.out.printf("%s\n%s\n", header, Strings.repeat("-", header.length()));
-      registries.entrySet().stream()
-          .map(
-              e ->
-                  renderLine(
-                      e.getKey().getTldStr(), Optional.ofNullable(cursors.get(e.getValue()))))
+      cursorKeys.entrySet().stream()
+          .map(e -> renderLine(e.getKey(), Optional.ofNullable(cursors.get(e.getValue()))))
           .sorted()
           .forEach(System.out::println);
     }
   }
 
-  private static String renderLine(String tld, Optional<Cursor> cursor) {
+  private static String renderLine(String name, Optional<Cursor> cursor) {
     return String.format(
         OUTPUT_FMT,
-        tld,
+        name,
         cursor.map(c -> c.getCursorTime().toString()).orElse("(absent)"),
         cursor.map(c -> c.getLastUpdateTime().toString()).orElse("(absent)"));
   }
