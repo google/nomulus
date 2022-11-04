@@ -14,22 +14,24 @@
 
 package google.registry.persistence.transaction;
 
-import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.http.HttpRequestInitializer;
+import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.sql.CredentialFactory;
 
-/** Supplier class to provide {@link Credential} for Cloud SQL library. */
+/** Supplier class to provide Credential for Cloud SQL library. */
 public class CloudSqlCredentialSupplier implements CredentialFactory {
-  private static Credential credential;
+  private static GoogleCredentials credential;
 
   /** Initialize the supplier with given credential json and scopes. */
-  public static void setupCredentialSupplier(Credential credential) {
+  public static void setupCredentialSupplier(GoogleCredentials credential) {
     System.setProperty(
         CredentialFactory.CREDENTIAL_FACTORY_PROPERTY, CloudSqlCredentialSupplier.class.getName());
     CloudSqlCredentialSupplier.credential = credential;
   }
 
   @Override
-  public Credential create() {
-    return credential;
+  public HttpRequestInitializer create() {
+    return new HttpCredentialsAdapter(credential);
   }
 }

@@ -25,7 +25,7 @@ import static google.registry.config.RegistryConfig.getHibernateJdbcFetchSize;
 import static google.registry.config.RegistryConfig.getHibernateLogSqlQueries;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.api.client.auth.oauth2.Credential;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -247,7 +247,7 @@ public abstract class PersistenceModule {
   static JpaTransactionManager provideNomulusToolJpaTm(
       SqlCredentialStore credentialStore,
       @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
-      @CloudSqlClientCredential Credential credential,
+      @CloudSqlClientCredential GoogleCredentials credential,
       Clock clock) {
     CloudSqlCredentialSupplier.setupCredentialSupplier(credential);
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
