@@ -27,7 +27,6 @@ import static google.registry.model.transfer.TransferStatus.SERVER_CANCELLED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
-import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
@@ -79,7 +78,6 @@ public final class ContactDeleteFlow implements TransactionalFlow {
   @Inject @Superuser boolean isSuperuser;
   @Inject Optional<AuthInfo> authInfo;
   @Inject ContactHistory.Builder historyBuilder;
-  @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject EppResponse.Builder responseBuilder;
 
   @Inject

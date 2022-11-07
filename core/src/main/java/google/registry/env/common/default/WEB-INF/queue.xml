@@ -46,6 +46,12 @@
     </retry-parameters>
   </queue>
 
+  <!-- Queue for tasks that trigger domain DNS update upon host rename. -->
+  <queue>
+    <name>async-host-rename</name>
+    <rate>1/s</rate>
+  </queue>
+
   <!-- Queue for tasks that wait for a Beam pipeline to complete (i.e. Spec11 and invoicing). -->
   <queue>
     <name>beam-reporting</name>

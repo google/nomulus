@@ -34,6 +34,7 @@ import google.registry.dns.DnsModule;
 import google.registry.dns.PublishDnsUpdatesAction;
 import google.registry.dns.ReadDnsQueueAction;
 import google.registry.dns.RefreshDnsAction;
+import google.registry.dns.RefreshDnsOnHostRenameAction;
 import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.dns.writer.clouddns.CloudDnsWriterModule;
 import google.registry.dns.writer.dnsupdate.DnsUpdateConfigModule;
@@ -152,6 +153,8 @@ interface BackendRequestComponent {
   RdeReporter rdeReporter();
 
   RefreshDnsAction refreshDnsAction();
+
+  RefreshDnsOnHostRenameAction refreshDnsOnHostRenameAction();
 
   RelockDomainAction relockDomainAction();
 

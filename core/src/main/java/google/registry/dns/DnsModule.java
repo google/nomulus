@@ -16,6 +16,7 @@ package google.registry.dns;
 
 import static google.registry.dns.DnsConstants.DNS_PUBLISH_PUSH_QUEUE_NAME;
 import static google.registry.dns.DnsConstants.DNS_PULL_QUEUE_NAME;
+import static google.registry.dns.RefreshDnsOnHostRenameAction.PARAM_HOST_KEY;
 import static google.registry.request.RequestParameters.extractEnumParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
@@ -61,7 +62,7 @@ public abstract class DnsModule {
    */
   @Provides
   static HashFunction provideHashFunction() {
-    return Hashing.murmur3_32();
+    return Hashing.murmur3_32_fixed();
   }
 
   @Provides
@@ -116,6 +117,12 @@ public abstract class DnsModule {
   @Parameter(PARAM_HOSTS)
   static Set<String> provideHosts(HttpServletRequest req) {
     return extractSetOfParameters(req, PARAM_HOSTS);
+  }
+
+  @Provides
+  @Parameter(PARAM_HOST_KEY)
+  static String provideResourceKey(HttpServletRequest req) {
+    return extractRequiredParameter(req, PARAM_HOST_KEY);
   }
 
   @Provides

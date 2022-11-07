@@ -372,18 +372,14 @@ class DomainTransferRequestFlowTest
     assertThat(transferApprovedPollMessage.getEventTime()).isEqualTo(implicitTransferTime);
     assertThat(autorenewPollMessage.getEventTime()).isEqualTo(expectedExpirationTime);
     assertThat(
-            transferApprovedPollMessage
-                .getResponseData()
-                .stream()
+            transferApprovedPollMessage.getResponseData().stream()
                 .filter(TransferResponse.class::isInstance)
                 .map(TransferResponse.class::cast)
                 .collect(onlyElement())
                 .getTransferStatus())
         .isEqualTo(TransferStatus.SERVER_APPROVED);
     PendingActionNotificationResponse panData =
-        transferApprovedPollMessage
-            .getResponseData()
-            .stream()
+        transferApprovedPollMessage.getResponseData().stream()
             .filter(PendingActionNotificationResponse.class::isInstance)
             .map(PendingActionNotificationResponse.class::cast)
             .collect(onlyElement());
@@ -394,30 +390,24 @@ class DomainTransferRequestFlowTest
     // transfer pending message, and a transfer approved message (both OneTime messages).
     assertThat(getPollMessages("TheRegistrar", implicitTransferTime)).hasSize(2);
     PollMessage losingTransferPendingPollMessage =
-        getPollMessages("TheRegistrar", clock.nowUtc())
-            .stream()
+        getPollMessages("TheRegistrar", clock.nowUtc()).stream()
             .filter(pollMessage -> TransferStatus.PENDING.getMessage().equals(pollMessage.getMsg()))
             .collect(onlyElement());
     PollMessage losingTransferApprovedPollMessage =
-        getPollMessages("TheRegistrar", implicitTransferTime)
-            .stream()
+        getPollMessages("TheRegistrar", implicitTransferTime).stream()
             .filter(Predicates.not(Predicates.equalTo(losingTransferPendingPollMessage)))
             .collect(onlyElement());
     assertThat(losingTransferPendingPollMessage.getEventTime()).isEqualTo(clock.nowUtc());
     assertThat(losingTransferApprovedPollMessage.getEventTime()).isEqualTo(implicitTransferTime);
     assertThat(
-            losingTransferPendingPollMessage
-                .getResponseData()
-                .stream()
+            losingTransferPendingPollMessage.getResponseData().stream()
                 .filter(TransferResponse.class::isInstance)
                 .map(TransferResponse.class::cast)
                 .collect(onlyElement())
                 .getTransferStatus())
         .isEqualTo(TransferStatus.PENDING);
     assertThat(
-            losingTransferApprovedPollMessage
-                .getResponseData()
-                .stream()
+            losingTransferApprovedPollMessage.getResponseData().stream()
                 .filter(TransferResponse.class::isInstance)
                 .map(TransferResponse.class::cast)
                 .collect(onlyElement())

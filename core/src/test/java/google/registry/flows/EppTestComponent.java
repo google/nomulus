@@ -36,6 +36,7 @@ import google.registry.testing.FakeSleeper;
 import google.registry.tmch.TmchCertificateAuthority;
 import google.registry.tmch.TmchXmlSignature;
 import google.registry.util.Clock;
+import google.registry.util.CloudTasksUtils;
 import google.registry.util.Sleeper;
 import javax.inject.Singleton;
 
@@ -87,6 +88,11 @@ public interface EppTestComponent {
     @Provides
     AsyncTaskEnqueuer provideAsyncTaskEnqueuer() {
       return asyncTaskEnqueuer;
+    }
+
+    @Provides
+    CloudTasksUtils provideCloudTasksUtils() {
+      return cloudTasksHelper.getTestCloudTasksUtils();
     }
 
     @Provides
