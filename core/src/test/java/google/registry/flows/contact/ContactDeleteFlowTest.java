@@ -16,7 +16,6 @@ package google.registry.flows.contact;
 
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
 import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -27,7 +26,6 @@ import static google.registry.testing.DatabaseHelper.persistContactWithPendingTr
 import static google.registry.testing.DatabaseHelper.persistDeletedContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -238,7 +236,6 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
         .hasExactlyStatusValues(StatusValue.OK)
         .and()
         .hasOneHistoryEntryEachOfTypes(historyEntryTypes);
-    assertNoTasksEnqueued(QUEUE_ASYNC_DELETE);
     assertNoBillingEvents();
   }
 

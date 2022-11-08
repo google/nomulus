@@ -14,16 +14,12 @@
 
 package google.registry.batch;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
-import static org.joda.time.Duration.standardSeconds;
 
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableSortedSet;
@@ -32,11 +28,9 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
-import google.registry.testing.FakeSleeper;
 import google.registry.util.CapturingLogHandler;
 import google.registry.util.CloudTasksUtils;
 import google.registry.util.JdkLoggerConfig;
-import google.registry.util.Retrier;
 import java.util.logging.Level;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -64,18 +58,11 @@ public class AsyncTaskEnqueuerTest {
   @BeforeEach
   void beforeEach() {
     JdkLoggerConfig.getConfig(AsyncTaskEnqueuer.class).addHandler(logHandler);
-    asyncTaskEnqueuer =
-        createForTesting(cloudTasksHelper.getTestCloudTasksUtils(), clock, standardSeconds(90));
+    asyncTaskEnqueuer = createForTesting(cloudTasksHelper.getTestCloudTasksUtils());
   }
 
-  public static AsyncTaskEnqueuer createForTesting(
-      CloudTasksUtils cloudTasksUtils, FakeClock clock, Duration asyncDeleteDelay) {
-    return new AsyncTaskEnqueuer(
-        getQueue(QUEUE_ASYNC_DELETE),
-        getQueue(QUEUE_ASYNC_HOST_RENAME),
-        asyncDeleteDelay,
-        cloudTasksUtils,
-        new Retrier(new FakeSleeper(clock), 1));
+  public static AsyncTaskEnqueuer createForTesting(CloudTasksUtils cloudTasksUtils) {
+    return new AsyncTaskEnqueuer(cloudTasksUtils);
   }
 
   @Test

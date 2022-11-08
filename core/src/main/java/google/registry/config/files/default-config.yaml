@@ -421,11 +421,6 @@ misc:
   spec11BccEmailAddresses:
     - abuse@example.com
 
-  # How long to delay processing of asynchronous deletions. This should always
-  # be longer than eppResourceCachingSeconds, to prevent deleted contacts or
-  # hosts from being used on domains.
-  asyncDeleteDelaySeconds: 90
-
   # Number of times to retry a GAE operation when a transient exception is thrown.
   # The number of milliseconds it'll sleep before giving up is (2^n - 2) * 100.
   transientFailureRetries: 12

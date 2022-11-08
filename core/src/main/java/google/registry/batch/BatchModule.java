@@ -14,13 +14,9 @@
 
 package google.registry.batch;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.batch.CannedScriptExecutionAction.SCRIPT_PARAM;
 import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
@@ -33,13 +29,11 @@ import static google.registry.request.RequestParameters.extractRequiredDatetimeP
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfDatetimeParameters;
 
-import com.google.appengine.api.taskqueue.Queue;
 import com.google.common.collect.ImmutableSet;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.request.Parameter;
 import java.util.Optional;
-import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
 
@@ -127,24 +121,6 @@ public class BatchModule {
   @Parameter(PARAM_DRY_RUN)
   static boolean provideIsDryRun(HttpServletRequest req) {
     return extractBooleanParameter(req, PARAM_DRY_RUN);
-  }
-
-  @Provides
-  @Named(QUEUE_ASYNC_ACTIONS)
-  static Queue provideAsyncActionsPushQueue() {
-    return getQueue(QUEUE_ASYNC_ACTIONS);
-  }
-
-  @Provides
-  @Named(QUEUE_ASYNC_DELETE)
-  static Queue provideAsyncDeletePullQueue() {
-    return getQueue(QUEUE_ASYNC_DELETE);
-  }
-
-  @Provides
-  @Named(QUEUE_ASYNC_HOST_RENAME)
-  static Queue provideAsyncHostRenamePullQueue() {
-    return getQueue(QUEUE_ASYNC_HOST_RENAME);
   }
 
   // TODO(b/234424397): remove method after credential changes are rolled out.

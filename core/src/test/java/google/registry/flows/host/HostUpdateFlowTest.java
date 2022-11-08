@@ -16,8 +16,6 @@ package google.registry.flows.host;
 
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.batch.AsyncTaskEnqueuer.PARAM_HOST_KEY;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -37,7 +35,6 @@ import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntr
 import static google.registry.testing.HostSubject.assertAboutHosts;
 import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -79,7 +76,6 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -203,11 +199,12 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     Host renamedHost = doSuccessfulTest();
     assertThat(renamedHost.isSubordinate()).isTrue();
     // Task enqueued to change the NS record of the referencing domain.
-    assertTasksEnqueued(
-        QUEUE_ASYNC_HOST_RENAME,
-        new TaskMatcher()
-            .param(PARAM_HOST_KEY, renamedHost.createVKey().stringify())
-            .param("requestedTime", clock.nowUtc().toString()));
+    // TODO(jianglai): add assertion on host rename refresh based on SQL impementation.
+    // assertTasksEnqueued(
+    //    QUEUE_ASYNC_HOST_RENAME,
+    //    new TaskMatcher()
+    //        .param(PARAM_HOST_KEY, renamedHost.createVKey().stringify())
+    //        .param("requestedTime", clock.nowUtc().toString()));
   }
 
   @Test

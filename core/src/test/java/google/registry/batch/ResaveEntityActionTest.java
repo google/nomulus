@@ -41,7 +41,6 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,8 +66,7 @@ public class ResaveEntityActionTest {
   @BeforeEach
   void beforeEach() {
     asyncTaskEnqueuer =
-        AsyncTaskEnqueuerTest.createForTesting(
-            cloudTasksHelper.getTestCloudTasksUtils(), clock, Duration.ZERO);
+        AsyncTaskEnqueuerTest.createForTesting(cloudTasksHelper.getTestCloudTasksUtils());
     createTld("tld");
   }
 

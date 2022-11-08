@@ -1028,38 +1028,6 @@ public final class RegistryConfig {
     }
 
     /**
-     * Returns the delay before executing async delete flow mapreduces.
-     *
-     * <p>This delay should be sufficiently longer than a transaction, to solve the following
-     * problem:
-     *
-     * <ul>
-     *   <li>a domain mutation flow starts a transaction
-     *   <li>the domain flow non-transactionally reads a resource and sees that it's not in
-     *       PENDING_DELETE
-     *   <li>the domain flow creates a new reference to this resource
-     *   <li>a contact/host delete flow runs and marks the resource PENDING_DELETE and commits
-     *   <li>the domain flow commits
-     * </ul>
-     *
-     * <p>Although we try not to add references to a PENDING_DELETE resource, strictly speaking that
-     * is ok as long as the mapreduce eventually sees the new reference (and therefore
-     * asynchronously fails the delete). Without this delay, the mapreduce might have started before
-     * the domain flow committed, and could potentially miss the reference.
-     *
-     * <p>If you are using EPP resource caching (eppResourceCachingEnabled in YAML), then this
-     * duration should also be longer than that cache duration (eppResourceCachingSeconds).
-     *
-     * @see google.registry.config.RegistryConfigSettings.Caching
-     * @see google.registry.batch.AsyncTaskEnqueuer
-     */
-    @Provides
-    @Config("asyncDeleteDelay")
-    public static Duration provideAsyncDeleteDelay(RegistryConfigSettings config) {
-      return Duration.standardSeconds(config.misc.asyncDeleteDelaySeconds);
-    }
-
-    /**
      * The server ID used in the 'svID' element of an EPP 'greeting'.
      *
      * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 7530</a>

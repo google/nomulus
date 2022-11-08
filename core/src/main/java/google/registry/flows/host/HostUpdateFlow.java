@@ -268,7 +268,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
       }
       // We must also enqueue updates for all domains that use this host as their nameserver so
       // that their NS records can be updated to point at the new name.
-      asyncTaskEnqueuer.enqueueAsyncDnsRefresh(existingHost, tm().getTransactionTime());
+      // TODO(jianglai): implement a SQL based solution.
     }
   }
 
