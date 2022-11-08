@@ -16,7 +16,6 @@ package google.registry.model.domain;
 
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.contact.Contact;
@@ -69,7 +68,7 @@ public class DesignatedContact extends ImmutableObject implements UnsafeSerializ
 
   Type type;
 
-  @Ignore VKey<Contact> contactVKey;
+  VKey<Contact> contactVKey;
 
   public Type getType() {
     return type;

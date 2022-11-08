@@ -25,22 +25,13 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.Parent;
-import google.registry.persistence.VKey;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.AbstractList;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedHashMap;
@@ -49,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** A collection of static methods that deal with reflection on model classes. */
@@ -84,84 +74,6 @@ public class ModelUtils {
   /** Lists all instance fields on an object, including non-public and inherited fields. */
   public static Map<String, Field> getAllFields(Class<?> clazz) {
     return ALL_FIELDS_CACHE.get(clazz);
-  }
-
-  /** Return a string representing the persisted schema of a type or enum. */
-  static String getSchema(Class<?> clazz) {
-    StringBuilder stringBuilder = new StringBuilder();
-    Stream<?> body;
-    if (clazz.isEnum()) {
-      stringBuilder.append("enum ");
-      body = Arrays.stream(clazz.getEnumConstants());
-    } else {
-      stringBuilder.append("class ");
-      body =
-          getAllFields(clazz)
-              .values()
-              .stream()
-              .filter(field -> !field.isAnnotationPresent(Ignore.class))
-              .map(
-                  field -> {
-                    String annotation =
-                        field.isAnnotationPresent(Id.class)
-                            ? "@Id "
-                            : field.isAnnotationPresent(Parent.class) ? "@Parent " : "";
-                    String type =
-                        field.getType().isArray()
-                            ? field.getType().getComponentType().getName() + "[]"
-                            : field.getGenericType().toString().replaceFirst("class ", "");
-                    return String.format("%s%s %s", annotation, type, field.getName());
-                  });
-    }
-    return stringBuilder
-        .append(clazz.getName())
-        .append(" {\n  ")
-        .append(body.map(Object::toString).sorted().collect(Collectors.joining(";\n  ")))
-        .append(";\n}")
-        .toString();
-  }
-
-  /**
-   * Returns the set of Class objects of all persisted fields. This includes the parameterized
-   * type(s) of any fields (if any).
-   */
-  static Set<Class<?>> getPersistedFieldTypes(Class<?> clazz) {
-    ImmutableSet.Builder<Class<?>> builder = new ImmutableSet.Builder<>();
-    for (Field field : getAllFields(clazz).values()) {
-      // Skip fields that aren't persisted to Datastore.
-      if (field.isAnnotationPresent(Ignore.class)) {
-        continue;
-      }
-
-      // If the field's type is the same as the field's class object, then it's a non-parameterized
-      // type, and thus we just add it directly. We also don't bother looking at the parameterized
-      // types of Key and VKey objects, since they are just references to other objects and don't
-      // actually embed themselves in the persisted object anyway.
-      Class<?> fieldClazz = field.getType();
-      Type fieldType = field.getGenericType();
-      if (VKey.class.equals(fieldClazz)) {
-        continue;
-      }
-      builder.add(fieldClazz);
-      if (fieldType.equals(fieldClazz) || Key.class.equals(clazz)) {
-        continue;
-      }
-
-      // If the field is a parameterized type, then also add the parameterized field.
-      if (fieldType instanceof ParameterizedType) {
-        ParameterizedType parameterizedType = (ParameterizedType) fieldType;
-        for (Type actualType : parameterizedType.getActualTypeArguments()) {
-          if (actualType instanceof Class<?>) {
-            builder.add((Class<?>) actualType);
-          } else {
-            // We intentionally ignore types that are parameterized on non-concrete types. In theory
-            // we could have collections embedded within collections, but Objectify does not allow
-            // that.
-          }
-        }
-      }
-    }
-    return builder.build();
   }
 
   /** Retrieves a field value via reflection. */

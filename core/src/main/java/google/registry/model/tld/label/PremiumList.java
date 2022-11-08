@@ -23,8 +23,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.BloomFilter;
 import google.registry.model.Buildable;
-import google.registry.model.ImmutableObject;
-import google.registry.model.annotations.ReportedOn;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import java.io.Serializable;
@@ -35,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.Index;
 import javax.persistence.Table;
 import javax.persistence.Transient;
@@ -49,8 +48,7 @@ import org.joda.money.Money;
  * succeeds, we will end up with having two exact same premium lists that differ only by revisionId.
  * This is fine though, because we only use the list with the highest revisionId.
  */
-@ReportedOn
-@javax.persistence.Entity
+@Entity
 @Table(indexes = {@Index(columnList = "name", name = "premiumlist_name_idx")})
 public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEntry> {
 
@@ -64,7 +62,7 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
    * from the immutability contract so we can modify it after construction and we have to handle the
    * database processing on our own so we can detach it after load.
    */
-  @ImmutableObject.Insignificant @Transient ImmutableMap<String, BigDecimal> labelsToPrices;
+  @Insignificant @Transient ImmutableMap<String, BigDecimal> labelsToPrices;
 
   @Column(nullable = false)
   BloomFilter<String> bloomFilter;
@@ -116,11 +114,11 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
    * A premium list entry entity, persisted to Cloud SQL. Each instance represents the price of a
    * single label on a given TLD.
    */
-  @javax.persistence.Entity(name = "PremiumEntry")
+  @Entity(name = "PremiumEntry")
   public static class PremiumEntry extends DomainLabelEntry<BigDecimal, PremiumList.PremiumEntry>
       implements Buildable, Serializable {
 
-    @ImmutableObject.Insignificant @javax.persistence.Id Long revisionId;
+    @Insignificant @javax.persistence.Id Long revisionId;
 
     @Column(nullable = false)
     BigDecimal price;

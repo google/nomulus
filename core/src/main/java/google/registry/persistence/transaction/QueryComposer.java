@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 import javax.persistence.criteria.CriteriaBuilder;
 
 /**
- * Creates queries that can be used both for objectify and JPA.
+ * Creates queries that can be used JPA.
  *
  * <p>Example usage:
  *

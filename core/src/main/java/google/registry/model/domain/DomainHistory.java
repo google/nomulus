@@ -18,7 +18,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.EppResource;
 import google.registry.model.domain.GracePeriod.GracePeriodHistory;
 import google.registry.model.domain.secdns.DomainDsData;
@@ -115,7 +114,6 @@ public class DomainHistory extends HistoryEntry {
         updatable = false)
   })
   // HashSet rather than ImmutableSet so that Hibernate can fill them out lazily on request
-  @Ignore
   Set<DomainDsDataHistory> dsDataHistories = new HashSet<>();
 
   @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)

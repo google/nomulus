@@ -29,7 +29,6 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.OfyIdAllocation;
-import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.TimeOfYear;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -594,7 +593,6 @@ public abstract class BillingEvent extends ImmutableObject
    * <p>This is implemented as a separate event rather than a bit on BillingEvent in order to
    * preserve the immutability of billing events.
    */
-  @ReportedOn
   @Entity(name = "BillingCancellation")
   @Table(
       indexes = {

@@ -1125,7 +1125,7 @@ public final class DatabaseHelper {
             .build());
   }
 
-  /** Persists a single Objectify resource, without adjusting foreign resources or keys. */
+  /** Persists a single resource, without adjusting foreign resources or keys. */
   public static <R> R persistSimpleResource(final R resource) {
     return persistSimpleResources(ImmutableList.of(resource)).get(0);
   }

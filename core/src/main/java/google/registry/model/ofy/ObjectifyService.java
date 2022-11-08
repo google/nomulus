@@ -21,27 +21,17 @@ import static google.registry.util.TypeUtils.hasAnnotation;
 
 import com.google.appengine.api.datastore.AsyncDatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceConfig;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.ObjectifyFactory;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.EntitySubclass;
-import com.googlecode.objectify.impl.translate.TranslatorFactory;
-import com.googlecode.objectify.impl.translate.opt.joda.MoneyStringTranslatorFactory;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.GaeUserIdConverter;
-import google.registry.model.translators.BloomFilterOfStringTranslatorFactory;
-import google.registry.model.translators.CidrAddressBlockTranslatorFactory;
-import google.registry.model.translators.CurrencyUnitTranslatorFactory;
-import google.registry.model.translators.DurationTranslatorFactory;
-import google.registry.model.translators.InetAddressTranslatorFactory;
-import google.registry.model.translators.ReadableInstantUtcTranslatorFactory;
 
 /**
  * An instance of Ofy, obtained via {@code #auditedOfy()}, should be used to access all persistable
@@ -87,11 +77,6 @@ public class ObjectifyService {
     com.googlecode.objectify.ObjectifyService.setFactory(
         new ObjectifyFactory(false) {
           @Override
-          public Objectify begin() {
-            return new SessionKeyExposingObjectify(this);
-          }
-
-          @Override
           protected AsyncDatastoreService createRawAsyncDatastoreService(
               DatastoreServiceConfig cfg) {
             // In the unit test environment, wrap the Datastore service in a proxy that can be used
@@ -103,24 +88,7 @@ public class ObjectifyService {
           }
         });
 
-    // Translators must be registered before any entities can be registered.
-    registerTranslators();
     registerEntityClasses(ImmutableSet.of(GaeUserIdConverter.class));
-  }
-
-  /** Register translators that allow less common types to be stored directly in Datastore. */
-  private static void registerTranslators() {
-    for (TranslatorFactory<?> translatorFactory :
-        ImmutableList.of(
-            new BloomFilterOfStringTranslatorFactory(),
-            new CidrAddressBlockTranslatorFactory(),
-            new CurrencyUnitTranslatorFactory(),
-            new DurationTranslatorFactory(),
-            new InetAddressTranslatorFactory(),
-            new MoneyStringTranslatorFactory(),
-            new ReadableInstantUtcTranslatorFactory())) {
-      factory().getTranslators().add(translatorFactory);
-    }
   }
 
   /** Register classes that can be persisted via Objectify as Datastore entities. */

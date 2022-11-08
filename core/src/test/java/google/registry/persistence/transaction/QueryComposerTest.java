@@ -20,15 +20,14 @@ import static google.registry.persistence.transaction.QueryComposer.Comparator;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.Assert.assertThrows;
 
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
 import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,13 +43,11 @@ public class QueryComposerTest {
   TestEntity charlie = new TestEntity("charlie", 1);
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
+  public final JpaUnitTestExtension jpa =
+      new JpaTestExtensions.Builder()
           .withClock(fakeClock)
-          .withCloudSql()
-          .withOfyTestEntities(TestEntity.class)
-          .withJpaUnitTestEntities(TestEntity.class)
-          .build();
+          .withEntityClass(TestEntity.class)
+          .buildUnitTestExtension();
 
   public QueryComposerTest() {}
 
@@ -319,12 +316,10 @@ public class QueryComposerTest {
         .isEmpty();
   }
 
-  @javax.persistence.Entity
-  @Entity(name = "QueryComposerTestEntity")
+  @Entity
   private static class TestEntity extends ImmutableObject {
-    @javax.persistence.Id @Id private String name;
+    @Id private String name;
 
-    @Index
     // Renaming this implicitly verifies that property names work for hibernate queries.
     @Column(name = "some_value")
     private int val;

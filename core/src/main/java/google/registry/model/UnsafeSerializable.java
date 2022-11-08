@@ -23,8 +23,8 @@ import java.io.Serializable;
  * the migration. Note that only objects loaded from the SQL database need serialization support.
  *
  * <p>All entities implementing this interface take advantage of the fact that all Java collection
- * classes we use, either directly or indirectly, including those in Java libraries, Guava,
- * Objectify, and Hibernate are {@code Serializable}.
+ * classes we use, either directly or indirectly, including those in Java libraries, Guava, and
+ * Hibernate are {@code Serializable}.
  *
  * <p>The {@code serialVersionUID} field has also been omitted in the implementing classes, since
  * they are not used for persistence.

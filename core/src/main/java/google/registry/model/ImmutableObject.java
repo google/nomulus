@@ -21,8 +21,6 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Joiner;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.persistence.VKey;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -76,7 +74,7 @@ public abstract class ImmutableObject implements Cloneable {
   // Note: if this class is made to implement Serializable, this field must become 'transient' since
   // hashing is not stable across executions. Also note that @XmlTransient is forbidden on transient
   // fields and need to be removed if transient is added.
-  @Ignore @XmlTransient protected Integer hashCode;
+  @XmlTransient protected Integer hashCode;
 
   private boolean equalsImmutableObject(ImmutableObject other) {
     return getClass().equals(other.getClass())
@@ -176,9 +174,6 @@ public abstract class ImmutableObject implements Cloneable {
 
   /** Helper function to recursively hydrate an ImmutableObject. */
   private static Object hydrate(Object value) {
-    if (value instanceof Key) {
-      return value;
-    }
     if (value instanceof Map) {
       return transformValues((Map<?, ?>) value, ImmutableObject::hydrate);
     }

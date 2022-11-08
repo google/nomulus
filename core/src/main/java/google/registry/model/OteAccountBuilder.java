@@ -29,7 +29,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
@@ -199,9 +198,8 @@ public final class OteAccountBuilder {
    *
    * <p>Use this to set up registrar fields.
    *
-   * <p>NOTE: DO NOT change anything that would affect the {@link Key#create} result on Registrars.
-   * If you want to make this function public, add a check that the Key.create on the registrars
-   * hasn't changed.
+   * <p>NOTE: DO NOT change anything that would affect the result of {@link Registrar#createVKey()}
+   * . If you want to make this function public, add a check that the value hasn't changed.
    *
    * @param func a function setting the requested fields on Registrar Builders. Will be applied to
    *     all the Registrars.

@@ -25,7 +25,6 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.Range;
-import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import java.util.List;
@@ -50,7 +49,6 @@ public class TimeOfYear extends ImmutableObject implements UnsafeSerializable {
    * The time as "month day millis" with all fields left-padded with zeroes so that lexographic
    * sorting will do the right thing.
    */
-  @Index
   String timeString;
 
   /**

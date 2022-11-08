@@ -888,9 +888,7 @@ public class DomainTest {
 
   @Test
   void testHistoryIdRestoration() {
-    // Verify that history ids for billing events are restored during load from datastore.  History
-    // ids are not used by business code or persisted in datastore, but only to reconstruct
-    // objectify keys when loading from SQL.
+    // Verify that history ids for billing events are restored during load.
     DateTime now = fakeClock.nowUtc();
     domain =
         persistResource(

@@ -29,11 +29,7 @@ import org.joda.time.DateTime;
 @XmlTransient
 @MappedSuperclass
 public abstract class BaseTransferObject extends ImmutableObject implements UnsafeSerializable {
-  /**
-   * The status of the current or last transfer. Can be null if never transferred. Note that we
-   * leave IgnoreSave off this field so that we can ensure that TransferData loaded from Objectify
-   * will always be non-null.
-   */
+  /** The status of the current or last transfer. Can be null if never transferred. */
   @XmlElement(name = "trStatus")
   @Enumerated(EnumType.STRING)
   TransferStatus transferStatus;
