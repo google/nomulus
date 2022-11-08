@@ -36,6 +36,9 @@ ext {
       //    resolved version of xpp3 is not on repo.maven. This may be due to
       //    the fact that xpp3 has been renamed to org.ogce.xpp3.
 
+      // Note that since Gradle 7, for version labels to be strict, we need to
+      // append '!!' to the end. Otherwise they may still be forced to upgrade.
+
       // Breaking changes causing compilation error.
       'com.beust:jcommander:1.60',
       'com.google.apis:google-api-services-dns:v2beta1-rev99-1.25.0',
@@ -62,9 +65,11 @@ ext {
       'com.google.javascript:closure-compiler:v20210505',
       'com.google.closure-stylesheets:closure-stylesheets:1.5.0',
 
+      // 5.6.12.Final is buggy wrt immutable CompositeUserTypes.
+      // 6.0+ requires Java 11.
+      'org.hibernate:hibernate-core:[5.6.14.Final, 6.0)',
+      'org.hibernate:hibernate-hikaricp:[5.6.14.Final, 6.0)',
       // Latest version of the following are Java11-only
-      'org.hibernate:hibernate-core:[5.4.23.Final, 6.0)',
-      'org.hibernate:hibernate-hikaricp:[5.4.23.Final, 6.0)',
       'com.zaxxer:HikariCP:3.4.5',
       'com.github.ben-manes.caffeine:caffeine:[2.9.3,3.0)',
 
@@ -106,8 +111,8 @@ ext {
       // Excluding versions 2.0 from google-api-client because they're
       // runtime incompatible with version 1.25 of admin directory API.
       // TODO: see if we can upgrade to a newer version of the latter.
-      'com.google.api-client:google-api-client-java6:[1.31.3,2.0)',
-      'com.google.api-client:google-api-client:[1.31.3,2.0)',
+      'com.google.api-client:google-api-client-java6:[1.31.3,2.0)!!',
+      'com.google.api-client:google-api-client:[1.31.3,2.0)!!',
       'com.google.api-client:google-api-client-appengine:[1.31.3,2.0)',
       'com.google.api-client:google-api-client-servlet:[1.31.3,2.0)',
       'com.google.apis:google-api-services-appengine:[v1-rev130-1.25.0,)',
