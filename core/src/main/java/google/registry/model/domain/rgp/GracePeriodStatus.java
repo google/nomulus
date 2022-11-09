@@ -17,8 +17,8 @@ package google.registry.model.domain.rgp;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.translators.EnumToAttributeAdapter;
-import google.registry.model.translators.EnumToAttributeAdapter.EppEnum;
+import google.registry.model.adapters.EnumToAttributeAdapter;
+import google.registry.model.adapters.EnumToAttributeAdapter.EppEnum;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlAttribute;

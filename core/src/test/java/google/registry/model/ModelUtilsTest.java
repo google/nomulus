@@ -17,7 +17,6 @@ package google.registry.model;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableMap;
-import com.googlecode.objectify.annotation.Id;
 import google.registry.testing.AppEngineExtension;
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -34,14 +33,13 @@ public class ModelUtilsTest {
   /** Test class for reflection methods. */
   public static class TestClass extends ImmutableObject implements Buildable {
 
-    @Id
     String id;
 
     String a;
 
     String b;
 
-    /** Note that there is no getter for {@link #b}.*/
+    /** Note that there is no getter for {@link #b}. */
     public String getId() {
       return id;
     }
@@ -50,7 +48,7 @@ public class ModelUtilsTest {
       return a;
     }
 
-    /** Builder for {@link TestClass}. Note that there is no setter for {@link #a}.*/
+    /** Builder for {@link TestClass}. Note that there is no setter for {@link #a}. */
     public static class Builder extends Buildable.Builder<TestClass> {
 
       protected Builder() {}
@@ -83,10 +81,11 @@ public class ModelUtilsTest {
 
   @Test
   void testGetAllFields() throws Exception {
-    Map<String, Field> expected = ImmutableMap.of(
-        "id", TestClass.class.getDeclaredField("id"),
-        "a", TestClass.class.getDeclaredField("a"),
-        "b", TestClass.class.getDeclaredField("b"));
+    Map<String, Field> expected =
+        ImmutableMap.of(
+            "id", TestClass.class.getDeclaredField("id"),
+            "a", TestClass.class.getDeclaredField("a"),
+            "b", TestClass.class.getDeclaredField("b"));
     // More complicated version of isEqualTo() so that we check for ordering.
     assertThat(ModelUtils.getAllFields(TestClass.class).entrySet())
         .containsExactlyElementsIn(expected.entrySet())
@@ -127,7 +126,7 @@ public class ModelUtilsTest {
     original.id = "foo";
     TestClass cloned = original.asBuilder().setId("bar").build();
     assertThat(cloned.hashCode()).isNotEqualTo(original.hashCode());
-    cloned.id = "foo";  // Violates immutability contract.
+    cloned.id = "foo"; // Violates immutability contract.
     // The hashCode is now cached and is stale (but that's the expected behavior).
     assertThat(cloned.hashCode()).isNotEqualTo(original.hashCode());
   }

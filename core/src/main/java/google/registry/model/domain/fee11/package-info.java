@@ -20,7 +20,7 @@
 @XmlJavaTypeAdapter(CurrencyUnitAdapter.class)
 package google.registry.model.domain.fee11;
 
-import google.registry.model.translators.CurrencyUnitAdapter;
+import google.registry.model.adapters.CurrencyUnitAdapter;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlNs;

@@ -35,7 +35,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
-import google.registry.model.annotations.ReportedOn;
 import google.registry.model.registrar.RegistrarPoc.RegistrarPocId;
 import google.registry.persistence.VKey;
 import java.io.Serializable;
@@ -57,7 +56,6 @@ import javax.persistence.Table;
  * *MUST* also modify the persisted Registrar entity with {@link Registrar#contactsRequireSyncing}
  * set to true.
  */
-@ReportedOn
 @Entity
 @Table(indexes = {@Index(columnList = "gaeUserId", name = "registrarpoc_gae_user_id_idx")})
 @IdClass(RegistrarPocId.class)

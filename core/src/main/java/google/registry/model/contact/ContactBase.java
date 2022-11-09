@@ -241,8 +241,8 @@ public class ContactBase extends EppResource
    * Postal info for the contact.
    *
    * <p>The XML marshalling expects the {@link PostalInfo} objects in a list, but we can't actually
-   * persist them to Datastore that way because Objectify can't handle collections of embedded
-   * objects that themselves contain collections, and there's a list of streets inside. This method
+   * persist them directly due to legacy reasons (Objectify can't handle collections of embedded
+   * objects that themselves contain collections, and there's a list of streets inside). This method
    * transforms the persisted format to the XML format for marshalling.
    */
   @XmlElement(name = "postalInfo")

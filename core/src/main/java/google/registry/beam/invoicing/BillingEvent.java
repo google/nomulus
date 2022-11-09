@@ -64,7 +64,7 @@ public abstract class BillingEvent implements Serializable {
           "amount",
           "flags");
 
-  /** Returns the unique Objectify ID for the {@code OneTime} associated with this event. */
+  /** Returns the unique ID for the {@code OneTime} associated with this event. */
   abstract long id();
 
   /** Returns the UTC DateTime this event becomes billable. */

@@ -21,7 +21,7 @@ import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Base class of all unit tests for entities which are persisted to Datastore via Objectify. */
+/** Base class of all unit tests for entities which are persisted to SQL. */
 public abstract class EntityTestCase {
 
   protected enum JpaEntityCoverageCheck {

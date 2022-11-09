@@ -29,12 +29,12 @@ import google.registry.flows.EppException.SyntaxErrorException;
 import google.registry.flows.EppException.UnimplementedProtocolVersionException;
 import google.registry.flows.custom.EntityChanges;
 import google.registry.model.EppResource;
+import google.registry.model.adapters.CurrencyUnitAdapter.UnknownCurrencyException;
 import google.registry.model.eppcommon.EppXmlTransformer;
 import google.registry.model.eppinput.EppInput.WrongProtocolVersionException;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.host.InetAddressAdapter.IpVersionMismatchException;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
-import google.registry.model.translators.CurrencyUnitAdapter.UnknownCurrencyException;
 import google.registry.xml.XmlException;
 import java.util.List;
 

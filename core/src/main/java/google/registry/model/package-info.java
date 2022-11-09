@@ -29,22 +29,21 @@ import javax.xml.bind.annotation.XmlSchema;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /*
- * This package defines all entities which are managed via EPP XML and persisted to the Datastore
- * via Objectify.
+ * This package defines all entities which are managed via EPP XML and persisted to SQL via
+ * Hibernate.
  *
  * <p>All first class entities are represented as a resource class - {@link
  * google.registry.model.domain.Domain}, {@link google.registry.model.host.Host}, {@link
  * google.registry.model.contact.Contact}, and {@link
- * google.registry.model.registrar.Registrar}. Resource objects are written in a single shared
- * entity group per TLD. All commands that operate on those entities are grouped in a "Command"
- * class- {@link google.registry.model.domain.DomainCommand}, {@link
+ * google.registry.model.registrar.Registrar}. All commands that operate on those entities are
+ * grouped in a "Command" class- {@link google.registry.model.domain.DomainCommand}, {@link
  * google.registry.model.host.HostCommand}, {@link google.registry.model.contact.ContactCommand}.
  * The Resource does double duty as both the persisted representation and as the XML-marshallable
  * object returned in respond to Info commands.
  *
- * <p>Command classes are never persisted, and the Objectify annotations on the Create and Update
- * classes are purely for the benefit of the derived Resource classes that inherit from them.
- * Whenever a command that mutates the model is executed, a HistoryEvent is stored with the affected
- * Resource as its Datastore parent. All history entries have an indexed modification time field so
- * that the history can be read in chronological order.
+ * <p>Command classes are never persisted.
+ * Whenever a command that mutates the model is executed, a {@link
+ * google.registry.reporting.HistoryEvent} is stored with the affected Resource as an embedded
+ * field. All history entries have an indexed modification time field so that the history can be
+ * read in chronological order.
  */

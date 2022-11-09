@@ -22,7 +22,7 @@
     @XmlJavaTypeAdapter(UtcDateTimeAdapter.class)})
 package google.registry.model.domain.fee12;
 
-import google.registry.model.translators.CurrencyUnitAdapter;
+import google.registry.model.adapters.CurrencyUnitAdapter;
 import google.registry.xml.UtcDateTimeAdapter;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

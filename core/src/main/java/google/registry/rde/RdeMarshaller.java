@@ -18,7 +18,6 @@ import static com.google.common.base.Verify.verify;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
@@ -164,10 +163,12 @@ public final class RdeMarshaller implements Serializable {
     try {
       xml = marshal(element);
     } catch (MarshalException e) {
-      error = String.format("RDE XML schema validation failed: %s\n%s%s\n",
-          Key.create(resource),
-          e.getLinkedException(),
-          getMarshaller().marshalLenient(element));
+      error =
+          String.format(
+              "RDE XML schema validation failed: %s\n%s%s\n",
+              resource.createVKey(),
+              e.getLinkedException(),
+              getMarshaller().marshalLenient(element));
       logger.atSevere().withCause(e).log(error);
     }
     return DepositFragment.create(type, xml, error);

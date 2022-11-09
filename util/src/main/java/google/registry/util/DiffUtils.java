@@ -81,7 +81,7 @@ public final class DiffUtils {
           && aValue == null
           && bValue instanceof Collection
           && ((Collection<?>) bValue).isEmpty()) {
-        // Ignore a mismatch between Objectify's use of null to store empty collections and our
+        // Ignore a mismatch between the use of null to store empty collections and our
         // code's builder methods, which yield empty collections for the same fields.  This
         // prevents useless lines of the form "[null, []]" from appearing in diffs.
       } else {

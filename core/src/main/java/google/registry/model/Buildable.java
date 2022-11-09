@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.IdService.allocateId;
 import static google.registry.model.ModelUtils.getAllFields;
 
-import com.googlecode.objectify.annotation.Id;
 import google.registry.model.annotations.OfyIdAllocation;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.lang.reflect.Field;
@@ -56,14 +55,10 @@ public interface Buildable {
     /** Build the instance. */
     public S build() {
       try {
-        // If this object has a Long or long Objectify @Id field that is not set, set it now. For
-        // any entity it has one and only one @Id field in its class hierarchy.
+        // If this object has a Long or long @OfyIdAllocation field that is not set, set it now.
         Field idField =
             getAllFields(instance.getClass()).values().stream()
-                .filter(
-                    field ->
-                        field.isAnnotationPresent(Id.class)
-                            || field.isAnnotationPresent(OfyIdAllocation.class))
+                .filter(field -> field.isAnnotationPresent(OfyIdAllocation.class))
                 .findFirst()
                 .orElse(null);
         if (idField != null

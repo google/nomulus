@@ -25,7 +25,6 @@ import com.google.appengine.api.datastore.DatastoreTimeoutException;
 import com.google.appengine.api.taskqueue.TransientFailureException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
@@ -95,16 +94,6 @@ public class Ofy {
   /** Returns the wrapped Objectify's ObjectifyFactory. */
   public ObjectifyFactory factory() {
     return ofy().factory();
-  }
-
-  /**
-   * Returns keys read by Objectify during this transaction.
-   *
-   * <p>This won't include the keys of asynchronous save and delete operations that haven't been
-   * reaped.
-   */
-  public ImmutableSet<Key<?>> getSessionKeys() {
-    return ((SessionKeyExposingObjectify) ofy()).getSessionKeys();
   }
 
   /** Clears the session cache. */
@@ -272,7 +261,6 @@ public class Ofy {
         });
         return work.getResult();
       } catch (TransientFailureException
-          | TimestampInversionException
           | DatastoreTimeoutException
           | DatastoreFailureException e) {
         // TransientFailureExceptions come from task queues and always mean nothing committed.

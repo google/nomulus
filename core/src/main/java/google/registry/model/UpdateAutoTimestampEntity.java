@@ -14,7 +14,6 @@
 
 package google.registry.model;
 
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.util.PreconditionsUtils;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -39,7 +38,6 @@ public abstract class UpdateAutoTimestampEntity extends ImmutableObject
   // Prevents subclasses from unexpectedly accessing as property (e.g., Host), which would
   // require an unnecessary non-private setter method.
   @Access(AccessType.FIELD)
-  @Ignore
   UpdateAutoTimestamp updateTimestamp = UpdateAutoTimestamp.create(null);
 
   /** Get the {@link UpdateAutoTimestamp} for this entity. */

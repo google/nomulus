@@ -55,8 +55,6 @@ public class JpaDemoPipeline implements Serializable {
 
                   @ProcessElement
                   public void processElement() {
-                    // AppEngineEnvironment is needed as long as JPA entity classes still depends
-                    // on Objectify.
                     int result =
                         (Integer)
                             jpaTm()

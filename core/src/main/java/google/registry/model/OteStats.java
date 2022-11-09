@@ -26,7 +26,6 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.fee.FeeCreateCommandExtension;
 import google.registry.model.domain.launch.LaunchCreateExtension;
@@ -202,7 +201,7 @@ public class OteStats {
       try {
         record(historyEntry);
       } catch (XmlException e) {
-        throw new RuntimeException("Couldn't parse history entry " + Key.create(historyEntry), e);
+        throw new RuntimeException("Couldn't parse history entry " + historyEntry.createVKey(), e);
       }
       // Break out early if all tests were passed.
       if (wereAllTestsPassed()) {

@@ -53,8 +53,8 @@ import javax.inject.Inject;
  * <p>All commands and responses conform to the RDAP spec as defined in RFCs 7480 through 7485.
  *
  * <p>The RDAP specification lumps contacts and registrars together and calls them "entities", which
- * is confusing for us, because "entity" means something else in Objectify. But here, when we use
- * the term, it means either a contact or registrar. When searching for entities, we always start by
+ * is confusing for us, because "entity" means something else in SQL. But here, when we use the
+ * term, it means either a contact or registrar. When searching for entities, we always start by
  * returning all matching contacts, and after that all matching registrars.
  *
  * <p>There are two ways to search for entities: by full name (for contacts, the search name, for
