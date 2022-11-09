@@ -143,6 +143,7 @@ public class SecretManagerKeyring implements Keyring {
     return getString(StringKeyLabel.MARKSDB_SMDRL_LOGIN_STRING);
   }
 
+  // TODO(b/237305940): remove this method and all supports, including entry in secretmanager
   @Override
   public String getJsonCredential() {
     return getString(StringKeyLabel.JSON_CREDENTIAL_STRING);

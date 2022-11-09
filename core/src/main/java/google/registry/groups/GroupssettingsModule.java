@@ -17,7 +17,7 @@ package google.registry.groups;
 import com.google.api.services.groupssettings.Groupssettings;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.config.CredentialModule.DelegatedCredential;
+import google.registry.config.CredentialModule.AdcDelegatedCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
 
@@ -27,7 +27,7 @@ public final class GroupssettingsModule {
 
   @Provides
   static Groupssettings provideDirectory(
-      @DelegatedCredential GoogleCredentialsBundle credentialsBundle,
+      @AdcDelegatedCredential GoogleCredentialsBundle credentialsBundle,
       @Config("projectId") String projectId) {
     return new Groupssettings.Builder(
             credentialsBundle.getHttpTransport(),

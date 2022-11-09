@@ -17,7 +17,7 @@ package google.registry.groups;
 import com.google.api.services.admin.directory.Directory;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.config.CredentialModule.DelegatedCredential;
+import google.registry.config.CredentialModule.AdcDelegatedCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
 
@@ -27,7 +27,7 @@ public final class DirectoryModule {
 
   @Provides
   static Directory provideDirectory(
-      @DelegatedCredential GoogleCredentialsBundle credentialsBundle,
+      @AdcDelegatedCredential GoogleCredentialsBundle credentialsBundle,
       @Config("projectId") String projectId) {
     return new Directory.Builder(
             credentialsBundle.getHttpTransport(),

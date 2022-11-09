@@ -120,10 +120,4 @@ public final class KeyModule {
   static String provideSafeBrowsingAPIKey(Keyring keyring) {
     return keyring.getSafeBrowsingAPIKey();
   }
-
-  @Provides
-  @Key("jsonCredential")
-  static String provideJsonCredential(Keyring keyring) {
-    return keyring.getJsonCredential();
-  }
 }
