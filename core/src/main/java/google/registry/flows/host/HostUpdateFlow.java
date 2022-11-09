@@ -16,6 +16,8 @@ package google.registry.flows.host;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.Sets.union;
+import static google.registry.dns.RefreshDnsOnHostRenameAction.PARAM_HOST_KEY;
+import static google.registry.dns.RefreshDnsOnHostRenameAction.QUEUE_HOST_RENAME;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.checkSameValuesNotAddedAndRemoved;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -30,9 +32,12 @@ import static google.registry.model.reporting.HistoryEntry.Type.HOST_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
+import com.google.cloud.tasks.v2.Task;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.dns.DnsQueue;
+import google.registry.dns.RefreshDnsOnHostRenameAction;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ObjectAlreadyExistsException;
 import google.registry.flows.EppException.ParameterValueRangeErrorException;
@@ -59,6 +64,8 @@ import google.registry.model.host.HostCommand.Update.Change;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.persistence.VKey;
+import google.registry.request.Action.Service;
+import google.registry.util.CloudTasksUtils;
 import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -107,9 +114,8 @@ public final class HostUpdateFlow implements TransactionalFlow {
    * requires special checking, since you must be able to clear the status off the object with an
    * update.
    */
-  private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES = ImmutableSet.of(
-      StatusValue.PENDING_DELETE,
-      StatusValue.SERVER_UPDATE_PROHIBITED);
+  private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES =
+      ImmutableSet.of(StatusValue.PENDING_DELETE, StatusValue.SERVER_UPDATE_PROHIBITED);
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
@@ -120,7 +126,10 @@ public final class HostUpdateFlow implements TransactionalFlow {
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject DnsQueue dnsQueue;
   @Inject EppResponse.Builder responseBuilder;
-  @Inject HostUpdateFlow() {}
+  @Inject CloudTasksUtils cloudTasksUtils;
+
+  @Inject
+  HostUpdateFlow() {}
 
   @Override
   public EppResponse run() throws EppException {
@@ -268,7 +277,12 @@ public final class HostUpdateFlow implements TransactionalFlow {
       }
       // We must also enqueue updates for all domains that use this host as their nameserver so
       // that their NS records can be updated to point at the new name.
-      // TODO(jianglai): implement a SQL based solution.
+      Task task =
+          cloudTasksUtils.createPostTask(
+              RefreshDnsOnHostRenameAction.PATH,
+              Service.BACKEND.toString(),
+              ImmutableMultimap.of(PARAM_HOST_KEY, existingHost.createVKey().stringify()));
+      cloudTasksUtils.enqueue(QUEUE_HOST_RENAME, task);
     }
   }
 

@@ -35,14 +35,11 @@ public final class AsyncTaskEnqueuer {
 
   /** The HTTP parameter names used by async flows. */
   public static final String PARAM_RESOURCE_KEY = "resourceKey";
-  public static final String PARAM_HOST_KEY = "hostKey";
   public static final String PARAM_REQUESTED_TIME = "requestedTime";
   public static final String PARAM_RESAVE_TIMES = "resaveTimes";
 
   /** The task queue names used by async flows. */
   public static final String QUEUE_ASYNC_ACTIONS = "async-actions";
-
-  public static final String QUEUE_ASYNC_HOST_RENAME = "async-host-rename-pull";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Duration MAX_ASYNC_ETA = Duration.standardDays(30);

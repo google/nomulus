@@ -24,7 +24,6 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
-import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -79,7 +78,6 @@ public final class HostDeleteFlow implements TransactionalFlow {
   @Inject Trid trid;
   @Inject @Superuser boolean isSuperuser;
   @Inject HostHistory.Builder historyBuilder;
-  @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject EppResponse.Builder responseBuilder;
 
   @Inject

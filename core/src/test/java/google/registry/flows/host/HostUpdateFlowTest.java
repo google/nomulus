@@ -16,6 +16,8 @@ package google.registry.flows.host;
 
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.dns.RefreshDnsOnHostRenameAction.PARAM_HOST_KEY;
+import static google.registry.dns.RefreshDnsOnHostRenameAction.QUEUE_HOST_RENAME;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -38,10 +40,12 @@ import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
+import google.registry.dns.RefreshDnsOnHostRenameAction;
 import google.registry.flows.EppException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.FlowUtils.NotLoggedInException;
@@ -75,6 +79,7 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -199,12 +204,13 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     Host renamedHost = doSuccessfulTest();
     assertThat(renamedHost.isSubordinate()).isTrue();
     // Task enqueued to change the NS record of the referencing domain.
-    // TODO(jianglai): add assertion on host rename refresh based on SQL impementation.
-    // assertTasksEnqueued(
-    //    QUEUE_ASYNC_HOST_RENAME,
-    //    new TaskMatcher()
-    //        .param(PARAM_HOST_KEY, renamedHost.createVKey().stringify())
-    //        .param("requestedTime", clock.nowUtc().toString()));
+    cloudTasksHelper.assertTasksEnqueued(
+        QUEUE_HOST_RENAME,
+        new TaskMatcher()
+            .url(RefreshDnsOnHostRenameAction.PATH)
+            .method(HttpMethod.POST)
+            .service("backend")
+            .param(PARAM_HOST_KEY, renamedHost.createVKey().stringify()));
   }
 
   @Test

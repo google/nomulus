@@ -247,12 +247,6 @@
   <!-- Enqueues DNS update tasks following a host rename. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/dnsRefreshForHostRename</url-pattern>
-  </servlet-mapping>
-
-  <!-- Enqueues DNS update tasks following a host rename. -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
     <url-pattern>/_dr/task/refreshDnsOnHostRename</url-pattern>
   </servlet-mapping>
 
