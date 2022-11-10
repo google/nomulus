@@ -28,7 +28,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
-import google.registry.model.annotations.OfyIdAllocation;
+import google.registry.model.annotations.IdAllocation;
 import google.registry.model.common.TimeOfYear;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -146,7 +146,7 @@ public abstract class BillingEvent extends ImmutableObject
   }
 
   /** Entity id. */
-  @OfyIdAllocation @Id Long id;
+  @IdAllocation @Id Long id;
 
   /** The registrar to bill. */
   @Column(name = "registrarId", nullable = false)
