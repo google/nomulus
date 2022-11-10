@@ -169,7 +169,7 @@ public class SyncRegistrarsSheetTest {
                 // distinction to make sure we're not relying on it.  Sigh.
                 .setVisibleInWhoisAsAdmin(false)
                 .setVisibleInWhoisAsTech(true)
-                .setGaeUserId("light")
+                .setLoginEmailAddress("john.doe@example.tld")
                 .build(),
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
@@ -217,7 +217,7 @@ public class SyncRegistrarsSheetTest {
                 + "Phone number and email visible in domain WHOIS query as "
                 + "Registrar Abuse contact info: No\n"
                 + "Registrar-Console access: Yes\n"
-                + "GAE-UserID: light\n");
+                + "Login Email Address: john.doe@example.tld\n");
     assertThat(row)
         .containsEntry(
             "techContacts",
@@ -262,7 +262,7 @@ public class SyncRegistrarsSheetTest {
                 + "Phone number and email visible in domain WHOIS query as "
                 + "Registrar Abuse contact info: No\n"
                 + "Registrar-Console access: Yes\n"
-                + "GAE-UserID: light\n");
+                + "Login Email Address: john.doe@example.tld\n");
     assertThat(row).containsEntry("emailAddress", "nowhere@example.org");
     assertThat(row).containsEntry(
         "address.street", "I get fallen back upon since there's no l10n addr");

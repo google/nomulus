@@ -57,7 +57,7 @@ import javax.persistence.Table;
  * set to true.
  */
 @Entity
-@Table(indexes = {@Index(columnList = "gaeUserId", name = "registrarpoc_gae_user_id_idx")})
+@Table(indexes = @Index(columnList = "loginEmailAddress", name = "registrarpoc_login_email_idx"))
 @IdClass(RegistrarPocId.class)
 public class RegistrarPoc extends ImmutableObject implements Jsonifiable, UnsafeSerializable {
 
@@ -89,7 +89,7 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
     }
 
     Type(String display, boolean required) {
-      this.displayName = display;
+      displayName = display;
       this.required = required;
     }
   }
@@ -97,7 +97,12 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
   /** The name of the contact. */
   String name;
 
-  /** The email address of the contact. */
+  /**
+   * The contact email address of the contact.
+   *
+   * <p>This is different from the login email which is assgined to the regstrar and cannot be
+   * changed.
+   */
   @Id String emailAddress;
 
   @Id String registrarId;
@@ -118,13 +123,21 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
   Set<Type> types;
 
   /**
-   * A GAE user ID allowed to act as this registrar contact.
+   * A GAIA email address that was assigned to the registrar for console login purpose.
    *
-   * <p>This can be derived from a known email address using http://email-to-gae-id.appspot.com.
+   * <p>We used to store the GAE user ID directly to identify the logged-in user in the registrar
+   * console, and relied on a hacky trick with datastore to get the ID from the email address when
+   * creating a {@link RegistrarPoc}. We switched to using the login email directly as each
+   * registrar is assigned a unique email address that is immutable (to them at least), so it is as
+   * good as an identifier as the ID itself, and it allows us to get rid of the datastore
+   * dependency.
    *
-   * @see com.google.appengine.api.users.User#getUserId()
+   * <p>We backfilled all login email addresses for existing {@link RegistrarPoc}s that have a
+   * non-null GAE user ID. The backfill is done by first trying the {@link #emailAddress} field,
+   * then trying {@link #registrarId}+"@known-dasher_domain" and picking the ones that converted to
+   * the existing ID stored in the database.
    */
-  String gaeUserId;
+  String loginEmailAddress;
 
   /**
    * Whether this contact is publicly visible in WHOIS registrar query results as an Admin contact.
@@ -220,8 +233,8 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
     return visibleInDomainWhoisAsAbuse;
   }
 
-  public String getGaeUserId() {
-    return gaeUserId;
+  public String getLoginEmailAddress() {
+    return loginEmailAddress;
   }
 
   public Builder asBuilder() {
@@ -258,8 +271,8 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
    * Types: [ADMIN, WHOIS]
    * Visible in WHOIS as Admin contact: Yes
    * Visible in WHOIS as Technical contact: No
-   * GAE-UserID: 1234567890
    * Registrar-Console access: Yes
+   * Login Email Address: person@registry.example
    * }</pre>
    */
   public String toStringMultilinePlainText() {
@@ -289,10 +302,10 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
         .append('\n');
     result
         .append("Registrar-Console access: ")
-        .append(getGaeUserId() != null ? "Yes" : "No")
+        .append(getLoginEmailAddress() != null ? "Yes" : "No")
         .append('\n');
-    if (getGaeUserId() != null) {
-      result.append("GAE-UserID: ").append(getGaeUserId()).append('\n');
+    if (getLoginEmailAddress() != null) {
+      result.append("Login Email Address: ").append(getLoginEmailAddress()).append('\n');
     }
     return result.toString();
   }
@@ -311,7 +324,7 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
         .put("visibleInDomainWhoisAsAbuse", visibleInDomainWhoisAsAbuse)
         .put("allowedToSetRegistryLockPassword", allowedToSetRegistryLockPassword)
         .put("registryLockAllowed", isRegistryLockAllowed())
-        .put("gaeUserId", gaeUserId)
+        .put("loginEmailAddress", loginEmailAddress)
         .build();
   }
 
@@ -418,8 +431,8 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
       return this;
     }
 
-    public Builder setGaeUserId(String gaeUserId) {
-      getInstance().gaeUserId = gaeUserId;
+    public Builder setLoginEmailAddress(String loginEmailAddress) {
+      getInstance().loginEmailAddress = loginEmailAddress;
       return this;
     }
 

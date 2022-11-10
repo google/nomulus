@@ -43,7 +43,6 @@ import google.registry.util.Clock;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.Driver;
@@ -90,9 +89,6 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
   // is documented in PSQL's official user guide.
   private static final String CONNECTION_BACKEND_TYPE = "client backend";
   private static final int ACTIVE_CONNECTIONS_CAP = 5;
-  public static final String NEW_REGISTRAR_GAE_USER_ID = "666";
-  public static final String THE_REGISTRAR_GAE_USER_ID = "31337";
-  public static final String MARLA_SINGER_GAE_USER_ID = "12345";
 
   private final Clock clock;
   private final Optional<String> initScriptPath;
@@ -171,7 +167,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
       File tempSqlFile = File.createTempFile("tempSqlFile", ".sql");
       tempSqlFile.deleteOnExit();
       exporter.export(extraEntityClasses, tempSqlFile);
-      executeSql(new String(Files.readAllBytes(tempSqlFile.toPath()), StandardCharsets.UTF_8));
+      executeSql(Files.readString(tempSqlFile.toPath()));
     }
     assertReasonableNumDbConnections();
     emf = createEntityManagerFactory(getJpaProperties());
@@ -308,7 +304,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
   private static String getJdbcUrl() {
     // Disable Postgres driver use of java.util.logging to reduce noise at startup time
     return "jdbc:postgresql://"
-        + database.getContainerIpAddress()
+        + database.getHost()
         + ":"
         + database.getMappedPort(POSTGRESQL_PORT)
         + "/"
@@ -411,7 +407,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
         .setEmailAddress("johndoe@theregistrar.com")
         .setPhoneNumber("+1.1234567890")
         .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
-        .setGaeUserId(THE_REGISTRAR_GAE_USER_ID)
+        .setLoginEmailAddress("johndoe@theregistrar.com")
         .build();
   }
 
@@ -423,7 +419,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
         .setRegistryLockEmailAddress("Marla.Singer.RegistryLock@crr.com")
         .setPhoneNumber("+1.2128675309")
         .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
-        .setGaeUserId(MARLA_SINGER_GAE_USER_ID)
+        .setLoginEmailAddress("Marla.Singer@crr.com")
         .setAllowedToSetRegistryLockPassword(true)
         .setRegistryLockPassword("hi")
         .build();

@@ -16,7 +16,7 @@
         "name": "Extra Terrestrial",
         "visibleInWhoisAsTech": false,
         "emailAddress": "etphonehome@example.com",
-        "gaeUserId": null,
+        "loginEmailAddress": null,
         "types": "ADMIN,BILLING,TECH,WHOIS"
       },
       {
@@ -27,7 +27,7 @@
         "visibleInWhoisAsTech": false,
         "emailAddress": "Marla.Singer@crr.com",
         "registryLockEmailAddress": "Marla.Singer.RegistryLock@crr.com",
-        "gaeUserId": "12345",
+        "loginEmailAddress": "Marla.Singer@crr.com",
         "types": "TECH"
       }
     ],

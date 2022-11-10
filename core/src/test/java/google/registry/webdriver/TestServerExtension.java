@@ -16,10 +16,8 @@ package google.registry.webdriver;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.testing.AppEngineExtension.THE_REGISTRAR_GAE_USER_ID;
 import static google.registry.util.NetworkUtils.getExternalAddressOfLocalSystem;
 import static google.registry.util.NetworkUtils.pickUnusedPort;
-import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -35,7 +33,6 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -72,8 +69,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
       ImmutableList<Route> routes,
       ImmutableList<Class<? extends Filter>> filters,
       ImmutableList<Fixture> fixtures,
-      String email,
-      Optional<String> gaeUserId) {
+      String email) {
     this.runfiles = runfiles;
     this.routes = routes;
     this.filters = filters;
@@ -86,8 +82,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
             .withLocalModules()
             .withUrlFetch()
             .withTaskQueue()
-            .withUserService(
-                UserInfo.createAdmin(email, gaeUserId.orElse(THE_REGISTRAR_GAE_USER_ID)))
+            .withUserService(UserInfo.createAdmin(email))
             .build();
   }
 
@@ -178,7 +173,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
 
   private final class Server implements Runnable {
 
-    private ExtensionContext context;
+    private final ExtensionContext context;
 
     Server(ExtensionContext context) {
       this.context = context;
@@ -254,7 +249,6 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     ImmutableList<Class<? extends Filter>> filters;
     private ImmutableList<Fixture> fixtures = ImmutableList.of();
     private String email;
-    private Optional<String> gaeUserId = Optional.empty();
 
     /** Sets the directories containing the static files for {@link TestServer}. */
     Builder setRunfiles(ImmutableMap<String, Path> runfiles) {
@@ -292,13 +286,6 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
       return this;
     }
 
-    /** Optionally, sets the GAE user ID for the logged in user. */
-    public Builder setGaeUserId(String gaeUserId) {
-      this.gaeUserId =
-          Optional.of(checkArgumentNotNull(gaeUserId, "Must specify a non-null GAE user ID"));
-      return this;
-    }
-
     /** Returns a new {@link TestServerExtension} instance. */
     public TestServerExtension build() {
       return new TestServerExtension(
@@ -306,8 +293,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
           checkNotNull(this.routes),
           checkNotNull(this.filters),
           checkNotNull(this.fixtures),
-          checkNotNull(this.email),
-          this.gaeUserId);
+          checkNotNull(this.email));
     }
   }
 }

@@ -45,7 +45,7 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
               route("/registrar-settings", FrontendServlet.class))
           .setFilters(ObjectifyFilter.class, OfyFilter.class)
           .setFixtures(BASIC)
-          .setEmail("Marla.Singer@google.com")
+          .setEmail("Marla.Singer@crr.com")
           .build();
 
   /** Checks the identified element has the given text content. */

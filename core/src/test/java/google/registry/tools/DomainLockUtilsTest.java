@@ -79,7 +79,7 @@ public final class DomainLockUtilsTest {
           .withCloudSql()
           .withClock(clock)
           .withTaskQueue()
-          .withUserService(UserInfo.create(POC_ID, "12345"))
+          .withUserService(UserInfo.create(POC_ID))
           .build();
 
   private Domain domain;

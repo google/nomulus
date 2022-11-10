@@ -72,28 +72,4 @@ class RegistrarCreateConsoleScreenshotTest extends WebDriverTestCase {
     driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("createResult");
   }
-
-  @RetryingTest(3)
-  void get_admin_fails_badEmail() throws Throwable {
-    server.setIsAdmin(true);
-    driver.get(server.getUrl("/registrar-create"));
-    driver.waitForDisplayedElement(By.tagName("h1"));
-    driver.findElement(By.id("clientId")).sendKeys("my-name");
-    driver.findElement(By.id("name")).sendKeys("registrar name");
-    driver
-        .findElement(By.id("billingAccount"))
-        .sendKeys(""
-            + "USD=12345678-abcd-1234-5678-cba987654321\n"
-            + "JPY=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
-    driver.findElement(By.id("driveId")).sendKeys("drive-id");
-    driver.findElement(By.id("ianaId")).sendKeys("15263");
-    driver.findElement(By.id("referralEmail")).sendKeys("email@icann.example");
-    driver.findElement(By.id("consoleUserEmail")).sendKeys("bad email");
-    driver.findElement(By.id("street1")).sendKeys("123 Street st.");
-    driver.findElement(By.id("city")).sendKeys("Citysville");
-    driver.findElement(By.id("countryCode")).sendKeys("fr");
-    driver.findElement(By.id("submit-button")).click();
-    driver.waitForDisplayedElement(By.tagName("h1"));
-    driver.diffPage("createResultFailed");
-  }
 }

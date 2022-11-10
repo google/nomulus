@@ -614,7 +614,7 @@
         registrar_id text not null,
         allowed_to_set_registry_lock_password boolean not null,
         fax_number text,
-        gae_user_id text,
+        login_email_address text,
         name text,
         phone_number text,
         registry_lock_email_address text,
@@ -828,7 +828,7 @@ create index IDXaydgox62uno9qx8cjlj5lauye on "PollMessage" (event_time);
 create index premiumlist_name_idx on "PremiumList" (name);
 create index registrar_name_idx on "Registrar" (registrar_name);
 create index registrar_iana_identifier_idx on "Registrar" (iana_identifier);
-create index registrarpoc_gae_user_id_idx on "RegistrarPoc" (gae_user_id);
+create index registrarpoc_login_email_idx on "RegistrarPoc" (login_email_address);
 create index idx_registry_lock_verification_code on "RegistryLock" (verification_code);
 create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
 

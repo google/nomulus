@@ -114,7 +114,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     RegistrarPoc registrarPoc = registrarPocs.stream().findAny().get();
     assertThat(registrarPoc.getEmailAddress()).isEqualTo(email);
     assertThat(registrarPoc.getName()).isEqualTo(email);
-    assertThat(registrarPoc.getGaeUserId()).isNotNull();
+    assertThat(registrarPoc.getLoginEmailAddress()).isEqualTo(email);
   }
 
   @Test

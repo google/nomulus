@@ -14,36 +14,40 @@
 
 package google.registry.ui.server.registrar;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static google.registry.model.common.GaeUserIdConverter.convertEmailAddressToGaeUserId;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.tofu.SoyTofu;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
+import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.ui.server.SoyTemplateUtils;
+import google.registry.ui.soy.registrar.AnalyticsSoyInfo;
+import google.registry.ui.soy.registrar.ConsoleSoyInfo;
+import google.registry.ui.soy.registrar.ConsoleUtilsSoyInfo;
+import google.registry.ui.soy.registrar.FormsSoyInfo;
 import google.registry.ui.soy.registrar.RegistrarCreateConsoleSoyInfo;
 import google.registry.util.StringGenerator;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -54,12 +58,9 @@ import org.joda.money.CurrencyUnit;
  *
  * <p>This Action does 2 things: - for GET, just returns the form that asks for the required
  * information. - for POST, receives the information and creates the Registrar.
- *
- * <p>TODO(b/120201577): once we can have 2 different Actions with the same path (different
- * Methods), separate this class to 2 Actions.
  */
 @Action(
-    service = Action.Service.DEFAULT,
+    service = Service.DEFAULT,
     path = ConsoleRegistrarCreatorAction.PATH,
     method = {Method.POST, Method.GET},
     auth = Auth.AUTH_PUBLIC)
@@ -74,11 +75,11 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
 
   private static final Supplier<SoyTofu> TOFU_SUPPLIER =
       SoyTemplateUtils.createTofuSupplier(
-          google.registry.ui.soy.registrar.AnalyticsSoyInfo.getInstance(),
-          google.registry.ui.soy.registrar.ConsoleSoyInfo.getInstance(),
-          google.registry.ui.soy.registrar.ConsoleUtilsSoyInfo.getInstance(),
-          google.registry.ui.soy.registrar.FormsSoyInfo.getInstance(),
-          google.registry.ui.soy.registrar.RegistrarCreateConsoleSoyInfo.getInstance());
+          AnalyticsSoyInfo.getInstance(),
+          ConsoleSoyInfo.getInstance(),
+          ConsoleUtilsSoyInfo.getInstance(),
+          FormsSoyInfo.getInstance(),
+          RegistrarCreateConsoleSoyInfo.getInstance());
 
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;
   @Inject SendEmailUtils sendEmailUtils;
@@ -136,7 +137,7 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
     return PATH;
   }
 
-  private void checkPresent(Optional<?> value, String name) {
+  private static void checkPresent(Optional<?> value, String name) {
     checkState(value.isPresent(), "Missing value for %s", name);
   }
 
@@ -193,11 +194,6 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
       optionalZip.ifPresent(zip -> data.put("zip", zip));
       data.put("countryCode", countryCode.get());
 
-      String gaeUserId =
-          checkNotNull(
-              convertEmailAddressToGaeUserId(consoleUserEmail.get()),
-              "Email address %s is not associated with any GAE ID",
-              consoleUserEmail.get());
       String password = optionalPassword.orElse(passwordGenerator.createString(PASSWORD_LENGTH));
       String phonePasscode =
           optionalPasscode.orElse(passcodeGenerator.createString(PASSCODE_LENGTH));
@@ -213,7 +209,7 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
               .setType(Registrar.Type.REAL)
               .setPassword(password)
               .setPhonePasscode(phonePasscode)
-              .setState(Registrar.State.PENDING)
+              .setState(State.PENDING)
               .setLocalizedAddress(
                   new RegistrarAddress.Builder()
                       .setStreet(
@@ -232,7 +228,7 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
               .setRegistrar(registrar)
               .setName(consoleUserEmail.get())
               .setEmailAddress(consoleUserEmail.get())
-              .setGaeUserId(gaeUserId)
+              .setLoginEmailAddress(consoleUserEmail.get())
               .build();
       tm().transact(
               () -> {
@@ -285,7 +281,7 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
             .render());
   }
 
-  private String toEmailLine(Optional<?> value, String name) {
+  private static String toEmailLine(Optional<?> value, String name) {
     return String.format("    %s: %s\n", name, value.orElse(null));
   }
   private void sendExternalUpdates() {

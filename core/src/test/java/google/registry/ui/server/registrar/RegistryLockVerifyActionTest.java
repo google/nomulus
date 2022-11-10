@@ -70,7 +70,7 @@ final class RegistryLockVerifyActionTest {
       AppEngineExtension.builder()
           .withCloudSql()
           .withClock(fakeClock)
-          .withUserService(UserInfo.create("marla.singer@example.com", "12345"))
+          .withUserService(UserInfo.create("marla.singer@example.com"))
           .build();
 
   private final HttpServletRequest request = mock(HttpServletRequest.class);
