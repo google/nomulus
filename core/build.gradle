@@ -704,9 +704,6 @@ createToolTask(
     sourceSets.nonprod)
 
 createToolTask(
-    'jpaDemoPipeline', 'google.registry.beam.common.JpaDemoPipeline')
-
-createToolTask(
     'createSyntheticDomainHistories',
     'google.registry.tools.javascrap.CreateSyntheticDomainHistoriesPipeline')
 
