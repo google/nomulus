@@ -15,7 +15,6 @@
 package google.registry.config;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.auth.ServiceAccountSigner;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -23,12 +22,9 @@ import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.keyring.api.KeyModule.Key;
 import google.registry.util.Clock;
 import google.registry.util.GoogleCredentialsBundle;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -119,50 +115,6 @@ public abstract class CredentialModule {
   }
 
   /**
-   * Provides a {@link GoogleCredentialsBundle} from the service account's JSON key file.
-   *
-   * <p>On App Engine, a thread created using Java's built-in API needs this credential when it
-   * calls App Engine API. The Google Sheets API also needs this credential.
-   */
-  @JsonCredential
-  @Provides
-  @Singleton
-  public static GoogleCredentialsBundle provideJsonCredential(
-      @Config("defaultCredentialOauthScopes") ImmutableList<String> requiredScopes,
-      @Key("jsonCredential") String jsonCredential) {
-    GoogleCredentials credential;
-    try {
-      credential =
-          GoogleCredentials.fromStream(new ByteArrayInputStream(jsonCredential.getBytes(UTF_8)));
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-    if (credential.createScopedRequired()) {
-      credential = credential.createScoped(requiredScopes);
-    }
-    return GoogleCredentialsBundle.create(credential);
-  }
-
-  /**
-   * Provides a {@link GoogleCredentialsBundle} with delegated admin access for a G Suite domain.
-   *
-   * <p>The G Suite domain must grant delegated admin access to the registry service account with
-   * all scopes in {@code requiredScopes}, including ones not related to G Suite.
-   */
-  @DelegatedCredential
-  @Provides
-  @Singleton
-  public static GoogleCredentialsBundle provideDelegatedCredential(
-      @Config("delegatedCredentialOauthScopes") ImmutableList<String> requiredScopes,
-      @JsonCredential GoogleCredentialsBundle credentialsBundle,
-      @Config("gSuiteAdminAccountEmailAddress") String gSuiteAdminAccountEmailAddress) {
-    return GoogleCredentialsBundle.create(credentialsBundle
-        .getGoogleCredentials()
-        .createDelegated(gSuiteAdminAccountEmailAddress)
-        .createScoped(requiredScopes));
-  }
-
-  /**
    * Provides a {@link GoogleCredentialsBundle} with delegated access to Google Workspace APIs for
    * the application default credential user.
    *
@@ -222,24 +174,6 @@ public abstract class CredentialModule {
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
   public @interface GoogleWorkspaceCredential {}
-
-  /**
-   * Dagger qualifier for a credential from a service account's JSON key, to be used in non-request
-   * threads.
-   */
-  @Qualifier
-  @Documented
-  @Retention(RetentionPolicy.RUNTIME)
-  public @interface JsonCredential {}
-
-  /**
-   * Dagger qualifier for a credential with delegated admin access for a dasher domain (for G
-   * Suite).
-   */
-  @Qualifier
-  @Documented
-  @Retention(RetentionPolicy.RUNTIME)
-  public @interface DelegatedCredential {}
 
   /**
    * Dagger qualifier for a credential with delegated admin access for a dasher domain (for Google
