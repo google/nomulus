@@ -1309,6 +1309,18 @@ public final class RegistryConfig {
     public static int provideHibernateJdbcBatchSize(RegistryConfigSettings config) {
       return config.hibernate.jdbcBatchSize;
     }
+
+    @Provides
+    @Config("packageCreateLimitEmailSubjectText")
+    public static String providePackageCreateLimitEmailSubjectText(RegistryConfigSettings config) {
+      return config.packageMonitoring.packageCreateLimitEmailSubjectText;
+    }
+
+    @Provides
+    @Config("packageCreateLimitEmailBodyText")
+    public static String providePackageCreateLimitEmailBodyText(RegistryConfigSettings config) {
+      return config.packageMonitoring.packageCreateLimitEmailBodyText;
+    }
   }
 
   /** Returns the App Engine project ID, which is based off the environment name. */

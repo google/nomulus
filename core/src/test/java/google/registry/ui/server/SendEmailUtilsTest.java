@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import com.google.common.collect.ImmutableList;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
+import java.util.Optional;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import org.junit.jupiter.api.Test;
@@ -117,6 +118,34 @@ class SendEmailUtilsTest {
                 "It is a dark and scary place."))
         .isFalse();
     verifyMessageSent("foo@example.com");
+  }
+
+  @Test
+  void testSuccess_bcc() throws Exception {
+    setRecipients(ImmutableList.of("johnny@fakesite.tld"));
+    assertThat(sendEmailUtils.hasRecipients()).isTrue();
+    sendEmailUtils.sendEmail(
+        "Welcome to the Internet",
+        "It is a dark and scary place.",
+        Optional.of("bar@example.com"),
+        ImmutableList.of("baz@example.com"));
+
+    ArgumentCaptor<EmailMessage> contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);
+    verify(emailService).sendEmail(contentCaptor.capture());
+    EmailMessage emailMessage = contentCaptor.getValue();
+    ImmutableList.Builder<InternetAddress> recipientBuilder = ImmutableList.builder();
+    for (String expectedRecipient : ImmutableList.of("johnny@fakesite.tld", "baz@example.com")) {
+      recipientBuilder.add(new InternetAddress(expectedRecipient));
+    }
+    EmailMessage expectedContent =
+        EmailMessage.newBuilder()
+            .setSubject("Welcome to the Internet")
+            .setBody("It is a dark and scary place.")
+            .setFrom(new InternetAddress("outgoing@registry.example"))
+            .addBcc(new InternetAddress("bar@example.com"))
+            .setRecipients(recipientBuilder.build())
+            .build();
+    assertThat(emailMessage).isEqualTo(expectedContent);
   }
 
   @Test

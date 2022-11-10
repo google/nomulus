@@ -23,6 +23,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.mail.internet.AddressException;
@@ -54,8 +55,9 @@ public class SendEmailUtils {
   }
 
   /**
-   * Sends an email from Nomulus to the registrarChangesNotificationEmailAddresses and the specified
-   * additionalAddresses. Returns true iff sending to at least 1 address was successful.
+   * Sends an email from Nomulus to the registrarChangesNotificationEmailAddresses, the bcc address,
+   * and the specified additionalAddresses. Returns true iff sending to at least 1 address was
+   * successful.
    *
    * <p>This means that if there are no recipients ({@link #hasRecipients} returns false), this will
    * return false even thought no error happened.
@@ -64,7 +66,10 @@ public class SendEmailUtils {
    * not all) of the recipients had an error.
    */
   public boolean sendEmail(
-      final String subject, String body, ImmutableList<String> additionalAddresses) {
+      final String subject,
+      String body,
+      Optional<String> bcc,
+      ImmutableList<String> additionalAddresses) {
     try {
       InternetAddress from =
           new InternetAddress(
@@ -89,13 +94,22 @@ public class SendEmailUtils {
       if (recipients.isEmpty()) {
         return false;
       }
-      emailService.sendEmail(
+      EmailMessage.Builder emailMessage =
           EmailMessage.newBuilder()
               .setBody(body)
               .setSubject(subject)
               .setRecipients(recipients)
-              .setFrom(from)
-              .build());
+              .setFrom(from);
+      if (bcc.isPresent()) {
+        try {
+          InternetAddress bccInternetAddress = new InternetAddress(bcc.get(), true);
+          emailMessage.addBcc(bccInternetAddress);
+        } catch (AddressException e) {
+          logger.atSevere().withCause(e).log(
+              "Could not send email to %s with subject '%s'.", bcc, subject);
+        }
+      }
+      emailService.sendEmail(emailMessage.build());
       return true;
     } catch (Throwable t) {
       logger.atSevere().withCause(t).log(
@@ -103,6 +117,21 @@ public class SendEmailUtils {
           Joiner.on(", ").join(registrarChangesNotificationEmailAddresses), subject);
       return false;
     }
+  }
+
+  /**
+   * Sends an email from Nomulus to the registrarChangesNotificationEmailAddresses and the specified
+   * additionalAddresses. Returns true iff sending to at least 1 address was successful.
+   *
+   * <p>This means that if there are no recipients ({@link #hasRecipients} returns false), this will
+   * return false even thought no error happened.
+   *
+   * <p>This also means that if there are multiple recipients, it will return true even if some (but
+   * not all) of the recipients had an error.
+   */
+  public boolean sendEmail(
+      final String subject, String body, ImmutableList<String> additionalAddresses) {
+    return sendEmail(subject, body, Optional.empty(), additionalAddresses);
   }
 
   /**
