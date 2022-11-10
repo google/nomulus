@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.primitives.Ints;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.PackagePromotion;
@@ -75,12 +76,12 @@ public class CheckPackagesComplianceAction implements Runnable {
                                 "SELECT COUNT(*) FROM DomainHistory WHERE current_package_token ="
                                     + " :token AND modificationTime >= :lastBilling AND type ="
                                     + " 'DOMAIN_CREATE'")
-                            .setParameter("token", packagePromo.getToken().getSqlKey().toString())
+                            .setParameter("token", packagePromo.getToken().getKey().toString())
                             .setParameter(
                                 "lastBilling", packagePromo.getNextBillingDate().minusYears(1))
                             .getSingleResult();
                 if (creates > packagePromo.getMaxCreates()) {
-                  int overage = creates.intValue() - packagePromo.getMaxCreates();
+                  int overage = Ints.saturatedCast(creates) - packagePromo.getMaxCreates();
                   logger.atInfo().log(
                       "Package with package token %s has exceeded their max domain creation limit"
                           + " by %d name(s).",
@@ -122,13 +123,12 @@ public class CheckPackagesComplianceAction implements Runnable {
       AllocationToken packageToken, String subject, String body, Registrar registrar) {
     logger.atInfo().log(
         String.format(
-            "Compliance email sent to the %s registrar regarding the package with package token"
-                + " %s.",
+            "Compliance email sent to the %s registrar regarding the package with token" + " %s.",
             registrar.getRegistrarName(), packageToken.getToken()));
     sendEmailUtils.sendEmail(
         subject,
         body,
-        registrySupportEmail,
+        Optional.of(registrySupportEmail),
         registrar.getContacts().stream()
             .filter(c -> c.getTypes().contains(RegistrarPoc.Type.ADMIN))
             .map(RegistrarPoc::getEmailAddress)

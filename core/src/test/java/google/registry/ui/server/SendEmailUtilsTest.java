@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import com.google.common.collect.ImmutableList;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
+import java.util.Optional;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import org.junit.jupiter.api.Test;
@@ -126,7 +127,7 @@ class SendEmailUtilsTest {
     sendEmailUtils.sendEmail(
         "Welcome to the Internet",
         "It is a dark and scary place.",
-        "bar@example.com",
+        Optional.of("bar@example.com"),
         ImmutableList.of("baz@example.com"));
 
     ArgumentCaptor<EmailMessage> contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);

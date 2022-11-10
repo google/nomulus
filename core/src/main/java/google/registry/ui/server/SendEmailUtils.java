@@ -14,7 +14,6 @@
 
 package google.registry.ui.server;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.google.common.base.Joiner;
@@ -24,6 +23,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.mail.internet.AddressException;
@@ -66,7 +66,10 @@ public class SendEmailUtils {
    * not all) of the recipients had an error.
    */
   public boolean sendEmail(
-      final String subject, String body, String bcc, ImmutableList<String> additionalAddresses) {
+      final String subject,
+      String body,
+      Optional<String> bcc,
+      ImmutableList<String> additionalAddresses) {
     try {
       InternetAddress from =
           new InternetAddress(
@@ -97,9 +100,9 @@ public class SendEmailUtils {
               .setSubject(subject)
               .setRecipients(recipients)
               .setFrom(from);
-      if (!isNullOrEmpty(bcc)) {
+      if (bcc.isPresent()) {
         try {
-          InternetAddress bccInternetAddress = new InternetAddress(bcc, true);
+          InternetAddress bccInternetAddress = new InternetAddress(bcc.get(), true);
           emailMessage.addBcc(bccInternetAddress);
         } catch (AddressException e) {
           logger.atSevere().withCause(e).log(
@@ -128,7 +131,7 @@ public class SendEmailUtils {
    */
   public boolean sendEmail(
       final String subject, String body, ImmutableList<String> additionalAddresses) {
-    return sendEmail(subject, body, "", additionalAddresses);
+    return sendEmail(subject, body, Optional.empty(), additionalAddresses);
   }
 
   /**
