@@ -17,6 +17,8 @@ package google.registry.model.tld;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
 import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
@@ -26,6 +28,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.math.RoundingMode.UNNECESSARY;
@@ -38,11 +41,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.EntityTestCase;
+import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Registry.RegistryNotFoundException;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.tld.label.ReservedList;
+import google.registry.persistence.VKey;
 import google.registry.util.SerializeUtils;
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -627,5 +632,80 @@ public final class RegistryTest extends EntityTestCase {
     assertThrows(
         IllegalArgumentException.class,
         () -> Registry.get("tld").asBuilder().setRoidSuffix("ABC-DEF"));
+  }
+
+  @Test
+  void testSuccess_setDefaultPromoTokens() {
+    Registry registry = Registry.get("tld");
+    assertThat(registry.getDefaultPromoTokens()).isEmpty();
+    AllocationToken token1 =
+        persistResource(
+            new AllocationToken()
+                .asBuilder()
+                .setToken("abc123")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken token2 =
+        persistResource(
+            new AllocationToken()
+                .asBuilder()
+                .setToken("token")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    ImmutableSet<VKey<AllocationToken>> tokens =
+        ImmutableSet.of(token1.createVKey(), token2.createVKey());
+    registry = registry.asBuilder().setDefaultPromoTokens(tokens).build();
+    assertThat(registry.getDefaultPromoTokens()).isEqualTo(tokens);
+  }
+
+  @Test
+  void testFailure_setDefaultPromoTokensWrongTokenType() {
+    Registry registry = Registry.get("tld");
+    assertThat(registry.getDefaultPromoTokens()).isEmpty();
+    AllocationToken token1 =
+        persistResource(
+            new AllocationToken()
+                .asBuilder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                registry
+                    .asBuilder()
+                    .setDefaultPromoTokens(ImmutableSet.of(token1.createVKey()))
+                    .build());
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "Token abc123 has an invalid token type. DefaultPromoTokens must be of the type"
+                + " DEFAULT_PROMO");
+  }
+
+  @Test
+  void testFailure_setDefaultPromoTokensNotValidForTld() {
+    Registry registry = Registry.get("tld");
+    assertThat(registry.getDefaultPromoTokens()).isEmpty();
+    AllocationToken token1 =
+        persistResource(
+            new AllocationToken()
+                .asBuilder()
+                .setToken("abc123")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedTlds(ImmutableSet.of("example"))
+                .build());
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                registry
+                    .asBuilder()
+                    .setDefaultPromoTokens(ImmutableSet.of(token1.createVKey()))
+                    .build());
+    assertThat(thrown.getMessage()).isEqualTo("The token abc123 is not valid for this TLD");
   }
 }

@@ -45,6 +45,8 @@ import google.registry.model.UnsafeSerializable;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
+import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
@@ -451,6 +453,12 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   /** An allowlist of hosts allowed to be used on domains on this TLD (ignored if empty). */
   @Nullable Set<String> allowedFullyQualifiedHostNames;
 
+  /**
+   * References to allocation tokens that can be used on the TLD if no other token is passed in on a
+   * domain create.
+   */
+  @EmptySetToNull Set<VKey<AllocationToken>> defaultPromoTokens;
+
   public String getTldStr() {
     return tldStr;
   }
@@ -637,6 +645,10 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
 
   public ImmutableSet<String> getAllowedFullyQualifiedHostNames() {
     return nullToEmptyImmutableCopy(allowedFullyQualifiedHostNames);
+  }
+
+  public ImmutableSet<VKey<AllocationToken>> getDefaultPromoTokens() {
+    return nullToEmptyImmutableCopy(defaultPromoTokens);
   }
 
   @Override
@@ -897,6 +909,26 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     public Builder setAllowedFullyQualifiedHostNames(
         ImmutableSet<String> allowedFullyQualifiedHostNames) {
       getInstance().allowedFullyQualifiedHostNames = allowedFullyQualifiedHostNames;
+      return this;
+    }
+
+    public Builder setDefaultPromoTokens(ImmutableSet<VKey<AllocationToken>> promoTokens) {
+      tm().transact(
+              () -> {
+                for (VKey<AllocationToken> tokenKey : promoTokens) {
+                  AllocationToken token = tm().loadByKey(tokenKey);
+                  checkArgument(
+                      token.getTokenType().equals(TokenType.DEFAULT_PROMO),
+                      String.format(
+                          "Token %s has an invalid token type. DefaultPromoTokens must be of the"
+                              + " type DEFAULT_PROMO",
+                          token.getToken()));
+                  checkArgument(
+                      token.getAllowedTlds().contains(getInstance().tldStr),
+                      String.format("The token %s is not valid for this TLD", token.getToken()));
+                }
+                getInstance().defaultPromoTokens = promoTokens;
+              });
       return this;
     }
 
