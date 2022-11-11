@@ -1058,7 +1058,8 @@ CREATE TABLE public."Tld" (
     tld_state_transitions public.hstore NOT NULL,
     tld_type text NOT NULL,
     tld_unicode text NOT NULL,
-    transfer_grace_period_length interval NOT NULL
+    transfer_grace_period_length interval NOT NULL,
+    default_promo_tokens text[]
 );
 
 

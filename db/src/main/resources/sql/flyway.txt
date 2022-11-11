@@ -128,3 +128,4 @@ V127__fix_user.sql
 V128__fix_package_promotion_id.sql
 V129__create_allocateId_sequence_alternative.sql
 V130__add_login_email_column_to_registrarpoc.sql
+V131__add_default_promo_tokens_to_registry.sql
