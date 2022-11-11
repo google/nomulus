@@ -843,7 +843,8 @@ CREATE TABLE public."RegistrarPoc" (
     visible_in_whois_as_admin boolean NOT NULL,
     visible_in_whois_as_tech boolean NOT NULL,
     registry_lock_email_address text,
-    registrar_id text NOT NULL
+    registrar_id text NOT NULL,
+    login_email_address text
 );
 
 
@@ -2049,6 +2050,13 @@ CREATE INDEX registrar_name_idx ON public."Registrar" USING btree (registrar_nam
 --
 
 CREATE INDEX registrarpoc_gae_user_id_idx ON public."RegistrarPoc" USING btree (gae_user_id);
+
+
+--
+-- Name: registrarpoc_login_email_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX registrarpoc_login_email_idx ON public."RegistrarPoc" USING btree (login_email_address);
 
 
 --

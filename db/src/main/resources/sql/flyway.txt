@@ -127,3 +127,4 @@ V126__drop_autorenew_poll_message_history_id_column_in_domain_table.sql
 V127__fix_user.sql
 V128__fix_package_promotion_id.sql
 V129__create_allocateId_sequence_alternative.sql
+V130__add_login_email_column_to_registrarpoc.sql
