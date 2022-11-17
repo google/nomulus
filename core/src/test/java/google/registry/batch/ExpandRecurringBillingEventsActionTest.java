@@ -456,6 +456,45 @@ public class ExpandRecurringBillingEventsActionTest {
   }
 
   @Test
+  void testSuccess_noEventExpanded_recurrenceEndAfterEvent_cursorTimeTooLate() throws Exception {
+    // This can occur when a domain is transferred/renewed/deleted during autorenew grace peroid.
+    recurring =
+        persistResource(
+            recurring
+                .asBuilder()
+                .setRecurrenceEndTime(recurring.getEventTime().plusDays(5))
+                .build());
+    action.cursorTimeParam = Optional.of(recurring.getRecurrenceEndTime().plusDays(46));
+    runAction();
+    // No new history entries should be generated because cursor time is more than 45 days after
+    // recurrence end time.
+    assertThat(getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW)).isEmpty();
+    assertBillingEventsForResource(domain, recurring);
+    assertCursorAt(currentTestTime);
+  }
+
+  @Test
+  void testSuccess_expandSingleEvent_recurrenceEndAfterEvent() throws Exception {
+    // This can occur when a domain is transferred/renewed/deleted during autorenew grace peroid.
+    recurring =
+        persistResource(
+            recurring
+                .asBuilder()
+                .setRecurrenceEndTime(recurring.getEventTime().plusDays(5))
+                .build());
+    action.cursorTimeParam = Optional.of(recurring.getRecurrenceEndTime().plusDays(35));
+    runAction();
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
+    assertHistoryEntryMatches(
+        domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), false);
+    BillingEvent.OneTime expected =
+        defaultOneTimeBuilder().setDomainHistory(persistedEntry).build();
+    assertBillingEventsForResource(domain, expected, recurring);
+    assertCursorAt(currentTestTime);
+  }
+
+  @Test
   void testSuccess_expandSingleEvent_dryRun() throws Exception {
     persistResource(recurring);
     action.isDryRun = true;

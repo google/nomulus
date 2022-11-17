@@ -131,12 +131,14 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                                     + "WHERE eventTime <= :executeTime "
                                     + "AND eventTime < recurrenceEndTime "
                                     + "AND id > :maxProcessedRecurrenceId "
-                                    + "AND recurrenceEndTime > :cursorTime "
+                                    + "AND recurrenceEndTime > :adjustedCursorTime "
                                     + "ORDER BY id ASC",
                                 Recurring.class)
                             .setParameter("executeTime", executeTime)
                             .setParameter("maxProcessedRecurrenceId", prevMaxProcessedRecurrenceId)
-                            .setParameter("cursorTime", cursorTime)
+                            .setParameter(
+                                "adjustedCursorTime",
+                                cursorTime.minus(Registry.DEFAULT_AUTO_RENEW_GRACE_PERIOD))
                             .setMaxResults(batchSize)
                             .getResultList();
                     for (Recurring recurring : recurrings) {
@@ -279,6 +281,19 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
               .setReason("Domain autorenewal by ExpandRecurringBillingEventsAction")
               .setRequestedByRegistrar(false)
               .setType(DOMAIN_AUTORENEW)
+              // Note: the following statement seems to not be entirely correct as manual renewal
+              // during the autorenew grace period also closes out the existing recurrence, but in
+              // that instance the autorenew history entry should still have the transaction records
+              // for obvious reasons. It can be argued the history entry should always have the
+              // transaction record, regardless of what happens afterward. If the domain is deleted
+              // later during the autorenew grace period, another history entry for the delete would
+              // record that mutation separately, but the previous autorenew should not have its
+              // history entry retroactively altered, or in this case have the transaction records
+              // omitted when its created belatedly (when billing time is in scope). However, since
+              // we will be rewriting this action and only want to do the absolute minimum change to
+              // fix it for now, we will leave the current logic in place to avoid any unnecessary
+              // complications.
+              //
               // Don't write a domain transaction record if the recurrence was
               // ended prior to the billing time (i.e. a domain was deleted
               // during the autorenew grace period).
