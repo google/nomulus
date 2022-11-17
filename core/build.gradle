@@ -752,8 +752,13 @@ if (environment == 'alpha') {
           ],
       invoicing          :
           [
-              mainClass: 'google.registry.beam.invoicing.InvoicingPipeline',
+              mainClass: 'google.registry.beam.billing.InvoicingPipeline',
               metaData : 'google/registry/beam/invoicing_pipeline_metadata.json'
+          ],
+      expandBilling      :
+          [
+              mainClass: 'google.registry.beam.billing.ExpandRecurringBillingEventsPipeline',
+              metaData : 'google/registry/beam/expand_recurring_billing_events_pipeline_metadata.json'
           ],
       rde                :
           [

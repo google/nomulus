@@ -258,7 +258,7 @@
   <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/generateInvoices?shouldPublish=true&runInEmpty]]></url>
     <description>
-      Starts the beam/invoicing/InvoicingPipeline Dataflow template, which creates the overall invoice and
+      Starts the beam/billing/InvoicingPipeline Dataflow template, which creates the overall invoice and
       detail report CSVs for last month, storing them in gs://[PROJECT-ID]-billing/invoices/yyyy-MM.
       Upon success, sends an e-mail copy of the invoice to billing personnel, and copies detail
       reports to the associated registrars' drive folders.

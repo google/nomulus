@@ -170,7 +170,6 @@ import org.joda.time.DateTime;
  * @see <a href="https://cloud.google.com/dataflow/docs/guides/templates/using-flex-templates">Using
  *     Flex Templates</a>
  */
-@SuppressWarnings("ALL")
 @Singleton
 public class RdePipeline implements Serializable {
 

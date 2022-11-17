@@ -24,8 +24,10 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaQuery;
+import org.joda.time.DateTime;
 
 /** Interface for query instances used by {@link RegistryJpaIO.Read}. */
 public interface RegistryQuery<T> extends Serializable {
@@ -57,7 +59,14 @@ public interface RegistryQuery<T> extends Serializable {
       Query query =
           nativeQuery ? entityManager.createNativeQuery(sql) : entityManager.createQuery(sql);
       if (parameters != null) {
-        parameters.forEach(query::setParameter);
+        parameters.forEach(
+            (key, value) -> {
+              if (value instanceof DateTime) {
+                query.setParameter(key, ((DateTime) value).toDate(), TemporalType.TIMESTAMP);
+              } else {
+                query.setParameter(key, value);
+              }
+            });
       }
       JpaTransactionManager.setQueryFetchSize(query, QUERY_FETCH_SIZE);
       @SuppressWarnings("unchecked")

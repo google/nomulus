@@ -575,9 +575,9 @@ public final class RegistryConfig {
     /**
      * Returns the default job region to run Apache Beam (Cloud Dataflow) jobs in.
      *
-     * @see google.registry.beam.invoicing.InvoicingPipeline
+     * @see google.registry.beam.billing.InvoicingPipeline
      * @see google.registry.beam.spec11.Spec11Pipeline
-     * @see google.registry.beam.invoicing.InvoicingPipeline
+     * @see google.registry.beam.billing.InvoicingPipeline
      */
     @Provides
     @Config("defaultJobRegion")
@@ -655,7 +655,7 @@ public final class RegistryConfig {
     /**
      * Returns the URL of the GCS bucket we store invoices and detail reports in.
      *
-     * @see google.registry.beam.invoicing.InvoicingPipeline
+     * @see google.registry.beam.billing.InvoicingPipeline
      */
     @Provides
     @Config("billingBucketUrl")
@@ -691,7 +691,7 @@ public final class RegistryConfig {
     /**
      * Returns the file prefix for the invoice CSV file.
      *
-     * @see google.registry.beam.invoicing.InvoicingPipeline
+     * @see google.registry.beam.billing.InvoicingPipeline
      * @see google.registry.reporting.billing.BillingEmailUtils
      */
     @Provides

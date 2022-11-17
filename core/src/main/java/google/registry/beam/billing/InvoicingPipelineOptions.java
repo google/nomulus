@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.beam.invoicing;
+package google.registry.beam.billing;
 
 import google.registry.beam.common.RegistryPipelineOptions;
 import org.apache.beam.sdk.options.Description;

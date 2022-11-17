@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.beam.invoicing;
+package google.registry.beam.billing;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 
 import com.google.common.flogger.FluentLogger;
+import google.registry.beam.billing.BillingEvent.InvoiceGroupingKey;
+import google.registry.beam.billing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
 import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.common.RegistryJpaIO.Read;
-import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey;
-import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.registrar.Registrar;

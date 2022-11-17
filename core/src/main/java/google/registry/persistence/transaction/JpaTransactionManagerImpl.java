@@ -602,7 +602,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     DateTime transactionTime;
 
     // The set of entity objects that have been either persisted (via insert()) or merged (via
-    // put()/update()).  If the entity manager returns these as a result of a find() or query
+    // put()/update()). If the entity manager returns these as a result of a find() or query
     // operation, we can not detach them -- detaching removes them from the transaction and causes
     // them to not be saved to the database -- so we throw an exception instead.
     Set<Object> objectsToSave = Collections.newSetFromMap(new IdentityHashMap<>());

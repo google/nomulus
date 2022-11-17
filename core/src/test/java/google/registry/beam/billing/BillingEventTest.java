@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.beam.invoicing;
+package google.registry.beam.billing;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey;
-import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
+import google.registry.beam.billing.BillingEvent.InvoiceGroupingKey;
+import google.registry.beam.billing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

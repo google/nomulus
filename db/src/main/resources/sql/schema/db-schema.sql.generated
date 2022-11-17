@@ -76,6 +76,7 @@
         reason text not null,
         domain_name text not null,
         recurrence_end_time timestamptz,
+        recurrence_last_expansion timestamptz not null,
         recurrence_time_of_year text,
         renewal_price_amount numeric(19, 2),
         renewal_price_currency text,
@@ -774,6 +775,7 @@ create index IDXd3gxhkh0jk694pjvh9pyn7wjc on "BillingRecurrence" (registrar_id);
 create index IDX6syykou4nkc7hqa5p8r92cpch on "BillingRecurrence" (event_time);
 create index IDXoqttafcywwdn41um6kwlt0n8b on "BillingRecurrence" (domain_repo_id);
 create index IDXp3usbtvk0v1m14i5tdp4xnxgc on "BillingRecurrence" (recurrence_end_time);
+create index IDXp0pxi708hlu4n40qhbtihge8x on "BillingRecurrence" (recurrence_last_expansion);
 create index IDXjny8wuot75b5e6p38r47wdawu on "BillingRecurrence" (recurrence_time_of_year);
 create index IDX3y752kr9uh4kh6uig54vemx0l on "Contact" (creation_time);
 create index IDXtm415d6fe1rr35stm33s5mg18 on "Contact" (current_sponsor_registrar_id);

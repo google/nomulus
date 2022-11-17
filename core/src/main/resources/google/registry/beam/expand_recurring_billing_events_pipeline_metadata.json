@@ -1,0 +1,51 @@
+{
+  "name": "Expand Recurring Billings Events for Implicit Auto-Renewals",
+  "description": "An Apache Beam batch pipeline that finds all auto-renewals that have implicitly occurred between the given window and creates the corresponding billing events and hisotry entries.",
+  "parameters": [
+    {
+      "name": "registryEnvironment",
+      "label": "The Registry environment.",
+      "helpText": "The Registry environment.",
+      "is_optional": false,
+      "regexes": [
+        "^PRODUCTION|SANDBOX|CRASH|QA|ALPHA$"
+      ]
+    },
+    {
+      "name": "startTime",
+      "label": "The inclusive lower bound of the operation window.",
+      "helpText": "The inclusive lower bound of the operation window, in ISO 8601 format.",
+      "is_optional": false
+    },
+    {
+      "name": "endTime",
+      "label": "The exclusive upper bound of the operation window.",
+      "helpText": "The exclusive upper bound of the operation window, in ISO 8601 format.",
+      "is_optional": false
+    },
+    {
+      "name": "shard",
+      "label": "The exclusive upper bound of the operation window.",
+      "helpText": "The exclusive upper bound of the operation window, in ISO 8601 format.",
+      "is_optional": true
+    },
+    {
+      "name": "isDryRun",
+      "label": "Whether this job is a dry run.",
+      "helpText": "If true, no changes will be saved to the database.",
+      "is_optional": true,
+      "regexes": [
+        "^true|false$"
+      ]
+    },
+    {
+      "name": "advanceCursor",
+      "label": "Whether the BILLING_TIME global cursor should be advanced.",
+      "helpText": "If true, after all expansions are persisted, the cursor will be changed from startTime to endTime.",
+      "is_optional": true,
+      "regexes": [
+        "^true|false$"
+      ]
+    }
+  ]
+}
