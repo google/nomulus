@@ -22,6 +22,7 @@ import dagger.Lazy;
 import google.registry.config.RegistryEnvironment;
 import google.registry.config.SystemPropertySetter;
 import google.registry.model.AppEngineEnvironment;
+import google.registry.model.IdService;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import org.apache.beam.sdk.harness.JvmInitializer;
@@ -67,5 +68,15 @@ public class RegistryPipelineWorkerInitializer implements JvmInitializer {
     new AppEngineEnvironment("s~" + registryPipelineComponent.getProjectId())
         .setEnvironmentForAllThreads();
     SystemPropertySetter.PRODUCTION_IMPL.setProperty(PROPERTY, "true");
+    // Use self-allocated IDs if requested. Note that this inevitably results in duplicate IDs from
+    // multiple workers, which can also collide with existing IDs in the database. So they cannot be
+    // dependent upon for comparison or anything significant. The resulting entities can never be
+    // persisted back into the database. This is a stop-gap measure that should only be used when
+    // you need to create Buildables in Beam, but do not have control over how the IDs are
+    // allocated, and you don't care about the generated IDs as long
+    // as you can build the entities.
+    if (registryOptions.getUseSelfAllocatedId()) {
+      IdService.setForceUseSelfAllocatedId();
+    }
   }
 }
