@@ -53,7 +53,6 @@ import google.registry.flows.exceptions.ObjectAlreadySponsoredException;
 import google.registry.flows.exceptions.TransferPeriodMustBeOneYearException;
 import google.registry.flows.exceptions.TransferPeriodZeroAndFeeTransferExtensionException;
 import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Transfer;
 import google.registry.model.domain.DomainHistory;
@@ -207,16 +206,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
       feesAndCredits =
           period.getValue() == 0
               ? Optional.empty()
-              : Optional.of(
-                  pricingLogic.getTransferPrice(
-                      registry,
-                      targetId,
-                      now,
-                      existingRecurring
-                          .asBuilder()
-                          .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
-                          .setRenewalPrice(null)
-                          .build()));
+              : Optional.of(pricingLogic.getTransferPrice(registry, targetId, now, null));
     }
 
     if (feesAndCredits.isPresent()) {
