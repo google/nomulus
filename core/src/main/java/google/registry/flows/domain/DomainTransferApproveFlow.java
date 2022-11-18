@@ -166,13 +166,10 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                                 Registry.get(tld),
                                 targetId,
                                 transferData.getTransferRequestTime(),
-                                hasPackageToken
-                                    ? existingRecurring
-                                        .asBuilder()
-                                        .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
-                                        .setRenewalPrice(renewalPrice)
-                                        .build()
-                                    : existingRecurring)
+                                // When removing a domain from a package it should return to the
+                                // default recurring billing behavior so the existing recurring
+                                // billing event should not be passed in.
+                                hasPackageToken ? null : existingRecurring)
                             .getRenewCost())
                     .setEventTime(now)
                     .setBillingTime(now.plus(Registry.get(tld).getTransferGracePeriodLength()))
