@@ -48,7 +48,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.ResourceUtils;
 import java.io.File;
@@ -69,17 +68,12 @@ import org.apache.beam.sdk.values.TypeDescriptor;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
 /** Unit tests for {@link InvoicingPipeline}. */
 class InvoicingPipelineTest {
-
-  @RegisterExtension
-  @Order(Order.DEFAULT - 1)
-  final DatastoreEntityExtension datastore = new DatastoreEntityExtension().allThreads(true);
 
   @RegisterExtension
   final TestPipelineExtension pipeline =

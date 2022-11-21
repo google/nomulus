@@ -21,10 +21,8 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.tld.label.ReservedList.ReservedListEntry;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
-import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -32,10 +30,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ReservedListDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
-
-  @RegisterExtension
-  @Order(value = 1)
-  DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   @RegisterExtension
   JpaIntegrationWithCoverageExtension jpa =

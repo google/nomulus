@@ -40,13 +40,11 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
-import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
@@ -55,11 +53,6 @@ import org.mockito.ArgumentCaptor;
 public class ResaveAllEppResourcesPipelineTest {
 
   private final FakeClock fakeClock = new FakeClock(DateTime.parse("2020-03-10T00:00:00.000Z"));
-
-  @RegisterExtension
-  @Order(Order.DEFAULT - 1)
-  final transient DatastoreEntityExtension datastore =
-      new DatastoreEntityExtension().allThreads(true);
 
   @RegisterExtension
   final TestPipelineExtension testPipeline =

@@ -28,11 +28,9 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
-import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -40,10 +38,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class RegistrarDaoTest {
 
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
-
-  @RegisterExtension
-  @Order(value = 1)
-  DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   @RegisterExtension
   JpaIntegrationWithCoverageExtension jpa =

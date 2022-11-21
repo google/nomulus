@@ -84,7 +84,6 @@ import google.registry.rde.RdeResourceType;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import java.io.IOException;
@@ -102,7 +101,6 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
@@ -155,11 +153,6 @@ public class RdePipelineTest {
 
   private final RdePipelineOptions options =
       PipelineOptionsFactory.create().as(RdePipelineOptions.class);
-
-  // The pipeline runs in a different thread, which needs to be masqueraded as a GAE thread as well.
-  @RegisterExtension
-  @Order(Order.DEFAULT - 1)
-  final DatastoreEntityExtension datastore = new DatastoreEntityExtension().allThreads(true);
 
   @RegisterExtension
   final JpaIntegrationTestExtension database =

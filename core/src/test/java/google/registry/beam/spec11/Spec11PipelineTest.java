@@ -47,7 +47,6 @@ import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.model.reporting.Spec11ThreatMatchDao;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.ResourceUtils;
@@ -69,7 +68,6 @@ import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
@@ -111,11 +109,6 @@ class Spec11PipelineTest {
           ThreatMatch.create("POTENTIALLY_HARMFUL_APPLICATION", "bitcoin.bank"),
           ThreatMatch.create("THREAT_TYPE_UNSPECIFIED", "no-eamil.com"),
           ThreatMatch.create("UNWANTED_SOFTWARE", "anti-anti-anti-virus.dev"));
-
-  @RegisterExtension
-  @Order(Order.DEFAULT - 1)
-  final transient DatastoreEntityExtension datastore =
-      new DatastoreEntityExtension().allThreads(true);
 
   @TempDir Path tmpDir;
 
