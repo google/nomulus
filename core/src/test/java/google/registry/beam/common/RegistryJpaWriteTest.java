@@ -28,13 +28,11 @@ import google.registry.model.contact.Contact;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import java.io.Serializable;
 import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
 import org.apache.beam.sdk.transforms.Create;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -42,11 +40,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class RegistryJpaWriteTest implements Serializable {
 
   private final FakeClock fakeClock = new FakeClock(DateTime.parse("2000-01-01T00:00:00.0Z"));
-
-  @RegisterExtension
-  @Order(Order.DEFAULT - 1)
-  final transient DatastoreEntityExtension datastore =
-      new DatastoreEntityExtension().allThreads(true);
 
   @RegisterExtension
   final transient JpaIntegrationTestExtension database =

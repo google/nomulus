@@ -15,7 +15,6 @@
 package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 
 import dagger.Component;
 import google.registry.config.CredentialModule;
@@ -24,7 +23,6 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.privileges.secretmanager.SecretManagerModule;
-import google.registry.testing.DatastoreEntityExtension;
 import google.registry.util.UtilsModule;
 import java.util.Optional;
 import javax.inject.Provider;
@@ -35,7 +33,6 @@ import org.hibernate.cfg.Environment;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -47,9 +44,6 @@ class PersistenceModuleTest {
   @Container
   private final PostgreSQLContainer database =
       new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
-
-  @RegisterExtension
-  public DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   private EntityManagerFactory emf;
 

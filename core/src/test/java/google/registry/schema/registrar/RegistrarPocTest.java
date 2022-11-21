@@ -26,19 +26,13 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
-import google.registry.testing.DatastoreEntityExtension;
 import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for persisting {@link RegistrarPoc} entities. */
 class RegistrarPocTest {
-
-  @RegisterExtension
-  @Order(value = 1)
-  DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   @RegisterExtension
   JpaIntegrationWithCoverageExtension jpa =
