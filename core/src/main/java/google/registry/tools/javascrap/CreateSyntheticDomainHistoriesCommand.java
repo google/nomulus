@@ -30,11 +30,11 @@ import google.registry.model.domain.Domain;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.tools.AppEngineConnection;
 import google.registry.tools.CommandWithConnection;
 import google.registry.tools.CommandWithRemoteApi;
 import google.registry.tools.ConfirmingCommand;
 import google.registry.tools.RemoteApiOptionsUtil;
+import google.registry.tools.ServiceConnection;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -88,7 +88,7 @@ public class CreateSyntheticDomainHistoriesCommand extends ConfirmingCommand
   private static final ExecutorService executor = Executors.newFixedThreadPool(20);
   private static final AtomicInteger numDomainsProcessed = new AtomicInteger();
 
-  private AppEngineConnection connection;
+  private ServiceConnection connection;
 
   @Inject
   @Config("registryAdminClientId")
@@ -170,7 +170,7 @@ public class CreateSyntheticDomainHistoriesCommand extends ConfirmingCommand
   }
 
   @Override
-  public void setConnection(AppEngineConnection connection) {
+  public void setConnection(ServiceConnection connection) {
     this.connection = connection;
   }
 

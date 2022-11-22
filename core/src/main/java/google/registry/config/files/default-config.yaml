@@ -5,12 +5,12 @@
 # to override some of these values to configure and enable some services used in
 # production environments.
 
-appEngine:
-  # Globally unique App Engine project ID
+gcpProject:
+  # Globally unique GCP project ID
   projectId: registry-project-id
-  # Location of the App engine project, note that us-central1 and europe-west1 are special in that
-  # they are used without the trailing number in App Engine commands and Google Cloud Console.
-  # See: https://cloud.google.com/appengine/docs/locations
+  # Location of the GCP project, note that us-central1 and europe-west1 are special in that
+  # they are used without the trailing number in GCP commands and Google Cloud Console.
+  # See: https://cloud.google.com/appengine/docs/locations as an example
   locationId: registry-location-id
 
   # whether to use local/test credentials when connecting to the servers

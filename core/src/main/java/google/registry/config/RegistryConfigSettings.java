@@ -21,7 +21,7 @@ import java.util.Set;
 /** The POJO that YAML config files are deserialized into. */
 public class RegistryConfigSettings {
 
-  public AppEngine appEngine;
+  public GcpProject gcpProject;
   public GSuite gSuite;
   public OAuth oAuth;
   public CredentialOAuth credentialOAuth;
@@ -45,8 +45,8 @@ public class RegistryConfigSettings {
   public DnsUpdate dnsUpdate;
   public PackageMonitoring packageMonitoring;
 
-  /** Configuration options that apply to the entire App Engine project. */
-  public static class AppEngine {
+  /** Configuration options that apply to the entire GCP project. */
+  public static class GcpProject {
     public String projectId;
     public String locationId;
     public boolean isLocal;

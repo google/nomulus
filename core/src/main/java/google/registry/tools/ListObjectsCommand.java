@@ -54,10 +54,10 @@ abstract class ListObjectsCommand implements CommandWithConnection, CommandWithR
       description = "Whether to print full field names in header row (as opposed to aliases)")
   private boolean fullFieldNames = false;
 
-  private AppEngineConnection connection;
+  private ServiceConnection connection;
 
   @Override
-  public void setConnection(AppEngineConnection connection) {
+  public void setConnection(ServiceConnection connection) {
     this.connection = connection;
   }
 

@@ -43,12 +43,12 @@ import javax.inject.Inject;
 import org.json.simple.JSONValue;
 
 /**
- * An http connection to an appengine server.
+ * An HTTP connection to a service.
  *
  * <p>By default - connects to the TOOLS service. To create a Connection to another service, call
  * the {@link #withService} function.
  */
-public class AppEngineConnection {
+public class ServiceConnection {
 
   /** Pattern to heuristically extract title tag contents in HTML responses. */
   private static final Pattern HTML_TITLE_TAG_PATTERN = Pattern.compile("<title>(.*?)</title>");
@@ -57,18 +57,18 @@ public class AppEngineConnection {
   private final Service service;
 
   @Inject
-  AppEngineConnection() {
+  ServiceConnection() {
     service = Service.TOOLS;
   }
 
-  private AppEngineConnection(Service service, HttpRequestFactory requestFactory) {
+  private ServiceConnection(Service service, HttpRequestFactory requestFactory) {
     this.service = service;
     this.requestFactory = requestFactory;
   }
 
   /** Returns a copy of this connection that talks to a different service. */
-  public AppEngineConnection withService(Service service) {
-    return new AppEngineConnection(service, requestFactory);
+  public ServiceConnection withService(Service service) {
+    return new ServiceConnection(service, requestFactory);
   }
 
   /** Returns the contents of the title tag in the given HTML, or null if not found. */

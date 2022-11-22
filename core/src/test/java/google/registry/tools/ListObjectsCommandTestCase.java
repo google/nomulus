@@ -37,7 +37,7 @@ import org.mockito.Mock;
 public abstract class ListObjectsCommandTestCase<C extends ListObjectsCommand>
     extends CommandTestCase<C> {
 
-  @Mock AppEngineConnection connection;
+  @Mock ServiceConnection connection;
 
   /** Where to find the servlet task; set by the subclass. */
   abstract String getTaskPath();

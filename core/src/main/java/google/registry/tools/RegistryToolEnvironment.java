@@ -106,7 +106,7 @@ public enum RegistryToolEnvironment {
         // XXX: Kludge to stop processing once we reach what is *probably* the command name.
         //      This is necessary in order to allow commands to accept arguments named '-e'.
         //      This code should probably be updated, should any zero arity flags be added to
-        //      RegistryCli, LoggingParameters, or AppEngineConnection.
+        //      RegistryCli, LoggingParameters, or ServiceConnection.
         if (args[i].startsWith("-")) {
           expecting = !args[i].contains("=");
         } else {

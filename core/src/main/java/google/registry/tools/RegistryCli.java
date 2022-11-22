@@ -80,7 +80,7 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
   RegistryToolComponent component;
 
   // These are created lazily on first use.
-  private AppEngineConnection connection;
+  private ServiceConnection connection;
   private RemoteApiInstaller installer;
 
   // The "shell" command should only exist on first use - so that we can't run "shell" inside
@@ -225,10 +225,10 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
     }
   }
 
-  private AppEngineConnection getConnection() {
+  private ServiceConnection getConnection() {
     // Get the App Engine connection, advise the user if they are not currently logged in..
     if (connection == null) {
-      connection = component.appEngineConnection();
+      connection = component.serviceConnection();
     }
     return connection;
   }

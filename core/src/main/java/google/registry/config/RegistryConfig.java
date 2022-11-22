@@ -103,13 +103,13 @@ public final class RegistryConfig {
     @Provides
     @Config("projectId")
     public static String provideProjectId(RegistryConfigSettings config) {
-      return config.appEngine.projectId;
+      return config.gcpProject.projectId;
     }
 
     @Provides
     @Config("locationId")
     public static String provideLocationId(RegistryConfigSettings config) {
-      return config.appEngine.locationId;
+      return config.gcpProject.locationId;
     }
 
     /**
@@ -1325,7 +1325,7 @@ public final class RegistryConfig {
 
   /** Returns the App Engine project ID, which is based off the environment name. */
   public static String getProjectId() {
-    return CONFIG_SETTINGS.get().appEngine.projectId;
+    return CONFIG_SETTINGS.get().gcpProject.projectId;
   }
 
   /**
@@ -1338,7 +1338,7 @@ public final class RegistryConfig {
   }
 
   public static boolean areServersLocal() {
-    return CONFIG_SETTINGS.get().appEngine.isLocal;
+    return CONFIG_SETTINGS.get().gcpProject.isLocal;
   }
 
   /**
@@ -1347,7 +1347,7 @@ public final class RegistryConfig {
    * <p>This is used by the {@code nomulus} tool to connect to the App Engine remote API.
    */
   public static URL getDefaultServer() {
-    return makeUrl(CONFIG_SETTINGS.get().appEngine.defaultServiceUrl);
+    return makeUrl(CONFIG_SETTINGS.get().gcpProject.defaultServiceUrl);
   }
 
   /**
@@ -1356,7 +1356,7 @@ public final class RegistryConfig {
    * <p>This is used by the {@code nomulus} tool to connect to the App Engine remote API.
    */
   public static URL getBackendServer() {
-    return makeUrl(CONFIG_SETTINGS.get().appEngine.backendServiceUrl);
+    return makeUrl(CONFIG_SETTINGS.get().gcpProject.backendServiceUrl);
   }
 
   /**
@@ -1365,7 +1365,7 @@ public final class RegistryConfig {
    * <p>This is used by the {@code nomulus} tool to connect to the App Engine remote API.
    */
   public static URL getToolsServer() {
-    return makeUrl(CONFIG_SETTINGS.get().appEngine.toolsServiceUrl);
+    return makeUrl(CONFIG_SETTINGS.get().gcpProject.toolsServiceUrl);
   }
 
   /**
@@ -1374,7 +1374,7 @@ public final class RegistryConfig {
    * <p>This is used by the {@code nomulus} tool to connect to the App Engine remote API.
    */
   public static URL getPubapiServer() {
-    return makeUrl(CONFIG_SETTINGS.get().appEngine.pubapiServiceUrl);
+    return makeUrl(CONFIG_SETTINGS.get().gcpProject.pubapiServiceUrl);
   }
 
   /** Returns the amount of time a singleton should be cached, before expiring. */

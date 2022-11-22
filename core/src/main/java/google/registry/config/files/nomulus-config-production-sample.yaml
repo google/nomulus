@@ -2,7 +2,7 @@
 # This is the same as what Google Registry runs in production, except with
 # placeholders for Google-specific settings.
 
-appEngine:
+gcpProject:
   projectId: placeholder
   # Set to true if running against local servers (localhost)
   isLocal: false

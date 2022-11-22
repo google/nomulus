@@ -54,8 +54,7 @@ import org.mockito.Mock;
 /** Unit tests for {@link CreateRegistrarCommand}. */
 class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand> {
 
-  @Mock private AppEngineConnection connection;
-
+  @Mock private ServiceConnection connection;
 
   @BeforeEach
   void beforeEach() {

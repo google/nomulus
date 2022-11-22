@@ -40,8 +40,8 @@ import org.mockito.quality.Strictness;
 /** Unit tests for {@link CurlCommand}. */
 class CurlCommandTest extends CommandTestCase<CurlCommand> {
 
-  @Mock private AppEngineConnection connection;
-  @Mock private AppEngineConnection connectionForService;
+  @Mock private ServiceConnection connection;
+  @Mock private ServiceConnection connectionForService;
 
   @BeforeEach
   void beforeEach() {

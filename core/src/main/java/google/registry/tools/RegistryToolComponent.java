@@ -176,7 +176,7 @@ interface RegistryToolComponent {
 
   void inject(WhoisQueryCommand command);
 
-  AppEngineConnection appEngineConnection();
+  ServiceConnection serviceConnection();
 
   @LocalCredentialJson
   String googleCredentialJson();
