@@ -59,7 +59,7 @@ class RegistryJpaWriteTest implements Serializable {
     ImmutableList<Contact> contacts = contactsBuilder.build();
     testPipeline
         .apply(Create.of(contacts))
-        .apply(RegistryJpaIO.<Contact>write().withName("Contact").withBatchSize(4).withShards(2));
+        .apply(RegistryJpaIO.<Contact>write().withName("Contact").withBatchSize(4));
     testPipeline.run().waitUntilFinish();
 
     assertThat(loadAllOf(Contact.class))

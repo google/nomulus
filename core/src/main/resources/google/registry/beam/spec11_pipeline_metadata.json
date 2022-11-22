@@ -30,15 +30,6 @@
       ]
     },
     {
-      "name": "sqlWriteShards",
-      "label": "Number of output shards to create when writing to SQL.",
-      "helpText": "Number of shards to create out of the data before writing to the SQL database. Please refer to the Javadoc of RegistryJpaIO.Write.shards() for how to choose this value.",
-      "is_optional": true,
-      "regexes": [
-        "^[1-9][0-9]*$"
-      ]
-    },
-    {
       "name": "date",
       "label": "The date when the pipeline runs",
       "helpText": "The date when the threat scan is performed, in yyyy-MM-dd format.",

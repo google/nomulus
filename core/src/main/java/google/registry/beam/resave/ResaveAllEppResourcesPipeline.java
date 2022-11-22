@@ -33,7 +33,6 @@ import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
 import google.registry.util.DateTimeUtils;
 import java.io.Serializable;
-import java.util.concurrent.ThreadLocalRandom;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
@@ -143,15 +142,13 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
   /** Projects and re-saves all resources with repo IDs provided by the {@link Read}. */
   private <T extends EppResource> void projectAndResaveResources(
       Pipeline pipeline, Class<T> clazz, Read<?, String> repoIdRead) {
-    int numShards = options.getSqlWriteShards();
     int batchSize = options.getSqlWriteBatchSize();
     String className = clazz.getSimpleName();
     pipeline
         .apply("Read " + className, repoIdRead)
         .apply(
             "Shard data for class" + className,
-            WithKeys.<Integer, String>of(e -> ThreadLocalRandom.current().nextInt(numShards))
-                .withKeyType(integers()))
+            WithKeys.<Integer, String>of(0).withKeyType(integers()))
         .apply(
             "Group into batches for class" + className,
             GroupIntoBatches.<Integer, String>ofSize(batchSize).withShardedKey())
