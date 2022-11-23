@@ -682,8 +682,8 @@ public final class RegistryTest extends EntityTestCase {
                     .build());
     assertThat(thrown.getMessage())
         .isEqualTo(
-            "Token abc123 has an invalid token type. DefaultPromoTokens must be of the type"
-                + " DEFAULT_PROMO");
+            "Token abc123 has an invalid token type of SINGLE_USE. DefaultPromoTokens must be of"
+                + " the type DEFAULT_PROMO");
   }
 
   @Test
@@ -706,6 +706,8 @@ public final class RegistryTest extends EntityTestCase {
                     .asBuilder()
                     .setDefaultPromoTokens(ImmutableSet.of(token1.createVKey()))
                     .build());
-    assertThat(thrown.getMessage()).isEqualTo("The token abc123 is not valid for this TLD");
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "The token abc123 is not valid for this TLD. The valid TLDs for abc123 are [example].");
   }
 }

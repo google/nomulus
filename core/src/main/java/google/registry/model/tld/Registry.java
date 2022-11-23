@@ -457,7 +457,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    * References to allocation tokens that can be used on the TLD if no other token is passed in on a
    * domain create.
    */
-  @EmptySetToNull Set<VKey<AllocationToken>> defaultPromoTokens;
+  Set<VKey<AllocationToken>> defaultPromoTokens;
 
   public String getTldStr() {
     return tldStr;
@@ -920,12 +920,14 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
                   checkArgument(
                       token.getTokenType().equals(TokenType.DEFAULT_PROMO),
                       String.format(
-                          "Token %s has an invalid token type. DefaultPromoTokens must be of the"
-                              + " type DEFAULT_PROMO",
-                          token.getToken()));
+                          "Token %s has an invalid token type of %s. DefaultPromoTokens must be of"
+                              + " the type DEFAULT_PROMO",
+                          token.getToken(), token.getTokenType()));
                   checkArgument(
                       token.getAllowedTlds().contains(getInstance().tldStr),
-                      String.format("The token %s is not valid for this TLD", token.getToken()));
+                      String.format(
+                          "The token %s is not valid for this TLD. The valid TLDs for %s are %s.",
+                          token.getToken(), token.getToken(), token.getAllowedTlds()));
                 }
                 getInstance().defaultPromoTokens = promoTokens;
               });

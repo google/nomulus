@@ -704,6 +704,7 @@
         create_billing_cost_currency text,
         creation_time timestamptz not null,
         currency text not null,
+        default_promo_tokens text[],
         dns_paused boolean not null,
         dns_writers text[] not null,
         drive_folder_id text,
