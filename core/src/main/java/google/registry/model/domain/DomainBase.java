@@ -481,7 +481,8 @@ public class DomainBase extends EppResource
               // Set the speculatively-written new autorenew events as the domain's autorenew
               // events.
               .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
-              .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage());
+              .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage())
+              .setCurrentPackageToken(null);
       if (transferData.getTransferPeriod().getValue() == 1) {
         // Set the grace period using a key to the pre-scheduled transfer billing event.  Not using
         // GracePeriod.forBillingEvent() here in order to avoid the actual Datastore fetch.
