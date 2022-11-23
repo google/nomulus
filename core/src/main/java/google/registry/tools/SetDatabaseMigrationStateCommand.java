@@ -30,8 +30,7 @@ import org.joda.time.DateTime;
 @Parameters(
     separators = " =",
     commandDescription = "Set the current database migration state schedule.")
-public class SetDatabaseMigrationStateCommand extends ConfirmingCommand
-    implements CommandWithRemoteApi {
+public class SetDatabaseMigrationStateCommand extends ConfirmingCommand {
 
   private static final String WARNING_MESSAGE =
       "Attempting to change the schedule with an effect that would take place within the next 10 "

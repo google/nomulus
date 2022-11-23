@@ -145,40 +145,29 @@ class ShellCommandTest {
     shellCommand.run();
   }
 
-  static class MockCli implements CommandRunner {
-    public ArrayList<ImmutableList<String>> calls = new ArrayList<>();
-
-    @Override
-    public void run(String[] args) {
-      calls.add(ImmutableList.copyOf(args));
-    }
-  }
-
   @Test
   void testMultipleCommandInvocations() throws Exception {
-    try (RegistryCli cli =
-        new RegistryCli("unittest", ImmutableMap.of("test_command", TestCommand.class))) {
-      RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
-      cli.setEnvironment(RegistryToolEnvironment.UNITTEST);
-      cli.run(new String[] {"test_command", "-x", "xval", "arg1", "arg2"});
-      cli.run(new String[] {"test_command", "-x", "otherxval", "arg3"});
-      cli.run(new String[] {"test_command"});
-      assertThat(TestCommand.commandInvocations)
-          .containsExactly(
-              ImmutableList.of("xval", "arg1", "arg2"),
-              ImmutableList.of("otherxval", "arg3"),
-              ImmutableList.of("default value"));
-    }
+    RegistryCli cli =
+        new RegistryCli("unittest", ImmutableMap.of("test_command", TestCommand.class));
+    RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
+    cli.setEnvironment(RegistryToolEnvironment.UNITTEST);
+    cli.run(new String[] {"test_command", "-x", "xval", "arg1", "arg2"});
+    cli.run(new String[] {"test_command", "-x", "otherxval", "arg3"});
+    cli.run(new String[] {"test_command"});
+    assertThat(TestCommand.commandInvocations)
+        .containsExactly(
+            ImmutableList.of("xval", "arg1", "arg2"),
+            ImmutableList.of("otherxval", "arg3"),
+            ImmutableList.of("default value"));
   }
 
   @Test
   void testNonExistentCommand() {
-    try (RegistryCli cli =
-        new RegistryCli("unittest", ImmutableMap.of("test_command", TestCommand.class))) {
+    RegistryCli cli =
+        new RegistryCli("unittest", ImmutableMap.of("test_command", TestCommand.class));
 
-      cli.setEnvironment(RegistryToolEnvironment.UNITTEST);
-      assertThrows(MissingCommandException.class, () -> cli.run(new String[] {"bad_command"}));
-    }
+    cli.setEnvironment(RegistryToolEnvironment.UNITTEST);
+    assertThrows(MissingCommandException.class, () -> cli.run(new String[] {"bad_command"}));
   }
 
   private void performJCommanderCompletorTest(
@@ -341,12 +330,22 @@ class ShellCommandTest {
     System.setIn(new ByteArrayInputStream("command1\n".getBytes(UTF_8)));
   }
 
+  static class MockCli implements CommandRunner {
+    public ArrayList<ImmutableList<String>> calls = new ArrayList<>();
+
+    @Override
+    public void run(String[] args) {
+      calls.add(ImmutableList.copyOf(args));
+    }
+  }
+
   @Parameters(commandDescription = "Test command")
   static class TestCommand implements Command {
-    enum OrgType {
-      PRIVATE,
-      PUBLIC
-    }
+    // List for recording command invocations by run().
+    //
+    // This has to be static because it gets populated by multiple TestCommand instances, which are
+    // created in RegistryCli by using reflection to call the constructor.
+    static final List<List<String>> commandInvocations = new ArrayList<>();
 
     @Parameter(
         names = {"-x", "--xparam"},
@@ -357,13 +356,6 @@ class ShellCommandTest {
         names = {"--xorg"},
         description = "test organization")
     OrgType orgType = OrgType.PRIVATE;
-
-    // List for recording command invocations by run().
-    //
-    // This has to be static because it gets populated by multiple TestCommand instances, which are
-    // created in RegistryCli by using reflection to call the constructor.
-    static final List<List<String>> commandInvocations = new ArrayList<>();
-
     @Parameter(description = "normal argument")
     List<String> args;
 
@@ -377,6 +369,11 @@ class ShellCommandTest {
         callRecord.addAll(args);
       }
       commandInvocations.add(callRecord.build());
+    }
+
+    enum OrgType {
+      PRIVATE,
+      PUBLIC
     }
   }
 

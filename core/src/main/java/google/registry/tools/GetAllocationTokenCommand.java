@@ -32,7 +32,7 @@ import java.util.Optional;
 
 /** Command to show allocation tokens. */
 @Parameters(separators = " =", commandDescription = "Show allocation token(s)")
-final class GetAllocationTokenCommand implements CommandWithRemoteApi {
+final class GetAllocationTokenCommand implements Command {
 
   @Parameter(
       description = "Allocation token(s)",

@@ -26,7 +26,7 @@ import org.joda.time.DateTime;
 
 /** Abstract command to print one or more resources to stdout. */
 @Parameters(separators = " =")
-abstract class GetEppResourceCommand implements CommandWithRemoteApi {
+abstract class GetEppResourceCommand implements Command {
 
   @Parameter(
       names = "--read_timestamp",

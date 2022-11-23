@@ -15,25 +15,21 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.tools.Injector.injectReflectively;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
-import com.google.appengine.tools.remoteapi.RemoteApiInstaller;
-import com.google.appengine.tools.remoteapi.RemoteApiOptions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import google.registry.config.RegistryConfig;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.tools.AuthModule.LoginRequiredException;
 import google.registry.tools.params.ParameterFactory;
-import java.io.ByteArrayInputStream;
-import java.net.URL;
 import java.security.Security;
 import java.util.Map;
 import java.util.Optional;
@@ -42,7 +38,7 @@ import org.postgresql.util.PSQLException;
 
 /** Container class to create and run remote commands against a Datastore instance. */
 @Parameters(separators = " =", commandDescription = "Command-line interface to the registry")
-final class RegistryCli implements AutoCloseable, CommandRunner {
+final class RegistryCli implements CommandRunner {
 
   // The environment parameter is parsed twice: once here, and once with {@link
   // RegistryToolEnvironment#parseFromArgs} in the {@link RegistryTool#main} function.
@@ -78,9 +74,8 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
 
   RegistryToolComponent component;
 
-  // These are created lazily on first use.
+  // This is created lazily on first use.
   private ServiceConnection connection;
-  private RemoteApiInstaller installer;
 
   // The "shell" command should only exist on first use - so that we can't run "shell" inside
   // "shell".
@@ -206,24 +201,6 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
     }
   }
 
-  @Override
-  public void close() {
-    if (installer != null) {
-      try {
-        installer.uninstall();
-        installer = null;
-      } catch (IllegalArgumentException e) {
-        // There is no point throwing the error if the API is already uninstalled, which is most
-        // likely caused by something wrong when installing the API. That something (e. g. no
-        // credential found) must have already thrown an error message earlier (e. g. must run
-        // "nomulus login" first). This error message here is non-actionable.
-        if (!e.getMessage().equals("remote API is already uninstalled")) {
-          throw e;
-        }
-      }
-    }
-  }
-
   private ServiceConnection getConnection() {
     // Get the App Engine connection, advise the user if they are not currently logged in..
     if (connection == null) {
@@ -239,37 +216,14 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
       ((CommandWithConnection) command).setConnection(getConnection());
     }
 
-    // CommandWithRemoteApis need to have the remote api installed to work.
-    if (command instanceof CommandWithRemoteApi) {
-      if (installer == null) {
-        installer = new RemoteApiInstaller();
-        RemoteApiOptions options = new RemoteApiOptions();
-        options.server(
-            getConnection().getServer().getHost(), getPort(getConnection().getServer()));
-        if (RegistryConfig.areServersLocal()) {
-          // Use dev credentials for localhost.
-          options.useDevelopmentServerCredential();
-        } else {
-          RemoteApiOptionsUtil.useGoogleCredentialStream(
-              options, new ByteArrayInputStream(component.googleCredentialJson().getBytes(UTF_8)));
-        }
-        installer.install(options);
-
-        // Enable Cloud SQL for command that needs remote API as they will very likely use
-        // Cloud SQL after the database migration. Note that the DB password is stored in Datastore
-        // and it is already initialized above.
-        TransactionManagerFactory.setJpaTm(
-            () -> component.nomulusToolJpaTransactionManager().get());
-        TransactionManagerFactory.setReplicaJpaTm(
-            () -> component.nomulusToolReplicaJpaTransactionManager().get());
-      }
-    }
-
+    // Reset the JPA transaction manager after every command to avoid a situation where a test can
+    // interfere with other tests
+    JpaTransactionManager cachedJpaTm = jpaTm();
+    TransactionManagerFactory.setJpaTm(() -> component.nomulusToolJpaTransactionManager().get());
+    TransactionManagerFactory.setReplicaJpaTm(
+        () -> component.nomulusToolReplicaJpaTransactionManager().get());
     command.run();
-  }
-
-  private int getPort(URL url) {
-    return url.getPort() == -1 ? url.getDefaultPort() : url.getPort();
+    TransactionManagerFactory.setJpaTm(() -> cachedJpaTm);
   }
 
   void setEnvironment(RegistryToolEnvironment environment) {

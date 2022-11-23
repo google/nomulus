@@ -26,8 +26,7 @@ import google.registry.persistence.VKey;
 import java.util.List;
 
 /** Shared base class for commands to update or delete allocation tokens. */
-abstract class UpdateOrDeleteAllocationTokensCommand extends ConfirmingCommand
-    implements CommandWithRemoteApi {
+abstract class UpdateOrDeleteAllocationTokensCommand extends ConfirmingCommand {
 
   @Parameter(
       names = {"-p", "--prefix"},

@@ -37,7 +37,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 
 /** Command to encrypt/decrypt {@code .ghostryde} files. */
 @Parameters(separators = " =", commandDescription = "Encrypt/decrypt a ghostryde file.")
-final class GhostrydeCommand implements CommandWithRemoteApi {
+final class GhostrydeCommand implements Command {
 
   @Parameter(
       names = {"-e", "--encrypt"},

@@ -31,7 +31,7 @@ import javax.inject.Inject;
  * Command to set and update ASCII-armored secret from the active {@code Keyring} implementation.
  */
 @Parameters(separators = " =", commandDescription = "Update values of secret in the keyring.")
-final class UpdateKeyringSecretCommand implements CommandWithRemoteApi {
+final class UpdateKeyringSecretCommand implements Command {
 
   @Inject SecretManagerKeyringUpdater secretManagerKeyringUpdater;
 

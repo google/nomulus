@@ -28,7 +28,7 @@ import org.joda.time.DateTime;
 
 /** Command to show the count of active domains on a given TLD. */
 @Parameters(separators = " =", commandDescription = "Show count of domains on TLD")
-final class CountDomainsCommand implements CommandWithRemoteApi {
+final class CountDomainsCommand implements Command {
 
   @Parameter(
       names = {"-t", "--tld", "--tlds"},

@@ -35,7 +35,7 @@ import javax.inject.Named;
 
 /** Composite command to set up OT&E TLDs and accounts. */
 @Parameters(separators = " =", commandDescription = "Set up OT&E TLDs and registrars")
-final class SetupOteCommand extends ConfirmingCommand implements CommandWithRemoteApi {
+final class SetupOteCommand extends ConfirmingCommand {
 
   private static final int PASSWORD_LENGTH = 16;
 

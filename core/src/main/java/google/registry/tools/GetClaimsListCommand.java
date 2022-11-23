@@ -34,7 +34,7 @@ import java.nio.file.Paths;
  * currently storing in SQL.
  */
 @Parameters(separators = " =", commandDescription = "Download the current claims list")
-final class GetClaimsListCommand implements CommandWithRemoteApi {
+final class GetClaimsListCommand implements Command {
 
   @Parameter(
       names = {"-o", "--output"},

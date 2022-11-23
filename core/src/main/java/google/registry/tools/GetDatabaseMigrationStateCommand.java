@@ -23,7 +23,7 @@ import google.registry.model.common.TimedTransitionProperty;
 /** A command to check the current Registry 3.0 migration state of the database. */
 @DeleteAfterMigration
 @Parameters(separators = " =", commandDescription = "Check current Registry 3.0 migration state")
-public class GetDatabaseMigrationStateCommand implements CommandWithRemoteApi {
+public class GetDatabaseMigrationStateCommand implements Command {
 
   @Override
   public void run() throws Exception {
