@@ -45,10 +45,10 @@ final class GenerateZoneFilesCommand implements CommandWithConnection, CommandWi
       validateWith = DateParameter.class)
   private DateTime exportDate = DateTime.now(UTC).minus(standardMinutes(2)).withTimeAtStartOfDay();
 
-  private AppEngineConnection connection;
+  private ServiceConnection connection;
 
   @Override
-  public void setConnection(AppEngineConnection connection) {
+  public void setConnection(ServiceConnection connection) {
     this.connection = connection;
   }
 

@@ -60,7 +60,7 @@ abstract class EppToolCommand extends ConfirmingCommand
 
   private List<XmlEppParameters> commands = new ArrayList<>();
 
-  private AppEngineConnection connection;
+  private ServiceConnection connection;
 
   static class XmlEppParameters {
     final String clientId;
@@ -97,7 +97,7 @@ abstract class EppToolCommand extends ConfirmingCommand
   }
 
   @Override
-  public void setConnection(AppEngineConnection connection) {
+  public void setConnection(ServiceConnection connection) {
     this.connection = connection;
   }
 

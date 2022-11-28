@@ -31,7 +31,7 @@ import java.util.List;
 
 @Parameters(separators = " =", commandDescription = "Send an HTTP command to the nomulus server.")
 class CurlCommand implements CommandWithConnection {
-  private AppEngineConnection connection;
+  private ServiceConnection connection;
 
   // HTTP Methods that are acceptable for use as values for --method.
   public enum Method {
@@ -76,7 +76,7 @@ class CurlCommand implements CommandWithConnection {
   private Service service;
 
   @Override
-  public void setConnection(AppEngineConnection connection) {
+  public void setConnection(ServiceConnection connection) {
     this.connection = connection;
   }
 
@@ -90,7 +90,7 @@ class CurlCommand implements CommandWithConnection {
       throw new IllegalArgumentException("You may not specify a body for a get method.");
     }
 
-    AppEngineConnection connectionToService = connection.withService(service);
+    ServiceConnection connectionToService = connection.withService(service);
     String response =
         (method == Method.GET)
             ? connectionToService.sendGetRequest(path, ImmutableMap.<String, String>of())

@@ -30,7 +30,7 @@ import org.mockito.Mock;
 /** Unit tests for {@link LoadTestCommand}. */
 class LoadTestCommandTest extends CommandTestCase<LoadTestCommand> {
 
-  @Mock private AppEngineConnection connection;
+  @Mock private ServiceConnection connection;
 
   @BeforeEach
   void beforeEach() {

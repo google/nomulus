@@ -33,11 +33,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-/** Unit tests for {@link google.registry.tools.AppEngineConnection}. */
+/** Unit tests for {@link ServiceConnection}. */
 @ExtendWith(MockitoExtension.class)
-final class AppEngineConnectionTest {
+final class GcpProjectConnectionTest {
 
-  private AppEngineConnection connection;
+  private ServiceConnection connection;
   private TestHttpTransport httpTransport;
   private TestLowLevelHttpRequest lowLevelHttpRequest;
   @Mock LowLevelHttpResponse lowLevelHttpResponse;
@@ -84,7 +84,7 @@ final class AppEngineConnectionTest {
         .thenReturn(new ByteArrayInputStream("MyContent".getBytes(UTF_8)));
     when(lowLevelHttpResponse.getStatusCode()).thenReturn(200);
 
-    connection = new AppEngineConnection();
+    connection = new ServiceConnection();
     httpTransport = new TestHttpTransport();
     connection.requestFactory = httpTransport.createRequestFactory();
   }

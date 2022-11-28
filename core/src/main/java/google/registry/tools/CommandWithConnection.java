@@ -16,5 +16,5 @@ package google.registry.tools;
 
 /** A command that can send HTTP requests to a backend module. */
 public interface CommandWithConnection extends Command {
-  void setConnection(AppEngineConnection connection);
+  void setConnection(ServiceConnection connection);
 }

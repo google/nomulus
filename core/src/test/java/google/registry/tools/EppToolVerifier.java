@@ -36,9 +36,8 @@ import org.mockito.ArgumentCaptor;
 /**
  * Class for verifying EPP commands sent to the server via the tool endpoint.
  *
- * <p>Provides its own (mock) {@link AppEngineConnection} that will be monitored for EPP
- * transmission. This Connection needs to be registered with the tool endpoint - something like
- * this:
+ * <p>Provides its own (mock) {@link ServiceConnection} that will be monitored for EPP transmission.
+ * This Connection needs to be registered with the tool endpoint - something like this:
  *
  * <pre>{@code
  * SomeToolCommand command = ...;
@@ -49,7 +48,7 @@ import org.mockito.ArgumentCaptor;
  */
 public class EppToolVerifier {
 
-  private final AppEngineConnection connection = mock(AppEngineConnection.class);
+  private final ServiceConnection connection = mock(ServiceConnection.class);
 
   private String registrarId;
   private boolean superuser;
@@ -196,7 +195,7 @@ public class EppToolVerifier {
   }
 
   /** Returns the (mock) Connection that is being monitored by this verifier. */
-  private AppEngineConnection getConnection() {
+  private ServiceConnection getConnection() {
     return connection;
   }
 }

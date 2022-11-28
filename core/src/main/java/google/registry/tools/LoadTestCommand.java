@@ -77,10 +77,10 @@ class LoadTestCommand extends ConfirmingCommand
       description = "Time to run the load test in seconds.")
   int runSeconds = DEFAULT_RUN_SECONDS;
 
-  private AppEngineConnection connection;
+  private ServiceConnection connection;
 
   @Override
-  public void setConnection(AppEngineConnection connection) {
+  public void setConnection(ServiceConnection connection) {
     this.connection = connection;
   }
 

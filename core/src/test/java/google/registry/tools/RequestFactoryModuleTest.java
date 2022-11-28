@@ -53,8 +53,8 @@ public class RequestFactoryModuleTest {
   @Test
   void test_provideHttpRequestFactory_localhost() throws Exception {
     // Make sure that localhost creates a request factory with an initializer.
-    boolean origIsLocal = RegistryConfig.CONFIG_SETTINGS.get().appEngine.isLocal;
-    RegistryConfig.CONFIG_SETTINGS.get().appEngine.isLocal = true;
+    boolean origIsLocal = RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal;
+    RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = true;
     try {
       HttpRequestFactory factory =
           RequestFactoryModule.provideHttpRequestFactory(credentialsBundle);
@@ -64,7 +64,7 @@ public class RequestFactoryModuleTest {
       initializer.initialize(request);
       verifyNoInteractions(httpRequestInitializer);
     } finally {
-      RegistryConfig.CONFIG_SETTINGS.get().appEngine.isLocal = origIsLocal;
+      RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = origIsLocal;
     }
   }
 
@@ -72,8 +72,8 @@ public class RequestFactoryModuleTest {
   void test_provideHttpRequestFactory_remote() throws Exception {
     when(credentialsBundle.getHttpRequestInitializer()).thenReturn(httpRequestInitializer);
     // Make sure that example.com creates a request factory with the UNITTEST client id but no
-    boolean origIsLocal = RegistryConfig.CONFIG_SETTINGS.get().appEngine.isLocal;
-    RegistryConfig.CONFIG_SETTINGS.get().appEngine.isLocal = false;
+    boolean origIsLocal = RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal;
+    RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = false;
     try {
       HttpRequestFactory factory =
           RequestFactoryModule.provideHttpRequestFactory(credentialsBundle);
@@ -86,7 +86,7 @@ public class RequestFactoryModuleTest {
       assertThat(request.getReadTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
       verifyNoMoreInteractions(httpRequestInitializer);
     } finally {
-      RegistryConfig.CONFIG_SETTINGS.get().appEngine.isLocal = origIsLocal;
+      RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = origIsLocal;
     }
   }
 }

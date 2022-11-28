@@ -36,7 +36,7 @@ import org.mockito.quality.Strictness;
 /** Unit tests for {@link VerifyOteCommand}. */
 class VerifyOteCommandTest extends CommandTestCase<VerifyOteCommand> {
 
-  @Mock private AppEngineConnection connection;
+  @Mock private ServiceConnection connection;
 
   @BeforeEach
   void beforeEach() throws Exception {
