@@ -19,7 +19,7 @@ import google.registry.persistence.VKey;
 import javax.persistence.Converter;
 
 @Converter(autoApply = true)
-public class AllocationTokenSetConverter extends StringSetConverterBase<VKey<AllocationToken>> {
+public class AllocationTokenListConverter extends StringListConverterBase<VKey<AllocationToken>> {
 
   @Override
   String toString(VKey<AllocationToken> element) {

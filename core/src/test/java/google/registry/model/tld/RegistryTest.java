@@ -654,8 +654,8 @@ public final class RegistryTest extends EntityTestCase {
                 .setTokenType(DEFAULT_PROMO)
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
-    ImmutableSet<VKey<AllocationToken>> tokens =
-        ImmutableSet.of(token1.createVKey(), token2.createVKey());
+    ImmutableList<VKey<AllocationToken>> tokens =
+        ImmutableList.of(token1.createVKey(), token2.createVKey());
     registry = registry.asBuilder().setDefaultPromoTokens(tokens).build();
     assertThat(registry.getDefaultPromoTokens()).isEqualTo(tokens);
   }
@@ -678,7 +678,7 @@ public final class RegistryTest extends EntityTestCase {
             () ->
                 registry
                     .asBuilder()
-                    .setDefaultPromoTokens(ImmutableSet.of(token1.createVKey()))
+                    .setDefaultPromoTokens(ImmutableList.of(token1.createVKey()))
                     .build());
     assertThat(thrown.getMessage())
         .isEqualTo(
@@ -704,10 +704,10 @@ public final class RegistryTest extends EntityTestCase {
             () ->
                 registry
                     .asBuilder()
-                    .setDefaultPromoTokens(ImmutableSet.of(token1.createVKey()))
+                    .setDefaultPromoTokens(ImmutableList.of(token1.createVKey()))
                     .build());
     assertThat(thrown.getMessage())
         .isEqualTo(
-            "The token abc123 is not valid for this TLD. The valid TLDs for abc123 are [example].");
+            "The token abc123 is not valid for this TLD. The valid TLDs for abc123 are [example]");
   }
 }

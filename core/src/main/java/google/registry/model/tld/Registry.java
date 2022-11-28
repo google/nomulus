@@ -30,6 +30,7 @@ import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -52,6 +53,7 @@ import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.JodaMoneyType;
 import google.registry.util.Idn;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -457,7 +459,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    * References to allocation tokens that can be used on the TLD if no other token is passed in on a
    * domain create.
    */
-  Set<VKey<AllocationToken>> defaultPromoTokens;
+  List<VKey<AllocationToken>> defaultPromoTokens;
 
   public String getTldStr() {
     return tldStr;
@@ -647,7 +649,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     return nullToEmptyImmutableCopy(allowedFullyQualifiedHostNames);
   }
 
-  public ImmutableSet<VKey<AllocationToken>> getDefaultPromoTokens() {
+  public ImmutableList<VKey<AllocationToken>> getDefaultPromoTokens() {
     return nullToEmptyImmutableCopy(defaultPromoTokens);
   }
 
@@ -912,7 +914,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
       return this;
     }
 
-    public Builder setDefaultPromoTokens(ImmutableSet<VKey<AllocationToken>> promoTokens) {
+    public Builder setDefaultPromoTokens(ImmutableList<VKey<AllocationToken>> promoTokens) {
       tm().transact(
               () -> {
                 for (VKey<AllocationToken> tokenKey : promoTokens) {
@@ -926,7 +928,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
                   checkArgument(
                       token.getAllowedTlds().contains(getInstance().tldStr),
                       String.format(
-                          "The token %s is not valid for this TLD. The valid TLDs for %s are %s.",
+                          "The token %s is not valid for this TLD. The valid TLDs for %s are %s",
                           token.getToken(), token.getToken(), token.getAllowedTlds()));
                 }
                 getInstance().defaultPromoTokens = promoTokens;

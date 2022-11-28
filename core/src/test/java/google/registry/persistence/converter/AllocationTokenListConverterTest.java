@@ -20,25 +20,25 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIM
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
+import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
-import java.util.Set;
+import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
 /** Unit tests for {@link google.registry.persistence.converter.AllocationTokenSetConverter}. */
-public class AllocationTokenSetConverterTest {
+public class AllocationTokenListConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
       new JpaTestExtensions.Builder()
-          .withEntityClass(TestAllocationTokenVKeySet.class)
+          .withEntityClass(TestAllocationTokenVKeyList.class)
           .buildUnitTestExtension();
 
   @Test
@@ -47,26 +47,27 @@ public class AllocationTokenSetConverterTest {
         new AllocationToken().asBuilder().setToken("abc123").setTokenType(SINGLE_USE).build();
     AllocationToken token2 =
         new AllocationToken().asBuilder().setToken("token").setTokenType(UNLIMITED_USE).build();
-    Set<VKey<AllocationToken>> tokens = ImmutableSet.of(token1.createVKey(), token2.createVKey());
-    TestAllocationTokenVKeySet testAllocationTokenVKeySet = new TestAllocationTokenVKeySet(tokens);
-    insertInDb(testAllocationTokenVKeySet);
-    TestAllocationTokenVKeySet persisted =
+    List<VKey<AllocationToken>> tokens = ImmutableList.of(token1.createVKey(), token2.createVKey());
+    TestAllocationTokenVKeyList testAllocationTokenVKeyList =
+        new TestAllocationTokenVKeyList(tokens);
+    insertInDb(testAllocationTokenVKeyList);
+    TestAllocationTokenVKeyList persisted =
         jpaTm()
             .transact(
-                () -> jpaTm().getEntityManager().find(TestAllocationTokenVKeySet.class, "id"));
-    assertThat(persisted.tokenSet).isEqualTo(tokens);
+                () -> jpaTm().getEntityManager().find(TestAllocationTokenVKeyList.class, "id"));
+    assertThat(persisted.tokenList).isEqualTo(tokens);
   }
 
-  @Entity(name = "TestAllocationTokenVKeySet")
-  static class TestAllocationTokenVKeySet extends ImmutableObject {
+  @Entity(name = "TestAllocationTokenVKeyList")
+  static class TestAllocationTokenVKeyList extends ImmutableObject {
     @Id String id = "id";
 
-    Set<VKey<AllocationToken>> tokenSet;
+    List<VKey<AllocationToken>> tokenList;
 
-    TestAllocationTokenVKeySet() {}
+    TestAllocationTokenVKeyList() {}
 
-    TestAllocationTokenVKeySet(Set<VKey<AllocationToken>> tokenSet) {
-      this.tokenSet = tokenSet;
+    TestAllocationTokenVKeyList(List<VKey<AllocationToken>> tokenList) {
+      this.tokenList = tokenList;
     }
   }
 }
