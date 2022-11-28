@@ -32,7 +32,7 @@ import javax.persistence.Id;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for {@link google.registry.persistence.converter.AllocationTokenSetConverter}. */
+/** Unit tests for {@link google.registry.persistence.converter.AllocationTokenListConverter}. */
 public class AllocationTokenListConverterTest {
 
   @RegisterExtension
