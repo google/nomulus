@@ -49,6 +49,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -67,6 +68,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 
 /**
@@ -147,6 +149,8 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
+    boolean hasPackageToken = existingDomain.getCurrentPackageToken().isPresent();
+    Money renewalPrice = hasPackageToken ? null : existingRecurring.getRenewalPrice().orElse(null);
     Optional<BillingEvent.OneTime> billingEvent =
         transferData.getTransferPeriod().getValue() == 0
             ? Optional.empty()
@@ -162,12 +166,16 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                                 Registry.get(tld),
                                 targetId,
                                 transferData.getTransferRequestTime(),
-                                existingRecurring)
+                                // When removing a domain from a package it should return to the
+                                // default recurring billing behavior so the existing recurring
+                                // billing event should not be passed in.
+                                hasPackageToken ? null : existingRecurring)
                             .getRenewCost())
                     .setEventTime(now)
                     .setBillingTime(now.plus(Registry.get(tld).getTransferGracePeriodLength()))
                     .setDomainHistoryId(domainHistoryId)
                     .build());
+
     ImmutableList.Builder<ImmutableObject> entitiesToSave = new ImmutableList.Builder<>();
     // If we are within an autorenew grace period, cancel the autorenew billing event and don't
     // increase the registration time, since the transfer subsumes the autorenew's extra year.
@@ -198,8 +206,11 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setTargetId(targetId)
             .setRegistrarId(gainingRegistrarId)
             .setEventTime(newExpirationTime)
-            .setRenewalPriceBehavior(existingRecurring.getRenewalPriceBehavior())
-            .setRenewalPrice(existingRecurring.getRenewalPrice().orElse(null))
+            .setRenewalPriceBehavior(
+                hasPackageToken
+                    ? RenewalPriceBehavior.DEFAULT
+                    : existingRecurring.getRenewalPriceBehavior())
+            .setRenewalPrice(renewalPrice)
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistoryId(domainHistoryId)
             .build();
@@ -243,7 +254,11 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .orElseGet(ImmutableSet::of))
             .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(registrarId)
+            // Even if the existing domain had a package token, that package token should be removed
+            // on transfer
+            .setCurrentPackageToken(null)
             .build();
+
     Registry registry = Registry.get(existingDomain.getTld());
     DomainHistory domainHistory = buildDomainHistory(newDomain, registry, now, gainingRegistrarId);
     // Create a poll message for the gaining client.
