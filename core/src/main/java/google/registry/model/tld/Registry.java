@@ -928,8 +928,8 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
                   checkArgument(
                       token.getAllowedTlds().contains(getInstance().tldStr),
                       String.format(
-                          "The token %s is not valid for this TLD. The valid TLDs for %s are %s",
-                          token.getToken(), token.getToken(), token.getAllowedTlds()));
+                          "The token %s is not valid for this TLD. The valid TLDs for it are %s",
+                          token.getToken(), token.getAllowedTlds()));
                 }
                 getInstance().defaultPromoTokens = promoTokens;
               });

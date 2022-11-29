@@ -708,6 +708,6 @@ public final class RegistryTest extends EntityTestCase {
                     .build());
     assertThat(thrown.getMessage())
         .isEqualTo(
-            "The token abc123 is not valid for this TLD. The valid TLDs for abc123 are [example]");
+            "The token abc123 is not valid for this TLD. The valid TLDs for it are [example]");
   }
 }
