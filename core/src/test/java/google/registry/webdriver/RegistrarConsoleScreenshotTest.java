@@ -62,7 +62,6 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           .setFilters(ObjectifyFilter.class, OfyFilter.class)
           .setFixtures(BASIC)
           .setEmail("Marla.Singer@crr.com") // from AppEngineExtension.makeRegistrarContact3
-          .setGaeUserId("12345") // from AppEngineExtension.makeRegistrarContact3
           .build();
 
   @RetryingTest(3)

@@ -16,7 +16,6 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.common.GaeUserIdConverter.convertEmailAddressToGaeUserId;
 import static google.registry.model.registrar.Registrar.loadByRegistrarId;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
@@ -67,7 +66,7 @@ final class ConsoleRegistrarCreatorActionTest {
   final AppEngineExtension appEngineExtension = AppEngineExtension.builder().withCloudSql().build();
 
   @RegisterExtension
-  @Order(value = Integer.MAX_VALUE)
+  @Order(Integer.MAX_VALUE)
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   private final FakeResponse response = new FakeResponse();
@@ -217,10 +216,9 @@ final class ConsoleRegistrarCreatorActionTest {
         .containsExactly(
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
-                .setGaeUserId("-1509175207")
-                .setGaeUserId(convertEmailAddressToGaeUserId("myclientid@registry.example"))
                 .setName("myclientid@registry.example")
                 .setEmailAddress("myclientid@registry.example")
+                .setLoginEmailAddress("myclientid@registry.example")
                 .build());
   }
 

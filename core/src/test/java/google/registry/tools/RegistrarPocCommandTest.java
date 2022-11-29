@@ -132,10 +132,33 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "NewRegistrar");
     RegistrarPoc registrarPoc =
         loadRegistrar("NewRegistrar").getContacts().stream()
-            .filter(rc -> rc.getEmailAddress().equals("jane.doe@example.com"))
+            .filter(rc -> "jane.doe@example.com".equals(rc.getEmailAddress()))
             .findFirst()
             .get();
-    assertThat(registrarPoc.getGaeUserId()).matches("-?[0-9]+");
+    assertThat(registrarPoc.getLoginEmailAddress()).isEqualTo("jane.doe@example.com");
+  }
+
+  @Test
+  void testUpdate_enableConsoleAccess_specifyLoginEmail() throws Exception {
+    Registrar registrar = loadRegistrar("NewRegistrar");
+    persistSimpleResource(
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
+            .setName("Jane Doe")
+            .setEmailAddress("jane.doe@example.com")
+            .build());
+    runCommandForced(
+        "--mode=UPDATE",
+        "--email=jane.doe@example.com",
+        "--login_email=jim.doe@example.com",
+        "--allow_console_access=true",
+        "NewRegistrar");
+    RegistrarPoc registrarPoc =
+        loadRegistrar("NewRegistrar").getContacts().stream()
+            .filter(rc -> "jane.doe@example.com".equals(rc.getEmailAddress()))
+            .findFirst()
+            .get();
+    assertThat(registrarPoc.getLoginEmailAddress()).isEqualTo("jim.doe@example.com");
   }
 
   @Test
@@ -146,7 +169,6 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
             .setRegistrar(registrar)
             .setName("Judith Doe")
             .setEmailAddress("judith.doe@example.com")
-            .setGaeUserId("11111")
             .build());
     runCommandForced(
         "--mode=UPDATE",
@@ -154,7 +176,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "--allow_console_access=false",
         "NewRegistrar");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarPoc.getGaeUserId()).isNull();
+    assertThat(registrarPoc.getLoginEmailAddress()).isNull();
   }
 
   @Test
@@ -165,14 +187,12 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
             .setRegistrar(registrar)
             .setName("John Doe")
             .setEmailAddress("john.doe@example.com")
-            .setGaeUserId("11111")
             .build());
     persistSimpleResource(
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
             .setName("Johnna Doe")
             .setEmailAddress("johnna.doe@example.com")
-            .setGaeUserId("11112")
             .setVisibleInDomainWhoisAsAbuse(true)
             .build());
     runCommandForced(
@@ -183,7 +203,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
     ImmutableList<RegistrarPoc> registrarPocs =
         loadRegistrar("NewRegistrar").getContacts().asList();
     for (RegistrarPoc registrarPoc : registrarPocs) {
-      if (registrarPoc.getName().equals("John Doe")) {
+      if ("John Doe".equals(registrarPoc.getName())) {
         assertThat(registrarPoc.getVisibleInDomainWhoisAsAbuse()).isTrue();
       } else {
         assertThat(registrarPoc.getVisibleInDomainWhoisAsAbuse()).isFalse();
@@ -199,7 +219,6 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
             .setRegistrar(registrar)
             .setName("John Doe")
             .setEmailAddress("john.doe@example.com")
-            .setGaeUserId("11111")
             .setVisibleInDomainWhoisAsAbuse(true)
             .build());
     IllegalArgumentException thrown =
@@ -227,7 +246,6 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setRegistrar(registrar)
                 .setName("John Doe")
                 .setEmailAddress("john.doe@example.com")
-                .setGaeUserId("11111")
                 .setPhoneNumber("123-456-7890")
                 .setFaxNumber("123-456-7890")
                 .setTypes(ImmutableSet.of(ADMIN, ABUSE))
@@ -239,7 +257,6 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
     assertThat(registrarPoc.getEmailAddress()).isEqualTo(existingContact.getEmailAddress());
     assertThat(registrarPoc.getName()).isEqualTo(existingContact.getName());
-    assertThat(registrarPoc.getGaeUserId()).isEqualTo(existingContact.getGaeUserId());
     assertThat(registrarPoc.getPhoneNumber()).isEqualTo(existingContact.getPhoneNumber());
     assertThat(registrarPoc.getFaxNumber()).isEqualTo(existingContact.getFaxNumber());
     assertThat(registrarPoc.getTypes()).isEqualTo(existingContact.getTypes());
@@ -259,7 +276,6 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
             .setRegistrar(registrar)
             .setName("John Doe")
             .setEmailAddress("john.doe@example.com")
-            .setGaeUserId("11111")
             .setPhoneNumber("123-456-7890")
             .setFaxNumber("123-456-7890")
             .setTypes(ImmutableSet.of(ADMIN, ABUSE))
@@ -287,10 +303,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
             .setTypes(ImmutableSet.of(ADMIN, ABUSE))
             .build());
     runCommandForced(
-        "--mode=UPDATE",
-        "--email=john.doe@example.com",
-        "--contact_type=",
-        "NewRegistrar");
+        "--mode=UPDATE", "--email=john.doe@example.com", "--contact_type=", "NewRegistrar");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
     assertThat(registrarPoc.getTypes()).isEmpty();
   }
@@ -321,16 +334,13 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setVisibleInWhoisAsTech(false)
                 .setVisibleInDomainWhoisAsAbuse(true)
                 .build());
-    assertThat(registrarPoc.getGaeUserId()).isNull();
+    assertThat(registrarPoc.getLoginEmailAddress()).isNull();
   }
 
   @Test
   void testDelete() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").getContacts()).isNotEmpty();
-    runCommandForced(
-        "--mode=DELETE",
-        "--email=janedoe@theregistrar.com",
-        "NewRegistrar");
+    runCommandForced("--mode=DELETE", "--email=janedoe@theregistrar.com", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getContacts()).isEmpty();
   }
 
@@ -358,7 +368,21 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "--contact_type=ADMIN,ABUSE",
         "NewRegistrar");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarPoc.getGaeUserId()).matches("-?[0-9]+");
+    assertThat(registrarPoc.getEmailAddress()).isEqualTo("jim.doe@example.com");
+  }
+
+  @Test
+  void testCreate_withConsoleAccessEnabled_specifyLoginEmail() throws Exception {
+    runCommandForced(
+        "--mode=CREATE",
+        "--name=Jim Doe",
+        "--email=jim.doe@example.com",
+        "--login_email=jane.doe@example.com",
+        "--allow_console_access=true",
+        "--contact_type=ADMIN,ABUSE",
+        "NewRegistrar");
+    RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
+    assertThat(registrarPoc.getLoginEmailAddress()).isEqualTo("jane.doe@example.com");
   }
 
   @Test

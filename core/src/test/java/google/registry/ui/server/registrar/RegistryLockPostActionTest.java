@@ -159,10 +159,8 @@ final class RegistryLockPostActionTest {
   }
 
   @Test
-  void testSuccess_linkedToContactEmail() throws Exception {
-    // Even though the user is some.email@gmail.com the contact is still Marla Singer
-    userWithLockPermission =
-        new User("some.email@gmail.com", "gmail.com", userWithLockPermission.getUserId());
+  void testSuccess_linkedToLoginEmail() throws Exception {
+    userWithLockPermission = new User("Marla.Singer@crr.com", "crr.com");
     action =
         createAction(
             AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithLockPermission, false)));

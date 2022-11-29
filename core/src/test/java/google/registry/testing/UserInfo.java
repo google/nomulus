@@ -24,25 +24,24 @@ public abstract class UserInfo {
 
   abstract String email();
   abstract String authDomain();
-  abstract String gaeUserId();
   abstract boolean isAdmin();
   abstract boolean isLoggedIn();
 
   /** Creates a new logged-in non-admin user instance. */
-  public static UserInfo create(String email, String gaeUserId) {
+  public static UserInfo create(String email) {
     String authDomain = email.substring(email.indexOf('@') + 1);
-    return new AutoValue_UserInfo(email, authDomain, gaeUserId, false, true);
+    return new AutoValue_UserInfo(email, authDomain, false, true);
   }
 
   /** Creates a new logged-in admin user instance. */
-  public static UserInfo createAdmin(String email, String gaeUserId) {
+  public static UserInfo createAdmin(String email) {
     String authDomain = email.substring(email.indexOf('@') + 1);
-    return new AutoValue_UserInfo(email, authDomain, gaeUserId, true, true);
+    return new AutoValue_UserInfo(email, authDomain, true, true);
   }
 
   /** Returns a logged-out user instance. */
   public static UserInfo loggedOut() {
-    return new AutoValue_UserInfo("", "", "", false, false);
+    return new AutoValue_UserInfo("", "", false, false);
   }
 
   UserInfo() {}

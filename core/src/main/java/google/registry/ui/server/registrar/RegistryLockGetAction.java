@@ -24,6 +24,7 @@ import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
 import com.google.appengine.api.users.User;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
@@ -123,16 +124,21 @@ public final class RegistryLockGetAction implements JsonGetAction {
   static Optional<RegistrarPoc> getContactMatchingLogin(User user, Registrar registrar) {
     ImmutableList<RegistrarPoc> matchingContacts =
         registrar.getContacts().stream()
-            .filter(contact -> contact.getGaeUserId() != null)
-            .filter(contact -> Objects.equals(contact.getGaeUserId(), user.getUserId()))
+            .filter(contact -> contact.getLoginEmailAddress() != null)
+            .filter(
+                contact ->
+                    Objects.equals(
+                        Ascii.toLowerCase(contact.getLoginEmailAddress()),
+                        Ascii.toLowerCase(user.getEmail())))
             .collect(toImmutableList());
     if (matchingContacts.size() > 1) {
       ImmutableList<String> matchingEmails =
           matchingContacts.stream().map(RegistrarPoc::getEmailAddress).collect(toImmutableList());
       throw new IllegalArgumentException(
           String.format(
-              "User ID %s had multiple matching contacts with email addresses %s",
-              user.getUserId(), matchingEmails));
+              "User with login email %s had multiple matching contacts with contact email addresses"
+                  + " %s",
+              user.getEmail(), matchingEmails));
     }
     return matchingContacts.stream().findFirst();
   }
@@ -188,7 +194,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
         getLockedDomains(registrarId, isAdmin));
   }
 
-  private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(
+  private static ImmutableList<ImmutableMap<String, ?>> getLockedDomains(
       String registrarId, boolean isAdmin) {
     return jpaTm()
         .transact(
@@ -199,7 +205,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
                     .collect(toImmutableList()));
   }
 
-  private ImmutableMap<String, ?> lockToMap(RegistryLock lock, boolean isAdmin) {
+  private static ImmutableMap<String, ?> lockToMap(RegistryLock lock, boolean isAdmin) {
     DateTime now = jpaTm().getTransactionTime();
     return new ImmutableMap.Builder<String, Object>()
         .put(DOMAIN_NAME_PARAM, lock.getDomainName())

@@ -17,7 +17,6 @@ package google.registry.request.auth;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
-import static google.registry.testing.AppEngineExtension.THE_REGISTRAR_GAE_USER_ID;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
@@ -94,14 +93,7 @@ class AuthenticatedRegistrarAccessorTest {
   private static AuthResult createAuthResult(boolean isAdmin) {
     return AuthResult.create(
         AuthLevel.USER,
-        UserAuthInfo.create(
-            new User(
-                String.format(
-                    "%s@gmail.com",
-                    isAdmin ? "admin" : "user"),
-                "gmail.com",
-                THE_REGISTRAR_GAE_USER_ID),
-            isAdmin));
+        UserAuthInfo.create(new User("johndoe@theregistrar.com", "theregistrar.com"), isAdmin));
   }
 
   @BeforeEach
@@ -195,7 +187,8 @@ class AuthenticatedRegistrarAccessorTest {
    */
   @Test
   void getAllRegistrarIdWithAccess_userInSupportGroup() {
-    when(groupsConnection.isMemberOfGroup("user@gmail.com", SUPPORT_GROUP.get())).thenReturn(true);
+    when(groupsConnection.isMemberOfGroup("johndoe@theregistrar.com", SUPPORT_GROUP.get()))
+        .thenReturn(true);
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
             USER, ADMIN_REGISTRAR_ID, SUPPORT_GROUP, lazyGroupsConnection);
@@ -233,7 +226,7 @@ class AuthenticatedRegistrarAccessorTest {
         new AuthenticatedRegistrarAccessor(
             USER, ADMIN_REGISTRAR_ID, SUPPORT_GROUP, lazyGroupsConnection);
 
-    verify(groupsConnection).isMemberOfGroup("user@gmail.com", SUPPORT_GROUP.get());
+    verify(groupsConnection).isMemberOfGroup("johndoe@theregistrar.com", SUPPORT_GROUP.get());
     assertThat(registrarAccessor.getAllRegistrarIdsWithRoles())
         .containsExactly(REGISTRAR_ID_WITH_CONTACT, OWNER);
     verify(lazyGroupsConnection).get();
@@ -245,7 +238,7 @@ class AuthenticatedRegistrarAccessorTest {
     expectGetRegistrarFailure(
         REAL_REGISTRAR_ID_WITHOUT_CONTACT,
         USER,
-        "user user@gmail.com doesn't have access to registrar NewRegistrar");
+        "user johndoe@theregistrar.com doesn't have access to registrar NewRegistrar");
     verify(lazyGroupsConnection).get();
   }
 
@@ -260,7 +253,7 @@ class AuthenticatedRegistrarAccessorTest {
     expectGetRegistrarFailure(
         REGISTRAR_ID_WITH_CONTACT,
         USER,
-        "user user@gmail.com doesn't have access to registrar TheRegistrar");
+        "user johndoe@theregistrar.com doesn't have access to registrar TheRegistrar");
     verify(lazyGroupsConnection).get();
   }
 
@@ -270,7 +263,7 @@ class AuthenticatedRegistrarAccessorTest {
     expectGetRegistrarFailure(
         OTE_REGISTRAR_ID_WITHOUT_CONTACT,
         USER,
-        "user user@gmail.com doesn't have access to registrar OteRegistrar");
+        "user johndoe@theregistrar.com doesn't have access to registrar OteRegistrar");
     verify(lazyGroupsConnection).get();
   }
 
@@ -290,7 +283,19 @@ class AuthenticatedRegistrarAccessorTest {
     expectGetRegistrarSuccess(
         REGISTRAR_ID_WITH_CONTACT,
         USER,
-        "user user@gmail.com has [OWNER] access to registrar TheRegistrar");
+        "user johndoe@theregistrar.com has [OWNER] access to registrar TheRegistrar");
+    verify(lazyGroupsConnection).get();
+  }
+
+  /** Succeed loading registrar if user has access to it. Email address is case-insensitive */
+  @Test
+  void testGetRegistrarForUser_inContacts_isNotAdmin_caseInsensitive() throws Exception {
+    expectGetRegistrarSuccess(
+        REGISTRAR_ID_WITH_CONTACT,
+        AuthResult.create(
+            AuthLevel.USER,
+            UserAuthInfo.create(new User("JohnDoe@theregistrar.com", "theregistrar.com"), false)),
+        "user JohnDoe@theregistrar.com has [OWNER] access to registrar TheRegistrar");
     verify(lazyGroupsConnection).get();
   }
 
@@ -300,7 +305,7 @@ class AuthenticatedRegistrarAccessorTest {
     expectGetRegistrarSuccess(
         REGISTRAR_ID_WITH_CONTACT,
         GAE_ADMIN,
-        "admin admin@gmail.com has [OWNER, ADMIN] access to registrar TheRegistrar");
+        "admin johndoe@theregistrar.com has [OWNER, ADMIN] access to registrar TheRegistrar");
     verifyNoInteractions(lazyGroupsConnection);
   }
 
@@ -310,7 +315,7 @@ class AuthenticatedRegistrarAccessorTest {
     expectGetRegistrarSuccess(
         REAL_REGISTRAR_ID_WITHOUT_CONTACT,
         GAE_ADMIN,
-        "admin admin@gmail.com has [ADMIN] access to registrar NewRegistrar.");
+        "admin johndoe@theregistrar.com has [ADMIN] access to registrar NewRegistrar.");
     verifyNoInteractions(lazyGroupsConnection);
   }
 
@@ -325,7 +330,7 @@ class AuthenticatedRegistrarAccessorTest {
     expectGetRegistrarSuccess(
         REAL_REGISTRAR_ID_WITHOUT_CONTACT,
         GAE_ADMIN,
-        "admin admin@gmail.com has [OWNER, ADMIN] access to registrar NewRegistrar.");
+        "admin johndoe@theregistrar.com has [OWNER, ADMIN] access to registrar NewRegistrar.");
     verifyNoInteractions(lazyGroupsConnection);
   }
 
@@ -335,7 +340,7 @@ class AuthenticatedRegistrarAccessorTest {
     expectGetRegistrarSuccess(
         OTE_REGISTRAR_ID_WITHOUT_CONTACT,
         GAE_ADMIN,
-        "admin admin@gmail.com has [OWNER, ADMIN] access to registrar OteRegistrar.");
+        "admin johndoe@theregistrar.com has [OWNER, ADMIN] access to registrar OteRegistrar.");
     verifyNoInteractions(lazyGroupsConnection);
   }
 

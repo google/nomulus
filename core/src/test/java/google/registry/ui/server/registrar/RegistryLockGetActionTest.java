@@ -72,7 +72,7 @@ final class RegistryLockGetActionTest {
 
   @BeforeEach
   void beforeEach() {
-    user = userFromRegistrarPoc(AppEngineExtension.makeRegistrarContact3());
+    user = userFromRegistrarPoc(makeRegistrarContact3());
     fakeClock.setTo(DateTime.parse("2000-06-08T22:00:00.0Z"));
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
     accessor =
@@ -335,7 +335,7 @@ final class RegistryLockGetActionTest {
     // Locks are allowed for admins even when they're not enabled for the registrar
     persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
     // disallow the other user
-    persistResource(makeRegistrarContact2().asBuilder().setGaeUserId(null).build());
+    persistResource(makeRegistrarContact2().asBuilder().setLoginEmailAddress(null).build());
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, true));
     accessor =
         AuthenticatedRegistrarAccessor.createForTesting(
@@ -361,9 +361,9 @@ final class RegistryLockGetActionTest {
   }
 
   @Test
-  void testSuccess_linkedToContactEmail() {
-    // Even though the user is some.email@gmail.com the contact is still Marla Singer
-    user = new User("some.email@gmail.com", "gmail.com", user.getUserId());
+  void testSuccess_linkedToLoginContactEmail() {
+    // Note that the email address is case-insensitive.
+    user = new User("marla.singer@crr.com", "crr.com", user.getUserId());
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
     action =
         new RegistryLockGetAction(
@@ -413,6 +413,6 @@ final class RegistryLockGetActionTest {
   }
 
   static User userFromRegistrarPoc(RegistrarPoc registrarPoc) {
-    return new User(registrarPoc.getEmailAddress(), "gmail.com", registrarPoc.getGaeUserId());
+    return new User(registrarPoc.getLoginEmailAddress(), "gmail.com");
   }
 }

@@ -206,8 +206,8 @@ public final class RegistrarFormFields {
   public static final FormField<String, String> CONTACT_FAX_NUMBER_FIELD =
       FormFields.PHONE_NUMBER.asBuilderNamed("faxNumber").build();
 
-  public static final FormField<String, String> CONTACT_GAE_USER_ID_FIELD =
-      FormFields.NAME.asBuilderNamed("gaeUserId").build();
+  public static final FormField<String, String> CONTACT_LOGIN_EMAIL_ADDRESS_FIELD =
+      FormFields.NAME.asBuilderNamed("loginEmailAddress").build();
 
   public static final FormField<Object, Boolean> CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD =
       FormField.named("allowedToSetRegistryLockPassword", Object.class)
@@ -284,11 +284,15 @@ public final class RegistrarFormFields {
 
   public static final FormField<Map<String, ?>, RegistrarAddress> L10N_ADDRESS_FIELD =
       FormField.mapNamed("localizedAddress")
-          .transform(RegistrarAddress.class, (args) -> toNewAddress(
-              args, L10N_STREET_FIELD, L10N_CITY_FIELD, L10N_STATE_FIELD, L10N_ZIP_FIELD))
+          .transform(
+              RegistrarAddress.class,
+              args ->
+                  toNewAddress(
+                      args, L10N_STREET_FIELD, L10N_CITY_FIELD, L10N_STATE_FIELD, L10N_ZIP_FIELD))
           .build();
 
-  private static @Nullable RegistrarAddress toNewAddress(
+  @Nullable
+  private static RegistrarAddress toNewAddress(
       @Nullable Map<String, ?> args,
       final FormField<List<String>, List<String>> streetField,
       final FormField<String, String> cityField,
@@ -327,7 +331,8 @@ public final class RegistrarFormFields {
     }
   }
 
-  private static @Nullable String parseHostname(@Nullable String input) {
+  @Nullable
+  private static String parseHostname(@Nullable String input) {
     if (input == null) {
       return null;
     }
@@ -337,7 +342,8 @@ public final class RegistrarFormFields {
     return canonicalizeHostname(input);
   }
 
-  public static @Nullable DateTime parseDateTime(@Nullable String input) {
+  @Nullable
+  public static DateTime parseDateTime(@Nullable String input) {
     if (input == null) {
       return null;
     }
@@ -391,7 +397,8 @@ public final class RegistrarFormFields {
     builder.setPhoneNumber(CONTACT_PHONE_NUMBER_FIELD.extractUntyped(args).orElse(null));
     builder.setFaxNumber(CONTACT_FAX_NUMBER_FIELD.extractUntyped(args).orElse(null));
     builder.setTypes(CONTACT_TYPES.extractUntyped(args).orElse(ImmutableSet.of()));
-    builder.setGaeUserId(CONTACT_GAE_USER_ID_FIELD.extractUntyped(args).orElse(null));
+    builder.setLoginEmailAddress(
+        CONTACT_LOGIN_EMAIL_ADDRESS_FIELD.extractUntyped(args).orElse(null));
     // The parser is inconsistent with whether it retrieves boolean values as strings or booleans.
     // As a result, use a potentially-redundant converter that can deal with both.
     builder.setAllowedToSetRegistryLockPassword(

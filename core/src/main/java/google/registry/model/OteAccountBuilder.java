@@ -15,7 +15,6 @@
 package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
@@ -30,7 +29,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import google.registry.config.RegistryEnvironment;
-import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
@@ -77,14 +75,14 @@ public final class OteAccountBuilder {
    * Validation regex for registrar base client IDs (3-14 lowercase alphanumeric characters).
    *
    * <p>The base client ID is appended with numbers to create four different test registrar accounts
-   * (e.g. reg-1, reg-3, reg-4, reg-5).  Registrar client IDs are of type clIDType in eppcom.xsd
+   * (e.g. reg-1, reg-3, reg-4, reg-5). Registrar client IDs are of type clIDType in eppcom.xsd
    * which is limited to 16 characters, hence the limit of 14 here to account for the dash and
    * numbers.
    *
    * <p>The base client ID is also used to generate the OT&E TLDs, hence the restriction to
    * lowercase alphanumeric characters.
    */
-  private static final Pattern REGISTRAR_PATTERN = Pattern.compile("^[a-z0-9]{3,14}$");
+  private static final Pattern REGISTRAR_PATTERN = Pattern.compile("^[a-z\\d]{3,14}$");
 
   // Durations are short so that registrars can test with quick transfer (etc.) turnaround.
   private static final Duration SHORT_ADD_GRACE_PERIOD = Duration.standardMinutes(60);
@@ -179,17 +177,11 @@ public final class OteAccountBuilder {
    * <p>NOTE: can be called more than once, adding multiple contacts. Each contact will have access
    * to all OT&amp;E Registrars.
    *
-   * @param email the contact email that will have web-console access to all the Registrars. Must be
-   *     from "our G Suite domain" (we have to be able to get its GaeUserId)
+   * @param email the contact/login email that will have web-console access to all the Registrars.
+   *     Must be from "our G Suite domain".
    */
   public OteAccountBuilder addContact(String email) {
-    String gaeUserId =
-        checkNotNull(
-            GaeUserIdConverter.convertEmailAddressToGaeUserId(email),
-            "Email address %s is not associated with any GAE ID",
-            email);
-    registrars.forEach(
-        registrar -> contactsBuilder.add(createRegistrarContact(email, gaeUserId, registrar)));
+    registrars.forEach(registrar -> contactsBuilder.add(createRegistrarContact(email, registrar)));
     return this;
   }
 
@@ -304,7 +296,7 @@ public final class OteAccountBuilder {
       TldState initialTldState,
       boolean isEarlyAccess,
       int roidSuffix) {
-    String tldNameAlphaNumerical = tldName.replaceAll("[^a-z0-9]", "");
+    String tldNameAlphaNumerical = tldName.replaceAll("[^a-z\\d]", "");
     Optional<PremiumList> premiumList = PremiumListDao.getLatestRevision(DEFAULT_PREMIUM_LIST);
     checkState(premiumList.isPresent(), "Couldn't find premium list %s.", DEFAULT_PREMIUM_LIST);
     Registry.Builder builder =
@@ -348,13 +340,12 @@ public final class OteAccountBuilder {
         .build();
   }
 
-  private static RegistrarPoc createRegistrarContact(
-      String email, String gaeUserId, Registrar registrar) {
+  private static RegistrarPoc createRegistrarContact(String email, Registrar registrar) {
     return new RegistrarPoc.Builder()
         .setRegistrar(registrar)
         .setName(email)
         .setEmailAddress(email)
-        .setGaeUserId(gaeUserId)
+        .setLoginEmailAddress(email)
         .build();
   }
 

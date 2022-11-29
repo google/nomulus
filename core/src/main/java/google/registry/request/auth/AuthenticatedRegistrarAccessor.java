@@ -21,6 +21,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.appengine.api.users.User;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.flogger.FluentLogger;
@@ -307,7 +308,7 @@ public class AuthenticatedRegistrarAccessor {
     UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
     if (userAuthInfo.appEngineUser().isPresent()) {
       User user = userAuthInfo.appEngineUser().get();
-      logger.atInfo().log("Checking registrar contacts for user ID %s.", user.getUserId());
+      logger.atInfo().log("Checking registrar contacts for user ID %s.", user.getEmail());
 
       // Find all registrars that have a registrar contact with this user's ID.
       jpaTm()
@@ -315,11 +316,11 @@ public class AuthenticatedRegistrarAccessor {
               () ->
                   jpaTm()
                       .query(
-                          "SELECT r FROM Registrar r INNER JOIN RegistrarPoc rp ON "
-                              + "r.registrarId = rp.registrarId WHERE rp.gaeUserId = "
-                              + ":gaeUserId AND r.state != :state",
+                          "SELECT r FROM Registrar r INNER JOIN RegistrarPoc rp ON r.registrarId ="
+                              + " rp.registrarId WHERE lower(rp.loginEmailAddress) = :email AND"
+                              + " r.state != :state",
                           Registrar.class)
-                      .setParameter("gaeUserId", user.getUserId())
+                      .setParameter("email", Ascii.toLowerCase(user.getEmail()))
                       .setParameter("state", State.DISABLED)
                       .getResultStream()
                       .forEach(registrar -> builder.put(registrar.getRegistrarId(), Role.OWNER)));

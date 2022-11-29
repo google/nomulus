@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.CollectionUtils.nullToEmpty;
-import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -29,7 +28,6 @@ import com.google.common.base.Enums;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.tools.params.OptionalPhoneNumberParameter;
@@ -48,6 +46,7 @@ import java.util.Set;
 import javax.annotation.Nullable;
 
 /** Command for CRUD operations on {@link Registrar} contact list fields. */
+@SuppressWarnings("OptionalAssignedToNull")
 @Parameters(
     separators = " =",
     commandDescription = "Create/read/update/delete the various contact lists for a Registrar.")
@@ -78,8 +77,18 @@ final class RegistrarPocCommand extends MutatingCommand {
   private List<String> contactTypeNames;
 
   @Nullable
-  @Parameter(names = "--email", description = "Contact email address.")
+  @Parameter(
+      names = "--email",
+      description =
+          "Contact email address. Required when creating a contact"
+              + " and will be used as the console login email, if --login_email is not specified.")
   String email;
+
+  @Nullable
+  @Parameter(
+      names = "--login_email",
+      description = "Console login email address. If not specified, --email will be used.")
+  String loginEmail;
 
   @Nullable
   @Parameter(
@@ -168,13 +177,13 @@ final class RegistrarPocCommand extends MutatingCommand {
     // If the contact_type parameter is not specified, we should not make any changes.
     if (contactTypeNames == null) {
       contactTypes = null;
-    // It appears that when the user specifies "--contact_type=" with no types following, JCommander
-    // sets contactTypeNames to a one-element list containing the empty string. This is strange, but
-    // we need to handle this by setting the contact types to the empty set. Also do this if
-    // contactTypeNames is empty, which is what I would hope JCommander would return in some future,
-    // better world.
+      // It appears that when the user specifies "--contact_type=" with no types following,
+      // JCommander sets contactTypeNames to a one-element list containing the empty string. This is
+      // strange, but we need to handle this by setting the contact types to the empty set. Also do
+      // this if contactTypeNames is empty, which is what I would hope JCommander would return in
+      // some future, better world.
     } else if (contactTypeNames.isEmpty()
-        || ((contactTypeNames.size() == 1) && contactTypeNames.get(0).isEmpty())) {
+        || contactTypeNames.size() == 1 && contactTypeNames.get(0).isEmpty()) {
       contactTypes = ImmutableSet.of();
     } else {
       contactTypes =
@@ -194,7 +203,7 @@ final class RegistrarPocCommand extends MutatingCommand {
         break;
       case CREATE:
         stageEntityChange(null, createContact(registrar));
-        if ((visibleInDomainWhoisAsAbuse != null) && visibleInDomainWhoisAsAbuse) {
+        if (visibleInDomainWhoisAsAbuse != null && visibleInDomainWhoisAsAbuse) {
           unsetOtherWhoisAbuseFlags(contacts, null);
         }
         break;
@@ -211,7 +220,7 @@ final class RegistrarPocCommand extends MutatingCommand {
             "Cannot clear visible_in_domain_whois_as_abuse flag, as that would leave no domain"
                 + " WHOIS abuse contacts; instead, set the flag on another contact");
         stageEntityChange(oldContact, newContact);
-        if ((visibleInDomainWhoisAsAbuse != null) && visibleInDomainWhoisAsAbuse) {
+        if (visibleInDomainWhoisAsAbuse != null && visibleInDomainWhoisAsAbuse) {
           unsetOtherWhoisAbuseFlags(contacts, oldContact.getEmailAddress());
         }
         break;
@@ -261,9 +270,7 @@ final class RegistrarPocCommand extends MutatingCommand {
     builder.setTypes(nullToEmpty(contactTypes));
 
     if (Objects.equals(allowConsoleAccess, Boolean.TRUE)) {
-      builder.setGaeUserId(checkArgumentNotNull(
-          GaeUserIdConverter.convertEmailAddressToGaeUserId(email),
-          String.format("Email address %s is not associated with any GAE ID", email)));
+      builder.setLoginEmailAddress(loginEmail == null ? email : loginEmail);
     }
     if (visibleInWhoisAsAdmin != null) {
       builder.setVisibleInWhoisAsAdmin(visibleInWhoisAsAdmin);
@@ -311,11 +318,9 @@ final class RegistrarPocCommand extends MutatingCommand {
     }
     if (allowConsoleAccess != null) {
       if (allowConsoleAccess.equals(Boolean.TRUE)) {
-        builder.setGaeUserId(checkArgumentNotNull(
-            GaeUserIdConverter.convertEmailAddressToGaeUserId(email),
-            String.format("Email address %s is not associated with any GAE ID", email)));
+        builder.setLoginEmailAddress(loginEmail == null ? email : loginEmail);
       } else {
-        builder.setGaeUserId(null);
+        builder.setLoginEmailAddress(null);
       }
     }
     if (allowedToSetRegistryLockPassword != null) {

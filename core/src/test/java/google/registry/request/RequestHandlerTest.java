@@ -55,7 +55,7 @@ public final class RequestHandlerTest {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withCloudSql()
-          .withUserService(UserInfo.create("test@example.com", "test@example.com"))
+          .withUserService(UserInfo.create("test@example.com"))
           .build();
 
   @Action(

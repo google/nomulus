@@ -57,11 +57,6 @@ public final class RegistryTestServerMain {
   private String loginEmail = "Marla.Singer@crr.com";
 
   @Parameter(
-      names = "--login_user_id",
-      description = "GAE User ID for App Engine Local User Service.")
-  private String loginUserId = AppEngineExtension.MARLA_SINGER_GAE_USER_ID;
-
-  @Parameter(
       names = "--login_is_admin",
       description = "Should logged in user be an admin for App Engine Local User Service.",
       arity = 1)
@@ -140,9 +135,7 @@ public final class RegistryTestServerMain {
             .withTaskQueue()
             .withLocalModules()
             .withUserService(
-                loginIsAdmin
-                    ? UserInfo.createAdmin(loginEmail, loginUserId)
-                    : UserInfo.create(loginEmail, loginUserId))
+                loginIsAdmin ? UserInfo.createAdmin(loginEmail) : UserInfo.create(loginEmail))
             .build();
     appEngine.setUp();
     new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);

@@ -16,7 +16,7 @@
         "name": "Extra Terrestrial",
         "visibleInWhoisAsTech": false,
         "emailAddress": "etphonehome@example.com",
-        "gaeUserId": null,
+        "loginEmailAddress": null,
         "types": "ADMIN,BILLING,TECH,WHOIS"
       },
       {
@@ -26,7 +26,7 @@
         "name": "E.T.",
         "visibleInWhoisAsTech": false,
         "emailAddress": "etphonehome@example.com",
-        "gaeUserId": null,
+        "loginEmailAddress": null,
         "types": "MARKETING"
       }
     ],

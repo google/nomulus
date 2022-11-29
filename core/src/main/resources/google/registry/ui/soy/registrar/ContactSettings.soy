@@ -183,8 +183,8 @@
         {/call}
       {/if}
     </table>
-    {if isNonnull($item['gaeUserId'])}
-      <input type="hidden" name="{$namePrefix}gaeUserId" value="{$item['gaeUserId']}">
+    {if isNonnull($item['loginEmailAddress'])}
+      <input type="hidden" name="{$namePrefix}loginEmailAddress" value="{$item['loginEmailAddress']}">
     {/if}
   </div>
 {/template}

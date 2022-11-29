@@ -52,7 +52,7 @@ class ConsoleUiActionTest {
   final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder()
           .withCloudSql()
-          .withUserService(UserInfo.create("marla.singer@example.com", "12345"))
+          .withUserService(UserInfo.create("marla.singer@example.com"))
           .build();
 
   private final HttpServletRequest request = mock(HttpServletRequest.class);

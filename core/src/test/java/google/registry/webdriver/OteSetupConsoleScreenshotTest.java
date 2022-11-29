@@ -59,16 +59,4 @@ public class OteSetupConsoleScreenshotTest extends WebDriverTestCase {
     driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("oteResult");
   }
-
-  @RetryingTest(3)
-  void get_admin_fails_badEmail() throws Throwable {
-    server.setIsAdmin(true);
-    driver.get(server.getUrl("/registrar-ote-setup"));
-    driver.waitForDisplayedElement(By.tagName("h1"));
-    driver.findElement(By.id("clientId")).sendKeys("acmereg");
-    driver.findElement(By.id("email")).sendKeys("bad email");
-    driver.findElement(By.id("submit-button")).click();
-    driver.waitForDisplayedElement(By.tagName("h1"));
-    driver.diffPage("oteResultFailed");
-  }
 }

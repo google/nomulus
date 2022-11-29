@@ -81,10 +81,6 @@ import org.junit.jupiter.api.io.TempDir;
  */
 public final class AppEngineExtension implements BeforeEachCallback, AfterEachCallback {
 
-  public static final String NEW_REGISTRAR_GAE_USER_ID = "666";
-  public static final String THE_REGISTRAR_GAE_USER_ID = "31337";
-  public static final String MARLA_SINGER_GAE_USER_ID = "12345";
-
   /**
    * The GAE testing library requires queue.xml to be a file, not a resource in a jar, so we read it
    * in here and write it to a temporary file later.
@@ -336,7 +332,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
         .setEmailAddress("johndoe@theregistrar.com")
         .setPhoneNumber("+1.1234567890")
         .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
-        .setGaeUserId(THE_REGISTRAR_GAE_USER_ID)
+        .setLoginEmailAddress("johndoe@theregistrar.com")
         .build();
   }
 
@@ -348,7 +344,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
         .setRegistryLockEmailAddress("Marla.Singer.RegistryLock@crr.com")
         .setPhoneNumber("+1.2128675309")
         .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
-        .setGaeUserId(MARLA_SINGER_GAE_USER_ID)
+        .setLoginEmailAddress("Marla.Singer@crr.com")
         .setAllowedToSetRegistryLockPassword(true)
         .setRegistryLockPassword("hi")
         .build();
@@ -435,11 +431,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       // Set top-level properties on LocalServiceTestConfig for user login.
       helper
           .setEnvIsLoggedIn(userInfo.isLoggedIn())
-          // This envAttributes thing is the only way to set userId.
-          // see https://code.google.com/p/googleappengine/issues/detail?id=3579
-          .setEnvAttributes(
-              ImmutableMap.of(
-                  "com.google.appengine.api.users.UserService.user_id_key", userInfo.gaeUserId()))
           .setEnvAuthDomain(userInfo.authDomain())
           .setEnvEmail(userInfo.email())
           .setEnvIsAdmin(userInfo.isAdmin());

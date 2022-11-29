@@ -64,7 +64,7 @@ public final class OteAccountBuilderTest {
     persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
   }
 
-  private void assertTldExists(String tld, TldState tldState, Money eapFee) {
+  private static void assertTldExists(String tld, TldState tldState, Money eapFee) {
     Registry registry = Registry.get(tld);
     assertThat(registry).isNotNull();
     assertThat(registry.getPremiumListName()).hasValue("default_sandbox_list");
@@ -80,7 +80,7 @@ public final class OteAccountBuilderTest {
         .isEqualTo(eapFee.getAmount());
   }
 
-  private void assertRegistrarExists(String registrarId, String tld) {
+  private static void assertRegistrarExists(String registrarId, String tld) {
     Registrar registrar = Registrar.loadByRegistrarId(registrarId).orElse(null);
     assertThat(registrar).isNotNull();
     assertThat(registrar.getType()).isEqualTo(Registrar.Type.OTE);
@@ -88,7 +88,7 @@ public final class OteAccountBuilderTest {
     assertThat(registrar.getAllowedTlds()).containsExactly(tld);
   }
 
-  private void assertContactExists(String registrarId, String email) {
+  private static void assertContactExists(String registrarId, String email) {
     Registrar registrar = Registrar.loadByRegistrarId(registrarId).get();
     assertThat(registrar.getContacts().stream().map(RegistrarPoc::getEmailAddress)).contains(email);
     RegistrarPoc contact =
@@ -97,7 +97,7 @@ public final class OteAccountBuilderTest {
             .findAny()
             .get();
     assertThat(contact.getEmailAddress()).isEqualTo(email);
-    assertThat(contact.getGaeUserId()).isNotEmpty();
+    assertThat(contact.getLoginEmailAddress()).isEqualTo(email);
   }
 
   @Test
