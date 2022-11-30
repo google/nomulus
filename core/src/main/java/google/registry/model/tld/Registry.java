@@ -458,6 +458,12 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   /**
    * References to allocation tokens that can be used on the TLD if no other token is passed in on a
    * domain create.
+   *
+   * <p>Ordering is important for this field as it will determine which token is used if multiple
+   * tokens in the list are valid for a specific registration. It is crucial that modifications to
+   * this field only modify the entire list contents. Modifications to a single token in the list
+   * (ex: add a token to the list or remove a token from the list) should not be allowed without
+   * resetting the entire list contents.
    */
   List<VKey<AllocationToken>> defaultPromoTokens;
 
