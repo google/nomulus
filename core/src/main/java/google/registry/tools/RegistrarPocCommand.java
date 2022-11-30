@@ -182,8 +182,9 @@ final class RegistrarPocCommand extends MutatingCommand {
       // strange, but we need to handle this by setting the contact types to the empty set. Also do
       // this if contactTypeNames is empty, which is what I would hope JCommander would return in
       // some future, better world.
-    } else if (contactTypeNames.isEmpty()
-        || contactTypeNames.size() == 1 && contactTypeNames.get(0).isEmpty()) {
+    } else //noinspection UnnecessaryParentheses
+    if (contactTypeNames.isEmpty()
+        || (contactTypeNames.size() == 1 && contactTypeNames.get(0).isEmpty())) {
       contactTypes = ImmutableSet.of();
     } else {
       contactTypes =
