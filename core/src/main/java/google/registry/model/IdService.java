@@ -22,7 +22,6 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.common.flogger.FluentLogger;
 import google.registry.beam.common.RegistryPipelineWorkerInitializer;
 import google.registry.config.RegistryEnvironment;
-import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import java.math.BigInteger;
@@ -33,7 +32,6 @@ import org.joda.time.DateTime;
 /**
  * Allocates a {@link long} to use as a {@code @Id}, (part) of the primary SQL key for an entity.
  */
-@DeleteAfterMigration
 public final class IdService {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

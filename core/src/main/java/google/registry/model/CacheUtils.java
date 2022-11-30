@@ -18,13 +18,9 @@ import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Supplier;
-import google.registry.model.annotations.DeleteAfterMigration;
 import java.time.Duration;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Utility methods related to caching Datastore entities. */
 public class CacheUtils {
@@ -76,30 +72,5 @@ public class CacheUtils {
       caffeine = caffeine.refreshAfterWrite(refreshAfterWrite);
     }
     return caffeine;
-  }
-
-  /**
-   * A {@link CacheLoader} that automatically masquerade the background thread where the refresh
-   * action runs in to be an GAE thread.
-   */
-  @DeleteAfterMigration
-  public abstract static class AppEngineEnvironmentCacheLoader<K, V> implements CacheLoader<K, V> {
-
-    private static final AppEngineEnvironment environment = new AppEngineEnvironment();
-
-    @Override
-    public @Nullable V reload(@NonNull K key, @NonNull V oldValue) throws Exception {
-      V value;
-      boolean isMasqueraded = false;
-      if (!AppEngineEnvironment.isInAppEngineEnvironment()) {
-        environment.setEnvironmentForCurrentThread();
-        isMasqueraded = true;
-      }
-      value = load(key);
-      if (isMasqueraded) {
-        environment.unsetEnvironmentForCurrentThread();
-      }
-      return value;
-    }
   }
 }

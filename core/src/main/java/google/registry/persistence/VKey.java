@@ -75,7 +75,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    * Constructs a {@link VKey} for an {@link EppResource } from the string representation.
    *
    * <p>The string representation is obtained from the {@link #stringify()} function and like this:
-   * {@code kind:TestObject@sql:rO0ABXQAA2Zvbw}
+   * {@code kind:SomeEntity@sql:rO0ABXQAA2Zvbw}
    */
   public static <T extends EppResource> VKey<T> createEppVKeyFromString(String keyString) {
     ImmutableMap<String, String> kvs =

@@ -19,11 +19,6 @@ plugins {
 dependencies {
     def deps = rootProject.dependencyMap
 
-    // Custom-built objectify jar at commit ecd5165, included in Nomulus
-    // release.
-    implementation files(
-        "${rootDir}/third_party/objectify/v4_1/objectify-4.1.3.jar")
-
     implementation deps['com.google.code.findbugs:jsr305']
     implementation deps['com.google.guava:guava']
     implementation deps['com.squareup:javapoet']

@@ -25,9 +25,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
+import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
 import java.lang.reflect.Field;
@@ -38,6 +36,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -50,7 +50,6 @@ public class ImmutableObjectTest {
       AppEngineExtension.builder()
           .withCloudSql()
           .withJpaUnitTestEntities(ValueObject.class)
-          .withOfyTestEntities(ValueObject.class)
           .build();
 
   /** Simple subclass of ImmutableObject. */
@@ -266,21 +265,19 @@ public class ImmutableObjectTest {
   /** Subclass of ImmutableObject with keys to other objects. */
   public static class RootObject extends ImmutableObject {
 
-    Key<ValueObject> hydrateMe;
+    VKey<ValueObject> hydrateMe;
 
-    @DoNotHydrate
-    Key<ValueObject> skipMe;
+    @DoNotHydrate VKey<ValueObject> skipMe;
 
-    Map<String, Key<ValueObject>> map;
+    Map<String, VKey<ValueObject>> map;
 
-    Set<Key<ValueObject>> set;
+    Set<VKey<ValueObject>> set;
   }
 
   /** Simple subclass of ImmutableObject. */
   @Entity
-  @javax.persistence.Entity
   public static class ValueObject extends ImmutableObject {
-    @Id @javax.persistence.Id long id;
+    @Id long id;
 
     String value;
 

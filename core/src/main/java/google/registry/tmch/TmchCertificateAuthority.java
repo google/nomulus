@@ -19,12 +19,12 @@ import static google.registry.config.RegistryConfig.ConfigModule.TmchCaMode.PROD
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.model.CacheUtils;
-import google.registry.model.CacheUtils.AppEngineEnvironmentCacheLoader;
 import google.registry.model.tmch.TmchCrl;
 import google.registry.util.Clock;
 import google.registry.util.X509Utils;
@@ -78,7 +78,7 @@ public final class TmchCertificateAuthority {
   private static final LoadingCache<TmchCaMode, X509CRL> CRL_CACHE =
       CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
-              new AppEngineEnvironmentCacheLoader<TmchCaMode, X509CRL>() {
+              new CacheLoader<TmchCaMode, X509CRL>() {
                 @Override
                 public X509CRL load(final TmchCaMode tmchCaMode) throws GeneralSecurityException {
                   Optional<TmchCrl> storedCrl = TmchCrl.get();

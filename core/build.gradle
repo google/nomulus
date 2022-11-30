@@ -163,11 +163,6 @@ configurations {
 dependencies {
   def deps = rootProject.dependencyMap
 
-  // Custom-built objectify jar at commit ecd5165, included in Nomulus
-  // release.
-  implementation files(
-      "${rootDir}/third_party/objectify/v4_1/objectify-4.1.3.jar")
-
   testRuntimeOnly files(sourceSets.test.resources.srcDirs)
 
   implementation deps['com.beust:jcommander']

@@ -29,7 +29,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import google.registry.config.RegistryConfig;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.tools.AuthModule.LoginRequiredException;
 import google.registry.tools.params.ParameterFactory;
@@ -255,15 +254,6 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
               options, new ByteArrayInputStream(component.googleCredentialJson().getBytes(UTF_8)));
         }
         installer.install(options);
-
-        // Database setup -- we also only ever do this if "installer" is null, just so that it's
-        // only done once.
-
-        // Ensure that all entity classes are loaded before command code runs.
-        ObjectifyService.initOfy();
-        // Make sure we start the command with a clean cache, so that any previous command won't
-        // interfere with this one.
-        ObjectifyService.auditedOfy().clearSessionCache();
 
         // Enable Cloud SQL for command that needs remote API as they will very likely use
         // Cloud SQL after the database migration. Note that the DB password is stored in Datastore

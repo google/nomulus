@@ -21,7 +21,6 @@ import com.google.common.flogger.FluentLogger;
 import dagger.Lazy;
 import google.registry.config.RegistryEnvironment;
 import google.registry.config.SystemPropertySetter;
-import google.registry.model.AppEngineEnvironment;
 import google.registry.model.IdService;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
@@ -63,10 +62,6 @@ public class RegistryPipelineWorkerInitializer implements JvmInitializer {
         transactionManagerLazy = registryPipelineComponent.getJpaTransactionManager();
     }
     TransactionManagerFactory.setJpaTmOnBeamWorker(transactionManagerLazy::get);
-    // Masquerade all threads as App Engine threads, so we can create Ofy keys in the pipeline. Also
-    // loads all ofy entities.
-    new AppEngineEnvironment("s~" + registryPipelineComponent.getProjectId())
-        .setEnvironmentForAllThreads();
     SystemPropertySetter.PRODUCTION_IMPL.setProperty(PROPERTY, "true");
     // Use self-allocated IDs if requested. Note that this inevitably results in duplicate IDs from
     // multiple workers, which can also collide with existing IDs in the database. So they cannot be

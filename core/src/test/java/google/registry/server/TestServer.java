@@ -34,7 +34,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
-import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
@@ -85,13 +84,10 @@ public final class TestServer {
    * @param routes list of servlet endpoints
    */
   public TestServer(
-      HostAndPort address,
-      ImmutableMap<String, Path> runfiles,
-      ImmutableList<Route> routes,
-      ImmutableList<Class<? extends Filter>> filters) {
+      HostAndPort address, ImmutableMap<String, Path> runfiles, ImmutableList<Route> routes) {
     urlAddress = createUrlAddress(address);
     server.addConnector(createConnector(address));
-    server.addHandler(createHandler(runfiles, routes, filters));
+    server.addHandler(createHandler(runfiles, routes));
   }
 
   /** Starts the HTTP server in a new thread and returns once it's online. */
@@ -156,10 +152,7 @@ public final class TestServer {
     }
   }
 
-  private Context createHandler(
-      Map<String, Path> runfiles,
-      ImmutableList<Route> routes,
-      ImmutableList<Class<? extends Filter>> filters) {
+  private Context createHandler(Map<String, Path> runfiles, ImmutableList<Route> routes) {
     Context context = new Context(server, CONTEXT_PATH, Context.SESSIONS);
     context.addServlet(new ServletHolder(HealthzServlet.class), "/healthz");
     for (Map.Entry<String, Path> runfile : runfiles.entrySet()) {
@@ -168,8 +161,7 @@ public final class TestServer {
           runfile.getKey());
     }
     for (Route route : routes) {
-      context.addServlet(
-          new ServletHolder(wrapServlet(route.servletClass(), filters)), route.path());
+      context.addServlet(new ServletHolder(wrapServlet(route.servletClass())), route.path());
     }
     ServletHolder holder = new ServletHolder(DefaultServlet.class);
     holder.setInitParameter("aliases", "1");
@@ -177,9 +169,8 @@ public final class TestServer {
     return context;
   }
 
-  private HttpServlet wrapServlet(
-      Class<? extends HttpServlet> servletClass, ImmutableList<Class<? extends Filter>> filters) {
-    return new ServletWrapperDelegatorServlet(servletClass, filters, requestQueue);
+  private HttpServlet wrapServlet(Class<? extends HttpServlet> servletClass) {
+    return new ServletWrapperDelegatorServlet(servletClass, requestQueue);
   }
 
   private static Connector createConnector(HostAndPort address) {

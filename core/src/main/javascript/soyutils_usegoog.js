@@ -928,7 +928,6 @@ soy.$$cleanHtml = function(value, opt_safeTags) {
 };
 
 
-// LINT.IfChange(htmlToText)
 /**
  * Converts HTML to plain text by removing tags, normalizing spaces and
  * converting entities.
@@ -1008,10 +1007,6 @@ soy.$$htmlToText = function(value) {
 /** @private @const */
 soy.BLOCK_TAGS_RE_ =
     /^\/?(address|blockquote|dd|div|dl|dt|h[1-6]|hr|li|ol|p|pre|table|tr|ul)$/i;
-// LINT.ThenChange(
-//     ../../../third_party/java_src/soy/java/com/google/template/soy/basicfunctions/HtmlToText.java,
-//     ../../../third_party/java_src/soy/python/runtime/sanitize.py:htmlToText)
-
 
 /**
  * Escapes HTML, except preserves entities.

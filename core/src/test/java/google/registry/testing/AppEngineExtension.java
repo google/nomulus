@@ -39,9 +39,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.ObjectifyFilter;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
@@ -135,7 +132,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   private UserInfo userInfo;
 
   // Test Objectify entity classes to be used with this AppEngineExtension instance.
-  private ImmutableList<Class<?>> ofyTestEntities;
   private ImmutableList<Class<?>> jpaTestEntities;
 
   public Optional<JpaIntegrationTestExtension> getJpaIntegrationTestExtension() {
@@ -146,7 +142,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   public static class Builder {
 
     private AppEngineExtension extension = new AppEngineExtension();
-    private ImmutableList.Builder<Class<?>> ofyTestEntities = new ImmutableList.Builder<>();
     private ImmutableList.Builder<Class<?>> jpaTestEntities = new ImmutableList.Builder<>();
 
     /** Turns on Cloud SQL only, for use by test data generators. */
@@ -205,24 +200,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       return this;
     }
 
-    /**
-     * Declares test-only entities to be registered with {@code ObjectifyService}.
-     *
-     * <p>Note that {@code ObjectifyService} silently replaces the current registration for a given
-     * kind when a different class is registered for this kind. Since {@code ObjectifyService} does
-     * not support de-registration, each test entity class must be of a unique kind across the
-     * entire code base. Although this requirement can be worked around by using different {@code
-     * ObjectifyService} instances for each test (class), the setup overhead would rise
-     * significantly.
-     *
-     * @see AppEngineExtension#register(Class)
-     */
-    @SafeVarargs
-    public final Builder withOfyTestEntities(Class<?>... entities) {
-      ofyTestEntities.add(entities);
-      return this;
-    }
-
     public Builder withJpaUnitTestEntities(Class<?>... entities) {
       jpaTestEntities.add(entities);
       extension.withJpaUnitTest = true;
@@ -239,7 +216,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       checkState(
           !extension.withJpaUnitTest || !extension.enableJpaEntityCoverageCheck,
           "withJpaUnitTestEntities cannot be set when enableJpaEntityCoverageCheck");
-      extension.ofyTestEntities = this.ofyTestEntities.build();
       extension.jpaTestEntities = this.jpaTestEntities.build();
       return extension;
     }
@@ -440,9 +416,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       helper.setEnvInstance("0");
     }
     helper.setUp();
-
-    ObjectifyService.initOfy();
-    this.ofyTestEntities.forEach(AppEngineExtension::register);
   }
 
   /** Called after each test method. */
@@ -472,7 +445,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   public void tearDown() throws Exception {
     // Resets Objectify. Although it would seem more obvious to do this at the start of a request
     // instead of at the end, this is more consistent with what ObjectifyFilter does in real code.
-    ObjectifyFilter.complete();
     helper.tearDown();
     helper = null;
     // Test that Datastore didn't need any indexes we don't have listed in our index file.
@@ -500,24 +472,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       // Clean up environment setting left behind by AppEngine test instance.
       ApiProxy.setEnvironmentForCurrentThread(null);
     }
-  }
-
-  /**
-   * Registers test-only Objectify entities and checks for re-registrations for the same kind by
-   * different classes.
-   */
-  private static void register(Class<?> entityClass) {
-    String kind = Key.getKind(entityClass);
-    Optional.ofNullable(com.googlecode.objectify.ObjectifyService.factory().getMetadata(kind))
-        .ifPresent(
-            meta ->
-                checkState(
-                    meta.getEntityClass() == entityClass,
-                    "Cannot register %s. The Kind %s is already registered with %s.",
-                    entityClass.getName(),
-                    kind,
-                    meta.getEntityClass().getName()));
-    com.googlecode.objectify.ObjectifyService.register(entityClass);
   }
 
   /** Install {@code testing/logging.properties} so logging is less noisy. */

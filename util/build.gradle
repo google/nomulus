@@ -57,7 +57,6 @@ dependencies {
   testImplementation deps['org.mockito:mockito-core']
   testImplementation deps['org.mockito:mockito-junit-jupiter']
   testImplementation deps['org.testcontainers:junit-jupiter']
-  testImplementation files("${rootDir}/third_party/objectify/v4_1/objectify-4.1.3.jar")
   testImplementation project(path: ':common', configuration: 'testing')
   testRuntimeOnly deps['com.google.flogger:flogger-system-backend']
   annotationProcessor deps['com.google.auto.value:auto-value']
