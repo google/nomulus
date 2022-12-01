@@ -528,6 +528,7 @@ task javaIncrementalFormatApply {
 
 task javadoc(type: Javadoc) {
   source javadocSource
+  exclude "**/package-info.java"
   classpath = files(javadocClasspath)
   destinationDir = file("${buildDir}/docs/javadoc")
   options.encoding = "UTF-8"
