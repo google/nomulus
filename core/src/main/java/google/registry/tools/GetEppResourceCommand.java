@@ -60,11 +60,11 @@ abstract class GetEppResourceCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() {
+    DateTime now = clock.nowUtc();
     if (readTimestamp == null) {
-      readTimestamp = clock.nowUtc();
+      readTimestamp = now;
     }
-    checkArgument(
-        !readTimestamp.isBefore(clock.nowUtc()), "--read_timestamp may not be in the past");
+    checkArgument(!readTimestamp.isBefore(now), "--read_timestamp may not be in the past");
     runAndPrint();
   }
 }

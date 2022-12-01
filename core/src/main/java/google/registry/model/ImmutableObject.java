@@ -14,6 +14,7 @@
 
 package google.registry.model;
 
+import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Maps.transformValues;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -178,7 +179,7 @@ public abstract class ImmutableObject implements Cloneable {
       return transformValues((Map<?, ?>) value, ImmutableObject::hydrate);
     }
     if (value instanceof Collection) {
-      return ((Collection<?>) value).stream().map(ImmutableObject::hydrate);
+      return transform((Collection<?>) value, ImmutableObject::hydrate);
     }
     if (value instanceof ImmutableObject) {
       return ((ImmutableObject) value).toHydratedString();
