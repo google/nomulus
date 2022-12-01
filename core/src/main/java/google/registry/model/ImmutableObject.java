@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import google.registry.persistence.VKey;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -178,7 +179,8 @@ public abstract class ImmutableObject implements Cloneable {
       return transformValues((Map<?, ?>) value, ImmutableObject::hydrate);
     }
     if (value instanceof Collection) {
-      return ((Collection<?>) value).stream().map(ImmutableObject::hydrate);
+      return ((Collection<?>) value)
+          .stream().map(ImmutableObject::hydrate).collect(ImmutableList.toImmutableList());
     }
     if (value instanceof ImmutableObject) {
       return ((ImmutableObject) value).toHydratedString();
