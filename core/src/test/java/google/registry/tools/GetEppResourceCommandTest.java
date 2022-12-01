@@ -19,6 +19,7 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.truth.Truth;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -26,7 +27,7 @@ import org.mockito.Mockito;
 /** Unit tests for {@link GetEppResourceCommand}. */
 public class GetEppResourceCommandTest {
 
-  private static final DateTime TEST_TIME = DateTime.now();
+  private static final DateTime TEST_TIME = DateTime.now(DateTimeZone.UTC);
 
   private final FakeClock clock = new FakeClock(TEST_TIME);
   private GetEppResourceCommand commandUnderTest;
