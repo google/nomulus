@@ -45,7 +45,7 @@ public class GetEppResourceCommandTest {
   }
 
   @Test
-  public void readTimestampBeforeNow_noException() {
+  public void readTimestampBeforeNow_throwsException() {
     commandUnderTest.readTimestamp = clock.nowUtc().minusMillis(1);
     assertThrows(IllegalArgumentException.class, () -> commandUnderTest.run());
   }
