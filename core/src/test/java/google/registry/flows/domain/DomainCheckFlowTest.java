@@ -189,6 +189,25 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
+  void testSuccess_allocationToken_premiumAnchorTenant_noFee() throws Exception {
+    createTld("example");
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("example1", USD, "example1,USD 100"))
+            .build());
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setRegistrationBehavior(AllocationToken.RegistrationBehavior.ANCHOR_TENANT)
+            .setDomainName("example1.tld")
+            .build());
+    setEppInput("domain_check_allocationtoken_fee.xml");
+    runFlowAssertResponse(loadFile("domain_check_allocationtoken_fee_anchor_response.xml"));
+  }
+
+  @Test
   void testSuccess_oneExists_allocationTokenIsRedeemed() throws Exception {
     setEppInput("domain_check_allocationtoken.xml");
     Domain domain = persistActiveDomain("example1.tld");
