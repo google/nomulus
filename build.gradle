@@ -528,6 +528,10 @@ task javaIncrementalFormatApply {
 
 task javadoc(type: Javadoc) {
   source javadocSource
+  // Java 11.0.17 has the following bug that affects annotation handling on
+  // package-info.java:
+  // https://bugs.openjdk.org/browse/JDK-8222091
+  exclude "**/package-info.java"
   classpath = files(javadocClasspath)
   destinationDir = file("${buildDir}/docs/javadoc")
   options.encoding = "UTF-8"
