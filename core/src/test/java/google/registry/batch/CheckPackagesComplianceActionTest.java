@@ -57,7 +57,13 @@ public class CheckPackagesComplianceActionTest {
   // This is the default creation time for test data.
   private final FakeClock clock = new FakeClock(DateTime.parse("2012-03-25TZ"));
   private static final String CREATE_LIMIT_EMAIL_SUBJECT = "create limit subject";
+  private static final String DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT = "domain limit warning subject";
+  private static final String DOMAIN_LIMIT_UPGRADE_EMAIL_SUBJECT = "domain limit upgrade subject";
   private static final String CREATE_LIMIT_EMAIL_BODY = "create limit body %1$s %2$s %3$s";
+  private static final String DOMAIN_LIMIT_WARNING_EMAIL_BODY =
+      "domain limit warning body %1$s %2$s %3$s";
+  private static final String DOMAIN_LIMIT_UPGRADE_EMAIL_BODY =
+      "domain limit upgrade body %1$s %2$s %3$s";
   private static final String SUPPORT_EMAIL = "registry@test.com";
 
   @RegisterExtension
@@ -70,7 +76,6 @@ public class CheckPackagesComplianceActionTest {
   private final Logger loggerToIntercept =
       Logger.getLogger(CheckPackagesComplianceAction.class.getCanonicalName());
   private final SendEmailService emailService = mock(SendEmailService.class);
-
   private Contact contact;
   private PackagePromotion packagePromotion;
   private SendEmailUtils sendEmailUtils;
@@ -88,7 +93,15 @@ public class CheckPackagesComplianceActionTest {
     createTld("tld");
     action =
         new CheckPackagesComplianceAction(
-            sendEmailUtils, CREATE_LIMIT_EMAIL_SUBJECT, CREATE_LIMIT_EMAIL_BODY, SUPPORT_EMAIL);
+            sendEmailUtils,
+            clock,
+            CREATE_LIMIT_EMAIL_SUBJECT,
+            DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT,
+            DOMAIN_LIMIT_UPGRADE_EMAIL_SUBJECT,
+            CREATE_LIMIT_EMAIL_BODY,
+            DOMAIN_LIMIT_WARNING_EMAIL_BODY,
+            DOMAIN_LIMIT_UPGRADE_EMAIL_BODY,
+            SUPPORT_EMAIL);
     token =
         persistResource(
             new AllocationToken.Builder()
@@ -110,7 +123,6 @@ public class CheckPackagesComplianceActionTest {
             .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
             .build();
 
-    tm().transact(() -> tm().put(packagePromotion));
     contact = persistActiveContact("contact1234");
   }
 
@@ -121,6 +133,7 @@ public class CheckPackagesComplianceActionTest {
 
   @Test
   void testSuccess_noPackageOverCreateLimit() {
+    tm().transact(() -> tm().put(packagePromotion));
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
             .asBuilder()
@@ -136,6 +149,7 @@ public class CheckPackagesComplianceActionTest {
 
   @Test
   void testSuccess_onePackageOverCreateLimit() throws Exception {
+    tm().transact(() -> tm().put(packagePromotion));
     // Create limit is 1, creating 2 domains to go over the limit
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
@@ -168,6 +182,7 @@ public class CheckPackagesComplianceActionTest {
 
   @Test
   void testSuccess_multiplePackagesOverCreateLimit() {
+    tm().transact(() -> tm().put(packagePromotion));
     // Create limit is 1, creating 2 domains to go over the limit
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
@@ -234,6 +249,7 @@ public class CheckPackagesComplianceActionTest {
 
   @Test
   void testSuccess_onlyChecksCurrentBillingYear() {
+    tm().transact(() -> tm().put(packagePromotion));
     AllocationToken token2 =
         persistResource(
             new AllocationToken.Builder()
@@ -272,5 +288,279 @@ public class CheckPackagesComplianceActionTest {
         .that(logHandler)
         .hasLogAtLevelWithMessage(Level.INFO, "Found no packages over their create limit.");
     verifyNoInteractions(emailService);
+  }
+
+  @Test
+  void testSuccess_noPackageOverActiveDomainsLimit() {
+    tm().transact(() -> tm().put(packagePromotion));
+    persistEppResource(
+        DatabaseHelper.newDomain("foo.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+
+    action.run();
+    verifyNoInteractions(emailService);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.INFO, "Found no packages over their active domains limit.");
+  }
+
+  @Test
+  void testSuccess_onePackageOverActiveDomainsLimit() {
+    packagePromotion = packagePromotion.asBuilder().setMaxCreates(4).setMaxDomains(1).build();
+    tm().transact(() -> tm().put(packagePromotion));
+    // Domains limit is 1, creating 2 domains to go over the limit
+    persistEppResource(
+        DatabaseHelper.newDomain("foo.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+    persistEppResource(
+        DatabaseHelper.newDomain("buzz.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+
+    AllocationToken token2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("token")
+                .setTokenType(TokenType.PACKAGE)
+                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setAllowedTlds(ImmutableSet.of("foo"))
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setDiscountFraction(1)
+                .build());
+    PackagePromotion packagePromotion2 =
+        new PackagePromotion.Builder()
+            .setToken(token2)
+            .setMaxDomains(8)
+            .setMaxCreates(4)
+            .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
+            .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
+            .build();
+    tm().transact(() -> tm().put(packagePromotion2));
+    persistEppResource(
+        DatabaseHelper.newDomain("foo2.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token2.createVKey())
+            .build());
+
+    action.run();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.INFO, "Found 1 packages over their active domains limit.");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "Package with package token abc123 has exceed their max active domains limit by 1"
+                + " name(s).");
+    verify(emailService).sendEmail(emailCaptor.capture());
+    EmailMessage emailMessage = emailCaptor.getValue();
+    assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT);
+    assertThat(emailMessage.body())
+        .isEqualTo(
+            String.format(
+                DOMAIN_LIMIT_WARNING_EMAIL_BODY, "The Registrar", "abc123", SUPPORT_EMAIL));
+    PackagePromotion packageAfterCheck =
+        tm().transact(() -> PackagePromotion.loadByTokenString(token.getToken()).get());
+    assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.nowUtc());
+  }
+
+  @Test
+  void testSuccess_multiplePackagesOverActiveDomainsLimit() {
+    tm().transact(
+            () -> tm().put(packagePromotion.asBuilder().setMaxDomains(1).setMaxCreates(4).build()));
+    // Domains limit is 1, creating 2 domains to go over the limit
+    persistEppResource(
+        DatabaseHelper.newDomain("foo.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+    persistEppResource(
+        DatabaseHelper.newDomain("buzz.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+
+    AllocationToken token2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("token")
+                .setTokenType(TokenType.PACKAGE)
+                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setAllowedTlds(ImmutableSet.of("foo"))
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setDiscountFraction(1)
+                .build());
+    PackagePromotion packagePromotion2 =
+        new PackagePromotion.Builder()
+            .setToken(token2)
+            .setMaxDomains(1)
+            .setMaxCreates(5)
+            .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
+            .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
+            .build();
+    tm().transact(() -> tm().put(packagePromotion2));
+
+    persistEppResource(
+        DatabaseHelper.newDomain("foo2.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token2.createVKey())
+            .build());
+    persistEppResource(
+        DatabaseHelper.newDomain("buzz2.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token2.createVKey())
+            .build());
+
+    action.run();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.INFO, "Found 2 packages over their active domains limit.");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "Package with package token abc123 has exceed their max active domains limit by 1"
+                + " name(s).");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "Package with package token token has exceed their max active domains limit by 1"
+                + " name(s).");
+    verify(emailService, times(2)).sendEmail(any(EmailMessage.class));
+  }
+
+  @Test
+  void testSuccess_packageOverActiveDomainsLimitAlreadySentWarningEmail_DoesNotSendAgain() {
+    packagePromotion =
+        packagePromotion
+            .asBuilder()
+            .setMaxCreates(4)
+            .setMaxDomains(1)
+            .setLastNotificationSent(clock.nowUtc().minusDays(5))
+            .build();
+    tm().transact(() -> tm().put(packagePromotion));
+    // Domains limit is 1, creating 2 domains to go over the limit
+    persistEppResource(
+        DatabaseHelper.newDomain("foo.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+    persistEppResource(
+        DatabaseHelper.newDomain("buzz.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+
+    action.run();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.INFO, "Found 1 packages over their active domains limit.");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "Package with package token abc123 has exceed their max active domains limit by 1"
+                + " name(s).");
+    verifyNoInteractions(emailService);
+    PackagePromotion packageAfterCheck =
+        tm().transact(() -> PackagePromotion.loadByTokenString(token.getToken()).get());
+    assertThat(packageAfterCheck.getLastNotificationSent().get())
+        .isEqualTo(clock.nowUtc().minusDays(5));
+  }
+
+  @Test
+  void testSuccess_packageOverActiveDomainsLimitAlreadySentWarningEmailOver40DaysAgo_SendsAgain() {
+    packagePromotion =
+        packagePromotion
+            .asBuilder()
+            .setMaxCreates(4)
+            .setMaxDomains(1)
+            .setLastNotificationSent(clock.nowUtc().minusDays(45))
+            .build();
+    tm().transact(() -> tm().put(packagePromotion));
+    // Domains limit is 1, creating 2 domains to go over the limit
+    persistEppResource(
+        DatabaseHelper.newDomain("foo.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+    persistEppResource(
+        DatabaseHelper.newDomain("buzz.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+
+    action.run();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.INFO, "Found 1 packages over their active domains limit.");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "Package with package token abc123 has exceed their max active domains limit by 1"
+                + " name(s).");
+    verify(emailService).sendEmail(emailCaptor.capture());
+    EmailMessage emailMessage = emailCaptor.getValue();
+    assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT);
+    assertThat(emailMessage.body())
+        .isEqualTo(
+            String.format(
+                DOMAIN_LIMIT_WARNING_EMAIL_BODY, "The Registrar", "abc123", SUPPORT_EMAIL));
+    PackagePromotion packageAfterCheck =
+        tm().transact(() -> PackagePromotion.loadByTokenString(token.getToken()).get());
+    assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.nowUtc());
+  }
+
+  @Test
+  void testSuccess_packageOverActiveDomainsLimitAlreadySentWarning30DaysAgo_SendsUpgradeEmail() {
+    packagePromotion =
+        packagePromotion
+            .asBuilder()
+            .setMaxCreates(4)
+            .setMaxDomains(1)
+            .setLastNotificationSent(clock.nowUtc().minusDays(31))
+            .build();
+    tm().transact(() -> tm().put(packagePromotion));
+    // Domains limit is 1, creating 2 domains to go over the limit
+    persistEppResource(
+        DatabaseHelper.newDomain("foo.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+    persistEppResource(
+        DatabaseHelper.newDomain("buzz.tld", contact)
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+
+    action.run();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.INFO, "Found 1 packages over their active domains limit.");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "Package with package token abc123 has exceed their max active domains limit by 1"
+                + " name(s).");
+    verify(emailService).sendEmail(emailCaptor.capture());
+    EmailMessage emailMessage = emailCaptor.getValue();
+    assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_UPGRADE_EMAIL_SUBJECT);
+    assertThat(emailMessage.body())
+        .isEqualTo(
+            String.format(
+                DOMAIN_LIMIT_UPGRADE_EMAIL_BODY, "The Registrar", "abc123", SUPPORT_EMAIL));
+    PackagePromotion packageAfterCheck =
+        tm().transact(() -> PackagePromotion.loadByTokenString(token.getToken()).get());
+    assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.nowUtc());
   }
 }

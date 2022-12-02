@@ -255,7 +255,11 @@ public class RegistryConfigSettings {
 
   /** Configuration for package compliance monitoring. */
   public static class PackageMonitoring {
-    public String packageCreateLimitEmailSubjectText;
-    public String packageCreateLimitEmailBodyText;
+    public String packageCreateLimitEmailSubject;
+    public String packageCreateLimitEmailBody;
+    public String packageDomainLimitWarningEmailSubject;
+    public String packageDomainLimitWarningEmailBody;
+    public String packageDomainLimitUpgradeEmailSubject;
+    public String packageDomainLimitUpgradeEmailBody;
   }
 }

@@ -1317,15 +1317,41 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("packageCreateLimitEmailSubjectText")
-    public static String providePackageCreateLimitEmailSubjectText(RegistryConfigSettings config) {
-      return config.packageMonitoring.packageCreateLimitEmailSubjectText;
+    @Config("packageCreateLimitEmailSubject")
+    public static String providePackageCreateLimitEmailSubject(RegistryConfigSettings config) {
+      return config.packageMonitoring.packageCreateLimitEmailSubject;
     }
 
     @Provides
-    @Config("packageCreateLimitEmailBodyText")
-    public static String providePackageCreateLimitEmailBodyText(RegistryConfigSettings config) {
-      return config.packageMonitoring.packageCreateLimitEmailBodyText;
+    @Config("packageCreateLimitEmailBody")
+    public static String providePackageCreateLimitEmailBody(RegistryConfigSettings config) {
+      return config.packageMonitoring.packageCreateLimitEmailBody;
+    }
+
+    @Provides
+    @Config("packageDomainLimitWarningEmailSubject")
+    public static String providePackageDomainLimitWarningEmailSubject(
+        RegistryConfigSettings config) {
+      return config.packageMonitoring.packageDomainLimitWarningEmailSubject;
+    }
+
+    @Provides
+    @Config("packageDomainLimitWarningEmailBody")
+    public static String providePackageDomainLimitWarningEmailBody(RegistryConfigSettings config) {
+      return config.packageMonitoring.packageDomainLimitWarningEmailBody;
+    }
+
+    @Provides
+    @Config("packageDomainLimitUpgradeEmailSubject")
+    public static String providePackageDomainLimitUpgradeEmailSubject(
+        RegistryConfigSettings config) {
+      return config.packageMonitoring.packageDomainLimitUpgradeEmailSubject;
+    }
+
+    @Provides
+    @Config("packageDomainLimitUpgradeEmailBody")
+    public static String providePackageDomainLimitUpgradeEmailBody(RegistryConfigSettings config) {
+      return config.packageMonitoring.packageDomainLimitUpgradeEmailBody;
     }
   }
 
