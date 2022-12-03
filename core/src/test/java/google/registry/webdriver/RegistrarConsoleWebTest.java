@@ -21,8 +21,6 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.googlecode.objectify.ObjectifyFilter;
-import google.registry.model.ofy.OfyFilter;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
@@ -43,7 +41,6 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
           .setRoutes(
               route("/registrar", FrontendServlet.class),
               route("/registrar-settings", FrontendServlet.class))
-          .setFilters(ObjectifyFilter.class, OfyFilter.class)
           .setFixtures(BASIC)
           .setEmail("Marla.Singer@crr.com")
           .build();

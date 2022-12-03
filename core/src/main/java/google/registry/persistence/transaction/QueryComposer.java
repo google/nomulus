@@ -149,14 +149,6 @@ public abstract class QueryComposer<T> {
   /**
    * Enum used to specify comparison operations, e.g. {@code where("fieldName", Comparator.NE,
    * "someval")'}.
-   *
-   * <p>These contain values that specify the comparison behavior for both objectify and criteria
-   * queries. For objectify, we provide a string to be appended to the field name in a {@code
-   * filter()} expression. For criteria queries we provide a function that knows how to obtain a
-   * {@link WhereOperator} from a {@link CriteriaBuilder}.
-   *
-   * <p>Note that the objectify strings for comparators other than equality are preceded by a space
-   * because {@code filter()} expects the fieldname to be separated from the operator by a space.
    */
   public enum Comparator {
     /**

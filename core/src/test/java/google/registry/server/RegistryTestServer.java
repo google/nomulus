@@ -21,13 +21,10 @@ import static google.registry.util.BuildPathUtils.getResourcesDir;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
-import com.googlecode.objectify.ObjectifyFilter;
-import google.registry.model.ofy.OfyFilter;
 import google.registry.module.backend.BackendServlet;
 import google.registry.module.frontend.FrontendServlet;
 import java.net.URL;
 import java.nio.file.Path;
-import javax.servlet.Filter;
 
 /** Lightweight HTTP server for testing the Nomulus Admin and Registrar consoles. */
 public final class RegistryTestServer {
@@ -87,15 +84,11 @@ public final class RegistryTestServer {
           route("/registry-lock-post", FrontendServlet.class),
           route("/registry-lock-verify", FrontendServlet.class));
 
-  private static final ImmutableList<Class<? extends Filter>> FILTERS = ImmutableList.of(
-      ObjectifyFilter.class,
-      OfyFilter.class);
-
   private final TestServer server;
 
   /** @see TestServer#TestServer(HostAndPort, ImmutableMap, ImmutableList, ImmutableList) */
   public RegistryTestServer(HostAndPort address) {
-    server = new TestServer(address, RUNFILES, ROUTES, FILTERS);
+    server = new TestServer(address, RUNFILES, ROUTES);
   }
 
   /** @see TestServer#start() */

@@ -17,8 +17,6 @@ package google.registry.webdriver;
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.server.Route.route;
 
-import com.googlecode.objectify.ObjectifyFilter;
-import google.registry.model.ofy.OfyFilter;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -33,7 +31,6 @@ class RegistrarCreateConsoleScreenshotTest extends WebDriverTestCase {
       new TestServerExtension.Builder()
           .setRunfiles(RegistryTestServer.RUNFILES)
           .setRoutes(route("/registrar-create", FrontendServlet.class))
-          .setFilters(ObjectifyFilter.class, OfyFilter.class)
           .setFixtures(BASIC)
           .setEmail("Marla.Singer@google.com")
           .build();

@@ -28,10 +28,8 @@ import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STAT
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableMap;
-import com.googlecode.objectify.ObjectifyFilter;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
-import google.registry.model.ofy.OfyFilter;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.module.frontend.FrontendServlet;
@@ -59,7 +57,6 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
               route("/registrar-settings", FrontendServlet.class),
               route("/registry-lock-get", FrontendServlet.class),
               route("/registry-lock-verify", FrontendServlet.class))
-          .setFilters(ObjectifyFilter.class, OfyFilter.class)
           .setFixtures(BASIC)
           .setEmail("Marla.Singer@crr.com") // from AppEngineExtension.makeRegistrarContact3
           .build();

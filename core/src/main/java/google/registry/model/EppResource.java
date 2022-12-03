@@ -32,7 +32,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryConfig;
-import google.registry.model.CacheUtils.AppEngineEnvironmentCacheLoader;
 import google.registry.model.annotations.IdAllocation;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.transfer.TransferData;
@@ -354,7 +353,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   }
 
   static final CacheLoader<VKey<? extends EppResource>, EppResource> CACHE_LOADER =
-      new AppEngineEnvironmentCacheLoader<VKey<? extends EppResource>, EppResource>() {
+      new CacheLoader<VKey<? extends EppResource>, EppResource>() {
 
         @Override
         public EppResource load(VKey<? extends EppResource> key) {

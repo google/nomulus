@@ -37,7 +37,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
-import javax.servlet.Filter;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -59,7 +58,6 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
   private final BlockingQueue<FutureTask<?>> jobs = new LinkedBlockingDeque<>();
   private final ImmutableMap<String, Path> runfiles;
   private final ImmutableList<Route> routes;
-  private final ImmutableList<Class<? extends Filter>> filters;
 
   private TestServer testServer;
   private Thread serverThread;
@@ -67,12 +65,10 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
   private TestServerExtension(
       ImmutableMap<String, Path> runfiles,
       ImmutableList<Route> routes,
-      ImmutableList<Class<? extends Filter>> filters,
       ImmutableList<Fixture> fixtures,
       String email) {
     this.runfiles = runfiles;
     this.routes = routes;
-    this.filters = filters;
     this.fixtures = fixtures;
     // We create an GAE-Admin user, and then use AuthenticatedRegistrarAccessor.bypassAdminCheck to
     // choose whether the user is an admin or not.
@@ -96,8 +92,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
                   // can access this server.
                   getExternalAddressOfLocalSystem().getHostAddress(), pickUnusedPort()),
               runfiles,
-              routes,
-              filters);
+              routes);
     } catch (UnknownHostException e) {
       throw new IllegalStateException(e);
     }
@@ -239,14 +234,12 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
   /**
    * Builder for {@link TestServerExtension}.
    *
-   * <p>This builder has three required fields: {@link #setRunfiles}, {@link #setRoutes}, and {@link
-   * #setFilters}.
+   * <p>This builder has two required fields: {@link #setRunfiles} and {@link #setRoutes}.
    */
   public static final class Builder {
 
     private ImmutableMap<String, Path> runfiles;
     private ImmutableList<Route> routes;
-    ImmutableList<Class<? extends Filter>> filters;
     private ImmutableList<Fixture> fixtures = ImmutableList.of();
     private String email;
 
@@ -260,13 +253,6 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     public Builder setRoutes(Route... routes) {
       checkArgument(routes.length > 0);
       this.routes = ImmutableList.copyOf(routes);
-      return this;
-    }
-
-    /** Sets the list of servlet {@link Filter} objects for {@link TestServer}. */
-    @SafeVarargs
-    public final Builder setFilters(Class<? extends Filter>... filters) {
-      this.filters = ImmutableList.copyOf(filters);
       return this;
     }
 
@@ -291,7 +277,6 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
       return new TestServerExtension(
           checkNotNull(this.runfiles),
           checkNotNull(this.routes),
-          checkNotNull(this.filters),
           checkNotNull(this.fixtures),
           checkNotNull(this.email));
     }

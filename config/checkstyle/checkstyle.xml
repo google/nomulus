@@ -43,12 +43,6 @@ by Joshua Bloch in his book Effective Java -->
     <property name="message" value='Your Javadocs appear to use invalid &lt;a&gt; tag syntax in @see tags. Please use the correct syntax: @see &lt;a href="http(s)://your_url"&gt;url_description&lt;/a&gt;'/>
   </module>
 
-  <!-- Checks that our Ofy wrapper is used instead of the "real" ofy(). -->
-  <module name="RegexpSingleline">
-    <property name="format" value="com\.googlecode\.objectify\.ObjectifyService\.ofy"/>
-    <property name="message" value="Use google.registry.model.ofy.ObjectifyService.ofy(). Do not use com.googlecode.objectify.v4.ObjectifyService.ofy()."/>
-  </module>
-
   <!-- Checks that java.util.Optional is used instead of Guava's Optional. -->
   <module name="RegexpSingleline">
     <property name="format" value="com\.google\.common\.base\.Optional"/>
@@ -58,7 +52,7 @@ by Joshua Bloch in his book Effective Java -->
   <!-- Checks that the deprecated ExpectedException is not used. -->
   <module name="RegexpSingleline">
     <property name="format" value="org\.junit\.rules\.ExpectedException"/>
-    <property name="message" value="Use assertThrows and expectThrows from JUnitBackports instead of the deprecated methods on ExpectedException."/>
+    <property name="message" value="Use assertThrows and expectThrows instead of the deprecated methods on ExpectedException."/>
   </module>
 
   <module name="LineLength">

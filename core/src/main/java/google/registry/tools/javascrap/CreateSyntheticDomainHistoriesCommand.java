@@ -27,7 +27,6 @@ import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.Domain;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.tools.CommandWithConnection;
@@ -199,7 +198,6 @@ public class CreateSyntheticDomainHistoriesCommand extends ConfirmingCommand
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    ObjectifyService.initOfy();
     return installer;
   }
 

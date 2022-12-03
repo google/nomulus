@@ -49,7 +49,6 @@ also defined:
     incrementally.
 *   `python` -- Some Python reporting scripts
 *   `release` -- Configuration for our continuous integration process.
-*   `third_party` -- External dependencies.
 
 ## Build the codebase
 
