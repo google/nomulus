@@ -53,7 +53,7 @@ import javax.inject.Inject;
  * event time is in the past), same as through EPP.
  */
 @Parameters(separators = " =", commandDescription = "Acknowledge one-time poll messages.")
-final class AckPollMessagesCommand implements CommandWithRemoteApi {
+final class AckPollMessagesCommand implements Command {
 
   @Parameter(
       names = {"-c", "--client"},

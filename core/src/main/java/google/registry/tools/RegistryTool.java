@@ -17,7 +17,6 @@ package google.registry.tools;
 import com.google.common.collect.ImmutableMap;
 import google.registry.tools.javascrap.CompareEscrowDepositsCommand;
 import google.registry.tools.javascrap.CreateCancellationsForOneTimesCommand;
-import google.registry.tools.javascrap.CreateSyntheticDomainHistoriesCommand;
 
 /** Container class to create and run remote commands against a Datastore instance. */
 public final class RegistryTool {
@@ -48,7 +47,6 @@ public final class RegistryTool {
           .put("create_registrar", CreateRegistrarCommand.class)
           .put("create_registrar_groups", CreateRegistrarGroupsCommand.class)
           .put("create_reserved_list", CreateReservedListCommand.class)
-          .put("create_synthetic_domain_histories", CreateSyntheticDomainHistoriesCommand.class)
           .put("create_tld", CreateTldCommand.class)
           .put("curl", CurlCommand.class)
           .put("delete_allocation_tokens", DeleteAllocationTokensCommand.class)
@@ -123,8 +121,7 @@ public final class RegistryTool {
 
   public static void main(String[] args) throws Exception {
     RegistryToolEnvironment.parseFromArgs(args).setup();
-    try (RegistryCli cli = new RegistryCli("nomulus", COMMAND_MAP)) {
-      cli.run(args);
-    }
+    RegistryCli cli = new RegistryCli("nomulus", COMMAND_MAP);
+    cli.run(args);
   }
 }

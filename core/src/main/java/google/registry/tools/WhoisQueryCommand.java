@@ -23,7 +23,7 @@ import javax.inject.Inject;
 
 /** Command to execute a WHOIS query. */
 @Parameters(separators = " =", commandDescription = "Manually perform a WHOIS query")
-final class WhoisQueryCommand implements CommandWithRemoteApi {
+final class WhoisQueryCommand implements Command {
 
   @Parameter(
       description = "WHOIS query string",

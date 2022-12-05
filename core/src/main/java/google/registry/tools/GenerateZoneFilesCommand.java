@@ -30,7 +30,7 @@ import org.joda.time.DateTime;
 
 /** Command to generate zone files. */
 @Parameters(separators = " =", commandDescription = "Generate zone files")
-final class GenerateZoneFilesCommand implements CommandWithConnection, CommandWithRemoteApi {
+final class GenerateZoneFilesCommand implements CommandWithConnection {
 
   @Parameter(
       description = "One or more TLDs to generate zone files for",

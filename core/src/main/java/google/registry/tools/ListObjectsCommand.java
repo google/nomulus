@@ -33,7 +33,7 @@ import org.json.simple.JSONValue;
  *
  * <p>The formatting is done on the server side; this class just dumps the results to the screen.
  */
-abstract class ListObjectsCommand implements CommandWithConnection, CommandWithRemoteApi {
+abstract class ListObjectsCommand implements CommandWithConnection {
 
   @Nullable
   @Parameter(

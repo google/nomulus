@@ -33,8 +33,7 @@ public class DevTool {
 
   public static void main(String[] args) throws Exception {
     RegistryToolEnvironment.parseFromArgs(args).setup();
-    try (RegistryCli cli = new RegistryCli("devtool", COMMAND_MAP)) {
-      cli.run(args);
-    }
+    RegistryCli cli = new RegistryCli("devtool", COMMAND_MAP);
+    cli.run(args);
   }
 }

@@ -30,7 +30,7 @@ import java.util.List;
 /** Command to create groups in Google Groups for all contact types for a registrar. */
 @Parameters(separators = " =", commandDescription = "Create groups for a registrar.")
 public class CreateRegistrarGroupsCommand extends ConfirmingCommand
-    implements CommandWithConnection, CommandWithRemoteApi {
+    implements CommandWithConnection {
 
   @Parameter(
       description = "Client identifier(s) of the registrar(s) to create groups for",

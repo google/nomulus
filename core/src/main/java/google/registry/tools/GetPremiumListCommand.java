@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 /** Retrieves and prints one or more premium lists. */
 @Parameters(separators = " =", commandDescription = "Show one or more premium lists")
-public class GetPremiumListCommand implements CommandWithRemoteApi {
+public class GetPremiumListCommand implements Command {
 
   @Parameter(description = "Name(s) of the premium list(s) to retrieve", required = true)
   private List<String> mainParameters;

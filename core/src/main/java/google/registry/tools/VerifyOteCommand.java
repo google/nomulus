@@ -45,7 +45,7 @@ import java.util.Objects;
 @Parameters(
     separators = " =",
     commandDescription = "Verify passage of OT&E for specified (or all) registrars")
-final class VerifyOteCommand implements CommandWithConnection, CommandWithRemoteApi {
+final class VerifyOteCommand implements CommandWithConnection {
 
   @Parameter(
       description = "List of registrar names to check; must be the same names as the ones used "

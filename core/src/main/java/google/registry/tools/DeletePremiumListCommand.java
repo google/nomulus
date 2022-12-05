@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
  * in use on a tld.
  */
 @Parameters(separators = " =", commandDescription = "Delete a PremiumList.")
-final class DeletePremiumListCommand extends ConfirmingCommand implements CommandWithRemoteApi {
+final class DeletePremiumListCommand extends ConfirmingCommand {
 
   @Nullable PremiumList premiumList;
 

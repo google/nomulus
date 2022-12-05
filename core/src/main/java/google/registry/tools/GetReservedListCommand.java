@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 /** Retrieves and prints one or more reserved lists. */
 @Parameters(separators = " =", commandDescription = "Show one or more reserved lists")
-public class GetReservedListCommand implements CommandWithRemoteApi {
+public class GetReservedListCommand implements Command {
 
   @Parameter(
       names = {"-n", "--name"},

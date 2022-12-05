@@ -26,7 +26,7 @@ import javax.inject.Inject;
 
 /** Command to send ICANN notification that an escrow deposit was uploaded. */
 @Parameters(separators = " =", commandDescription = "Send an ICANN report of an uploaded deposit.")
-final class SendEscrowReportToIcannCommand implements CommandWithRemoteApi {
+final class SendEscrowReportToIcannCommand implements Command {
 
   @Parameter(
       description = "One or more foo-report.xml files.",

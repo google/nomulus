@@ -30,10 +30,9 @@ import org.bouncycastle.openpgp.PGPKeyPair;
 
 /** Retrieves ASCII-armored secrets from the active {@link Keyring} implementation. */
 @Parameters(
-  separators = " =",
-  commandDescription = "Retrieves the value of a secret from the keyring."
-)
-final class GetKeyringSecretCommand implements CommandWithRemoteApi {
+    separators = " =",
+    commandDescription = "Retrieves the value of a secret from the keyring.")
+final class GetKeyringSecretCommand implements Command {
 
   @Inject Keyring keyring;
 

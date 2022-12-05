@@ -34,7 +34,7 @@ import org.joda.time.DateTime;
 @Parameters(
     separators = " =",
     commandDescription = "Show history entries that occurred in a given time range")
-final class GetHistoryEntriesCommand implements CommandWithRemoteApi {
+final class GetHistoryEntriesCommand implements Command {
 
   @Parameter(
       names = {"-a", "--after"},

@@ -39,7 +39,7 @@ import javax.inject.Inject;
     commandDescription =
         "Set the number of instances for a given service and version. "
             + "Note that this command only works for manual scaling service.")
-final class SetNumInstancesCommand implements CommandWithRemoteApi {
+final class SetNumInstancesCommand implements Command {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

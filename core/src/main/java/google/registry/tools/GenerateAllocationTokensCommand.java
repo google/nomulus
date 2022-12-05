@@ -69,7 +69,7 @@ import org.joda.time.DateTime;
         "Generates and persists the given number of AllocationTokens, "
             + "printing each token to stdout.")
 @NonFinalForTesting
-class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
+class GenerateAllocationTokensCommand implements Command {
 
   @Parameter(
       names = {"--tokens"},

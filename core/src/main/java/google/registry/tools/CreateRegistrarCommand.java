@@ -40,7 +40,7 @@ import javax.annotation.Nullable;
 /** Command to create a Registrar. */
 @Parameters(separators = " =", commandDescription = "Create new registrar account(s)")
 final class CreateRegistrarCommand extends CreateOrUpdateRegistrarCommand
-    implements CommandWithConnection, CommandWithRemoteApi {
+    implements CommandWithConnection {
 
   private static final ImmutableSet<RegistryToolEnvironment> ENVIRONMENTS_ALLOWING_GROUP_CREATION =
       ImmutableSet.of(PRODUCTION, SANDBOX, UNITTEST);

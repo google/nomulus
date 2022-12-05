@@ -26,7 +26,7 @@ import javax.inject.Inject;
 
 /** Command to encrypt an escrow deposit. */
 @Parameters(separators = " =", commandDescription = "Encrypt an escrow deposit")
-class EncryptEscrowDepositCommand implements CommandWithRemoteApi {
+class EncryptEscrowDepositCommand implements Command {
 
   @Parameter(
       names = {"-t", "--tld"},
