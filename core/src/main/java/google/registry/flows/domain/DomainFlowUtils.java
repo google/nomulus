@@ -682,7 +682,13 @@ public class DomainFlowUtils {
           builder.setAvailIfSupported(true);
           fees =
               pricingLogic
-                  .getCreatePrice(registry, domainNameString, now, years, false, allocationToken)
+                  .getCreatePrice(
+                      registry,
+                      domainNameString,
+                      now,
+                      years,
+                      isAnchorTenant(domainName, allocationToken, Optional.empty()),
+                      allocationToken)
                   .getFees();
         }
         break;
