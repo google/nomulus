@@ -225,6 +225,8 @@ ext {
       'org.mockito:mockito-junit-jupiter:[3.7.7,)',
       'org.mortbay.jetty:jetty:[6.1.26,)',
       'org.postgresql:postgresql:[42.2.18,)',
+      'org.eclipse.jetty:jetty-server:[9.4.49.v20220914,)',
+      'org.eclipse.jetty:jetty-servlet:[9.4.49.v20220914,)',
       'org.slf4j:slf4j-jdk14:[1.7.28,)',
       'org.testcontainers:jdbc:[1.15.2,)',
       'org.testcontainers:junit-jupiter:[1.15.2,)',

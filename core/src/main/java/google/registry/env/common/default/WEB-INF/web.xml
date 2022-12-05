@@ -13,6 +13,29 @@
     <load-on-startup>1</load-on-startup>
   </servlet>
 
+  <!-- Dedicated servlet for static content with cache control -->
+  <servlet>
+    <servlet-name>default</servlet-name>
+    <servlet-class>org.eclipse.jetty.servlet.DefaultServlet</servlet-class>
+    <init-param>
+      <param-name>cacheControl</param-name>
+      <param-value>max-age=18000,public</param-value>
+    </init-param>
+    <init-param>
+      <param-name>precompressed</param-name>
+      <param-value>true</param-value>
+    </init-param>
+    <init-param>
+      <param-name>dirAllowed</param-name>
+      <param-value>false</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>./console/*</url-pattern>
+  </servlet-mapping>
+
   <!-- The primary EPP endpoint for the Registry, which accepts EPP requests from our TLS proxy. -->
   <servlet-mapping>
     <servlet-name>frontend-servlet</servlet-name>
@@ -71,7 +94,7 @@
     <url-pattern>/registry-lock-verify</url-pattern>
   </servlet-mapping>
 
-  <!-- Security config -->
+<!--  &lt;!&ndash; Security config &ndash;&gt;-->
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>Internal</web-resource-name>

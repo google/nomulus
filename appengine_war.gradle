@@ -47,6 +47,10 @@ war {
 
 if (project.path == ":services:default") {
     war {
+        from("${rootDir}/console-webapp/dist/console-webapp") {
+            include "**/*"
+            into("console")
+        }
         from("${coreResourcesDir}/google/registry/ui") {
             include "registrar_bin.js"
             if (environment != "production") {
