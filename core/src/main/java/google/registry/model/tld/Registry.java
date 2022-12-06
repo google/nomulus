@@ -30,6 +30,7 @@ import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -45,11 +46,14 @@ import google.registry.model.UnsafeSerializable;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
+import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.JodaMoneyType;
 import google.registry.util.Idn;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -451,6 +455,18 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   /** An allowlist of hosts allowed to be used on domains on this TLD (ignored if empty). */
   @Nullable Set<String> allowedFullyQualifiedHostNames;
 
+  /**
+   * References to allocation tokens that can be used on the TLD if no other token is passed in on a
+   * domain create.
+   *
+   * <p>Ordering is important for this field as it will determine which token is used if multiple
+   * tokens in the list are valid for a specific registration. It is crucial that modifications to
+   * this field only modify the entire list contents. Modifications to a single token in the list
+   * (ex: add a token to the list or remove a token from the list) should not be allowed without
+   * resetting the entire list contents.
+   */
+  List<VKey<AllocationToken>> defaultPromoTokens;
+
   public String getTldStr() {
     return tldStr;
   }
@@ -637,6 +653,10 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
 
   public ImmutableSet<String> getAllowedFullyQualifiedHostNames() {
     return nullToEmptyImmutableCopy(allowedFullyQualifiedHostNames);
+  }
+
+  public ImmutableList<VKey<AllocationToken>> getDefaultPromoTokens() {
+    return nullToEmptyImmutableCopy(defaultPromoTokens);
   }
 
   @Override
@@ -897,6 +917,28 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     public Builder setAllowedFullyQualifiedHostNames(
         ImmutableSet<String> allowedFullyQualifiedHostNames) {
       getInstance().allowedFullyQualifiedHostNames = allowedFullyQualifiedHostNames;
+      return this;
+    }
+
+    public Builder setDefaultPromoTokens(ImmutableList<VKey<AllocationToken>> promoTokens) {
+      tm().transact(
+              () -> {
+                for (VKey<AllocationToken> tokenKey : promoTokens) {
+                  AllocationToken token = tm().loadByKey(tokenKey);
+                  checkArgument(
+                      token.getTokenType().equals(TokenType.DEFAULT_PROMO),
+                      String.format(
+                          "Token %s has an invalid token type of %s. DefaultPromoTokens must be of"
+                              + " the type DEFAULT_PROMO",
+                          token.getToken(), token.getTokenType()));
+                  checkArgument(
+                      token.getAllowedTlds().contains(getInstance().tldStr),
+                      String.format(
+                          "The token %s is not valid for this TLD. The valid TLDs for it are %s",
+                          token.getToken(), token.getAllowedTlds()));
+                }
+                getInstance().defaultPromoTokens = promoTokens;
+              });
       return this;
     }
 
