@@ -54,6 +54,8 @@ public class CheckPackagesComplianceAction implements Runnable {
   private final String packageDomainLimitWarningEmailBody;
   private final String packageDomainLimitUpgradeEmailBody;
   private final String registrySupportEmail;
+  private static final int THIRTY_DAYS = 30;
+  private static final int FORTY_DAYS = 40;
 
   @Inject
   public CheckPackagesComplianceAction(
@@ -82,9 +84,9 @@ public class CheckPackagesComplianceAction implements Runnable {
     tm().transact(
             () -> {
               ImmutableList<PackagePromotion> packages = tm().loadAllOf(PackagePromotion.class);
-              ImmutableList.Builder<PackagePromotion> packagesOverCreateLimit =
+              ImmutableList.Builder<PackagePromotion> packagesOverCreateLimitBuilder =
                   new ImmutableList.Builder<>();
-              ImmutableList.Builder<PackagePromotion> packagesOverActiveDomainsLimit =
+              ImmutableList.Builder<PackagePromotion> packagesOverActiveDomainsLimitBuilder =
                   new ImmutableList.Builder<>();
               for (PackagePromotion packagePromo : packages) {
                 Long creates =
@@ -103,7 +105,7 @@ public class CheckPackagesComplianceAction implements Runnable {
                       "Package with package token %s has exceeded their max domain creation limit"
                           + " by %d name(s).",
                       packagePromo.getToken().getKey(), overage);
-                  packagesOverCreateLimit.add(packagePromo);
+                  packagesOverCreateLimitBuilder.add(packagePromo);
                 }
 
                 Long activeDomains =
@@ -121,98 +123,87 @@ public class CheckPackagesComplianceAction implements Runnable {
                       "Package with package token %s has exceed their max active domains limit by"
                           + " %d name(s).",
                       packagePromo.getToken().getKey(), overage);
-                  packagesOverActiveDomainsLimit.add(packagePromo);
+                  packagesOverActiveDomainsLimitBuilder.add(packagePromo);
                 }
               }
-              if (packagesOverCreateLimit.build().isEmpty()) {
-                logger.atInfo().log("Found no packages over their create limit.");
-              } else {
-                logger.atInfo().log(
-                    "Found %d packages over their create limit.",
-                    packagesOverCreateLimit.build().size());
-                for (PackagePromotion packagePromotion : packagesOverCreateLimit.build()) {
-                  AllocationToken packageToken = tm().loadByKey(packagePromotion.getToken());
-                  Optional<Registrar> registrar =
-                      Registrar.loadByRegistrarIdCached(
-                          packageToken.getAllowedRegistrarIds().iterator().next());
-                  if (registrar.isPresent()) {
-                    String body =
-                        String.format(
-                            packageCreateLimitEmailBody,
-                            registrar.get().getRegistrarName(),
-                            packageToken.getToken(),
-                            registrySupportEmail);
-                    sendNotification(
-                        packageToken, packageCreateLimitEmailSubject, body, registrar.get());
-                  } else {
-                    logger.atSevere().log(
-                        String.format(
-                            "Could not find registrar for package token %s", packageToken));
-                  }
-                }
-              }
-
-              if (packagesOverActiveDomainsLimit.build().isEmpty()) {
-                logger.atInfo().log("Found no packages over their active domains limit.");
-              } else {
-                logger.atInfo().log(
-                    "Found %d packages over their active domains limit.",
-                    packagesOverActiveDomainsLimit.build().size());
-                for (PackagePromotion packagePromotion : packagesOverActiveDomainsLimit.build()) {
-                  // Determine if email should be 30 day warning or upgrade notification
-                  String emailTemplate;
-                  String emailSubject;
-                  if (packagePromotion.getLastNotificationSent().isPresent()) {
-                    if (packagePromotion
-                        .getLastNotificationSent()
-                        .get()
-                        .isAfter(clock.nowUtc().minusDays(30))) {
-                      // Don't send an email if notification was already sent within the last 30
-                      // days
-                      continue;
-                    } else if (packagePromotion
-                        .getLastNotificationSent()
-                        .get()
-                        .isBefore(clock.nowUtc().minusDays(40))) {
-                      // Send a warning if last warning email was more than 40 days ago
-                      emailTemplate = packageDomainLimitWarningEmailBody;
-                      emailSubject = packageDomainLimitWarningEmailSubject;
-                    } else {
-                      // Send an upgrade email if last email was between 30 and 40 days ago
-                      emailTemplate = packageDomainLimitUpgradeEmailBody;
-                      emailSubject = packageDomainLimitUpgradeEmailSubject;
-                    }
-                  } else {
-                    // if no previous email has been sent, send a warning email
-                    emailTemplate = packageDomainLimitWarningEmailBody;
-                    emailSubject = packageDomainLimitWarningEmailSubject;
-                  }
-
-                  AllocationToken packageToken = tm().loadByKey(packagePromotion.getToken());
-                  Optional<Registrar> registrar =
-                      Registrar.loadByRegistrarIdCached(
-                          packageToken.getAllowedRegistrarIds().iterator().next());
-                  if (registrar.isPresent()) {
-                    String body =
-                        String.format(
-                            emailTemplate,
-                            registrar.get().getRegistrarName(),
-                            packageToken.getToken(),
-                            registrySupportEmail);
-                    sendNotification(packageToken, emailSubject, body, registrar.get());
-                    tm().put(
-                            packagePromotion
-                                .asBuilder()
-                                .setLastNotificationSent(clock.nowUtc())
-                                .build());
-                  } else {
-                    logger.atSevere().log(
-                        String.format(
-                            "Could not find registrar for package token %s", packageToken));
-                  }
-                }
-              }
+              handlePackageCreationOverage(packagesOverCreateLimitBuilder.build());
+              handleActiveDomainOverage(packagesOverActiveDomainsLimitBuilder.build());
             });
+  }
+
+  private void handlePackageCreationOverage(ImmutableList<PackagePromotion> overageList) {
+    if (overageList.isEmpty()) {
+      logger.atInfo().log("Found no packages over their create limit.");
+    } else {
+      logger.atInfo().log("Found %d packages over their create limit.", overageList.size());
+      for (PackagePromotion packagePromotion : overageList) {
+        AllocationToken packageToken = tm().loadByKey(packagePromotion.getToken());
+        Optional<Registrar> registrar =
+            Registrar.loadByRegistrarIdCached(
+                packageToken.getAllowedRegistrarIds().iterator().next());
+        if (registrar.isPresent()) {
+          String body =
+              String.format(
+                  packageCreateLimitEmailBody,
+                  registrar.get().getRegistrarName(),
+                  packageToken.getToken(),
+                  registrySupportEmail);
+          sendNotification(packageToken, packageCreateLimitEmailSubject, body, registrar.get());
+        } else {
+          logger.atSevere().log(
+              String.format("Could not find registrar for package token %s", packageToken));
+        }
+      }
+    }
+  }
+
+  private void handleActiveDomainOverage(ImmutableList<PackagePromotion> overageList) {
+    if (overageList.isEmpty()) {
+      logger.atInfo().log("Found no packages over their active domains limit.");
+    } else {
+      logger.atInfo().log("Found %d packages over their active domains limit.", overageList.size());
+      for (PackagePromotion packagePromotion : overageList) {
+        int daysSinceLastNotification =
+            packagePromotion
+                .getLastNotificationSent()
+                .map(sentDate -> org.joda.time.Days.daysBetween(sentDate, clock.nowUtc()).getDays())
+                .orElse(Integer.MAX_VALUE);
+        if (daysSinceLastNotification < THIRTY_DAYS) {
+          // Don't send an email if notification was already sent within the last 30
+          // days
+          continue;
+        } else if (daysSinceLastNotification < FORTY_DAYS) {
+          // Send an upgrade email if last email was between 30 and 40 days ago
+          sendActiveDomainOverageEmail(false, packagePromotion);
+        } else {
+          // Send a warning email
+          sendActiveDomainOverageEmail(true, packagePromotion);
+        }
+      }
+    }
+  }
+
+  private void sendActiveDomainOverageEmail(boolean warning, PackagePromotion packagePromotion) {
+    String emailSubject =
+        warning ? packageDomainLimitWarningEmailSubject : packageDomainLimitUpgradeEmailSubject;
+    String emailTemplate =
+        warning ? packageDomainLimitWarningEmailBody : packageDomainLimitUpgradeEmailBody;
+    AllocationToken packageToken = tm().loadByKey(packagePromotion.getToken());
+    Optional<Registrar> registrar =
+        Registrar.loadByRegistrarIdCached(packageToken.getAllowedRegistrarIds().iterator().next());
+    if (registrar.isPresent()) {
+      String body =
+          String.format(
+              emailTemplate,
+              registrar.get().getRegistrarName(),
+              packageToken.getToken(),
+              registrySupportEmail);
+      sendNotification(packageToken, emailSubject, body, registrar.get());
+      tm().put(packagePromotion.asBuilder().setLastNotificationSent(clock.nowUtc()).build());
+    } else {
+      logger.atSevere().log(
+          String.format("Could not find registrar for package token %s", packageToken));
+    }
   }
 
   private void sendNotification(

@@ -567,9 +567,11 @@ packageMonitoring:
     Regards,
     Example Registry
 
-  # Email subject text to notify partners their package has exceeded the limit for current active domains for more than 30 days and will be upgraded
+  # Email subject text to notify partners their package has exceeded the limit
+  # for current active domains for more than 30 days and will be upgraded
   packageDomainLimitUpgradeEmailSubject: "NOTICE: Your Package Is Being Upgraded"
-  # Email body text template to warn partners their package has exceeded the limit for active domains for more than 30 days and will be upgraded
+  # Email body text template to warn partners their package has exceeded the
+  # limit for active domains for more than 30 days and will be upgraded
   packageDomainLimitUpgradeEmailBody: >
     Dear %1$s,
     
