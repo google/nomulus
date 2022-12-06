@@ -48,6 +48,7 @@ public class RegistryConfigSettings {
   /** Configuration options that apply to the entire GCP project. */
   public static class GcpProject {
     public String projectId;
+    public long projectIdNumber;
     public String locationId;
     public boolean isLocal;
     public String defaultServiceUrl;

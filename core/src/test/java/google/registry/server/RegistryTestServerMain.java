@@ -19,7 +19,11 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
+import google.registry.model.console.GlobalRole;
+import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.request.auth.IapHeaderAuthenticationMechanism;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.UserInfo;
 import google.registry.tools.params.HostAndPortParameter;
@@ -138,6 +142,16 @@ public final class RegistryTestServerMain {
                 loginIsAdmin ? UserInfo.createAdmin(loginEmail) : UserInfo.create(loginEmail))
             .build();
     appEngine.setUp();
+    UserRoles userRoles =
+        new UserRoles.Builder().setIsAdmin(loginIsAdmin).setGlobalRole(GlobalRole.FTE).build();
+    User user =
+        new User.Builder()
+            .setEmailAddress(loginEmail)
+            .setGaiaId("123457890")
+            .setUserRoles(userRoles)
+            .setRegistryLockPassword("registryLockPassword")
+            .build();
+    IapHeaderAuthenticationMechanism.setUserAuthInfoForTestServer(user);
     new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);
     AppEngineExtension.loadInitialData();
     System.out.printf("%sLoading fixtures...%s\n", BLUE, RESET);

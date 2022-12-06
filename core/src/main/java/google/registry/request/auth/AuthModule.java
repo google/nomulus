@@ -14,13 +14,10 @@
 
 package google.registry.request.auth;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
 import com.google.appengine.api.oauth.OAuthService;
 import com.google.appengine.api.oauth.OAuthServiceFactory;
+import com.google.auth.oauth2.TokenVerifier;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
@@ -32,12 +29,14 @@ import javax.inject.Singleton;
 @Module
 public class AuthModule {
 
+  private static final String IAP_ISSUER_URL = "https://cloud.google.com/iap";
+
   /** Provides the custom authentication mechanisms (including OAuth). */
   @Provides
   ImmutableList<AuthenticationMechanism> provideApiAuthenticationMechanisms(
       OAuthAuthenticationMechanism oauthAuthenticationMechanism,
-      CookieOAuth2AuthenticationMechanism cookieOAuth2AuthenticationMechanism) {
-    return ImmutableList.of(oauthAuthenticationMechanism, cookieOAuth2AuthenticationMechanism);
+      IapHeaderAuthenticationMechanism iapHeaderAuthenticationMechanism) {
+    return ImmutableList.of(oauthAuthenticationMechanism, iapHeaderAuthenticationMechanism);
   }
 
   /** Provides the OAuthService instance. */
@@ -48,12 +47,9 @@ public class AuthModule {
 
   @Provides
   @Singleton
-  GoogleIdTokenVerifier provideGoogleIdTokenVerifier(
-      @Config("allowedOauthClientIds") ImmutableSet<String> allowedOauthClientIds,
-      NetHttpTransport httpTransport,
-      JsonFactory jsonFactory) {
-    return new GoogleIdTokenVerifier.Builder(httpTransport, jsonFactory)
-        .setAudience(allowedOauthClientIds)
-        .build();
+  TokenVerifier provideTokenVerifier(
+      @Config("projectId") String projectId, @Config("projectIdNumber") long projectIdNumber) {
+    String audience = String.format("/projects/%d/apps/%s", projectIdNumber, projectId);
+    return TokenVerifier.newBuilder().setAudience(audience).setIssuer(IAP_ISSUER_URL).build();
   }
 }
