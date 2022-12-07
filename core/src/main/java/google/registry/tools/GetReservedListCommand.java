@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.appengine.repackaged.com.google.common.collect.Streams;
+import com.google.common.collect.Streams;
 import google.registry.model.tld.label.ReservedList.ReservedListEntry;
 import google.registry.model.tld.label.ReservedListDao;
 import java.util.Comparator;
