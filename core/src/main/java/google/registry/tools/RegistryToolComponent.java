@@ -40,7 +40,6 @@ import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.Modules.UrlFetchServiceModule;
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
-import google.registry.tools.javascrap.CompareEscrowDepositsCommand;
 import google.registry.tools.javascrap.CreateCancellationsForOneTimesCommand;
 import google.registry.util.UtilsModule;
 import google.registry.whois.NonCachingWhoisModule;
@@ -88,8 +87,6 @@ interface RegistryToolComponent {
   void inject(CheckDomainClaimsCommand command);
 
   void inject(CheckDomainCommand command);
-
-  void inject(CompareEscrowDepositsCommand command);
 
   void inject(CountDomainsCommand command);
 
