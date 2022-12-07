@@ -26,7 +26,6 @@ public class RegistryConfigSettings {
   public OAuth oAuth;
   public CredentialOAuth credentialOAuth;
   public RegistryPolicy registryPolicy;
-  public Datastore datastore;
   public Hibernate hibernate;
   public CloudSql cloudSql;
   public CloudDns cloudDns;
@@ -106,11 +105,6 @@ public class RegistryConfigSettings {
     public String registryName;
     public List<String> spec11WebResources;
     public boolean requireSslCertificates;
-  }
-
-  /** Configuration for Cloud Datastore. */
-  public static class Datastore {
-    public int baseOfyRetryMillis;
   }
 
   /** Configuration for Hibernate. */

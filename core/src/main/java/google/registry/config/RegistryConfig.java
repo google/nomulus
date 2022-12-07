@@ -1450,11 +1450,6 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().registryPolicy.defaultRegistrarWhoisServer;
   }
 
-  /** Returns the base retry duration that gets doubled after each failure within {@code Ofy}. */
-  public static Duration getBaseOfyRetryDuration() {
-    return Duration.millis(CONFIG_SETTINGS.get().datastore.baseOfyRetryMillis);
-  }
-
   /** Returns the default database transaction isolation. */
   public static String getHibernateConnectionIsolation() {
     return CONFIG_SETTINGS.get().hibernate.connectionIsolation;

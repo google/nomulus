@@ -45,7 +45,6 @@ public class SetDatabaseMigrationStateCommandTest
     assertThat(jpaTm().transact(() -> jpaTm().loadSingleton(DatabaseMigrationStateSchedule.class)))
         .isEmpty();
     runCommandForced("--migration_schedule=1970-01-01T00:00:00.000Z=DATASTORE_ONLY");
-    // use a raw ofy call to check what's in the DB
     jpaTm()
         .transact(
             () ->

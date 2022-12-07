@@ -10,10 +10,6 @@ registryPolicy:
     Disclaimer line 1.
     Line 2 is this 1.
 
-datastore:
-  eppResourceIndexBucketsNum: 3
-  baseOfyRetryMillis: 0
-
 caching:
   singletonCacheRefreshSeconds: 0
   domainLabelCachingSeconds: 0

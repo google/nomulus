@@ -182,11 +182,6 @@ registryPolicy:
   # should generally be true for production environments, for added security.
   requireSslCertificates: true
 
-datastore:
-  # Milliseconds that Objectify waits to retry a Datastore transaction (this
-  # doubles after each failure).
-  baseOfyRetryMillis: 100
-
 hibernate:
   # Make 'SERIALIZABLE' the default isolation level to ensure correctness.
   #

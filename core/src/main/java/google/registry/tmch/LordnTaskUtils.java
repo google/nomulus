@@ -46,8 +46,8 @@ public final class LordnTaskUtils {
   /** Enqueues a task in the LORDN queue representing a line of CSV for LORDN export. */
   public static void enqueueDomainTask(Domain domain) {
     tm().assertInTransaction();
-    // This method needs to use ofy transactionTime as the Domain's creationTime because
-    // CreationTime isn't yet populated when this method is called during the resource flow.
+    // This method needs to use transactionTime as the Domain's creationTime because CreationTime
+    // isn't yet populated when this method is called during the resource flow.
     String tld = domain.getTld();
     if (domain.getLaunchNotice() == null) {
       getQueue(QUEUE_SUNRISE).add(TaskOptions.Builder
