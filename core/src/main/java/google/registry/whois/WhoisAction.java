@@ -18,8 +18,6 @@ import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.appengine.api.datastore.DatastoreFailureException;
-import com.google.appengine.api.datastore.DatastoreTimeoutException;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
@@ -86,19 +84,12 @@ public class WhoisAction implements Runnable {
     try {
       final WhoisCommand command = whoisReader.readCommand(input, false, now);
       metricBuilder.setCommand(command);
-      WhoisResponseResults results =
-          retrier.callWithRetry(
-              () -> {
-                WhoisResponseResults results1;
-                try {
-                  results1 = command.executeQuery(now).getResponse(PREFER_UNICODE, disclaimer);
-                } catch (WhoisException e) {
-                  throw new UncheckedWhoisException(e);
-                }
-                return results1;
-              },
-              DatastoreTimeoutException.class,
-              DatastoreFailureException.class);
+      WhoisResponseResults results;
+      try {
+        results = command.executeQuery(now).getResponse(PREFER_UNICODE, disclaimer);
+      } catch (WhoisException e) {
+        throw new UncheckedWhoisException(e);
+      }
       responseText = results.plainTextOutput();
       setWhoisMetrics(metricBuilder, results.numResults(), SC_OK);
     } catch (UncheckedWhoisException u) {

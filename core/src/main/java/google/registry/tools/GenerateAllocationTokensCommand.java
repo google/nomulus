@@ -27,7 +27,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.appengine.tools.remoteapi.RemoteApiException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -47,7 +46,6 @@ import google.registry.tools.params.TransitionListParameter.TokenStatusTransitio
 import google.registry.util.CollectionUtils;
 import google.registry.util.DomainNameUtils;
 import google.registry.util.NonFinalForTesting;
-import google.registry.util.Retrier;
 import google.registry.util.StringGenerator;
 import java.io.File;
 import java.io.IOException;
@@ -170,8 +168,6 @@ class GenerateAllocationTokensCommand implements Command {
   @Named("base58StringGenerator")
   StringGenerator stringGenerator;
 
-  @Inject Retrier retrier;
-
   private static final int BATCH_SIZE = 20;
   private static final Joiner SKIP_NULLS = Joiner.on(',').skipNulls();
 
@@ -220,8 +216,7 @@ class GenerateAllocationTokensCommand implements Command {
                     return token.build();
                   })
               .collect(toImmutableSet());
-      // Wrap in a retrier to deal with transient 404 errors (thrown as RemoteApiExceptions).
-      tokensSaved += retrier.callWithRetry(() -> saveTokens(tokens), RemoteApiException.class);
+      tokensSaved += saveTokens(tokens);
     } while (tokensSaved < numTokens);
   }
 
@@ -287,7 +282,7 @@ class GenerateAllocationTokensCommand implements Command {
     if (dryRun) {
       savedTokens = tokens;
     } else {
-      tm().transact(() -> tm().transact(() -> tm().putAll(tokens)));
+      tm().transact(() -> tm().putAll(tokens));
       savedTokens = tm().transact(() -> tm().loadByEntities(tokens));
     }
     savedTokens.forEach(

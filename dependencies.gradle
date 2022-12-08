@@ -57,8 +57,6 @@ ext {
       // appengine-api-1.0-sdk has breaking changes.
       'com.google.appengine:appengine-api-1.0-sdk:1.9.86',
       // Pin-breakers for appengine-api-1.0-sdk
-      'com.google.appengine.tools:appengine-gcs-client:0.8.1',
-      'com.google.appengine.tools:appengine-pipeline:0.2.13',
       'com.google.appengine:appengine-testing:1.9.86',
 
       // Pinned for gwt-user.
@@ -124,7 +122,6 @@ ext {
       'com.google.apis:google-api-services-sheets:[v4-rev612-1.25.0,)',
       'com.google.apis:google-api-services-storage:[v1-rev20210127-1.31.0,)',
       'com.google.appengine:appengine-api-stubs:[1.9.86,)',
-      'com.google.appengine:appengine-remote-api:[1.9.86,)',
       'com.google.auth:google-auth-library-credentials:[0.24.1,)',
       'com.google.auth:google-auth-library-oauth2-http:[0.24.1,)',
       'com.google.auto.service:auto-service-annotations:[1.0-rc7,)',
