@@ -28,13 +28,8 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import com.beust.jcommander.ParameterException;
-import com.google.appengine.tools.remoteapi.RemoteApiException;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -45,9 +40,6 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.DeterministicStringGenerator.Rule;
-import google.registry.testing.FakeClock;
-import google.registry.testing.FakeSleeper;
-import google.registry.util.Retrier;
 import google.registry.util.StringGenerator.Alphabets;
 import java.io.File;
 import java.util.Collection;
@@ -55,7 +47,6 @@ import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
 
 /** Unit tests for {@link GenerateAllocationTokensCommand}. */
 class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAllocationTokensCommand> {
@@ -63,8 +54,6 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
   @BeforeEach
   void beforeEach() {
     command.stringGenerator = new DeterministicStringGenerator(Alphabets.BASE_58);
-    command.retrier =
-        new Retrier(new FakeSleeper(new FakeClock(DateTime.parse("2000-01-01TZ"))), 3);
   }
 
   @Test
@@ -89,21 +78,6 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     runCommand("--number", "1");
     assertAllocationTokens(createToken("123456789ABCDEFG", null, null));
     assertInStdout("123456789ABCDEFG");
-  }
-
-  @Test
-  void testSuccess_retry() throws Exception {
-    command = spy(command);
-    RemoteApiException fakeException = new RemoteApiException("foo", "foo", "foo", new Exception());
-    doThrow(fakeException)
-        .doThrow(fakeException)
-        .doCallRealMethod()
-        .when(command)
-        .saveTokens(ArgumentMatchers.any());
-    runCommand("--number", "1");
-    assertAllocationTokens(createToken("123456789ABCDEFG", null, null));
-    assertInStdout("123456789ABCDEFG");
-    verify(command, times(3)).saveTokens(ArgumentMatchers.any());
   }
 
   @Test

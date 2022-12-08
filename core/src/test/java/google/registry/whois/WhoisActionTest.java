@@ -38,8 +38,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.datastore.DatastoreFailureException;
-import com.google.appengine.api.datastore.DatastoreTimeoutException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.model.contact.Contact;
@@ -641,30 +639,5 @@ public class WhoisActionTest {
             .build();
     verify(action.whoisMetrics).recordWhoisMetric(eq(expected));
     assertThat(response.getPayload()).isEqualTo("Internal Server Error");
-  }
-
-  @Test
-  void testRun_retryOnTransientFailure() throws Exception {
-    persistResource(loadRegistrar("TheRegistrar").asBuilder().setUrl("http://my.fake.url").build());
-    persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4"));
-    WhoisAction action = newWhoisAction("ns1.cat.lol");
-    WhoisResponse expectedResponse =
-        action
-            .whoisReader
-            .readCommand(action.input, false, clock.nowUtc())
-            .executeQuery(clock.nowUtc());
-
-    WhoisReader mockReader = mock(WhoisReader.class);
-    WhoisCommand mockCommand = mock(WhoisCommand.class);
-    when(mockReader.readCommand(any(Reader.class), eq(false), any(DateTime.class)))
-        .thenReturn(mockCommand);
-    when(mockCommand.executeQuery(any(DateTime.class)))
-        .thenThrow(new DatastoreFailureException("Expected transient exception #1"))
-        .thenThrow(new DatastoreTimeoutException("Expected transient exception #2"))
-        .thenReturn(expectedResponse);
-
-    action.whoisReader = mockReader;
-    action.run();
-    assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_nameserver.txt"));
   }
 }
