@@ -1,7 +1,0 @@
-# This is a Gradle generated file for dependency locking.
-# Manual edits can break the build and are not advised.
-# This file is expected to be part of source control.
-gradle.plugin.com.boxfuse.client:gradle-plugin-publishing:6.0.1=classpath
-org.flywaydb.flyway:org.flywaydb.flyway.gradle.plugin:6.0.1=classpath
-org.flywaydb:flyway-core:6.0.1=classpath
-empty=
