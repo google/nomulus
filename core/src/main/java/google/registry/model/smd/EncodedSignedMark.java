@@ -17,12 +17,11 @@ package google.registry.model.smd;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.io.BaseEncoding.base64;
 
-import com.google.appengine.api.datastore.Text;
+import com.google.common.base.CharMatcher;
 import google.registry.model.ImmutableObject;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlValue;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
  * Encoded data representation of a {@link SignedMark} object.
@@ -35,31 +34,27 @@ public class EncodedSignedMark extends ImmutableObject implements AbstractSigned
 
   private static final String ENCODING_DEFAULT = "base64";
 
+  private static final CharMatcher WHITESPACE = CharMatcher.anyOf(" \t\r\n");
+
   /** Encoding used for contained data. Default is {@value #ENCODING_DEFAULT}. */
   @XmlAttribute
   String encoding;
 
-  /**
-   * Encoded data. This is stored in a Text field rather than a String due to historical reasons,
-   * namely that Objectify cannot autoconvert Strings greater than 500 characters to Text within
-   * {@code Embed} collections.
-   */
-  @XmlValue
-  @XmlJavaTypeAdapter(RemoveWhitespaceTextAdapter.class)
-  Text encodedData;
+  /** Encoded data. */
+  @XmlValue String encodedData;
 
   public String getEncoding() {
     return firstNonNull(encoding, ENCODING_DEFAULT);
   }
 
   public String getEncodedData() {
-    return encodedData == null ? "" : encodedData.getValue();
+    return encodedData == null ? "" : WHITESPACE.removeFrom(encodedData);
   }
 
   public static EncodedSignedMark create(String encoding, String encodedData) {
     EncodedSignedMark instance = new EncodedSignedMark();
     instance.encoding = encoding;
-    instance.encodedData = new Text(encodedData);
+    instance.encodedData = encodedData;
     return instance;
   }
 
