@@ -48,32 +48,10 @@
     <url-pattern>/_dr/loadtest</url-pattern>
   </servlet-mapping>
 
-  <!-- The nomulus command line tool uses this endpoint to write to Datastore. -->
-  <servlet>
-    <display-name>Remote API Servlet</display-name>
-    <servlet-name>RemoteApiServlet</servlet-name>
-    <servlet-class>com.google.apphosting.utils.remoteapi.RemoteApiServlet</servlet-class>
-    <load-on-startup>1</load-on-startup>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>RemoteApiServlet</servlet-name>
-    <url-pattern>/remote_api</url-pattern>
-  </servlet-mapping>
-
   <!--  ExecuteEppCommand uses this to execute remotely. -->
   <servlet-mapping>
     <servlet-name>tools-servlet</servlet-name>
     <url-pattern>/_dr/epptool</url-pattern>
-  </servlet-mapping>
-
-  <!-- Pipeline GUI servlets. -->
-  <servlet>
-    <servlet-name>pipeline</servlet-name>
-    <servlet-class>com.google.appengine.tools.pipeline.impl.servlets.PipelineServlet</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>pipeline</servlet-name>
-    <url-pattern>/_ah/pipeline/*</url-pattern>
   </servlet-mapping>
 
   <!-- Refreshes all active domains in DNS -->
