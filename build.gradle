@@ -551,6 +551,7 @@ task coreDev {
   dependsOn 'javadoc'
   dependsOn 'checkDependenciesDotGradle'
   dependsOn 'checkLicense'
+  dependsOn ':console-webapp:runConsoleWebappUnitTests'
   dependsOn ':core:check'
   dependsOn 'assemble'
 }

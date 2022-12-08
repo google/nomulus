@@ -12,18 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+def consoleDir = "${rootDir}/console-webapp"
+
 clean {
-  delete "${rootDir}/console-webapp/node_modules"
+  delete "${consoleDir}/node_modules"
+  delete "${consoleDir}/dist"
 }
 
 task npmInstallDeps(type: Exec) {
-  workingDir "${rootDir}/console-webapp/"
+  workingDir "${consoleDir}/"
   executable 'npm'
   args 'i', '--no-audit', '--no-fund', '--loglevel=error'
 }
 
 task runConsoleWebappLocally(type: Exec) {
-  workingDir "${rootDir}/console-webapp/"
+  workingDir "${consoleDir}/"
   executable 'npm'
   args 'run', 'start:dev'
 }
+
+task runConsoleWebappUnitTests(type: Exec) {
+  workingDir "${consoleDir}/"
+  executable 'npm'
+  args 'run', 'test'
+}
+
+task buildConsoleWebappNonProd(type: Exec) {
+  workingDir "${consoleDir}/"
+  executable 'npm'
+  args 'run', 'build'
+}
+
+// Keeping the same as non prod for now before we figure out optimization we want to include
+task buildConsoleWebappProd(type: Exec) {
+  workingDir "${consoleDir}/"
+  executable 'npm'
+  args 'run', 'build'
+}
+
+tasks.runConsoleWebappUnitTests.dependsOn(tasks.npmInstallDeps)
+tasks.buildConsoleWebappProd.dependsOn(tasks.npmInstallDeps)

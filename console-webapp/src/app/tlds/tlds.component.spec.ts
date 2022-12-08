@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { TldsComponent } from './tlds.component';
+import {MaterialModule} from '../material.module';
 
 describe('TldsComponent', () => {
   let component: TldsComponent;
@@ -8,6 +9,7 @@ describe('TldsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [MaterialModule],
       declarations: [ TldsComponent ]
     })
     .compileComponents();

@@ -105,6 +105,7 @@ explodeWar.doLast {
 
 rootProject.deploy.dependsOn appengineDeployAll
 rootProject.stage.dependsOn appengineStage
+tasks['war'].dependsOn ':console-webapp:buildConsoleWebappProd'
 tasks['war'].dependsOn ':core:compileProdJS'
 tasks['war'].dependsOn ':core:processResources'
 tasks['war'].dependsOn ':core:jar'

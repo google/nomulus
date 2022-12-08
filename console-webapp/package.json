@@ -7,7 +7,7 @@
     "build": "ng build",
     "build:local": "ng build --base-href=/default/console/",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "test": "ng test --browsers=ChromeHeadless --watch=false",
     "run:dev": "",
     "start:dev": "concurrently \"./../gradlew :core:runTestServer\" \"ng serve --proxy-config dev-proxy.config.json\""
   },
