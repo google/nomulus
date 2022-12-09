@@ -124,7 +124,7 @@ public class DomainBase extends EppResource
   String tld;
 
   /** References to hosts that are the nameservers for the domain. */
-  @EmptySetToNull @Transient Set<VKey<Host>> nsHosts;
+  @Transient Set<VKey<Host>> nsHosts;
 
   /** Contacts. */
   VKey<Contact> adminContact;

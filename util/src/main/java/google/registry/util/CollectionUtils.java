@@ -120,8 +120,8 @@ public class CollectionUtils {
    * Turns an empty collection into a null collection.
    *
    * <p>This is unwise in the general case (nulls are bad; empties are good) but occasionally needed
-   * to cause JAXB not to emit a field, or to avoid saving something to Datastore. The method name
-   * includes "force" to indicate that you should think twice before using it.
+   * to cause JAXB not to emit a field. The method name includes "force" to indicate that you should
+   * think twice before using it.
    */
   @Nullable
   public static <T, C extends Collection<T>> C forceEmptyToNull(@Nullable C potentiallyEmpty) {
