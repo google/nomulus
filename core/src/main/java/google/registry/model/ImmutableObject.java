@@ -52,15 +52,6 @@ public abstract class ImmutableObject implements Cloneable {
   public @interface DoNotHydrate {}
 
   /**
-   * Indicates that the field stores a null value to indicate an empty set. This is also used in
-   * object comparison.
-   */
-  @Documented
-  @Retention(RUNTIME)
-  @Target(FIELD)
-  public @interface EmptySetToNull {}
-
-  /**
    * Indicates that the field does not take part in the immutability contract.
    *
    * <p>Certain fields currently get modified by hibernate and there is nothing we can do about it.

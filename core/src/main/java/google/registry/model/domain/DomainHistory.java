@@ -96,7 +96,6 @@ public class DomainHistory extends HistoryEntry {
               columnList =
                   "domain_history_history_revision_id,domain_history_domain_repo_id,host_repo_id",
               unique = true))
-  @EmptySetToNull
   @Column(name = "host_repo_id")
   Set<VKey<Host>> nsHosts;
 
@@ -160,7 +159,6 @@ public class DomainHistory extends HistoryEntry {
   @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
   @JoinColumn(name = "historyRevisionId", referencedColumnName = "historyRevisionId")
   @JoinColumn(name = "domainRepoId", referencedColumnName = "domainRepoId")
-  @EmptySetToNull
   Set<DomainTransactionRecord> domainTransactionRecords;
 
   public Set<DomainTransactionRecord> getDomainTransactionRecords() {
