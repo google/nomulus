@@ -33,7 +33,7 @@
   </servlet>
   <servlet-mapping>
     <servlet-name>default</servlet-name>
-    <url-pattern>console/*</url-pattern>
+    <url-pattern>/console/*</url-pattern>
   </servlet-mapping>
 
   <!-- The primary EPP endpoint for the Registry, which accepts EPP requests from our TLS proxy. -->

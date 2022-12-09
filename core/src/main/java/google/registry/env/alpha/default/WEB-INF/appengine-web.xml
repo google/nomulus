@@ -24,6 +24,5 @@
     <include path="/assets/css/**" expiration="1m"/>
     <include path="/assets/images/**" expiration="1m"/>
     <include path="/assets/sources/**" expiration="1m"/>
-    <include path="/console/**" expiration="1m"/>
   </static-files>
 </appengine-web-app>
