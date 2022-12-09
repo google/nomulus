@@ -165,8 +165,8 @@ public final class EppResourceUtils {
     // UpdateAutoTimestamp. For non-mutating uses (info, whois, etc.), this is equivalent to rolling
     // "now" forward to at least the last update on the resource, so that a read right after a write
     // doesn't appear stale. For mutating flows, if we had to roll now forward then the flow will
-    // fail when it tries to save anything via Ofy, since "now" is needed to be > the last update
-    // time for writes.
+    // fail when it tries to save anything, since "now" is needed to be > the last update time for
+    // writes.
     return Optional.of(
         cloneProjectedAtTime(
             resource, latestOf(now, resource.getUpdateTimestamp().getTimestamp())));

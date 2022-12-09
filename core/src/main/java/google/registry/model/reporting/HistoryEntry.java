@@ -137,7 +137,7 @@ public abstract class HistoryEntry extends ImmutableObject
   @Column(name = "historyXmlBytes")
   byte[] xmlBytes;
 
-  /** The time the command occurred, represented by the ofy transaction time. */
+  /** The time the command occurred, represented by the transaction time. */
   @Column(nullable = false, name = "historyModificationTime")
   DateTime modificationTime;
 

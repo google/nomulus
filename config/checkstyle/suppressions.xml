@@ -9,6 +9,4 @@
   <suppress files="[/\\].*[/\\]generated.*[/\\]" checks="."/>
   <!-- Ignore Javadoc checks in test files -->
   <suppress files="[/\\].*[/\\]src/test/java/.*[/\\]" checks="JavadocType"/>
-  <!-- ofy() regex check doesn't apply to these files -->
-  <suppress files="AugmentedDeleter.java|AugmentedSaver.java|Ofy.java" checks="RegexpSingleline"/>
 </suppressions>
