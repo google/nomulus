@@ -15,7 +15,6 @@
 package google.registry.beam.invoicing;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.beam.BeamUtils.getQueryFromFile;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 
 import com.google.common.flogger.FluentLogger;
@@ -29,6 +28,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.reporting.billing.BillingModule;
 import google.registry.util.DomainNameUtils;
+import google.registry.util.ResourceUtils;
 import google.registry.util.SqlTemplate;
 import java.io.Serializable;
 import java.time.YearMonth;
@@ -209,7 +209,8 @@ public class InvoicingPipeline implements Serializable {
     YearMonth endMonth = YearMonth.parse(yearMonth).plusMonths(1);
     String queryWithComments =
         SqlTemplate.create(
-                getQueryFromFile(InvoicingPipeline.class, "cloud_sql_billing_events.sql"))
+                ResourceUtils.readResourceUtf8(
+                    InvoicingPipeline.class, "sql/cloud_sql_billing_events.sql"))
             .put("FIRST_TIMESTAMP_OF_MONTH", yearMonth + "-01")
             .put(
                 "LAST_TIMESTAMP_OF_MONTH",
