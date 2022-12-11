@@ -14,7 +14,7 @@
 
 package google.registry.persistence.transaction;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.testing.AppEngineExtension;
@@ -28,7 +28,7 @@ class DummyJpaTransactionManagerTest {
 
   @Test
   void throwsExceptionWhenAnyMethodIsInvoked() {
-    assertThrows(UnsupportedOperationException.class, () -> jpaTm().transact(() -> null));
-    assertThrows(UnsupportedOperationException.class, () -> jpaTm().getTransactionTime());
+    assertThrows(UnsupportedOperationException.class, () -> tm().transact(() -> null));
+    assertThrows(UnsupportedOperationException.class, () -> tm().getTransactionTime());
   }
 }

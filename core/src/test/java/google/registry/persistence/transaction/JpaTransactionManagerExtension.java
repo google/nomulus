@@ -213,7 +213,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
       recreateSchema();
     }
     JpaTransactionManagerImpl txnManager = new JpaTransactionManagerImpl(emf, clock);
-    cachedTm = TransactionManagerFactory.jpaTm();
+    cachedTm = TransactionManagerFactory.tm();
     TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(txnManager));
     TransactionManagerFactory.setReplicaJpaTm(
         Suppliers.ofInstance(new ReplicaSimulatingJpaTransactionManager(txnManager)));

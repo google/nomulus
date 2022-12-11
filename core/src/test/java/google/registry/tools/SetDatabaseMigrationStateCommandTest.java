@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -42,15 +42,13 @@ public class SetDatabaseMigrationStateCommandTest
   @Test
   void testSuccess_setsBasicSchedule() throws Exception {
     assertThat(DatabaseMigrationStateSchedule.get()).isEqualTo(DEFAULT_TRANSITION_MAP);
-    assertThat(jpaTm().transact(() -> jpaTm().loadSingleton(DatabaseMigrationStateSchedule.class)))
+    assertThat(tm().transact(() -> tm().loadSingleton(DatabaseMigrationStateSchedule.class)))
         .isEmpty();
     runCommandForced("--migration_schedule=1970-01-01T00:00:00.000Z=DATASTORE_ONLY");
-    jpaTm()
-        .transact(
+    tm().transact(
             () ->
                 assertThat(
-                        jpaTm()
-                            .loadSingleton(DatabaseMigrationStateSchedule.class)
+                        tm().loadSingleton(DatabaseMigrationStateSchedule.class)
                             .get()
                             .migrationTransitions)
                     .isEqualTo(DEFAULT_TRANSITION_MAP));

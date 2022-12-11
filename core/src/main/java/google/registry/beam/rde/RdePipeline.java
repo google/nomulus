@@ -26,7 +26,7 @@ import static google.registry.beam.rde.RdePipeline.TupleTags.REFERENCED_HOSTS;
 import static google.registry.beam.rde.RdePipeline.TupleTags.REVISION_ID;
 import static google.registry.beam.rde.RdePipeline.TupleTags.SUPERORDINATE_DOMAINS;
 import static google.registry.model.reporting.HistoryEntryDao.RESOURCE_TYPES_TO_HISTORY_TYPES;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.apache.beam.sdk.values.TypeDescriptors.kvs;
 
 import com.google.common.collect.ImmutableList;
@@ -305,7 +305,7 @@ public class RdePipeline implements Serializable {
                     (String registrarRepoId) -> {
                       VKey<Registrar> key = VKey.create(Registrar.class, registrarRepoId);
                       includedRegistrarCounter.inc();
-                      Registrar registrar = jpaTm().transact(() -> jpaTm().loadByKey(key));
+                      Registrar registrar = tm().transact(() -> tm().loadByKey(key));
                       DepositFragment fragment = marshaller.marshalRegistrar(registrar);
                       ImmutableSet<KV<PendingDeposit, DepositFragment>> fragments =
                           pendingDeposits.stream()
@@ -376,11 +376,9 @@ public class RdePipeline implements Serializable {
   private <T extends HistoryEntry> EppResource loadResourceByHistoryEntryId(
       Class<T> historyEntryClazz, String repoId, long revisionId) {
 
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
-                jpaTm()
-                    .loadByKey(
+                tm().loadByKey(
                         VKey.create(historyEntryClazz, new HistoryEntryId(repoId, revisionId))))
         .getResourceAtPointInTime()
         .map(resource -> resource.cloneProjectedAtTime(watermark))

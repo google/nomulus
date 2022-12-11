@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.config.RegistryEnvironment.PRODUCTION;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
@@ -243,7 +242,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     Registrar registrar = loadRegistrarUnchecked(registrarId);
     // Detach the registrar to avoid Hibernate object-updates, since we wish to email
     // out the diffs between the existing and updated registrar objects
-    jpaTm().getEntityManager().detach(registrar);
+    tm().getEntityManager().detach(registrar);
     // Verify that the registrar hasn't been changed.
     // To do that - we find the latest update time (or null if the registrar has been
     // deleted) and compare to the update time from the args. The update time in the args

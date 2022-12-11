@@ -14,7 +14,7 @@
 
 package google.registry.beam.common;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.truth.Truth;
@@ -81,12 +81,12 @@ public class DatabaseSnapshotTest {
     jpa =
         new JpaTransactionManagerImpl(
             Persistence.createEntityManagerFactory("nomulus", jpaProperties), new FakeClock());
-    origJpa = jpaTm();
+    origJpa = tm();
     TransactionManagerFactory.setJpaTm(() -> jpa);
 
     Registry tld = DatabaseHelper.newRegistry("tld", "TLD");
-    jpaTm().transact(() -> jpaTm().put(tld));
-    registry = jpaTm().transact(() -> jpaTm().loadByEntity(tld));
+    tm().transact(() -> tm().put(tld));
+    registry = tm().transact(() -> tm().loadByEntity(tld));
   }
 
   @AfterAll
@@ -113,11 +113,9 @@ public class DatabaseSnapshotTest {
   void readSnapshot() {
     try (DatabaseSnapshot databaseSnapshot = DatabaseSnapshot.createSnapshot()) {
       Registry snapshotRegistry =
-          jpaTm()
-              .transact(
+          tm().transact(
                   () ->
-                      jpaTm()
-                          .setDatabaseSnapshot(databaseSnapshot.getSnapshotId())
+                      tm().setDatabaseSnapshot(databaseSnapshot.getSnapshotId())
                           .loadByEntity(registry));
       Truth.assertThat(snapshotRegistry).isEqualTo(registry);
     }
@@ -131,22 +129,20 @@ public class DatabaseSnapshotTest {
               .asBuilder()
               .setCreateBillingCost(registry.getStandardCreateCost().plus(1))
               .build();
-      jpaTm().transact(() -> jpaTm().put(updated));
+      tm().transact(() -> tm().put(updated));
 
-      Registry persistedUpdate = jpaTm().transact(() -> jpaTm().loadByEntity(registry));
+      Registry persistedUpdate = tm().transact(() -> tm().loadByEntity(registry));
       Truth.assertThat(persistedUpdate).isNotEqualTo(registry);
 
       Registry snapshotRegistry =
-          jpaTm()
-              .transact(
+          tm().transact(
                   () ->
-                      jpaTm()
-                          .setDatabaseSnapshot(databaseSnapshot.getSnapshotId())
+                      tm().setDatabaseSnapshot(databaseSnapshot.getSnapshotId())
                           .loadByEntity(registry));
       Truth.assertThat(snapshotRegistry).isEqualTo(registry);
     } finally {
       // Revert change to registry in DB, which is shared by all test methods.
-      jpaTm().transact(() -> jpaTm().put(registry));
+      tm().transact(() -> tm().put(registry));
     }
   }
 
@@ -158,7 +154,7 @@ public class DatabaseSnapshotTest {
               .asBuilder()
               .setCreateBillingCost(registry.getStandardCreateCost().plus(1))
               .build();
-      jpaTm().transact(() -> jpaTm().put(updated));
+      tm().transact(() -> tm().put(updated));
 
       Read<Registry, Registry> read =
           RegistryJpaIO.read(() -> CriteriaQueryBuilder.create(Registry.class).build(), x -> x)
@@ -172,7 +168,7 @@ public class DatabaseSnapshotTest {
       testPipeline.run();
     } finally {
       // Revert change to registry in DB, which is shared by all test methods.
-      jpaTm().transact(() -> jpaTm().put(registry));
+      tm().transact(() -> tm().put(registry));
     }
   }
 }

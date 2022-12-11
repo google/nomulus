@@ -15,7 +15,7 @@
 package google.registry.tools.server;
 
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 
@@ -47,10 +47,9 @@ public final class ListReservedListsAction extends ListObjectsAction<ReservedLis
 
   @Override
   public ImmutableSet<ReservedList> loadObjects() {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
-                jpaTm().loadAllOf(ReservedList.class).stream()
+                tm().loadAllOf(ReservedList.class).stream()
                     .map(ReservedList::getName)
                     .map(ReservedListDao::getLatestRevision)
                     .filter(Optional::isPresent)

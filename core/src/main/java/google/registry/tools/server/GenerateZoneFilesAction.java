@@ -17,7 +17,6 @@ package google.registry.tools.server;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.BaseEncoding.base16;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -144,7 +143,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   }
 
   private void generateForTld(String tld, DateTime exportTime) {
-    ImmutableList<String> stanzas = jpaTm().transact(() -> getStanzasForTld(tld, exportTime));
+    ImmutableList<String> stanzas = tm().transact(() -> getStanzasForTld(tld, exportTime));
     BlobId outputBlobId = BlobId.of(bucket, String.format(FILENAME_FORMAT, tld, exportTime));
     try (OutputStream gcsOutput = gcsUtils.openOutputStream(outputBlobId);
         Writer osWriter = new OutputStreamWriter(gcsOutput, UTF_8);
@@ -160,8 +159,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   private ImmutableList<String> getStanzasForTld(String tld, DateTime exportTime) {
     ImmutableList.Builder<String> result = new ImmutableList.Builder<>();
     ScrollableResults scrollableResults =
-        jpaTm()
-            .query("FROM Domain WHERE tld = :tld AND deletionTime > :exportTime")
+        tm().query("FROM Domain WHERE tld = :tld AND deletionTime > :exportTime")
             .setParameter("tld", tld)
             .setParameter("exportTime", exportTime)
             .unwrap(Query.class)
@@ -171,8 +169,8 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
       Domain domain = (Domain) scrollableResults.get(0);
       populateStanzasForDomain(domain, exportTime, result);
       if (i == 0) {
-        jpaTm().getEntityManager().flush();
-        jpaTm().getEntityManager().clear();
+        tm().getEntityManager().flush();
+        tm().getEntityManager().clear();
       }
     }
     return result.build();

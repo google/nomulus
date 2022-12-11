@@ -15,7 +15,7 @@
 package google.registry.model.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -212,12 +212,11 @@ public class Lock extends ImmutableObject implements Serializable {
     String scope = tld != null ? tld : GLOBAL;
     Supplier<AcquireResult> lockAcquirer =
         () -> {
-          DateTime now = jpaTm().getTransactionTime();
+          DateTime now = tm().getTransactionTime();
 
           // Checking if an unexpired lock still exists - if so, the lock can't be acquired.
           Lock lock =
-              jpaTm()
-                  .loadByKeyIfPresent(VKey.create(Lock.class, new LockId(resourceName, scope)))
+              tm().loadByKeyIfPresent(VKey.create(Lock.class, new LockId(resourceName, scope)))
                   .orElse(null);
           if (lock != null) {
             logger.atInfo().log(
@@ -237,11 +236,11 @@ public class Lock extends ImmutableObject implements Serializable {
 
           Lock newLock =
               create(resourceName, scope, requestStatusChecker.getLogId(), now, leaseLength);
-          jpaTm().put(newLock);
+          tm().put(newLock);
 
           return AcquireResult.create(now, lock, newLock, lockState);
         };
-    AcquireResult acquireResult = jpaTm().transactWithoutBackup(lockAcquirer);
+    AcquireResult acquireResult = tm().transactWithoutBackup(lockAcquirer);
 
     logAcquireResult(acquireResult);
     lockMetrics.recordAcquire(resourceName, scope, acquireResult.lockState());
@@ -258,15 +257,15 @@ public class Lock extends ImmutableObject implements Serializable {
           // this can happen if release() is called around the expiration time and the lock
           // expires underneath us.
           VKey<Lock> key = VKey.create(Lock.class, new LockId(resourceName, scope));
-          Lock loadedLock = jpaTm().loadByKeyIfPresent(key).orElse(null);
+          Lock loadedLock = tm().loadByKeyIfPresent(key).orElse(null);
           if (equals(loadedLock)) {
             // Use deleteIgnoringReadOnly() so that we don't create a commit log entry for deleting
             // the lock.
             logger.atInfo().log("Deleting lock: %s", lockId);
-            jpaTm().delete(key);
+            tm().delete(key);
 
             lockMetrics.recordRelease(
-                resourceName, scope, new Duration(acquiredTime, jpaTm().getTransactionTime()));
+                resourceName, scope, new Duration(acquiredTime, tm().getTransactionTime()));
           } else {
             logger.atSevere().log(
                 "The lock we acquired was transferred to someone else before we"
@@ -278,7 +277,7 @@ public class Lock extends ImmutableObject implements Serializable {
           }
           return null;
         };
-    jpaTm().transactWithoutBackup(lockReleaser);
+    tm().transactWithoutBackup(lockReleaser);
   }
 
   static class LockId extends ImmutableObject implements Serializable {

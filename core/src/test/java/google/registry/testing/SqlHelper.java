@@ -15,7 +15,7 @@
 package google.registry.testing;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -33,37 +33,37 @@ import org.junit.jupiter.api.function.Executable;
 public class SqlHelper {
 
   public static RegistryLock saveRegistryLock(RegistryLock lock) {
-    return jpaTm().transact(() -> RegistryLockDao.save(lock));
+    return tm().transact(() -> RegistryLockDao.save(lock));
   }
 
   public static Optional<RegistryLock> getRegistryLockByVerificationCode(String verificationCode) {
-    return jpaTm().transact(() -> RegistryLockDao.getByVerificationCode(verificationCode));
+    return tm().transact(() -> RegistryLockDao.getByVerificationCode(verificationCode));
   }
 
   public static Optional<RegistryLock> getMostRecentRegistryLockByRepoId(String repoId) {
-    return jpaTm().transact(() -> RegistryLockDao.getMostRecentByRepoId(repoId));
+    return tm().transact(() -> RegistryLockDao.getMostRecentByRepoId(repoId));
   }
 
   public static Optional<RegistryLock> getMostRecentVerifiedRegistryLockByRepoId(String repoId) {
-    return jpaTm().transact(() -> RegistryLockDao.getMostRecentVerifiedLockByRepoId(repoId));
+    return tm().transact(() -> RegistryLockDao.getMostRecentVerifiedLockByRepoId(repoId));
   }
 
   public static Optional<RegistryLock> getMostRecentUnlockedRegistryLockByRepoId(String repoId) {
-    return jpaTm().transact(() -> RegistryLockDao.getMostRecentVerifiedUnlockByRepoId(repoId));
+    return tm().transact(() -> RegistryLockDao.getMostRecentVerifiedUnlockByRepoId(repoId));
   }
 
   public static ImmutableList<RegistryLock> getRegistryLocksByRegistrarId(String registrarId) {
-    return jpaTm().transact(() -> RegistryLockDao.getLocksByRegistrarId(registrarId));
+    return tm().transact(() -> RegistryLockDao.getLocksByRegistrarId(registrarId));
   }
 
   public static Optional<RegistryLock> getRegistryLockByRevisionId(long revisionId) {
-    return jpaTm().transact(() -> RegistryLockDao.getByRevisionId(revisionId));
+    return tm().transact(() -> RegistryLockDao.getByRevisionId(revisionId));
   }
 
   public static Registrar saveRegistrar(String registrarId) {
     Registrar registrar = makeRegistrar1().asBuilder().setRegistrarId(registrarId).build();
-    jpaTm().transact(() -> jpaTm().insert(registrar));
-    return jpaTm().transact(() -> jpaTm().loadByKey(registrar.createVKey()));
+    tm().transact(() -> tm().insert(registrar));
+    return tm().transact(() -> tm().loadByKey(registrar.createVKey()));
   }
 
   public static void assertThrowForeignKeyViolation(Executable executable) {

@@ -15,7 +15,7 @@
 package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -51,7 +51,7 @@ public class StringMapConverterBaseTest {
     TestEntity testEntity = new TestEntity(MAP);
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.map).containsExactlyEntriesIn(MAP);
   }
 
@@ -60,12 +60,11 @@ public class StringMapConverterBaseTest {
     TestEntity testEntity = new TestEntity(MAP);
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.map).containsExactlyEntriesIn(MAP);
     persisted.map = ImmutableMap.of(new Key("key4"), new Value("value4"));
-    jpaTm().transact(() -> jpaTm().getEntityManager().merge(persisted));
-    TestEntity updated =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+    tm().transact(() -> tm().getEntityManager().merge(persisted));
+    TestEntity updated = tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(updated.map).containsExactly(new Key("key4"), new Value("value4"));
   }
 
@@ -74,7 +73,7 @@ public class StringMapConverterBaseTest {
     TestEntity testEntity = new TestEntity(null);
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.map).isNull();
   }
 
@@ -83,7 +82,7 @@ public class StringMapConverterBaseTest {
     TestEntity testEntity = new TestEntity(ImmutableMap.of());
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.map).isEmpty();
   }
 
@@ -117,13 +116,11 @@ public class StringMapConverterBaseTest {
   }
 
   private static Object getSingleResultFromNativeQuery(String sql) {
-    return jpaTm()
-        .transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).getSingleResult());
+    return tm().transact(() -> tm().getEntityManager().createNativeQuery(sql).getSingleResult());
   }
 
   private static Object executeNativeQuery(String sql) {
-    return jpaTm()
-        .transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).executeUpdate());
+    return tm().transact(() -> tm().getEntityManager().createNativeQuery(sql).executeUpdate());
   }
 
   private static class Key extends ImmutableObject {

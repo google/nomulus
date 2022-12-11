@@ -16,7 +16,6 @@ package google.registry.tools.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.tld.Registries.assertTldsExist;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 
@@ -80,8 +79,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
     checkArgument(smearMinutes > 0, "Must specify a positive number of smear minutes");
     tm().transact(
             () ->
-                jpaTm()
-                    .query(
+                tm().query(
                         "SELECT domainName FROM Domain "
                             + "WHERE tld IN (:tlds) "
                             + "AND deletionTime > :now",

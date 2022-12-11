@@ -16,7 +16,7 @@ package google.registry.testing;
 
 import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -66,7 +66,7 @@ class AppEngineExtensionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    originalJpa = jpaTm();
+    originalJpa = tm();
     appEngine.beforeEach(context.getContext());
   }
 
@@ -75,7 +75,7 @@ class AppEngineExtensionTest {
     // Note: cannot use isSameInstanceAs() because DummyTransactionManager would throw on any
     // access.
     assertWithMessage("Original state not restore. Is appEngine.afterEach not called by this test?")
-        .that(originalJpa == jpaTm())
+        .that(originalJpa == tm())
         .isTrue();
   }
 

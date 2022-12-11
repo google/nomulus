@@ -14,7 +14,7 @@
 
 package google.registry.model.tld.label;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.flogger.FluentLogger;
@@ -31,7 +31,7 @@ public class ReservedListDao {
   public static void save(ReservedList reservedList) {
     checkArgumentNotNull(reservedList, "Must specify reservedList");
     logger.atInfo().log("Saving reserved list %s to Cloud SQL.", reservedList.getName());
-    jpaTm().transact(() -> jpaTm().insert(reservedList));
+    tm().transact(() -> tm().insert(reservedList));
     logger.atInfo().log(
         "Saved reserved list %s with %d entries to Cloud SQL.",
         reservedList.getName(), reservedList.getReservedListEntries().size());
@@ -39,7 +39,7 @@ public class ReservedListDao {
 
   /** Deletes a reserved list from Cloud SQL. */
   public static void delete(ReservedList reservedList) {
-    jpaTm().transact(() -> jpaTm().delete(reservedList));
+    tm().transact(() -> tm().delete(reservedList));
   }
 
   /**
@@ -47,11 +47,9 @@ public class ReservedListDao {
    * exists.
    */
   public static Optional<ReservedList> getLatestRevision(String reservedListName) {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
-                jpaTm()
-                    .query(
+                tm().query(
                         "FROM ReservedList WHERE revisionId IN "
                             + "(SELECT MAX(revisionId) FROM ReservedList WHERE name = :name)",
                         ReservedList.class)
@@ -66,11 +64,9 @@ public class ReservedListDao {
    * <p>This means that at least one reserved list revision must exist for the given name.
    */
   public static boolean checkExists(String reservedListName) {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
-                jpaTm()
-                        .query("SELECT 1 FROM ReservedList WHERE name = :name", Integer.class)
+                tm().query("SELECT 1 FROM ReservedList WHERE name = :name", Integer.class)
                         .setParameter("name", reservedListName)
                         .setMaxResults(1)
                         .getResultList()

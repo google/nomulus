@@ -15,7 +15,7 @@
 package google.registry.beam.resave;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.apache.beam.sdk.values.TypeDescriptors.integers;
 
 import com.google.common.collect.ImmutableList;
@@ -171,19 +171,18 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
     public void processElement(
         @Element KV<ShardedKey<Integer>, Iterable<String>> element,
         OutputReceiver<Void> outputReceiver) {
-      jpaTm()
-          .transact(
+      tm().transact(
               () -> {
-                DateTime now = jpaTm().getTransactionTime();
+                DateTime now = tm().getTransactionTime();
                 ImmutableList<VKey<? extends EppResource>> keys =
                     Streams.stream(element.getValue())
                         .map(repoId -> VKey.create(clazz, repoId))
                         .collect(toImmutableList());
                 ImmutableList<EppResource> mappedResources =
-                    jpaTm().loadByKeys(keys).values().stream()
+                    tm().loadByKeys(keys).values().stream()
                         .map(r -> r.cloneProjectedAtTime(now))
                         .collect(toImmutableList());
-                jpaTm().putAll(mappedResources);
+                tm().putAll(mappedResources);
               });
     }
   }

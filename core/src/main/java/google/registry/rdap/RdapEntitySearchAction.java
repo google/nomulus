@@ -15,7 +15,7 @@
 package google.registry.rdap;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.rdap.RdapUtils.getRegistrarByIanaIdentifier;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
@@ -260,7 +260,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
         resultSet = RdapResultSet.create(ImmutableList.of());
       } else {
         resultSet =
-            replicaJpaTm()
+            replicaTm()
                 .transact(
                     () -> {
                       CriteriaQueryBuilder<Contact> builder =
@@ -307,10 +307,10 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
         contactList = ImmutableList.of();
       } else {
         Optional<Contact> contact =
-            replicaJpaTm()
+            replicaTm()
                 .transact(
                     () ->
-                        replicaJpaTm()
+                        replicaTm()
                             .loadByKeyIfPresent(
                                 VKey.create(Contact.class, partialStringQuery.getInitialString())));
         contactList =
@@ -370,7 +370,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
         contactResultSet = RdapResultSet.create(ImmutableList.of());
       } else {
         contactResultSet =
-            replicaJpaTm()
+            replicaTm()
                 .transact(
                     () ->
                         getMatchingResources(

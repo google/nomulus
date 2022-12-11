@@ -14,7 +14,7 @@
 
 package google.registry.model;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import javax.annotation.Nullable;
 import javax.persistence.Column;
@@ -34,7 +34,7 @@ public class CreateAutoTimestamp extends ImmutableObject implements UnsafeSerial
   @PreUpdate
   void setTimestamp() {
     if (creationTime == null) {
-      creationTime = jpaTm().getTransactionTime();
+      creationTime = tm().getTransactionTime();
     }
   }
 

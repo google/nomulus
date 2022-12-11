@@ -15,7 +15,7 @@
 package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
@@ -51,8 +51,7 @@ class JpaTestExtensionsSqlLoggingTest {
 
   @Test
   void sqlLog_displayed() throws UnsupportedEncodingException {
-    jpaTm()
-        .transact(() -> jpaTm().getEntityManager().createNativeQuery("select 1").getSingleResult());
+    tm().transact(() -> tm().getEntityManager().createNativeQuery("select 1").getSingleResult());
     assertThat(stdoutBuffer.toString(UTF_8.name())).contains("select 1");
   }
 }

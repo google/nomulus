@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -111,18 +111,16 @@ abstract class CreateOrUpdateReservedListCommandTestCase<
   }
 
   ReservedList getCloudSqlReservedList(String name) {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () -> {
               long revisionId =
-                  jpaTm()
-                      .query(
+                  tm().query(
                           "SELECT MAX(rl.revisionId) FROM ReservedList rl WHERE name = :name",
                           Long.class)
                       .setParameter("name", name)
                       .getSingleResult();
-              return jpaTm()
-                  .query("FROM ReservedList WHERE revisionId = :revisionId", ReservedList.class)
+              return tm().query(
+                      "FROM ReservedList WHERE revisionId = :revisionId", ReservedList.class)
                   .setParameter("revisionId", revisionId)
                   .getSingleResult();
             });

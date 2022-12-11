@@ -14,7 +14,6 @@
 package google.registry.batch;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
@@ -71,8 +70,7 @@ public class CheckPackagesComplianceAction implements Runnable {
               for (PackagePromotion packagePromo : packages) {
                 Long creates =
                     (Long)
-                        jpaTm()
-                            .query(
+                        tm().query(
                                 "SELECT COUNT(*) FROM DomainHistory WHERE current_package_token ="
                                     + " :token AND modificationTime >= :lastBilling AND type ="
                                     + " 'DOMAIN_CREATE'")

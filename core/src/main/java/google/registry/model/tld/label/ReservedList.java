@@ -22,7 +22,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
 import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -78,8 +78,7 @@ public final class ReservedList
 
   @PreRemove
   void preRemove() {
-    jpaTm()
-        .query("DELETE FROM ReservedEntry WHERE revision_id = :revisionId")
+    tm().query("DELETE FROM ReservedEntry WHERE revision_id = :revisionId")
         .setParameter("revisionId", revisionId)
         .executeUpdate();
   }
@@ -101,7 +100,7 @@ public final class ReservedList
               entry -> {
                 // We can safely change the revision id since it's "Insignificant".
                 entry.revisionId = revisionId;
-                jpaTm().insert(entry);
+                tm().insert(entry);
               });
     }
   }
@@ -200,10 +199,9 @@ public final class ReservedList
   public synchronized ImmutableMap<String, ReservedListEntry> getReservedListEntries() {
     if (reservedListMap == null) {
       reservedListMap =
-          jpaTm()
-              .transact(
+          tm().transact(
                   () ->
-                      jpaTm()
+                      tm()
                           .createQueryComposer(ReservedListEntry.class)
                           .where("revisionId", EQ, revisionId)
                           .stream()

@@ -17,7 +17,7 @@ package google.registry.persistence;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableSet;
@@ -56,27 +56,24 @@ class EntityCallbacksListenerTest {
 
     TestEntity testUpdate = new TestEntity();
     TestEntity updated =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () -> {
-                  TestEntity merged = jpaTm().getEntityManager().merge(testUpdate);
+                  TestEntity merged = tm().getEntityManager().merge(testUpdate);
                   merged.nonTransientField++;
-                  jpaTm().getEntityManager().flush();
+                  tm().getEntityManager().flush();
                   return merged;
                 });
     // Note that when we get the merged entity, its @PostLoad callbacks are also invoked
     checkAll(updated, 0, 1, 0, 1);
 
-    TestEntity testLoad =
-        jpaTm().transact(() -> jpaTm().loadByKey(VKey.create(TestEntity.class, "id")));
+    TestEntity testLoad = tm().transact(() -> tm().loadByKey(VKey.create(TestEntity.class, "id")));
     checkAll(testLoad, 0, 0, 0, 1);
 
     TestEntity testRemove =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () -> {
-                  TestEntity removed = jpaTm().loadByKey(VKey.create(TestEntity.class, "id"));
-                  return jpaTm().delete(removed);
+                  TestEntity removed = tm().loadByKey(VKey.create(TestEntity.class, "id"));
+                  return tm().delete(removed);
                 });
     checkAll(testRemove, 0, 0, 1, 1);
   }
@@ -104,11 +101,10 @@ class EntityCallbacksListenerTest {
   void verifyCallbacksNotCalledOnCommit() {
     insertInDb(new TestEntity());
 
-    TestEntity testLoad =
-        jpaTm().transact(() -> jpaTm().loadByKey(VKey.create(TestEntity.class, "id")));
+    TestEntity testLoad = tm().transact(() -> tm().loadByKey(VKey.create(TestEntity.class, "id")));
     assertThat(testLoad.entityPreUpdate).isEqualTo(0);
 
-    testLoad = jpaTm().transact(() -> jpaTm().loadByKey(VKey.create(TestEntity.class, "id")));
+    testLoad = tm().transact(() -> tm().loadByKey(VKey.create(TestEntity.class, "id")));
 
     // Verify that post-load happened but pre-update didn't.
     assertThat(testLoad.entityPostLoad).isEqualTo(1);

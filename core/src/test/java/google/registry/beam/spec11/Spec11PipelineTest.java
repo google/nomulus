@@ -17,7 +17,7 @@ package google.registry.beam.spec11;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
@@ -278,11 +278,10 @@ class Spec11PipelineTest {
   }
 
   private void verifySaveToCloudSql() {
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               ImmutableList<Spec11ThreatMatch> sqlThreatMatches =
-                  Spec11ThreatMatchDao.loadEntriesByDate(jpaTm(), new LocalDate(2020, 1, 27));
+                  Spec11ThreatMatchDao.loadEntriesByDate(tm(), new LocalDate(2020, 1, 27));
               assertThat(sqlThreatMatches)
                   .comparingElementsUsing(immutableObjectCorrespondence("id"))
                   .containsExactlyElementsIn(sqlThreatMatches);

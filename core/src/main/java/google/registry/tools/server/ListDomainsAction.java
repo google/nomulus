@@ -17,7 +17,7 @@ package google.registry.tools.server;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.tld.Registries.assertTldsExist;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
@@ -74,18 +74,16 @@ public final class ListDomainsAction extends ListObjectsAction<Domain> {
   }
 
   private ImmutableList<Domain> loadDomains() {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
-                jpaTm()
-                    .query(
+                tm().query(
                         "FROM Domain WHERE tld IN (:tlds) AND deletionTime > "
                             + "current_timestamp() ORDER BY creationTime DESC",
                         Domain.class)
                     .setParameter("tlds", tlds)
                     .setMaxResults(limit)
                     .getResultStream()
-                    .map(EppResourceUtils.transformAtTime(jpaTm().getTransactionTime()))
+                    .map(EppResourceUtils.transformAtTime(tm().getTransactionTime()))
                     .collect(toImmutableList()));
   }
 }

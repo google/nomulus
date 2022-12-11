@@ -17,7 +17,7 @@ package google.registry.model.tld.label;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.money.CurrencyUnit.JPY;
@@ -28,7 +28,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
-import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestCacheExtension;
@@ -88,8 +87,7 @@ public class PremiumListDaoTest {
   @Test
   void saveNew_worksSuccessfully() {
     PremiumListDao.save(testList);
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               Optional<PremiumList> persistedListOpt = PremiumListDao.getLatestRevision("testname");
               assertThat(persistedListOpt).isPresent();
@@ -119,8 +117,7 @@ public class PremiumListDaoTest {
                     BigDecimal.valueOf(30.03)))
             .setCreationTimestamp(fakeClock.nowUtc())
             .build());
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               Optional<PremiumList> savedListOpt = PremiumListDao.getLatestRevision("testname");
               assertThat(savedListOpt).isPresent();
@@ -167,8 +164,7 @@ public class PremiumListDaoTest {
             .setLabelsToPrices(TEST_PRICES)
             .setCreationTimestamp(fakeClock.nowUtc())
             .build());
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               Optional<PremiumList> persistedList = PremiumListDao.getLatestRevision("list1");
               assertThat(persistedList).isPresent();
@@ -188,8 +184,7 @@ public class PremiumListDaoTest {
             .setLabelsToPrices(TEST_PRICES)
             .setCreationTimestamp(fakeClock.nowUtc())
             .build());
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               PremiumList premiumList = PremiumListDao.getLatestRevision("list1").get();
               assertThat(premiumList.getLabelsToPrices())
@@ -260,8 +255,7 @@ public class PremiumListDaoTest {
     PremiumListDao.save(testList);
     PremiumList pl = PremiumListDao.getLatestRevision("testname").get();
     assertThat(PremiumListDao.premiumListCache.getIfPresent("testname")).hasValue(pl);
-    TransactionManagerFactory.tm()
-        .transact(() -> PremiumListDao.save("testname", USD, ImmutableList.of("test,USD 1")));
+    tm().transact(() -> PremiumListDao.save("testname", USD, ImmutableList.of("test,USD 1")));
     assertThat(PremiumListDao.premiumListCache.getIfPresent("testname")).isNull();
   }
 

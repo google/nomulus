@@ -15,7 +15,7 @@
 package google.registry.beam.spec11;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
@@ -131,9 +131,8 @@ public class Spec11Pipeline implements Serializable {
                   public void processElement(
                       @Element KV<String, String> input, OutputReceiver<DomainNameInfo> output) {
                     Domain domain =
-                        jpaTm()
-                            .transact(
-                                () -> jpaTm().loadByKey(VKey.create(Domain.class, input.getKey())));
+                        tm().transact(
+                                () -> tm().loadByKey(VKey.create(Domain.class, input.getKey())));
                     String emailAddress = input.getValue();
                     if (emailAddress == null) {
                       emailAddress = "";

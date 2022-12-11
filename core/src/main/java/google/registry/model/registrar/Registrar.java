@@ -27,7 +27,6 @@ import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.config.RegistryConfig.getDefaultRegistrarWhoisServer;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.tld.Registries.assertTldsExist;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
@@ -580,8 +579,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   private Iterable<RegistrarPoc> getContactsIterable() {
     return tm().transact(
             () ->
-                jpaTm()
-                    .query("FROM RegistrarPoc WHERE registrarId = :registrarId", RegistrarPoc.class)
+                tm().query("FROM RegistrarPoc WHERE registrarId = :registrarId", RegistrarPoc.class)
                     .setParameter("registrarId", registrarId)
                     .getResultStream()
                     .collect(toImmutableList()));

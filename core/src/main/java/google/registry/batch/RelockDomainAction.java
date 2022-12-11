@@ -16,7 +16,6 @@ package google.registry.batch;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
@@ -189,7 +188,7 @@ public class RelockDomainAction implements Runnable {
         "Domain %s has a pending delete.",
         domainName);
     checkArgument(
-        !DateTimeUtils.isAtOrAfter(jpaTm().getTransactionTime(), domain.getDeletionTime()),
+        !DateTimeUtils.isAtOrAfter(tm().getTransactionTime(), domain.getDeletionTime()),
         "Domain %s has been deleted.",
         domainName);
     checkArgument(

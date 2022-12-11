@@ -16,7 +16,6 @@ package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
@@ -349,14 +348,12 @@ public final class EppResourceUtils {
               Query query;
               if (isContactKey) {
                 query =
-                    jpaTm()
-                        .query(CONTACT_LINKED_DOMAIN_QUERY, String.class)
+                    tm().query(CONTACT_LINKED_DOMAIN_QUERY, String.class)
                         .setParameter("fkRepoId", key)
                         .setParameter("now", now);
               } else {
                 query =
-                    jpaTm()
-                        .getEntityManager()
+                    tm().getEntityManager()
                         .createNativeQuery(HOST_LINKED_DOMAIN_QUERY)
                         .setParameter("fkRepoId", key.getKey())
                         .setParameter("now", now.toDate());

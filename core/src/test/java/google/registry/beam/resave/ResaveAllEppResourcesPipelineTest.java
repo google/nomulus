@@ -16,7 +16,7 @@ package google.registry.beam.resave;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
@@ -151,7 +151,7 @@ public class ResaveAllEppResourcesPipelineTest {
     persistDomainWithDependentResources("renewed", "tld", contact, now, now, now.plusYears(1));
     persistActiveDomain("nonrenewed.tld", now, now.plusYears(20));
     // Spy the transaction manager so we can be sure we're only saving the renewed domain
-    JpaTransactionManager spy = spy(jpaTm());
+    JpaTransactionManager spy = spy(tm());
     TransactionManagerFactory.setJpaTm(() -> spy);
     ArgumentCaptor<Domain> domainPutCaptor = ArgumentCaptor.forClass(Domain.class);
     runPipeline();
@@ -171,7 +171,7 @@ public class ResaveAllEppResourcesPipelineTest {
         persistDomainWithDependentResources(
             "nonrenewed", "tld", contact, now, now, now.plusYears(20));
     // Spy the transaction manager so we can be sure we're attempting to save everything
-    JpaTransactionManager spy = spy(jpaTm());
+    JpaTransactionManager spy = spy(tm());
     TransactionManagerFactory.setJpaTm(() -> spy);
     ArgumentCaptor<EppResource> eppResourcePutCaptor = ArgumentCaptor.forClass(EppResource.class);
     runPipeline();

@@ -18,7 +18,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.flows.poll.PollFlowUtils.createPollMessageQuery;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.LIKE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -81,8 +81,7 @@ final class AckPollMessagesCommand implements Command {
 
   /** Loads and acks all matching poll messages from SQL in one transaction. */
   private void ackPollMessagesSql() {
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               QueryComposer<PollMessage> query = createPollMessageQuery(clientId, clock.nowUtc());
               if (!isNullOrEmpty(message)) {

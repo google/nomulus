@@ -15,7 +15,7 @@
 package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableSet;
@@ -41,7 +41,7 @@ public class StringSetConverterTest {
     TestEntity testEntity = new TestEntity(tlds);
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).containsExactly("app", "dev", "how");
   }
 
@@ -50,7 +50,7 @@ public class StringSetConverterTest {
     TestEntity testEntity = new TestEntity(null);
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).isNull();
   }
 
@@ -59,7 +59,7 @@ public class StringSetConverterTest {
     TestEntity testEntity = new TestEntity(ImmutableSet.of());
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).isEmpty();
   }
 

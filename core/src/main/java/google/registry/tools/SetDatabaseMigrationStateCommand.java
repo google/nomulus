@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -48,11 +48,10 @@ public class SetDatabaseMigrationStateCommand extends ConfirmingCommand {
 
   @Override
   protected String prompt() {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () -> {
               StringBuilder result = new StringBuilder();
-              DateTime now = jpaTm().getTransactionTime();
+              DateTime now = tm().getTransactionTime();
               DateTime nextTransition = transitionSchedule.ceilingKey(now);
               if (nextTransition != null && nextTransition.isBefore(now.plusMinutes(10))) {
                 result.append(WARNING_MESSAGE);
@@ -65,7 +64,7 @@ public class SetDatabaseMigrationStateCommand extends ConfirmingCommand {
 
   @Override
   protected String execute() {
-    jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(transitionSchedule));
+    tm().transact(() -> DatabaseMigrationStateSchedule.set(transitionSchedule));
     return String.format("Successfully set new migration state schedule %s", transitionSchedule);
   }
 }

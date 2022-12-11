@@ -15,7 +15,7 @@
 package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.ImmutableObject;
@@ -41,7 +41,7 @@ public class StringValueEnumeratedTest {
     TestEntity testEntity = new TestEntity(State.ACTIVE);
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.state).isEqualTo(State.ACTIVE);
   }
 
@@ -51,11 +51,9 @@ public class StringValueEnumeratedTest {
     insertInDb(testEntity);
 
     assertThat(
-            jpaTm()
-                .transact(
+            tm().transact(
                     () ->
-                        jpaTm()
-                            .getEntityManager()
+                        tm().getEntityManager()
                             .createNativeQuery("SELECT state FROM \"TestEntity\" WHERE name = 'id'")
                             .getSingleResult()))
         .isEqualTo("DISABLED");

@@ -16,7 +16,7 @@ package google.registry.model.history;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newContactWithRoid;
@@ -64,10 +64,9 @@ public class DomainHistoryTest extends EntityTestCase {
     DomainHistory domainHistory = createDomainHistory(domain);
     insertInDb(domainHistory);
 
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              DomainHistory fromDatabase = jpaTm().loadByKey(domainHistory.createVKey());
+              DomainHistory fromDatabase = tm().loadByKey(domainHistory.createVKey());
               assertDomainHistoriesEqual(fromDatabase, domainHistory);
               assertThat(fromDatabase.getRepoId()).isEqualTo(domainHistory.getRepoId());
             });
@@ -78,8 +77,7 @@ public class DomainHistoryTest extends EntityTestCase {
     Domain domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
     DomainHistory domainHistory = createDomainHistory(domain);
     insertInDb(domainHistory);
-    DomainHistory fromDatabase =
-        jpaTm().transact(() -> jpaTm().loadByKey(domainHistory.createVKey()));
+    DomainHistory fromDatabase = tm().transact(() -> tm().loadByKey(domainHistory.createVKey()));
     assertThat(SerializeUtils.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 
@@ -88,11 +86,10 @@ public class DomainHistoryTest extends EntityTestCase {
     Host host = newHostWithRoid("ns1.example.com", "host1");
     Contact contact = newContactWithRoid("contactId", "contact1");
 
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              jpaTm().insert(host);
-              jpaTm().insert(contact);
+              tm().insert(host);
+              tm().insert(contact);
             });
 
     Domain domain =

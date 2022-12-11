@@ -19,7 +19,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
 import static google.registry.config.RegistryConfig.getSingletonCachePersistDuration;
 import static google.registry.config.RegistryConfig.getStaticPremiumListMaxCachedEntries;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -135,11 +135,10 @@ public class PremiumListDao {
 
   /** Saves the given premium list (and its premium list entries) to Cloud SQL. */
   public static PremiumList save(PremiumList premiumList) {
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              jpaTm().insert(premiumList);
-              jpaTm().getEntityManager().flush(); // This populates the revisionId.
+              tm().insert(premiumList);
+              tm().getEntityManager().flush(); // This populates the revisionId.
               long revisionId = premiumList.getRevisionId();
 
               if (!isNullOrEmpty(premiumList.getLabelsToPrices())) {
@@ -148,7 +147,7 @@ public class PremiumListDao {
                     .getLabelsToPrices()
                     .forEach(
                         (key, value) -> entries.add(PremiumEntry.create(revisionId, value, key)));
-                jpaTm().insertAll(entries.build());
+                tm().insertAll(entries.build());
               }
             });
     premiumListCache.invalidate(premiumList.getName());
@@ -156,27 +155,23 @@ public class PremiumListDao {
   }
 
   public static void delete(PremiumList premiumList) {
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               Optional<PremiumList> persistedList = getLatestRevision(premiumList.getName());
               if (persistedList.isPresent()) {
-                jpaTm()
-                    .query("DELETE FROM PremiumEntry WHERE revisionId = :revisionId")
+                tm().query("DELETE FROM PremiumEntry WHERE revisionId = :revisionId")
                     .setParameter("revisionId", persistedList.get().getRevisionId())
                     .executeUpdate();
-                jpaTm().delete(persistedList.get());
+                tm().delete(persistedList.get());
               }
             });
     premiumListCache.invalidate(premiumList.getName());
   }
 
   private static Optional<PremiumList> getLatestRevisionUncached(String premiumListName) {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
-                jpaTm()
-                    .query(
+                tm().query(
                         "FROM PremiumList WHERE name = :name ORDER BY revisionId DESC",
                         PremiumList.class)
                     .setParameter("name", premiumListName)
@@ -191,11 +186,9 @@ public class PremiumListDao {
    * <p>This is an expensive operation and should only be used when the entire list is required.
    */
   public static List<PremiumEntry> loadPremiumEntries(PremiumList premiumList) {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
-                jpaTm()
-                    .query(
+                tm().query(
                         "FROM PremiumEntry pe WHERE pe.revisionId = :revisionId",
                         PremiumEntry.class)
                     .setParameter("revisionId", premiumList.getRevisionId())
@@ -207,11 +200,9 @@ public class PremiumListDao {
    * retrieval so it should only be done in a cached context.
    */
   static Optional<BigDecimal> getPriceForLabelUncached(RevisionIdAndLabel revisionIdAndLabel) {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
-                jpaTm()
-                    .query(
+                tm().query(
                         "SELECT pe.price FROM PremiumEntry pe WHERE pe.revisionId = :revisionId"
                             + " AND pe.domainLabel = :label",
                         BigDecimal.class)

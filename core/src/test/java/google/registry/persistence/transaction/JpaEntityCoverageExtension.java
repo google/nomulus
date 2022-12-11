@@ -15,7 +15,7 @@
 package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -99,11 +99,9 @@ public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEach
   private static boolean isPersisted(Class<?> entityType) {
     try {
       List<?> result =
-          jpaTm()
-              .transact(
+          tm().transact(
                   () ->
-                      jpaTm()
-                          .query(
+                      tm().query(
                               String.format("SELECT e FROM %s e", getJpaEntityName(entityType)),
                               entityType)
                           .setMaxResults(1)

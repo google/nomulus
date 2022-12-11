@@ -14,7 +14,7 @@
 
 package google.registry.model.smd;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableMap;
@@ -28,15 +28,12 @@ public class SignedMarkRevocationListDao {
   /** Loads the {@link SignedMarkRevocationList}. */
   static SignedMarkRevocationList load() {
     Optional<SignedMarkRevocationList> smdrl =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () -> {
                   Long revisionId =
-                      jpaTm()
-                          .query("SELECT MAX(revisionId) FROM SignedMarkRevocationList", Long.class)
+                      tm().query("SELECT MAX(revisionId) FROM SignedMarkRevocationList", Long.class)
                           .getSingleResult();
-                  return jpaTm()
-                      .query(
+                  return tm().query(
                           "FROM SignedMarkRevocationList smrl LEFT JOIN FETCH smrl.revokes "
                               + "WHERE smrl.revisionId = :revisionId",
                           SignedMarkRevocationList.class)
@@ -49,7 +46,7 @@ public class SignedMarkRevocationListDao {
 
   /** Save the given {@link SignedMarkRevocationList} */
   static void save(SignedMarkRevocationList signedMarkRevocationList) {
-    jpaTm().transact(() -> jpaTm().insert(signedMarkRevocationList));
+    tm().transact(() -> tm().insert(signedMarkRevocationList));
     logger.atInfo().log(
         "Inserted %,d signed mark revocations into Cloud SQL.",
         signedMarkRevocationList.revokes.size());

@@ -15,7 +15,7 @@
 package google.registry.model.tld.label;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.tld.label.ReservedList.ReservedListEntry;
@@ -60,12 +60,10 @@ public class ReservedListDaoTest {
   @Test
   void save_worksSuccessfully() {
     ReservedListDao.save(testReservedList);
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               ReservedList persistedList =
-                  jpaTm()
-                      .query("FROM ReservedList WHERE name = :name", ReservedList.class)
+                  tm().query("FROM ReservedList WHERE name = :name", ReservedList.class)
                       .setParameter("name", "testlist")
                       .getSingleResult();
               assertThat(persistedList.getReservedListEntries())

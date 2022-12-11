@@ -15,7 +15,7 @@
 package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -43,7 +43,7 @@ public class StringListConverterTest {
     TestEntity testEntity = new TestEntity(tlds);
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).containsExactly("app", "dev", "how");
   }
 
@@ -53,11 +53,10 @@ public class StringListConverterTest {
     TestEntity testEntity = new TestEntity(tlds);
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     persisted.tlds = ImmutableList.of("com", "gov");
-    jpaTm().transact(() -> jpaTm().getEntityManager().merge(persisted));
-    TestEntity updated =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+    tm().transact(() -> tm().getEntityManager().merge(persisted));
+    TestEntity updated = tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(updated.tlds).containsExactly("com", "gov");
   }
 
@@ -66,7 +65,7 @@ public class StringListConverterTest {
     TestEntity testEntity = new TestEntity(null);
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).isNull();
   }
 
@@ -75,7 +74,7 @@ public class StringListConverterTest {
     TestEntity testEntity = new TestEntity(ImmutableList.of());
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).isEmpty();
   }
 
@@ -107,13 +106,11 @@ public class StringListConverterTest {
   }
 
   private static Object getSingleResultFromNativeQuery(String sql) {
-    return jpaTm()
-        .transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).getSingleResult());
+    return tm().transact(() -> tm().getEntityManager().createNativeQuery(sql).getSingleResult());
   }
 
   private static Object executeNativeQuery(String sql) {
-    return jpaTm()
-        .transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).executeUpdate());
+    return tm().transact(() -> tm().getEntityManager().createNativeQuery(sql).executeUpdate());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.

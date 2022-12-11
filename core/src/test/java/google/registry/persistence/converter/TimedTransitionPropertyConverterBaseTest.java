@@ -15,7 +15,7 @@
 package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -59,7 +59,7 @@ class TimedTransitionPropertyConverterBaseTest {
     TestEntity testEntity = new TestEntity(TIMED_TRANSITION_PROPERTY);
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property).containsExactlyEntriesIn(TIMED_TRANSITION_PROPERTY);
   }
 
@@ -68,13 +68,12 @@ class TimedTransitionPropertyConverterBaseTest {
     TestEntity testEntity = new TestEntity(TIMED_TRANSITION_PROPERTY);
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property).containsExactlyEntriesIn(TIMED_TRANSITION_PROPERTY);
     ImmutableSortedMap<DateTime, String> newValues = ImmutableSortedMap.of(START_OF_TIME, "val4");
     persisted.property = TimedTransitionProperty.fromValueMap(newValues);
-    jpaTm().transact(() -> jpaTm().getEntityManager().merge(persisted));
-    TestEntity updated =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+    tm().transact(() -> tm().getEntityManager().merge(persisted));
+    TestEntity updated = tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(updated.property).isEqualTo(newValues);
   }
 
@@ -83,7 +82,7 @@ class TimedTransitionPropertyConverterBaseTest {
     TestEntity testEntity = new TestEntity(null);
     insertInDb(testEntity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property).isNull();
   }
 
@@ -120,12 +119,11 @@ class TimedTransitionPropertyConverterBaseTest {
   }
 
   private static Object getSingleResultFromNativeQuery(String sql) {
-    return jpaTm()
-        .transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).getSingleResult());
+    return tm().transact(() -> tm().getEntityManager().createNativeQuery(sql).getSingleResult());
   }
 
   private static void executeNativeQuery(String sql) {
-    jpaTm().transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).executeUpdate());
+    tm().transact(() -> tm().getEntityManager().createNativeQuery(sql).executeUpdate());
   }
 
   @Converter(autoApply = true)

@@ -15,7 +15,7 @@
 package google.registry.model.tld;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.RegistryLock;
@@ -26,31 +26,29 @@ public final class RegistryLockDao {
 
   /** Returns the {@link RegistryLock} referred to by this revision ID, or empty if none exists. */
   public static Optional<RegistryLock> getByRevisionId(long revisionId) {
-    jpaTm().assertInTransaction();
-    return Optional.ofNullable(jpaTm().getEntityManager().find(RegistryLock.class, revisionId));
+    tm().assertInTransaction();
+    return Optional.ofNullable(tm().getEntityManager().find(RegistryLock.class, revisionId));
   }
 
   /** Returns the most recent version of the {@link RegistryLock} referred to by the code. */
   public static Optional<RegistryLock> getByVerificationCode(String verificationCode) {
-    jpaTm().assertInTransaction();
+    tm().assertInTransaction();
     Long revisionId =
-        jpaTm()
-            .query(
+        tm().query(
                 "SELECT MAX(revisionId) FROM RegistryLock WHERE verificationCode ="
                     + " :verificationCode",
                 Long.class)
             .setParameter("verificationCode", verificationCode)
             .getSingleResult();
     return Optional.ofNullable(revisionId)
-        .map(revision -> jpaTm().getEntityManager().find(RegistryLock.class, revision));
+        .map(revision -> tm().getEntityManager().find(RegistryLock.class, revision));
   }
 
   /** Returns all lock objects that this registrar has created, including pending locks. */
   public static ImmutableList<RegistryLock> getLocksByRegistrarId(String registrarId) {
-    jpaTm().assertInTransaction();
+    tm().assertInTransaction();
     return ImmutableList.copyOf(
-        jpaTm()
-            .query(
+        tm().query(
                 "SELECT lock FROM RegistryLock lock WHERE lock.registrarId = :registrarId"
                     + " AND lock.unlockCompletionTime IS NULL ORDER BY lock.domainName ASC",
                 RegistryLock.class)
@@ -64,9 +62,8 @@ public final class RegistryLockDao {
    * <p>Returns empty if this domain hasn't been locked before.
    */
   public static Optional<RegistryLock> getMostRecentByRepoId(String repoId) {
-    jpaTm().assertInTransaction();
-    return jpaTm()
-        .query(
+    tm().assertInTransaction();
+    return tm().query(
             "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId"
                 + " ORDER BY lock.revisionId DESC",
             RegistryLock.class)
@@ -83,9 +80,8 @@ public final class RegistryLockDao {
    * {@link #getMostRecentByRepoId(String)} in that it only returns verified locks.
    */
   public static Optional<RegistryLock> getMostRecentVerifiedLockByRepoId(String repoId) {
-    jpaTm().assertInTransaction();
-    return jpaTm()
-        .query(
+    tm().assertInTransaction();
+    return tm().query(
             "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId AND"
                 + " lock.lockCompletionTime IS NOT NULL AND lock.unlockCompletionTime IS NULL"
                 + " ORDER BY lock.revisionId DESC",
@@ -103,9 +99,8 @@ public final class RegistryLockDao {
    * {@link #getMostRecentByRepoId(String)} in that it only returns verified unlocks.
    */
   public static Optional<RegistryLock> getMostRecentVerifiedUnlockByRepoId(String repoId) {
-    jpaTm().assertInTransaction();
-    return jpaTm()
-        .query(
+    tm().assertInTransaction();
+    return tm().query(
             "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId AND"
                 + " lock.unlockCompletionTime IS NOT NULL ORDER BY lock.revisionId DESC",
             RegistryLock.class)
@@ -116,8 +111,8 @@ public final class RegistryLockDao {
   }
 
   public static RegistryLock save(RegistryLock registryLock) {
-    jpaTm().assertInTransaction();
+    tm().assertInTransaction();
     checkNotNull(registryLock, "Null registry lock cannot be saved");
-    return jpaTm().getEntityManager().merge(registryLock);
+    return tm().getEntityManager().merge(registryLock);
   }
 }

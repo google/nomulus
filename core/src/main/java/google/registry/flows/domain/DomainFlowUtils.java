@@ -37,7 +37,6 @@ import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.model.tld.label.ReservationType.NAME_COLLISION;
 import static google.registry.model.tld.label.ReservationType.RESERVED_FOR_ANCHOR_TENANT;
 import static google.registry.model.tld.label.ReservationType.RESERVED_FOR_SPECIFIC_USE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.CollectionUtils.nullToEmpty;
@@ -1179,8 +1178,7 @@ public class DomainFlowUtils {
 
   private static List<DomainHistory> findRecentHistoryEntries(
       Domain domain, DateTime now, Duration maxSearchPeriod) {
-    return jpaTm()
-        .query(
+    return tm().query(
             "FROM DomainHistory WHERE modificationTime >= :beginning AND repoId = "
                 + ":repoId ORDER BY modificationTime ASC",
             DomainHistory.class)

@@ -22,7 +22,7 @@ import static google.registry.model.common.DatabaseMigrationStateSchedule.Migrat
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.SQL_ONLY;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.SQL_PRIMARY;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.SQL_PRIMARY_READ_ONLY;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.Assert.assertThrows;
 
@@ -128,7 +128,7 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(nowInvalidMap)));
+            () -> tm().transact(() -> DatabaseMigrationStateSchedule.set(nowInvalidMap)));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
@@ -150,7 +150,7 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
   private void runValidTransition(MigrationState from, MigrationState to) {
     ImmutableSortedMap<DateTime, MigrationState> transitions =
         createMapEndingWithTransition(from, to);
-    jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(transitions));
+    tm().transact(() -> DatabaseMigrationStateSchedule.set(transitions));
     assertThat(DatabaseMigrationStateSchedule.getUncached().toValueMap())
         .containsExactlyEntriesIn(transitions);
   }
@@ -161,7 +161,7 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(transitions)));
+            () -> tm().transact(() -> DatabaseMigrationStateSchedule.set(transitions)));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
