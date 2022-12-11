@@ -14,18 +14,17 @@
 
 package google.registry.beam.common;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static org.apache.beam.sdk.values.TypeDescriptors.integers;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import google.registry.beam.common.RegistryQuery.CriteriaQuerySupplier;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nullable;
 import javax.persistence.criteria.CriteriaQuery;
@@ -297,6 +296,8 @@ public final class RegistryJpaIO {
 
     public abstract SerializableFunction<T, Object> jpaConverter();
 
+    public abstract boolean retrySingly();
+
     public Write<T> withName(String name) {
       return toBuilder().name(name).build();
     }
@@ -317,6 +318,17 @@ public final class RegistryJpaIO {
       return toBuilder().jpaConverter(jpaConverter).build();
     }
 
+    /**
+     * Whether to try to persist elements in a batch one by one when batch saving fails.
+     *
+     * <p>By default single retries are performed to identify the element that caused the batch
+     * failure. However, in cases where elements need to be persisted together in a transaction,
+     * retries should not be attempted.
+     */
+    public Write<T> withRetrySingly(boolean retrySingly) {
+      return toBuilder().retrySingly(retrySingly).build();
+    }
+
     abstract Builder<T> toBuilder();
 
     @Override
@@ -333,7 +345,7 @@ public final class RegistryJpaIO {
               GroupIntoBatches.<Integer, T>ofSize(batchSize()).withShardedKey())
           .apply(
               "Write in batch for " + name(),
-              ParDo.of(new SqlBatchWriter<>(name(), jpaConverter())));
+              ParDo.of(new SqlBatchWriter<>(name(), jpaConverter(), retrySingly())));
     }
 
     static <T> Builder<T> builder() {
@@ -341,7 +353,8 @@ public final class RegistryJpaIO {
           .name(DEFAULT_NAME)
           .batchSize(DEFAULT_BATCH_SIZE)
           .shards(DEFAULT_SHARDS)
-          .jpaConverter(x -> x);
+          .jpaConverter(x -> x)
+          .retrySingly(true);
     }
 
     @AutoValue.Builder
@@ -355,6 +368,8 @@ public final class RegistryJpaIO {
 
       abstract Builder<T> jpaConverter(SerializableFunction<T, Object> jpaConverter);
 
+      abstract Builder<T> retrySingly(boolean retrySingly);
+
       abstract Write<T> build();
     }
   }
@@ -363,10 +378,12 @@ public final class RegistryJpaIO {
   private static class SqlBatchWriter<T> extends DoFn<KV<ShardedKey<Integer>, Iterable<T>>, Void> {
     private final Counter counter;
     private final SerializableFunction<T, Object> jpaConverter;
+    private final boolean retrySingly;
 
-    SqlBatchWriter(String type, SerializableFunction<T, Object> jpaConverter) {
+    SqlBatchWriter(String type, SerializableFunction<T, Object> jpaConverter, boolean retrySingly) {
       counter = Metrics.counter("SQL_WRITE", type);
       this.jpaConverter = jpaConverter;
+      this.retrySingly = retrySingly;
     }
 
     @ProcessElement
@@ -377,9 +394,15 @@ public final class RegistryJpaIO {
     private void actuallyProcessElement(@Element KV<ShardedKey<Integer>, Iterable<T>> kv) {
       ImmutableList<Object> entities =
           Streams.stream(kv.getValue())
-              .map(this.jpaConverter::apply)
-              // TODO(b/177340730): post migration delete the line below.
-              .filter(Objects::nonNull)
+              .flatMap(
+                  entity -> {
+                    Object convertedEntity = this.jpaConverter.apply(entity);
+                    if (convertedEntity instanceof Iterable) {
+                      return Streams.stream((Iterable<?>) convertedEntity);
+                    } else {
+                      return ImmutableSet.of(convertedEntity).stream();
+                    }
+                  })
               .collect(ImmutableList.toImmutableList());
       try {
         jpaTm()
@@ -391,7 +414,11 @@ public final class RegistryJpaIO {
                 });
         counter.inc(entities.size());
       } catch (RuntimeException e) {
-        processSingly(entities);
+        if (retrySingly) {
+          processSingly(entities);
+        } else {
+          throw e;
+        }
       }
     }
 
@@ -442,8 +469,16 @@ public final class RegistryJpaIO {
       // updateTimestamp) are reflected in the input object. Beam doesn't allow modification of
       // input objects, so this throws an exception.
       // TODO(go/non-datastore-allocateid): also check that all the objects have IDs
-      checkArgument(
-          !jpaTm().exists(obj), "Entities created in SqlBatchWriter must not already exist");
+      if (jpaTm().exists(obj)) {
+        throw new ExistingEntityException(
+            String.format("Entities created in SqlBatchWriter must not already exist: %s", obj));
+      }
+    }
+  }
+
+  static class ExistingEntityException extends IllegalArgumentException {
+    ExistingEntityException(String message) {
+      super(message);
     }
   }
 }
