@@ -18,6 +18,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.primitives.Ints;
 import google.registry.config.RegistryConfig.Config;
@@ -32,6 +33,7 @@ import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.Clock;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.joda.time.Days;
 
 /**
  * An action that checks all {@link PackagePromotion} objects for compliance with their max create
@@ -81,78 +83,78 @@ public class CheckPackagesComplianceAction implements Runnable {
 
   @Override
   public void run() {
-    tm().transact(
-            () -> {
-              ImmutableList<PackagePromotion> packages = tm().loadAllOf(PackagePromotion.class);
-              ImmutableList.Builder<PackagePromotion> packagesOverCreateLimitBuilder =
-                  new ImmutableList.Builder<>();
-              ImmutableList.Builder<PackagePromotion> packagesOverActiveDomainsLimitBuilder =
-                  new ImmutableList.Builder<>();
-              for (PackagePromotion packagePromo : packages) {
-                Long creates =
-                    (Long)
-                        tm().query(
-                                "SELECT COUNT(*) FROM DomainHistory WHERE current_package_token ="
-                                    + " :token AND modificationTime >= :lastBilling AND type ="
-                                    + " 'DOMAIN_CREATE'")
-                            .setParameter("token", packagePromo.getToken().getKey().toString())
-                            .setParameter(
-                                "lastBilling", packagePromo.getNextBillingDate().minusYears(1))
-                            .getSingleResult();
-                if (creates > packagePromo.getMaxCreates()) {
-                  int overage = Ints.saturatedCast(creates) - packagePromo.getMaxCreates();
-                  logger.atInfo().log(
-                      "Package with package token %s has exceeded their max domain creation limit"
-                          + " by %d name(s).",
-                      packagePromo.getToken().getKey(), overage);
-                  packagesOverCreateLimitBuilder.add(packagePromo);
-                }
+    tm().transact(this::checkPackages);
+  }
 
-                Long activeDomains =
-                    (Long)
-                        tm().query(
-                                "SELECT COUNT(*) FROM Domain WHERE current_package_token = :token"
-                                    + " AND deletion_time = :time")
-                            .setParameter("token", packagePromo.getToken().getKey().toString())
-                            .setParameter("time", END_OF_TIME.toDate())
-                            .getSingleResult();
+  private void checkPackages() {
+    ImmutableList<PackagePromotion> packages = tm().loadAllOf(PackagePromotion.class);
+    ImmutableList.Builder<PackagePromotion> packagesOverCreateLimitBuilder =
+        new ImmutableList.Builder<>();
+    ImmutableList.Builder<PackagePromotion> packagesOverActiveDomainsLimitBuilder =
+        new ImmutableList.Builder<>();
+    for (PackagePromotion packagePromo : packages) {
+      Long creates =
+          (Long)
+              tm().query(
+                      "SELECT COUNT(*) FROM DomainHistory WHERE current_package_token ="
+                          + " :token AND modificationTime >= :lastBilling AND type ="
+                          + " 'DOMAIN_CREATE'")
+                  .setParameter("token", packagePromo.getToken().getKey().toString())
+                  .setParameter("lastBilling", packagePromo.getNextBillingDate().minusYears(1))
+                  .getSingleResult();
+      if (creates > packagePromo.getMaxCreates()) {
+        int overage = Ints.saturatedCast(creates) - packagePromo.getMaxCreates();
+        logger.atInfo().log(
+            "Package with package token %s has exceeded their max domain creation limit"
+                + " by %d name(s).",
+            packagePromo.getToken().getKey(), overage);
+        packagesOverCreateLimitBuilder.add(packagePromo);
+      }
 
-                if (activeDomains > packagePromo.getMaxDomains()) {
-                  int overage = Ints.saturatedCast(activeDomains) - packagePromo.getMaxDomains();
-                  logger.atInfo().log(
-                      "Package with package token %s has exceed their max active domains limit by"
-                          + " %d name(s).",
-                      packagePromo.getToken().getKey(), overage);
-                  packagesOverActiveDomainsLimitBuilder.add(packagePromo);
-                }
-              }
-              handlePackageCreationOverage(packagesOverCreateLimitBuilder.build());
-              handleActiveDomainOverage(packagesOverActiveDomainsLimitBuilder.build());
-            });
+      Long activeDomains =
+          (Long)
+              tm().query(
+                      "SELECT COUNT(*) FROM Domain WHERE current_package_token = :token"
+                          + " AND deletion_time = :endOfTime")
+                  .setParameter("token", packagePromo.getToken().getKey().toString())
+                  .setParameter("endOfTime", END_OF_TIME.toDate())
+                  .getSingleResult();
+
+      if (activeDomains > packagePromo.getMaxDomains()) {
+        int overage = Ints.saturatedCast(activeDomains) - packagePromo.getMaxDomains();
+        logger.atInfo().log(
+            "Package with package token %s has exceed their max active domains limit by"
+                + " %d name(s).",
+            packagePromo.getToken().getKey(), overage);
+        packagesOverActiveDomainsLimitBuilder.add(packagePromo);
+      }
+    }
+    handlePackageCreationOverage(packagesOverCreateLimitBuilder.build());
+    handleActiveDomainOverage(packagesOverActiveDomainsLimitBuilder.build());
   }
 
   private void handlePackageCreationOverage(ImmutableList<PackagePromotion> overageList) {
     if (overageList.isEmpty()) {
       logger.atInfo().log("Found no packages over their create limit.");
-    } else {
-      logger.atInfo().log("Found %d packages over their create limit.", overageList.size());
-      for (PackagePromotion packagePromotion : overageList) {
-        AllocationToken packageToken = tm().loadByKey(packagePromotion.getToken());
-        Optional<Registrar> registrar =
-            Registrar.loadByRegistrarIdCached(
-                packageToken.getAllowedRegistrarIds().iterator().next());
-        if (registrar.isPresent()) {
-          String body =
-              String.format(
-                  packageCreateLimitEmailBody,
-                  registrar.get().getRegistrarName(),
-                  packageToken.getToken(),
-                  registrySupportEmail);
-          sendNotification(packageToken, packageCreateLimitEmailSubject, body, registrar.get());
-        } else {
-          logger.atSevere().log(
-              String.format("Could not find registrar for package token %s", packageToken));
-        }
+      return;
+    }
+    logger.atInfo().log("Found %d packages over their create limit.", overageList.size());
+    for (PackagePromotion packagePromotion : overageList) {
+      AllocationToken packageToken = tm().loadByKey(packagePromotion.getToken());
+      Optional<Registrar> registrar =
+          Registrar.loadByRegistrarIdCached(
+              Iterables.getOnlyElement(packageToken.getAllowedRegistrarIds()));
+      if (registrar.isPresent()) {
+        String body =
+            String.format(
+                packageCreateLimitEmailBody,
+                registrar.get().getRegistrarName(),
+                packageToken.getToken(),
+                registrySupportEmail);
+        sendNotification(packageToken, packageCreateLimitEmailSubject, body, registrar.get());
+      } else {
+        throw new IllegalStateException(
+            String.format("Could not find registrar for package token %s", packageToken));
       }
     }
   }
@@ -160,25 +162,25 @@ public class CheckPackagesComplianceAction implements Runnable {
   private void handleActiveDomainOverage(ImmutableList<PackagePromotion> overageList) {
     if (overageList.isEmpty()) {
       logger.atInfo().log("Found no packages over their active domains limit.");
-    } else {
-      logger.atInfo().log("Found %d packages over their active domains limit.", overageList.size());
-      for (PackagePromotion packagePromotion : overageList) {
-        int daysSinceLastNotification =
-            packagePromotion
-                .getLastNotificationSent()
-                .map(sentDate -> org.joda.time.Days.daysBetween(sentDate, clock.nowUtc()).getDays())
-                .orElse(Integer.MAX_VALUE);
-        if (daysSinceLastNotification < THIRTY_DAYS) {
-          // Don't send an email if notification was already sent within the last 30
-          // days
-          continue;
-        } else if (daysSinceLastNotification < FORTY_DAYS) {
-          // Send an upgrade email if last email was between 30 and 40 days ago
-          sendActiveDomainOverageEmail(false, packagePromotion);
-        } else {
-          // Send a warning email
-          sendActiveDomainOverageEmail(true, packagePromotion);
-        }
+      return;
+    }
+    logger.atInfo().log("Found %d packages over their active domains limit.", overageList.size());
+    for (PackagePromotion packagePromotion : overageList) {
+      int daysSinceLastNotification =
+          packagePromotion
+              .getLastNotificationSent()
+              .map(sentDate -> Days.daysBetween(sentDate, clock.nowUtc()).getDays())
+              .orElse(Integer.MAX_VALUE);
+      if (daysSinceLastNotification < THIRTY_DAYS) {
+        // Don't send an email if notification was already sent within the last 30
+        // days
+        continue;
+      } else if (daysSinceLastNotification < FORTY_DAYS) {
+        // Send an upgrade email if last email was between 30 and 40 days ago
+        sendActiveDomainOverageEmail(/* warning= */ false, packagePromotion);
+      } else {
+        // Send a warning email
+        sendActiveDomainOverageEmail(/* warning= */ true, packagePromotion);
       }
     }
   }
@@ -190,7 +192,8 @@ public class CheckPackagesComplianceAction implements Runnable {
         warning ? packageDomainLimitWarningEmailBody : packageDomainLimitUpgradeEmailBody;
     AllocationToken packageToken = tm().loadByKey(packagePromotion.getToken());
     Optional<Registrar> registrar =
-        Registrar.loadByRegistrarIdCached(packageToken.getAllowedRegistrarIds().iterator().next());
+        Registrar.loadByRegistrarIdCached(
+            Iterables.getOnlyElement(packageToken.getAllowedRegistrarIds()));
     if (registrar.isPresent()) {
       String body =
           String.format(
@@ -201,7 +204,7 @@ public class CheckPackagesComplianceAction implements Runnable {
       sendNotification(packageToken, emailSubject, body, registrar.get());
       tm().put(packagePromotion.asBuilder().setLastNotificationSent(clock.nowUtc()).build());
     } else {
-      logger.atSevere().log(
+      throw new IllegalStateException(
           String.format("Could not find registrar for package token %s", packageToken));
     }
   }
