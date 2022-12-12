@@ -14,7 +14,6 @@
 
 package google.registry.reporting.icann;
 
-import com.google.common.io.Resources;
 import google.registry.util.ResourceUtils;
 import google.registry.util.SqlTemplate;
 import org.joda.time.YearMonth;
@@ -28,9 +27,7 @@ public class BasicDnsCountQueryCoordinator implements DnsCountQueryCoordinator {
 
   @Override
   public String createQuery(YearMonth yearMonth) {
-    return SqlTemplate.create(
-            ResourceUtils.readResourceUtf8(
-                Resources.getResource(this.getClass(), "sql/" + "dns_counts.sql")))
+    return SqlTemplate.create(ResourceUtils.readResourceUtf8(this.getClass(), "sql/dns_counts.sql"))
         .build();
   }
 

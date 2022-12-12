@@ -20,7 +20,6 @@ import static google.registry.tools.GenerateSqlErDiagramCommand.FLYWAY_FILE_ELEM
 import static google.registry.tools.GenerateSqlErDiagramCommand.getLastFlywayFileName;
 
 import com.google.common.base.Joiner;
-import com.google.common.io.Resources;
 import google.registry.util.ResourceUtils;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -61,16 +60,14 @@ class GenerateSqlErDiagramCommandTest extends CommandTestCase<GenerateSqlErDiagr
   void validateErDiagramIsUpToDate() {
     String goldenFullDiagram =
         ResourceUtils.readResourceUtf8(
-            Resources.getResource(
-                Paths.get(GOLDEN_DIAGRAM_FOLDER).resolve("full_er_diagram.html").toString()));
+            Paths.get(GOLDEN_DIAGRAM_FOLDER).resolve("full_er_diagram.html").toString());
     assertWithMessage(UPDATE_INSTRUCTIONS)
         .that(Jsoup.parse(goldenFullDiagram).getElementById(FLYWAY_FILE_ELEMENT_ID).text())
         .isEqualTo(getLastFlywayFileName());
 
     String briefFullDiagram =
         ResourceUtils.readResourceUtf8(
-            Resources.getResource(
-                Paths.get(GOLDEN_DIAGRAM_FOLDER).resolve("brief_er_diagram.html").toString()));
+            Paths.get(GOLDEN_DIAGRAM_FOLDER).resolve("brief_er_diagram.html").toString());
     assertWithMessage(UPDATE_INSTRUCTIONS)
         .that(Jsoup.parse(briefFullDiagram).getElementById(FLYWAY_FILE_ELEMENT_ID).text())
         .isEqualTo(getLastFlywayFileName());

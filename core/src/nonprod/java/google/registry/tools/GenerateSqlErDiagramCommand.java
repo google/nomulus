@@ -142,7 +142,7 @@ public class GenerateSqlErDiagramCommand implements Command {
       // Add pan and zoom support for the embedded SVG in the HTML.
       StringBuilder svgPanZoomLib =
           new StringBuilder("<script>")
-              .append(ResourceUtils.readResourceUtf8(Resources.getResource(SVG_PAN_ZOOM_LIB)))
+              .append(ResourceUtils.readResourceUtf8(SVG_PAN_ZOOM_LIB))
               .append("</script>");
       doc.select("head").first().append(svgPanZoomLib.toString());
       doc.select("svg")
@@ -207,8 +207,7 @@ public class GenerateSqlErDiagramCommand implements Command {
 
   private static void initDb(Connection connection) {
     try (Statement statement = connection.createStatement()) {
-      statement.execute(
-          ResourceUtils.readResourceUtf8(Resources.getResource(NOMULUS_GOLDEN_SCHEMA)));
+      statement.execute(ResourceUtils.readResourceUtf8(NOMULUS_GOLDEN_SCHEMA));
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }

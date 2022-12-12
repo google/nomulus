@@ -18,9 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.Resources;
 import google.registry.util.Clock;
-import google.registry.util.ResourceUtils;
 import java.util.regex.Pattern;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord;
@@ -55,14 +53,6 @@ public class BeamUtils {
               "Read unexpected null value for field(s) %s for record %s",
               missingFieldList, record));
     }
-  }
-
-  /**
-   * Returns the {@link String} contents for a file in the {@code sql/} directory relative to a
-   * class.
-   */
-  public static String getQueryFromFile(Class<?> clazz, String filename) {
-    return ResourceUtils.readResourceUtf8(Resources.getResource(clazz, "sql/" + filename));
   }
 
   /** Creates a beam job name and validates that it conforms to the requirements. */
