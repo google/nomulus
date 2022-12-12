@@ -18,16 +18,15 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.api.client.json.webtoken.JsonWebSignature.Header;
+import com.google.auth.oauth2.TokenVerifier;
 import com.google.common.truth.Truth8;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
-import java.security.GeneralSecurityException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,28 +35,33 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-/** Tests for {@link CookieOAuth2AuthenticationMechanism}. */
+/** Tests for {@link IapHeaderAuthenticationMechanism}. */
 @ExtendWith(MockitoExtension.class)
-public class CookieOAuth2AuthenticationMechanismTest {
+@MockitoSettings(strictness = Strictness.LENIENT)
+public class IapHeaderAuthenticationMechanismTest {
 
   @RegisterExtension
   public final JpaTestExtensions.JpaUnitTestExtension jpaExtension =
       new JpaTestExtensions.Builder().withEntityClass(User.class).buildUnitTestExtension();
 
-  @Mock private GoogleIdTokenVerifier tokenVerifier;
+  @Mock private TokenVerifier tokenVerifier;
   @Mock private HttpServletRequest request;
 
-  private GoogleIdToken token;
-  private CookieOAuth2AuthenticationMechanism authenticationMechanism;
+  private JsonWebSignature token;
+  private IapHeaderAuthenticationMechanism authenticationMechanism;
 
   @BeforeEach
-  void beforeEach() {
-    authenticationMechanism = new CookieOAuth2AuthenticationMechanism(tokenVerifier);
+  void beforeEach() throws Exception {
+    authenticationMechanism = new IapHeaderAuthenticationMechanism(tokenVerifier);
+    when(request.getHeader("X-Goog-IAP-JWT-Assertion")).thenReturn("jwtValue");
     Payload payload = new Payload();
     payload.setEmail("email@email.com");
     payload.setSubject("gaiaId");
-    token = new GoogleIdToken(new Header(), payload, new byte[0], new byte[0]);
+    token = new JsonWebSignature(new Header(), payload, new byte[0], new byte[0]);
+    when(tokenVerifier.verify("jwtValue")).thenReturn(token);
   }
 
   @Test
@@ -94,7 +98,7 @@ public class CookieOAuth2AuthenticationMechanismTest {
   @Test
   void testFailure_errorVerifyingToken() throws Exception {
     when(request.getCookies()).thenReturn(new Cookie[] {new Cookie("idToken", "asdf")});
-    when(tokenVerifier.verify("asdf")).thenThrow(new GeneralSecurityException("hi"));
+    when(tokenVerifier.verify("asdf")).thenThrow(new TokenVerifier.VerificationException("hi"));
     assertThat(authenticationMechanism.authenticate(request).isAuthenticated()).isFalse();
   }
 

@@ -8,6 +8,8 @@
 gcpProject:
   # Globally unique GCP project ID
   projectId: registry-project-id
+  # Corresponding project ID number
+  projectIdNumber: 123456789012
   # Location of the GCP project, note that us-central1 and europe-west1 are special in that
   # they are used without the trailing number in GCP commands and Google Cloud Console.
   # See: https://cloud.google.com/appengine/docs/locations as an example

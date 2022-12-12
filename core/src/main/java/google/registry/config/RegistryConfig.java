@@ -107,6 +107,12 @@ public final class RegistryConfig {
     }
 
     @Provides
+    @Config("projectIdNumber")
+    public static long provideProjectIdNumber(RegistryConfigSettings config) {
+      return config.gcpProject.projectIdNumber;
+    }
+
+    @Provides
     @Config("locationId")
     public static String provideLocationId(RegistryConfigSettings config) {
       return config.gcpProject.locationId;
