@@ -94,7 +94,7 @@
     <url-pattern>/registry-lock-verify</url-pattern>
   </servlet-mapping>
 
-<!--  &lt;!&ndash; Security config &ndash;&gt;-->
+  <!-- Security config -->
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>Internal</web-resource-name>

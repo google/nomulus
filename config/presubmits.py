@@ -25,7 +25,7 @@ import textwrap
 import re
 
 # We should never analyze any generated files
-UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "cloudbuild-caches", "/out/", ".git/", ".gradle/", "/dist/", "karma.conf.js"}
+UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "cloudbuild-caches", "/out/", ".git/", ".gradle/", "/dist/", "karma.conf.js", "polyfills.ts", "test.ts"}
 # We can't rely on CI to have the Enum package installed so we do this instead.
 FORBIDDEN = 1
 REQUIRED = 2
@@ -86,7 +86,7 @@ PRESUBMITS = {
     # License check
     PresubmitCheck(
         r".*Copyright 20\d{2} The Nomulus Authors\. All Rights Reserved\.",
-        ("java", "js", "soy", "sql", "py", "sh", "gradle"), {
+        ("java", "js", "soy", "sql", "py", "sh", "gradle", "ts"), {
             ".git", "/build/", "/generated/", "/generated_tests/",
             "node_modules/", "LoggerConfig.java", "registrar_bin.",
             "registrar_dbg.", "google-java-format-diff.py",
@@ -95,7 +95,7 @@ PRESUBMITS = {
         "File did not include the license header.",
 
     # Files must end in a newline
-    PresubmitCheck(r".*\n$", ("java", "js", "soy", "sql", "py", "sh", "gradle"),
+    PresubmitCheck(r".*\n$", ("java", "js", "soy", "sql", "py", "sh", "gradle", "ts"),
                    {"node_modules/"}, REQUIRED):
         "Source files must end in a newline.",
 
