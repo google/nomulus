@@ -26,7 +26,6 @@ import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nullable;
 import javax.persistence.criteria.CriteriaQuery;
 import org.apache.beam.sdk.coders.Coder;
@@ -263,37 +262,10 @@ public final class RegistryJpaIO {
 
     public static final int DEFAULT_BATCH_SIZE = 1;
 
-    /** The default number of write shard. Please refer to {@link #shards} for more information. */
-    public static final int DEFAULT_SHARDS = 1;
-
     public abstract String name();
 
     /** Number of elements to be written in one call. */
     public abstract int batchSize();
-
-    /**
-     * The number of shards the output should be split into.
-     *
-     * <p>This value is a hint to the pipeline runner on the level of parallelism, and should be
-     * significantly greater than the number of threads working on this transformation (see next
-     * paragraph for more information). On the other hand, it should not be too large to the point
-     * that the number of elements per shard is lower than {@link #batchSize()}. As a rule of thumb,
-     * the following constraint should hold: {@code shards * batchSize * nThreads <=
-     * inputElementCount}. Although it is not always possible to determine the number of threads
-     * working on this transform, when the pipeline run is IO-bound, it most likely is close to the
-     * total number of threads in the pipeline, which is explained below.
-     *
-     * <p>With Cloud Dataflow runner, the total number of worker threads in a batch pipeline (which
-     * includes all existing Registry pipelines) is the number of vCPUs used by the pipeline, and
-     * can be set by the {@code --maxNumWorkers} and {@code --workerMachineType} parameters. The
-     * number of worker threads in a streaming pipeline can be set by the {@code --maxNumWorkers}
-     * and {@code --numberOfWorkerHarnessThreads} parameters.
-     *
-     * <p>Note that connections on the database server are a limited resource, therefore the number
-     * of threads that interact with the database should be set to an appropriate limit. Again, we
-     * cannot control this number, but can influence it by controlling the total number of threads.
-     */
-    public abstract int shards();
 
     public abstract SerializableFunction<T, Object> jpaConverter();
 
@@ -303,10 +275,6 @@ public final class RegistryJpaIO {
 
     public Write<T> withBatchSize(int batchSize) {
       return toBuilder().batchSize(batchSize).build();
-    }
-
-    public Write<T> withShards(int shards) {
-      return toBuilder().shards(shards).build();
     }
 
     /**
@@ -322,10 +290,7 @@ public final class RegistryJpaIO {
     @Override
     public PCollection<Void> expand(PCollection<T> input) {
       return input
-          .apply(
-              "Shard data " + name(),
-              WithKeys.<Integer, T>of(e -> ThreadLocalRandom.current().nextInt(shards()))
-                  .withKeyType(integers()))
+          .apply("Add key to data " + name(), WithKeys.<Integer, T>of(0).withKeyType(integers()))
           // The call to withShardedKey() is performance critical. The resulting transform ensures
           // that data is spread evenly across all worker threads.
           .apply(
@@ -340,7 +305,6 @@ public final class RegistryJpaIO {
       return new AutoValue_RegistryJpaIO_Write.Builder<T>()
           .name(DEFAULT_NAME)
           .batchSize(DEFAULT_BATCH_SIZE)
-          .shards(DEFAULT_SHARDS)
           .jpaConverter(x -> x);
     }
 
@@ -350,8 +314,6 @@ public final class RegistryJpaIO {
       abstract Builder<T> name(String name);
 
       abstract Builder<T> batchSize(int batchSize);
-
-      abstract Builder<T> shards(int jdbcNumConnsHint);
 
       abstract Builder<T> jpaConverter(SerializableFunction<T, Object> jpaConverter);
 

@@ -30,15 +30,6 @@
       ]
     },
     {
-      "name": "sqlWriteShards",
-      "label": "Number of output shards to create when writing to SQL.",
-      "helpText": "Number of shards to create out of the data before writing to the SQL database. Please refer to the Javadoc of RegistryJpaIO.Write.shards() for how to choose this value.",
-      "is_optional": true,
-      "regexes": [
-        "^[1-9][0-9]*$"
-      ]
-    },
-    {
       "name": "yearMonth",
       "label": "The year and month we generate invoice and detailed reports for.",
       "helpText": "The year and month for which the invoice and detailed reports are generated, in yyyy-MM format.",

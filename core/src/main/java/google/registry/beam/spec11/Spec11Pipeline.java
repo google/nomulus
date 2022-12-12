@@ -162,7 +162,6 @@ public class Spec11Pipeline implements Serializable {
         RegistryJpaIO.<KV<DomainNameInfo, ThreatMatch>>write()
             .withName(transformId)
             .withBatchSize(options.getSqlWriteBatchSize())
-            .withShards(options.getSqlWriteShards())
             .withJpaConverter(
                 (kv) -> {
                   DomainNameInfo domainNameInfo = kv.getKey();

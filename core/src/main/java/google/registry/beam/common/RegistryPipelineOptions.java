@@ -14,7 +14,6 @@
 
 package google.registry.beam.common;
 
-import google.registry.beam.common.RegistryJpaIO.Write;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.persistence.PersistenceModule.JpaTransactionManagerType;
@@ -29,9 +28,9 @@ import org.apache.beam.sdk.options.Description;
  * Defines Nomulus-specific pipeline options, e.g. JPA configurations.
  *
  * <p>When using the Cloud Dataflow runner, users are recommended to set an upper bound on active
- * database connections by setting the pipeline worker options including {@code --maxNumWorkers},
- * {@code workerMachineType}, and {@code numberOfWorkerHarnessThreads}. Please refer to {@link
- * Write#shards()} for more information.
+ * database connections by setting the max number of pipeline worker threads using {@code
+ * --maxNumWorkers} and {@code workerMachineType} for batch pipelines, or {@code --maxNumWorkers}
+ * and {@code --numberOfWorkerHarnessThreads} for streaming pipelines.
  */
 public interface RegistryPipelineOptions extends GcpOptions {
 
@@ -57,14 +56,6 @@ public interface RegistryPipelineOptions extends GcpOptions {
   int getSqlWriteBatchSize();
 
   void setSqlWriteBatchSize(int sqlWriteBatchSize);
-
-  @Description(
-      "Number of shards to create out of the data before writing to the SQL database. Please refer "
-          + "to the Javadoc of RegistryJpaIO.Write.shards() for how to choose this value.")
-  @Default.Integer(100)
-  int getSqlWriteShards();
-
-  void setSqlWriteShards(int maxConcurrentSqlWriters);
 
   @DeleteAfterMigration
   @Description(
