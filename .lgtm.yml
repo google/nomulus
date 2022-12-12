@@ -1,6 +1,0 @@
-extraction:
-  java:
-    prepare:
-      packages: "npm"
-    index:
-      java_version: "11"
