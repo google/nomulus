@@ -19,21 +19,15 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.appengine.api.utils.SystemProperty;
 import com.google.appengine.api.utils.SystemProperty.Environment.Value;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import google.registry.config.RegistryEnvironment;
 import google.registry.persistence.DaggerPersistenceComponent;
 import google.registry.tools.RegistryToolEnvironment;
 import google.registry.util.NonFinalForTesting;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 /** Factory class to create {@link TransactionManager} instance. */
-// TODO: Rename this to PersistenceFactory and move to persistence package.
 public final class TransactionManagerFactory {
-
-  /** Optional override to manually set the transaction manager per-test. */
-  private static Optional<TransactionManager> tmForTest = Optional.empty();
 
   /** Supplier for jpaTm so that it is initialized only once, upon first usage. */
   @NonFinalForTesting
@@ -78,41 +72,21 @@ public final class TransactionManagerFactory {
   }
 
   /**
-   * Returns the {@link TransactionManager} instance.
-   *
-   * <p>Returns the {@link JpaTransactionManager} or replica based on the possible manually
-   * specified per-test transaction manager.
-   */
-  public static TransactionManager tm() {
-    return tmForTest.orElseGet(TransactionManagerFactory::jpaTm);
-  }
-
-  /**
    * Returns {@link JpaTransactionManager} instance.
    *
    * <p>Between invocations of {@link TransactionManagerFactory#setJpaTm} every call to this method
    * returns the same instance.
    */
-  public static JpaTransactionManager jpaTm() {
+  public static JpaTransactionManager tm() {
     return jpaTm.get();
   }
 
   /** Returns a read-only {@link JpaTransactionManager} instance if configured. */
-  public static JpaTransactionManager replicaJpaTm() {
+  public static JpaTransactionManager replicaTm() {
     return replicaJpaTm.get();
   }
 
-  /**
-   * Returns a {@link TransactionManager} that uses a replica database if one exists.
-   *
-   * <p>In Datastore mode, this is unchanged from the regular transaction manager. In SQL mode,
-   * however, this will be a reference to the read-only replica database if one is configured.
-   */
-  public static TransactionManager replicaTm() {
-    return replicaJpaTm();
-  }
-
-  /** Sets the return of {@link #jpaTm()} to the given instance of {@link JpaTransactionManager}. */
+  /** Sets the return of {@link #tm()} to the given instance of {@link JpaTransactionManager}. */
   public static void setJpaTm(Supplier<JpaTransactionManager> jpaTmSupplier) {
     checkArgumentNotNull(jpaTmSupplier, "jpaTmSupplier");
     checkState(
@@ -122,7 +96,7 @@ public final class TransactionManagerFactory {
     jpaTm = Suppliers.memoize(jpaTmSupplier::get);
   }
 
-  /** Sets the value of {@link #replicaJpaTm()} to the given {@link JpaTransactionManager}. */
+  /** Sets the value of {@link #replicaTm()} to the given {@link JpaTransactionManager}. */
   public static void setReplicaJpaTm(Supplier<JpaTransactionManager> replicaJpaTmSupplier) {
     checkArgumentNotNull(replicaJpaTmSupplier, "replicaJpaTmSupplier");
     checkState(
@@ -133,32 +107,12 @@ public final class TransactionManagerFactory {
   }
 
   /**
-   * Makes {@link #jpaTm()} return the {@link JpaTransactionManager} instance provided by {@code
+   * Makes {@link #tm()} return the {@link JpaTransactionManager} instance provided by {@code
    * jpaTmSupplier} from now on. This method should only be called by an implementor of {@link
    * org.apache.beam.sdk.harness.JvmInitializer}.
    */
   public static void setJpaTmOnBeamWorker(Supplier<JpaTransactionManager> jpaTmSupplier) {
     checkArgumentNotNull(jpaTmSupplier, "jpaTmSupplier");
     jpaTm = Suppliers.memoize(jpaTmSupplier::get);
-  }
-
-  /**
-   * Sets the return of {@link #tm()} to the given instance of {@link TransactionManager}.
-   *
-   * <p>DO NOT CALL THIS DIRECTLY IF POSSIBLE. Strongly prefer the use of <code>TmOverrideExtension
-   * </code> in test code instead.
-   *
-   * <p>Used when overriding the per-test transaction manager for dual-database tests. Should be
-   * matched with a corresponding invocation of {@link #removeTmOverrideForTest()} either at the end
-   * of the test or in an <code>@AfterEach</code> handler.
-   */
-  @VisibleForTesting
-  public static void setTmOverrideForTest(TransactionManager newTmOverride) {
-    tmForTest = Optional.of(newTmOverride);
-  }
-
-  /** Resets the overridden transaction manager post-test. */
-  public static void removeTmOverrideForTest() {
-    tmForTest = Optional.empty();
   }
 }

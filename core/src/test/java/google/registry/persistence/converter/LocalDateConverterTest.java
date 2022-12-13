@@ -15,7 +15,7 @@
 package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.ImmutableObject;
@@ -55,8 +55,8 @@ public class LocalDateConverterTest {
   private LocalDateConverterTestEntity persistAndLoadTestEntity(LocalDate date) {
     LocalDateConverterTestEntity entity = new LocalDateConverterTestEntity(date);
     insertInDb(entity);
-    return jpaTm()
-        .transact(() -> jpaTm().loadByKey(VKey.create(LocalDateConverterTestEntity.class, "id")));
+    return tm().transact(
+            () -> tm().loadByKey(VKey.create(LocalDateConverterTestEntity.class, "id")));
   }
 
   /** Override entity name to avoid the nested class reference. */

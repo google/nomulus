@@ -17,7 +17,7 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertSimpleResources;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
@@ -352,11 +352,9 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       }
 
       // Reset SQL Sequence based id allocation so that ids are deterministic in tests.
-      jpaTm()
-          .transact(
+      tm().transact(
               () ->
-                  jpaTm()
-                      .getEntityManager()
+                  tm().getEntityManager()
                       .createNativeQuery(
                           "alter sequence if exists project_wide_unique_id_seq start 1 minvalue 1"
                               + " restart with 1")

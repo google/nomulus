@@ -15,7 +15,7 @@
 package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.ImmutableObject;
@@ -53,7 +53,7 @@ public class VKeyConverterTest {
     insertInDb(stringEntity, longEntity, original);
 
     TestEntity retrieved =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, 1984L));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, 1984L));
     assertThat(retrieved.stringKey).isEqualTo(stringKey);
     assertThat(retrieved.longKey).isEqualTo(longKey);
   }

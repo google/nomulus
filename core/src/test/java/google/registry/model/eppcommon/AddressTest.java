@@ -15,7 +15,7 @@
 package google.registry.model.eppcommon;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -83,7 +83,7 @@ class AddressTest {
   /** Test the merge behavior. */
   @Test
   void testSuccess_putAndLoadStreetLines() {
-    jpaTm().transact(() -> jpaTm().put(entity));
+    tm().transact(() -> tm().put(entity));
     assertAddress(loadByEntity(entity).address, "123 W 14th St", "8th Fl", "Rm 8");
   }
 

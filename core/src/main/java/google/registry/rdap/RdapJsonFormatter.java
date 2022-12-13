@@ -20,7 +20,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static google.registry.model.EppResourceUtils.isLinked;
-import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.rdap.RdapIcannStandardInformation.CONTACT_REDACTED_VALUE;
 import static google.registry.util.CollectionUtils.union;
 
@@ -366,15 +366,13 @@ public class RdapJsonFormatter {
     // Kick off the database loads of the nameservers that we will need, so it can load
     // asynchronously while we load and process the contacts.
     ImmutableSet<Host> loadedHosts =
-        replicaJpaTm()
+        replicaTm()
             .transact(
                 () ->
-                    ImmutableSet.copyOf(
-                        replicaJpaTm().loadByKeys(domain.getNameservers()).values()));
+                    ImmutableSet.copyOf(replicaTm().loadByKeys(domain.getNameservers()).values()));
     // Load the registrant and other contacts and add them to the data.
     ImmutableMap<VKey<? extends Contact>, Contact> loadedContacts =
-        replicaJpaTm()
-            .transact(() -> replicaJpaTm().loadByKeysIfPresent(domain.getReferencedContacts()));
+        replicaTm().transact(() -> replicaTm().loadByKeysIfPresent(domain.getReferencedContacts()));
     // RDAP Response Profile 2.7.3, A domain MUST have the REGISTRANT, ADMIN, TECH roles and MAY
     // have others. We also add the BILLING.
     //
@@ -453,10 +451,10 @@ public class RdapJsonFormatter {
         statuses.add(StatusValue.LINKED);
       }
       if (host.isSubordinate()
-          && replicaJpaTm()
+          && replicaTm()
               .transact(
                   () ->
-                      replicaJpaTm()
+                      replicaTm()
                           .loadByKey(host.getSuperordinateDomain())
                           .cloneProjectedAtTime(getRequestTime())
                           .getStatusValues()
@@ -907,10 +905,10 @@ public class RdapJsonFormatter {
             .replace("%entityName%", entityName)
             .replace("%repoIdValue%", resourceVkey.getKey().toString());
     Iterable<HistoryEntry> historyEntries =
-        replicaJpaTm()
+        replicaTm()
             .transact(
                 () ->
-                    replicaJpaTm()
+                    replicaTm()
                         .getEntityManager()
                         .createQuery(jpql, HistoryEntry.class)
                         .getResultList());

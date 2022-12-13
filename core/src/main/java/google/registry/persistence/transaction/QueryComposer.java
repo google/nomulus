@@ -14,7 +14,7 @@
 
 package google.registry.persistence.transaction;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -210,7 +210,7 @@ public abstract class QueryComposer<T> {
     }
 
     public void addToCriteriaQueryBuilder(CriteriaQueryBuilder queryBuilder) {
-      CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
+      CriteriaBuilder criteriaBuilder = tm().getEntityManager().getCriteriaBuilder();
       queryBuilder.where(
           fieldName, comparator.getComparisonFactory().apply(criteriaBuilder), value);
     }

@@ -14,7 +14,7 @@
 
 package google.registry.model;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import java.util.Optional;
@@ -38,7 +38,7 @@ public class UpdateAutoTimestamp extends ImmutableObject implements UnsafeSerial
   @PrePersist
   @PreUpdate
   void setTimestamp() {
-    lastUpdateTime = jpaTm().getTransactionTime();
+    lastUpdateTime = tm().getTransactionTime();
   }
 
   /** Returns the timestamp, or {@code START_OF_TIME} if it's null. */

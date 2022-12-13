@@ -15,7 +15,7 @@
 package google.registry.model.console;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import java.util.Optional;
 
@@ -24,11 +24,9 @@ public class UserDao {
 
   /** Retrieves the one user with this email address if it exists. */
   public static Optional<User> loadUser(String emailAddress) {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
-                jpaTm()
-                    .query("FROM User WHERE emailAddress = :emailAddress", User.class)
+                tm().query("FROM User WHERE emailAddress = :emailAddress", User.class)
                     .setParameter("emailAddress", emailAddress)
                     .getResultStream()
                     .findFirst());
@@ -36,8 +34,7 @@ public class UserDao {
 
   /** Saves the given user, checking that no existing user already exists with this email. */
   public static void saveUser(User user) {
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               // Check for an existing user (the unique constraint protects us, but this gives a
               // nicer exception)
@@ -51,7 +48,7 @@ public class UserDao {
                             + " email already exists with ID %s",
                         user.getEmailAddress(), user.getId(), savedUser.getId()));
               }
-              jpaTm().put(user);
+              tm().put(user);
             });
   }
 }

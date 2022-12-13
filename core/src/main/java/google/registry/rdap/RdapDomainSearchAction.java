@@ -16,7 +16,7 @@ package google.registry.rdap;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
-import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -203,13 +203,13 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     int querySizeLimit = RESULT_SET_SIZE_SCALING_FACTOR * rdapResultSetMaxSize;
     RdapResultSet<Domain> resultSet;
     resultSet =
-        replicaJpaTm()
+        replicaTm()
             .transact(
                 () -> {
                   CriteriaBuilder criteriaBuilder =
-                      replicaJpaTm().getEntityManager().getCriteriaBuilder();
+                      replicaTm().getEntityManager().getCriteriaBuilder();
                   CriteriaQueryBuilder<Domain> queryBuilder =
-                      CriteriaQueryBuilder.create(replicaJpaTm(), Domain.class)
+                      CriteriaQueryBuilder.create(replicaTm(), Domain.class)
                           .where(
                               "domainName",
                               criteriaBuilder::like,
@@ -239,7 +239,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     int querySizeLimit = RESULT_SET_SIZE_SCALING_FACTOR * rdapResultSetMaxSize;
     RdapResultSet<Domain> resultSet;
     resultSet =
-        replicaJpaTm()
+        replicaTm()
             .transact(
                 () -> {
                   CriteriaQueryBuilder<Domain> builder =
@@ -305,7 +305,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // incomplete result set if a search asks for something like "ns*", but we need to enforce a
     // limit in order to avoid arbitrarily long-running queries.
     Optional<String> desiredRegistrar = getDesiredRegistrar();
-    return replicaJpaTm()
+    return replicaTm()
         .transact(
             () -> {
               CriteriaQueryBuilder<Host> builder =
@@ -319,7 +319,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                 builder =
                     builder.where(
                         "currentSponsorRegistrarId",
-                        replicaJpaTm().getEntityManager().getCriteriaBuilder()::equal,
+                        replicaTm().getEntityManager().getCriteriaBuilder()::equal,
                         desiredRegistrar.get());
               }
               return getMatchingResources(builder, true, maxNameserversInFirstStage)
@@ -438,11 +438,11 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
         parameters.put("desiredRegistrar", desiredRegistrar.get());
       }
     hostKeys =
-        replicaJpaTm()
+        replicaTm()
             .transact(
                 () -> {
                   javax.persistence.Query query =
-                      replicaJpaTm()
+                      replicaTm()
                           .getEntityManager()
                           .createNativeQuery(queryBuilder.toString())
                           .setMaxResults(maxNameserversInFirstStage);
@@ -475,37 +475,37 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     int numHostKeysSearched = 0;
     for (List<VKey<Host>> chunk : Iterables.partition(hostKeys, 30)) {
       numHostKeysSearched += chunk.size();
-        replicaJpaTm()
-            .transact(
-                () -> {
-                  for (VKey<Host> hostKey : hostKeys) {
-                    CriteriaQueryBuilder<Domain> queryBuilder =
-                        CriteriaQueryBuilder.create(replicaJpaTm(), Domain.class)
-                            .whereFieldContains("nsHosts", hostKey)
-                            .orderByAsc("domainName");
-                    CriteriaBuilder criteriaBuilder =
-                        replicaJpaTm().getEntityManager().getCriteriaBuilder();
-                    if (!shouldIncludeDeleted()) {
-                      queryBuilder =
-                          queryBuilder.where(
-                              "deletionTime", criteriaBuilder::greaterThan, getRequestTime());
-                    }
-                    if (cursorString.isPresent()) {
-                      queryBuilder =
-                          queryBuilder.where(
-                              "domainName", criteriaBuilder::greaterThan, cursorString.get());
-                    }
-                    replicaJpaTm()
-                        .criteriaQuery(queryBuilder.build())
-                        .getResultStream()
-                        .filter(this::isAuthorized)
-                        .forEach(
-                            (domain) -> {
-                              Hibernate.initialize(domain.getDsData());
-                              domainSetBuilder.add(domain);
-                            });
+      replicaTm()
+          .transact(
+              () -> {
+                for (VKey<Host> hostKey : hostKeys) {
+                  CriteriaQueryBuilder<Domain> queryBuilder =
+                      CriteriaQueryBuilder.create(replicaTm(), Domain.class)
+                          .whereFieldContains("nsHosts", hostKey)
+                          .orderByAsc("domainName");
+                  CriteriaBuilder criteriaBuilder =
+                      replicaTm().getEntityManager().getCriteriaBuilder();
+                  if (!shouldIncludeDeleted()) {
+                    queryBuilder =
+                        queryBuilder.where(
+                            "deletionTime", criteriaBuilder::greaterThan, getRequestTime());
                   }
-                });
+                  if (cursorString.isPresent()) {
+                    queryBuilder =
+                        queryBuilder.where(
+                            "domainName", criteriaBuilder::greaterThan, cursorString.get());
+                  }
+                  replicaTm()
+                      .criteriaQuery(queryBuilder.build())
+                      .getResultStream()
+                      .filter(this::isAuthorized)
+                      .forEach(
+                          (domain) -> {
+                            Hibernate.initialize(domain.getDsData());
+                            domainSetBuilder.add(domain);
+                          });
+                }
+              });
     }
     List<Domain> domains = domainSetBuilder.build().asList();
     metricInformationBuilder.setNumHostsRetrieved(numHostKeysSearched);

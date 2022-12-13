@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
@@ -87,8 +86,7 @@ abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
   @Override
   protected final void init() throws Exception {
     for (String token : mainParameters) {
-      jpaTm()
-          .transact(
+      tm().transact(
               () -> {
                 PackagePromotion oldPackage = getOldPackagePromotion(token);
                 checkArgument(

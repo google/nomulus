@@ -16,7 +16,7 @@ package google.registry.model.console;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
@@ -38,19 +38,15 @@ public class UserTest extends EntityTestCase {
             .setUserRoles(
                 new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(true).build())
             .build();
-    jpaTm().transact(() -> jpaTm().put(user));
-    jpaTm()
-        .transact(
+    tm().transact(() -> tm().put(user));
+    tm().transact(
             () -> {
               assertAboutImmutableObjects()
                   .that(
-                      jpaTm()
-                          .query("FROM User WHERE gaiaId = 'gaiaId'", User.class)
-                          .getSingleResult())
+                      tm().query("FROM User WHERE gaiaId = 'gaiaId'", User.class).getSingleResult())
                   .isEqualExceptFields(user, "id", "updateTimestamp");
               assertThat(
-                      jpaTm()
-                          .query("FROM User WHERE gaiaId = 'badGaiaId'", User.class)
+                      tm().query("FROM User WHERE gaiaId = 'badGaiaId'", User.class)
                           .getResultList())
                   .isEmpty();
             });

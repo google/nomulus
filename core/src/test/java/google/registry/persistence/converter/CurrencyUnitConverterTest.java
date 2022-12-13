@@ -15,7 +15,7 @@
 package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -41,27 +41,23 @@ public class CurrencyUnitConverterTest {
     TestEntity entity = new TestEntity(CurrencyUnit.EUR);
     insertInDb(entity);
     assertThat(
-            jpaTm()
-                .transact(
+            tm().transact(
                     () ->
-                        jpaTm()
-                            .getEntityManager()
+                        tm().getEntityManager()
                             .createNativeQuery(
                                 "SELECT currency FROM \"TestEntity\" WHERE name = 'id'")
                             .getResultList()))
         .containsExactly("EUR");
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.currency).isEqualTo(CurrencyUnit.EUR);
   }
 
   @Test
   void invalidCurrency() {
-    jpaTm()
-        .transact(
+    tm().transact(
             () ->
-                jpaTm()
-                    .getEntityManager()
+                tm().getEntityManager()
                     .createNativeQuery(
                         "INSERT INTO \"TestEntity\" (name, currency) VALUES('id', 'XXXX')")
                     .executeUpdate());
@@ -69,9 +65,7 @@ public class CurrencyUnitConverterTest {
         assertThrows(
             PersistenceException.class,
             () ->
-                jpaTm()
-                    .transact(
-                        () -> jpaTm().getEntityManager().find(TestEntity.class, "id").currency));
+                tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id").currency));
     assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("Unknown currency 'XXXX'");
   }
 

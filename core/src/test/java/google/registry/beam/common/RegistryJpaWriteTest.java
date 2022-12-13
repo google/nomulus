@@ -16,7 +16,7 @@ package google.registry.beam.common;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.newContact;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,7 +51,7 @@ class RegistryJpaWriteTest implements Serializable {
 
   @Test
   void writeToSql_twoWriters() {
-    jpaTm().transact(() -> jpaTm().put(AppEngineExtension.makeRegistrar2()));
+    tm().transact(() -> tm().put(AppEngineExtension.makeRegistrar2()));
     ImmutableList.Builder<Contact> contactsBuilder = new ImmutableList.Builder<>();
     for (int i = 0; i < 3; i++) {
       contactsBuilder.add(newContact("contact_" + i));
@@ -72,11 +72,10 @@ class RegistryJpaWriteTest implements Serializable {
     // RegistryJpaIO.Write actions should not write existing objects to the database because the
     // object could have been mutated in between creation and when the Write actually occurs,
     // causing a race condition
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              jpaTm().put(AppEngineExtension.makeRegistrar2());
-              jpaTm().put(newContact("contact"));
+              tm().put(AppEngineExtension.makeRegistrar2());
+              tm().put(newContact("contact"));
             });
     Contact contact = Iterables.getOnlyElement(loadAllOf(Contact.class));
     testPipeline

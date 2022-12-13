@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameter;
@@ -32,8 +32,7 @@ public class GetPackagePromotionCommand extends GetEppResourceCommand {
   @Override
   void runAndPrint() {
     for (String token : mainParameters) {
-      jpaTm()
-          .transact(
+      tm().transact(
               () -> {
                 PackagePromotion packagePromotion =
                     checkArgumentPresent(

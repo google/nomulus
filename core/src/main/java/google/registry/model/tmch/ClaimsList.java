@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
@@ -104,8 +104,7 @@ public class ClaimsList extends ImmutableObject {
 
   @PreRemove
   void preRemove() {
-    jpaTm()
-        .query("DELETE FROM ClaimsEntry WHERE revision_id = :revisionId")
+    tm().query("DELETE FROM ClaimsEntry WHERE revision_id = :revisionId")
         .setParameter("revisionId", revisionId)
         .executeUpdate();
   }
@@ -123,7 +122,7 @@ public class ClaimsList extends ImmutableObject {
     if (labelsToKeys != null) {
       labelsToKeys.forEach(
           (domainLabel, claimKey) ->
-              jpaTm().insert(new ClaimsEntry(revisionId, domainLabel, claimKey)));
+              tm().insert(new ClaimsEntry(revisionId, domainLabel, claimKey)));
     }
   }
 
@@ -169,10 +168,9 @@ public class ClaimsList extends ImmutableObject {
   public ImmutableMap<String, String> getLabelsToKeys() {
     if (labelsToKeys == null) {
       labelsToKeys =
-          jpaTm()
-              .transact(
+          tm().transact(
                   () ->
-                      jpaTm()
+                      tm()
                           .createQueryComposer(ClaimsEntry.class)
                           .where("revisionId", EQ, revisionId)
                           .stream()
@@ -191,8 +189,7 @@ public class ClaimsList extends ImmutableObject {
    */
   public long size() {
     if (labelsToKeys == null) {
-      return jpaTm()
-          .createQueryComposer(ClaimsEntry.class)
+      return tm().createQueryComposer(ClaimsEntry.class)
           .where("revisionId", EQ, revisionId)
           .count();
     }
@@ -209,11 +206,9 @@ public class ClaimsList extends ImmutableObject {
     if (labelsToKeys != null) {
       return Optional.ofNullable(labelsToKeys.get(label));
     }
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
-                jpaTm()
-                    .createQueryComposer(ClaimsEntry.class)
+                tm().createQueryComposer(ClaimsEntry.class)
                     .where("revisionId", EQ, revisionId)
                     .where("domainLabel", EQ, label)
                     .first()

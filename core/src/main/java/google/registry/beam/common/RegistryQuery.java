@@ -14,7 +14,7 @@
 
 package google.registry.beam.common;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import google.registry.persistence.transaction.JpaTransactionManager;
 import java.io.Serializable;
@@ -53,7 +53,7 @@ public interface RegistryQuery<T> extends Serializable {
   static <T> RegistryQuery<T> createQuery(
       String sql, @Nullable Map<String, Object> parameters, boolean nativeQuery) {
     return () -> {
-      EntityManager entityManager = jpaTm().getEntityManager();
+      EntityManager entityManager = tm().getEntityManager();
       Query query =
           nativeQuery ? entityManager.createNativeQuery(sql) : entityManager.createQuery(sql);
       if (parameters != null) {
@@ -76,7 +76,7 @@ public interface RegistryQuery<T> extends Serializable {
       String jpql, @Nullable Map<String, Object> parameters, Class<T> clazz) {
     return () -> {
       // TODO(b/193662898): switch to jpaTm().query() when it can properly detach loaded entities.
-      EntityManager entityManager = jpaTm().getEntityManager();
+      EntityManager entityManager = tm().getEntityManager();
       TypedQuery<T> query = entityManager.createQuery(jpql, clazz);
       if (parameters != null) {
         parameters.forEach(query::setParameter);
@@ -98,7 +98,7 @@ public interface RegistryQuery<T> extends Serializable {
   static <T> RegistryQuery<T> createQuery(CriteriaQuerySupplier<T> criteriaQuery) {
     return () -> {
       // TODO(b/193662898): switch to jpaTm().query() when it can properly detach loaded entities.
-      EntityManager entityManager = jpaTm().getEntityManager();
+      EntityManager entityManager = tm().getEntityManager();
       TypedQuery<T> query = entityManager.createQuery(criteriaQuery.get());
       JpaTransactionManager.setQueryFetchSize(query, QUERY_FETCH_SIZE);
       return query.getResultStream().map(e -> detach(entityManager, e));

@@ -15,7 +15,7 @@
 package google.registry.model.console;
 
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.truth.Truth8;
@@ -62,7 +62,7 @@ public class UserDaoTest extends EntityTestCase {
     // nonexistent one should never exist
     Truth8.assertThat(UserDao.loadUser("nonexistent@email.com")).isEmpty();
     // now try deleting the one that does exist
-    jpaTm().transact(() -> jpaTm().delete(fromDb));
+    tm().transact(() -> tm().delete(fromDb));
     Truth8.assertThat(UserDao.loadUser("email@email.com")).isEmpty();
   }
 

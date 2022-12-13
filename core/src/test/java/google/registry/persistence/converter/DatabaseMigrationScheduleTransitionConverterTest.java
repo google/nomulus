@@ -15,7 +15,7 @@
 package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -63,11 +63,9 @@ public class DatabaseMigrationScheduleTransitionConverterTest {
         new DatabaseMigrationScheduleTransitionConverterTestEntity(timedTransitionProperty);
     insertInDb(testEntity);
     DatabaseMigrationScheduleTransitionConverterTestEntity persisted =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () ->
-                    jpaTm()
-                        .getEntityManager()
+                    tm().getEntityManager()
                         .find(DatabaseMigrationScheduleTransitionConverterTestEntity.class, "id"));
     assertThat(persisted.timedTransitionProperty).containsExactlyEntriesIn(timedTransitionProperty);
   }

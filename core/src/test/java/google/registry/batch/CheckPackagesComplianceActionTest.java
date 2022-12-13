@@ -14,7 +14,7 @@
 package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
@@ -110,7 +110,7 @@ public class CheckPackagesComplianceActionTest {
             .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
             .build();
 
-    jpaTm().transact(() -> jpaTm().put(packagePromotion));
+    tm().transact(() -> tm().put(packagePromotion));
     contact = persistActiveContact("contact1234");
   }
 
@@ -199,7 +199,7 @@ public class CheckPackagesComplianceActionTest {
             .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .build();
-    jpaTm().transact(() -> jpaTm().put(packagePromotion2));
+    tm().transact(() -> tm().put(packagePromotion2));
 
     persistEppResource(
         DatabaseHelper.newDomain("foo2.tld", contact)
@@ -253,7 +253,7 @@ public class CheckPackagesComplianceActionTest {
             .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
             .setNextBillingDate(DateTime.parse("2015-11-12T05:00:00Z"))
             .build();
-    jpaTm().transact(() -> jpaTm().put(packagePromotion2));
+    tm().transact(() -> tm().put(packagePromotion2));
 
     // Create limit is 1, creating 2 domains to go over the limit
     persistEppResource(

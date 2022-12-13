@@ -15,7 +15,7 @@
 package google.registry.rdap;
 
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
-import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -217,7 +217,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
   private NameserverSearchResponse searchByNameUsingPrefix(RdapSearchPattern partialStringQuery) {
     // Add 1 so we can detect truncation.
     int querySizeLimit = getStandardQuerySizeLimit();
-    return replicaJpaTm()
+    return replicaTm()
         .transact(
             () -> {
               CriteriaQueryBuilder<Host> queryBuilder =
@@ -260,20 +260,20 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
         parameters.put("desiredRegistrar", getDesiredRegistrar().get());
       }
       queryBuilder.append(" ORDER BY repo_id ASC");
-      rdapResultSet =
-          replicaJpaTm()
-              .transact(
-                  () -> {
-                    javax.persistence.Query query =
-                        replicaJpaTm()
-                            .getEntityManager()
-                            .createNativeQuery(queryBuilder.toString(), Host.class)
-                            .setMaxResults(querySizeLimit);
-                    parameters.build().forEach(query::setParameter);
-                    @SuppressWarnings("unchecked")
-                    List<Host> resultList = query.getResultList();
-                    return filterResourcesByVisibility(resultList, querySizeLimit);
-                  });
+    rdapResultSet =
+        replicaTm()
+            .transact(
+                () -> {
+                  javax.persistence.Query query =
+                      replicaTm()
+                          .getEntityManager()
+                          .createNativeQuery(queryBuilder.toString(), Host.class)
+                          .setMaxResults(querySizeLimit);
+                  parameters.build().forEach(query::setParameter);
+                  @SuppressWarnings("unchecked")
+                  List<Host> resultList = query.getResultList();
+                  return filterResourcesByVisibility(resultList, querySizeLimit);
+                });
     return makeSearchResults(rdapResultSet, CursorType.ADDRESS);
   }
 

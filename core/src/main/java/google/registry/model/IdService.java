@@ -15,7 +15,7 @@
 package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
@@ -70,12 +70,10 @@ public final class IdService {
    * <p>The generated IDs are project-wide unique
    */
   private static Long getSequenceBasedId() {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
                 (BigInteger)
-                    jpaTm()
-                        .getEntityManager()
+                    tm().getEntityManager()
                         .createNativeQuery("SELECT nextval('project_wide_unique_id_seq')")
                         .getSingleResult())
         .longValue();

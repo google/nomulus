@@ -14,7 +14,7 @@
 
 package google.registry.batch;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
 
@@ -77,8 +77,7 @@ public class WipeOutContactHistoryPiiAction implements Runnable {
       int numOfWipedEntities = 0;
       do {
         numOfWipedEntities =
-            jpaTm()
-                .transact(
+            tm().transact(
                     () ->
                         wipeOutContactHistoryData(
                             getNextContactHistoryEntitiesWithPiiBatch(wipeOutTime)));
@@ -113,8 +112,7 @@ public class WipeOutContactHistoryPiiAction implements Runnable {
     // email is one of the required fields in EPP, meaning it's initially not null.
     // Therefore, checking if it's null is one way to avoid processing contact history entities
     // that have been processed previously. Refer to RFC 5733 for more information.
-    return jpaTm()
-        .query(
+    return tm().query(
             "FROM ContactHistory WHERE modificationTime < :wipeOutTime " + "AND email IS NOT NULL",
             ContactHistory.class)
         .setParameter("wipeOutTime", wipeOutTime)
@@ -128,7 +126,7 @@ public class WipeOutContactHistoryPiiAction implements Runnable {
     AtomicInteger numOfEntities = new AtomicInteger(0);
     contactHistoryEntities.forEach(
         contactHistoryEntity -> {
-          jpaTm().update(contactHistoryEntity.asBuilder().wipeOutPii().build());
+          tm().update(contactHistoryEntity.asBuilder().wipeOutPii().build());
           numOfEntities.incrementAndGet();
         });
     logger.atInfo().log(

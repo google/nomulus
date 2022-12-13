@@ -16,7 +16,7 @@ package google.registry.model.tmch;
 
 import static google.registry.config.RegistryConfig.getClaimsListCacheDuration;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -51,7 +51,7 @@ public class ClaimsListDao {
 
   /** Saves the given {@link ClaimsList} to Cloud SQL. */
   public static void save(ClaimsList claimsList) {
-    jpaTm().transact(() -> jpaTm().insert(claimsList));
+    tm().transact(() -> tm().insert(claimsList));
     CACHE.put(ClaimsListDao.class, claimsList);
   }
 
@@ -65,15 +65,12 @@ public class ClaimsListDao {
    * doesn't exist.
    */
   private static ClaimsList getUncached() {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () -> {
               Long revisionId =
-                  jpaTm()
-                      .query("SELECT MAX(revisionId) FROM ClaimsList", Long.class)
+                  tm().query("SELECT MAX(revisionId) FROM ClaimsList", Long.class)
                       .getSingleResult();
-              return jpaTm()
-                  .createQueryComposer(ClaimsList.class)
+              return tm().createQueryComposer(ClaimsList.class)
                   .where("revisionId", EQ, revisionId)
                   .first();
             })

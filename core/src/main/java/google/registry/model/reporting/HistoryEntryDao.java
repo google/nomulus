@@ -16,7 +16,7 @@ package google.registry.model.reporting;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -56,8 +56,7 @@ public class HistoryEntryDao {
   /** Loads all history objects in the times specified, including all types. */
   public static ImmutableList<HistoryEntry> loadAllHistoryObjects(
       DateTime afterTime, DateTime beforeTime) {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
                 new ImmutableList.Builder<HistoryEntry>()
                     .addAll(loadAllHistoryObjects(ContactHistory.class, afterTime, beforeTime))
@@ -84,8 +83,8 @@ public class HistoryEntryDao {
   /** Loads all history objects in the time period specified for the given {@link EppResource}. */
   public static ImmutableList<HistoryEntry> loadHistoryObjectsForResource(
       VKey<? extends EppResource> resourceKey, DateTime afterTime, DateTime beforeTime) {
-    return jpaTm()
-        .transact(() -> loadHistoryObjectsForResourceInternal(resourceKey, afterTime, beforeTime));
+    return tm().transact(
+            () -> loadHistoryObjectsForResourceInternal(resourceKey, afterTime, beforeTime));
   }
 
   /**
@@ -119,8 +118,7 @@ public class HistoryEntryDao {
   /** Loads all history objects from all time from the given registrars. */
   public static Iterable<HistoryEntry> loadHistoryObjectsByRegistrars(
       ImmutableCollection<String> registrarIds) {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
                 Streams.concat(
                         loadHistoryObjectByRegistrarsInternal(ContactHistory.class, registrarIds),
@@ -132,8 +130,7 @@ public class HistoryEntryDao {
 
   private static <T extends HistoryEntry> Stream<T> loadHistoryObjectByRegistrarsInternal(
       Class<T> historyClass, ImmutableCollection<String> registrarIds) {
-    return jpaTm()
-        .criteriaQuery(
+    return tm().criteriaQuery(
             CriteriaQueryBuilder.create(historyClass)
                 .whereFieldIsIn("clientId", registrarIds)
                 .build())
@@ -144,7 +141,7 @@ public class HistoryEntryDao {
       VKey<? extends EppResource> resourceKey, DateTime afterTime, DateTime beforeTime) {
     // The class we're searching from is based on which resource type (e.g. Domain) we have
     Class<? extends HistoryEntry> historyClass = getHistoryClassFromParent(resourceKey.getKind());
-    CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
+    CriteriaBuilder criteriaBuilder = tm().getEntityManager().getCriteriaBuilder();
     CriteriaQuery<? extends HistoryEntry> criteriaQuery =
         CriteriaQueryBuilder.create(historyClass)
             .where("modificationTime", criteriaBuilder::greaterThanOrEqualTo, afterTime)
@@ -154,7 +151,7 @@ public class HistoryEntryDao {
             .orderByAsc("modificationTime")
             .build();
 
-    return ImmutableList.copyOf(jpaTm().criteriaQuery(criteriaQuery).getResultList());
+    return ImmutableList.copyOf(tm().criteriaQuery(criteriaQuery).getResultList());
   }
 
   public static Class<? extends HistoryEntry> getHistoryClassFromParent(
@@ -168,9 +165,8 @@ public class HistoryEntryDao {
 
   private static <T extends HistoryEntry> List<T> loadAllHistoryObjects(
       Class<T> historyClass, DateTime afterTime, DateTime beforeTime) {
-    CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
-    return jpaTm()
-        .criteriaQuery(
+    CriteriaBuilder criteriaBuilder = tm().getEntityManager().getCriteriaBuilder();
+    return tm().criteriaQuery(
             CriteriaQueryBuilder.create(historyClass)
                 .where("modificationTime", criteriaBuilder::greaterThanOrEqualTo, afterTime)
                 .where("modificationTime", criteriaBuilder::lessThanOrEqualTo, beforeTime)

@@ -16,7 +16,7 @@ package google.registry.model.reporting;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -51,32 +51,29 @@ class Spec11ThreatMatchDaoTest extends EntityTestCase {
     todayOrgDomain = persistResource(DatabaseHelper.newDomain("today.org", contact));
     yesterdayComDomain = persistResource(DatabaseHelper.newDomain("yesterday.com", contact));
     yesterdayOrgDomain = persistResource(DatabaseHelper.newDomain("yesterday.org", contact));
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              jpaTm().insertAll(getThreatMatchesToday());
-              jpaTm().insertAll(getThreatMatchesYesterday());
+              tm().insertAll(getThreatMatchesToday());
+              tm().insertAll(getThreatMatchesYesterday());
             });
   }
 
   @Test
   void testDeleteEntriesByDate() {
     // Verify that all entries with the date TODAY were removed
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Spec11ThreatMatchDao.deleteEntriesByDate(jpaTm(), TODAY);
+              Spec11ThreatMatchDao.deleteEntriesByDate(tm(), TODAY);
               ImmutableList<Spec11ThreatMatch> persistedToday =
-                  Spec11ThreatMatchDao.loadEntriesByDate(jpaTm(), TODAY);
+                  Spec11ThreatMatchDao.loadEntriesByDate(tm(), TODAY);
               assertThat(persistedToday).isEmpty();
             });
 
     // Verify that all other entries were not removed
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               ImmutableList<Spec11ThreatMatch> persistedYesterday =
-                  Spec11ThreatMatchDao.loadEntriesByDate(jpaTm(), YESTERDAY);
+                  Spec11ThreatMatchDao.loadEntriesByDate(tm(), YESTERDAY);
               assertThat(persistedYesterday)
                   .comparingElementsUsing(immutableObjectCorrespondence("id"))
                   .containsExactlyElementsIn(getThreatMatchesYesterday());
@@ -85,11 +82,10 @@ class Spec11ThreatMatchDaoTest extends EntityTestCase {
 
   @Test
   void testLoadEntriesByDate() {
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               ImmutableList<Spec11ThreatMatch> persisted =
-                  Spec11ThreatMatchDao.loadEntriesByDate(jpaTm(), TODAY);
+                  Spec11ThreatMatchDao.loadEntriesByDate(tm(), TODAY);
 
               assertThat(persisted)
                   .comparingElementsUsing(immutableObjectCorrespondence("id"))

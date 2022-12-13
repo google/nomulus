@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
@@ -177,11 +177,10 @@ public class DomainSqlTest {
   @Test
   void testResaveDomain_succeeds() {
     persistDomain();
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
-              jpaTm().put(persisted.asBuilder().build());
+              Domain persisted = tm().loadByKey(domain.createVKey());
+              tm().put(persisted.asBuilder().build());
             });
     // Load the domain in its entirety.
     assertEqualDomainExcept(loadByKey(domain.createVKey()));
@@ -190,18 +189,16 @@ public class DomainSqlTest {
   @Test
   void testModifyGracePeriod_setEmptyCollectionSuccessfully() {
     persistDomain();
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               Domain modified = persisted.asBuilder().setGracePeriods(ImmutableSet.of()).build();
-              jpaTm().put(modified);
+              tm().put(modified);
             });
 
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               assertThat(persisted.getGracePeriods()).isEmpty();
             });
   }
@@ -209,18 +206,16 @@ public class DomainSqlTest {
   @Test
   void testModifyGracePeriod_setNullCollectionSuccessfully() {
     persistDomain();
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               Domain modified = persisted.asBuilder().setGracePeriods(null).build();
-              jpaTm().put(modified);
+              tm().put(modified);
             });
 
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               assertThat(persisted.getGracePeriods()).isEmpty();
             });
   }
@@ -228,10 +223,9 @@ public class DomainSqlTest {
   @Test
   void testModifyGracePeriod_addThenRemoveSuccessfully() {
     persistDomain();
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               Domain modified =
                   persisted
                       .asBuilder()
@@ -244,13 +238,12 @@ public class DomainSqlTest {
                               null,
                               200L))
                       .build();
-              jpaTm().put(modified);
+              tm().put(modified);
             });
 
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               assertThat(persisted.getGracePeriods())
                   .containsExactly(
                       GracePeriod.create(
@@ -260,23 +253,21 @@ public class DomainSqlTest {
               assertEqualDomainExcept(persisted, "gracePeriods");
             });
 
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               Domain.Builder builder = persisted.asBuilder();
               for (GracePeriod gracePeriod : persisted.getGracePeriods()) {
                 if (gracePeriod.getType() == GracePeriodStatus.RENEW) {
                   builder.removeGracePeriod(gracePeriod);
                 }
               }
-              jpaTm().put(builder.build());
+              tm().put(builder.build());
             });
 
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               assertEqualDomainExcept(persisted);
             });
   }
@@ -284,18 +275,16 @@ public class DomainSqlTest {
   @Test
   void testModifyGracePeriod_removeThenAddSuccessfully() {
     persistDomain();
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               Domain modified = persisted.asBuilder().setGracePeriods(ImmutableSet.of()).build();
-              jpaTm().put(modified);
+              tm().put(modified);
             });
 
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               assertThat(persisted.getGracePeriods()).isEmpty();
               Domain modified =
                   persisted
@@ -309,13 +298,12 @@ public class DomainSqlTest {
                               null,
                               100L))
                       .build();
-              jpaTm().put(modified);
+              tm().put(modified);
             });
 
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               assertThat(persisted.getGracePeriods())
                   .containsExactly(
                       GracePeriod.create(
@@ -332,37 +320,33 @@ public class DomainSqlTest {
         Sets.union(domain.getDsData(), ImmutableSet.of(extraDsData)).immutableCopy();
 
     // Add an extra DomainDsData to dsData set.
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               assertThat(persisted.getDsData()).containsExactlyElementsIn(domain.getDsData());
               Domain modified = persisted.asBuilder().setDsData(unionDsData).build();
-              jpaTm().put(modified);
+              tm().put(modified);
             });
 
     // Verify that the persisted domain entity contains both DomainDsData records.
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               assertThat(persisted.getDsData()).containsExactlyElementsIn(unionDsData);
               assertEqualDomainExcept(persisted, "dsData");
             });
 
     // Remove the extra DomainDsData record from dsData set.
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
-              jpaTm().put(persisted.asBuilder().setDsData(domain.getDsData()).build());
+              Domain persisted = tm().loadByKey(domain.createVKey());
+              tm().put(persisted.asBuilder().setDsData(domain.getDsData()).build());
             });
 
     // Verify that the persisted domain is equal to the original domain.
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              Domain persisted = jpaTm().loadByKey(domain.createVKey());
+              Domain persisted = tm().loadByKey(domain.createVKey());
               assertEqualDomainExcept(persisted);
             });
   }
@@ -371,7 +355,7 @@ public class DomainSqlTest {
   void testSerializable() {
     createTld("com");
     insertInDb(contact, contact2, domain, host);
-    Domain persisted = jpaTm().transact(() -> jpaTm().loadByEntity(domain));
+    Domain persisted = tm().transact(() -> tm().loadByEntity(domain));
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
@@ -427,8 +411,7 @@ public class DomainSqlTest {
     DateTime originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
     DateTime transactionTime =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () -> {
                   Host host2 =
                       new Host.Builder()
@@ -440,7 +423,7 @@ public class DomainSqlTest {
                   insertInDb(host2);
                   domain = persisted.asBuilder().addNameserver(host2.createVKey()).build();
                   updateInDb(domain);
-                  return jpaTm().getTransactionTime();
+                  return tm().getTransactionTime();
                 });
     domain = loadByKey(domain.createVKey());
     assertThat(domain.getUpdateTimestamp().getTimestamp()).isEqualTo(transactionTime);
@@ -454,8 +437,7 @@ public class DomainSqlTest {
     DateTime originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
     DateTime transactionTime =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () -> {
                   domain =
                       persisted
@@ -464,7 +446,7 @@ public class DomainSqlTest {
                               ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
                           .build();
                   updateInDb(domain);
-                  return jpaTm().getTransactionTime();
+                  return tm().getTransactionTime();
                 });
     domain = loadByKey(domain.createVKey());
     assertThat(domain.getUpdateTimestamp().getTimestamp()).isEqualTo(transactionTime);

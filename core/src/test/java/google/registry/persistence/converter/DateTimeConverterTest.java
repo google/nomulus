@@ -15,7 +15,7 @@
 package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.ImmutableObject;
@@ -72,9 +72,7 @@ public class DateTimeConverterTest {
     TestEntity entity = new TestEntity("normalized_utc_time", dt);
     insertInDb(entity);
     TestEntity retrievedEntity =
-        jpaTm()
-            .transact(
-                () -> jpaTm().getEntityManager().find(TestEntity.class, "normalized_utc_time"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "normalized_utc_time"));
     assertThat(retrievedEntity.dt.toString()).isEqualTo("2019-09-01T01:01:01.000Z");
   }
 
@@ -85,7 +83,7 @@ public class DateTimeConverterTest {
 
     insertInDb(entity);
     TestEntity retrievedEntity =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "new_york_time"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "new_york_time"));
     assertThat(retrievedEntity.dt.toString()).isEqualTo("2019-09-01T06:01:01.000Z");
   }
 

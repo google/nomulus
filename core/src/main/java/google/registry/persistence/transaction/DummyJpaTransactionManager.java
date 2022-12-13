@@ -20,8 +20,8 @@ import java.lang.reflect.Proxy;
  * A dummy implementation for {@link JpaTransactionManager} which throws exception when any of its
  * method is invoked.
  *
- * <p>This is used to initialize the {@link TransactionManagerFactory#jpaTm()} when running unit
- * tests, because obviously we cannot connect to the actual Cloud SQL backend in a unit test.
+ * <p>This is used to initialize the {@link TransactionManagerFactory#tm()} when running unit tests,
+ * because obviously we cannot connect to the actual Cloud SQL backend in a unit test.
  *
  * <p>If a unit test needs to access the Cloud SQL database, it must add {@code
  * JpaTransactionManagerExtension} as a JUnit extension in the test class.

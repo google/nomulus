@@ -15,7 +15,7 @@
 package google.registry.model.common;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -192,7 +192,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
 
   /** Sets and persists to SQL the provided migration transition schedule. */
   public static void set(ImmutableSortedMap<DateTime, MigrationState> migrationTransitionMap) {
-    jpaTm().assertInTransaction();
+    tm().assertInTransaction();
     TimedTransitionProperty<MigrationState> transitions =
         TimedTransitionProperty.make(
             migrationTransitionMap,
@@ -201,7 +201,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
             MigrationState.DATASTORE_ONLY,
             "migrationTransitionMap must start with DATASTORE_ONLY");
     validateTransitionAtCurrentTime(transitions);
-    jpaTm().put(new DatabaseMigrationStateSchedule(transitions));
+    tm().put(new DatabaseMigrationStateSchedule(transitions));
     CACHE.invalidateAll();
   }
 
@@ -218,12 +218,10 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
   /** Loads the currently-set migration schedule from SQL, or the default if none exists. */
   @VisibleForTesting
   static TimedTransitionProperty<MigrationState> getUncached() {
-    return jpaTm()
-        .transactWithoutBackup(
+    return tm().transactWithoutBackup(
             () -> {
               try {
-                return jpaTm()
-                    .loadSingleton(DatabaseMigrationStateSchedule.class)
+                return tm().loadSingleton(DatabaseMigrationStateSchedule.class)
                     .map(s -> s.migrationTransitions)
                     .orElse(DEFAULT_TRANSITION_MAP);
               } catch (PersistenceException e) {
@@ -245,8 +243,8 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
    */
   private static void validateTransitionAtCurrentTime(
       TimedTransitionProperty<MigrationState> newTransitions) {
-    MigrationState currentValue = getUncached().getValueAtTime(jpaTm().getTransactionTime());
-    MigrationState nextCurrentValue = newTransitions.getValueAtTime(jpaTm().getTransactionTime());
+    MigrationState currentValue = getUncached().getValueAtTime(tm().getTransactionTime());
+    MigrationState nextCurrentValue = newTransitions.getValueAtTime(tm().getTransactionTime());
     checkArgument(
         VALID_STATE_TRANSITIONS.get(currentValue).contains(nextCurrentValue),
         "Cannot transition from current state-as-of-now %s to new state-as-of-now %s",

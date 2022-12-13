@@ -14,7 +14,7 @@
 
 package google.registry.persistence.transaction;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Collection;
@@ -104,7 +104,7 @@ public class CriteriaQueryBuilder<T> {
 
   /** Creates a query builder that will SELECT from the given class. */
   public static <T> CriteriaQueryBuilder<T> create(Class<T> clazz) {
-    return create(jpaTm(), clazz);
+    return create(tm(), clazz);
   }
 
   /** Creates a query builder for the given entity manager. */

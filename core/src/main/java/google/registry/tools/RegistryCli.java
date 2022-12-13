@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.tools.Injector.injectReflectively;
 
 import com.beust.jcommander.JCommander;
@@ -218,7 +218,7 @@ final class RegistryCli implements CommandRunner {
 
     // Reset the JPA transaction manager after every command to avoid a situation where a test can
     // interfere with other tests
-    JpaTransactionManager cachedJpaTm = jpaTm();
+    JpaTransactionManager cachedJpaTm = tm();
     TransactionManagerFactory.setJpaTm(() -> component.nomulusToolJpaTransactionManager().get());
     TransactionManagerFactory.setReplicaJpaTm(
         () -> component.nomulusToolReplicaJpaTransactionManager().get());

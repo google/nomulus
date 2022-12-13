@@ -15,7 +15,7 @@
 package google.registry.beam.common;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.flogger.FluentLogger;
 import java.util.List;
@@ -52,7 +52,7 @@ public class DatabaseSnapshot implements AutoCloseable {
   }
 
   private DatabaseSnapshot open() {
-    entityManager = jpaTm().getStandaloneEntityManager();
+    entityManager = tm().getStandaloneEntityManager();
     transaction = entityManager.getTransaction();
     transaction.setRollbackOnly();
     transaction.begin();

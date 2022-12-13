@@ -16,7 +16,7 @@ package google.registry.model.history;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newHostWithRoid;
@@ -45,10 +45,9 @@ public class HostHistoryTest extends EntityTestCase {
     Host hostFromDb = loadByEntity(host);
     HostHistory hostHistory = createHostHistory(hostFromDb);
     insertInDb(hostHistory);
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
-              HostHistory fromDatabase = jpaTm().loadByKey(hostHistory.createVKey());
+              HostHistory fromDatabase = tm().loadByKey(hostHistory.createVKey());
               assertHostHistoriesEqual(fromDatabase, hostHistory);
               assertThat(fromDatabase.getRepoId()).isEqualTo(hostHistory.getRepoId());
             });
@@ -61,7 +60,7 @@ public class HostHistoryTest extends EntityTestCase {
     Host hostFromDb = loadByEntity(host);
     HostHistory hostHistory = createHostHistory(hostFromDb);
     insertInDb(hostHistory);
-    HostHistory fromDatabase = jpaTm().transact(() -> jpaTm().loadByKey(hostHistory.createVKey()));
+    HostHistory fromDatabase = tm().transact(() -> tm().loadByKey(hostHistory.createVKey()));
     assertThat(SerializeUtils.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 

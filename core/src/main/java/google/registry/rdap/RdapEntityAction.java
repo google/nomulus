@@ -14,7 +14,7 @@
 
 package google.registry.rdap;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.replicaJpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.rdap.RdapUtils.getRegistrarByIanaIdentifier;
 import static google.registry.rdap.RdapUtils.getRegistrarByName;
 import static google.registry.request.Action.Method.GET;
@@ -71,7 +71,7 @@ public class RdapEntityAction extends RdapActionBase {
     if (ROID_PATTERN.matcher(pathSearchString).matches()) {
       VKey<Contact> contactVKey = VKey.create(Contact.class, pathSearchString);
       Optional<Contact> contact =
-          replicaJpaTm().transact(() -> replicaJpaTm().loadByKeyIfPresent(contactVKey));
+          replicaTm().transact(() -> replicaTm().loadByKeyIfPresent(contactVKey));
       // As per Andy Newton on the regext mailing list, contacts by themselves have no role, since
       // they are global, and might have different roles for different domains.
       if (contact.isPresent() && isAuthorized(contact.get())) {

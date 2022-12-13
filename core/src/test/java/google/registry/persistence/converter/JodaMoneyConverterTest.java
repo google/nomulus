@@ -14,7 +14,7 @@
 package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -60,11 +60,9 @@ public class JodaMoneyConverterTest {
     TestEntity entity = new TestEntity(money);
     insertInDb(entity);
     List<?> result =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () ->
-                    jpaTm()
-                        .getEntityManager()
+                    tm().getEntityManager()
                         .createNativeQuery(
                             "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
                         .getResultList());
@@ -75,7 +73,7 @@ public class JodaMoneyConverterTest {
         .containsExactly(BigDecimal.valueOf(100.12).setScale(2), "USD")
         .inOrder();
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.money).isEqualTo(money);
   }
 
@@ -86,11 +84,9 @@ public class JodaMoneyConverterTest {
     TestEntity entity = new TestEntity(money);
     insertInDb(entity);
     List<?> result =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () ->
-                    jpaTm()
-                        .getEntityManager()
+                    tm().getEntityManager()
                         .createNativeQuery(
                             "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
                         .getResultList());
@@ -102,11 +98,9 @@ public class JodaMoneyConverterTest {
         .inOrder();
 
     result =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () ->
-                    jpaTm()
-                        .getEntityManager()
+                    tm().getEntityManager()
                         .createQuery("SELECT money FROM TestEntity WHERE name" + " = 'id'")
                         .getResultList());
 
@@ -114,7 +108,7 @@ public class JodaMoneyConverterTest {
     assertThat(result.get(0)).isEqualTo(money);
 
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.money).isEqualTo(money);
   }
 
@@ -130,11 +124,9 @@ public class JodaMoneyConverterTest {
     ComplexTestEntity entity = new ComplexTestEntity(moneyMap, myMoney, yourMoney);
     insertInDb(entity);
     List<?> result =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () ->
-                    jpaTm()
-                        .getEntityManager()
+                    tm().getEntityManager()
                         .createNativeQuery(
                             "SELECT my_amount, my_currency, your_amount, your_currency FROM"
                                 + " \"ComplexTestEntity\" WHERE name = 'id'")
@@ -145,17 +137,15 @@ public class JodaMoneyConverterTest {
             BigDecimal.valueOf(100).setScale(2), "USD", BigDecimal.valueOf(80).setScale(2), "GBP")
         .inOrder();
     result =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () ->
-                    jpaTm()
-                        .getEntityManager()
+                    tm().getEntityManager()
                         .createNativeQuery(
                             "SELECT map_amount, map_currency FROM \"MoneyMap\""
                                 + " WHERE entity_name = 'id' AND map_key = 'dos'")
                         .getResultList());
     ComplexTestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(ComplexTestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(ComplexTestEntity.class, "id"));
     assertThat(result).hasSize(1);
 
     assertThat(Arrays.asList((Object[]) result.get(0)))
@@ -173,32 +163,26 @@ public class JodaMoneyConverterTest {
    */
   @Test
   void testNullSafeGet_nullAmountNullCurrency_returnsNull() throws SQLException {
-    jpaTm()
-        .transact(
+    tm().transact(
             () ->
-                jpaTm()
-                    .getEntityManager()
+                tm().getEntityManager()
                     .createNativeQuery(
                         "INSERT INTO \"TestEntity\" (name, amount, currency) VALUES('id', null,"
                             + " null)")
                     .executeUpdate());
     List<?> result =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () ->
-                    jpaTm()
-                        .getEntityManager()
+                    tm().getEntityManager()
                         .createNativeQuery(
                             "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
                         .getResultList());
     assertThat(result).hasSize(1);
     assertThat(Arrays.asList((Object[]) result.get(0))).containsExactly(null, null).inOrder();
     assertThat(
-            jpaTm()
-                .transact(
+            tm().transact(
                     () ->
-                        jpaTm()
-                            .getEntityManager()
+                        tm().getEntityManager()
                             .createQuery("SELECT money FROM TestEntity WHERE name = 'id'")
                             .getResultList())
                 .get(0))
@@ -207,21 +191,17 @@ public class JodaMoneyConverterTest {
 
   @Test
   void testNullSafeGet_nullAMountValidCurrency_throwsHibernateException() throws SQLException {
-    jpaTm()
-        .transact(
+    tm().transact(
             () ->
-                jpaTm()
-                    .getEntityManager()
+                tm().getEntityManager()
                     .createNativeQuery(
                         "INSERT INTO \"TestEntity\" (name, amount, currency) VALUES('id', null,"
                             + " 'USD')")
                     .executeUpdate());
     List<?> result =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () ->
-                    jpaTm()
-                        .getEntityManager()
+                    tm().getEntityManager()
                         .createNativeQuery(
                             "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
                         .getResultList());
@@ -232,11 +212,9 @@ public class JodaMoneyConverterTest {
         assertThrows(
             PersistenceException.class,
             () ->
-                jpaTm()
-                    .transact(
+                tm().transact(
                         () ->
-                            jpaTm()
-                                .getEntityManager()
+                            tm().getEntityManager()
                                 .createQuery("SELECT money FROM TestEntity WHERE name = 'id'")
                                 .getResultList()));
     assertThat(thrown)
@@ -249,21 +227,17 @@ public class JodaMoneyConverterTest {
   @Test
   void testNullSafeGet_nullAMountInValidCurrency_throwsIllegalCurrencyException()
       throws SQLException {
-    jpaTm()
-        .transact(
+    tm().transact(
             () ->
-                jpaTm()
-                    .getEntityManager()
+                tm().getEntityManager()
                     .createNativeQuery(
                         "INSERT INTO \"TestEntity\" (name, amount, currency) VALUES('id', 100,"
                             + " 'INVALIDCURRENCY')")
                     .executeUpdate());
     List<?> result =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () ->
-                    jpaTm()
-                        .getEntityManager()
+                    tm().getEntityManager()
                         .createNativeQuery(
                             "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
                         .getResultList());
@@ -275,11 +249,9 @@ public class JodaMoneyConverterTest {
         assertThrows(
             IllegalCurrencyException.class,
             () ->
-                jpaTm()
-                    .transact(
+                tm().transact(
                         () ->
-                            jpaTm()
-                                .getEntityManager()
+                            tm().getEntityManager()
                                 .createQuery("SELECT money FROM TestEntity WHERE name = 'id'")
                                 .getResultList()));
     assertThat(thrown).hasMessageThat().isEqualTo("Unknown currency 'INVALIDCURRENCY'");

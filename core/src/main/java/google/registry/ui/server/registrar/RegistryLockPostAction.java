@@ -16,7 +16,7 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.ui.server.registrar.RegistryLockGetAction.getContactMatchingLogin;
@@ -127,8 +127,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
               .orElseThrow(() -> new ForbiddenException("User is not logged in"));
 
       String userEmail = verifyPasswordAndGetEmail(userAuthInfo, postInput);
-      jpaTm()
-          .transact(
+      tm().transact(
               () -> {
                 RegistryLock registryLock =
                     postInput.isLock

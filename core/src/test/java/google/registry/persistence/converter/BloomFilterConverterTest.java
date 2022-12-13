@@ -16,7 +16,7 @@ package google.registry.persistence.converter;
 import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.hash.Funnels.stringFunnel;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableSet;
@@ -43,7 +43,7 @@ class BloomFilterConverterTest {
     TestEntity entity = new TestEntity(bloomFilter);
     insertInDb(entity);
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.bloomFilter).isEqualTo(bloomFilter);
   }
 

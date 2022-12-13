@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -60,11 +60,9 @@ public class AllocationTokenStatusTransitionConverterTest {
         new AllocationTokenStatusTransitionConverterTestEntity(timedTransitionProperty);
     insertInDb(testEntity);
     AllocationTokenStatusTransitionConverterTestEntity persisted =
-        jpaTm()
-            .transact(
+        tm().transact(
                 () ->
-                    jpaTm()
-                        .getEntityManager()
+                    tm().getEntityManager()
                         .find(AllocationTokenStatusTransitionConverterTestEntity.class, "id"));
     assertThat(persisted.timedTransitionProperty).containsExactlyEntriesIn(timedTransitionProperty);
   }

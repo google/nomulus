@@ -17,7 +17,7 @@ package google.registry.persistence.converter;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableList;
@@ -52,9 +52,7 @@ public class AllocationTokenListConverterTest {
         new TestAllocationTokenVKeyList(tokens);
     insertInDb(testAllocationTokenVKeyList);
     TestAllocationTokenVKeyList persisted =
-        jpaTm()
-            .transact(
-                () -> jpaTm().getEntityManager().find(TestAllocationTokenVKeyList.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(TestAllocationTokenVKeyList.class, "id"));
     assertThat(persisted.tokenList).isEqualTo(tokens);
   }
 

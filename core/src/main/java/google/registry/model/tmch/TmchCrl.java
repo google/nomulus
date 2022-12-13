@@ -15,7 +15,7 @@
 package google.registry.model.tmch;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import google.registry.model.common.CrossTldSingleton;
 import java.util.Optional;
@@ -39,7 +39,7 @@ public final class TmchCrl extends CrossTldSingleton {
 
   /** Returns the singleton instance of this entity, without memoization. */
   public static Optional<TmchCrl> get() {
-    return jpaTm().transact(() -> jpaTm().loadSingleton(TmchCrl.class));
+    return tm().transact(() -> tm().loadSingleton(TmchCrl.class));
   }
 
   /**
@@ -49,14 +49,13 @@ public final class TmchCrl extends CrossTldSingleton {
    * and actually newer than the one currently in the database.
    */
   public static void set(final String crl, final String url) {
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               TmchCrl tmchCrl = new TmchCrl();
-              tmchCrl.updated = jpaTm().getTransactionTime();
+              tmchCrl.updated = tm().getTransactionTime();
               tmchCrl.crl = checkNotNull(crl, "crl");
               tmchCrl.url = checkNotNull(url, "url");
-              jpaTm().put(tmchCrl);
+              tm().put(tmchCrl);
             });
   }
 

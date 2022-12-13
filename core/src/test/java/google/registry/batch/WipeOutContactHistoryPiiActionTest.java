@@ -17,7 +17,7 @@ package google.registry.batch;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.apache.http.HttpStatus.SC_OK;
 
@@ -118,8 +118,7 @@ class WipeOutContactHistoryPiiActionTest {
   void getAllHistoryEntitiesOlderThan_returnsAllPersistedEntities() {
     ImmutableList<ContactHistory> expectedToBeWipedOut =
         persistLotsOfContactHistoryEntities(20, MIN_MONTHS_BEFORE_WIPE_OUT + 1, 0, DEFAULT_CONTACT);
-    jpaTm()
-        .transact(
+    tm().transact(
             () ->
                 assertThat(
                         action.getNextContactHistoryEntitiesWithPiiBatch(
@@ -135,8 +134,7 @@ class WipeOutContactHistoryPiiActionTest {
     // persisted entities that should not be part of the actual result
     persistLotsOfContactHistoryEntities(15, 17, MIN_MONTHS_BEFORE_WIPE_OUT - 1, DEFAULT_CONTACT);
 
-    jpaTm()
-        .transact(
+    tm().transact(
             () ->
                 assertThat(
                         action.getNextContactHistoryEntitiesWithPiiBatch(
@@ -147,8 +145,7 @@ class WipeOutContactHistoryPiiActionTest {
   @Test
   void run_withNoEntitiesToWipeOut_success() {
     assertThat(
-            jpaTm()
-                .transact(
+            tm().transact(
                     () ->
                         action
                             .getNextContactHistoryEntitiesWithPiiBatch(
@@ -158,8 +155,7 @@ class WipeOutContactHistoryPiiActionTest {
     action.run();
 
     assertThat(
-            jpaTm()
-                .transact(
+            tm().transact(
                     () ->
                         action
                             .getNextContactHistoryEntitiesWithPiiBatch(
@@ -180,8 +176,7 @@ class WipeOutContactHistoryPiiActionTest {
 
     // The query should return a stream of all persisted entities.
     assertThat(
-            jpaTm()
-                .transact(
+            tm().transact(
                     () ->
                         action
                             .getNextContactHistoryEntitiesWithPiiBatch(
@@ -197,8 +192,7 @@ class WipeOutContactHistoryPiiActionTest {
 
     // The query should return an empty stream after the wipe out action.
     assertThat(
-            jpaTm()
-                .transact(
+            tm().transact(
                     () ->
                         action
                             .getNextContactHistoryEntitiesWithPiiBatch(
@@ -217,8 +211,7 @@ class WipeOutContactHistoryPiiActionTest {
 
     // The query should return a subset of all persisted data.
     assertThat(
-            jpaTm()
-                .transact(
+            tm().transact(
                     () ->
                         action
                             .getNextContactHistoryEntitiesWithPiiBatch(
@@ -233,8 +226,7 @@ class WipeOutContactHistoryPiiActionTest {
 
     // The query should return an empty stream after the wipe out action.
     assertThat(
-            jpaTm()
-                .transact(
+            tm().transact(
                     () ->
                         action
                             .getNextContactHistoryEntitiesWithPiiBatch(
@@ -254,8 +246,7 @@ class WipeOutContactHistoryPiiActionTest {
 
     // The query should return a subset of all persisted data.
     assertThat(
-            jpaTm()
-                .transact(
+            tm().transact(
                     () ->
                         action
                             .getNextContactHistoryEntitiesWithPiiBatch(
@@ -270,8 +261,7 @@ class WipeOutContactHistoryPiiActionTest {
 
     // The query should return an empty stream after the wipe out action.
     assertThat(
-            jpaTm()
-                .transact(
+            tm().transact(
                     () ->
                         action
                             .getNextContactHistoryEntitiesWithPiiBatch(
@@ -284,8 +274,7 @@ class WipeOutContactHistoryPiiActionTest {
 
   @Test
   void wipeOutContactHistoryData_wipesOutNoEntity() {
-    jpaTm()
-        .transact(
+    tm().transact(
             () ->
                 assertThat(
                         action.wipeOutContactHistoryData(
@@ -302,8 +291,7 @@ class WipeOutContactHistoryPiiActionTest {
 
     assertAllEntitiesContainPii(DatabaseHelper.loadByEntitiesIfPresent(expectedToBeWipedOut));
 
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               action.wipeOutContactHistoryData(
                   action.getNextContactHistoryEntitiesWithPiiBatch(

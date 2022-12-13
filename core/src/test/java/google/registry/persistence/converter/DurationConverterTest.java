@@ -15,7 +15,7 @@
 package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.ImmutableObject;
@@ -82,7 +82,7 @@ public class DurationConverterTest {
     DurationTestEntity entity = new DurationTestEntity(duration);
     insertInDb(entity);
     DurationTestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(DurationTestEntity.class, "id"));
+        tm().transact(() -> tm().getEntityManager().find(DurationTestEntity.class, "id"));
     assertThat(persisted.duration.getMillis()).isEqualTo(duration.getMillis());
   }
 

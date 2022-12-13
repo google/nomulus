@@ -15,7 +15,6 @@
 package google.registry.model.domain.token;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -101,9 +100,8 @@ public class PackagePromotion extends ImmutableObject implements Buildable {
 
   /** Loads and returns a PackagePromotion entity by its token string directly from Cloud SQL. */
   public static Optional<PackagePromotion> loadByTokenString(String tokenString) {
-    jpaTm().assertInTransaction();
-    return jpaTm()
-        .query("FROM PackagePromotion WHERE token = :token", PackagePromotion.class)
+    tm().assertInTransaction();
+    return tm().query("FROM PackagePromotion WHERE token = :token", PackagePromotion.class)
         .setParameter("token", VKey.create(AllocationToken.class, tokenString))
         .getResultStream()
         .findFirst();

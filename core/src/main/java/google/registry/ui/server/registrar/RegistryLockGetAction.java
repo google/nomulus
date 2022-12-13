@@ -16,7 +16,7 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -196,17 +196,16 @@ public final class RegistryLockGetAction implements JsonGetAction {
 
   private static ImmutableList<ImmutableMap<String, ?>> getLockedDomains(
       String registrarId, boolean isAdmin) {
-    return jpaTm()
-        .transact(
+    return tm().transact(
             () ->
                 RegistryLockDao.getLocksByRegistrarId(registrarId).stream()
-                    .filter(lock -> !lock.isLockRequestExpired(jpaTm().getTransactionTime()))
+                    .filter(lock -> !lock.isLockRequestExpired(tm().getTransactionTime()))
                     .map(lock -> lockToMap(lock, isAdmin))
                     .collect(toImmutableList()));
   }
 
   private static ImmutableMap<String, ?> lockToMap(RegistryLock lock, boolean isAdmin) {
-    DateTime now = jpaTm().getTransactionTime();
+    DateTime now = tm().getTransactionTime();
     return new ImmutableMap.Builder<String, Object>()
         .put(DOMAIN_NAME_PARAM, lock.getDomainName())
         .put(LOCKED_TIME_PARAM, lock.getLockCompletionTime().map(DateTime::toString).orElse(""))

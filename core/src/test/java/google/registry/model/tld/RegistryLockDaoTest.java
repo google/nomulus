@@ -17,7 +17,7 @@ package google.registry.model.tld;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.getMostRecentUnlockedRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.getMostRecentVerifiedRegistryLockByRepoId;
@@ -55,16 +55,14 @@ public final class RegistryLockDaoTest extends EntityTestCase {
     RegistryLock lock = createLock();
     saveRegistryLock(lock);
     fakeClock.advanceOneMilli();
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               RegistryLock updatedLock =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
               RegistryLockDao.save(
                   updatedLock.asBuilder().setLockCompletionTime(fakeClock.nowUtc()).build());
             });
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
@@ -97,8 +95,7 @@ public final class RegistryLockDaoTest extends EntityTestCase {
     fakeClock.advanceOneMilli();
     RegistryLock updatedLock = lock.asBuilder().setLockCompletionTime(fakeClock.nowUtc()).build();
     saveRegistryLock(updatedLock);
-    jpaTm()
-        .transact(
+    tm().transact(
             () -> {
               RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();

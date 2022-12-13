@@ -15,7 +15,7 @@
 package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -110,7 +110,7 @@ public class ClaimsListDaoTest {
     ClaimsList claimsList =
         ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     // Bypass the DAO to avoid the cache
-    jpaTm().transact(() -> jpaTm().insert(claimsList));
+    tm().transact(() -> tm().insert(claimsList));
     ClaimsList fromDatabase = ClaimsListDao.get();
     // At first, we haven't loaded any entries
     assertThat(fromDatabase.claimKeyCache.getIfPresent("label1")).isNull();
