@@ -175,16 +175,6 @@
     <url-pattern>/_dr/cron/fanout</url-pattern>
   </servlet-mapping>
 
-  <!-- Pipeline GUI servlets. -->
-  <servlet>
-    <servlet-name>pipeline</servlet-name>
-    <servlet-class>com.google.appengine.tools.pipeline.impl.servlets.PipelineServlet</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>pipeline</servlet-name>
-    <url-pattern>/_ah/pipeline/*</url-pattern>
-  </servlet-mapping>
-
   <!-- Syncs registrars to the registrar spreadsheet.  -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
