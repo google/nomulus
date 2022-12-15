@@ -280,9 +280,9 @@ class Spec11PipelineTest {
   private void verifySaveToCloudSql() {
     tm().transact(
             () -> {
-              ImmutableList<Spec11ThreatMatch> sqlThreatMatches =
+              ImmutableList<Spec11ThreatMatch> spec11ThreatMatches =
                   Spec11ThreatMatchDao.loadEntriesByDate(tm(), new LocalDate(2020, 1, 27));
-              assertThat(sqlThreatMatches)
+              assertThat(spec11ThreatMatches)
                   .comparingElementsUsing(immutableObjectCorrespondence("id"))
                   .containsExactlyElementsIn(sqlThreatMatches);
             });
