@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
+import google.registry.util.DomainNameUtils;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -50,12 +51,9 @@ public final class NameserversParameter extends ParameterConverterValidator<Set<
     if (Strings.isNullOrEmpty(value)) {
       return ImmutableSet.of();
     }
-    return Splitter.on(',')
-        .trimResults()
-        .omitEmptyStrings()
-        .splitToList(value)
-        .stream()
+    return Splitter.on(',').trimResults().omitEmptyStrings().splitToList(value).stream()
         .flatMap(NameserversParameter::splitNameservers)
+        .map(DomainNameUtils::canonicalizeHostname)
         .collect(toImmutableSet());
   }
 

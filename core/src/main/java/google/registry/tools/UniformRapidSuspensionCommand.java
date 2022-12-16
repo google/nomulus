@@ -35,11 +35,12 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
+import google.registry.tools.params.NameserversParameter;
 import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.tools.soy.UniformRapidSuspensionSoyInfo;
 import google.registry.util.Clock;
-import google.registry.util.DomainNameUtils;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -69,9 +70,12 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
 
   @Parameter(
       names = {"-h", "--hosts"},
-      description = "Comma-delimited set of fully qualified host names to replace the current hosts"
-          + " on the domain.")
-  private List<String> newHosts = new ArrayList<>();
+      description =
+          "Comma-delimited set of fully qualified host names to replace the current hosts"
+              + " on the domain.",
+      converter = NameserversParameter.class,
+      validateWith = NameserversParameter.class)
+  private Set<String> newHosts = new HashSet<>();
 
   @Parameter(
       names = {"-s", "--dsdata"},
@@ -126,14 +130,10 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
   protected void initMutatingEppToolCommand() {
     superuser = true;
     DateTime now = clock.nowUtc();
-    ImmutableList<String> newCanonicalHosts =
-        newHosts.stream().map(DomainNameUtils::canonicalizeHostname).collect(toImmutableList());
-    ImmutableSet<String> newHostsSet = ImmutableSet.copyOf(newCanonicalHosts);
     Optional<Domain> domainOpt = loadByForeignKey(Domain.class, domainName, now);
     checkArgumentPresent(domainOpt, "Domain '%s' does not exist or is deleted", domainName);
     Domain domain = domainOpt.get();
-    Set<String> missingHosts =
-        difference(newHostsSet, checkResourcesExist(Host.class, newCanonicalHosts, now));
+    Set<String> missingHosts = difference(newHosts, checkResourcesExist(Host.class, newHosts, now));
     checkArgument(missingHosts.isEmpty(), "Hosts do not exist: %s", missingHosts);
     checkArgument(
         locksToPreserve.isEmpty() || undo,
@@ -187,9 +187,9 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
             "domainName",
             domainName,
             "hostsToAdd",
-            difference(newHostsSet, existingNameservers),
+            difference(newHosts, existingNameservers),
             "hostsToRemove",
-            difference(existingNameservers, newHostsSet),
+            difference(existingNameservers, newHosts),
             "statusesToApply",
             statusesToApply,
             "statusesToRemove",

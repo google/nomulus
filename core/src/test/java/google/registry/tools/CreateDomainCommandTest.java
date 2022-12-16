@@ -58,11 +58,45 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
   }
 
   @Test
+  void testSuccess_completeWithCanonicalization() throws Exception {
+    runCommandForced(
+        "--client=NewRegistrar",
+        "--period=1",
+        "--nameservers=NS1.zdns.google,ns2.ZDNS.google,ns3.zdns.gOOglE,ns4.zdns.google",
+        "--registrant=crr-admin",
+        "--admins=crr-admin",
+        "--techs=crr-tech",
+        "--password=2fooBAR",
+        "--ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4 5 1"
+            + " A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+        "--ds_records=60485 5  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
+        "example.tld");
+    eppVerifier.verifySent("domain_create_complete.xml");
+  }
+
+  @Test
   void testSuccess_completeWithSquareBrackets() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
         "--period=1",
         "--nameservers=ns[1-4].zdns.google",
+        "--registrant=crr-admin",
+        "--admins=crr-admin",
+        "--techs=crr-tech",
+        "--password=2fooBAR",
+        "--ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4 5 1"
+            + " A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+        "--ds_records=60485 5  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
+        "example.tld");
+    eppVerifier.verifySent("domain_create_complete.xml");
+  }
+
+  @Test
+  void testSuccess_completeWithSquareBracketsAndCanonicalization() throws Exception {
+    runCommandForced(
+        "--client=NewRegistrar",
+        "--period=1",
+        "--nameservers=NS[1-4].zdns.google",
         "--registrant=crr-admin",
         "--admins=crr-admin",
         "--techs=crr-tech",
