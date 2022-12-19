@@ -93,10 +93,10 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
   }
 
   @Test
-  void testSuccess_completeWithSquareBrackets() throws Exception {
+  void testSuccess_completeWithSquareBracketsAndCanonicalization() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
-        "--add_nameservers=ns[1-2].zdns.google",
+        "--add_nameservers=NS[1-2].zdns.google",
         "--add_admins=crr-admin2",
         "--add_techs=crr-tech2",
         "--add_statuses=serverDeleteProhibited",

@@ -1006,7 +1006,6 @@ public final class DatabaseHelper {
    *
    * <p>This was coded for testing RDE since its queries depend on the associated entries.
    *
-   *
    * @see #persistResource(ImmutableObject)
    */
   public static <R extends EppResource> R persistEppResource(final R resource) {

@@ -40,8 +40,8 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import java.util.Collection;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -183,7 +183,7 @@ public final class EppResourceUtils {
    * @param now the logical time of the check
    */
   public static <T extends EppResource> ImmutableSet<String> checkResourcesExist(
-      Class<T> clazz, List<String> uniqueIds, final DateTime now) {
+      Class<T> clazz, Collection<String> uniqueIds, final DateTime now) {
     return ForeignKeyUtils.load(clazz, uniqueIds, now).keySet();
   }
 

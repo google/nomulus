@@ -164,6 +164,27 @@ class UniformRapidSuspensionCommandTest
   }
 
   @Test
+  void testCommand_bracketNameserverNotationWithCanonicalization() throws Exception {
+    persistDomainWithHosts(defaultDomain, defaultDsData, ns1, ns2);
+    runCommandForced(
+        "--domain_name=evil.tld",
+        "--hosts=URS[1-2].example.com",
+        "--dsdata=1 1 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+        "--renew_one_year=false");
+    eppVerifier
+        .expectRegistrarId("CharlestonRoad")
+        .expectSuperuser()
+        .verifySent("uniform_rapid_suspension.xml")
+        .verifyNoMoreSent();
+    assertInStdout("uniform_rapid_suspension --undo");
+    assertInStdout("--domain_name evil.tld");
+    assertInStdout("--hosts ns1.example.com,ns2.example.com");
+    assertInStdout("--dsdata 1 2 3 DEAD,4 5 6 BEEF");
+    assertNotInStdout("--locks_to_preserve");
+    assertNotInStdout("--restore_client_hold");
+  }
+
+  @Test
   void testUndo_removesLocksReplacesHostsAndDsData() throws Exception {
     persistDomainWithHosts(defaultDomain, defaultDsData, urs1, urs2);
     runCommandForced(
