@@ -15,7 +15,9 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.tools.UpdateOrDeleteAllocationTokensCommand.getTokenKeys;
 import static google.registry.util.CollectionUtils.findDuplicates;
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 
 import com.beust.jcommander.Parameter;
@@ -232,6 +234,15 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
   )
   Integer numDnsPublishShards;
 
+  @Nullable
+  @Parameter(
+      names = "--default_tokens",
+      description =
+          "A comma-separated list of default allocation tokens to be applied to the TLD. The"
+              + " ordering of this list will determine which token is used in the case where"
+              + " multiple tokens are valid for a registration.")
+  List<String> defaultTokens;
+
   /** Returns the existing registry (for update) or null (for creates). */
   @Nullable
   abstract Registry getOldRegistry(String tld);
@@ -373,6 +384,13 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
 
       builder.setAllowedFullyQualifiedHostNames(getAllowedNameservers(oldRegistry));
 
+      if (!isNullOrEmpty(defaultTokens)) {
+        if (defaultTokens.equals(ImmutableList.of(""))) {
+          builder.setDefaultPromoTokens(ImmutableList.of());
+        } else {
+          builder.setDefaultPromoTokens(getTokenKeys(defaultTokens, null));
+        }
+      }
       // Update the Registry object.
       setCommandSpecificProperties(builder);
       stageEntityChange(oldRegistry, builder.build());
