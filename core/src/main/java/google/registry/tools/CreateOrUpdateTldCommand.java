@@ -240,7 +240,8 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
       description =
           "A comma-separated list of default allocation tokens to be applied to the TLD. The"
               + " ordering of this list will determine which token is used in the case where"
-              + " multiple tokens are valid for a registration.")
+              + " multiple tokens are valid for a registration. Use an empty string to clear all"
+              + " present default tokens.")
   List<String> defaultTokens;
 
   /** Returns the existing registry (for update) or null (for creates). */

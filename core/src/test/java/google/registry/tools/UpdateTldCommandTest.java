@@ -240,6 +240,45 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
+  void testSuccess_replaceExistingDefaultTokensListOrder() throws Exception {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken()
+                .asBuilder()
+                .setToken("abc123")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
+                .build());
+    AllocationToken token2 =
+        persistResource(
+            new AllocationToken()
+                .asBuilder()
+                .setToken("token")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
+                .build());
+    AllocationToken token3 =
+        persistResource(
+            new AllocationToken()
+                .asBuilder()
+                .setToken("othertoken")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
+                .build());
+    assertThat(Registry.get("xn--q9jyb4c").getDefaultPromoTokens()).isEmpty();
+    persistResource(
+        Registry.get("xn--q9jyb4c")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(token.createVKey(), token2.createVKey()))
+            .build());
+    assertThat(Registry.get("xn--q9jyb4c").getDefaultPromoTokens())
+        .containsExactly(token.createVKey(), token2.createVKey());
+    runCommandForced("--default_tokens=token,othertoken", "xn--q9jyb4c");
+    assertThat(Registry.get("xn--q9jyb4c").getDefaultPromoTokens())
+        .containsExactly(token2.createVKey(), token3.createVKey());
+  }
+
+  @Test
   void testFailure_specifiedDefaultToken_doesntExist() {
     IllegalStateException thrown =
         assertThrows(
