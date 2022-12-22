@@ -14,7 +14,6 @@
 
 package google.registry.beam.common;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.apache.beam.sdk.values.TypeDescriptors.integers;
 
@@ -345,8 +344,7 @@ public final class RegistryJpaIO {
       try {
         tm().transact(
                 () -> {
-                  // Don't modify existing objects as it could lead to race conditions
-                  entities.forEach(this::verifyObjectNonexistence);
+                  // TODO(b/263502442): properly handle creations and blind-writes.
                   tm().putAll(entities);
                 });
         counter.inc(entities.size());
@@ -364,8 +362,7 @@ public final class RegistryJpaIO {
         try {
           tm().transact(
                   () -> {
-                    // Don't modify existing objects as it could lead to race conditions
-                    verifyObjectNonexistence(entity);
+                    // TODO(b/263502442): properly handle creations and blind-writes.
                     tm().put(entity);
                   });
           counter.inc();
@@ -390,16 +387,6 @@ public final class RegistryJpaIO {
       } catch (IllegalArgumentException e) {
         return "Non-SqlEntity: " + entity;
       }
-    }
-
-    /** SqlBatchWriter should not re-write existing entities due to potential race conditions. */
-    private void verifyObjectNonexistence(Object obj) {
-      // We cannot rely on calling "insert" on the objects because the underlying JPA persist call
-      // adds the input object to the persistence context, meaning that any modifications (e.g.
-      // updateTimestamp) are reflected in the input object. Beam doesn't allow modification of
-      // input objects, so this throws an exception.
-      // TODO(go/non-datastore-allocateid): also check that all the objects have IDs
-      checkArgument(!tm().exists(obj), "Entities created in SqlBatchWriter must not already exist");
     }
   }
 }
