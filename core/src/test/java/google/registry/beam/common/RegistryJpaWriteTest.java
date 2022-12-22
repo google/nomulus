@@ -33,6 +33,7 @@ import java.io.Serializable;
 import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
 import org.apache.beam.sdk.transforms.Create;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -67,6 +68,7 @@ class RegistryJpaWriteTest implements Serializable {
         .containsExactlyElementsIn(contacts);
   }
 
+  @Disabled("b/263502442")
   @Test
   void testFailure_writeExistingEntity() {
     // RegistryJpaIO.Write actions should not write existing objects to the database because the
