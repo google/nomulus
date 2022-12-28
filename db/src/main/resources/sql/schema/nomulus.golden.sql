@@ -833,7 +833,6 @@ CREATE TABLE public."RegistrarPoc" (
     email_address text NOT NULL,
     allowed_to_set_registry_lock_password boolean NOT NULL,
     fax_number text,
-    gae_user_id text,
     name text,
     phone_number text,
     registry_lock_password_hash text,
@@ -2044,13 +2043,6 @@ CREATE INDEX registrar_iana_identifier_idx ON public."Registrar" USING btree (ia
 --
 
 CREATE INDEX registrar_name_idx ON public."Registrar" USING btree (registrar_name);
-
-
---
--- Name: registrarpoc_gae_user_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX registrarpoc_gae_user_id_idx ON public."RegistrarPoc" USING btree (gae_user_id);
 
 
 --
