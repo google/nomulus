@@ -120,7 +120,8 @@ public class GenerateInvoicesAction implements Runnable {
                           .orElse(Cursor.createGlobal(RECURRING_BILLING, START_OF_TIME))
                           .getCursorTime());
 
-      if (yearMonth.getMonthOfYear() >= currentCursorTime.getMonthOfYear()) {
+      if (yearMonth.getMonthOfYear() >= currentCursorTime.getMonthOfYear()
+          && yearMonth.getYear() == currentCursorTime.getYear()) {
         throw new IllegalStateException(
             "Latest billing events expansion cycle hasn't finished yet, terminating invoicing"
                 + " pipeline");
