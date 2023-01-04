@@ -16,14 +16,15 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.persistence.VKey;
 import java.util.List;
+import javax.annotation.Nullable;
 
 /** Shared base class for commands to update or delete allocation tokens. */
 abstract class UpdateOrDeleteAllocationTokensCommand extends ConfirmingCommand {
@@ -47,19 +48,20 @@ abstract class UpdateOrDeleteAllocationTokensCommand extends ConfirmingCommand {
       description = "Do not actually update or delete the tokens; defaults to false")
   protected boolean dryRun;
 
-  protected ImmutableSet<VKey<AllocationToken>> getTokenKeys() {
+  public static ImmutableList<VKey<AllocationToken>> getTokenKeys(
+      @Nullable List<String> tokens, @Nullable String prefix) {
     checkArgument(
         tokens == null ^ prefix == null,
         "Must provide one of --tokens or --prefix, not both / neither");
     if (tokens != null) {
-      ImmutableSet<VKey<AllocationToken>> keys =
+      ImmutableList<VKey<AllocationToken>> keys =
           tokens.stream()
               .map(token -> VKey.create(AllocationToken.class, token))
-              .collect(toImmutableSet());
-      ImmutableSet<VKey<AllocationToken>> nonexistentKeys =
+              .collect(toImmutableList());
+      ImmutableList<VKey<AllocationToken>> nonexistentKeys =
           tm().transact(
-                  () -> keys.stream().filter(key -> !tm().exists(key)).collect(toImmutableSet()));
-      checkState(nonexistentKeys.isEmpty(), "Tokens with keys %s did not exist.", nonexistentKeys);
+                  () -> keys.stream().filter(key -> !tm().exists(key)).collect(toImmutableList()));
+      checkState(nonexistentKeys.isEmpty(), "Tokens with keys %s did not exist", nonexistentKeys);
       return keys;
     } else {
       checkArgument(!prefix.isEmpty(), "Provided prefix should not be blank");
@@ -68,7 +70,7 @@ abstract class UpdateOrDeleteAllocationTokensCommand extends ConfirmingCommand {
                   tm().loadAllOf(AllocationToken.class).stream()
                       .filter(token -> token.getToken().startsWith(prefix))
                       .map(AllocationToken::createVKey)
-                      .collect(toImmutableSet()));
+                      .collect(toImmutableList()));
     }
   }
 }

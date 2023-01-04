@@ -16,11 +16,13 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.math.BigDecimal.ROUND_UNNECESSARY;
 import static org.joda.money.CurrencyUnit.JPY;
@@ -32,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
+import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Registry;
 import java.math.BigDecimal;
 import org.joda.money.Money;
@@ -566,6 +569,68 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
     assertThat(thrown)
         .hasMessageThat()
         .contains("Invalid DNS writer name(s) specified: [Deadbeef, Invalid]");
+  }
+
+  @Test
+  void testSuccess_defaultToken() throws Exception {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken()
+                .asBuilder()
+                .setToken("abc123")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
+                .build());
+    runCommandForced(
+        "--default_tokens=abc123",
+        "--roid_suffix=Q9JYB4C",
+        "--dns_writers=FooDnsWriter",
+        "xn--q9jyb4c");
+    assertThat(Registry.get("xn--q9jyb4c").getDefaultPromoTokens())
+        .containsExactly(token.createVKey());
+  }
+
+  @Test
+  void testSuccess_multipleDefaultTokens() throws Exception {
+    AllocationToken token =
+        persistResource(
+            new AllocationToken()
+                .asBuilder()
+                .setToken("abc123")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
+                .build());
+    AllocationToken token2 =
+        persistResource(
+            new AllocationToken()
+                .asBuilder()
+                .setToken("token")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
+                .build());
+    runCommandForced(
+        "--default_tokens=abc123,token",
+        "--roid_suffix=Q9JYB4C",
+        "--dns_writers=FooDnsWriter",
+        "xn--q9jyb4c");
+    assertThat(Registry.get("xn--q9jyb4c").getDefaultPromoTokens())
+        .containsExactly(token.createVKey(), token2.createVKey());
+  }
+
+  @Test
+  void testFailure_specifiedDefaultToken_doesntExist() {
+    IllegalStateException thrown =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                runCommandForced(
+                    "xn--q9jyb4c",
+                    "--default_tokens=InvalidToken",
+                    "--roid_suffix=Q9JYB4C",
+                    "--dns_writers=FooDnsWriter"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Tokens with keys [VKey<AllocationToken>(sql:InvalidToken)] did not exist");
   }
 
   private void runSuccessfulReservedListsTest(String reservedLists) throws Exception {
