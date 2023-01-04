@@ -168,4 +168,28 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
                 + " terminating invoicing pipeline");
     cloudTasksHelper.assertNoTasksEnqueued("beam-reporting");
   }
+
+  @Test
+  void testSucceedsToGenerateInvoicesFirstDayOfTheYear() throws Exception {
+    persistResource(Cursor.createGlobal(RECURRING_BILLING, DateTime.parse("2017-01-01TZ")));
+    action =
+        new GenerateInvoicesAction(
+            "test-project",
+            "test-region",
+            "staging_bucket",
+            "billing_bucket",
+            "REG-INV",
+            false,
+            new YearMonth(2016, 12),
+            emailUtils,
+            cloudTasksUtils,
+            clock,
+            response,
+            dataflow);
+    action.run();
+    assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload()).isEqualTo("Launched invoicing pipeline: jobid");
+    cloudTasksHelper.assertNoTasksEnqueued("beam-reporting");
+  }
 }
