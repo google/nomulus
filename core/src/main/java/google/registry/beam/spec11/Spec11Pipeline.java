@@ -26,7 +26,6 @@ import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.RegistryConfig.ConfigModule;
-import google.registry.model.IdService;
 import google.registry.model.domain.Domain;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
@@ -175,7 +174,8 @@ public class Spec11Pipeline implements Serializable {
                             .setDomainName(input.getKey().domainName())
                             .setDomainRepoId(input.getKey().domainRepoId())
                             .setRegistrarId(input.getKey().registrarId())
-                            .setId(IdService.allocateId())
+                            // TODO(b/264416932) Fix the conflict with schema definition of id.
+                            // .setId(IdService.allocateId())
                             .build();
                     output.output(spec11ThreatMatch);
                   }
