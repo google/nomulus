@@ -131,13 +131,15 @@ additional components that are need to be configured separately.
     provided valuable feedback
 *   [CoCCa](http://cocca.org.nz) and [FRED](https://fred.nic.cz) are other
     open-source registry platforms in use by many TLDs
-*   We are not aware of any fully open source domain registrar projects, but
-    open source EPP Toolkits (not yet tested with Nomulus; may require
+*   We are aware of one fully open source EPP domain registrar project called [PyRar](https://github.com/james-stevens/pyrar). 
+    As of Jan-2023, a lot works, but it is still under going development. It has not been tested with Nomulus.
+*   There are also various open source EPP Toolkits (not yet tested with Nomulus; may require
     integration work) include:
     *   [EPP RTK Project](http://epp-rtk.sourceforge.net/)
     *   [CentralNic](https://www.centralnic.com/registry/labs)
     *   [ari-toolkit](https://github.com/AusRegistry/ari-toolkit)
     *   [Net::DRI](https://metacpan.org/pod/Net::DRI)
+    *   [EPP-RESTAPI](https://github.com/james-stevens/epp-restapi)
 *   Some Open Source DNS Projects that may be useful, but which we have not
     tested:
     *   [AtomiaDNS](http://atomiadns.com/)
