@@ -174,8 +174,7 @@ public class Spec11Pipeline implements Serializable {
                             .setDomainName(input.getKey().domainName())
                             .setDomainRepoId(input.getKey().domainRepoId())
                             .setRegistrarId(input.getKey().registrarId())
-                            // TODO(b/264416932) Fix the conflict with schema definition of id.
-                            // .setId(IdService.allocateId())
+                            // TODO(b/264416932) Assign id to prevent duplicate inserts.
                             .build();
                     output.output(spec11ThreatMatch);
                   }
