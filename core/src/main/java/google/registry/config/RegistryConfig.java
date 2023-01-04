@@ -1153,6 +1153,12 @@ public final class RegistryConfig {
       return ImmutableSet.copyOf(config.oAuth.allowedOauthClientIds);
     }
 
+    @Provides
+    @Config("iapClientId")
+    public static Optional<String> provideIapClientId(RegistryConfigSettings config) {
+      return Optional.ofNullable(config.oAuth.iapClientId);
+    }
+
     /**
      * Provides the OAuth scopes required for accessing Google APIs using the default credential.
      */

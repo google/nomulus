@@ -16,6 +16,8 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.tools.RequestFactoryModule.REQUEST_TIMEOUT_MS;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -25,9 +27,15 @@ import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpRequestInitializer;
+import com.google.api.client.http.HttpResponse;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.client.util.GenericData;
+import com.google.auth.oauth2.UserCredentials;
 import google.registry.config.RegistryConfig;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.GoogleCredentialsBundle;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,7 +65,7 @@ public class RequestFactoryModuleTest {
     RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = true;
     try {
       HttpRequestFactory factory =
-          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle);
+          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, Optional.empty());
       HttpRequestInitializer initializer = factory.getInitializer();
       assertThat(initializer).isNotNull();
       HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
@@ -76,12 +84,46 @@ public class RequestFactoryModuleTest {
     RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = false;
     try {
       HttpRequestFactory factory =
-          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle);
+          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, Optional.empty());
       HttpRequestInitializer initializer = factory.getInitializer();
       assertThat(initializer).isNotNull();
       // HttpRequestFactory#buildGetRequest() calls initialize() once.
       HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
       verify(httpRequestInitializer).initialize(request);
+      assertThat(request.getConnectTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
+      assertThat(request.getReadTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
+      verifyNoMoreInteractions(httpRequestInitializer);
+    } finally {
+      RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = origIsLocal;
+    }
+  }
+
+  @Test
+  void test_provideHttpRequestFactory_remote_withIap() throws Exception {
+    // Mock the request/response to/from the IAP server requesting an ID token
+    UserCredentials mockUserCredentials = mock(UserCredentials.class);
+    when(credentialsBundle.getGoogleCredentials()).thenReturn(mockUserCredentials);
+    HttpTransport mockTransport = mock(HttpTransport.class);
+    when(credentialsBundle.getHttpTransport()).thenReturn(mockTransport);
+    when(credentialsBundle.getJsonFactory()).thenReturn(GsonFactory.getDefaultInstance());
+    HttpRequestFactory mockRequestFactory = mock(HttpRequestFactory.class);
+    when(mockTransport.createRequestFactory()).thenReturn(mockRequestFactory);
+    HttpRequest mockPostRequest = mock(HttpRequest.class);
+    when(mockRequestFactory.buildPostRequest(any(), any())).thenReturn(mockPostRequest);
+    HttpResponse mockResponse = mock(HttpResponse.class);
+    when(mockPostRequest.execute()).thenReturn(mockResponse);
+    GenericData genericDataResponse = new GenericData();
+    genericDataResponse.set("id_token", "iapIdToken");
+    when(mockResponse.parseAs(GenericData.class)).thenReturn(genericDataResponse);
+
+    boolean origIsLocal = RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal;
+    RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = false;
+    try {
+      HttpRequestFactory factory =
+          RequestFactoryModule.provideHttpRequestFactory(
+              credentialsBundle, Optional.of("iapClientId"));
+      HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
+      assertThat(request.getHeaders().getAuthorization()).isEqualTo("Bearer iapIdToken");
       assertThat(request.getConnectTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
       assertThat(request.getReadTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
       verifyNoMoreInteractions(httpRequestInitializer);

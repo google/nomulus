@@ -306,6 +306,9 @@ oAuth:
   # in this list. Client IDs are typically of the format
   # numbers-alphanumerics.apps.googleusercontent.com
   allowedOauthClientIds: []
+  # GCP Identity-Aware Proxy client ID, if set up (note: this requires manual setup
+  # of User objects in the database for Nomulus tool users)
+  iapClientId: null
 
 credentialOAuth:
   # OAuth scopes required for accessing Google APIs using the default
