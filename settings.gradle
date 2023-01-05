@@ -46,3 +46,4 @@ include 'services:backend'
 include 'services:tools'
 include 'services:pubapi'
 include 'java8compatibility'
+include "console-webapp"

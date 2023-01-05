@@ -270,6 +270,8 @@ dependencies {
   implementation deps['org.jsoup:jsoup']
   testImplementation deps['org.mortbay.jetty:jetty']
   implementation deps['org.postgresql:postgresql']
+  implementation "org.eclipse.jetty:jetty-server:9.4.49.v20220914"
+  implementation "org.eclipse.jetty:jetty-servlet:9.4.49.v20220914"
   testImplementation deps['org.seleniumhq.selenium:selenium-api']
   testImplementation deps['org.seleniumhq.selenium:selenium-chrome-driver']
   testImplementation deps['org.seleniumhq.selenium:selenium-java']
