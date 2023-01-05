@@ -171,7 +171,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
 
   @Test
   void testSucceedsToGenerateInvoicesFirstDayOfTheYear() throws Exception {
-    persistResource(Cursor.createGlobal(RECURRING_BILLING, DateTime.parse("2017-01-01TZ")));
+    persistResource(Cursor.createGlobal(RECURRING_BILLING, DateTime.parse("2017-01-01T13:15:00Z")));
     action =
         new GenerateInvoicesAction(
             "test-project",
