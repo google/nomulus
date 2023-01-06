@@ -181,7 +181,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     Domain newDomain = performUpdate(command, existingDomain, now);
     DomainHistory domainHistory =
         historyBuilder.setType(DOMAIN_UPDATE).setDomain(newDomain).build();
-    validateNewState(newDomain);
+    validateNewState(newDomain, existingDomain);
     if (requiresDnsUpdate(existingDomain, newDomain)) {
       dnsQueue.addDomainRefreshTask(targetId);
     }
@@ -307,9 +307,19 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     }
   }
 
-  private void validateNewState(Domain newDomain) throws EppException {
+  private void validateNewState(Domain newDomain, Domain existingDomain) throws EppException {
     validateRequiredContactsPresent(newDomain.getRegistrant(), newDomain.getContacts());
-    validateDsData(newDomain.getDsData());
+    try {
+      validateDsData(newDomain.getDsData(), false);
+    } catch (Exception newDsDataException) {
+      try {
+        validateDsData(existingDomain.getDsData(), true);
+      } catch (Exception existingDsDatException) {
+        throw existingDsDatException;
+      }
+      throw newDsDataException;
+    }
+
     validateNameserversCountForTld(
         newDomain.getTld(),
         InternetDomainName.from(newDomain.getDomainName()),

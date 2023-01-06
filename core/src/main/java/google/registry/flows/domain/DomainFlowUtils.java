@@ -161,6 +161,7 @@ public class DomainFlowUtils {
   public static final ImmutableSet<ReservationType> TYPES_ALLOWED_FOR_CREATE_ONLY_IN_SUNRISE =
       Sets.immutableEnumSet(ALLOWED_IN_SUNRISE, NAME_COLLISION);
 
+
   /** Warning message for allocation of collision domains in sunrise. */
   public static final String COLLISION_MESSAGE =
       "Domain on the name collision list was allocated. But by policy, the domain will not be "
@@ -183,6 +184,10 @@ public class DomainFlowUtils {
 
   /** Maximum number of characters in a domain label, from RFC 2181. */
   private static final int MAX_LABEL_SIZE = 63;
+
+  private static final String EXISTING_DS_DATA_INVALID =
+      "Invalid DS Data must be corrected or removed. Hint: you can use one EPP request to fix DS"
+          + " Data and perform other updates. ";
 
   /**
    * Returns parsed version of {@code name} if domain name label follows our naming rules and is
@@ -314,12 +319,14 @@ public class DomainFlowUtils {
   }
 
   /** Check that the DS data that will be set on a domain is valid. */
-  static void validateDsData(Set<DomainDsData> dsData) throws EppException {
+  static void validateDsData(Set<DomainDsData> dsData, boolean isExisting) throws EppException {
+    String errorPrefix = isExisting ? EXISTING_DS_DATA_INVALID : "";
     if (dsData != null) {
       if (dsData.size() > MAX_DS_RECORDS_PER_DOMAIN) {
         throw new TooManyDsRecordsException(
             String.format(
-                "A maximum of %s DS records are allowed per domain.", MAX_DS_RECORDS_PER_DOMAIN));
+                errorPrefix + "A maximum of %s DS records are allowed per domain.",
+                MAX_DS_RECORDS_PER_DOMAIN));
       }
       ImmutableList<DomainDsData> invalidAlgorithms =
           dsData.stream()
@@ -328,7 +335,8 @@ public class DomainFlowUtils {
       if (!invalidAlgorithms.isEmpty()) {
         throw new InvalidDsRecordException(
             String.format(
-                "Domain contains DS record(s) with an invalid algorithm wire value: %s",
+                errorPrefix
+                    + "Domain contains DS record(s) with an invalid algorithm wire value: %s",
                 invalidAlgorithms));
       }
       ImmutableList<DomainDsData> invalidDigestTypes =
@@ -338,7 +346,7 @@ public class DomainFlowUtils {
       if (!invalidDigestTypes.isEmpty()) {
         throw new InvalidDsRecordException(
             String.format(
-                "Domain contains DS record(s) with an invalid digest type: %s",
+                errorPrefix + "Domain contains DS record(s) with an invalid digest type: %s",
                 invalidDigestTypes));
       }
       ImmutableList<DomainDsData> digestsWithInvalidDigestLength =
@@ -352,7 +360,7 @@ public class DomainFlowUtils {
       if (!digestsWithInvalidDigestLength.isEmpty()) {
         throw new InvalidDsRecordException(
             String.format(
-                "Domain contains DS record(s) with an invalid digest length: %s",
+                errorPrefix + "Domain contains DS record(s) with an invalid digest length: %s",
                 digestsWithInvalidDigestLength));
       }
     }
@@ -1019,7 +1027,7 @@ public class DomainFlowUtils {
     if (secDnsCreate.get().getMaxSigLife() != null) {
       throw new MaxSigLifeNotSupportedException();
     }
-    validateDsData(secDnsCreate.get().getDsData());
+    validateDsData(secDnsCreate.get().getDsData(), false);
     return secDnsCreate;
   }
 
