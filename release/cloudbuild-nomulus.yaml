@@ -90,8 +90,10 @@ steps:
       ${PROJECT_ID} \
       google.registry.beam.spec11.Spec11Pipeline \
       google/registry/beam/spec11_pipeline_metadata.json \
-      google.registry.beam.invoicing.InvoicingPipeline \
+      google.registry.beam.billing.InvoicingPipeline \
       google/registry/beam/invoicing_pipeline_metadata.json \
+      google.registry.beam.billing.ExpandRecurringBillingEventsPipeline \
+      google/registry/beam/expand_recurring_billing_events_pipeline_metadata.json \
       google.registry.beam.rde.RdePipeline \
       google/registry/beam/rde_pipeline_metadata.json \
       google.registry.beam.resave.ResaveAllEppResourcesPipeline \

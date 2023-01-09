@@ -1131,7 +1131,7 @@ public class DomainFlowUtils {
    * hasn't been reported yet and b) matches the predicate 3. Return the transactionRecords under
    * the most recent HistoryEntry that fits the above criteria, with negated reportAmounts.
    */
-  static ImmutableSet<DomainTransactionRecord> createCancelingRecords(
+  public static ImmutableSet<DomainTransactionRecord> createCancelingRecords(
       Domain domain,
       final DateTime now,
       Duration maxSearchPeriod,

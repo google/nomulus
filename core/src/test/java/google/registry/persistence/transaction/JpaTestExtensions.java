@@ -147,7 +147,7 @@ public class JpaTestExtensions {
     }
 
     /** Adds the specified property to those used to initialize the transaction manager. */
-    Builder withProperty(String name, String value) {
+    public Builder withProperty(String name, String value) {
       this.userProperties.put(name, value);
       return this;
     }

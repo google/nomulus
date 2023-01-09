@@ -296,7 +296,11 @@ class DomainTransferRequestFlowTest
             .setRecurrenceEndTime(implicitTransferTime)
             .build();
     BillingEvent.Recurring gainingClientAutorenew =
-        getGainingClientAutorenewEvent().asBuilder().setEventTime(expectedExpirationTime).build();
+        getGainingClientAutorenewEvent()
+            .asBuilder()
+            .setEventTime(expectedExpirationTime)
+            .setRecurrenceLastExpansion(expectedExpirationTime.minusYears(1))
+            .build();
     // Construct extra billing events expected by the specific test.
     ImmutableSet<BillingEvent> extraBillingEvents =
         Stream.of(extraExpectedBillingEvents)

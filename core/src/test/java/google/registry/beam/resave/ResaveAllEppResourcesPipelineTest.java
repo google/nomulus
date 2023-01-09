@@ -36,12 +36,14 @@ import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.FakeClock;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +62,11 @@ public class ResaveAllEppResourcesPipelineTest {
 
   @RegisterExtension
   final JpaIntegrationTestExtension database =
-      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
+      new JpaTestExtensions.Builder()
+          .withClock(fakeClock)
+          .withProperty(
+              Environment.ISOLATION, TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ.name())
+          .buildIntegrationTestExtension();
 
   private final ResaveAllEppResourcesPipelineOptions options =
       PipelineOptionsFactory.create().as(ResaveAllEppResourcesPipelineOptions.class);
