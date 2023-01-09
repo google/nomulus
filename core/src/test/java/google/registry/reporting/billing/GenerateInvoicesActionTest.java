@@ -27,8 +27,9 @@ import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.net.MediaType;
 import google.registry.beam.BeamActionTestBase;
 import google.registry.model.common.Cursor;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.reporting.ReportingModule;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
@@ -45,8 +46,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class GenerateInvoicesActionTest extends BeamActionTestBase {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final BillingEmailUtils emailUtils = mock(BillingEmailUtils.class);
   private FakeClock clock = new FakeClock();

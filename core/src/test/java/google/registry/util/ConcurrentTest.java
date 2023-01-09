@@ -20,16 +20,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import google.registry.testing.AppEngineExtension;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link Concurrent}. */
 class ConcurrentTest {
-
-  @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void testTransform_emptyList_returnsEmptyList() {

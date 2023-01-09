@@ -38,7 +38,8 @@ import google.registry.model.common.Cursor;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
@@ -56,7 +57,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class SyncRegistrarsSheetTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Captor private ArgumentCaptor<ImmutableList<ImmutableMap<String, String>>> rowsCaptor;
   @Mock private SheetSynchronizer sheetSynchronizer;
@@ -73,9 +75,8 @@ public class SyncRegistrarsSheetTest {
   @BeforeEach
   void beforeEach() {
     createTld("example");
-    // Remove Registrar entities created by AppEngineExtension (and RegistrarContact's, for jpa).
-      tm().transact(() -> tm().loadAllOf(RegistrarPoc.class))
-          .forEach(DatabaseHelper::deleteResource);
+    // Remove Registrar entities created by JpaTransactionManagerExtension.
+    tm().transact(() -> tm().loadAllOf(RegistrarPoc.class)).forEach(DatabaseHelper::deleteResource);
     Registrar.loadAll().forEach(DatabaseHelper::deleteResource);
   }
 

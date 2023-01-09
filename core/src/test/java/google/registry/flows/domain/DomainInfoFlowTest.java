@@ -74,7 +74,7 @@ import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.xml.ValidationMode;
 import java.util.regex.Pattern;
@@ -115,7 +115,10 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
     persistResource(
-        AppEngineExtension.makeRegistrar1().asBuilder().setRegistrarId("ClientZ").build());
+        JpaTransactionManagerExtension.makeRegistrar1()
+            .asBuilder()
+            .setRegistrarId("ClientZ")
+            .build());
   }
 
   private void persistTestEntities(String domainName, boolean inactive) {

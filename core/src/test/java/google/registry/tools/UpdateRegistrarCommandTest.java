@@ -39,7 +39,7 @@ import google.registry.flows.certs.CertificateChecker.InsecureCertificateExcepti
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.util.CidrAddressBlock;
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -885,7 +885,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   @Test
   void testFailure_registrarNameSimilarToExisting() {
     // Note that "tHeRe GiStRaR" normalizes identically to "The Registrar", which is created by
-    // AppEngineExtension.
+    // JpaTransactionManagerExtension.
     assertThrows(
         IllegalArgumentException.class,
         () -> runCommand("--name tHeRe GiStRaR", "--force", "NewRegistrar"));
@@ -924,7 +924,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   private void persistWhoisAbuseContact() {
     persistResource(
-        AppEngineExtension.makeRegistrarContact1()
+        JpaTransactionManagerExtension.makeRegistrarContact1()
             .asBuilder()
             .setVisibleInDomainWhoisAsAbuse(true)
             .build());

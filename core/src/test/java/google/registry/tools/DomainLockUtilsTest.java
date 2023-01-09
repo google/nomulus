@@ -43,14 +43,14 @@ import google.registry.model.domain.RegistryLock;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.SqlHelper;
-import google.registry.testing.UserInfo;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.Optional;
 import java.util.Set;
@@ -74,13 +74,8 @@ public final class DomainLockUtilsTest {
   private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
 
   @RegisterExtension
-  public final AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .withClock(clock)
-          .withTaskQueue()
-          .withUserService(UserInfo.create(POC_ID))
-          .build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   private Domain domain;
 

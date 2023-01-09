@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import java.util.Optional;
@@ -31,14 +30,9 @@ import javax.annotation.Nullable;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link SyncRegistrarsSheetAction}. */
 public class SyncRegistrarsSheetActionTest {
-
-  @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private final FakeResponse response = new FakeResponse();
   private final SyncRegistrarsSheet syncRegistrarsSheet = mock(SyncRegistrarsSheet.class);

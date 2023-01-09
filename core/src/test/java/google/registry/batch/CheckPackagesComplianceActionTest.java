@@ -33,7 +33,8 @@ import google.registry.model.contact.Contact;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.PackagePromotion;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.ui.server.SendEmailUtils;
@@ -67,8 +68,8 @@ public class CheckPackagesComplianceActionTest {
   private static final String SUPPORT_EMAIL = "registry@test.com";
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withClock(clock).build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   private CheckPackagesComplianceAction action;
   private AllocationToken token;

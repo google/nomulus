@@ -49,7 +49,8 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Registry;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -64,7 +65,8 @@ class AllocationTokenFlowUtilsTest {
       new AllocationTokenFlowUtils(new AllocationTokenCustomLogic());
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final AllocationTokenExtension allocationTokenExtension =
       mock(AllocationTokenExtension.class);

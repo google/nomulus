@@ -23,7 +23,8 @@ import static google.registry.util.X509Utils.loadCertificate;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.tmch.TmchCrl;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import java.security.SignatureException;
 import java.security.cert.CertificateExpiredException;
@@ -40,9 +41,10 @@ class TmchCertificateAuthorityTest {
   private static final String REVOKED_TEST_CERTIFICATE = loadFile("icann-tmch-test-revoked.crt");
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  public final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private FakeClock clock = new FakeClock(DateTime.parse("2014-01-01T00:00:00Z"));
+  private final FakeClock clock = new FakeClock(DateTime.parse("2014-01-01T00:00:00Z"));
 
   @Test
   void testFailure_prodRootExpired() {

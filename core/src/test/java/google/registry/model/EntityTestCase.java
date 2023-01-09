@@ -16,9 +16,13 @@ package google.registry.model;
 
 import static org.joda.time.DateTimeZone.UTC;
 
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaEntityCoverageExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Base class of all unit tests for entities which are persisted to SQL. */
@@ -36,18 +40,29 @@ public abstract class EntityTestCase {
 
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
-  @RegisterExtension public final AppEngineExtension appEngine;
+  @Order(Order.DEFAULT)
+  @RegisterExtension
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
+
+  @Order(Order.DEFAULT + 1)
+  @RegisterExtension
+  final JpaEntityCoverageExtension coverage;
 
   protected EntityTestCase() {
     this(JpaEntityCoverageCheck.DISABLED);
   }
 
   protected EntityTestCase(JpaEntityCoverageCheck jpaEntityCoverageCheck) {
-    appEngine =
-        AppEngineExtension.builder()
-            .withCloudSql()
-            .enableJpaEntityCoverageCheck(jpaEntityCoverageCheck == JpaEntityCoverageCheck.ENABLED)
-            .withClock(fakeClock)
-            .build();
+    coverage =
+        jpaEntityCoverageCheck == JpaEntityCoverageCheck.ENABLED
+            ? new JpaEntityCoverageExtension()
+            : new JpaEntityCoverageExtension() {
+              @Override
+              public void beforeEach(ExtensionContext context) {}
+
+              @Override
+              public void afterEach(ExtensionContext context) {}
+            };
   }
 }

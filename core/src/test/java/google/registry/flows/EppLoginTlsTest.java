@@ -24,7 +24,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.certs.CertificateChecker;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CertificateSamples;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.SelfSignedCaCertificate;
@@ -44,7 +45,8 @@ import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemWriter;
 class EppLoginTlsTest extends EppTestCase {
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @RegisterExtension
   @Order(value = Integer.MAX_VALUE)

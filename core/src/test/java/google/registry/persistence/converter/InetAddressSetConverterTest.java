@@ -22,7 +22,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.net.InetAddress;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -35,11 +36,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class InetAddressSetConverterTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .withJpaUnitTestEntities(InetAddressSetTestEntity.class)
-          .build();
+  public final JpaUnitTestExtension jpa =
+      new JpaTestExtensions.Builder()
+          .withEntityClass(InetAddressSetTestEntity.class)
+          .buildUnitTestExtension();
 
   @Test
   void roundTripConversion_returnsSameAddresses() {

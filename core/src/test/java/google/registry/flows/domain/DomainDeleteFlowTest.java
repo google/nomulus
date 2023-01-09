@@ -101,15 +101,19 @@ import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.TaskQueueExtension;
 import java.util.Map;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainDeleteFlow}. */
 class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain> {
+
+  @RegisterExtension final TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private Domain domain;
   private DomainHistory earlierHistoryEntry;

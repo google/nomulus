@@ -157,7 +157,7 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
             .build());
     driver.findElement(By.id("reg-app-btn-save")).click();
     Thread.sleep(1000);
-    Registrar registrar = server.runInAppEngineEnvironment(() -> loadRegistrar("TheRegistrar"));
+    Registrar registrar = loadRegistrar("TheRegistrar");
     assertThat(registrar.getEmailAddress()).isEqualTo("test1@example.com");
     assertThat(registrar.getRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(registrar.getWhoisServer()).isEqualTo("foo.bar.baz");
@@ -176,9 +176,7 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
   void testContactSettingsView() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-settings"));
     driver.waitForDisplayedElement(By.id("reg-app-btn-add"));
-    ImmutableList<RegistrarPoc> contacts =
-        server.runInAppEngineEnvironment(
-            () -> loadRegistrar("TheRegistrar").getContacts().asList());
+    ImmutableList<RegistrarPoc> contacts = loadRegistrar("TheRegistrar").getContacts().asList();
     for (RegistrarPoc contact : contacts) {
       assertEltTextPresent(By.id("contacts[0].name"), contact.getName());
       assertEltTextPresent(By.id("contacts[0].emailAddress"), contact.getEmailAddress());
@@ -190,7 +188,7 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
   void testSecuritySettingsView() throws Throwable {
     driver.get(server.getUrl("/registrar#security-settings"));
     driver.waitForDisplayedElement(By.id("reg-app-btn-edit"));
-    Registrar registrar = server.runInAppEngineEnvironment(() -> loadRegistrar("TheRegistrar"));
+    Registrar registrar = loadRegistrar("TheRegistrar");
     assertThat(driver.findElement(By.id("phonePasscode")).getAttribute("value"))
         .isEqualTo(registrar.getPhonePasscode());
   }

@@ -23,9 +23,10 @@ import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.request.auth.IapHeaderAuthenticationMechanism;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.UserInfo;
+import google.registry.testing.UserServiceExtension;
 import google.registry.tools.params.HostAndPortParameter;
 import google.registry.ui.ConsoleDebug;
 import java.util.List;
@@ -131,17 +132,10 @@ public final class RegistryTestServerMain {
 
     final RegistryTestServer server = new RegistryTestServer(address);
 
-    System.out.printf("%sLoading SQL fixtures and AppEngineExtension...%s\n", BLUE, RESET);
-    AppEngineExtension appEngine =
-        AppEngineExtension.builder()
-            .withCloudSql()
-            .withUrlFetch()
-            .withTaskQueue()
-            .withLocalModules()
-            .withUserService(
-                loginIsAdmin ? UserInfo.createAdmin(loginEmail) : UserInfo.create(loginEmail))
-            .build();
-    appEngine.setUp();
+    System.out.printf("%sLoading SQL fixtures and User service...%s\n", BLUE, RESET);
+    new UserServiceExtension(
+            loginIsAdmin ? UserInfo.createAdmin(loginEmail) : UserInfo.create(loginEmail))
+        .beforeEach(null);
     UserRoles userRoles =
         new UserRoles.Builder().setIsAdmin(loginIsAdmin).setGlobalRole(GlobalRole.FTE).build();
     User user =
@@ -153,7 +147,7 @@ public final class RegistryTestServerMain {
             .build();
     IapHeaderAuthenticationMechanism.setUserAuthInfoForTestServer(user);
     new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);
-    AppEngineExtension.loadInitialData();
+    JpaTransactionManagerExtension.loadInitialData();
     System.out.printf("%sLoading fixtures...%s\n", BLUE, RESET);
     for (Fixture fixture : fixtures) {
       fixture.load();
@@ -169,7 +163,7 @@ public final class RegistryTestServerMain {
       }
     } finally {
       server.stop();
-      appEngine.tearDown();
+      // appEngine.tearDown();
     }
   }
 

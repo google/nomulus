@@ -24,11 +24,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.RequestModule;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper.CloudTasksHelperModule;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TaskQueueExtension;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.servlet.http.HttpServletRequest;
@@ -42,8 +44,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public final class DnsInjectionTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+
+  @RegisterExtension final TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);

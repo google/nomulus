@@ -26,7 +26,7 @@ import com.google.appengine.api.log.RequestLogs;
 import com.google.apphosting.api.ApiProxy;
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.TestLogHandler;
-import google.registry.testing.AppEngineExtension;
+import google.registry.testing.UserServiceExtension;
 import java.util.logging.Level;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +57,9 @@ final class RequestStatusCheckerImplTest {
         });
   }
 
-  @RegisterExtension AppEngineExtension appEngineExtension = AppEngineExtension.builder().build();
+  // We do not actually need to set up user service, rather, we just need this extension to set up
+  // App Engine environment so the status checker can make an App Engine API call.
+  @RegisterExtension UserServiceExtension userService = new UserServiceExtension("");
 
   @BeforeEach
   void beforeEach() {

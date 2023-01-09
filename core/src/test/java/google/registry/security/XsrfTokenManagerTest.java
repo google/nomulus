@@ -19,7 +19,8 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.appengine.api.users.User;
 import com.google.common.base.Splitter;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeUserService;
 import org.joda.time.Duration;
@@ -31,7 +32,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class XsrfTokenManagerTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final User testUser = new User("test@example.com", "test@example.com");
   private final FakeClock clock = new FakeClock(START_OF_TIME);

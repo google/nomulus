@@ -37,6 +37,8 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.RegistrarPoc;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonResponse;
 import google.registry.request.ResponseImpl;
@@ -44,7 +46,6 @@ import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.FakeClock;
 import google.registry.ui.server.SendEmailUtils;
@@ -76,8 +77,8 @@ public abstract class RegistrarSettingsActionTestCase {
   final FakeClock clock = new FakeClock(DateTime.parse("2014-01-01T00:00:00Z"));
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @Mock HttpServletRequest req;
   @Mock HttpServletResponse rsp;
@@ -97,7 +98,7 @@ public abstract class RegistrarSettingsActionTestCase {
     disallowRegistrarAccess(CLIENT_ID, "newtld");
 
     // Add a technical contact to the registrar (in addition to the default admin contact created by
-    // AppEngineExtension).
+    // JpaTransactionManagerExtension).
     techContact =
         getOnlyElement(loadRegistrar(CLIENT_ID).getContactsOfType(RegistrarPoc.Type.TECH));
 

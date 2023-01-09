@@ -17,7 +17,8 @@ package google.registry.tools.server;
 import static com.google.common.truth.Truth.assertThat;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeJsonResponse;
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +31,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ListActionTestCase {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private FakeJsonResponse response;
 

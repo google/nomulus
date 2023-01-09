@@ -29,7 +29,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.hash.BloomFilter;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +41,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class PremiumListTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @BeforeEach
   void before() {

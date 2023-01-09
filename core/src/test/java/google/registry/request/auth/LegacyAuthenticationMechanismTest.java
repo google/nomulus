@@ -24,8 +24,9 @@ import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.security.XsrfTokenManager;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
@@ -43,7 +44,8 @@ import org.mockito.quality.Strictness;
 final class LegacyAuthenticationMechanismTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Mock private UserService userService;
   @Mock private HttpServletRequest req;

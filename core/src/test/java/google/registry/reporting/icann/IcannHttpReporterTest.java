@@ -31,7 +31,8 @@ import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.api.client.util.Base64;
 import com.google.api.client.util.StringUtils;
 import com.google.common.io.ByteSource;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,8 @@ class IcannHttpReporterTest {
   private MockLowLevelHttpRequest mockRequest;
 
   @RegisterExtension
-  AppEngineExtension appEngineExtension = new AppEngineExtension.Builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private MockHttpTransport createMockTransport(
       int statusCode, final ByteSource iirdeaResponse) {

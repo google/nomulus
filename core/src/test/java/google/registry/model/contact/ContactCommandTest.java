@@ -25,16 +25,11 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.contact.ContactCommand.Update;
 import google.registry.model.contact.ContactCommand.Update.Change;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.EppLoader;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Test xml roundtripping of commands. */
 public class ContactCommandTest {
-
-  @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private void doXmlRoundtripTest(String inputFilename) throws Exception {
     EppLoader eppLoader = new EppLoader(this, inputFilename);

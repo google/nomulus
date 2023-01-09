@@ -26,7 +26,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.util.CidrAddressBlock;
 import java.lang.reflect.Field;
 import java.util.ArrayDeque;
@@ -46,11 +47,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ImmutableObjectTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .withJpaUnitTestEntities(ValueObject.class)
-          .build();
+  final JpaUnitTestExtension jpa =
+      new JpaTestExtensions.Builder().withEntityClass(ValueObject.class).buildUnitTestExtension();
 
   /** Simple subclass of ImmutableObject. */
   public static class SimpleObject extends ImmutableObject {

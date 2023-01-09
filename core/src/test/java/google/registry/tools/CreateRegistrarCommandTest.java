@@ -1644,7 +1644,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @Test
   void testFailure_registrarNameSimilarToExisting() {
     // Note that "tHeRe GiStRaR" normalizes identically to "The Registrar", which is created by
-    // AppEngineExtension.
+    // JpaTransactionManagerExtension.
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

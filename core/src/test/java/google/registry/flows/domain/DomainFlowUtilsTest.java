@@ -39,7 +39,7 @@ import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Registry.TldType;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +51,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   void setup() {
     setEppInput("domain_info.xml");
     createTld("tld");
-    persistResource(AppEngineExtension.makeRegistrar1().asBuilder().build());
+    persistResource(JpaTransactionManagerExtension.makeRegistrar1().asBuilder().build());
   }
 
   @Test

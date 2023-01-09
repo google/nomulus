@@ -54,11 +54,15 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.TaskQueueExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostCreateFlow}. */
 class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
+
+  @RegisterExtension TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private void setEppHostCreateInput(String hostName, String hostAddrs) {
     setEppInput(
