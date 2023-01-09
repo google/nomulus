@@ -538,52 +538,52 @@ sslCertificateValidation:
 
 # Configuration options for the package compliance monitoring
 packageMonitoring:
-  # Email subject text to notify partners their package has exceeded the limit for domain creates
-  packageCreateLimitEmailSubject: "NOTICE: Your package is being upgraded"
-  # Email body text template notify partners their package has exceeded the limit for domain creates
+  # Email subject text to notify tech support that a package has exceeded the limit for domain creates
+  packageCreateLimitEmailSubject: "ACTION REQUIRED: Package needs to be upgraded"
+  # Email body text template notify support that a package has exceeded the limit for domain creates
   packageCreateLimitEmailBody: >
-    Dear %1$s,
+    Dear Support,
     
-    We are contacting you to inform you that your package with the package token 
-    %2$s has exceeded its limit for annual domain creations.
-    Your package will now be upgraded to the next tier. 
+    A package has exceeded its max create limit and needs to be upgraded to the 
+    next tier.
     
-    If you have any questions or require additional support, please contact us
-    at %3$s.
-    
-    Regards,
-    Example Registry
+    Package ID: %1$s
+    Package Token: %2$s
+    Registrar: %3$s
+    Current Max Create Limit: %4$s
 
-  # Email subject text to notify partners their package has exceeded the limit for current active domains and warn them their package will be upgraded in 30 days
-  packageDomainLimitWarningEmailSubject: "WARNING: Your package has exceeded the domain limit"
-  # Email body text template to warn partners their package has exceeded the limit for active domains and will be upgraded in 30 days
+  # Email subject text to notify support that a package has exceeded the limit
+  # for current active domains and a warning needs to be sent
+  packageDomainLimitWarningEmailSubject: "ACTION REQUIRED: Package has exceeded the domain limit - send warning"
+  # Email body text template to inform support that a package has exceeded the
+  # limit for active domains and a warning needs to be sent that the package
+  # will be upgraded in 30 days
   packageDomainLimitWarningEmailBody: >
-    Dear %1$s,
-      
-    We are contacting you to inform you that your package with the package token 
-    %2$s has exceeded its limit for active domains.
-    Your package will be upgraded to the next tier in 30 days if the number of active domains does not return below the limit. 
-
-    If you have any questions or require additional support, please contact us
-    at %3$s.
-
-    Regards,
-    Example Registry
-
-  # Email subject text to notify partners their package has exceeded the limit
-  # for current active domains for more than 30 days and will be upgraded
-  packageDomainLimitUpgradeEmailSubject: "NOTICE: Your package is being upgraded"
-  # Email body text template to warn partners their package has exceeded the
-  # limit for active domains for more than 30 days and will be upgraded
-  packageDomainLimitUpgradeEmailBody: >
-    Dear %1$s,
+    Dear Support,
     
-    We are contacting you to inform you that your package with the package token 
-    %2$s has exceeded its limit for active domains.
-    Your package will now be upgraded to the next tier. 
+    A package has exceeded its max domain limit. Please send a warning to the 
+    registrar that their package will be upgraded to the next tier in 30 days if 
+    the number of active domains does not return below the limit.
+    
+    Package ID: %1$s
+    Package Token: %2$s
+    Registrar: %3$s
+    Active Domain Limit: %4$s
+    Current Active Domains: %5$s
 
-    If you have any questions or require additional support, please contact us
-    at %3$s.
-
-    Regards,
-    Example Registry
+  # Email subject text to notify support that a package has exceeded the limit
+  # for current active domains for more than 30 days and needs to be upgraded
+  packageDomainLimitUpgradeEmailSubject: "ACTION REQUIRED: Package has exceeded the domain limit - upgrade package"
+  # Email body text template to inform support that a package has exceeded the
+  # limit for active domains for more than 30 days and needs to be upgraded
+  packageDomainLimitUpgradeEmailBody: >
+    Dear Support,
+    
+    A package has exceeded its max domain limit for over 30 days and needs to be 
+    upgraded to the next tier.
+    
+    Package ID: %1$s
+    Package Token: %2$s
+    Registrar: %3$s
+    Active Domain Limit: %4$s
+    Current Active Domains: %5$s

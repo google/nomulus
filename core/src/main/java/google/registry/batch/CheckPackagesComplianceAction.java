@@ -13,10 +13,10 @@
 // limitations under the License.
 package google.registry.batch;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
+import avro.shaded.com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
@@ -25,7 +25,6 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.PackagePromotion;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.auth.Auth;
@@ -90,8 +89,8 @@ public class CheckPackagesComplianceAction implements Runnable {
     ImmutableList<PackagePromotion> packages = tm().loadAllOf(PackagePromotion.class);
     ImmutableList.Builder<PackagePromotion> packagesOverCreateLimitBuilder =
         new ImmutableList.Builder<>();
-    ImmutableList.Builder<PackagePromotion> packagesOverActiveDomainsLimitBuilder =
-        new ImmutableList.Builder<>();
+    ImmutableMap.Builder<PackagePromotion, Integer> packagesOverActiveDomainsLimitBuilder =
+        new ImmutableMap.Builder<>();
     for (PackagePromotion packagePromo : packages) {
       Long creates =
           (Long)
@@ -125,7 +124,7 @@ public class CheckPackagesComplianceAction implements Runnable {
             "Package with package token %s has exceed their max active domains limit by"
                 + " %d name(s).",
             packagePromo.getToken().getKey(), overage);
-        packagesOverActiveDomainsLimitBuilder.add(packagePromo);
+        packagesOverActiveDomainsLimitBuilder.put(packagePromo, Ints.saturatedCast(creates));
       }
     }
     handlePackageCreationOverage(packagesOverCreateLimitBuilder.build());
@@ -147,9 +146,10 @@ public class CheckPackagesComplianceAction implements Runnable {
         String body =
             String.format(
                 packageCreateLimitEmailBody,
-                registrar.get().getRegistrarName(),
+                packagePromotion.getId(),
                 packageToken.getToken(),
-                registrySupportEmail);
+                registrar.get().getRegistrarName(),
+                packagePromotion.getMaxCreates());
         sendNotification(packageToken, packageCreateLimitEmailSubject, body, registrar.get());
       } else {
         throw new IllegalStateException(
@@ -158,13 +158,13 @@ public class CheckPackagesComplianceAction implements Runnable {
     }
   }
 
-  private void handleActiveDomainOverage(ImmutableList<PackagePromotion> overageList) {
+  private void handleActiveDomainOverage(ImmutableMap<PackagePromotion, Integer> overageList) {
     if (overageList.isEmpty()) {
       logger.atInfo().log("Found no packages over their active domains limit.");
       return;
     }
     logger.atInfo().log("Found %d packages over their active domains limit.", overageList.size());
-    for (PackagePromotion packagePromotion : overageList) {
+    for (PackagePromotion packagePromotion : overageList.keySet()) {
       int daysSinceLastNotification =
           packagePromotion
               .getLastNotificationSent()
@@ -176,15 +176,18 @@ public class CheckPackagesComplianceAction implements Runnable {
         continue;
       } else if (daysSinceLastNotification < FORTY_DAYS) {
         // Send an upgrade email if last email was between 30 and 40 days ago
-        sendActiveDomainOverageEmail(/* warning= */ false, packagePromotion);
+        sendActiveDomainOverageEmail(
+            /* warning= */ false, packagePromotion, overageList.get(packagePromotion));
       } else {
         // Send a warning email
-        sendActiveDomainOverageEmail(/* warning= */ true, packagePromotion);
+        sendActiveDomainOverageEmail(
+            /* warning= */ true, packagePromotion, overageList.get(packagePromotion));
       }
     }
   }
 
-  private void sendActiveDomainOverageEmail(boolean warning, PackagePromotion packagePromotion) {
+  private void sendActiveDomainOverageEmail(
+      boolean warning, PackagePromotion packagePromotion, int activeDomains) {
     String emailSubject =
         warning ? packageDomainLimitWarningEmailSubject : packageDomainLimitUpgradeEmailSubject;
     String emailTemplate =
@@ -197,9 +200,11 @@ public class CheckPackagesComplianceAction implements Runnable {
       String body =
           String.format(
               emailTemplate,
-              registrar.get().getRegistrarName(),
+              packagePromotion.getId(),
               packageToken.getToken(),
-              registrySupportEmail);
+              registrar.get().getRegistrarName(),
+              packagePromotion.getMaxDomains(),
+              activeDomains);
       sendNotification(packageToken, emailSubject, body, registrar.get());
       tm().put(packagePromotion.asBuilder().setLastNotificationSent(clock.nowUtc()).build());
     } else {
@@ -212,15 +217,9 @@ public class CheckPackagesComplianceAction implements Runnable {
       AllocationToken packageToken, String subject, String body, Registrar registrar) {
     logger.atInfo().log(
         String.format(
-            "Compliance email sent to the %s registrar regarding the package with token" + " %s.",
+            "Compliance email sent to support regarding the %s registrar and the package with token"
+                + " %s.",
             registrar.getRegistrarName(), packageToken.getToken()));
-    sendEmailUtils.sendEmail(
-        subject,
-        body,
-        Optional.of(registrySupportEmail),
-        registrar.getContacts().stream()
-            .filter(c -> c.getTypes().contains(RegistrarPoc.Type.ADMIN))
-            .map(RegistrarPoc::getEmailAddress)
-            .collect(toImmutableList()));
+    sendEmailUtils.sendEmail(subject, body, ImmutableList.of(registrySupportEmail));
   }
 }
