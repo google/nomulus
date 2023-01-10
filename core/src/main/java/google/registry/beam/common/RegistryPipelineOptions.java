@@ -15,7 +15,6 @@
 package google.registry.beam.common;
 
 import google.registry.config.RegistryEnvironment;
-import google.registry.model.annotations.DeleteAfterMigration;
 import google.registry.persistence.PersistenceModule.JpaTransactionManagerType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import java.util.Objects;
@@ -56,17 +55,6 @@ public interface RegistryPipelineOptions extends GcpOptions {
   int getSqlWriteBatchSize();
 
   void setSqlWriteBatchSize(int sqlWriteBatchSize);
-
-  @DeleteAfterMigration
-  @Description(
-      "Whether to use self allocated primary IDs when building entities. This should only be used"
-          + " when the IDs are not significant and the resulting entities are not persisted back to"
-          + " the database. Use with caution as self allocated IDs are not unique across workers,"
-          + " and persisting entities with these IDs can be dangerous.")
-  @Default.Boolean(false)
-  boolean getUseSelfAllocatedId();
-
-  void setUseSelfAllocatedId(boolean useSelfAllocatedId);
 
   static RegistryPipelineComponent toRegistryPipelineComponent(RegistryPipelineOptions options) {
     return DaggerRegistryPipelineComponent.builder()
