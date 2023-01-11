@@ -108,7 +108,7 @@ public class AllocationTokenFlowUtils {
    *
    * @throws EppException if the token is invalid in any way
    */
-  private static void validateToken(
+  public static void validateToken(
       InternetDomainName domainName, AllocationToken token, String registrarId, DateTime now)
       throws EppException {
 
