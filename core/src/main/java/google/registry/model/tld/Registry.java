@@ -16,6 +16,7 @@ package google.registry.model.tld;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.toMap;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
@@ -212,6 +213,22 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
                   return Maps.transformEntries(keysMap, (k, v) -> entities.getOrDefault(v, null));
                 }
               });
+
+  /** A cache that loads the default promo tokens for a given {@link Registry}. */
+  public static final LoadingCache<Registry, ImmutableList<AllocationToken>>
+      DEFAULT_PROMO_TOKENS_CACHE =
+          CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
+              .build(
+                  new CacheLoader<Registry, ImmutableList<AllocationToken>>() {
+                    @Override
+                    public ImmutableList<AllocationToken> load(Registry registry) {
+                      ImmutableList<VKey<AllocationToken>> tokenKeys =
+                          registry.getDefaultPromoTokens();
+                      return tokenKeys.stream()
+                          .map(key -> tm().transact(() -> tm().loadByKey(key)))
+                          .collect(toImmutableList());
+                    }
+                  });
 
   public static VKey<Registry> createVKey(String tld) {
     return VKey.create(Registry.class, tld);

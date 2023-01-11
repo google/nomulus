@@ -47,11 +47,13 @@ import static google.registry.model.EppResourceUtils.createDomainRepoId;
 import static google.registry.model.IdService.allocateId;
 import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
+import static google.registry.model.tld.Registry.DEFAULT_PROMO_TOKENS_CACHE;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
 import static google.registry.model.tld.label.ReservationType.NAME_COLLISION;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 
@@ -61,6 +63,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
+import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.flows.ExtensionManager;
@@ -270,6 +273,22 @@ public final class DomainCreateFlow implements TransactionalFlow {
             registrarId,
             now,
             eppInput.getSingleExtension(AllocationTokenExtension.class));
+    if (!allocationToken.isPresent() && !registry.getDefaultPromoTokens().isEmpty()) {
+      ImmutableList<AllocationToken> tokenList = DEFAULT_PROMO_TOKENS_CACHE.get(registry);
+      checkArgument(!isNullOrEmpty(tokenList), "Failed loading defaultPromoTokens from database");
+      // Check if any of the tokens are valid for this domain registration
+      for (AllocationToken token : tokenList) {
+        try {
+          AllocationTokenFlowUtils.validateToken(
+              InternetDomainName.from(command.getDomainName()), token, registrarId, now);
+        } catch (AssociationProhibitsOperationException e) {
+          continue;
+        }
+        // Only use the first valid token in the list
+        allocationToken = Optional.of(token);
+        break;
+      }
+    }
     boolean isAnchorTenant =
         isAnchorTenant(
             domainName, allocationToken, eppInput.getSingleExtension(MetadataExtension.class));
