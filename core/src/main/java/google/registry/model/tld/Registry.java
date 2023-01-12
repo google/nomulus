@@ -215,17 +215,17 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
               });
 
   /** A cache that loads the default promo tokens for a given {@link Registry}. */
-  public static final LoadingCache<Registry, ImmutableList<AllocationToken>>
+  public static final LoadingCache<Registry, ImmutableList<Optional<AllocationToken>>>
       DEFAULT_PROMO_TOKENS_CACHE =
           CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
               .build(
-                  new CacheLoader<Registry, ImmutableList<AllocationToken>>() {
+                  new CacheLoader<Registry, ImmutableList<Optional<AllocationToken>>>() {
                     @Override
-                    public ImmutableList<AllocationToken> load(Registry registry) {
+                    public ImmutableList<Optional<AllocationToken>> load(Registry registry) {
                       ImmutableList<VKey<AllocationToken>> tokenKeys =
                           registry.getDefaultPromoTokens();
                       return tokenKeys.stream()
-                          .map(key -> tm().transact(() -> tm().loadByKey(key)))
+                          .map(key -> tm().transact(() -> tm().loadByKeyIfPresent(key)))
                           .collect(toImmutableList());
                     }
                   });
