@@ -54,7 +54,7 @@ public class ServerSecret extends CrossTldSingleton {
             });
   }
 
-  /** Returns the global ServerSecret instance, creating it if one isn't already in Datastore. */
+  /** Returns the global ServerSecret instance, creating it if one isn't already in the database. */
   public static ServerSecret get() {
     return CACHE.get(ServerSecret.class);
   }

@@ -36,7 +36,6 @@ import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobConfiguration;
 import com.google.api.services.bigquery.model.JobConfigurationExtract;
-import com.google.api.services.bigquery.model.JobConfigurationLoad;
 import com.google.api.services.bigquery.model.JobConfigurationQuery;
 import com.google.api.services.bigquery.model.JobReference;
 import com.google.api.services.bigquery.model.JobStatistics;
@@ -57,7 +56,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import google.registry.bigquery.BigqueryUtils.DestinationFormat;
-import google.registry.bigquery.BigqueryUtils.SourceFormat;
 import google.registry.bigquery.BigqueryUtils.TableType;
 import google.registry.bigquery.BigqueryUtils.WriteDisposition;
 import google.registry.util.NonFinalForTesting;
@@ -373,23 +371,6 @@ public class BigqueryConnection implements AutoCloseable {
     } catch (IOException e) {
       throw BigqueryJobFailureException.create(e);
     }
-  }
-
-  /**
-   * Starts an asynchronous load job to populate the specified destination table with the given
-   * source URIs and source format. Returns a ListenableFuture that holds the same destination table
-   * object on success.
-   */
-  public ListenableFuture<DestinationTable> startLoad(
-      DestinationTable dest, SourceFormat sourceFormat, Iterable<String> sourceUris) {
-    Job job = new Job()
-        .setConfiguration(new JobConfiguration()
-            .setLoad(new JobConfigurationLoad()
-                .setWriteDisposition(dest.getWriteDisposition().toString())
-                .setSourceFormat(sourceFormat.toString())
-                .setSourceUris(ImmutableList.copyOf(sourceUris))
-                .setDestinationTable(dest.getTableReference())));
-    return transform(runJobToCompletion(job, dest), this::updateTable, directExecutor());
   }
 
   /**

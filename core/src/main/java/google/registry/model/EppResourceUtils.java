@@ -89,14 +89,14 @@ public final class EppResourceUtils {
   }
 
   /**
-   * Loads the last created version of an {@link EppResource} from Datastore by foreign key.
+   * Loads the last created version of an {@link EppResource} from the database by foreign key.
    *
    * <p>Returns empty if no resource with this foreign key was ever created, or if the most recently
    * created resource was deleted before time "now".
    *
    * <p>Loading an {@link EppResource} by itself is not sufficient to know its current state since
    * it may have various expirable conditions and status values that might implicitly change its
-   * state as time progresses even if it has not been updated in Datastore. Rather, the resource
+   * state as time progresses even if it has not been updated in the database. Rather, the resource
    * must be combined with a timestamp to view its current state. We use a global last updated
    * timestamp on the resource's entity group (which is essentially free since all writes to the
    * entity group must be serialized anyways) to guarantee monotonically increasing write times, and
@@ -330,7 +330,7 @@ public final class EppResourceUtils {
   /**
    * Returns a set of {@link VKey} for domains that reference a specified contact or host.
    *
-   * <p>This is an eventually consistent query if used for Datastore.
+   * <p>This is an eventually consistent query if used for the database.
    *
    * @param key the referent key
    * @param now the logical time of the check

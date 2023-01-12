@@ -55,7 +55,7 @@ public final class DiffUtils {
     }
   }
 
-  /** Pretty-prints a deep diff between two maps that represent Datastore entities. */
+  /** Pretty-prints a deep diff between two maps that represent entities. */
   public static String prettyPrintEntityDeepDiff(Map<?, ?> a, Map<?, ?> b) {
     return prettyPrintDiffedMap(deepDiff(a, b, true), null);
   }

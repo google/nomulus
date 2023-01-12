@@ -57,7 +57,7 @@ public class HostBase extends EppResource {
    * Fully qualified hostname, which is a unique identifier for this host.
    *
    * <p>This is only unique in the sense that for any given lifetime specified as the time range
-   * from (creationTime, deletionTime) there can only be one host in Datastore with this name.
+   * from (creationTime, deletionTime) there can only be one host in the database with this name.
    * However, there can be many hosts with the same name and non-overlapping lifetimes.
    */
   String hostName;

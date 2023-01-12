@@ -35,12 +35,12 @@ import org.joda.time.Duration;
  * <p>This class implements the <i>Locking Rolling Cursor</i> pattern, which solves the problem of
  * how to reliably execute App Engine tasks which can't be made idempotent.
  *
- * <p>{@link LockHandler} is used to ensure only one task executes at a time for a given
- * {@code LockedCursorTask} subclass + TLD combination. This is necessary because App Engine tasks
- * might double-execute. Normally tasks solve this by being idempotent, but that's not possible for
- * RDE, which writes to a GCS filename with a deterministic name. So Datastore is used to to
- * guarantee isolation. If we can't acquire the lock, it means the task is already running, so
- * {@link NoContentException} is thrown to cancel the task.
+ * <p>{@link LockHandler} is used to ensure only one task executes at a time for a given {@code
+ * LockedCursorTask} subclass + TLD combination. This is necessary because App Engine tasks might
+ * double-execute. Normally tasks solve this by being idempotent, but that's not possible for RDE,
+ * which writes to a GCS filename with a deterministic name. So locks are used to guarantee
+ * isolation. If we can't acquire the lock, it means the task is already running, so {@link
+ * NoContentException} is thrown to cancel the task.
  *
  * <p>The specific date for which the deposit is generated depends on the current position of the
  * {@link Cursor}. If the cursor is set to tomorrow, we do nothing and return 204 No Content. If the
@@ -59,7 +59,7 @@ class EscrowTaskRunner {
     /**
      * Performs task logic while the lock is held.
      *
-     * @param watermark the logical time for a point-in-time view of Datastore
+     * @param watermark the logical time for a point-in-time view of the database.
      */
     void runWithLock(DateTime watermark) throws Exception;
   }

@@ -23,7 +23,7 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import org.joda.time.DateTime;
 
-/** A timestamp that auto-updates when first saved to Datastore. */
+/** A timestamp that auto-updates when first saved to the database. */
 @Embeddable
 public class CreateAutoTimestamp extends ImmutableObject implements UnsafeSerializable {
 

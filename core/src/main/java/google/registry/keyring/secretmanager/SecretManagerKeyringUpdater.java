@@ -51,7 +51,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 
 /**
  * The {@link SecretManagerKeyringUpdater} accumulates updates to a {@link SecretManagerKeyring} and
- * persists them to KMS and Datastore when closed.
+ * persists them to Cloud Secret Manager when closed.
  */
 public final class SecretManagerKeyringUpdater {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -125,7 +125,7 @@ public final class SecretManagerKeyringUpdater {
   }
 
   /**
-   * Persists the secrets in the Secret Manager (primary) and the Datastore (secondary).
+   * Persists the secrets in the Secret Manager.
    *
    * <p>Updates to the Secret Manager are not transactional. If an error happens, the successful
    * updates are not reverted; unwritten updates are aborted. This is not a problem right now, since

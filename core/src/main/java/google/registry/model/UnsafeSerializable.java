@@ -18,9 +18,7 @@ import java.io.Serializable;
 
 /**
  * Marker interface for Nomulus entities whose serialization are implemented in a fragile way. These
- * entities are made {@link Serializable} so that they can be passed between JVMs. The intended use
- * case is BEAM pipeline-based cross-database data validation between Datastore and Cloud SQL during
- * the migration. Note that only objects loaded from the SQL database need serialization support.
+ * entities are made {@link Serializable} so that they can be passed between JVMs.
  *
  * <p>All entities implementing this interface take advantage of the fact that all Java collection
  * classes we use, either directly or indirectly, including those in Java libraries, Guava, and
@@ -29,5 +27,4 @@ import java.io.Serializable;
  * <p>The {@code serialVersionUID} field has also been omitted in the implementing classes, since
  * they are not used for persistence.
  */
-// TODO(b/203609782): either remove this interface or fix implementors post migration.
 public interface UnsafeSerializable extends Serializable {}

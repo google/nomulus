@@ -48,7 +48,7 @@ import org.joda.time.Duration;
  *
  * <p>If no deposits have been made so far, then {@code startingPoint} is used as the watermark of
  * the next deposit. If that's a day in the future, then escrow won't start until that date. This
- * first deposit time will be set to Datastore in a transaction.
+ * first deposit time will be set to the database in a transaction.
  */
 public final class PendingDepositChecker {
 

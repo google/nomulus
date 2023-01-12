@@ -145,9 +145,8 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
    *     clauses that make up this SQL query
    * @param checkForVisibility true if the results should be checked to make sure they are visible;
    *     normally this should be equal to the shouldIncludeDeleted setting, but in cases where the
-   *     query could not check deletion status (due to Datastore limitations such as the limit of
-   *     one field queried for inequality, for instance), it may need to be set to true even when
-   *     not including deleted records
+   *     query could not check deletion status, it may need to be set to true even when not
+   *     including deleted records
    * @param querySizeLimit the maximum number of items the query is expected to return, usually
    *     because the limit has been set
    * @return an {@link RdapResultSet} object containing the list of resources and an incompleteness

@@ -67,7 +67,7 @@ import org.joda.time.DateTime;
  *
  * <p>Poll messages are not delivered until their {@link #eventTime} has passed. Poll messages can
  * be speculatively enqueued for future delivery, and then modified or deleted before that date has
- * passed. Unlike most other entities in Datastore, which are marked as deleted but otherwise
+ * passed. Unlike most other entities in the database, which are marked as deleted but otherwise
  * retained for historical purposes, poll messages are truly deleted once they have been delivered
  * and ACKed.
  *
@@ -337,7 +337,8 @@ public abstract class PollMessage extends ImmutableObject
   /**
    * A one-time poll message.
    *
-   * <p>One-time poll messages are deleted from Datastore once they have been delivered and ACKed.
+   * <p>One-time poll messages are deleted from the database once they have been delivered and
+   * ACKed.
    */
   @Entity
   @DiscriminatorValue("ONE_TIME")

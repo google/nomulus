@@ -52,9 +52,9 @@ public class CriteriaQueryBuilder<T> {
   }
 
   /** Adds a WHERE clause to the query, given the specified operation, field, and value. */
-  public <V> CriteriaQueryBuilder<T> where(
-      String fieldName, WhereOperator<V> whereClause, V value) {
-    Expression<V> expression = root.get(fieldName);
+  public <U> CriteriaQueryBuilder<T> where(
+      String fieldName, WhereOperator<U> whereClause, U value) {
+    Expression<U> expression = root.get(fieldName);
     return where(whereClause.predicate(expression, value));
   }
 
@@ -74,7 +74,7 @@ public class CriteriaQueryBuilder<T> {
    * Adds a WHERE clause to the query specifying that a collection field must contain a particular
    * value.
    */
-  public <V> CriteriaQueryBuilder<T> whereFieldContains(String fieldName, Object value) {
+  public CriteriaQueryBuilder<T> whereFieldContains(String fieldName, Object value) {
     return where(
         jpaTm.getEntityManager().getCriteriaBuilder().isMember(value, root.get(fieldName)));
   }

@@ -4,7 +4,7 @@ There are multiple different kinds of configuration that go into getting a
 working registry system up and running. Broadly speaking, configuration works in
 two ways -- globally, for the entire sytem, and per-TLD. Global configuration is
 managed by editing code and deploying a new version, whereas per-TLD
-configuration is data that lives in Datastore in `Registry` entities, and is
+configuration is data that lives in the database in `Registry` entities, and is
 updated by running `nomulus` commands without having to deploy a new version.
 
 ## Initial configuration
@@ -39,7 +39,6 @@ The main files of note that come pre-configured in Nomulus are:
 *   `web.xml` -- Configuration of URL paths on the webserver
 *   `appengine-web.xml` -- Overall App Engine settings including number and type
     of instances
-*   `datastore-indexes.xml` -- Configuration of entity indexes in Datastore
 *   `queue.xml` -- Configuration of App Engine task queues
 *   `application.xml` -- Configuration of the application name and its services
 
@@ -49,8 +48,8 @@ doc, and the rest are covered in the general App Engine documentation.
 If you are not writing new code to implement custom features, is unlikely that
 you will need to make any modifications beyond simple changes to
 `application.xml` and `appengine-web.xml`. If you are writing new features, it's
-likely you'll need to add cronjobs, URL paths, Datastore indexes, and task
-queues, and thus edit those associated XML files.
+likely you'll need to add cronjobs, URL paths, and task queues, and thus edit
+those associated XML files.
 
 The existing codebase is configured for running a full-scale registry with
 multiple TLDs.  In order to deploy to App Engine, you will either need to
@@ -177,7 +176,7 @@ SecretManager to configure accordingly, for example:
 
 ## Per-TLD configuration
 
-`Registry` entities, which are persisted to Datastore, are used for per-TLD
+`Registry` entities, which are persisted to the database, are used for per-TLD
 configuration. They contain any kind of configuration that is specific to a TLD,
 such as the create/renew price of a domain name, the pricing engine
 implementation, the DNS writer implementation, whether escrow exports are

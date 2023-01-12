@@ -55,10 +55,13 @@ public class DomainTransactionRecord extends ImmutableObject
   @Column(nullable = false)
   String tld;
 
-  // The following two fields are exposed in this entity to support bulk-loading in Cloud SQL by the
-  // Datastore-SQL validation. They are excluded from equality check since they are not set in
-  // Datastore.
-  // TODO(b/203609782): post migration, decide whether to keep these two fields.
+  // The following two fields are marked as insignificant because they are only used to map the set
+  // of DomainTransactionRecords of a DomainHistory to the rows in the DomainTransactionRecord
+  // table. They are auto-populated when the DomainHistory is persisted into the database (due to
+  // the one-to-many mapping) and are foreign key constrained. More importantly, they cannot be set
+  // directly in the code. We therefore do not need to compare them for equality checks, and we
+  // would have to introduce setters only to set them in tests (and change a lot of test code) if
+  // we remove the annotation.
   @Insignificant String domainRepoId;
 
   @Insignificant Long historyRevisionId;

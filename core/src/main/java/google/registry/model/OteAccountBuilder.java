@@ -50,7 +50,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
- * Class to help build and persist all the OT&amp;E entities in Datastore.
+ * Class to help build and persist all the OT&amp;E entities in the database.
  *
  * <p>This includes the TLDs (Registries), Registrars, and the RegistrarContacts that can access the
  * web console.

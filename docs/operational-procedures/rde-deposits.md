@@ -26,7 +26,7 @@ need to implement a working and secure key store from which RDE can pull the
 private key used to transmit the deposits via sFTP.
 
 For each phase and TLD in the process, the system maintains a `Cursor` entity in
-Datastore, which contains a timestamp indicating that everything before the
+the database, which contains a timestamp indicating that everything before the
 timestamp is current (except for RDE_UPLOAD_SFTP, which works a little
 differently). Only if the current time is after the cursor time do the actions
 check to see if they have work to do. For RDE, there are separate cursor types

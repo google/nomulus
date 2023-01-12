@@ -254,13 +254,13 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
     // Set the user to only have the current role for this registrar
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of(CLIENT_ID, role));
-    // Load the registrar as it is currently in datastore, and make sure the requested update will
-    // actually change it
+    // Load the registrar as it is currently in the database, and make sure the requested update
+    // will actually change it
     Registrar registrar = loadRegistrar(CLIENT_ID);
     assertThat(getter.apply(registrar)).isNotEqualTo(newValue);
 
     // Call the action to perform the requested update, then load the "updated" registrar and
-    // return the "datastore" registrar to its original state (for the next iteration)
+    // return the "database" registrar to its original state (for the next iteration)
     Map<String, Object> response =
         action.handleJsonRequest(
             ImmutableMap.of(
@@ -309,8 +309,8 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
             .build();
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(accessMap);
-    // Load the registrar as it is currently in datastore, and make sure the requested update will
-    // actually change it
+    // Load the registrar as it is currently in the database, and make sure the requested update
+    // will actually change it
     Registrar registrar = loadRegistrar(CLIENT_ID);
     assertThat(getter.apply(registrar)).isNotEqualTo(newValue);
 

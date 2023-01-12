@@ -790,7 +790,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_thirtyDomains_restoreFees() throws Exception {
     // Note that 30 is more than 25, which is the maximum # of entity groups you can enlist in a
-    // single Datastore transaction (each Domain entity is in a separate entity group).
+    // single database transaction (each Domain entity is in a separate entity group).
     // It's also pretty common for registrars to send large domain checks.
     setEppInput("domain_check_fee_thirty_domains.xml");
     // example-00.tld won't exist and thus will not have a renew fee like the others.

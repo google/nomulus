@@ -165,7 +165,7 @@ class WhoisHttpActionTest {
   }
 
   @Test
-  void testRun_wickedLineFeedForgeryInDatastore_crlfSubstitutedWithSpace() {
+  void testRun_wickedLineFeedForgeryInDatabase_crlfSubstitutedWithSpace() {
     Contact trl =
         FullFieldsTestEntityHelper.makeContact("5372808-TRL", "Eric Schmidt", "bog@cat.みんな");
     trl =

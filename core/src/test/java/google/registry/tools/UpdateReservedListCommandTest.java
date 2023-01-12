@@ -24,11 +24,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import google.registry.model.tld.label.ReservedList;
-import google.registry.model.tld.label.ReservedList.ReservedListEntry;
-import google.registry.model.tld.label.ReservedListDao;
 import java.io.File;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,16 +48,6 @@ class UpdateReservedListCommandTest
             .setCreationTimestamp(START_OF_TIME)
             .setShouldPublish(shouldPublish)
             .build());
-  }
-
-  private void populateInitialReservedListInCloudSql(boolean shouldPublish) {
-    ReservedListDao.save(
-        createCloudSqlReservedList(
-            "xn--q9jyb4c_common-reserved",
-            fakeClock.nowUtc(),
-            shouldPublish,
-            ImmutableMap.of(
-                "helicopter", ReservedListEntry.create("helicopter", FULLY_BLOCKED, ""))));
   }
 
   @Test
@@ -107,27 +94,8 @@ class UpdateReservedListCommandTest
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () ->
-                runCommand("--force", "--name=xn--q9jyb4c_poobah", "--input=" + reservedTermsPath));
+            () -> runCommandForced("--name=xn--q9jyb4c_poobah", "--input=" + reservedTermsPath));
     assertThat(thrown).hasMessageThat().contains(errorMessage);
-  }
-
-  @Test
-  void testSaveToCloudSql_succeeds() throws Exception {
-    populateInitialReservedListInCloudSql(true);
-    runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
-    verifyXnq9jyb4cInDatastore();
-    verifyXnq9jyb4cInCloudSql();
-  }
-
-  @Test
-  void testSaveToCloudSql_succeedsEvenPreviousListNotExist() throws Exception {
-    // Note that, during the dual-write phase, we always save the reserved list to Cloud SQL without
-    // checking if there is a list with same name. This is to backfill the existing list in Cloud
-    // Datastore when we update it.
-    runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
-    verifyXnq9jyb4cInDatastore();
-    assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
   }
 
   @Test

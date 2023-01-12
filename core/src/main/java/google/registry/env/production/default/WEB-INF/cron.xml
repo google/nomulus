@@ -26,9 +26,9 @@
 
       We want it to be close to midnight because that reduces the chance that the
       point-in-time code won't have to go to the extra trouble of fetching old
-      versions of objects from Datastore. However, we don't want it to run too
+      versions of objects from the database. However, we don't want it to run too
       close to midnight, because there's always a chance that a change which was
-      timestamped before midnight hasn't fully been committed to Datastore. So
+      timestamped before midnight hasn't fully been committed to the database. So
       we add a 4+ minute grace period to ensure the transactions cool down, since
       our queries are not transactional.
     -->
@@ -220,15 +220,6 @@
       group.
     </description>
     <schedule>every 1 minutes synchronized</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
-    <url><![CDATA[/_ah/sessioncleanup?clear]]></url>
-    <description>
-      Delete up to 100 expired _ah_SESSION entities from Datastore.
-    </description>
-    <schedule>every 15 minutes</schedule>
     <target>backend</target>
   </cron>
 

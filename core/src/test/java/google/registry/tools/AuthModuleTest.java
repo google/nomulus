@@ -144,7 +144,7 @@ class AuthModuleTest {
   }
 
   private Credential getCredential() {
-    // Reconstruct the entire dependency graph, injecting FakeDatastoreFactory and credential
+    // Reconstruct the entire dependency graph, injecting FakeDataStoreFactory and credential
     // parameters.
     JacksonFactory jsonFactory = new JacksonFactory();
     GoogleClientSecrets clientSecrets = getSecrets();

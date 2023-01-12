@@ -82,7 +82,7 @@ reserved lists (see subsequent sections). The two naming patterns are thus:
 ## Creating a reserved list
 
 Once the file containing the list of reserved terms is created, run the
-`create_reserved_list` command to load it into Datastore as follows. For the
+`create_reserved_list` command to load it into the database as follows. For the
 purposes of this example, we are creating a common reserved list named
 "common_bad-words".
 
@@ -163,8 +163,8 @@ reservedLists=[Key<?>(EntityGroupRoot("cross-tld")/ReservedList("common_bad-word
 
 ## Listing all available reserved lists
 
-The `list_reserved_lists` command is used to list all reserved lists in
-Datastore. It takes no arguments and displays a simple list of reserved lists in
+The `list_reserved_lists` command is used to list all reserved lists in the
+database. It takes no arguments and displays a simple list of reserved lists in
 newline-delimited format as follows:
 
 ```shell

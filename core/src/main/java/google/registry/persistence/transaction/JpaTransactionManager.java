@@ -76,11 +76,6 @@ public interface JpaTransactionManager extends TransactionManager {
    */
   Query query(String sqlString);
 
-  /**
-   * Execute the work in a transaction without recording the transaction for replay to datastore.
-   */
-  <T> T transactWithoutBackup(Supplier<T> work);
-
   /** Executes the work in a transaction with no retries and returns the result. */
   <T> T transactNoRetry(Supplier<T> work);
 

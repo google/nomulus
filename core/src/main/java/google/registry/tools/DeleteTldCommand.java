@@ -26,11 +26,11 @@ import google.registry.model.tld.Registry.TldType;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 
 /**
- * Command to delete the {@link Registry} associated with the specified TLD in Datastore.
+ * Command to delete the {@link Registry} associated with the specified TLD in the database.
  *
  * <p>This command will fail if any domains are currently registered on the TLD.
  */
-@Parameters(separators = " =", commandDescription = "Delete a TLD from Datastore.")
+@Parameters(separators = " =", commandDescription = "Delete a TLD from the database.")
 final class DeleteTldCommand extends ConfirmingCommand {
 
   private Registry registry;

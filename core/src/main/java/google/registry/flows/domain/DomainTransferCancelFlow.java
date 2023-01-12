@@ -62,9 +62,9 @@ import org.joda.time.DateTime;
  * transfer is automatically approved. Within that window, this flow allows the gaining client to
  * withdraw the transfer request.
  *
- * <p>When the transfer was requested, poll messages and billing events were saved to Datastore with
- * timestamps such that they only would become active when the transfer period passed. In this flow,
- * those speculative objects are deleted.
+ * <p>When the transfer was requested, poll messages and billing events were saved to the database
+ * with timestamps such that they only would become active when the transfer period passed. In this
+ * flow, those speculative objects are deleted.
  *
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException}

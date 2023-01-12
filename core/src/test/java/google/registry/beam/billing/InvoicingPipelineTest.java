@@ -374,7 +374,6 @@ class InvoicingPipelineTest {
   }
 
   private static void setupCloudSql() {
-    // Populate billing events in Cloud SQL to match existing test data for Datastore
     persistNewRegistrar("NewRegistrar");
     persistNewRegistrar("TheRegistrar");
     Registrar registrar1 = persistNewRegistrar("theRegistrar");

@@ -396,10 +396,10 @@ public final class DatabaseHelper {
                     .collect(
                         toImmutableMap(Map.Entry::getKey, entry -> entry.getValue().getValue())))
             .build();
-    // Since we used to persist a PremiumList to Datastore here, it is necessary to allocate an ID
-    // here to prevent breaking some hard-coded flow tests. IDs in tests are allocated in a
-    // strictly increasing sequence, if we don't pad out the ID here, we would have to renumber
-    // hundreds of unit tests.
+    // Since we used to persist a PremiumList here, it is necessary to allocate an ID here to
+    // prevent breaking some hard-coded flow tests. IDs in tests are allocated in a strictly
+    // increasing sequence, if we don't pad out the ID here, we would have to renumber hundreds of
+    // unit tests.
     allocateId();
     PremiumListDao.save(premiumList);
     maybeAdvanceClock();
@@ -837,12 +837,12 @@ public final class DatabaseHelper {
         .containsExactlyElementsIn(expected);
   }
 
-  /** Assert that the expected billing events are exactly the ones found in the fake Datastore. */
+  /** Assert that the expected billing events are exactly the ones found in test database. */
   public static void assertBillingEvents(BillingEvent... expected) {
     assertBillingEventsEqual(getBillingEvents(), asList(expected));
   }
 
-  /** Assert that the expected billing events set is exactly the one found in the fake Datastore. */
+  /** Assert that the expected billing events set is exactly the one found in test database. */
   public static void assertBillingEvents(Set<BillingEvent> expected) {
     assertBillingEventsEqual(getBillingEvents(), expected);
   }
@@ -1319,60 +1319,6 @@ public final class DatabaseHelper {
   public static <T> T assertDetachedFromEntityManager(T entity) {
     assertThat(tm().getEntityManager().contains(entity)).isFalse();
     return entity;
-  }
-
-  /**
-   * Sets a DATASTORE_PRIMARY_NO_ASYNC state on the {@link DatabaseMigrationStateSchedule}.
-   *
-   * <p>In order to allow for tests to manipulate the clock how they need, we start the transitions
-   * one millisecond after the clock's current time (in case the clock's current value is
-   * START_OF_TIME). We then advance the clock one second so that we're in the
-   * DATASTORE_PRIMARY_READ_ONLY phase.
-   *
-   * <p>We must use the current time, otherwise the setting of the migration state will fail due to
-   * an invalid transition.
-   */
-  public static void setMigrationScheduleToDatastorePrimaryNoAsync(FakeClock fakeClock) {
-    DateTime now = fakeClock.nowUtc();
-    tm().transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    ImmutableSortedMap.of(
-                        START_OF_TIME,
-                        MigrationState.DATASTORE_ONLY,
-                        now.plusMillis(1),
-                        MigrationState.DATASTORE_PRIMARY,
-                        now.plusMillis(2),
-                        MigrationState.DATASTORE_PRIMARY_NO_ASYNC)));
-    fakeClock.advanceBy(Duration.standardSeconds(1));
-  }
-
-  /**
-   * Sets a DATASTORE_PRIMARY_READ_ONLY state on the {@link DatabaseMigrationStateSchedule}.
-   *
-   * <p>In order to allow for tests to manipulate the clock how they need, we start the transitions
-   * one millisecond after the clock's current time (in case the clock's current value is
-   * START_OF_TIME). We then advance the clock one second so that we're in the
-   * DATASTORE_PRIMARY_READ_ONLY phase.
-   *
-   * <p>We must use the current time, otherwise the setting of the migration state will fail due to
-   * an invalid transition.
-   */
-  public static void setMigrationScheduleToDatastorePrimaryReadOnly(FakeClock fakeClock) {
-    DateTime now = fakeClock.nowUtc();
-    tm().transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    ImmutableSortedMap.of(
-                        START_OF_TIME,
-                        MigrationState.DATASTORE_ONLY,
-                        now.plusMillis(1),
-                        MigrationState.DATASTORE_PRIMARY,
-                        now.plusMillis(2),
-                        MigrationState.DATASTORE_PRIMARY_NO_ASYNC,
-                        now.plusMillis(3),
-                        MigrationState.DATASTORE_PRIMARY_READ_ONLY)));
-    fakeClock.advanceBy(Duration.standardSeconds(1));
   }
 
   /**

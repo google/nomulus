@@ -17,9 +17,7 @@ package google.registry.util;
 import com.google.common.io.Files;
 import java.nio.file.Path;
 
-/**
- * A utility class for conversion of input file paths into names for entities in Datastore.
- */
+/** A utility class for conversion of input file paths into names for entities in the database. */
 public final class ListNamingUtils {
 
   /** Turns a file path into a name suitable for use as the name of a premium or reserved list. */

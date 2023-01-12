@@ -60,7 +60,7 @@ import org.joda.time.Duration;
  *
  * <p>This class does not represent the total configuration of the Nomulus service. It's <b>only
  * meant for settings that need to be configured <i>once</i></b>. Settings which may be subject to
- * change in the future, should instead be retrieved from Datastore. The {@link
+ * change in the future, should instead be retrieved from the database. The {@link
  * google.registry.model.tld.Registry Registry} class is one such example of this.
  *
  * <p>Note: Only settings that are actually configurable belong in this file. It's not a catch-all

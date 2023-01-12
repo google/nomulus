@@ -167,12 +167,11 @@ public abstract class CommandTestCase<C extends Command> {
     return writeToNamedTmpFile("cert.pem", certificateFile);
   }
 
-  /** Reloads the given resource from Datastore. */
   <T> T reloadResource(T resource) {
     return tm().transact(() -> tm().loadByEntity(resource));
   }
 
-  /** Returns count of all poll messages in Datastore. */
+  /** Returns count of all poll messages. */
   int getPollMessageCount() {
     return tm().transact(() -> tm().loadAllOf(PollMessage.class).size());
   }

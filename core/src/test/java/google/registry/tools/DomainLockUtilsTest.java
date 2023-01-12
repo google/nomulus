@@ -454,7 +454,7 @@ public final class DomainLockUtilsTest {
             () -> domainLockUtils.verifyAndApplyLock(verificationCode, false));
     assertThat(thrown).hasMessageThat().isEqualTo("Domain example.tld is already locked");
 
-    // Failure during Datastore portion shouldn't affect the SQL object
+    // Failure during the lock acquisition portion shouldn't affect the SQL object
     RegistryLock afterAction = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
     assertThat(afterAction).isEqualTo(lock);
     assertNoDomainChanges();

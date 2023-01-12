@@ -68,8 +68,6 @@ def dockerIncompatibleTestPatterns = [
 // Nomulus classes, e.g., threads and objects retained by frameworks.
 // TODO(weiminyu): identify cause and fix offending tests.
 def fragileTestPatterns = [
-    // Test Datastore inexplicably aborts transaction.
-    "google/registry/model/tmch/ClaimsListShardTest.*",
     // Changes cache timeouts and for some reason appears to have contention
     // with other tests.
     "google/registry/whois/WhoisCommandFactoryTest.*",
@@ -168,7 +166,6 @@ dependencies {
   implementation deps['com.beust:jcommander']
   implementation deps['com.github.ben-manes.caffeine:caffeine']
   implementation deps['com.google.api:gax']
-  implementation deps['com.google.api.grpc:proto-google-cloud-datastore-v1']
   implementation deps['com.google.api.grpc:proto-google-common-protos']
   implementation deps['com.google.api.grpc:proto-google-cloud-secretmanager-v1']
   implementation deps['com.google.api-client:google-api-client']
@@ -192,7 +189,6 @@ dependencies {
   implementation deps['com.google.auth:google-auth-library-credentials']
   implementation deps['com.google.auth:google-auth-library-oauth2-http']
   implementation deps['com.google.cloud.bigdataoss:util']
-  implementation deps['com.google.cloud.datastore:datastore-v1-proto-client']
   implementation deps['com.google.cloud.sql:jdbc-socket-factory-core']
   runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
   implementation deps['com.google.cloud:google-cloud-secretmanager']

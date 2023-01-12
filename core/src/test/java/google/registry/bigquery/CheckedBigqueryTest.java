@@ -67,7 +67,7 @@ class CheckedBigqueryTest {
   }
 
   @Test
-  void testSuccess_datastoreCreation() throws Exception {
+  void testSuccess_datasetCreation() throws Exception {
     checkedBigquery.ensureDataSetExists("Project-Id", "Dataset-Id");
 
     ArgumentCaptor<Dataset> datasetArg = ArgumentCaptor.forClass(Dataset.class);
@@ -80,7 +80,7 @@ class CheckedBigqueryTest {
   }
 
   @Test
-  void testSuccess_datastoreAndTableCreation() throws Exception {
+  void testSuccess_datasetAndTableCreation() throws Exception {
     checkedBigquery.ensureDataSetAndTableExist("Project-Id", "Dataset2", "Table2");
 
     ArgumentCaptor<Dataset> datasetArg = ArgumentCaptor.forClass(Dataset.class);
