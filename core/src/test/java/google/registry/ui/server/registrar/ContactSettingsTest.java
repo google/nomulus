@@ -25,7 +25,7 @@ import com.google.common.collect.Iterables;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.registrar.RegistrarPoc.Type;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -110,7 +110,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
     reqJson.put(
         "contacts",
         ImmutableList.of(
-            AppEngineExtension.makeRegistrarContact2().toJsonMap(),
+            JpaTransactionManagerExtension.makeRegistrarContact2().toJsonMap(),
             techContact.asBuilder().setPhoneNumber(null).build().toJsonMap()));
     Map<String, Object> response =
         action.handleJsonRequest(
@@ -130,7 +130,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
     // First make the contact's info visible in whois as abuse contact info.
     Registrar registrar = loadRegistrar(CLIENT_ID);
     RegistrarPoc rc =
-        AppEngineExtension.makeRegistrarContact2()
+        JpaTransactionManagerExtension.makeRegistrarContact2()
             .asBuilder()
             .setVisibleInDomainWhoisAsAbuse(true)
             .build();
@@ -157,7 +157,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
     // First make the contact's info visible in whois as abuse contact info.
     Registrar registrar = loadRegistrar(CLIENT_ID);
     RegistrarPoc rc =
-        AppEngineExtension.makeRegistrarContact2()
+        JpaTransactionManagerExtension.makeRegistrarContact2()
             .asBuilder()
             .setVisibleInDomainWhoisAsAbuse(true)
             .build();
@@ -182,7 +182,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
   @Test
   void testSuccess_setRegistryLockPassword() {
     addPasswordToContactTwo();
-    String emailAddress = AppEngineExtension.makeRegistrarContact2().getEmailAddress();
+    String emailAddress = JpaTransactionManagerExtension.makeRegistrarContact2().getEmailAddress();
     RegistrarPoc newContactWithPassword =
         loadRegistrar(CLIENT_ID).getContacts().stream()
             .filter(rc -> rc.getEmailAddress().equals(emailAddress))
@@ -195,7 +195,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
   @Test
   void testSuccess_setRegistryLockPassword_notOverriddenLater() {
     addPasswordToContactTwo();
-    String emailAddress = AppEngineExtension.makeRegistrarContact2().getEmailAddress();
+    String emailAddress = JpaTransactionManagerExtension.makeRegistrarContact2().getEmailAddress();
     RegistrarPoc newContactWithPassword =
         loadRegistrar(CLIENT_ID).getContacts().stream()
             .filter(rc -> rc.getEmailAddress().equals(emailAddress))
@@ -209,9 +209,9 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
     reqJson.put(
         "contacts",
         ImmutableList.of(
-            AppEngineExtension.makeRegistrarContact1().toJsonMap(),
+            JpaTransactionManagerExtension.makeRegistrarContact1().toJsonMap(),
             newContactMap,
-            AppEngineExtension.makeRegistrarContact3().toJsonMap()));
+            JpaTransactionManagerExtension.makeRegistrarContact3().toJsonMap()));
     clock.advanceOneMilli();
     Map<String, Object> response =
         action.handleJsonRequest(ImmutableMap.of("op", "update", "id", CLIENT_ID, "args", reqJson));
@@ -227,7 +227,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
   private void addPasswordToContactTwo() {
     RegistrarPoc contact =
         persistResource(
-            AppEngineExtension.makeRegistrarContact2()
+            JpaTransactionManagerExtension.makeRegistrarContact2()
                 .asBuilder()
                 .setRegistryLockEmailAddress("johndoe@theregistrar.com")
                 .setAllowedToSetRegistryLockPassword(true)
@@ -238,9 +238,9 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
     reqJson.put(
         "contacts",
         ImmutableList.of(
-            AppEngineExtension.makeRegistrarContact1().toJsonMap(),
+            JpaTransactionManagerExtension.makeRegistrarContact1().toJsonMap(),
             contactMap,
-            AppEngineExtension.makeRegistrarContact3().toJsonMap()));
+            JpaTransactionManagerExtension.makeRegistrarContact3().toJsonMap()));
     Map<String, Object> response =
         action.handleJsonRequest(ImmutableMap.of("op", "update", "id", CLIENT_ID, "args", reqJson));
     assertThat(response).containsAtLeastEntriesIn(ImmutableMap.of("status", "SUCCESS"));
@@ -252,7 +252,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
     reqJson.put(
         "contacts",
         ImmutableList.of(
-            AppEngineExtension.makeRegistrarContact2()
+            JpaTransactionManagerExtension.makeRegistrarContact2()
                 .asBuilder()
                 .setEmailAddress("someotheremail@example.com")
                 .setRegistryLockEmailAddress("someotherexample@example.com")
@@ -278,16 +278,17 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
   void testPost_failure_setRegistryLockPassword_notAllowed() {
     // "allowedToSetRegistryLockPassword" must be set through the back end first
     // before we can set a password through the UI
-    Map<String, Object> contactMap = AppEngineExtension.makeRegistrarContact2().toJsonMap();
+    Map<String, Object> contactMap =
+        JpaTransactionManagerExtension.makeRegistrarContact2().toJsonMap();
     contactMap.put("allowedToSetRegistryLockPassword", true);
     contactMap.put("registryLockPassword", "hellothere");
     Map<String, Object> reqJson = loadRegistrar(CLIENT_ID).toJsonMap();
     reqJson.put(
         "contacts",
         ImmutableList.of(
-            AppEngineExtension.makeRegistrarContact1().toJsonMap(),
+            JpaTransactionManagerExtension.makeRegistrarContact1().toJsonMap(),
             contactMap,
-            AppEngineExtension.makeRegistrarContact3().toJsonMap()));
+            JpaTransactionManagerExtension.makeRegistrarContact3().toJsonMap()));
 
     Map<String, Object> response =
         action.handleJsonRequest(ImmutableMap.of("op", "update", "id", CLIENT_ID, "args", reqJson));
@@ -309,7 +310,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
     reqJson.put(
         "contacts",
         ImmutableList.of(
-            AppEngineExtension.makeRegistrarContact2().toJsonMap(),
+            JpaTransactionManagerExtension.makeRegistrarContact2().toJsonMap(),
             techContact.asBuilder().setAllowedToSetRegistryLockPassword(true).build().toJsonMap()));
 
     Map<String, Object> response =
@@ -329,7 +330,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
   void testPost_failure_setRegistryLockEmail() {
     addPasswordToContactTwo();
     Map<String, Object> reqJson = loadRegistrar(CLIENT_ID).toJsonMap();
-    String emailAddress = AppEngineExtension.makeRegistrarContact2().getEmailAddress();
+    String emailAddress = JpaTransactionManagerExtension.makeRegistrarContact2().getEmailAddress();
     RegistrarPoc newContactWithPassword =
         loadRegistrar(CLIENT_ID).getContacts().stream()
             .filter(rc -> rc.getEmailAddress().equals(emailAddress))
@@ -340,9 +341,9 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
     reqJson.put(
         "contacts",
         ImmutableList.of(
-            AppEngineExtension.makeRegistrarContact1().toJsonMap(),
+            JpaTransactionManagerExtension.makeRegistrarContact1().toJsonMap(),
             contactJson,
-            AppEngineExtension.makeRegistrarContact3().toJsonMap()));
+            JpaTransactionManagerExtension.makeRegistrarContact3().toJsonMap()));
 
     Map<String, Object> response =
         action.handleJsonRequest(ImmutableMap.of("op", "update", "id", CLIENT_ID, "args", reqJson));
@@ -390,7 +391,8 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
     Map<String, Object> reqJson = loadRegistrar(CLIENT_ID).toJsonMap();
     reqJson.put(
         "contacts",
-        ImmutableList.of(AppEngineExtension.makeRegistrarContact2().toJsonMap(), contactMap));
+        ImmutableList.of(
+            JpaTransactionManagerExtension.makeRegistrarContact2().toJsonMap(), contactMap));
 
     Map<String, Object> response =
         action.handleJsonRequest(ImmutableMap.of("op", "update", "id", CLIENT_ID, "args", reqJson));

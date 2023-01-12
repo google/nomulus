@@ -51,7 +51,8 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -68,8 +69,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ExpandRecurringBillingEventsActionTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private DateTime currentTestTime = DateTime.parse("1999-01-05T00:00:00Z");
   private final FakeClock clock = new FakeClock(currentTestTime);

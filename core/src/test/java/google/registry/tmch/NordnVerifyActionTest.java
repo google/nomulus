@@ -31,8 +31,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import google.registry.model.tld.Registry;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.HttpException.ConflictException;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeUrlConnectionService;
 import java.io.ByteArrayInputStream;
@@ -73,8 +74,8 @@ class NordnVerifyActionTest {
           + "bogpog,4611\n";
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final FakeResponse response = new FakeResponse();
   private final LordnRequestInitializer lordnRequestInitializer =

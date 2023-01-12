@@ -81,12 +81,16 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.TaskQueueExtension;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostUpdateFlow}. */
 class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
+
+  @RegisterExtension TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private void setEppHostUpdateInput(
       String oldHostName, String newHostName, String ipOrStatusToAdd, String ipOrStatusToRem) {

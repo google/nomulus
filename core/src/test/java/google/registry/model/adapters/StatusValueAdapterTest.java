@@ -28,17 +28,11 @@ import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.host.HostCommand;
 import google.registry.model.host.HostInfoData;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.EppLoader;
 import google.registry.xml.ValidationMode;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class StatusValueAdapterTest {
-
-  // Needed to create Hosts.
-  @RegisterExtension
-  public AppEngineExtension appEngine = new AppEngineExtension.Builder().withCloudSql().build();
 
   @Test
   void testMarshalling() throws Exception {

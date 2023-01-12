@@ -31,7 +31,6 @@ import com.google.api.services.dataflow.Dataflow.Projects.Locations.Jobs.Get;
 import com.google.api.services.dataflow.model.Job;
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.net.MediaType;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeResponse;
@@ -40,7 +39,6 @@ import java.io.IOException;
 import org.joda.time.YearMonth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PublishInvoicesAction}. */
 class PublishInvoicesActionTest {
@@ -56,9 +54,6 @@ class PublishInvoicesActionTest {
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
   private final CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
   private PublishInvoicesAction uploadAction;
-
-  @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
 
   @BeforeEach
   void beforeEach() throws IOException {

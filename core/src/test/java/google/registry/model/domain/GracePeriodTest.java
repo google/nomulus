@@ -24,7 +24,8 @@ import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -36,10 +37,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class GracePeriodTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withCloudSql() // Needed to be able to construct Keys.
-          .build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final DateTime now = DateTime.now(UTC);
   private BillingEvent.OneTime onetime;

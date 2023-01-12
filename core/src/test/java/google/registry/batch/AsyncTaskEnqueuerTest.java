@@ -24,7 +24,8 @@ import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableSortedSet;
 import google.registry.model.contact.Contact;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
@@ -47,8 +48,8 @@ import org.mockito.quality.Strictness;
 public class AsyncTaskEnqueuerTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private AsyncTaskEnqueuer asyncTaskEnqueuer;
   private final CapturingLogHandler logHandler = new CapturingLogHandler();

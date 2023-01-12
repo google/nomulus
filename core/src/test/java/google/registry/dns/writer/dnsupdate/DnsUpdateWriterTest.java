@@ -39,7 +39,8 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.util.ArrayList;
@@ -72,8 +73,8 @@ import org.xbill.DNS.Update;
 public class DnsUpdateWriterTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
+  public final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Mock private DnsMessageTransport mockResolver;
   @Captor private ArgumentCaptor<Update> updateCaptor;

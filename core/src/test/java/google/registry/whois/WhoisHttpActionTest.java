@@ -37,7 +37,8 @@ import static org.mockito.Mockito.when;
 import google.registry.model.contact.Contact;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Registry;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FullFieldsTestEntityHelper;
@@ -60,7 +61,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class WhoisHttpActionTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final FakeResponse response = new FakeResponse();
   private final FakeClock clock = new FakeClock(DateTime.parse("2009-06-29T20:13:00Z"));

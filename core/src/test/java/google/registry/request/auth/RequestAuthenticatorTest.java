@@ -26,11 +26,12 @@ import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.auth.RequestAuthenticator.AuthMethod;
 import google.registry.request.auth.RequestAuthenticator.AuthSettings;
 import google.registry.request.auth.RequestAuthenticator.UserPolicy;
 import google.registry.security.XsrfTokenManager;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeOAuthService;
 import google.registry.testing.FakeUserService;
@@ -44,7 +45,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class RequestAuthenticatorTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private static final AuthSettings AUTH_NONE =
       AuthSettings.create(

@@ -21,8 +21,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.RequestModule;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FullFieldsTestEntityHelper;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
@@ -38,7 +39,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 final class WhoisInjectionTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);

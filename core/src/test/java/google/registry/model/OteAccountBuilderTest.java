@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
-import static google.registry.testing.AppEngineExtension.makeRegistrar1;
+import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar1;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -33,7 +33,8 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldState;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.SystemClock;
 import org.joda.money.Money;
@@ -47,7 +48,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public final class OteAccountBuilderTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Test
   void testGetRegistrarToTldMap() {

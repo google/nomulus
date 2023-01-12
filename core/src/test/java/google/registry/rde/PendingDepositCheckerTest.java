@@ -32,7 +32,8 @@ import com.google.common.truth.Truth8;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Registry;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class PendingDepositCheckerTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final FakeClock clock = new FakeClock();
   private final PendingDepositChecker checker = new PendingDepositChecker();

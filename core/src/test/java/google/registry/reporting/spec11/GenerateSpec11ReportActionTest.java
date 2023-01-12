@@ -23,7 +23,6 @@ import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.net.MediaType;
 import google.registry.beam.BeamActionTestBase;
 import google.registry.reporting.ReportingModule;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
@@ -32,14 +31,9 @@ import java.io.IOException;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link GenerateSpec11ReportAction}. */
 class GenerateSpec11ReportActionTest extends BeamActionTestBase {
-
-  @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2018-06-11T12:23:56Z"));
   private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);

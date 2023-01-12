@@ -15,8 +15,8 @@
 package google.registry.testing;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar1;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
@@ -30,7 +30,7 @@ import javax.persistence.PersistenceException;
 import org.junit.jupiter.api.function.Executable;
 
 /** Static utils for setting up and retrieving test resources from the SQL database. */
-public class SqlHelper {
+public final class SqlHelper {
 
   public static RegistryLock saveRegistryLock(RegistryLock lock) {
     return tm().transact(() -> RegistryLockDao.save(lock));

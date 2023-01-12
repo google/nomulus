@@ -34,18 +34,13 @@ import google.registry.model.domain.superuser.DomainTransferRequestSuperuserExte
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.EppInput.CommandExtension;
-import google.registry.testing.AppEngineExtension;
 import google.registry.util.JdkLoggerConfig;
 import google.registry.util.TypeUtils;
 import java.util.logging.LogRecord;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ExtensionManager}. */
 class ExtensionManagerTest {
-
-  @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void testDuplicateExtensionsForbidden() {
@@ -245,7 +240,8 @@ class ExtensionManagerTest {
         @Override
         public ImmutableList<CommandExtension> getExtensions() {
           return suppliedExtensions;
-        }};
+        }
+      };
     }
   }
 }

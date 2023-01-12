@@ -38,8 +38,9 @@ import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
-import google.registry.testing.AppEngineExtension;
 import google.registry.util.JdkLoggerConfig;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -61,7 +62,8 @@ import org.mockito.quality.Strictness;
 class AuthenticatedRegistrarAccessorTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Mock private HttpServletRequest req;
   @Mock private HttpServletResponse rsp;

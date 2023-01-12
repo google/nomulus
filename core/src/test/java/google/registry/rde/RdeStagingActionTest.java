@@ -30,8 +30,9 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.beam.BeamActionTestBase;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.tld.Registry;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.HttpException.BadRequestException;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -50,8 +51,8 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   private final RdeStagingAction action = new RdeStagingAction();
 
   @RegisterExtension
-  public final AppEngineExtension extension =
-      AppEngineExtension.builder().withClock(clock).withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @BeforeEach
   @Override

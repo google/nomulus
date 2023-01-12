@@ -46,7 +46,8 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.tld.Registry;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
@@ -65,7 +66,8 @@ public class DomainPricingLogicTest {
   DomainPricingLogic domainPricingLogic;
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Inject Clock clock = new FakeClock(DateTime.now(UTC));
   @Mock EppInput eppInput;

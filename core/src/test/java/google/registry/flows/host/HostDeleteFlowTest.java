@@ -48,12 +48,16 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.TaskQueueExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostDeleteFlow}. */
 class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
+
+  @RegisterExtension TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   @BeforeEach
   void initFlowTest() {

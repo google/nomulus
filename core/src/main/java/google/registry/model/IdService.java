@@ -20,7 +20,7 @@ import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Allocates a {@link long} to use as a {@code @Id}, (part) of the primary SQL key for an entity.
+ * Allocates a {@code long} to use as a {@code @Id}, (part) of the primary SQL key for an entity.
  */
 public final class IdService {
 

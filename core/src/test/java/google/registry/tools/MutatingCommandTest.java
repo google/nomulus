@@ -32,7 +32,8 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.joda.time.DateTime;
@@ -44,7 +45,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class MutatingCommandTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private Registrar registrar1;
   private Registrar registrar2;

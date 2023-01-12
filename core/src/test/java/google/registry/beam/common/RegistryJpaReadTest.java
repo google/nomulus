@@ -14,7 +14,7 @@
 
 package google.registry.beam.common;
 
-import static google.registry.testing.AppEngineExtension.makeRegistrar1;
+import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.newRegistry;
@@ -42,7 +42,6 @@ import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.testing.PAssert;
@@ -60,7 +59,7 @@ public class RegistryJpaReadTest {
   private final FakeClock fakeClock = new FakeClock(START_TIME);
 
   @RegisterExtension
-  final transient JpaIntegrationTestExtension database =
+  final transient JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder()
           .withClock(fakeClock)
           .withoutCannedData()
@@ -74,7 +73,7 @@ public class RegistryJpaReadTest {
 
   @BeforeEach
   void beforeEach() {
-    Registrar ofyRegistrar = AppEngineExtension.makeRegistrar2();
+    Registrar ofyRegistrar = JpaIntegrationTestExtension.makeRegistrar2();
     insertInDb(ofyRegistrar);
 
     ImmutableList.Builder<Contact> builder = new ImmutableList.Builder<>();

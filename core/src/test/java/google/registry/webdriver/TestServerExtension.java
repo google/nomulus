@@ -23,38 +23,33 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.server.Fixture;
 import google.registry.server.Route;
 import google.registry.server.TestServer;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.UserInfo;
+import google.registry.testing.UserServiceExtension;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-/**
- * JUnit extension that sets up and tears down {@link TestServer}.
- *
- * <p><b>Warning:</b> App Engine testing environments are thread local. This extension will spawn
- * that testing environment in a separate thread from your unit tests. Therefore any modifications
- * you need to make to that testing environment (e.g. Datastore interactions) must be done through
- * the {@link #runInAppEngineEnvironment(Callable)} method.
- */
+/** JUnit extension that sets up and tears down {@link TestServer}. */
 public final class TestServerExtension implements BeforeEachCallback, AfterEachCallback {
 
   private static final Duration SERVER_STATUS_POLLING_INTERVAL = Duration.ofSeconds(5);
 
   private final ImmutableList<Fixture> fixtures;
-  private final AppEngineExtension appEngineExtension;
+  private final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+  private final UserServiceExtension userService;
   private final BlockingQueue<FutureTask<?>> jobs = new LinkedBlockingDeque<>();
   private final ImmutableMap<String, Path> runfiles;
   private final ImmutableList<Route> routes;
@@ -72,14 +67,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     this.fixtures = fixtures;
     // We create an GAE-Admin user, and then use AuthenticatedRegistrarAccessor.bypassAdminCheck to
     // choose whether the user is an admin or not.
-    this.appEngineExtension =
-        AppEngineExtension.builder()
-            .withCloudSql()
-            .withLocalModules()
-            .withUrlFetch()
-            .withTaskQueue()
-            .withUserService(UserInfo.createAdmin(email))
-            .build();
+    this.userService = new UserServiceExtension(UserInfo.createAdmin(email));
   }
 
   @Override
@@ -113,7 +101,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
   @Override
   public void afterEach(ExtensionContext context) {
     // Reset the global state AuthenticatedRegistrarAccessor.bypassAdminCheck
-    // to the default value so it doesn't interfere with other tests
+    // to the default value, so it doesn't interfere with other tests
     AuthenticatedRegistrarAccessor.bypassAdminCheck = false;
     serverThread.interrupt();
     try {
@@ -131,7 +119,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
    * Set the current user's Admin status.
    *
    * <p>This is sort of a hack because we can't actually change the user itself, nor that user's GAE
-   * roles. Instead we created a GAE-admin user in the constructor and we "bypass the admin check"
+   * roles. Instead, we created a GAE-admin user in the constructor and we "bypass the admin check"
    * if we want that user to not be an admin.
    *
    * <p>A better implementation would be to replace the AuthenticatedRegistrarAccessor - that way we
@@ -145,19 +133,6 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
   /** @see TestServer#getUrl(String) */
   public URL getUrl(String path) {
     return testServer.getUrl(path);
-  }
-
-  /**
-   * Runs arbitrary code inside server event loop thread.
-   *
-   * <p>You should use this method when you want to do things like change Datastore, because the App
-   * Engine testing environment is thread-local.
-   */
-  <T> T runInAppEngineEnvironment(Callable<T> callback) throws Throwable {
-    FutureTask<T> job = new FutureTask<>(callback);
-    jobs.add(job);
-    testServer.ping();
-    return job.get();
   }
 
   enum ServerStatus {
@@ -180,12 +155,14 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     public void run() {
       try {
         try {
-          appEngineExtension.beforeEach(context);
+          jpa.beforeEach(context);
+          userService.beforeEach(context);
           this.runInner();
         } catch (InterruptedException e) {
           // This is what we expect to happen.
         } finally {
-          appEngineExtension.afterEach(context);
+          userService.afterEach(context);
+          jpa.afterEach(context);
         }
       } catch (Throwable e) {
         serverStatus = ServerStatus.FAILED;
@@ -194,12 +171,6 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     }
 
     void runInner() throws Exception {
-      // Clear the SQL database and set it as primary (we have to do this out of band because the
-      // AppEngineExtension can't natively do it for us yet due to remaining ofy dependencies)
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);
-      // sleep a few millis to make sure we get to SQL-primary mode
-      Thread.sleep(4);
-      AppEngineExtension.loadInitialData();
       for (Fixture fixture : fixtures) {
         fixture.load();
       }
@@ -210,6 +181,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
         TestServerExtension.this.notify();
       }
       try {
+        //noinspection InfiniteLoopStatement
         while (true) {
           testServer.process();
           flushJobs();
@@ -256,14 +228,14 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
       return this;
     }
 
-    /** Sets an ordered list of Datastore fixtures that should be loaded on startup. */
+    /** Sets an ordered list of fixtures that should be loaded on startup. */
     public Builder setFixtures(Fixture... fixtures) {
       this.fixtures = ImmutableList.copyOf(fixtures);
       return this;
     }
 
     /**
-     * Sets information about the logged in user.
+     * Sets information about the logged-in user.
      *
      * <p>This unfortunately cannot be changed by test methods.
      */

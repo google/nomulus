@@ -20,7 +20,8 @@ import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.testing.TestLogHandler;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.JdkLoggerConfig;
 import java.io.StringReader;
@@ -33,7 +34,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class WhoisReaderTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final FakeClock clock = new FakeClock();
   private final TestLogHandler testLogHandler = new TestLogHandler();

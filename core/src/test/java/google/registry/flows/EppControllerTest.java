@@ -40,7 +40,8 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.eppoutput.Result;
 import google.registry.model.eppoutput.Result.Code;
 import google.registry.monitoring.whitebox.EppMetric;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.Clock;
 import google.registry.xml.ValidationMode;
@@ -67,7 +68,8 @@ import org.mockito.quality.Strictness;
 class EppControllerTest {
 
   @RegisterExtension
-  AppEngineExtension appEngineExtension = new AppEngineExtension.Builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Mock SessionMetadata sessionMetadata;
   @Mock TransportCredentials transportCredentials;

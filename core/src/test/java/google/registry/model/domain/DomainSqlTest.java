@@ -47,7 +47,8 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.SerializeUtils;
 import java.util.Arrays;
@@ -63,12 +64,8 @@ public class DomainSqlTest {
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .enableJpaEntityCoverageCheck(true)
-          .withClock(fakeClock)
-          .build();
+  final JpaIntegrationWithCoverageExtension jpa =
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   private Domain domain;
   private VKey<Contact> contactKey;

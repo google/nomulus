@@ -28,7 +28,8 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestCacheExtension;
 import java.math.BigDecimal;
@@ -50,12 +51,8 @@ public class PremiumListDaoTest {
   private final FakeClock fakeClock = new FakeClock();
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .enableJpaEntityCoverageCheck(true)
-          .withClock(fakeClock)
-          .build();
+  final JpaIntegrationWithCoverageExtension jpa =
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   // Set long persist times on caches so they can be tested (cache times default to 0 in tests).
   @RegisterExtension

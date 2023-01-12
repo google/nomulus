@@ -106,14 +106,18 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.TaskQueueExtension;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainUpdateFlow}. */
 class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain> {
+
+  @RegisterExtension final TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private static final DomainDsData SOME_DSDATA =
       DomainDsData.create(

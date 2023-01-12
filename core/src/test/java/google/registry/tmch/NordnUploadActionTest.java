@@ -49,11 +49,13 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.tld.Registry;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.FakeUrlConnectionService;
+import google.registry.testing.TaskQueueExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.Retrier;
 import google.registry.util.TaskQueueUtils;
@@ -90,8 +92,10 @@ class NordnUploadActionTest {
   private final FakeClock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12Z"));
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
+
+  @RegisterExtension final TaskQueueExtension taskQueueExtension = new TaskQueueExtension();
 
   private final LordnRequestInitializer lordnRequestInitializer =
       new LordnRequestInitializer(Optional.of("attack"));

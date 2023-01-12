@@ -16,12 +16,12 @@ package google.registry.testing;
 
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
+import google.registry.model.annotations.DeleteAfterMigration;
 import java.util.Set;
 import javax.annotation.Nullable;
 
-// TODO: Consider reconciling this with AppEngineExtension.withUserService()
-
 /** Fake implementation of {@link UserService} for testing. */
+@DeleteAfterMigration
 public class FakeUserService implements UserService {
 
   @Nullable private User user = null;

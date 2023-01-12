@@ -15,7 +15,7 @@
 package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.AppEngineExtension.makeRegistrar1;
+import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
@@ -36,7 +36,8 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.registrar.RegistrarPoc.Type;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.util.SelfSignedCaCertificate;
@@ -70,8 +71,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
   private static final String EXPIRATION_WARNING_EMAIL_SUBJECT_TEXT = "Expiration Warning Email";
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2021-05-24T20:21:22Z"));
   private final SendEmailService sendEmailService = mock(SendEmailService.class);

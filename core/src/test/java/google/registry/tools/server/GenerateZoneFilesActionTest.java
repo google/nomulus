@@ -36,7 +36,8 @@ import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.net.InetAddress;
@@ -51,8 +52,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class GenerateZoneFilesActionTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
+  public final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 

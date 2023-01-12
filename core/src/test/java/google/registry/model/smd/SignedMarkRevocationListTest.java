@@ -20,7 +20,8 @@ import static org.joda.time.Duration.standardDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class SignedMarkRevocationListTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2013-01-01T00:00:00Z"));
 

@@ -24,11 +24,12 @@ import static org.mockito.Mockito.mock;
 
 import com.google.appengine.api.users.User;
 import com.google.gson.JsonObject;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Actions;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.util.Idn;
@@ -43,7 +44,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   protected static final AuthResult AUTH_RESULT =
       AuthResult.create(

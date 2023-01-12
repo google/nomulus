@@ -65,7 +65,8 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
@@ -82,12 +83,8 @@ public class DomainTest {
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .enableJpaEntityCoverageCheck(true)
-          .withClock(fakeClock)
-          .build();
+  final JpaIntegrationWithCoverageExtension jpa =
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   private Domain domain;
   private VKey<BillingEvent.OneTime> oneTimeBillKey;

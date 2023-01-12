@@ -44,10 +44,12 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.SystemPropertyExtension;
+import google.registry.testing.TaskQueueExtension;
 import java.util.Optional;
 import java.util.Set;
 import org.joda.money.Money;
@@ -63,8 +65,10 @@ class DeleteProberDataActionTest {
   private static final DateTime DELETION_TIME = DateTime.parse("2010-01-01T00:00:00.000Z");
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+
+  @RegisterExtension TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   @RegisterExtension
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();

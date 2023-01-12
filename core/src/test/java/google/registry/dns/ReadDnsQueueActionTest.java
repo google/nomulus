@@ -32,7 +32,6 @@ import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.cloud.tasks.v2.Task;
-import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
@@ -42,10 +41,12 @@ import com.google.common.net.InternetDomainName;
 import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TaskQueueExtension;
 import google.registry.testing.TaskQueueHelper;
 import google.registry.testing.UriParameters;
 import java.nio.charset.StandardCharsets;
@@ -70,21 +71,10 @@ public class ReadDnsQueueActionTest {
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .withTaskQueue(
-              Joiner.on('\n')
-                  .join(
-                      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-                      "<queue-entries>",
-                      "  <queue>",
-                      "    <name>dns-pull</name>",
-                      "    <mode>pull</mode>",
-                      "  </queue>",
-                      "</queue-entries>"))
-          .withClock(clock)
-          .build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
+
+  @RegisterExtension final TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   @BeforeEach
   void beforeEach() {

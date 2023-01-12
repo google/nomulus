@@ -38,14 +38,14 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.host.Host;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.UserInfo;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
@@ -72,7 +72,7 @@ public class RelockDomainActionTest {
 
   private final FakeResponse response = new FakeResponse();
   private final FakeClock clock = new FakeClock(DateTime.parse("2015-05-18T12:34:56Z"));
-  private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
   private final DomainLockUtils domainLockUtils =
       new DomainLockUtils(
           new DeterministicStringGenerator(Alphabets.BASE_58),
@@ -80,12 +80,8 @@ public class RelockDomainActionTest {
           cloudTasksHelper.getTestCloudTasksUtils());
 
   @RegisterExtension
-  public final AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .withTaskQueue()
-          .withUserService(UserInfo.create(POC_ID))
-          .build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private Domain domain;
   private RegistryLock oldLock;

@@ -15,11 +15,11 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar2;
+import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrarContact2;
+import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrarContact3;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
-import static google.registry.testing.AppEngineExtension.makeRegistrar2;
-import static google.registry.testing.AppEngineExtension.makeRegistrarContact2;
-import static google.registry.testing.AppEngineExtension.makeRegistrarContact3;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -36,12 +36,13 @@ import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.UserRoles;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.RegistrarPoc;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import java.util.Map;
@@ -60,8 +61,8 @@ final class RegistryLockGetActionTest {
   private final FakeClock fakeClock = new FakeClock();
 
   @RegisterExtension
-  final AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder().withCloudSql().withClock(fakeClock).build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
 
   private final FakeResponse response = new FakeResponse();
 

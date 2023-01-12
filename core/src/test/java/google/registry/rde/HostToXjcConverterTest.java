@@ -25,7 +25,8 @@ import com.google.common.net.InetAddresses;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.xjc.host.XjcHostStatusType;
 import google.registry.xjc.host.XjcHostStatusValueType;
@@ -46,7 +47,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class HostToXjcConverterTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @BeforeEach
   void beforeEach() {
