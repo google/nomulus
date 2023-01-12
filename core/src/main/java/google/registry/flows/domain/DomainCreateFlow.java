@@ -274,18 +274,21 @@ public final class DomainCreateFlow implements TransactionalFlow {
             now,
             eppInput.getSingleExtension(AllocationTokenExtension.class));
     if (!allocationToken.isPresent() && !registry.getDefaultPromoTokens().isEmpty()) {
-      ImmutableList<AllocationToken> tokenList = DEFAULT_PROMO_TOKENS_CACHE.get(registry);
+      ImmutableList<Optional<AllocationToken>> tokenList = DEFAULT_PROMO_TOKENS_CACHE.get(registry);
       checkArgument(!isNullOrEmpty(tokenList), "Failed loading defaultPromoTokens from database");
       // Check if any of the tokens are valid for this domain registration
-      for (AllocationToken token : tokenList) {
+      for (Optional<AllocationToken> token : tokenList) {
+        if (!token.isPresent()) {
+          continue;
+        }
         try {
           AllocationTokenFlowUtils.validateToken(
-              InternetDomainName.from(command.getDomainName()), token, registrarId, now);
+              InternetDomainName.from(command.getDomainName()), token.get(), registrarId, now);
         } catch (AssociationProhibitsOperationException e) {
           continue;
         }
         // Only use the first valid token in the list
-        allocationToken = Optional.of(token);
+        allocationToken = token;
         break;
       }
     }
