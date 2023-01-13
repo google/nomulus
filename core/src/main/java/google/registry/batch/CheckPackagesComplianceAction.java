@@ -87,9 +87,9 @@ public class CheckPackagesComplianceAction implements Runnable {
 
   private void checkPackages() {
     ImmutableList<PackagePromotion> packages = tm().loadAllOf(PackagePromotion.class);
-    ImmutableList.Builder<PackagePromotion> packagesOverCreateLimitBuilder =
-        new ImmutableList.Builder<>();
-    ImmutableMap.Builder<PackagePromotion, Integer> packagesOverActiveDomainsLimitBuilder =
+    ImmutableMap.Builder<PackagePromotion, Long> packagesOverCreateLimitBuilder =
+        new ImmutableMap.Builder<>();
+    ImmutableMap.Builder<PackagePromotion, Long> packagesOverActiveDomainsLimitBuilder =
         new ImmutableMap.Builder<>();
     for (PackagePromotion packagePromo : packages) {
       Long creates =
@@ -102,12 +102,12 @@ public class CheckPackagesComplianceAction implements Runnable {
                   .setParameter("lastBilling", packagePromo.getNextBillingDate().minusYears(1))
                   .getSingleResult();
       if (creates > packagePromo.getMaxCreates()) {
-        int overage = Ints.saturatedCast(creates) - packagePromo.getMaxCreates();
+        long overage = creates - packagePromo.getMaxCreates();
         logger.atInfo().log(
             "Package with package token %s has exceeded their max domain creation limit"
                 + " by %d name(s).",
             packagePromo.getToken().getKey(), overage);
-        packagesOverCreateLimitBuilder.add(packagePromo);
+        packagesOverCreateLimitBuilder.put(packagePromo, creates);
       }
 
       Long activeDomains =
@@ -124,20 +124,20 @@ public class CheckPackagesComplianceAction implements Runnable {
             "Package with package token %s has exceed their max active domains limit by"
                 + " %d name(s).",
             packagePromo.getToken().getKey(), overage);
-        packagesOverActiveDomainsLimitBuilder.put(packagePromo, Ints.saturatedCast(creates));
+        packagesOverActiveDomainsLimitBuilder.put(packagePromo, activeDomains);
       }
     }
     handlePackageCreationOverage(packagesOverCreateLimitBuilder.build());
     handleActiveDomainOverage(packagesOverActiveDomainsLimitBuilder.build());
   }
 
-  private void handlePackageCreationOverage(ImmutableList<PackagePromotion> overageList) {
+  private void handlePackageCreationOverage(ImmutableMap<PackagePromotion, Long> overageList) {
     if (overageList.isEmpty()) {
       logger.atInfo().log("Found no packages over their create limit.");
       return;
     }
     logger.atInfo().log("Found %d packages over their create limit.", overageList.size());
-    for (PackagePromotion packagePromotion : overageList) {
+    for (PackagePromotion packagePromotion : overageList.keySet()) {
       AllocationToken packageToken = tm().loadByKey(packagePromotion.getToken());
       Optional<Registrar> registrar =
           Registrar.loadByRegistrarIdCached(
@@ -149,7 +149,8 @@ public class CheckPackagesComplianceAction implements Runnable {
                 packagePromotion.getId(),
                 packageToken.getToken(),
                 registrar.get().getRegistrarName(),
-                packagePromotion.getMaxCreates());
+                packagePromotion.getMaxCreates(),
+                overageList.get(packagePromotion));
         sendNotification(packageToken, packageCreateLimitEmailSubject, body, registrar.get());
       } else {
         throw new IllegalStateException(
@@ -158,7 +159,7 @@ public class CheckPackagesComplianceAction implements Runnable {
     }
   }
 
-  private void handleActiveDomainOverage(ImmutableMap<PackagePromotion, Integer> overageList) {
+  private void handleActiveDomainOverage(ImmutableMap<PackagePromotion, Long> overageList) {
     if (overageList.isEmpty()) {
       logger.atInfo().log("Found no packages over their active domains limit.");
       return;
@@ -187,7 +188,7 @@ public class CheckPackagesComplianceAction implements Runnable {
   }
 
   private void sendActiveDomainOverageEmail(
-      boolean warning, PackagePromotion packagePromotion, int activeDomains) {
+      boolean warning, PackagePromotion packagePromotion, long activeDomains) {
     String emailSubject =
         warning ? packageDomainLimitWarningEmailSubject : packageDomainLimitUpgradeEmailSubject;
     String emailTemplate =

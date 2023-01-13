@@ -551,6 +551,7 @@ packageMonitoring:
     Package Token: %2$s
     Registrar: %3$s
     Current Max Create Limit: %4$s
+    Creates Completed: %5$s
 
   # Email subject text to notify support that a package has exceeded the limit
   # for current active domains and a warning needs to be sent
