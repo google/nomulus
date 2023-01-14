@@ -107,7 +107,7 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_dr/task/expandRecurringBillingEvents]]></url>
+    <url><![CDATA[/_dr/task/expandRecurringBillingEvents?advanceCursor]]></url>
     <description>
       This job runs an action that creates synthetic OneTime billing events from Recurring billing
       events. Events are created for all instances of Recurring billing events that should exist

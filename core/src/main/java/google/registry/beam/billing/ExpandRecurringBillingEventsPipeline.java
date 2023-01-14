@@ -148,7 +148,7 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
     endTime = DateTime.parse(options.getEndTime());
     checkArgument(
         !endTime.isAfter(clock.nowUtc()),
-        String.format("End time %s must be on or before now.", endTime));
+        String.format("End time %s must be at or before now.", endTime));
     checkArgument(
         startTime.isBefore(endTime),
         String.format("[%s, %s) is not a valid window of operation.", startTime, endTime));
