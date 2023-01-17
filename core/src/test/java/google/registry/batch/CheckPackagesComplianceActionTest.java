@@ -60,11 +60,12 @@ public class CheckPackagesComplianceActionTest {
   private static final String CREATE_LIMIT_EMAIL_SUBJECT = "create limit subject";
   private static final String DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT = "domain limit warning subject";
   private static final String DOMAIN_LIMIT_UPGRADE_EMAIL_SUBJECT = "domain limit upgrade subject";
-  private static final String CREATE_LIMIT_EMAIL_BODY = "create limit body %1$s %2$s %3$s";
+  private static final String CREATE_LIMIT_EMAIL_BODY =
+      "create limit body %1$s %2$s %3$s %4$s %5$s";
   private static final String DOMAIN_LIMIT_WARNING_EMAIL_BODY =
-      "domain limit warning body %1$s %2$s %3$s";
+      "domain limit warning body %1$s %2$s %3$s %4$s %5$s";
   private static final String DOMAIN_LIMIT_UPGRADE_EMAIL_BODY =
-      "domain limit upgrade body %1$s %2$s %3$s";
+      "domain limit upgrade body %1$s %2$s %3$s %4$s %5$s";
   private static final String SUPPORT_EMAIL = "registry@test.com";
 
   @RegisterExtension
@@ -177,8 +178,7 @@ public class CheckPackagesComplianceActionTest {
     EmailMessage emailMessage = emailCaptor.getValue();
     assertThat(emailMessage.subject()).isEqualTo(CREATE_LIMIT_EMAIL_SUBJECT);
     assertThat(emailMessage.body())
-        .isEqualTo(
-            String.format(CREATE_LIMIT_EMAIL_BODY, "The Registrar", "abc123", SUPPORT_EMAIL));
+        .isEqualTo(String.format(CREATE_LIMIT_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
   }
 
   @Test
@@ -364,8 +364,7 @@ public class CheckPackagesComplianceActionTest {
     assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT);
     assertThat(emailMessage.body())
         .isEqualTo(
-            String.format(
-                DOMAIN_LIMIT_WARNING_EMAIL_BODY, "The Registrar", "abc123", SUPPORT_EMAIL));
+            String.format(DOMAIN_LIMIT_WARNING_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
     PackagePromotion packageAfterCheck =
         tm().transact(() -> PackagePromotion.loadByTokenString(token.getToken()).get());
     assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.nowUtc());
@@ -514,8 +513,7 @@ public class CheckPackagesComplianceActionTest {
     assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT);
     assertThat(emailMessage.body())
         .isEqualTo(
-            String.format(
-                DOMAIN_LIMIT_WARNING_EMAIL_BODY, "The Registrar", "abc123", SUPPORT_EMAIL));
+            String.format(DOMAIN_LIMIT_WARNING_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
     PackagePromotion packageAfterCheck =
         tm().transact(() -> PackagePromotion.loadByTokenString(token.getToken()).get());
     assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.nowUtc());
@@ -558,8 +556,7 @@ public class CheckPackagesComplianceActionTest {
     assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_UPGRADE_EMAIL_SUBJECT);
     assertThat(emailMessage.body())
         .isEqualTo(
-            String.format(
-                DOMAIN_LIMIT_UPGRADE_EMAIL_BODY, "The Registrar", "abc123", SUPPORT_EMAIL));
+            String.format(DOMAIN_LIMIT_UPGRADE_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
     PackagePromotion packageAfterCheck =
         tm().transact(() -> PackagePromotion.loadByTokenString(token.getToken()).get());
     assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.nowUtc());
