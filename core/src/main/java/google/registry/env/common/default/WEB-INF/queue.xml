@@ -65,7 +65,6 @@
   </queue>
 
   <!-- Queue for tasks that communicate with TMCH MarksDB webserver. -->
-  <!-- TODO(b/17623181): Delete this once the queue implementation is live and working. -->
   <queue>
     <name>marksdb</name>
     <rate>1/m</rate>
