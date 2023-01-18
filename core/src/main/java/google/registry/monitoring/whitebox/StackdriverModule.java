@@ -16,7 +16,6 @@ package google.registry.monitoring.whitebox;
 
 import com.google.api.services.monitoring.v3.Monitoring;
 import com.google.api.services.monitoring.v3.model.MonitoredResource;
-import com.google.appengine.api.modules.ModulesService;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.monitoring.metrics.MetricReporter;
@@ -34,8 +33,9 @@ import org.joda.time.Duration;
 public final class StackdriverModule {
 
   // We need a fake GCE zone to appease Stackdriver's resource model.
-  // TODO(b/31021585): Revisit this if/when gae_instance exists.
+  // TODO(b/265973059): Switch to resource type "gke_container".
   private static final String SPOOFED_GCE_ZONE = "us-central1-f";
+  private static final String SPOOFED_GCE_INSTANCE = "fake-instance";
 
   @Provides
   static Monitoring provideMonitoring(
@@ -53,7 +53,6 @@ public final class StackdriverModule {
   static MetricWriter provideMetricWriter(
       Monitoring monitoringClient,
       @Config("projectId") String projectId,
-      ModulesService modulesService,
       @Config("stackdriverMaxQps") int maxQps,
       @Config("stackdriverMaxPointsPerRequest") int maxPointsPerRequest) {
     // The MonitoredResource for GAE apps is not writable (and missing fields anyway) so we just
@@ -66,16 +65,7 @@ public final class StackdriverModule {
             .setLabels(
                 ImmutableMap.of(
                     // The "zone" field MUST be a valid GCE zone, so we fake one.
-                    "zone",
-                    SPOOFED_GCE_ZONE,
-                    // Overload the GCE "instance_id" field with the GAE module name, version and
-                    // instance_id.
-                    "instance_id",
-                    modulesService.getCurrentModule()
-                        + ":"
-                        + modulesService.getCurrentVersion()
-                        + ":"
-                        + modulesService.getCurrentInstanceId())),
+                    "zone", SPOOFED_GCE_ZONE, "instance_id", SPOOFED_GCE_INSTANCE)),
         maxQps,
         maxPointsPerRequest);
   }
