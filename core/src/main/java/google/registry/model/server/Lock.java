@@ -25,8 +25,6 @@ import com.google.common.base.Strings;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
-import google.registry.util.RequestStatusChecker;
-import google.registry.util.RequestStatusCheckerImpl;
 import java.io.Serializable;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -70,25 +68,13 @@ public class Lock extends ImmutableObject implements Serializable {
   enum LockState {
     IN_USE,
     FREE,
-    TIMED_OUT,
-    OWNER_DIED
+    TIMED_OUT
   }
 
   @VisibleForTesting static LockMetrics lockMetrics = new LockMetrics();
 
   /** The name of the locked resource. */
   @Transient @Id String lockId;
-
-  /**
-   * Unique log ID of the request that owns this lock.
-   *
-   * <p>When that request is no longer running (is finished), the lock can be considered implicitly
-   * released.
-   *
-   * <p>See {@link RequestStatusCheckerImpl#getLogId} for details about how it's created in
-   * practice.
-   */
-  @Column String requestLogId;
 
   /** When the lock can be considered implicitly released. */
   @Column(nullable = false)
@@ -124,7 +110,6 @@ public class Lock extends ImmutableObject implements Serializable {
   private static Lock create(
       String resourceName,
       String scope,
-      String requestLogId,
       DateTime acquiredTime,
       Duration leaseLength) {
     checkArgument(!Strings.isNullOrEmpty(resourceName), "resourceName cannot be null or empty");
@@ -132,7 +117,6 @@ public class Lock extends ImmutableObject implements Serializable {
     // Add the scope to the Lock's id so that it is unique for locks acquiring the same resource
     // across different TLDs.
     instance.lockId = makeLockId(resourceName, scope);
-    instance.requestLogId = requestLogId;
     instance.expirationTime = acquiredTime.plus(leaseLength);
     instance.acquiredTime = acquiredTime;
     instance.resourceName = resourceName;
@@ -172,18 +156,13 @@ public class Lock extends ImmutableObject implements Serializable {
       switch (acquireResult.lockState()) {
         case IN_USE:
           logger.atInfo().log(
-              "Existing lock by request %s is still valid now %s (until %s) lock: %s",
-              lock.requestLogId, now, lock.expirationTime, lock.lockId);
+              "Existing lock by request is still valid now %s (until %s) lock: %s",
+              now, lock.expirationTime, lock.lockId);
           break;
         case TIMED_OUT:
           logger.atInfo().log(
-              "Existing lock by request %s is timed out now %s (was valid until %s) lock: %s",
-              lock.requestLogId, now, lock.expirationTime, lock.lockId);
-          break;
-        case OWNER_DIED:
-          logger.atInfo().log(
-              "Existing lock is valid now %s (until %s), but owner (%s) isn't running lock: %s",
-              now, lock.expirationTime, lock.requestLogId, lock.lockId);
+              "Existing lock by request is timed out now %s (was valid until %s) lock: %s",
+              now, lock.expirationTime, lock.lockId);
           break;
         case FREE:
           // There was no existing lock
@@ -203,11 +182,7 @@ public class Lock extends ImmutableObject implements Serializable {
 
   /** Try to acquire a lock. Returns absent if it can't be acquired. */
   public static Optional<Lock> acquire(
-      String resourceName,
-      @Nullable String tld,
-      Duration leaseLength,
-      RequestStatusChecker requestStatusChecker,
-      boolean checkThreadRunning) {
+      String resourceName, @Nullable String tld, Duration leaseLength) {
     String scope = tld != null ? tld : GLOBAL;
     Supplier<AcquireResult> lockAcquirer =
         () -> {
@@ -219,22 +194,19 @@ public class Lock extends ImmutableObject implements Serializable {
                   .orElse(null);
           if (lock != null) {
             logger.atInfo().log(
-                "Loaded existing lock: %s for request: %s", lock.lockId, lock.requestLogId);
+                "Loaded existing lock: %s for resource: %s", lock.lockId, lock.resourceName);
           }
           LockState lockState;
           if (lock == null) {
             lockState = LockState.FREE;
           } else if (isAtOrAfter(now, lock.expirationTime)) {
             lockState = LockState.TIMED_OUT;
-          } else if (checkThreadRunning && !requestStatusChecker.isRunning(lock.requestLogId)) {
-            lockState = LockState.OWNER_DIED;
           } else {
             lockState = LockState.IN_USE;
             return AcquireResult.create(now, lock, null, lockState);
           }
 
-          Lock newLock =
-              create(resourceName, scope, requestStatusChecker.getLogId(), now, leaseLength);
+          Lock newLock = create(resourceName, scope, now, leaseLength);
           tm().put(newLock);
 
           return AcquireResult.create(now, lock, newLock, lockState);
