@@ -14,12 +14,13 @@
 
 package google.registry.util;
 
-import static com.google.appengine.api.ThreadManager.currentRequestThreadFactory;
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import com.google.common.util.concurrent.TimeLimiter;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,7 +47,9 @@ public class AppEngineTimeLimiter {
 
     @Override
     public void execute(Runnable command) {
-      currentRequestThreadFactory().newThread(command).start();
+      ExecutorService executor = Executors.newSingleThreadExecutor();
+      executor.execute(command);
+      executor.shutdown();
     }
 
     @Override
