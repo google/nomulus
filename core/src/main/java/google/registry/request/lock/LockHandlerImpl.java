@@ -26,7 +26,6 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import google.registry.model.server.Lock;
 import google.registry.util.AppEngineTimeLimiter;
 import google.registry.util.Clock;
-import google.registry.util.RequestStatusChecker;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -48,12 +47,10 @@ public class LockHandlerImpl implements LockHandler {
   /** Fudge factor to make sure we kill threads before a lock actually expires. */
   private static final Duration LOCK_TIMEOUT_FUDGE = Duration.standardSeconds(5);
 
-  private final RequestStatusChecker requestStatusChecker;
   private final Clock clock;
 
   @Inject
-  public LockHandlerImpl(RequestStatusChecker requestStatusChecker, Clock clock) {
-    this.requestStatusChecker = requestStatusChecker;
+  public LockHandlerImpl(Clock clock) {
     this.clock = clock;
   }
 
@@ -114,7 +111,7 @@ public class LockHandlerImpl implements LockHandler {
   /** Allows injection of mock Lock in tests. */
   @VisibleForTesting
   Optional<Lock> acquire(String lockName, @Nullable String tld, Duration leaseLength) {
-    return Lock.acquire(lockName, tld, leaseLength, requestStatusChecker, true);
+    return Lock.acquire(lockName, tld, leaseLength);
   }
 
   private interface LockAcquirer {

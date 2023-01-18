@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import google.registry.model.server.Lock;
 import google.registry.testing.FakeClock;
 import google.registry.testing.UserServiceExtension;
-import google.registry.util.RequestStatusCheckerImpl;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
@@ -134,7 +133,7 @@ final class LockHandlerImplTest {
   }
 
   private LockHandler createTestLockHandler(@Nullable Lock acquiredLock) {
-    return new LockHandlerImpl(new RequestStatusCheckerImpl(), clock) {
+    return new LockHandlerImpl(clock) {
       private static final long serialVersionUID = 0L;
 
       @Override
