@@ -674,8 +674,7 @@ CREATE TABLE public."Lock" (
     resource_name text NOT NULL,
     scope text NOT NULL,
     acquired_time timestamp with time zone NOT NULL,
-    expiration_time timestamp with time zone NOT NULL,
-    request_log_id text
+    expiration_time timestamp with time zone NOT NULL
 );
 
 
