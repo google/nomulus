@@ -22,7 +22,8 @@ import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
 import com.google.apphosting.api.ApiProxy;
 import google.registry.model.annotations.DeleteAfterMigration;
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -39,26 +40,22 @@ public final class TaskQueueExtension implements BeforeEachCallback, AfterEachCa
       readResourceUtf8("google/registry/env/common/default/WEB-INF/queue.xml");
 
   private LocalServiceTestHelper helper;
-  private String taskQueueXml;
-  private File tmpDir;
-
-  public TaskQueueExtension() {
-    this.taskQueueXml = QUEUE_XML;
-  }
+  private Path queueFile;
 
   @Override
   public void beforeEach(ExtensionContext context) throws Exception {
-    File queueFile = new File(tmpDir, "queue.xml");
-    asCharSink(queueFile, UTF_8).write(taskQueueXml);
+    queueFile = Files.createTempFile("queue", ".xml");
+    asCharSink(queueFile.toFile(), UTF_8).write(QUEUE_XML);
     helper =
         new LocalServiceTestHelper(
-            new LocalTaskQueueTestConfig().setQueueXmlPath(queueFile.getAbsolutePath()));
+            new LocalTaskQueueTestConfig().setQueueXmlPath(queueFile.toAbsolutePath().toString()));
     helper.setUp();
   }
 
   @Override
   public void afterEach(ExtensionContext context) throws Exception {
     helper.tearDown();
+    Files.delete(queueFile);
     ApiProxy.setEnvironmentForCurrentThread(null);
   }
 }
