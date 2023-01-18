@@ -18,17 +18,14 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.server.Lock.LockState.FREE;
 import static google.registry.model.server.Lock.LockState.IN_USE;
-import static google.registry.model.server.Lock.LockState.OWNER_DIED;
 import static google.registry.model.server.Lock.LockState.TIMED_OUT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import google.registry.model.EntityTestCase;
 import google.registry.model.server.Lock.LockState;
-import google.registry.util.RequestStatusChecker;
 import java.util.Optional;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
@@ -41,7 +38,6 @@ public class LockTest extends EntityTestCase {
   private static final String RESOURCE_NAME = "foo";
   private static final Duration ONE_DAY = Duration.standardDays(1);
   private static final Duration TWO_MILLIS = Duration.millis(2);
-  private static final RequestStatusChecker requestStatusChecker = mock(RequestStatusChecker.class);
 
   private LockMetrics origLockMetrics;
 
@@ -52,7 +48,7 @@ public class LockTest extends EntityTestCase {
   private static Optional<Lock> acquire(
       String tld, Duration leaseLength, LockState expectedLockState) {
     Lock.lockMetrics = mock(LockMetrics.class);
-    Optional<Lock> lock = Lock.acquire(RESOURCE_NAME, tld, leaseLength, requestStatusChecker, true);
+    Optional<Lock> lock = Lock.acquire(RESOURCE_NAME, tld, leaseLength);
     verify(Lock.lockMetrics).recordAcquire(RESOURCE_NAME, tld, expectedLockState);
     verifyNoMoreInteractions(Lock.lockMetrics);
     Lock.lockMetrics = null;
@@ -72,8 +68,6 @@ public class LockTest extends EntityTestCase {
   void beforeEach() {
     origLockMetrics = Lock.lockMetrics;
     Lock.lockMetrics = null;
-    when(requestStatusChecker.getLogId()).thenReturn("current-request-id");
-    when(requestStatusChecker.isRunning("current-request-id")).thenReturn(true);
   }
 
   @AfterEach
@@ -111,9 +105,6 @@ public class LockTest extends EntityTestCase {
     assertThat(acquire("", ONE_DAY, FREE)).isPresent();
     // We can't get it again while request is active
     assertThat(acquire("", ONE_DAY, IN_USE)).isEmpty();
-    // But if request is finished, we can get it.
-    when(requestStatusChecker.isRunning("current-request-id")).thenReturn(false);
-    assertThat(acquire("", ONE_DAY, OWNER_DIED)).isPresent();
   }
 
   @Test
@@ -134,9 +125,7 @@ public class LockTest extends EntityTestCase {
   @Test
   void testFailure_emptyResourceName() {
     IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> Lock.acquire("", "", TWO_MILLIS, requestStatusChecker, true));
+        assertThrows(IllegalArgumentException.class, () -> Lock.acquire("", "", TWO_MILLIS));
     assertThat(thrown).hasMessageThat().contains("resourceName cannot be null or empty");
   }
 }
