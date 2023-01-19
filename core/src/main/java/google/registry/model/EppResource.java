@@ -32,6 +32,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryConfig;
+import google.registry.dns.RefreshDnsAction;
 import google.registry.model.annotations.IdAllocation;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.transfer.TransferData;
@@ -41,6 +42,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
@@ -134,6 +136,23 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   /** Status values associated with this resource. */
   Set<StatusValue> statuses;
 
+  /**
+   * When this domain/host's DNS was requested to be refreshed, or null if its DNS is up-to-date.
+   *
+   * <p>This will almost always be null except in the couple of minutes' interval between when a
+   * DNS-affecting create or update operation takes place and when the {@link RefreshDnsAction}
+   * runs, which resets this back to null upon completion of the DNS refresh task. This is a {@link
+   * DateTime} rather than a simple dirty boolean so that the DNS refresh action can order by the
+   * DNS refresh request time and take action on the oldest ones first.
+   *
+   * <p>Note that in the {@code DomainHistory}/{@code HostHistory} table this value means something
+   * slightly different: It means that the given domain/host action requested a DNS update. Unlike
+   * on the {@code Domain}/{code Host} table, this value is not then subsequently nulled out once
+   * the DNS refresh is complete; rather, it remains as a permanent record of which actions were
+   * DNS-affecting and which were not.
+   */
+  @Transient @Nullable protected DateTime dnsRefreshRequestTime;
+
   public String getRepoId() {
     return repoId;
   }
@@ -183,6 +202,19 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
 
   public DateTime getDeletionTime() {
     return deletionTime;
+  }
+
+  /**
+   * Returns the DNS refresh request time iff this domain/host's DNS needs refreshing, otherwise
+   * absent.
+   */
+  public Optional<DateTime> getDnsRefreshRequestTime() {
+    return Optional.ofNullable(dnsRefreshRequestTime);
+  }
+
+  @SuppressWarnings("unused")
+  private void setInternalDnsRefreshRequestTime(DateTime time) {
+    dnsRefreshRequestTime = time;
   }
 
   /** Return a clone of the resource with timed status values modified using the given time. */
@@ -335,6 +367,11 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
      */
     public B setUpdateTimestamp(UpdateAutoTimestamp updateTimestamp) {
       getInstance().setUpdateTimestamp(updateTimestamp);
+      return thisCastToDerived();
+    }
+
+    public B setDnsRefreshRequestTime(Optional<DateTime> dnsRefreshRequestTime) {
+      getInstance().dnsRefreshRequestTime = dnsRefreshRequestTime.orElse(null);
       return thisCastToDerived();
     }
 

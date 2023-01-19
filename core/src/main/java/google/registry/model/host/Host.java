@@ -28,7 +28,7 @@ import javax.persistence.Table;
 /**
  * A persistable Host resource including mutable and non-mutable fields.
  *
- * <p>The {@link javax.persistence.Id} of the Host is the repoId.
+ * <p>The {@link Id} of the Host is the repoId.
  */
 @Entity(name = "Host")
 @Table(
@@ -48,7 +48,8 @@ import javax.persistence.Table;
       @Index(columnList = "hostName"),
       @Index(columnList = "creationTime"),
       @Index(columnList = "deletionTime"),
-      @Index(columnList = "currentSponsorRegistrarId")
+      @Index(columnList = "currentSponsorRegistrarId"),
+      @Index(columnList = "dnsRefreshRequestTime")
     })
 @ExternalMessagingName("host")
 @WithVKey(String.class)
@@ -81,7 +82,7 @@ public class Host extends HostBase implements ForeignKeyedEppResource {
     }
 
     public Builder copyFrom(HostBase hostBase) {
-      return this.setCreationRegistrarId(hostBase.getCreationRegistrarId())
+      return setCreationRegistrarId(hostBase.getCreationRegistrarId())
           .setCreationTime(hostBase.getCreationTime())
           .setDeletionTime(hostBase.getDeletionTime())
           .setHostName(hostBase.getHostName())
@@ -93,6 +94,7 @@ public class Host extends HostBase implements ForeignKeyedEppResource {
           .setPersistedCurrentSponsorRegistrarId(hostBase.getPersistedCurrentSponsorRegistrarId())
           .setRepoId(hostBase.getRepoId())
           .setSuperordinateDomain(hostBase.getSuperordinateDomain())
+          .setDnsRefreshRequestTime(hostBase.getDnsRefreshRequestTime())
           .setStatusValues(hostBase.getStatusValues());
     }
   }
