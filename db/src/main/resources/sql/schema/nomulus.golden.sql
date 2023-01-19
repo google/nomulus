@@ -396,7 +396,8 @@ CREATE TABLE public."Domain" (
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
     dns_refresh_request_time timestamp with time zone,
-    current_package_token text
+    current_package_token text,
+    lordn_phase text DEFAULT 'NONE'::text NOT NULL
 );
 
 
@@ -485,7 +486,8 @@ CREATE TABLE public."DomainHistory" (
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
     dns_refresh_request_time timestamp with time zone,
-    current_package_token text
+    current_package_token text,
+    lordn_phase text DEFAULT 'NONE'::text NOT NULL
 );
 
 
@@ -595,7 +597,8 @@ CREATE TABLE public."Host" (
     superordinate_domain text,
     inet_addresses text[],
     update_timestamp timestamp with time zone,
-    transfer_poll_message_id_3 bigint
+    transfer_poll_message_id_3 bigint,
+    dns_refresh_request_time timestamp with time zone
 );
 
 
@@ -628,7 +631,8 @@ CREATE TABLE public."HostHistory" (
     statuses text[],
     host_repo_id text NOT NULL,
     update_timestamp timestamp with time zone,
-    transfer_poll_message_id_3 bigint
+    transfer_poll_message_id_3 bigint,
+    dns_refresh_request_time timestamp with time zone
 );
 
 
@@ -1661,6 +1665,13 @@ CREATE INDEX idx73l103vc5900ig3p4odf0cngt ON public."BillingEvent" USING btree (
 
 
 --
+-- Name: idx7wg0yn3wdux3xsc4pfaljqf08; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx7wg0yn3wdux3xsc4pfaljqf08 ON public."Host" USING btree (dns_refresh_request_time) WHERE (dns_refresh_request_time IS NOT NULL);
+
+
+--
 -- Name: idx8nr0ke9mrrx4ewj6pd2ag4rmr; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1896,6 +1907,13 @@ CREATE INDEX idxn898pb9mwcg359cdwvolb11ck ON public."BillingRecurrence" USING bt
 --
 
 CREATE INDEX idxnb02m43jcx24r64n8rbg22u4q ON public."Domain" USING btree (admin_contact);
+
+
+--
+-- Name: idxnjhib7v6fj7dhj5qydkefkl2u; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxnjhib7v6fj7dhj5qydkefkl2u ON public."Domain" USING btree (lordn_phase) WHERE (lordn_phase <> 'NONE'::text);
 
 
 --
