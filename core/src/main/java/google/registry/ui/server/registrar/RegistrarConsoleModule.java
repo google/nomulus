@@ -156,4 +156,10 @@ public final class RegistrarConsoleModule {
   static Boolean provideIsLock(HttpServletRequest req) {
     return extractBooleanParameter(req, "isLock");
   }
+
+  @Provides
+  @Parameter("domain")
+  static String provideDomain(HttpServletRequest req) {
+    return extractRequiredParameter(req, "domain");
+  }
 }

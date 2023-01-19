@@ -31,6 +31,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.gson.annotations.Expose;
 import google.registry.config.RegistryConfig;
 import google.registry.dns.RefreshDnsAction;
 import google.registry.model.eppcommon.StatusValue;
@@ -67,7 +68,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    *
    * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 5730</a>
    */
-  @Transient String repoId;
+  @Expose @Transient String repoId;
 
   /**
    * The ID of the registrar that is currently sponsoring this resource.
@@ -75,7 +76,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
    * resource fields.
    */
-  String currentSponsorRegistrarId;
+  @Expose String currentSponsorRegistrarId;
 
   /**
    * The ID of the registrar that created this resource.
@@ -83,7 +84,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
    * resource fields.
    */
-  String creationRegistrarId;
+  @Expose String creationRegistrarId;
 
   /**
    * The ID of the registrar that last updated this resource.
@@ -92,7 +93,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * edits; it only includes EPP-visible modifications such as {@literal <update>}. Can be null if
    * the resource has never been modified.
    */
-  String lastEppUpdateRegistrarId;
+  @Expose String lastEppUpdateRegistrarId;
 
   /**
    * The time when this resource was created.
@@ -106,6 +107,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    */
   // Need to override the default non-null column attribute.
   @AttributeOverride(name = "creationTime", column = @Column)
+  @Expose
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /**
@@ -130,10 +132,10 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * edits; it only includes EPP-visible modifications such as {@literal <update>}. Can be null if
    * the resource has never been modified.
    */
-  DateTime lastEppUpdateTime;
+  @Expose DateTime lastEppUpdateTime;
 
   /** Status values associated with this resource. */
-  Set<StatusValue> statuses;
+  @Expose Set<StatusValue> statuses;
 
   /**
    * When this domain/host's DNS was requested to be refreshed, or null if its DNS is up-to-date.
