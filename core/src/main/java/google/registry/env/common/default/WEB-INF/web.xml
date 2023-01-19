@@ -94,6 +94,12 @@
     <url-pattern>/registry-lock-verify</url-pattern>
   </servlet-mapping>
 
+  <!-- Registrar console endpoints -->
+  <servlet-mapping>
+    <servlet-name>frontend-servlet</servlet-name>
+    <url-pattern>/console-api/*</url-pattern>
+  </servlet-mapping>
+
   <!-- Security config -->
   <security-constraint>
     <web-resource-collection>
