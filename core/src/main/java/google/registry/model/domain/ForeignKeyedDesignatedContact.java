@@ -23,10 +23,10 @@ import javax.xml.bind.annotation.XmlValue;
  *
  * <p>This type is used on the wire for EPP XML, where only the contact ID (foreign key) is exposed.
  * This is converted to and from the persisted type, {@link DesignatedContact}, which stores the
- * Datastore key instead of the foreign key.
+ * primary key instead of the foreign key.
  *
- * @see <a href="http://tools.ietf.org/html/rfc5731#section-2.2">
- *     RFC 5731 - EPP Domain Name Mapping - Contact and Client Identifiers</a>
+ * @see <a href="http://tools.ietf.org/html/rfc5731#section-2.2">RFC 5731 - EPP Domain Name Mapping
+ *     - Contact and Client Identifiers</a>
  */
 public class ForeignKeyedDesignatedContact extends ImmutableObject {
   @XmlAttribute(required = true)

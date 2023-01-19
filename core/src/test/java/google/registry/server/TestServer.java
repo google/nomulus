@@ -45,8 +45,8 @@ import org.mortbay.jetty.servlet.ServletHolder;
 /**
  * HTTP server that serves static content and handles servlet requests in the calling thread.
  *
- * <p>Using this server is similar to to other server classes, in that it has {@link #start()} and
- * {@link #stop()} methods. However a {@link #process()} method was added, which is used to process
+ * <p>Using this server is similar to other server classes, in that it has {@link #start()} and
+ * {@link #stop()} methods. However, a {@link #process()} method was added, which is used to process
  * requests made to servlets (not static files) in the calling thread.
  *
  * <p><b>Note:</b> This server is intended for development purposes. For the love all that is good,
@@ -59,11 +59,6 @@ import org.mortbay.jetty.servlet.ServletHolder;
  * inside {@link ServletWrapperDelegatorServlet}. When requests come in, a {@link FutureTask} will
  * be sent back to this class using a {@link LinkedBlockingDeque} message queue. Those messages are
  * then consumed by the {@code process()} method.
- *
- * <p>The reason why this is necessary is because the App Engine local testing services (created by
- * {@code LocalServiceTestHelper}) only apply to a single thread (probably to allow multi-threaded
- * tests). So when Jetty creates random threads to handle requests, they won't have access to the
- * Datastore and other stuff.
  */
 public final class TestServer {
 

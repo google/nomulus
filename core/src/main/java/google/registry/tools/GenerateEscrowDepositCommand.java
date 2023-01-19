@@ -53,7 +53,7 @@ final class GenerateEscrowDepositCommand implements Command {
 
   @Parameter(
       names = {"-w", "--watermark"},
-      description = "Point-in-time timestamp(s) for snapshotting Datastore.",
+      description = "Point-in-time timestamp(s) for which time the deposit should be generated",
       required = true,
       converter = DateTimeParameter.class)
   private List<DateTime> watermarks;

@@ -40,12 +40,12 @@ is easier to exclude the suite classes than individual test classes. This is the
 reason why all test tasks in the :core project contain the exclude pattern
 '"**/*TestCase.*", "**/*TestSuite.*"'
 
-Many Nomulus tests are not hermetic: they modify global state (e.g., the shared
-local instance of Datastore) but do not clean up on completion. This becomes a
-problem with Gradle. In the beginning we forced Gradle to run every test class
-in a new process, and incurred heavy overheads. Since then, we have fixed some
-tests, and manged to divide all tests into three suites that do not have
-intra-suite conflicts. We will revisit the remaining tests soon.
+Many Nomulus tests are not hermetic: they modify global state, but do not clean
+up on completion. This becomes a problem with Gradle. In the beginning we forced
+Gradle to run every test class in a new process, and incurred heavy overheads.
+Since then, we have fixed some tests, and manged to divide all tests into three
+suites that do not have intra-suite conflicts. We will revisit the remaining
+tests soon.
 
 Note that it is unclear if all conflicting tests have been identified. More may
 be exposed if test execution order changes, e.g., when new tests are added or

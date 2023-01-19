@@ -121,21 +121,7 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
    */
   Set<Type> types;
 
-  /**
-   * A GAIA email address that was assigned to the registrar for console login purpose.
-   *
-   * <p>We used to store the GAE user ID directly to identify the logged-in user in the registrar
-   * console, and relied on a hacky trick with datastore to get the ID from the email address when
-   * creating a {@link RegistrarPoc}. We switched to using the login email directly as each
-   * registrar is assigned a unique email address that is immutable (to them at least), so it is as
-   * good as an identifier as the ID itself, and it allows us to get rid of the datastore
-   * dependency.
-   *
-   * <p>We backfilled all login email addresses for existing {@link RegistrarPoc}s that have a
-   * non-null GAE user ID. The backfill is done by first trying the {@link #emailAddress} field,
-   * then trying {@link #registrarId}+"@known-dasher_domain" and picking the ones that converted to
-   * the existing ID stored in the database.
-   */
+  /** A GAIA email address that was assigned to the registrar for console login purpose. */
   String loginEmailAddress;
 
   /**

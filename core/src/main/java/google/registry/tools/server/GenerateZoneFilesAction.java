@@ -120,7 +120,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     final DateTime exportTime = DateTime.parse(json.get("exportTime").toString());
     // We disallow exporting within the past 2 minutes because there might be outstanding writes.
     // We can only reliably call loadAtPointInTime at times that are UTC midnight and >
-    // datastoreRetention ago in the past.
+    // databaseRetention ago in the past.
     DateTime now = clock.nowUtc();
     if (exportTime.isAfter(now.minusMinutes(2))) {
       throw new BadRequestException("Invalid export time: must be > 2 minutes ago");
@@ -284,12 +284,12 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   /**
    * Removes the TLD, if present, from a fully-qualified name.
    *
-   * <p>This would not work if a fully qualified host name in a different TLD were passed. But
-   * we only generate glue records for in-bailiwick name servers, meaning that the TLD will always
+   * <p>This would not work if a fully qualified host name in a different TLD were passed. But we
+   * only generate glue records for in-bailiwick name servers, meaning that the TLD will always
    * match.
    *
-   * If, for some unforeseen reason, the TLD is not present, indicate an error condition, so that
-   * our process for comparing Datastore and DNS data will realize that something is amiss.
+   * <p>If, for some unforeseen reason, the TLD is not present, indicate an error condition, so that
+   * our process for comparing SQL and DNS data will realize that something is amiss.
    */
   private static String stripTld(String fullyQualifiedName, String tld) {
     return fullyQualifiedName.endsWith(tld)

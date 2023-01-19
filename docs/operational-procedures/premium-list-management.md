@@ -4,12 +4,12 @@
 
 Nomulus comes with a `StaticPremiumListPricingEngine` that determines premium
 prices of domain labels (i.e. the part of the domain name without the TLD) by
-checking for their presence on a list of prices in Datastore. `nomulus` is used
-to load and update these lists from flat text files. The format of this list is
-simple: It is a newline-delimited CSV text file with each line containing the
-label and its price (including currency specifier in ISO-4217 format). Any
-individual label may not appear more than once in the file. Here's an example of
-the formatting:
+checking for their presence on a list of prices in the database. `nomulus` is
+used to load and update these lists from flat text files. The format of this
+list is simple: It is a newline-delimited CSV text file with each line
+containing the label and its price (including currency specifier in ISO-4217
+format). Any individual label may not appear more than once in the file. Here's
+an example of the formatting:
 
 ```
 premium,USD 100
@@ -28,7 +28,7 @@ location that is accessible to all members of your team (ideally in a source
 control system for revision tracking). These files should be thought of as the
 canonical versions of your premium lists. Note that there is no provided way to
 reconstruct a premium list .txt file from the premium list that is loaded into
-Datastore (though in principle it would be easy to do by writing a tool to do
+the database (though in principle it would be easy to do by writing a tool to do
 so), so don't lose those .txt files.
 
 The nomulus repository contains an
@@ -37,7 +37,7 @@ The nomulus repository contains an
 ## Creating a premium list
 
 Once the file containing the premium prices is ready, run the
-`create_premium_list` command to load it into Datastore as follows:
+`create_premium_list` command to load it into the database as follows:
 
 ```shell
 $ nomulus -e {ENVIRONMENT} create_premium_list -n exampletld -i exampletld.txt
@@ -106,8 +106,9 @@ premiumList=Key<?>(EntityGroupRoot("cross-tld")/PremiumList("exampletld"))
 
 ## Listing all available premium lists
 
-The `list_premium_lists` command is used to list all premium lists in Datastore.
-It takes no arguments and displays a simple list of premium lists as follows:
+The `list_premium_lists` command is used to list all premium lists in the
+database. It takes no arguments and displays a simple list of premium lists as
+follows:
 
 ```shell
 $ nomulus -e {ENVIRONMENT} list_premium_lists

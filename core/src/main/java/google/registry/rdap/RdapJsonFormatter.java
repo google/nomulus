@@ -143,8 +143,8 @@ public class RdapJsonFormatter {
      *
      * <p>Reserved to cases when this object is one of many results of a search query.
      *
-     * <p>We want to minimize the size of the reply, and also minimize the Datastore queries needed
-     * to generate these replies since we might have a lot of these objects to return.
+     * <p>We want to minimize the size of the reply, and also minimize the queries needed to
+     * generate these replies since we might have a lot of these objects to return.
      *
      * <p>Each object with a SUMMARY type will have a remark with a direct link to itself, which
      * will return the FULL result.
@@ -743,16 +743,9 @@ public class RdapJsonFormatter {
     // Rdap Response Profile 2.4.5 says the Registrar inside a Domain response MUST include the
     // ABUSE contact, but doesn't require any other contact.
     //
-    // In our current Datastore schema, to get the ABUSE contact we must go over all contacts.
-    // However, there's something to be said about returning smaller JSON
+    // Write the minimum, meaning only ABUSE for INTERNAL registrars, nothing for SUMMARY and
+    // everything for FULL.
     //
-    // TODO(b/117242274): Need to decide between 2 options:
-    // - Write the minimum, meaning only ABUSE for INTERNAL registrars, nothing for SUMMARY (also
-    //   saves resources for the RegistrarContact Datastore query!) and everything for FULL.
-    // - Write everything for everything.
-    //
-    // For now we'll do the first.
-
     if (outputDataType != OutputDataType.SUMMARY) {
       ImmutableList<RdapContactEntity> registrarContacts =
           registrar.getContacts().stream()

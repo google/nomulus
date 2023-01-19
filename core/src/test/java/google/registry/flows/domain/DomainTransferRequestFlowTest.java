@@ -306,7 +306,7 @@ class DomainTransferRequestFlowTest
         Stream.of(extraExpectedBillingEvents)
             .map(builder -> builder.setDomainHistory(historyEntryTransferRequest).build())
             .collect(toImmutableSet());
-    // Assert that the billing events we constructed above actually exist in Datastore.
+    // Assert that the billing events we constructed above actually exist in the database.
     ImmutableSet<BillingEvent> expectedBillingEvents =
         Streams.concat(
                 Stream.of(losingClientAutorenew, gainingClientAutorenew),

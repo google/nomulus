@@ -217,8 +217,8 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * on its length.
    *
    * <p>NB: We are assuming that this field is unique across all registrar entities. This is not
-   * formally enforced in Datastore, but should be enforced by ICANN in that no two registrars will
-   * be accredited with the same name.
+   * formally enforced in the database, but should be enforced by ICANN in that no two registrars
+   * will be accredited with the same name.
    *
    * @see <a href="http://www.icann.org/registrar-reports/accredited-list.html">ICANN-Accredited
    *     Registrars</a>
@@ -930,7 +930,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     return email;
   }
 
-  /** Loads all registrar entities directly from Datastore. */
+  /** Loads all registrar entities directly from the database. */
   public static Iterable<Registrar> loadAll() {
     return tm().transact(() -> tm().loadAllOf(Registrar.class));
   }
@@ -947,7 +947,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
         .collect(toImmutableSet());
   }
 
-  /** Loads and returns a registrar entity by its id directly from Datastore. */
+  /** Loads and returns a registrar entity by its id directly from the database. */
   public static Optional<Registrar> loadByRegistrarId(String registrarId) {
     checkArgument(!Strings.isNullOrEmpty(registrarId), "registrarId must be specified");
     return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));

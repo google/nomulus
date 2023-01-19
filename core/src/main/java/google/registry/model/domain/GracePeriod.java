@@ -37,7 +37,7 @@ import org.joda.time.DateTime;
  * A domain grace period with an expiration time.
  *
  * <p>When a grace period expires, it is lazily removed from the {@link Domain} the next time the
- * resource is loaded from Datastore.
+ * resource is loaded from the database.
  */
 @Entity
 @Table(
@@ -84,8 +84,8 @@ public class GracePeriod extends GracePeriodBase {
    * Creates a GracePeriod for an (optional) OneTime billing event.
    *
    * <p>Normal callers should always use {@link #forBillingEvent} instead, assuming they do not need
-   * to avoid loading the BillingEvent from Datastore. This method should typically be called only
-   * from test code to explicitly construct GracePeriods.
+   * to avoid loading the BillingEvent from the database. This method should typically be called
+   * only from test code to explicitly construct GracePeriods.
    */
   public static GracePeriod create(
       GracePeriodStatus type,
@@ -102,8 +102,8 @@ public class GracePeriod extends GracePeriodBase {
    * #gracePeriodId}.
    *
    * <p>Normal callers should always use {@link #forBillingEvent} instead, assuming they do not need
-   * to avoid loading the BillingEvent from Datastore. This method should typically be called only
-   * from test code to explicitly construct GracePeriods.
+   * to avoid loading the BillingEvent from the database. This method should typically be called
+   * only from test code to explicitly construct GracePeriods.
    */
   @VisibleForTesting
   public static GracePeriod create(

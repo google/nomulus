@@ -235,7 +235,7 @@ public class DomainTest {
   @Test
   void testPersistence() {
     // Note that this only verifies that the value stored under the foreign key is the same as that
-    // stored under the primary key ("domain" is the domain loaded from the datastore, not the
+    // stored under the primary key ("domain" is the domain loaded from the the database, not the
     // original domain object).
     assertThat(loadByForeignKey(Domain.class, domain.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(domain);

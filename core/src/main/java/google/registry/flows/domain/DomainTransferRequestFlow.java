@@ -91,7 +91,7 @@ import org.joda.time.DateTime;
  * by the losing registrar or rejected, and the gaining registrar can also cancel the transfer
  * request.
  *
- * <p>When a transfer is requested, poll messages and billing events are saved to Datastore with
+ * <p>When a transfer is requested, poll messages and billing events are saved to the database with
  * timestamps such that they only become active when the server-approval period passes. Keys to
  * these speculative objects are saved in the domain's transfer data, and on explicit approval,
  * rejection or cancellation of the request, they will be deleted (and in the approval case,

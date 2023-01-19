@@ -75,9 +75,9 @@ import org.junit.jupiter.api.io.TempDir;
 /**
  * Unit tests for {@link Spec11Pipeline}.
  *
- * <p>Unfortunately there is no emulator for BigQuery like that for Datastore or App Engine.
- * Therefore we cannot fully test the pipeline but only test the two separate sink IO functions,
- * assuming that date is sourcede correctly the {@code BigQueryIO}.
+ * <p>Unfortunately there is no emulator for BigQuery, so we cannot fully test the pipeline but only
+ * test the two separate sink IO functions, assuming that date is sourced correctly the {@code
+ * BigQueryIO}.
  */
 class Spec11PipelineTest {
 
@@ -214,7 +214,7 @@ class Spec11PipelineTest {
   }
 
   @Test
-  void testSuccess_readFromCloudSql() throws Exception {
+  void testSuccess_readFromCloudSql() {
     setupCloudSql();
     PCollection<DomainNameInfo> domainNameInfos = Spec11Pipeline.readFromCloudSql(pipeline);
     PAssert.that(domainNameInfos).containsInAnyOrder(DOMAIN_NAME_INFOS);
@@ -310,7 +310,7 @@ class Spec11PipelineTest {
         new File(
             String.format(
                 "%s/icann/spec11/2020-01/SPEC11_MONTHLY_REPORT_2020-01-27",
-                reportingBucketUrl.getAbsolutePath().toString()));
+                reportingBucketUrl.getAbsolutePath()));
     return ImmutableList.copyOf(
         ResourceUtils.readResourceUtf8(resultFile.toURI().toURL()).split("\n"));
   }
@@ -335,7 +335,6 @@ class Spec11PipelineTest {
           return false;
         }
       }
-      ;
       return true;
     }
   }

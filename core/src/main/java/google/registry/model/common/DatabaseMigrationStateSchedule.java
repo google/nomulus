@@ -218,7 +218,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
   /** Loads the currently-set migration schedule from SQL, or the default if none exists. */
   @VisibleForTesting
   static TimedTransitionProperty<MigrationState> getUncached() {
-    return tm().transactWithoutBackup(
+    return tm().transact(
             () -> {
               try {
                 return tm().loadSingleton(DatabaseMigrationStateSchedule.class)

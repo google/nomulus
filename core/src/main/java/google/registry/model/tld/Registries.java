@@ -84,7 +84,7 @@ public final class Registries {
     return ImmutableSet.copyOf(filterValues(cache.get(), equalTo(type)).keySet());
   }
 
-  /** Returns the Registry entities themselves of the given type loaded fresh from Datastore. */
+  /** Returns the Registry entities themselves of the given type loaded fresh from the database. */
   public static ImmutableSet<Registry> getTldEntitiesOfType(TldType type) {
     return Registry.get(filterValues(cache.get(), equalTo(type)).keySet());
   }

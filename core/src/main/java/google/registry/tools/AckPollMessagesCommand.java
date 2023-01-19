@@ -91,13 +91,7 @@ final class AckPollMessagesCommand implements Command {
             });
   }
 
-  /**
-   * Acks the poll message if not running in dry-run mode, prints regardless.
-   *
-   * <p>This is a separate function because the processing of poll messages is transactionally
-   * different between the Datastore and SQL implementations. Datastore must process the messages in
-   * batches, whereas we can load all messages from SQL in one transaction.
-   */
+  /** Acks the poll message if not running in dry-run mode, prints regardless. */
   private void actOnPollMessage(PollMessage pollMessage) {
     if (!dryRun) {
       PollFlowUtils.ackPollMessage(pollMessage);

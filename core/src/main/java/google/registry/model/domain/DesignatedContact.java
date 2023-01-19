@@ -28,7 +28,7 @@ import javax.xml.bind.annotation.XmlEnumValue;
  *
  * <p>A contact association on a domain consists of the contact key and the contact "type", which is
  * the designated role of this contact with respect to this domain. When converting to and from EPP
- * XML, we use {@link ForeignKeyedDesignatedContact} to replace the contact's Datastore key with its
+ * XML, we use {@link ForeignKeyedDesignatedContact} to replace the contact's primary key with its
  * foreign key, since that is what EPP exposes.
  *
  * <p>Note one could in principle store contact foreign keys here in addition to keys, unlike the

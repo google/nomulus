@@ -40,7 +40,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 
-/** A {@link ConfirmingCommand} that changes objects in Datastore. */
+/** A {@link ConfirmingCommand} that changes objects in the database. */
 public abstract class MutatingCommand extends ConfirmingCommand {
 
   /**

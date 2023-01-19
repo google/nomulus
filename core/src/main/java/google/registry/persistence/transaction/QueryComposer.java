@@ -16,12 +16,12 @@ package google.registry.persistence.transaction;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import google.registry.persistence.transaction.CriteriaQueryBuilder.WhereOperator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -40,14 +40,13 @@ import javax.persistence.criteria.CriteriaBuilder;
  */
 public abstract class QueryComposer<T> {
 
-  // The class whose entities we're querying.  Note that this limits us to single table queries in
-  // SQL.  In datastore, there's really no other kind of query.
+  // The class whose entities we're querying.
   protected Class<T> entityClass;
 
   // Field to order by, if any.  Null if we don't care about order.
   @Nullable protected String orderBy;
 
-  protected List<WhereClause<?>> predicates = new ArrayList<WhereClause<?>>();
+  protected List<WhereClause<?>> predicates = new ArrayList<>();
 
   protected QueryComposer(Class<T> entityClass) {
     this.entityClass = entityClass;
@@ -61,14 +60,14 @@ public abstract class QueryComposer<T> {
    */
   public <U extends Comparable<? super U>> QueryComposer<T> where(
       String fieldName, Comparator comparator, U value) {
-    predicates.add(new WhereClause(fieldName, comparator, value));
+    predicates.add(new WhereClause<>(fieldName, comparator, value));
     return this;
   }
 
   /**
    * Order the query results by the value of the specified field.
    *
-   * <p>TODO(mmuller): add the ability to do descending sort order.
+   * <p>TODO: add the ability to do descending sort order.
    */
   public QueryComposer<T> orderBy(String fieldName) {
     orderBy = fieldName;
@@ -151,52 +150,35 @@ public abstract class QueryComposer<T> {
    * "someval")'}.
    */
   public enum Comparator {
-    /**
-     * Return only records whose field is equal to the value.
-     *
-     * <p>Note that the datastore string for this is empty, which is consistent with the way {@code
-     * filter()} works (it uses an unadorned field name to check for equality).
-     */
-    EQ("", QueryComposer::equal),
+    /** Return only records whose field is equal to the value. */
+    EQ(QueryComposer::equal),
 
     /** Return only records whose field is less than the value. */
-    LT(" <", QueryComposer::lessThan),
+    LT(QueryComposer::lessThan),
 
     /** Return only records whose field is less than or equal to the value. */
-    LTE(" <=", QueryComposer::lessThanOrEqualTo),
+    LTE(QueryComposer::lessThanOrEqualTo),
 
     /** Return only records whose field is greater than or equal to the value. */
-    GTE(" >=", QueryComposer::greaterThanOrEqualTo),
+    GTE(QueryComposer::greaterThanOrEqualTo),
 
     /** Return only records whose field is greater than the value. */
-    GT(" >", QueryComposer::greaterThan),
+    GT(QueryComposer::greaterThan),
 
-    /**
-     * Return only records whose field matches the pattern.
-     *
-     * <p>SQL ONLY.
-     */
-    LIKE(null, QueryComposer::like);
-
-    private final String datastoreString;
+    /** Return only records whose field matches the pattern. */
+    LIKE(QueryComposer::like);
 
     @SuppressWarnings("ImmutableEnumChecker") // Functions are immutable.
     private final Function<CriteriaBuilder, WhereOperator<?>> operatorFactory;
 
-    Comparator(
-        String datastoreString, Function<CriteriaBuilder, WhereOperator<?>> operatorFactory) {
-      this.datastoreString = datastoreString;
+    Comparator(Function<CriteriaBuilder, WhereOperator<?>> operatorFactory) {
       this.operatorFactory = operatorFactory;
-    }
-
-    public String getDatastoreString() {
-      return datastoreString;
     }
 
     public Function<CriteriaBuilder, WhereOperator<?>> getComparisonFactory() {
       return operatorFactory;
     }
-  };
+  }
 
   protected static class WhereClause<U extends Comparable<? super U>> {
     public String fieldName;

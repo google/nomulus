@@ -148,7 +148,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("2fooBAR")))
                 .build());
     // Set the superordinate domain of ns1.example.com to example.com. In reality, this would have
-    // happened in the flow that created it, but here we just overwrite it in Datastore.
+    // happened in the flow that created it, but here we just overwrite it in the database.
     host1 = persistResource(host1.asBuilder().setSuperordinateDomain(domain.createVKey()).build());
     // Create a subordinate host that is not delegated to by anyone.
     host3 =

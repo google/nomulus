@@ -86,8 +86,7 @@ test {
 // and assign the path to it to the GOOGLE_APPLICATION_CREDENTIALS environment
 // variable.
 //
-// A typical use case is to run tests from desktop that accesses Cloud resources. See
-// core/src/test/java/google/registry/beam/initsql/BeamJpaModuleTest.java for an example.
+// A typical use case is to run tests from desktop that accesses Cloud resources.
 tasks.withType(Test).configureEach {
   def gcp_integration_env_property = 'test.gcp_integration.env'
 

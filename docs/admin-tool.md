@@ -99,5 +99,5 @@ that are used by a large number of other tools are:
 *   **`ListObjectsCommand`** -- Lists all objects of a specific type from the
     server and outputs them.
 *   **`MutatingCommand`** -- Provides a facility to create or update entities in
-    Datastore, and uses a diff algorithm to display the changes that will be
+    the database, and uses a diff algorithm to display the changes that will be
     made before committing them.

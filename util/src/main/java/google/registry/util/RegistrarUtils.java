@@ -31,8 +31,8 @@ public class RegistrarUtils {
 
   /**
    * Returns a normalized registrar ID by taking the input and making it lowercase and removing all
-   * characters that aren't alphanumeric or hyphens. The normalized id should be unique in
-   * Datastore, and is suitable for use in email addresses.
+   * characters that aren't alphanumeric or hyphens. The normalized id should be unique in the
+   * database, and is suitable for use in email addresses.
    */
   public static String normalizeRegistrarId(String registrarId) {
     return Ascii.toLowerCase(registrarId).replaceAll("[^a-z0-9\\-]", "");

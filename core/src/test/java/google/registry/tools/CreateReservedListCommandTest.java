@@ -168,13 +168,6 @@ class CreateReservedListCommandTest
     runNameTestExpectedFailure("soy_$oy", INVALID_FORMAT_ERROR_MESSAGE);
   }
 
-  @Test
-  void testSaveToCloudSql_succeeds() throws Exception {
-    runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
-    verifyXnq9jyb4cInDatastore();
-    verifyXnq9jyb4cInCloudSql();
-  }
-
   private void runNameTestExpectedFailure(String name, String expectedErrorMsg) {
     IllegalArgumentException thrown =
         assertThrows(

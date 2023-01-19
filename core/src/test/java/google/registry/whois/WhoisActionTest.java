@@ -284,7 +284,7 @@ public class WhoisActionTest {
   }
 
   @Test
-  void testRun_domainFlaggedAsDeletedInDatastore_isConsideredNotFound() {
+  void testRun_domainFlaggedAsDeletedInDatabase_isConsideredNotFound() {
     Registrar registrar;
     persistResource(
         makeDomain(
@@ -432,7 +432,7 @@ public class WhoisActionTest {
   }
 
   @Test
-  void testRun_nameserverFlaggedAsDeletedInDatastore_doesntGetLeaked() {
+  void testRun_nameserverFlaggedAsDeletedInDatabase_doesntGetLeaked() {
     persistResource(
         FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4")
             .asBuilder()

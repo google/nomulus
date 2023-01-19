@@ -257,8 +257,7 @@ public class DomainBase extends EppResource
    *
    * <p>Note that this is a Cloud SQL-based replacement for the {@code dns-pull} task queue. The
    * domains that have a non-null value for this field should be exactly the same as the tasks that
-   * would be in the {@code dns-pull} queue. Because this is Cloud SQL-specific, it is omitted from
-   * Datastore.
+   * would be in the {@code dns-pull} queue.
    *
    * <p>Note that in the {@link DomainHistory} table this value means something slightly different:
    * It means that the given domain action requested a DNS update. Unlike on the {@code Domain}
@@ -485,7 +484,7 @@ public class DomainBase extends EppResource
               .setCurrentPackageToken(null);
       if (transferData.getTransferPeriod().getValue() == 1) {
         // Set the grace period using a key to the pre-scheduled transfer billing event.  Not using
-        // GracePeriod.forBillingEvent() here in order to avoid the actual Datastore fetch.
+        // GracePeriod.forBillingEvent() here in order to avoid the actual fetch.
         builder.setGracePeriods(
             ImmutableSet.of(
                 GracePeriod.create(

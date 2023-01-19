@@ -158,11 +158,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public <T> T transactWithoutBackup(Supplier<T> work) {
-    return transact(work);
-  }
-
-  @Override
   public <T> T transactNoRetry(Supplier<T> work) {
     if (inTransaction()) {
       return work.get();

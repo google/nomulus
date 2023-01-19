@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /**
- * Nomulus Datastore model common/shared classes.
+ * Nomulus data model common/shared classes.
  *
  * <p>This package is intended to hold classes which are shared across multiple XML namespaces. As
  * such, no default namespace is declared in this package, and all objects in this package should be

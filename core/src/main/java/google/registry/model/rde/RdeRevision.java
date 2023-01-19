@@ -37,7 +37,7 @@ import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
 /**
- * Datastore entity for tracking RDE revisions.
+ * Entity for tracking RDE revisions.
  *
  * <p>This class is used by the RDE staging, upload, and reporting systems to determine the revision
  * that should be used in the generated filename. It also determines whether or not a {@code resend}
@@ -102,10 +102,10 @@ public final class RdeRevision extends UpdateAutoTimestampEntity {
    * Sets the revision ID for a given triplet.
    *
    * <p>This method verifies that the current revision is {@code revision - 1}, or that the object
-   * does not exist in Datastore if {@code revision == 0}.
+   * does not exist in the database if {@code revision == 0}.
    *
    * @throws IllegalStateException if not in a transaction
-   * @throws VerifyException if Datastore state doesn't meet the above criteria
+   * @throws VerifyException if the state doesn't meet the above criteria
    */
   public static void saveRevision(String tld, DateTime date, RdeMode mode, int revision) {
     checkArgument(revision >= 0, "Negative revision: %s", revision);

@@ -101,8 +101,6 @@ ext {
       'args4j:args4j:[2.0.26,)',
       'com.google.api:gax:[1.66.0,)',
       'com.google.api.grpc:proto-google-cloud-secretmanager-v1:[1.4.0,)',
-      // The two below are needed only for Datastore bulk delete pipeline.
-      'com.google.api.grpc:proto-google-cloud-datastore-v1:[0.88.9,)',
       'com.google.api.grpc:proto-google-cloud-tasks-v2:[1.33.2,)',
       'com.google.api.grpc:proto-google-common-protos:[2.1.0,)',
 
@@ -128,9 +126,7 @@ ext {
       'com.google.auto.service:auto-service:[1.0-rc7,)',
       'com.google.auto.value:auto-value-annotations:[1.7.4,)',
       'com.google.auto.value:auto-value:[1.7.4,)',
-      // The two below are needed only for Datastore bulk delete pipeline.
       'com.google.cloud.bigdataoss:util:2.2.6',
-      'com.google.cloud.datastore:datastore-v1-proto-client:[1.6.3,)',
       'com.google.cloud.sql:jdbc-socket-factory-core:[1.2.1,)',
       'com.google.cloud.sql:postgres-socket-factory:[1.2.1,)',
       'com.google.cloud:google-cloud-core:[1.94.3,)',
