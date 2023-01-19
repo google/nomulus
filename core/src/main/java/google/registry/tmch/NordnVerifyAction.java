@@ -23,7 +23,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteSource;
 import google.registry.request.Action;
-import google.registry.request.Header;
 import google.registry.request.HttpException.ConflictException;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
@@ -60,8 +59,8 @@ public final class NordnVerifyAction implements Runnable {
 
   static final String PATH = "/_dr/task/nordnVerify";
   static final String QUEUE = "marksdb";
-  static final String URL_HEADER = "X-DomainRegistry-Nordn-Url";
-  static final String HEADER_ACTION_LOG_ID = "X-DomainRegistry-ActionLogId";
+  static final String NORDN_URL_PARAM = "nordnUrl";
+  static final String NORDN_LOG_ID_PARAM = "nordnLogId";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -69,10 +68,20 @@ public final class NordnVerifyAction implements Runnable {
   @Inject Response response;
   @Inject UrlConnectionService urlConnectionService;
 
-  @Inject @Header(URL_HEADER) URL url;
-  @Inject @Header(HEADER_ACTION_LOG_ID) String actionLogId;
-  @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
-  @Inject NordnVerifyAction() {}
+  @Inject
+  @Parameter(NORDN_URL_PARAM)
+  URL url;
+
+  @Inject
+  @Parameter(NORDN_LOG_ID_PARAM)
+  String actionLogId;
+
+  @Inject
+  @Parameter(RequestParameters.PARAM_TLD)
+  String tld;
+
+  @Inject
+  NordnVerifyAction() {}
 
   @Override
   public void run() {

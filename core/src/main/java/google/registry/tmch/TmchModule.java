@@ -16,13 +16,11 @@ package google.registry.tmch;
 
 import static com.google.common.io.Resources.asByteSource;
 import static com.google.common.io.Resources.getResource;
-import static google.registry.request.RequestParameters.extractRequiredHeader;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 
 import dagger.Module;
 import dagger.Provides;
 import google.registry.keyring.api.KeyModule.Key;
-import google.registry.request.Header;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import java.net.MalformedURLException;
@@ -34,8 +32,10 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 @Module
 public final class TmchModule {
 
-  private static final PGPPublicKey MARKSDB_PUBLIC_KEY = TmchData
-      .loadPublicKey(asByteSource(getResource(TmchModule.class, "marksdb-public-key.asc")));
+  private static final PGPPublicKey MARKSDB_PUBLIC_KEY =
+      TmchData.loadPublicKey(asByteSource(getResource(TmchModule.class, "marksdb-public-key.asc")));
+
+  private TmchModule() {}
 
   @Provides
   @Key("marksdbPublicKey")
@@ -50,18 +50,18 @@ public final class TmchModule {
   }
 
   @Provides
-  @Header(NordnVerifyAction.URL_HEADER)
-  static URL provideUrl(HttpServletRequest req) {
+  @Parameter(NordnVerifyAction.NORDN_URL_PARAM)
+  static URL provideNordnUrl(HttpServletRequest req) {
     try {
-      return new URL(extractRequiredHeader(req, NordnVerifyAction.URL_HEADER));
+      return new URL(extractRequiredParameter(req, NordnVerifyAction.NORDN_URL_PARAM));
     } catch (MalformedURLException e) {
-      throw new BadRequestException("Bad URL: " + NordnVerifyAction.URL_HEADER);
+      throw new BadRequestException("Bad URL: " + NordnVerifyAction.NORDN_URL_PARAM);
     }
   }
 
   @Provides
-  @Header(NordnVerifyAction.HEADER_ACTION_LOG_ID)
-  static String provideActionLogId(HttpServletRequest req) {
-    return extractRequiredHeader(req, NordnVerifyAction.HEADER_ACTION_LOG_ID);
+  @Parameter(NordnVerifyAction.NORDN_LOG_ID_PARAM)
+  static String provideNordnLogId(HttpServletRequest req) {
+    return extractRequiredParameter(req, NordnVerifyAction.NORDN_LOG_ID_PARAM);
   }
 }

@@ -23,7 +23,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistDomainAndEnqueueLordn;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -51,14 +50,15 @@ import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.FakeUrlConnectionService;
 import google.registry.testing.TaskQueueExtension;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.util.CloudTasksUtils;
 import google.registry.util.Retrier;
-import google.registry.util.TaskQueueUtils;
 import google.registry.util.UrlConnectionException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -90,6 +90,8 @@ class NordnUploadActionTest {
   private static final String LOCATION_URL = "http://trololol";
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12Z"));
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
+  private final CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -117,10 +119,10 @@ class NordnUploadActionTest {
     createTld("tld");
     persistResource(Registry.get("tld").asBuilder().setLordnUsername("lolcat").build());
     action.clock = clock;
+    action.cloudTasksUtils = cloudTasksUtils;
     action.urlConnectionService = urlConnectionService;
     action.lordnRequestInitializer = lordnRequestInitializer;
     action.phase = "claims";
-    action.taskQueueUtils = new TaskQueueUtils(new Retrier(new FakeSleeper(clock), 3));
     action.tld = "tld";
     action.tmchMarksdbUrl = "http://127.0.0.1";
     action.random = new SecureRandom();
@@ -235,11 +237,11 @@ class NordnUploadActionTest {
   void testRun_claimsMode_verifyTaskGetsEnqueuedWithClaimsCsv() {
     persistClaimsModeDomain();
     action.run();
-    assertTasksEnqueued(
+    cloudTasksHelper.assertTasksEnqueued(
         NordnVerifyAction.QUEUE,
         new TaskMatcher()
             .url(NordnVerifyAction.PATH)
-            .header(NordnVerifyAction.URL_HEADER, LOCATION_URL)
+            .param(NordnVerifyAction.NORDN_URL_PARAM, LOCATION_URL)
             .header(CONTENT_TYPE, FORM_DATA.toString()));
   }
 
@@ -263,11 +265,11 @@ class NordnUploadActionTest {
   void testRun_sunriseMode_verifyTaskGetsEnqueuedWithSunriseCsv() {
     persistSunriseModeDomain();
     action.run();
-    assertTasksEnqueued(
+    cloudTasksHelper.assertTasksEnqueued(
         NordnVerifyAction.QUEUE,
         new TaskMatcher()
             .url(NordnVerifyAction.PATH)
-            .header(NordnVerifyAction.URL_HEADER, LOCATION_URL)
+            .param(NordnVerifyAction.NORDN_URL_PARAM, LOCATION_URL)
             .header(CONTENT_TYPE, FORM_DATA.toString()));
   }
 
