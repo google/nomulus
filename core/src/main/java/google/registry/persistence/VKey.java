@@ -22,6 +22,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.annotations.Expose;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.Contact;
@@ -52,7 +53,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
           .collect(toImmutableMap(Class::getSimpleName, identity()));
 
   // The primary key for the referenced entity.
-  Serializable key;
+  @Expose Serializable key;
 
   Class<? extends T> kind;
 
