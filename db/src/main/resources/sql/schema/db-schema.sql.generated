@@ -274,14 +274,15 @@
         billing_contact text,
         current_package_token text,
         deletion_poll_message_id int8,
-        dns_refresh_request_time timestamptz,
         domain_name text,
         idn_table_name text,
+        dns_refresh_request_time timestamptz,
         last_transfer_time timestamptz,
         launch_notice_accepted_time timestamptz,
         launch_notice_expiration_time timestamptz,
         launch_notice_tcn_id text,
         launch_notice_validator_id text,
+        lordn_phase text,
         registrant_contact text,
         registration_expiration_time timestamptz,
         smd_id text,
@@ -346,14 +347,15 @@
         billing_contact text,
         current_package_token text,
         deletion_poll_message_id int8,
-        dns_refresh_request_time timestamptz,
         domain_name text,
         idn_table_name text,
+        dns_refresh_request_time timestamptz,
         last_transfer_time timestamptz,
         launch_notice_accepted_time timestamptz,
         launch_notice_expiration_time timestamptz,
         launch_notice_tcn_id text,
         launch_notice_validator_id text,
+        lordn_phase text,
         registrant_contact text,
         registration_expiration_time timestamptz,
         smd_id text,
@@ -449,6 +451,7 @@
         statuses text[],
         host_name text,
         inet_addresses text[],
+        dns_refresh_request_time timestamptz,
         last_superordinate_change timestamptz,
         last_transfer_time timestamptz,
         superordinate_domain text,
@@ -469,6 +472,7 @@
         history_xml_bytes bytea,
         host_name text,
         inet_addresses text[],
+        dns_refresh_request_time timestamptz,
         last_superordinate_change timestamptz,
         last_transfer_time timestamptz,
         superordinate_domain text,
@@ -798,6 +802,7 @@ create index IDXr22ciyccwi9rrqmt1ro0s59qf on "Domain" (tech_contact);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
 create index IDXa7fu0bqynfb79rr80528b4jqt on "Domain" (registrant_contact);
 create index IDXcws5mvmpl8o10wrhde780ors2 on "Domain" (dns_refresh_request_time);
+create index IDXnjhib7v6fj7dhj5qydkefkl2u on "Domain" (lordn_phase);
 create index IDXsfci08jgsymxy6ovh4k7r358c on "Domain" (billing_recurrence_id);
 create index IDX3y3k7m2bkgahm9sixiohgyrga on "Domain" (transfer_billing_event_id);
 create index IDXcju58vqascbpve1t7fem53ctl on "Domain" (transfer_billing_recurrence_id);
@@ -820,6 +825,7 @@ create index IDXkpkh68n6dy5v51047yr6b0e9l on "Host" (host_name);
 create index IDXy98mebut8ix1v07fjxxdkqcx on "Host" (creation_time);
 create index IDXovmntef6l45tw2bsfl56tcugx on "Host" (deletion_time);
 create index IDXl49vydnq0h5j1piefwjy4i8er on "Host" (current_sponsor_registrar_id);
+create index IDX7wg0yn3wdux3xsc4pfaljqf08 on "Host" (dns_refresh_request_time);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
 create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
 create index IDXkkwbwcwvrdkkqothkiye4jiff on "HostHistory" (host_name);
