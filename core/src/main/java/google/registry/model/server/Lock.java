@@ -88,8 +88,7 @@ public class Lock extends ImmutableObject implements Serializable {
    * <p>See {@link RequestStatusCheckerImpl#getLogId} for details about how it's created in
    * practice.
    */
-  @Column(nullable = false)
-  String requestLogId;
+  @Column String requestLogId;
 
   /** When the lock can be considered implicitly released. */
   @Column(nullable = false)
