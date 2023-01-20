@@ -130,3 +130,4 @@ V129__create_allocateId_sequence_alternative.sql
 V130__add_login_email_column_to_registrarpoc.sql
 V131__add_default_promo_tokens_to_registry.sql
 V132__drop_gae_user_id_from_registrar_poc.sql
+V133__add_pull_queue_replace_columns.sql
