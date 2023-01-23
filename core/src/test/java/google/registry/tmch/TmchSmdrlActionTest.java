@@ -46,8 +46,8 @@ class TmchSmdrlActionTest extends TmchActionTestCase {
     assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", now)).isFalse();
     assertThat(smdrl.isSmdRevoked("0000001681375789102250-65536", now)).isFalse();
     when(httpUrlConnection.getInputStream())
-        .thenReturn(new ByteArrayInputStream(loadBytes("smdrl-latest.csv").read()))
-        .thenReturn(new ByteArrayInputStream(loadBytes("smdrl-latest.sig").read()));
+        .thenReturn(new ByteArrayInputStream(loadBytes("smdrl/smdrl-latest.csv").read()))
+        .thenReturn(new ByteArrayInputStream(loadBytes("smdrl/smdrl-latest.sig").read()));
     newTmchSmdrlAction().run();
     verify(httpUrlConnection, times(2)).getInputStream();
     assertThat(connectedUrls.stream().map(URL::toString).collect(toImmutableList()))

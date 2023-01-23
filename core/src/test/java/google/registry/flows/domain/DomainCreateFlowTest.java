@@ -14,6 +14,7 @@
 
 package google.registry.flows.domain;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
@@ -71,7 +72,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
-import com.google.common.truth.Truth8;
 import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
@@ -90,6 +90,7 @@ import google.registry.flows.domain.DomainCreateFlow.SignedMarksOnlyDuringSunris
 import google.registry.flows.domain.DomainFlowTmchUtils.FoundMarkExpiredException;
 import google.registry.flows.domain.DomainFlowTmchUtils.FoundMarkNotYetValidException;
 import google.registry.flows.domain.DomainFlowTmchUtils.NoMarksFoundMatchingDomainException;
+import google.registry.flows.domain.DomainFlowTmchUtils.SignedMarkRevokedErrorException;
 import google.registry.flows.domain.DomainFlowUtils.AcceptedTooLongAgoException;
 import google.registry.flows.domain.DomainFlowUtils.BadDomainNameCharacterException;
 import google.registry.flows.domain.DomainFlowUtils.BadDomainNamePartsCountException;
@@ -180,6 +181,9 @@ import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.TaskQueueExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.tmch.SmdrlCsvParser;
+import google.registry.tmch.TmchData;
+import google.registry.tmch.TmchTestData;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
@@ -190,6 +194,8 @@ import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junitpioneer.jupiter.cartesian.CartesianTest;
+import org.junitpioneer.jupiter.cartesian.CartesianTest.Values;
 
 /** Unit tests for {@link DomainCreateFlow}. */
 class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain> {
@@ -197,6 +203,18 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @RegisterExtension TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private static final String CLAIMS_KEY = "2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001";
+  // This is a time when SMD itself is not valid, but its signing certificates are. It will
+  // trigger a different exception than when any signing cert is not valid yet.
+  private static final DateTime SMD_NOT_YET_VALID_TIME = DateTime.parse("2022-11-20T12:34:56Z");
+  private static final DateTime SMD_VALID_TIME = DateTime.parse("2023-01-02T12:34:56Z");
+  // This is a time when the imtermediate certificate in the SMD signature chain has expired. The
+  // SMD itself has not expired yet. It will trigger a different exception than when the SMD itself
+  // has expired.
+  private static final DateTime SMD_CERT_EXPIRED_TIME = DateTime.parse("2027-11-02T12:34:56Z");
+  private static final String SMD_ID = "000000851669081693741-65535";
+  private static final String SMD_FILE_PATH = "smd/active.smd";
+  private static final String ENCODED_SMD =
+      TmchData.readEncodedSignedMark(TmchTestData.loadFile(SMD_FILE_PATH)).getEncodedData();
 
   private AllocationToken allocationToken;
 
@@ -206,7 +224,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @BeforeEach
-  void initCreateTest() {
+  void initCreateTest() throws Exception {
     createTld("tld");
     allocationToken =
         persistResource(
@@ -378,13 +396,16 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   private void assertSunriseLordn(String domainName) throws Exception {
     assertAboutDomains()
         .that(reloadResourceByForeignKey())
-        .hasSmdId("0000001761376042759136-65535")
+        .hasSmdId(SMD_ID)
         .and()
         .hasLaunchNotice(null);
     String expectedPayload =
         String.format(
-            "%s,%s,0000001761376042759136-65535,1,2014-09-09T09:09:09.017Z",
-            reloadResourceByForeignKey().getRepoId(), domainName);
+            "%s,%s,%s,1,%s",
+            reloadResourceByForeignKey().getRepoId(),
+            domainName,
+            SMD_ID,
+            SMD_VALID_TIME.plusMillis(17));
     assertTasksEnqueued(QUEUE_SUNRISE, new TaskMatcher().payload(expectedPayload));
   }
 
@@ -631,7 +652,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
     setEppInput(
         "domain_create_registration_encoded_signed_mark.xml",
-        ImmutableMap.of("DOMAIN", "test-validate.tld", "PHASE", "open"));
+        ImmutableMap.of("DOMAIN", "test-validate.tld", "PHASE", "open", "SMD", ENCODED_SMD));
     persistContactsAndHosts();
     EppException thrown = assertThrows(SignedMarksOnlyDuringSunriseException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -640,10 +661,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testFailure_generalAvailability_superuserMismatchedEncodedSignedMark() {
     createTld("tld", GENERAL_AVAILABILITY);
-    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
+    clock.setTo(SMD_VALID_TIME);
     setEppInput(
         "domain_create_registration_encoded_signed_mark.xml",
-        ImmutableMap.of("DOMAIN", "wrong.tld", "PHASE", "open"));
+        ImmutableMap.of("DOMAIN", "wrong.tld", "PHASE", "open", "SMD", ENCODED_SMD));
     persistContactsAndHosts();
     EppException thrown =
         assertThrows(NoMarksFoundMatchingDomainException.class, this::runFlowAsSuperuser);
@@ -1248,14 +1269,22 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_anchorTenantInSunrise_withMetadataExtension_andSignedMark() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
-    setEppInput("domain_create_anchor_tenant_sunrise_metadata_extension_signed_mark.xml");
+    setEppInput(
+        "domain_create_anchor_tenant_sunrise_metadata_extension_signed_mark.xml",
+        ImmutableMap.of("SMD", ENCODED_SMD));
     eppRequestSource = EppRequestSource.TOOL; // Only tools can pass in metadata.
     persistContactsAndHosts();
-    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
+    clock.setTo(SMD_VALID_TIME);
     runFlowAssertResponse(
         loadFile(
             "domain_create_response_encoded_signed_mark_name.xml",
-            ImmutableMap.of("DOMAIN", "test-validate.tld")));
+            ImmutableMap.of(
+                "DOMAIN",
+                "test-validate.tld",
+                "CREATE_TIME",
+                SMD_VALID_TIME.toString(),
+                "EXPIRATION_TIME",
+                SMD_VALID_TIME.plusYears(2).toString())));
     assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE, ANCHOR_TENANT));
   }
 
@@ -1275,13 +1304,19 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 persistReservedList("anchor_tenants", "test-validate,RESERVED_FOR_ANCHOR_TENANT"))
             .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, START_DATE_SUNRISE))
             .build());
-    setEppInput("domain_create_anchor_tenant_signed_mark.xml");
-    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
+    setEppInput("domain_create_anchor_tenant_signed_mark.xml", ImmutableMap.of("SMD", ENCODED_SMD));
+    clock.setTo(SMD_VALID_TIME);
     persistContactsAndHosts();
     runFlowAssertResponse(
         loadFile(
             "domain_create_response_encoded_signed_mark_name.xml",
-            ImmutableMap.of("DOMAIN", "test-validate.tld")));
+            ImmutableMap.of(
+                "DOMAIN",
+                "test-validate.tld",
+                "CREATE_TIME",
+                SMD_VALID_TIME.toString(),
+                "EXPIRATION_TIME",
+                SMD_VALID_TIME.plusYears(2).toString())));
     assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT, SUNRISE), allocationToken);
     assertDnsTasksEnqueued("test-validate.tld");
     assertSunriseLordn("test-validate.tld");
@@ -1363,7 +1398,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .hasValue(getHistoryEntries(reloadResourceByForeignKey()).get(0).getHistoryEntryId());
   }
 
-  private void assertAllocationTokenWasNotRedeemed(String token) {
+  private static void assertAllocationTokenWasNotRedeemed(String token) {
     AllocationToken reloadedToken =
         tm().transact(() -> tm().loadByKey(VKey.create(AllocationToken.class, token)));
     assertThat(reloadedToken.isRedeemed()).isFalse();
@@ -1629,15 +1664,21 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .asBuilder()
             .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, START_DATE_SUNRISE))
             .build());
-    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
+    clock.setTo(SMD_VALID_TIME);
     setEppInput(
         "domain_create_registration_encoded_signed_mark.xml",
-        ImmutableMap.of("DOMAIN", "test-and-validate.tld", "PHASE", "sunrise"));
+        ImmutableMap.of("DOMAIN", "test-and-validate.tld", "PHASE", "sunrise", "SMD", ENCODED_SMD));
     persistContactsAndHosts();
     runFlowAssertResponse(
         loadFile(
             "domain_create_response_encoded_signed_mark_name.xml",
-            ImmutableMap.of("DOMAIN", "test-and-validate.tld")));
+            ImmutableMap.of(
+                "DOMAIN",
+                "test-and-validate.tld",
+                "CREATE_TIME",
+                SMD_VALID_TIME.toString(),
+                "EXPIRATION_TIME",
+                SMD_VALID_TIME.plusYears(2).toString())));
 
     assertSunriseLordn("test-and-validate.tld");
 
@@ -2163,15 +2204,21 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_startDateSunriseRegistration_withEncodedSignedMark() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
-    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
+    clock.setTo(SMD_VALID_TIME);
     setEppInput(
         "domain_create_registration_encoded_signed_mark.xml",
-        ImmutableMap.of("DOMAIN", "test-validate.tld", "PHASE", "sunrise"));
+        ImmutableMap.of("DOMAIN", "test-validate.tld", "PHASE", "sunrise", "SMD", ENCODED_SMD));
     persistContactsAndHosts();
     runFlowAssertResponse(
         loadFile(
             "domain_create_response_encoded_signed_mark_name.xml",
-            ImmutableMap.of("DOMAIN", "test-validate.tld")));
+            ImmutableMap.of(
+                "DOMAIN",
+                "test-validate.tld",
+                "CREATE_TIME",
+                SMD_VALID_TIME.toString(),
+                "EXPIRATION_TIME",
+                SMD_VALID_TIME.plusYears(2).toString())));
     assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE));
     assertSunriseLordn("test-validate.tld");
   }
@@ -2180,13 +2227,21 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_startDateSunriseRegistration_withEncodedSignedMark_noType() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
-    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
-    setEppInput("domain_create_sunrise_encoded_signed_mark_no_type.xml");
+    clock.setTo(SMD_VALID_TIME);
+    setEppInput(
+        "domain_create_sunrise_encoded_signed_mark_no_type.xml",
+        ImmutableMap.of("SMD", ENCODED_SMD));
     persistContactsAndHosts();
     runFlowAssertResponse(
         loadFile(
             "domain_create_response_encoded_signed_mark_name.xml",
-            ImmutableMap.of("DOMAIN", "test-validate.tld")));
+            ImmutableMap.of(
+                "DOMAIN",
+                "test-validate.tld",
+                "CREATE_TIME",
+                SMD_VALID_TIME.toString(),
+                "EXPIRATION_TIME",
+                SMD_VALID_TIME.plusYears(2).toString())));
     assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE));
     assertSunriseLordn("test-validate.tld");
   }
@@ -2194,12 +2249,55 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testFail_startDateSunriseRegistration_wrongEncodedSignedMark() {
     createTld("tld", START_DATE_SUNRISE);
-    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
+    clock.setTo(SMD_VALID_TIME);
     setEppInput(
         "domain_create_registration_encoded_signed_mark.xml",
-        ImmutableMap.of("DOMAIN", "wrong.tld", "PHASE", "sunrise"));
+        ImmutableMap.of("DOMAIN", "wrong.tld", "PHASE", "sunrise", "SMD", ENCODED_SMD));
     persistContactsAndHosts();
     EppException thrown = assertThrows(NoMarksFoundMatchingDomainException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFail_startDateSunriseRegistration_revokedSignedMark() throws Exception {
+    SmdrlCsvParser.parse(TmchTestData.loadFile("smd/smdrl.csv").lines().collect(toImmutableList()))
+        .save();
+    createTld("tld", START_DATE_SUNRISE);
+    clock.setTo(SMD_VALID_TIME);
+    String revokedSmd =
+        TmchData.readEncodedSignedMark(TmchTestData.loadFile("smd/revoked.smd")).getEncodedData();
+    setEppInput(
+        "domain_create_registration_encoded_signed_mark.xml",
+        ImmutableMap.of("DOMAIN", "test-validate.tld", "PHASE", "sunrise", "SMD", revokedSmd));
+    persistContactsAndHosts();
+    EppException thrown = assertThrows(SignedMarkRevokedErrorException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @CartesianTest
+  void testFail_startDateSunriseRegistration_IdnRevokedSignedMark(
+      @Values(strings = {"Agent", "Holder"}) String contact,
+      @Values(strings = {"Court", "Trademark", "TreatyStatute"}) String type,
+      @Values(strings = {"Arab", "Chinese", "English", "French"}) String language)
+      throws Exception {
+    String filepath =
+        String.format("idn/%s-%s/%s-%s-%s-Revoked.smd", contact, language, type, contact, language);
+    ImmutableList<String> labels = TmchTestData.extractLabels(filepath);
+    if (labels.isEmpty()) {
+      return;
+    }
+    SmdrlCsvParser.parse(
+            TmchTestData.loadFile("idn/idn_smdrl.csv").lines().collect(toImmutableList()))
+        .save();
+    createTld("tld", START_DATE_SUNRISE);
+    clock.setTo(SMD_VALID_TIME);
+    String revokedSmd =
+        TmchData.readEncodedSignedMark(TmchTestData.loadFile(filepath)).getEncodedData();
+    setEppInput(
+        "domain_create_registration_encoded_signed_mark.xml",
+        ImmutableMap.of("DOMAIN", labels.get(0) + ".tld", "PHASE", "sunrise", "SMD", revokedSmd));
+    persistContactsAndHosts();
+    EppException thrown = assertThrows(SignedMarkRevokedErrorException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
@@ -2207,10 +2305,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testFail_startDateSunriseRegistration_markNotYetValid() {
     createTld("tld", START_DATE_SUNRISE);
     // If we move now back in time a bit, the mark will not have gone into effect yet.
-    clock.setTo(DateTime.parse("2013-08-09T10:05:59Z").minusSeconds(1));
+    clock.setTo(SMD_NOT_YET_VALID_TIME);
     setEppInput(
         "domain_create_registration_encoded_signed_mark.xml",
-        ImmutableMap.of("DOMAIN", "test-validate.tld", "PHASE", "sunrise"));
+        ImmutableMap.of("DOMAIN", "test-validate.tld", "PHASE", "sunrise", "SMD", ENCODED_SMD));
     persistContactsAndHosts();
     EppException thrown = assertThrows(FoundMarkNotYetValidException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -2220,10 +2318,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testFail_startDateSunriseRegistration_markExpired() {
     createTld("tld", START_DATE_SUNRISE);
     // Move time forward to the mark expiration time.
-    clock.setTo(DateTime.parse("2017-07-23T22:00:00.000Z"));
+    clock.setTo(SMD_CERT_EXPIRED_TIME);
     setEppInput(
         "domain_create_registration_encoded_signed_mark.xml",
-        ImmutableMap.of("DOMAIN", "test-validate.tld", "PHASE", "sunrise"));
+        ImmutableMap.of("DOMAIN", "test-validate.tld", "PHASE", "sunrise", "SMD", ENCODED_SMD));
     persistContactsAndHosts();
     EppException thrown = assertThrows(FoundMarkExpiredException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -2931,10 +3029,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_anchorTenant_inSunrise_trademarked_withSignedMark_viaToken() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
-    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
+    clock.setTo(SMD_VALID_TIME);
     setEppInput(
         "domain_create_registration_encoded_signed_mark_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "test-validate.tld"));
+        ImmutableMap.of("DOMAIN", "test-validate.tld", "SMD", ENCODED_SMD));
     persistResource(
         allocationToken
             .asBuilder()
@@ -3156,7 +3254,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .build()));
     Domain domain = reloadResourceByForeignKey();
     assertThat(domain.getCurrentPackageToken()).isPresent();
-    Truth8.assertThat(domain.getCurrentPackageToken()).hasValue(token.createVKey());
+    assertThat(domain.getCurrentPackageToken()).hasValue(token.createVKey());
   }
 
   @Test

@@ -49,6 +49,8 @@ import google.registry.model.tld.Registry.TldState;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.TaskQueueExtension;
+import google.registry.tmch.TmchData;
+import google.registry.tmch.TmchTestData;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,6 +65,9 @@ class EppLifecycleDomainTest extends EppTestCase {
           "REDATE", "2002-05-30T00:00:00Z",
           "ACDATE", "2002-06-04T00:00:00Z",
           "EXDATE", "2003-06-01T00:04:00Z");
+
+  private static final String ENCODED_SMD =
+      TmchData.readEncodedSignedMark(TmchTestData.loadFile("smd/active.smd")).getEncodedData();
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -1184,8 +1189,8 @@ class EppLifecycleDomainTest extends EppTestCase {
    */
   @Test
   void testDomainCreation_startDateSunriseFull() throws Exception {
-    // The signed mark is valid between 2013 and 2017
-    DateTime sunriseDate = DateTime.parse("2014-09-08T09:09:09Z");
+    // The signed mark is valid between 2022-11-22 and 2027-10-18.
+    DateTime sunriseDate = DateTime.parse("2025-09-08T09:09:09Z");
     DateTime gaDate = sunriseDate.plusDays(30);
     createTld(
         "example",
@@ -1201,7 +1206,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     createContactsAndHosts();
 
     // During pre-delegation, any create should fail both with and without mark
-    assertThatCommand("domain_create_sunrise_encoded_mark.xml")
+    assertThatCommand("domain_create_sunrise_encoded_mark.xml", ImmutableMap.of("SMD", ENCODED_SMD))
         .atTime(sunriseDate.minusDays(2))
         .hasResponse(
             "response_error.xml",
@@ -1219,7 +1224,9 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "MSG", "The current registry phase does not allow for general registrations"));
 
     // During sunrise, verify that the launch phase must be set to sunrise.
-    assertThatCommand("domain_create_start_date_sunrise_encoded_mark_wrong_phase.xml")
+    assertThatCommand(
+            "domain_create_start_date_sunrise_encoded_mark_wrong_phase.xml",
+            ImmutableMap.of("SMD", ENCODED_SMD))
         .atTime(sunriseDate)
         .hasResponse(
             "response_error.xml",
@@ -1230,14 +1237,14 @@ class EppLifecycleDomainTest extends EppTestCase {
 
     // During sunrise, create with mark will succeed but without will fail.
     // We also test we can delete without a mark.
-    assertThatCommand("domain_create_sunrise_encoded_mark.xml")
+    assertThatCommand("domain_create_sunrise_encoded_mark.xml", ImmutableMap.of("SMD", ENCODED_SMD))
         .atTime(sunriseDate.plusDays(1))
         .hasResponse(
             "domain_create_response.xml",
             ImmutableMap.of(
                 "DOMAIN", "test-validate.example",
-                "CRDATE", "2014-09-09T09:09:09Z",
-                "EXDATE", "2015-09-09T09:09:09Z"));
+                "CRDATE", "2025-09-09T09:09:09Z",
+                "EXDATE", "2026-09-09T09:09:09Z"));
 
     assertThatCommand("domain_delete.xml", ImmutableMap.of("DOMAIN", "test-validate.example"))
         .atTime(sunriseDate.plusDays(1).plusMinutes(1))
@@ -1264,15 +1271,14 @@ class EppLifecycleDomainTest extends EppTestCase {
                     "Declared launch extension phase does not match the current registry phase"));
 
     assertThatCommand(
-            "domain_create_no_hosts_or_dsdata.xml",
-            ImmutableMap.of("DOMAIN", "general.example"))
+            "domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "general.example"))
         .atTime(gaDate.plusDays(2))
         .hasResponse(
             "domain_create_response.xml",
             ImmutableMap.of(
                 "DOMAIN", "general.example",
-                "CRDATE", "2014-10-10T09:09:09Z",
-                "EXDATE", "2016-10-10T09:09:09Z"));
+                "CRDATE", "2025-10-10T09:09:09Z",
+                "EXDATE", "2027-10-10T09:09:09Z"));
 
     assertThatLogoutSucceeds();
   }
@@ -1280,8 +1286,8 @@ class EppLifecycleDomainTest extends EppTestCase {
   /** Test that missing type= argument on launch create works in start-date sunrise. */
   @Test
   void testDomainCreation_startDateSunrise_noType() throws Exception {
-    // The signed mark is valid between 2013 and 2017
-    DateTime sunriseDate = DateTime.parse("2014-09-08T09:09:09Z");
+    // The signed mark is valid between 2022-11-22 and 2027-10-18.
+    DateTime sunriseDate = DateTime.parse("2025-09-08T09:09:09Z");
     DateTime gaDate = sunriseDate.plusDays(30);
     createTld(
         "example",
@@ -1306,14 +1312,16 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "CODE", "2303",
                 "MSG", "The domain with given ID (test-validate.example) doesn't exist."));
 
-    assertThatCommand("domain_create_start_date_sunrise_encoded_mark_no_type.xml")
+    assertThatCommand(
+            "domain_create_start_date_sunrise_encoded_mark_no_type.xml",
+            ImmutableMap.of("SMD", ENCODED_SMD))
         .atTime(sunriseDate.plusDays(1).plusMinutes(1))
         .hasResponse(
             "domain_create_response.xml",
             ImmutableMap.of(
                 "DOMAIN", "test-validate.example",
-                "CRDATE", "2014-09-09T09:10:09Z",
-                "EXDATE", "2015-09-09T09:10:09Z"));
+                "CRDATE", "2025-09-09T09:10:09Z",
+                "EXDATE", "2026-09-09T09:10:09Z"));
 
     assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "test-validate.example"))
         .atTime(sunriseDate.plusDays(1).plusMinutes(2))
@@ -1321,8 +1329,8 @@ class EppLifecycleDomainTest extends EppTestCase {
             "domain_info_response_ok_wildcard.xml",
             ImmutableMap.of(
                 "DOMAIN", "test-validate.example",
-                "CRDATE", "2014-09-09T09:10:09Z",
-                "EXDATE", "2015-09-09T09:10:09Z"));
+                "CRDATE", "2025-09-09T09:10:09Z",
+                "EXDATE", "2026-09-09T09:10:09Z"));
 
     assertThatLogoutSucceeds();
   }
