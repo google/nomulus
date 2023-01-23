@@ -22,9 +22,12 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.CAN
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
+import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
+import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
@@ -286,6 +289,73 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("tokenStatusTransitions map cannot transition from NOT_STARTED to ENDED.");
+  }
+
+  @Test
+  void testUpdateStatusTransitions_endPackageTokenNoDomains() throws Exception {
+    DateTime now = DateTime.now(UTC);
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("token")
+                .setTokenType(PACKAGE)
+                .setRenewalPriceBehavior(SPECIFIED)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setTokenStatusTransitions(
+                    ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                        .put(START_OF_TIME, NOT_STARTED)
+                        .put(now.minusDays(1), VALID)
+                        .build())
+                .build());
+    runCommandForced(
+        "--prefix",
+        "token",
+        "--token_status_transitions",
+        String.format(
+            "\"%s=NOT_STARTED,%s=VALID,%s=ENDED\"", START_OF_TIME, now.minusDays(1), now));
+    token = reloadResource(token);
+    assertThat(token.getTokenStatusTransitions().toValueMap())
+        .containsExactly(START_OF_TIME, NOT_STARTED, now.minusDays(1), VALID, now, ENDED);
+  }
+
+  @Test
+  void testUpdateStatusTransitions_endPackageTokenWithActiveDomainsFails() throws Exception {
+    DateTime now = DateTime.now(UTC);
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("token")
+                .setTokenType(PACKAGE)
+                .setRenewalPriceBehavior(SPECIFIED)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setTokenStatusTransitions(
+                    ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                        .put(START_OF_TIME, NOT_STARTED)
+                        .put(now.minusDays(1), VALID)
+                        .build())
+                .build());
+    createTld("tld");
+    persistResource(
+        persistActiveDomain("example.tld")
+            .asBuilder()
+            .setCurrentPackageToken(token.createVKey())
+            .build());
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--prefix",
+                    "token",
+                    "--token_status_transitions",
+                    String.format(
+                        "\"%s=NOT_STARTED,%s=VALID,%s=ENDED\"",
+                        START_OF_TIME, now.minusDays(1), now)));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Package token token can not end its promotion because it still has 1 domains in the"
+                + " package");
   }
 
   @Test

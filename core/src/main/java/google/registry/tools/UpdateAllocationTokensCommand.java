@@ -14,6 +14,7 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.partition;
@@ -31,6 +32,7 @@ import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
+import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.tools.params.TransitionListParameter.TokenStatusTransitions;
 import java.util.List;
 import java.util.Map;
@@ -114,6 +116,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   private static final Joiner JOINER = Joiner.on(", ");
 
   private ImmutableSet<AllocationToken> tokensToSave;
+  private boolean endPackage = false;
 
   @Override
   public void init() {
@@ -124,6 +127,12 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     }
     if (ImmutableList.of("").equals(allowedTlds)) {
       allowedTlds = ImmutableList.of();
+    }
+
+    if (tokenStatusTransitions != null
+        && (tokenStatusTransitions.containsValue(TokenStatus.ENDED)
+            || tokenStatusTransitions.containsValue(TokenStatus.CANCELLED))) {
+      endPackage = true;
     }
 
     tokensToSave =
@@ -157,6 +166,19 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   }
 
   private AllocationToken updateToken(AllocationToken original) {
+    if (endPackage && original.getTokenType().equals(TokenType.PACKAGE)) {
+      Long domainsInPackage =
+          tm().query("SELECT COUNT(*) FROM Domain WHERE currentPackageToken = :token", Long.class)
+              .setParameter("token", original.createVKey())
+              .getSingleResult();
+
+      checkArgument(
+          domainsInPackage == 0,
+          String.format(
+              "Package token %s can not end its promotion because it still has %s domains in the"
+                  + " package",
+              original.getToken(), domainsInPackage));
+    }
     AllocationToken.Builder builder = original.asBuilder();
     Optional.ofNullable(allowedClientIds)
         .ifPresent(clientIds -> builder.setAllowedRegistrarIds(ImmutableSet.copyOf(clientIds)));

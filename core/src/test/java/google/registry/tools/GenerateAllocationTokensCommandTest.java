@@ -396,6 +396,25 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
   }
 
   @Test
+  void testFailure_invalidPackageTokenStatusTransition() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommand(
+                        "--number",
+                        "999",
+                        "--type",
+                        "PACKAGE",
+                        String.format(
+                            "--token_status_transitions=\"%s=NOT_STARTED,%s=VALID,%s=ENDED\"",
+                            START_OF_TIME, fakeClock.nowUtc(), fakeClock.nowUtc().plusDays(1)))))
+        .hasMessageThat()
+        .isEqualTo(
+            "Don't generate PACKAGE tokens with ENDED or CANCELLED in their transition map.");
+  }
+
+  @Test
   void testFailure_lengthOfZero() {
     IllegalArgumentException thrown =
         assertThrows(
