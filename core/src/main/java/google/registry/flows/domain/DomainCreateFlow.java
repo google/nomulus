@@ -15,6 +15,7 @@
 package google.registry.flows.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
@@ -45,9 +46,9 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActi
 import static google.registry.flows.domain.DomainFlowUtils.verifyUnitIsYears;
 import static google.registry.model.EppResourceUtils.createDomainRepoId;
 import static google.registry.model.IdService.allocateId;
+import static google.registry.model.domain.token.AllocationToken.ALLOCATION_TOKENS_CACHE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
-import static google.registry.model.tld.Registry.DEFAULT_PROMO_TOKENS_CACHE;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
@@ -120,7 +121,9 @@ import google.registry.model.tld.Registry.TldType;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
+import google.registry.persistence.VKey;
 import google.registry.tmch.LordnTaskUtils;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -274,23 +277,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
             now,
             eppInput.getSingleExtension(AllocationTokenExtension.class));
     if (!allocationToken.isPresent() && !registry.getDefaultPromoTokens().isEmpty()) {
-      ImmutableList<Optional<AllocationToken>> tokenList = DEFAULT_PROMO_TOKENS_CACHE.get(registry);
-      checkArgument(!isNullOrEmpty(tokenList), "Failed loading defaultPromoTokens from database");
-      // Check if any of the tokens are valid for this domain registration
-      for (Optional<AllocationToken> token : tokenList) {
-        if (!token.isPresent()) {
-          continue;
-        }
-        try {
-          AllocationTokenFlowUtils.validateToken(
-              InternetDomainName.from(command.getDomainName()), token.get(), registrarId, now);
-        } catch (AssociationProhibitsOperationException e) {
-          continue;
-        }
-        // Only use the first valid token in the list
-        allocationToken = token;
-        break;
-      }
+      allocationToken = checkForDefaultToken(registry, command);
     }
     boolean isAnchorTenant =
         isAnchorTenant(
@@ -456,6 +443,31 @@ public final class DomainCreateFlow implements TransactionalFlow {
         .build();
   }
 
+  private Optional<AllocationToken> checkForDefaultToken(
+      Registry registry, DomainCommand.Create command) throws EppException {
+    Map<VKey<AllocationToken>, Optional<AllocationToken>> tokenMap =
+        ALLOCATION_TOKENS_CACHE.getAll(registry.getDefaultPromoTokens());
+    checkState(
+        !isNullOrEmpty(tokenMap), "Failure while loading default TLD promotions from the database");
+    // Check if any of the tokens are valid for this domain registration
+    for (Optional<AllocationToken> token : tokenMap.values()) {
+      if (!token.isPresent()) {
+        continue;
+      }
+      try {
+        AllocationTokenFlowUtils.validateToken(
+            InternetDomainName.from(command.getDomainName()),
+            token.get(),
+            registrarId,
+            tm().getTransactionTime());
+      } catch (AssociationProhibitsOperationException e) {
+        continue;
+      }
+      // Only use the first valid token in the list
+      return token;
+    }
+    return Optional.empty();
+  }
   /**
    * Verifies that signed marks are only sent during sunrise.
    *
