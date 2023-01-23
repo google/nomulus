@@ -1768,7 +1768,37 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     runTest_defaultToken("bbbbb");
   }
 
-  void runTest_defaultToken(String token) throws Exception {
+  @Test
+  void testSuccess_defaultTokenAppliesCorrectPrice() throws Exception {
+    persistContactsAndHosts();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
+            .build());
+    BillingEvent.OneTime billingEvent = runTest_defaultToken("bbbbb");
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
+  }
+
+  BillingEvent.OneTime runTest_defaultToken(String token) throws Exception {
     setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlowAssertResponse(
         loadFile(
@@ -1782,6 +1812,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo(token);
+    return billingEvent;
   }
 
   @Test
