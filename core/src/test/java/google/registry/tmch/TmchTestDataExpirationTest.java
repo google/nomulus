@@ -42,9 +42,9 @@ class TmchTestDataExpirationTest {
    * files and so that we can test various types of files, but this test will vail when the validity
    * of the ICANN-provided file expires.
    *
-   * <p>When this fails, check
-   * <a>https://newgtlds.icann.org/en/about/trademark-clearinghouse/registries-registrars</a> for a
-   * new updated SMD file.
+   * <p>When this fails, check <a
+   * href="https://newgtlds.icann.org/en/about/trademark-clearinghouse/registries-registrars">Signed
+   * Mark Data Files</a> for a new updated SMD file.
    */
   @Test
   void testActiveSignedMarkFiles_areValidAndNotExpired() throws Exception {
@@ -53,7 +53,7 @@ class TmchTestDataExpirationTest {
             new TmchXmlSignature(
                 new TmchCertificateAuthority(TmchCaMode.PILOT, new SystemClock())));
 
-    String filePath = "active/smd-active-21aug20-en.smd";
+    String filePath = "smd/active.smd";
     String tmchData = loadFile(TmchTestDataExpirationTest.class, filePath);
     EncodedSignedMark smd = TmchData.readEncodedSignedMark(tmchData);
     try {

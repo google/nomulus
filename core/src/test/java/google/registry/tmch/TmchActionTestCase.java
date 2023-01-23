@@ -62,7 +62,8 @@ abstract class TmchActionTestCase {
   @BeforeEach
   public void beforeEachTmchActionTestCase() throws Exception {
     marksdb.tmchMarksdbUrl = MARKSDB_URL;
-    marksdb.marksdbPublicKey = TmchData.loadPublicKey(TmchTestData.loadBytes("pubkey"));
+    marksdb.marksdbPublicKey =
+        TmchData.loadPublicKey(TmchTestData.loadBytes("crypto/marksdb-public-key-test.asc"));
     marksdb.urlConnectionService = urlConnectionService;
     when(httpUrlConnection.getResponseCode()).thenReturn(SC_OK);
   }

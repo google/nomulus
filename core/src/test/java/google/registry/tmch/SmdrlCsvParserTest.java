@@ -33,7 +33,7 @@ class SmdrlCsvParserTest {
   private final FakeClock clock = new FakeClock();
 
   private static final CharSource SMDRL_LATEST_CSV =
-      TmchTestData.loadBytes("smdrl-latest.csv").asCharSource(US_ASCII);
+      TmchTestData.loadBytes("smdrl/smdrl-latest.csv").asCharSource(US_ASCII);
 
   @Test
   void testParse() throws Exception {

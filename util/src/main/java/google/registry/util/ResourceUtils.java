@@ -26,6 +26,8 @@ import java.net.URL;
 /** Utility methods related to reading java resources. */
 public final class ResourceUtils {
 
+  private ResourceUtils() {}
+
   /** Loads a resource from a file as a string, assuming UTF-8 encoding. */
   public static String readResourceUtf8(String filename) {
     return readResourceUtf8(getResource(filename));
