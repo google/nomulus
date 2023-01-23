@@ -27,8 +27,10 @@ import org.bouncycastle.openpgp.bc.BcPGPPublicKeyRing;
 /** Helper class for common data loaded from the jar and SQL at runtime. */
 public final class TmchData {
 
-  private static final String BEGIN_ENCODED_SMD = "-----BEGIN ENCODED SMD-----";
-  private static final String END_ENCODED_SMD = "-----END ENCODED SMD-----";
+  static final String BEGIN_ENCODED_SMD = "-----BEGIN ENCODED SMD-----";
+  static final String END_ENCODED_SMD = "-----END ENCODED SMD-----";
+
+  private TmchData() {}
 
   static PGPPublicKey loadPublicKey(ByteSource pgpPublicKeyFile) {
     try (InputStream input = pgpPublicKeyFile.openStream();

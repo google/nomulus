@@ -42,7 +42,7 @@
     <url><![CDATA[/_dr/cron/fanout?queue=marksdb&endpoint=/_dr/task/tmchDnl&runInEmpty]]></url>
     <description>
       This job downloads the latest DNL from MarksDB and inserts it into the database.
-      (See: TmchDnlServlet, ClaimsList)
+      (See: TmchDnlAction, ClaimsList)
     </description>
     <schedule>every 12 hours synchronized</schedule>
     <target>backend</target>
@@ -52,7 +52,7 @@
     <url><![CDATA[/_dr/cron/fanout?queue=marksdb&endpoint=/_dr/task/tmchSmdrl&runInEmpty]]></url>
     <description>
       This job downloads the latest SMDRL from MarksDB and inserts it into the database.
-      (See: TmchSmdrlServlet, SignedMarkRevocationList)
+      (See: TmchSmdrlAction, SignedMarkRevocationList)
     </description>
     <schedule>every 12 hours from 00:15 to 12:15</schedule>
     <target>backend</target>
@@ -62,7 +62,7 @@
     <url><![CDATA[/_dr/cron/fanout?queue=marksdb&endpoint=/_dr/task/tmchCrl&runInEmpty]]></url>
     <description>
       This job downloads the latest CRL from MarksDB and inserts it into the database.
-      (See: TmchCrlServlet)
+      (See: TmchCrlAction)
     </description>
     <schedule>every 12 hours synchronized</schedule>
     <target>backend</target>

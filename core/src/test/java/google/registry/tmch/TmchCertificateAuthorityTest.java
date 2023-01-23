@@ -37,24 +37,31 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link TmchCertificateAuthority}. */
 class TmchCertificateAuthorityTest {
 
-  private static final String GOOD_TEST_CERTIFICATE = loadFile("icann-tmch-test-good.crt");
-  private static final String REVOKED_TEST_CERTIFICATE = loadFile("icann-tmch-test-revoked.crt");
+  // This certificate is extracted from the SMD file smd/active.smd. It is the
+  // intermediate (TMV) certificate that was signed by the root (CA) cert and signed the SMD
+  // file.
+  private static final String GOOD_TMV_CERTIFICATE = loadFile("crypto/icann-tmv-test-good.crt");
+  // This certificate is extracted from the SMD file smd/tmv-cert-revoked.smd. It is the (revoked)
+  // intermediate (TMV) certificate that was signed by the root (CA) cert and signed the SMD
+  // file.
+  private static final String REVOKED_TMV_CERTIFICATE =
+      loadFile("crypto/icann-tmv-test-revoked.crt");
 
   @RegisterExtension
   public final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2014-01-01T00:00:00Z"));
+  private final FakeClock clock = new FakeClock(DateTime.parse("2022-11-20T00:00:00Z"));
 
   @Test
   void testFailure_prodRootExpired() {
     TmchCertificateAuthority tmchCertificateAuthority =
         new TmchCertificateAuthority(PRODUCTION, clock);
-    clock.setTo(DateTime.parse("2024-01-01T00:00:00Z"));
+    clock.setTo(DateTime.parse("2500-01-01T00:00:00Z"));
     CertificateExpiredException e =
         assertThrows(
             CertificateExpiredException.class, tmchCertificateAuthority::getAndValidateRoot);
-    assertThat(e).hasMessageThat().contains("NotAfter: Sun Jul 23 23:59:59 UTC 2023");
+    assertThat(e).hasMessageThat().contains("NotAfter");
   }
 
   @Test
@@ -65,7 +72,7 @@ class TmchCertificateAuthorityTest {
     CertificateNotYetValidException e =
         assertThrows(
             CertificateNotYetValidException.class, tmchCertificateAuthority::getAndValidateRoot);
-    assertThat(e).hasMessageThat().contains("NotBefore: Wed Jul 24 00:00:00 UTC 2013");
+    assertThat(e).hasMessageThat().contains("NotBefore");
   }
 
   @Test
@@ -77,14 +84,14 @@ class TmchCertificateAuthorityTest {
     SignatureException e =
         assertThrows(
             SignatureException.class,
-            () -> tmchCertificateAuthority.verify(loadCertificate(GOOD_TEST_CERTIFICATE)));
+            () -> tmchCertificateAuthority.verify(loadCertificate(GOOD_TMV_CERTIFICATE)));
     assertThat(e).hasMessageThat().contains("Signature does not match");
   }
 
   @Test
   void testSuccess_verify() throws Exception {
     TmchCertificateAuthority tmchCertificateAuthority = new TmchCertificateAuthority(PILOT, clock);
-    tmchCertificateAuthority.verify(loadCertificate(GOOD_TEST_CERTIFICATE));
+    tmchCertificateAuthority.verify(loadCertificate(GOOD_TMV_CERTIFICATE));
   }
 
   @Test
@@ -94,7 +101,7 @@ class TmchCertificateAuthorityTest {
     SignatureException e =
         assertThrows(
             SignatureException.class,
-            () -> tmchCertificateAuthority.verify(loadCertificate(GOOD_TEST_CERTIFICATE)));
+            () -> tmchCertificateAuthority.verify(loadCertificate(GOOD_TMV_CERTIFICATE)));
     assertThat(e).hasMessageThat().contains("Signature does not match");
   }
 
@@ -104,7 +111,7 @@ class TmchCertificateAuthorityTest {
     CertificateRevokedException thrown =
         assertThrows(
             CertificateRevokedException.class,
-            () -> tmchCertificateAuthority.verify(loadCertificate(REVOKED_TEST_CERTIFICATE)));
-    assertThat(thrown).hasMessageThat().contains("revoked, reason: KEY_COMPROMISE");
+            () -> tmchCertificateAuthority.verify(loadCertificate(REVOKED_TMV_CERTIFICATE)));
+    assertThat(thrown).hasMessageThat().contains("revoked, reason: UNSPECIFIED");
   }
 }

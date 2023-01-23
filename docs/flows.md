@@ -378,6 +378,7 @@ An EPP flow that creates a new domain resource.
     *   Trademarked domains cannot be registered before the sunrise period.
     *   The provided mark is not yet valid.
     *   The provided mark has expired.
+    *   Signed mark data is revoked.
     *   Domain names can only contain a-z, 0-9, '.' and '-'.
     *   Periods for domain registrations must be specified in years.
     *   The requested fees cannot be provided in the requested currency.
