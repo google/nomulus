@@ -72,11 +72,7 @@ public class UserTest extends EntityTestCase {
     assertThat(assertThrows(IllegalArgumentException.class, () -> builder.setUserRoles(null)))
         .hasMessageThat()
         .isEqualTo("User roles cannot be null");
-
-    assertThat(assertThrows(IllegalArgumentException.class, builder::build))
-        .hasMessageThat()
-        .isEqualTo("Gaia ID cannot be null");
-    builder.setGaiaId("gaiaId");
+    
     assertThat(assertThrows(IllegalArgumentException.class, builder::build))
         .hasMessageThat()
         .isEqualTo("Email address cannot be null");

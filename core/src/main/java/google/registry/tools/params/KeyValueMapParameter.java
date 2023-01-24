@@ -17,6 +17,7 @@ package google.registry.tools.params;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.console.RegistrarRole;
 import java.util.Map;
 import org.joda.money.CurrencyUnit;
 
@@ -105,6 +106,20 @@ public abstract class KeyValueMapParameter<K, V>
     @Override
     protected String parseValue(String value) {
       return value;
+    }
+  }
+
+  /** Combined converter/validator class for maps of registrar names to registrar roles. */
+  public static class StringToRegistrarRoleMap extends KeyValueMapParameter<String, RegistrarRole> {
+
+    @Override
+    protected String parseKey(String rawKey) {
+      return rawKey;
+    }
+
+    @Override
+    protected RegistrarRole parseValue(String rawValue) {
+      return RegistrarRole.valueOf(rawValue);
     }
   }
 }
