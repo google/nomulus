@@ -68,8 +68,6 @@ def dockerIncompatibleTestPatterns = [
 // Nomulus classes, e.g., threads and objects retained by frameworks.
 // TODO(weiminyu): identify cause and fix offending tests.
 def fragileTestPatterns = [
-    // Test Datastore inexplicably aborts transaction.
-    "google/registry/model/tmch/ClaimsListShardTest.*",
     // Changes cache timeouts and for some reason appears to have contention
     // with other tests.
     "google/registry/whois/WhoisCommandFactoryTest.*",
@@ -168,7 +166,6 @@ dependencies {
   implementation deps['com.beust:jcommander']
   implementation deps['com.github.ben-manes.caffeine:caffeine']
   implementation deps['com.google.api:gax']
-  implementation deps['com.google.api.grpc:proto-google-cloud-datastore-v1']
   implementation deps['com.google.api.grpc:proto-google-common-protos']
   implementation deps['com.google.api.grpc:proto-google-cloud-secretmanager-v1']
   implementation deps['com.google.api-client:google-api-client']
@@ -192,7 +189,6 @@ dependencies {
   implementation deps['com.google.auth:google-auth-library-credentials']
   implementation deps['com.google.auth:google-auth-library-oauth2-http']
   implementation deps['com.google.cloud.bigdataoss:util']
-  implementation deps['com.google.cloud.datastore:datastore-v1-proto-client']
   implementation deps['com.google.cloud.sql:jdbc-socket-factory-core']
   runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
   implementation deps['com.google.cloud:google-cloud-secretmanager']
@@ -270,6 +266,8 @@ dependencies {
   implementation deps['org.jsoup:jsoup']
   testImplementation deps['org.mortbay.jetty:jetty']
   implementation deps['org.postgresql:postgresql']
+  implementation "org.eclipse.jetty:jetty-server:9.4.49.v20220914"
+  implementation "org.eclipse.jetty:jetty-servlet:9.4.49.v20220914"
   testImplementation deps['org.seleniumhq.selenium:selenium-api']
   testImplementation deps['org.seleniumhq.selenium:selenium-chrome-driver']
   testImplementation deps['org.seleniumhq.selenium:selenium-java']
@@ -750,8 +748,13 @@ if (environment == 'alpha') {
           ],
       invoicing          :
           [
-              mainClass: 'google.registry.beam.invoicing.InvoicingPipeline',
+              mainClass: 'google.registry.beam.billing.InvoicingPipeline',
               metaData : 'google/registry/beam/invoicing_pipeline_metadata.json'
+          ],
+      expandBilling      :
+          [
+              mainClass: 'google.registry.beam.billing.ExpandRecurringBillingEventsPipeline',
+              metaData : 'google/registry/beam/expand_recurring_billing_events_pipeline_metadata.json'
           ],
       rde                :
           [

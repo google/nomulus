@@ -25,18 +25,6 @@ import org.joda.time.format.ISODateTimeFormat;
 /** Utilities related to Bigquery. */
 public class BigqueryUtils {
 
-  /** Bigquery modes for schema fields. */
-  public enum FieldMode {
-    NULLABLE,
-    REQUIRED,
-    REPEATED;
-
-    /** Return the name of the field mode as it should appear in the Bigquery schema. */
-    public String schemaName() {
-      return name();
-    }
-  }
-
   /** Bigquery schema field types. */
   public enum FieldType {
     STRING,
@@ -44,19 +32,7 @@ public class BigqueryUtils {
     FLOAT,
     TIMESTAMP,
     RECORD,
-    BOOLEAN;
-
-    /** Return the name of the field type as it should appear in the Bigquery schema. */
-    public String schemaName() {
-      return name();
-    }
-  }
-
-  /** Source formats for Bigquery load jobs. */
-  public enum SourceFormat {
-    CSV,
-    NEWLINE_DELIMITED_JSON,
-    DATASTORE_BACKUP
+    BOOLEAN
   }
 
   /** Destination formats for Bigquery extract jobs. */

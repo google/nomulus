@@ -106,7 +106,7 @@ public final class ReservedList
   }
 
   /**
-   * A reserved list entry entity, persisted to Datastore, that represents a single label and its
+   * A reserved list entry entity, persisted to the database, that represents a single label and its
    * reservation type.
    */
   @javax.persistence.Entity(name = "ReservedEntry")

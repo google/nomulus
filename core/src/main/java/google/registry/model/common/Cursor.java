@@ -52,8 +52,7 @@ public class Cursor extends UpdateAutoTimestampEntity {
   /** The scope of a global cursor. A global cursor is a cursor that is not specific to one tld. */
   public static final String GLOBAL = "GLOBAL";
 
-
-  /** The types of cursors, used as the string id field for each cursor in Datastore. */
+  /** The types of cursors, used as the string id field for each cursor in the database. */
   public enum CursorType {
     /** Cursor for ensuring rolling transactional isolation of BRDA staging operation. */
     BRDA(true),

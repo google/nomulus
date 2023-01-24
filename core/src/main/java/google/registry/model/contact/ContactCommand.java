@@ -122,8 +122,8 @@ public class ContactCommand {
      * Unique identifier for this contact.
      *
      * <p>This is only unique in the sense that for any given lifetime specified as the time range
-     * from (creationTime, deletionTime) there can only be one contact in Datastore with this
-     * id.  However, there can be many contacts with the same id and non-overlapping lifetimes.
+     * from (creationTime, deletionTime) there can only be one contact in the database with this id.
+     * However, there can be many contacts with the same id and non-overlapping lifetimes.
      */
     @XmlElement(name = "id")
     String contactId;

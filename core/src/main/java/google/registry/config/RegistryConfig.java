@@ -60,7 +60,7 @@ import org.joda.time.Duration;
  *
  * <p>This class does not represent the total configuration of the Nomulus service. It's <b>only
  * meant for settings that need to be configured <i>once</i></b>. Settings which may be subject to
- * change in the future, should instead be retrieved from Datastore. The {@link
+ * change in the future, should instead be retrieved from the database. The {@link
  * google.registry.model.tld.Registry Registry} class is one such example of this.
  *
  * <p>Note: Only settings that are actually configurable belong in this file. It's not a catch-all
@@ -575,9 +575,9 @@ public final class RegistryConfig {
     /**
      * Returns the default job region to run Apache Beam (Cloud Dataflow) jobs in.
      *
-     * @see google.registry.beam.invoicing.InvoicingPipeline
+     * @see google.registry.beam.billing.InvoicingPipeline
      * @see google.registry.beam.spec11.Spec11Pipeline
-     * @see google.registry.beam.invoicing.InvoicingPipeline
+     * @see google.registry.beam.billing.InvoicingPipeline
      */
     @Provides
     @Config("defaultJobRegion")
@@ -655,7 +655,7 @@ public final class RegistryConfig {
     /**
      * Returns the URL of the GCS bucket we store invoices and detail reports in.
      *
-     * @see google.registry.beam.invoicing.InvoicingPipeline
+     * @see google.registry.beam.billing.InvoicingPipeline
      */
     @Provides
     @Config("billingBucketUrl")
@@ -691,7 +691,7 @@ public final class RegistryConfig {
     /**
      * Returns the file prefix for the invoice CSV file.
      *
-     * @see google.registry.beam.invoicing.InvoicingPipeline
+     * @see google.registry.beam.billing.InvoicingPipeline
      * @see google.registry.reporting.billing.BillingEmailUtils
      */
     @Provides
@@ -1151,6 +1151,12 @@ public final class RegistryConfig {
     @Config("allowedOauthClientIds")
     public static ImmutableSet<String> provideAllowedOauthClientIds(RegistryConfigSettings config) {
       return ImmutableSet.copyOf(config.oAuth.allowedOauthClientIds);
+    }
+
+    @Provides
+    @Config("iapClientId")
+    public static Optional<String> provideIapClientId(RegistryConfigSettings config) {
+      return Optional.ofNullable(config.oAuth.iapClientId);
     }
 
     /**

@@ -26,16 +26,11 @@ import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
 import com.google.common.collect.ImmutableMap;
 import google.registry.beam.BeamActionTestBase;
 import google.registry.config.RegistryEnvironment;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ResaveAllEppResourcesPipelineAction}. */
 public class ResaveAllEppResourcesPipelineActionTest extends BeamActionTestBase {
-
-  @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final FakeClock fakeClock = new FakeClock();
 

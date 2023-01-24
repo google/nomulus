@@ -774,6 +774,7 @@ public class BillingEventTest extends EntityTestCase {
                     .setRecurrenceEndTime(END_OF_TIME)));
     assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
     assertThat(recurringEvent.getRenewalPrice()).hasValue(Money.of(USD, 100));
+    assertThat(recurringEvent.getRecurrenceLastExpansion()).isEqualTo(now);
   }
 
   @Test

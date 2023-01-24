@@ -20,16 +20,11 @@ import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.testing.AppEngineExtension;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PremiumListUtils}. */
 class PremiumListUtilsTest {
-
-  @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void parseInputToPremiumList_works() {

@@ -24,6 +24,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.persistence.VKey;
@@ -48,11 +49,11 @@ final class DeleteAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   private static final int BATCH_SIZE = 20;
   private static final Joiner JOINER = Joiner.on(", ");
 
-  private ImmutableSet<VKey<AllocationToken>> tokensToDelete;
+  private ImmutableList<VKey<AllocationToken>> tokensToDelete;
 
   @Override
   public void init() {
-    tokensToDelete = getTokenKeys();
+    tokensToDelete = getTokenKeys(tokens, prefix);
   }
 
   @Override

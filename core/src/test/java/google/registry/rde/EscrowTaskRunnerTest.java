@@ -27,10 +27,11 @@ import static org.mockito.Mockito.verify;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Registry;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.rde.EscrowTaskRunner.EscrowTask;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.HttpException.ServiceUnavailableException;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import org.joda.time.DateTime;
@@ -44,8 +45,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class EscrowTaskRunnerTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final EscrowTask task = mock(EscrowTask.class);
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));

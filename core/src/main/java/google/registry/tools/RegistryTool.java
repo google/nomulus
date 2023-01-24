@@ -17,7 +17,7 @@ package google.registry.tools;
 import com.google.common.collect.ImmutableMap;
 import google.registry.tools.javascrap.CreateCancellationsForOneTimesCommand;
 
-/** Container class to create and run remote commands against a Datastore instance. */
+/** Container class to create and run remote commands against a server instance. */
 public final class RegistryTool {
 
   /**

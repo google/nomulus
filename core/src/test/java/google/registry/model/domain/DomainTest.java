@@ -65,7 +65,8 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
@@ -82,12 +83,8 @@ public class DomainTest {
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .enableJpaEntityCoverageCheck(true)
-          .withClock(fakeClock)
-          .build();
+  final JpaIntegrationWithCoverageExtension jpa =
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   private Domain domain;
   private VKey<BillingEvent.OneTime> oneTimeBillKey;
@@ -238,7 +235,7 @@ public class DomainTest {
   @Test
   void testPersistence() {
     // Note that this only verifies that the value stored under the foreign key is the same as that
-    // stored under the primary key ("domain" is the domain loaded from the datastore, not the
+    // stored under the primary key ("domain" is the domain loaded from the the database, not the
     // original domain object).
     assertThat(loadByForeignKey(Domain.class, domain.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(domain);

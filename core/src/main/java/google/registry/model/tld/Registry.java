@@ -955,8 +955,8 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
           "Cannot create registry for TLD that is not a valid, canonical domain name");
       // Check the validity of all TimedTransitionProperties to ensure that they have values for
       // START_OF_TIME.  The setters above have already checked this for new values, but also check
-      // here to catch cases where we loaded an invalid TimedTransitionProperty from Datastore and
-      // cloned it into a new builder, to block re-building a Registry in an invalid state.
+      // here to catch cases where we loaded an invalid TimedTransitionProperty from the database
+      // and cloned it into a new builder, to block re-building a Registry in an invalid state.
       instance.tldStateTransitions.checkValidity();
       instance.renewBillingCostTransitions.checkValidity();
       instance.eapFeeSchedule.checkValidity();

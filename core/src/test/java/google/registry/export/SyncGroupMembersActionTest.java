@@ -38,8 +38,9 @@ import google.registry.groups.DirectoryGroupsConnection;
 import google.registry.groups.GroupsConnection.Role;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Response;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.Retrier;
@@ -51,12 +52,13 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  * Unit tests for {@link SyncGroupMembersAction}.
  *
  * <p>Note that this relies on the registrars NewRegistrar and TheRegistrar created by default in
- * {@link AppEngineExtension}.
+ * {@link JpaIntegrationTestExtension}.
  */
 public class SyncGroupMembersActionTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final DirectoryGroupsConnection connection = mock(DirectoryGroupsConnection.class);
   private final Response response = mock(Response.class);

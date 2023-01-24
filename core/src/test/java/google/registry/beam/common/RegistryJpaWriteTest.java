@@ -27,7 +27,7 @@ import google.registry.beam.TestPipelineExtension;
 import google.registry.model.contact.Contact;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.testing.FakeClock;
 import java.io.Serializable;
 import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
@@ -43,7 +43,7 @@ class RegistryJpaWriteTest implements Serializable {
   private final FakeClock fakeClock = new FakeClock(DateTime.parse("2000-01-01T00:00:00.0Z"));
 
   @RegisterExtension
-  final transient JpaIntegrationTestExtension database =
+  final transient JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
 
   @RegisterExtension
@@ -52,7 +52,7 @@ class RegistryJpaWriteTest implements Serializable {
 
   @Test
   void writeToSql_twoWriters() {
-    tm().transact(() -> tm().put(AppEngineExtension.makeRegistrar2()));
+    tm().transact(() -> tm().put(JpaTransactionManagerExtension.makeRegistrar2()));
     ImmutableList.Builder<Contact> contactsBuilder = new ImmutableList.Builder<>();
     for (int i = 0; i < 3; i++) {
       contactsBuilder.add(newContact("contact_" + i));
@@ -76,7 +76,7 @@ class RegistryJpaWriteTest implements Serializable {
     // causing a race condition
     tm().transact(
             () -> {
-              tm().put(AppEngineExtension.makeRegistrar2());
+              tm().put(JpaTransactionManagerExtension.makeRegistrar2());
               tm().put(newContact("contact"));
             });
     Contact contact = Iterables.getOnlyElement(loadAllOf(Contact.class));

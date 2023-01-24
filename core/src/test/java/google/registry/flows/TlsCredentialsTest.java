@@ -31,7 +31,8 @@ import google.registry.flows.TlsCredentials.MissingRegistrarCertificateException
 import google.registry.flows.TlsCredentials.RegistrarCertificateNotConfiguredException;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.ProxyHttpHeaders;
@@ -45,9 +46,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 final class TlsCredentialsTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  protected final FakeClock clock = new FakeClock();
+  private final FakeClock clock = new FakeClock();
 
   private final CertificateChecker certificateChecker =
       new CertificateChecker(

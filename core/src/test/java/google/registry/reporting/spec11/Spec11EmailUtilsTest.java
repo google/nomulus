@@ -17,6 +17,7 @@ package google.registry.reporting.spec11;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_HOLD;
 import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
+import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrarContact2;
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.getMatchA;
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.getMatchB;
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.sampleThreatMatches;
@@ -36,8 +37,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
@@ -93,7 +95,8 @@ class Spec11EmailUtilsTest {
           + " notice, please contact abuse@test.com.</p>";
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private SendEmailService emailService;
   private Spec11EmailUtils emailUtils;
@@ -350,7 +353,7 @@ class Spec11EmailUtilsTest {
   void testSuccess_useWhoisAbuseEmailIfAvailable() throws Exception {
     // if John Doe is the whois abuse contact, email them instead of the regular email
     persistResource(
-        AppEngineExtension.makeRegistrarContact2()
+        makeRegistrarContact2()
             .asBuilder()
             .setEmailAddress("johndoe@theregistrar.com")
             .setVisibleInDomainWhoisAsAbuse(true)

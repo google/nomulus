@@ -18,18 +18,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import google.registry.testing.AppEngineExtension;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PubApiServlet}. */
 class PubApiServletTest {
-
-  @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withLocalModules().build();
 
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);

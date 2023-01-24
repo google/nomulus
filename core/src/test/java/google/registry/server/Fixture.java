@@ -36,7 +36,7 @@ import google.registry.testing.DatabaseHelper;
 import java.io.IOException;
 
 /**
- * Datastore fixtures for the development webserver.
+ * Database fixtures for the development webserver.
  *
  * <p><b>Warning:</b> These fixtures aren't really intended for unit tests, since they take upwards
  * of a second to load.
@@ -162,6 +162,6 @@ public enum Fixture {
     }
   };
 
-  /** Loads this fixture into Datastore. */
+  /** Loads this fixture into the database. */
   public abstract void load();
 }

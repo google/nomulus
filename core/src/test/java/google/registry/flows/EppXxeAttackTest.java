@@ -15,7 +15,8 @@
 package google.registry.flows;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -23,7 +24,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EppXxeAttackTest extends EppTestCase {
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Test
   void testRemoteXmlExternalEntity() throws Exception {

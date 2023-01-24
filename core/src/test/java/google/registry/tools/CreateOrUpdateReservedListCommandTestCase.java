@@ -15,8 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -24,10 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
-import com.google.common.truth.Truth8;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tld.label.ReservedList.ReservedListEntry;
-import google.registry.model.tld.label.ReservedListDao;
 import java.io.File;
 import java.io.IOException;
 import org.joda.time.DateTime;
@@ -108,42 +104,5 @@ abstract class CreateOrUpdateReservedListCommandTestCase<
         .setShouldPublish(shouldPublish)
         .setReservedListMap(labelsToEntries)
         .build();
-  }
-
-  ReservedList getCloudSqlReservedList(String name) {
-    return tm().transact(
-            () -> {
-              long revisionId =
-                  tm().query(
-                          "SELECT MAX(rl.revisionId) FROM ReservedList rl WHERE name = :name",
-                          Long.class)
-                      .setParameter("name", name)
-                      .getSingleResult();
-              return tm().query(
-                      "FROM ReservedList WHERE revisionId = :revisionId", ReservedList.class)
-                  .setParameter("revisionId", revisionId)
-                  .getSingleResult();
-            });
-  }
-
-  void verifyXnq9jyb4cInCloudSql() {
-    assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
-    ReservedList persistedList = getCloudSqlReservedList("xn--q9jyb4c_common-reserved");
-    assertThat(persistedList.getName()).isEqualTo("xn--q9jyb4c_common-reserved");
-    assertThat(persistedList.getShouldPublish()).isTrue();
-    assertThat(persistedList.getReservedListEntries())
-        .containsExactly(
-            "baddies",
-            ReservedListEntry.create("baddies", FULLY_BLOCKED, ""),
-            "ford",
-            ReservedListEntry.create("ford", FULLY_BLOCKED, "random comment"));
-  }
-
-  void verifyXnq9jyb4cInDatastore() {
-    Truth8.assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
-    ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
-    assertThat(reservedList.getReservedListEntries()).hasSize(2);
-    Truth8.assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
-    Truth8.assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
   }
 }

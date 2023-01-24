@@ -25,7 +25,7 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import org.joda.time.DateTime;
 
-/** A timestamp that auto-updates on each save to Datastore/Cloud SQL. */
+/** A timestamp that auto-updates on each save to Cloud SQL. */
 @Embeddable
 public class UpdateAutoTimestamp extends ImmutableObject implements UnsafeSerializable {
 

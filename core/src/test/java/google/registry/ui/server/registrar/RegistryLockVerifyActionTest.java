@@ -40,17 +40,18 @@ import google.registry.model.domain.RegistryLock;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.UserInfo;
+import google.registry.testing.UserServiceExtension;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.StringGenerator;
 import google.registry.util.StringGenerator.Alphabets;
@@ -66,12 +67,12 @@ final class RegistryLockVerifyActionTest {
   private final FakeClock fakeClock = new FakeClock();
 
   @RegisterExtension
-  final AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .withClock(fakeClock)
-          .withUserService(UserInfo.create("marla.singer@example.com"))
-          .build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
+
+  @RegisterExtension
+  final UserServiceExtension userServiceExtension =
+      new UserServiceExtension("marla.singer@example.com");
 
   private final HttpServletRequest request = mock(HttpServletRequest.class);
   private final UserService userService = UserServiceFactory.getUserService();
@@ -211,8 +212,8 @@ final class RegistryLockVerifyActionTest {
 
   @Test
   void testFailure_doesNotChangeLockObject() {
-    // A failure when performing Datastore actions means that no actions should be taken in the
-    // Cloud SQL RegistryLock object
+    // A failure when performing actions means that no actions should be taken in the Cloud SQL
+    // RegistryLock object
     RegistryLock lock = createLock();
     saveRegistryLock(lock);
     // reload the lock to pick up creation time
@@ -220,7 +221,7 @@ final class RegistryLockVerifyActionTest {
     fakeClock.advanceOneMilli();
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action.run();
-    // we would have failed during the Datastore segment of the action
+    // we would have failed during the lock acquisition segment of the action
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already locked");
 
     // verify that the changes to the SQL object were rolled back

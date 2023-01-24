@@ -60,7 +60,7 @@ public enum StatusValue implements EppEnum {
   /**
    * A status for a resource has an incoming reference from an active domain.
    *
-   * <p>LINKED is a "virtual" status value that should never be persisted to Datastore on any
+   * <p>LINKED is a "virtual" status value that should never be persisted to the database on any
    * resource. It must be computed on the fly when we need it, as the set of domains using a
    * resource can change at any time.
    */

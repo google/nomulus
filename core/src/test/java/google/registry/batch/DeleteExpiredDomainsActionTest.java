@@ -36,12 +36,14 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.TaskQueueExtension;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,8 +56,10 @@ class DeleteExpiredDomainsActionTest {
   private final FakeClock clock = new FakeClock(DateTime.parse("2016-06-13T20:21:22Z"));
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
+
+  @RegisterExtension final TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private final FakeResponse response = new FakeResponse();
   private DeleteExpiredDomainsAction action;

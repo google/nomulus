@@ -27,7 +27,6 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.bigquery.BigqueryJobFailureException;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.request.HttpException.BadRequestException;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
@@ -43,7 +42,6 @@ import org.joda.time.Duration;
 import org.joda.time.YearMonth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.icann.IcannReportingStagingAction}. */
 class IcannReportingStagingActionTest {
@@ -55,10 +53,6 @@ class IcannReportingStagingActionTest {
   private IcannReportingStagingAction action;
   private FakeClock clock = new FakeClock(DateTime.parse("2021-01-02T11:00:00Z"));
   private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
-
-  @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
 
   @BeforeEach
   void beforeEach() throws Exception {

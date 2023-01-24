@@ -15,10 +15,11 @@
 package google.registry.webdriver;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar2;
+import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrarContact2;
+import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrarContact3;
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.server.Route.route;
-import static google.registry.testing.AppEngineExtension.makeRegistrar2;
-import static google.registry.testing.AppEngineExtension.makeRegistrarContact2;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -34,7 +35,6 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CertificateSamples;
 import google.registry.testing.DatabaseHelper;
 import java.util.Optional;
@@ -58,7 +58,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
               route("/registry-lock-get", FrontendServlet.class),
               route("/registry-lock-verify", FrontendServlet.class))
           .setFixtures(BASIC)
-          .setEmail("Marla.Singer@crr.com") // from AppEngineExtension.makeRegistrarContact3
+          .setEmail("Marla.Singer@crr.com") // from makeRegistrarContact3
           .build();
 
   @RetryingTest(3)
@@ -140,8 +140,6 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void settingsContactEdit_setRegistryLockPassword() throws Throwable {
-    server.runInAppEngineEnvironment(
-        () -> {
           persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
           persistResource(
               makeRegistrarContact2()
@@ -149,8 +147,6 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
                   .setRegistryLockEmailAddress("johndoe.registrylock@example.com")
                   .setAllowedToSetRegistryLockPassword(true)
                   .build());
-          return null;
-        });
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
     driver.waitForDisplayedElement(By.tagName("h1"));
@@ -175,24 +171,18 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         By.id("reg-app-btn-edit"));
     driver.diffPage("contact_view");
 
-    server.runInAppEngineEnvironment(
-        () -> {
-          RegistrarPoc contact =
-              loadRegistrar("TheRegistrar").getContacts().stream()
-                  .filter(c -> c.getEmailAddress().equals("johndoe@theregistrar.com"))
-                  .findFirst()
-                  .get();
+    RegistrarPoc contact =
+        loadRegistrar("TheRegistrar").getContacts().stream()
+            .filter(c -> "johndoe@theregistrar.com".equals(c.getEmailAddress()))
+            .findFirst()
+            .get();
           assertThat(contact.verifyRegistryLockPassword("password")).isTrue();
           assertThat(contact.getRegistryLockEmailAddress())
               .isEqualTo(Optional.of("johndoe.registrylock@example.com"));
-          return null;
-        });
   }
 
   @RetryingTest(3)
   void settingsContactEdit_setRegistryLockPassword_alreadySet() throws Throwable {
-    server.runInAppEngineEnvironment(
-        () -> {
           persistResource(
               makeRegistrarContact2()
                   .asBuilder()
@@ -200,8 +190,6 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
                   .setRegistryLockPassword("hi")
                   .build());
           persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
-          return null;
-        });
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
     driver.waitForDisplayedElement(By.tagName("h1"));
@@ -211,8 +199,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void settingsContactEdit_setRegistryLockPassword_notAllowedForContact() throws Throwable {
-    server.runInAppEngineEnvironment(
-        () -> persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build()));
+    persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
     driver.waitForDisplayedElement(By.tagName("h1"));
@@ -250,8 +237,8 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
    * Makes sure the user can't "manually" enter the admin-settings.
    *
    * <p>Users don't have the "admin setting" tab (see the {@link #index_owner()} test). However, we
-   * also want to make sure that if a user enter's the URL fragment manually they don't get the
-   * admin page.
+   * also want to make sure that if a user enters the URL fragment manually they don't get the admin
+   * page.
    *
    * <p>Note that failure here is a UI issue only and not a security issue, since any "admin" change
    * a user tries to do is validated on the backend and fails for non-admins.
@@ -278,7 +265,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.get(server.getUrl("/registrar?clientId=oteunfinished-1#admin-settings"));
     driver.findElement(By.id("btn-ote-status")).click();
     driver.findElement(By.id("ote-results-table")).click();
-    // the 'hover' styling takes a bit to go away--sleep so we don't flake
+    // the 'hover' styling takes a bit to go away--sleep, so we don't flake
     Thread.sleep(250);
     driver.diffPage("result");
   }
@@ -291,7 +278,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("before_click");
     driver.findElement(By.id("btn-ote-status")).click();
     driver.findElement(By.id("ote-results-table")).click();
-    // the 'hover' styling takes a bit to go away--sleep so we don't flake
+    // the 'hover' styling takes a bit to go away--sleep, so we don't flake
     Thread.sleep(250);
     driver.diffPage("result");
   }
@@ -319,16 +306,12 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void settingsSecurityWithCerts() throws Throwable {
-    server.runInAppEngineEnvironment(
-        () -> {
           persistResource(
               loadRegistrar("TheRegistrar")
                   .asBuilder()
                   .setClientCertificate(CertificateSamples.SAMPLE_CERT, START_OF_TIME)
                   .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, START_OF_TIME)
                   .build());
-          return null;
-        });
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#security-settings"));
     driver.waitForDisplayedElement(By.tagName("h1"));
@@ -340,10 +323,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void index_registrarDisabled() throws Throwable {
-    server.runInAppEngineEnvironment(
-        () ->
-            persistResource(
-                loadRegistrar("TheRegistrar").asBuilder().setState(State.DISABLED).build()));
+    persistResource(loadRegistrar("TheRegistrar").asBuilder().setState(State.DISABLED).build());
     driver.get(server.getUrl("/registrar"));
     driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("view");
@@ -391,8 +371,6 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   @RetryingTest(3)
   void registryLockVerify_success() throws Throwable {
     String lockVerificationCode = "f1be78a2-2d61-458c-80f0-9dd8f2f8625f";
-    server.runInAppEngineEnvironment(
-        () -> {
           createTld("tld");
           persistResource(DatabaseHelper.newDomain("example-lock.tld"));
           saveRegistryLock(
@@ -404,8 +382,6 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
                   .isSuperuser(false)
                   .setDomainName("example-lock.tld")
                   .build());
-          return null;
-        });
     driver.get(
         server.getUrl(
             "/registry-lock-verify?isLock=true&lockVerificationCode=" + lockVerificationCode));
@@ -429,11 +405,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void registryLock_notAllowed() throws Throwable {
-    server.runInAppEngineEnvironment(
-        () -> {
           persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
-          return null;
-        });
     driver.get(server.getUrl("/registrar?clientId=TheRegistrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
@@ -441,11 +413,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void registryLock_nonEmpty() throws Throwable {
-    server.runInAppEngineEnvironment(
-        () -> {
           createDomainAndSaveLock();
-          return null;
-        });
     driver.get(server.getUrl("/registrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
@@ -453,8 +421,6 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void registryLock_nonEmpty_admin() throws Throwable {
-    server.runInAppEngineEnvironment(
-        () -> {
           createTld("tld");
           // expired unlock request
           Domain expiredUnlockRequestDomain = persistActiveDomain("expiredunlock.tld");
@@ -497,8 +463,6 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
                   .setLockCompletionTime(START_OF_TIME)
                   .setUnlockRequestTime(START_OF_TIME)
                   .build());
-          return null;
-        });
     driver.get(server.getUrl("/registrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
@@ -506,11 +470,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void registryLock_unlockModal() throws Throwable {
-    server.runInAppEngineEnvironment(
-        () -> {
           createDomainAndSaveLock();
-          return null;
-        });
     driver.get(server.getUrl("/registrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
     driver.findElement(By.id("button-unlock-example.tld")).click();
@@ -522,12 +482,8 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   @RetryingTest(3)
   void registryLock_lockModal() throws Throwable {
     server.setIsAdmin(true);
-    server.runInAppEngineEnvironment(
-        () -> {
           createTld("tld");
           persistActiveDomain("example.tld");
-          return null;
-        });
     driver.get(server.getUrl("/registrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
     driver.findElement(By.id("button-lock-domain")).click();
@@ -538,27 +494,20 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void registryLock_notAllowedForUser() throws Throwable {
-    server.runInAppEngineEnvironment(
-        () -> {
-          persistResource(
-              AppEngineExtension.makeRegistrarContact3()
-                  .asBuilder()
-                  .setAllowedToSetRegistryLockPassword(true)
-                  .build());
-          return null;
-        });
+    persistResource(
+        makeRegistrarContact3().asBuilder().setAllowedToSetRegistryLockPassword(true).build());
     driver.get(server.getUrl("/registrar?clientId=TheRegistrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
   }
 
-  private void createDomainAndSaveLock() {
+  private static void createDomainAndSaveLock() {
     createTld("tld");
     Domain domain = persistActiveDomain("example.tld");
     saveRegistryLock(createRegistryLock(domain));
   }
 
-  private RegistryLock createRegistryLock(Domain domain) {
+  private static RegistryLock createRegistryLock(Domain domain) {
     return new RegistryLock.Builder()
         .setVerificationCode(UUID.randomUUID().toString())
         .isSuperuser(false)

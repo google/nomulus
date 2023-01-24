@@ -44,7 +44,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,7 +86,10 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
     // Registrar ClientZ is used in tests that need another registrar that definitely doesn't own
     // the resources in question.
     persistResource(
-        AppEngineExtension.makeRegistrar1().asBuilder().setRegistrarId("ClientZ").build());
+        JpaTransactionManagerExtension.makeRegistrar1()
+            .asBuilder()
+            .setRegistrarId("ClientZ")
+            .build());
   }
 
   static Domain persistWithPendingTransfer(Domain domain) {

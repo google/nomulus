@@ -1,6 +1,6 @@
 {
   "name": "Invoice and Detailed Reports Generation",
-  "description": "An Apache Beam batch pipeline that reads from a Datastore export and generate monthly invoice and detailed reports, saving them on GCS.",
+  "description": "An Apache Beam batch pipeline that generates monthly invoice and detailed reports, saving them on GCS.",
   "parameters": [
     {
       "name": "registryEnvironment",

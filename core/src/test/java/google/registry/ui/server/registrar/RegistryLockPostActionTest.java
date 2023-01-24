@@ -37,6 +37,9 @@ import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.UserRoles;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonResponse;
 import google.registry.request.ResponseImpl;
@@ -45,7 +48,6 @@ import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
@@ -85,8 +87,8 @@ final class RegistryLockPostActionTest {
   private final FakeClock clock = new FakeClock();
 
   @RegisterExtension
-  final AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder().withCloudSql().withClock(clock).build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   private User userWithoutPermission;
   private User userWithLockPermission;
@@ -101,8 +103,10 @@ final class RegistryLockPostActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    userWithLockPermission = userFromRegistrarPoc(AppEngineExtension.makeRegistrarContact3());
-    userWithoutPermission = userFromRegistrarPoc(AppEngineExtension.makeRegistrarContact2());
+    userWithLockPermission =
+        userFromRegistrarPoc(JpaTransactionManagerExtension.makeRegistrarContact3());
+    userWithoutPermission =
+        userFromRegistrarPoc(JpaTransactionManagerExtension.makeRegistrarContact2());
     createTld("tld");
     domain = persistResource(DatabaseHelper.newDomain("example.tld"));
 

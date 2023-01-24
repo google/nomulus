@@ -36,7 +36,7 @@ public class ServerSecretTest extends EntityTestCase {
   }
 
   @Test
-  void testGet_bootstrapping_savesSecretToDatastore() {
+  void testGet_bootstrapping_savesSecret() {
     ServerSecret secret = ServerSecret.get();
     assertThat(secret).isNotNull();
     assertThat(loadByEntity(new ServerSecret())).isEqualTo(secret);

@@ -74,6 +74,10 @@ public class PackagePromotion extends ImmutableObject implements Buildable {
   /** Date the last warning email was sent that the package has exceeded the maxDomains limit. */
   @Nullable DateTime lastNotificationSent;
 
+  public long getId() {
+    return packagePromotionId;
+  }
+
   public VKey<AllocationToken> getToken() {
     return token;
   }

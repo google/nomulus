@@ -154,7 +154,7 @@ public class DomainHistory extends HistoryEntry {
    *
    * <p>This will be empty for any DomainHistory/HistoryEntry generated before this field was added
    * (mid-2017), as well as any action that does not generate billable events (e.g. contact/host
-   * updates). *
+   * updates).
    */
   @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
   @JoinColumn(name = "historyRevisionId", referencedColumnName = "historyRevisionId")

@@ -88,8 +88,7 @@ public class Lock extends ImmutableObject implements Serializable {
    * <p>See {@link RequestStatusCheckerImpl#getLogId} for details about how it's created in
    * practice.
    */
-  @Column(nullable = false)
-  String requestLogId;
+  @Column String requestLogId;
 
   /** When the lock can be considered implicitly released. */
   @Column(nullable = false)
@@ -240,7 +239,7 @@ public class Lock extends ImmutableObject implements Serializable {
 
           return AcquireResult.create(now, lock, newLock, lockState);
         };
-    AcquireResult acquireResult = tm().transactWithoutBackup(lockAcquirer);
+    AcquireResult acquireResult = tm().transact(lockAcquirer);
 
     logAcquireResult(acquireResult);
     lockMetrics.recordAcquire(resourceName, scope, acquireResult.lockState());
@@ -277,7 +276,7 @@ public class Lock extends ImmutableObject implements Serializable {
           }
           return null;
         };
-    tm().transactWithoutBackup(lockReleaser);
+    tm().transact(lockReleaser);
   }
 
   static class LockId extends ImmutableObject implements Serializable {

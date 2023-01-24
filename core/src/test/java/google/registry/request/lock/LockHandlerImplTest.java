@@ -21,8 +21,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import google.registry.model.server.Lock;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
+import google.registry.testing.UserServiceExtension;
 import google.registry.util.RequestStatusCheckerImpl;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -40,8 +40,9 @@ final class LockHandlerImplTest {
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2001-08-29T12:20:00Z"));
 
-  @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  // We do not actually need to set up user service, rather, we just need this extension to set up
+  // App Engine environment so the status checker can make an App Engine API call.
+  @RegisterExtension UserServiceExtension userService = new UserServiceExtension("");
 
   private static class CountingCallable implements Callable<Void> {
     int numCalled;

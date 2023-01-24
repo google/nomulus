@@ -36,8 +36,6 @@ import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.RequestAuthenticator;
 import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.AppEngineExtension;
-import google.registry.testing.UserInfo;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
@@ -46,17 +44,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RequestHandler}. */
 public final class RequestHandlerTest {
-
-  @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .withUserService(UserInfo.create("test@example.com"))
-          .build();
 
   @Action(
       service = Action.Service.DEFAULT,

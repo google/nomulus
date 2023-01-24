@@ -1,6 +1,6 @@
 {
   "name": "Spec11 Report Generation",
-  "description": "An Apache Beam batch pipeline that reads from a Datastore export and generate Spec11 report for the month, saving it to both SQL and as a JSON file on GCS.",
+  "description": "An Apache Beam batch pipeline that generates Spec11 report for the month, saving it to both SQL and as a JSON file on GCS.",
   "parameters": [
     {
       "name": "registryEnvironment",

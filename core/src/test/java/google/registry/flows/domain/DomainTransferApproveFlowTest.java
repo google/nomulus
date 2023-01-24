@@ -302,6 +302,8 @@ class DomainTransferApproveFlowTest
                     getGainingClientAutorenewEvent()
                         .asBuilder()
                         .setEventTime(domain.getRegistrationExpirationTime())
+                        .setRecurrenceLastExpansion(
+                            domain.getRegistrationExpirationTime().minusYears(1))
                         .setDomainHistory(historyEntryTransferApproved)
                         .build()))
             .toArray(BillingEvent[]::new));
@@ -338,6 +340,8 @@ class DomainTransferApproveFlowTest
                     getGainingClientAutorenewEvent()
                         .asBuilder()
                         .setEventTime(domain.getRegistrationExpirationTime())
+                        .setRecurrenceLastExpansion(
+                            domain.getRegistrationExpirationTime().minusYears(1))
                         .setDomainHistory(historyEntryTransferApproved)
                         .build()))
             .toArray(BillingEvent[]::new));
@@ -835,7 +839,7 @@ class DomainTransferApproveFlowTest
         "tld",
         "domain_transfer_approve.xml",
         "domain_transfer_approve_response_zero_period.xml",
-        domain.getRegistrationExpirationTime().plusYears(0));
+        domain.getRegistrationExpirationTime());
     assertHistoryEntriesDoNotContainTransferBillingEventsOrGracePeriods();
   }
 

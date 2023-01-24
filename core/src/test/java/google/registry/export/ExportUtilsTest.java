@@ -21,7 +21,8 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.ReservedList;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -29,7 +30,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class ExportUtilsTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Test
   void test_exportReservedTerms() {

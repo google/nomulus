@@ -18,17 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import google.registry.testing.AppEngineExtension;
 import org.joda.time.YearMonth;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ActivityReportingQueryBuilder}. */
 class TransactionsReportingQueryBuilderTest {
-
-  @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
 
   private final YearMonth yearMonth = new YearMonth(2017, 9);
 

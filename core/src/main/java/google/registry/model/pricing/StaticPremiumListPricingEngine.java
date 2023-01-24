@@ -25,7 +25,7 @@ import javax.inject.Inject;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 
-/** A premium list pricing engine that stores static pricing information in Datastore entities. */
+/** A premium list pricing engine that stores static pricing information in database entities. */
 public final class StaticPremiumListPricingEngine implements PremiumPricingEngine {
 
   /** The name of the pricing engine, as used in {@code Registry.pricingEngineClassName}. */

@@ -36,7 +36,7 @@ import java.util.Optional;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.postgresql.util.PSQLException;
 
-/** Container class to create and run remote commands against a Datastore instance. */
+/** Container class to create and run remote commands against a server instance. */
 @Parameters(separators = " =", commandDescription = "Command-line interface to the registry")
 final class RegistryCli implements CommandRunner {
 

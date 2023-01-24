@@ -296,13 +296,17 @@ class DomainTransferRequestFlowTest
             .setRecurrenceEndTime(implicitTransferTime)
             .build();
     BillingEvent.Recurring gainingClientAutorenew =
-        getGainingClientAutorenewEvent().asBuilder().setEventTime(expectedExpirationTime).build();
+        getGainingClientAutorenewEvent()
+            .asBuilder()
+            .setEventTime(expectedExpirationTime)
+            .setRecurrenceLastExpansion(expectedExpirationTime.minusYears(1))
+            .build();
     // Construct extra billing events expected by the specific test.
     ImmutableSet<BillingEvent> extraBillingEvents =
         Stream.of(extraExpectedBillingEvents)
             .map(builder -> builder.setDomainHistory(historyEntryTransferRequest).build())
             .collect(toImmutableSet());
-    // Assert that the billing events we constructed above actually exist in Datastore.
+    // Assert that the billing events we constructed above actually exist in the database.
     ImmutableSet<BillingEvent> expectedBillingEvents =
         Streams.concat(
                 Stream.of(losingClientAutorenew, gainingClientAutorenew),

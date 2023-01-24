@@ -74,7 +74,7 @@ import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.xml.ValidationMode;
 import java.util.regex.Pattern;
@@ -115,7 +115,10 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
     persistResource(
-        AppEngineExtension.makeRegistrar1().asBuilder().setRegistrarId("ClientZ").build());
+        JpaTransactionManagerExtension.makeRegistrar1()
+            .asBuilder()
+            .setRegistrarId("ClientZ")
+            .build());
   }
 
   private void persistTestEntities(String domainName, boolean inactive) {
@@ -145,7 +148,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("2fooBAR")))
                 .build());
     // Set the superordinate domain of ns1.example.com to example.com. In reality, this would have
-    // happened in the flow that created it, but here we just overwrite it in Datastore.
+    // happened in the flow that created it, but here we just overwrite it in the database.
     host1 = persistResource(host1.asBuilder().setSuperordinateDomain(domain.createVKey()).build());
     // Create a subordinate host that is not delegated to by anyone.
     host3 =

@@ -27,7 +27,8 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
@@ -48,7 +49,8 @@ class TldFanoutActionTest {
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(new FakeClock());
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private static ImmutableListMultimap<String, String> getParamsMap(String... keysAndValues) {
     ImmutableListMultimap.Builder<String, String> params = new ImmutableListMultimap.Builder<>();

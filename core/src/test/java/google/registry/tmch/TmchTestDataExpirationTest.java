@@ -21,7 +21,8 @@ import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowTmchUtils;
 import google.registry.model.smd.EncodedSignedMark;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.util.SystemClock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class TmchTestDataExpirationTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   /**
    * Verifies the currently-active signed mark file provided by ICANN.

@@ -25,7 +25,9 @@ import static google.registry.testing.HostSubject.assertAboutHosts;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.testing.TaskQueueExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -34,8 +36,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EppLifecycleHostTest extends EppTestCase {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withClock(clock).withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
+
+  @RegisterExtension final TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   @Test
   void testLifecycle() throws Exception {

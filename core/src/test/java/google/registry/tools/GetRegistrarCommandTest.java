@@ -25,13 +25,13 @@ class GetRegistrarCommandTest extends CommandTestCase<GetRegistrarCommand> {
 
   @Test
   void testSuccess() throws Exception {
-    // This registrar is created by AppEngineExtension.
+    // This registrar is created by JpaTransactionManagerExtension.
     runCommand("NewRegistrar");
   }
 
   @Test
   void testSuccess_multipleArguments() throws Exception {
-    // Registrars are created by AppEngineExtension.
+    // Registrars are created by JpaTransactionManagerExtension.
     runCommand("NewRegistrar", "TheRegistrar");
   }
 

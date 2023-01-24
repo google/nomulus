@@ -34,9 +34,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.ReservedList;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Response;
 import google.registry.storage.drive.DriveConnection;
-import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ExportReservedTermsActionTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  JpaIntegrationTestExtension jpa = new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
   private final Response response = mock(Response.class);

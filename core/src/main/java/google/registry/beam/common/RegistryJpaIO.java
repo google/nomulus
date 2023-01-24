@@ -71,7 +71,7 @@ public final class RegistryJpaIO {
   }
 
   /**
-   * Returns a {@link Read} connector based on the given {@code jpql} query string.
+   * Returns a {@link Read} connector based on the given native or {@code jpql} query string.
    *
    * <p>User should take care to prevent sql-injection attacks.
    */

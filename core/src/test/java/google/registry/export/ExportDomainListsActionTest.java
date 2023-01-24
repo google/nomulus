@@ -35,8 +35,9 @@ import com.google.common.net.MediaType;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.Registry.TldType;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.storage.drive.DriveConnection;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,8 +55,8 @@ class ExportDomainListsActionTest {
   private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T02:02:02Z"));
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withLocalModules().withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @BeforeEach
   void beforeEach() {

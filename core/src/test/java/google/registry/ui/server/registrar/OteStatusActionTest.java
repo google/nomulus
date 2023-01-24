@@ -27,9 +27,10 @@ import google.registry.model.OteAccountBuilder;
 import google.registry.model.OteStats.StatType;
 import google.registry.model.OteStatsTestHelper;
 import google.registry.model.registrar.Registrar.Type;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
-import google.registry.testing.AppEngineExtension;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -46,7 +47,8 @@ public final class OteStatusActionTest {
   private final OteStatusAction action = new OteStatusAction();
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @BeforeEach
   void beforeEach() {

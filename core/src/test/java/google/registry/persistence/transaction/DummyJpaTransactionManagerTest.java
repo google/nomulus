@@ -17,14 +17,10 @@ package google.registry.persistence.transaction;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** JUnit test for {@link DummyJpaTransactionManager} */
 class DummyJpaTransactionManagerTest {
-
-  @RegisterExtension final AppEngineExtension appEngine = AppEngineExtension.builder().build();
 
   @Test
   void throwsExceptionWhenAnyMethodIsInvoked() {

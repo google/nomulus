@@ -39,7 +39,7 @@ import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
-/** Implementation of {@link LockHandler} that uses the datastore lock. */
+/** Implementation of {@link LockHandler} that uses the database lock. */
 public class LockHandlerImpl implements LockHandler {
 
   private static final long serialVersionUID = 5746905970040002524L;

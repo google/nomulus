@@ -27,7 +27,8 @@ import google.registry.config.RegistryConfig;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestCacheExtension;
@@ -43,8 +44,8 @@ class WhoisCommandFactoryTest {
   FakeClock clock = new FakeClock();
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withClock(clock).build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @RegisterExtension
   final TestCacheExtension testCacheExtension =

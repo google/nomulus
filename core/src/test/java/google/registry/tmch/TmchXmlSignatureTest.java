@@ -19,7 +19,8 @@ import static google.registry.tmch.TmchTestData.loadSmd;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.tmch.TmchXmlSignature.CertificateSignatureException;
 import java.security.cert.CertificateExpiredException;
@@ -39,7 +40,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class TmchXmlSignatureTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   // This should be a date which falls within the validity range of the test files contained in the
   // testdata/active directory. Note that test files claiming to be valid for a particular date

@@ -28,7 +28,8 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.TestCacheExtension;
 import google.registry.util.Clock;
 import java.time.Duration;
@@ -43,8 +44,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EppLifecycleToolsTest extends EppTestCase {
 
   @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withClock(clock).withCloudSql().withTaskQueue().build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @RegisterExtension
   public final TestCacheExtension testCacheExtension =

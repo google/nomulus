@@ -26,9 +26,9 @@
 
       We want it to be close to midnight because that reduces the chance that the
       point-in-time code won't have to go to the extra trouble of fetching old
-      versions of objects from Datastore. However, we don't want it to run too
+      versions of objects from the database. However, we don't want it to run too
       close to midnight, because there's always a chance that a change which was
-      timestamped before midnight hasn't fully been committed to Datastore. So
+      timestamped before midnight hasn't fully been committed to the database. So
       we add a 4+ minute grace period to ensure the transactions cool down, since
       our queries are not transactional.
     -->
@@ -132,7 +132,7 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_dr/task/expandRecurringBillingEvents]]></url>
+    <url><![CDATA[/_dr/task/expandRecurringBillingEvents?advanceCursor]]></url>
     <description>
       This job runs an action that creates synthetic OneTime billing events from Recurring billing
       events. Events are created for all instances of Recurring billing events that should exist
@@ -224,15 +224,6 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_ah/sessioncleanup?clear]]></url>
-    <description>
-      Delete up to 100 expired _ah_SESSION entities from Datastore.
-    </description>
-    <schedule>every 15 minutes</schedule>
-    <target>backend</target>
-  </cron>
-
-  <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/icannReportingStaging&runInEmpty]]></url>
     <description>
       Create ICANN activity and transaction reports for last month, storing them in
@@ -258,7 +249,7 @@
   <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/generateInvoices?shouldPublish=true&runInEmpty]]></url>
     <description>
-      Starts the beam/invoicing/InvoicingPipeline Dataflow template, which creates the overall invoice and
+      Starts the beam/billing/InvoicingPipeline Dataflow template, which creates the overall invoice and
       detail report CSVs for last month, storing them in gs://[PROJECT-ID]-billing/invoices/yyyy-MM.
       Upon success, sends an e-mail copy of the invoice to billing personnel, and copies detail
       reports to the associated registrars' drive folders.

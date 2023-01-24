@@ -21,20 +21,15 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.io.Resources;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ResourceInfo;
-import google.registry.testing.AppEngineExtension;
 import java.net.URL;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Presubmit tests for {@link ReservedList} configuration files. */
 class GenruleReservedListTest {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final String LISTS_DIRECTORY = "google/registry/config/files/reserved/";
-
-  @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   @Test
   void testParse_allReservedLists() throws Exception {

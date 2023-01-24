@@ -15,7 +15,6 @@
 package google.registry.tmch;
 
 import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
-import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.HttpHeaders.LOCATION;
@@ -31,25 +30,28 @@ import com.google.api.client.http.HttpMethods;
 import com.google.appengine.api.taskqueue.LeaseOptions;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.TaskHandle;
-import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.api.taskqueue.TransientFailureException;
 import com.google.apphosting.api.DeadlineExceededException;
+import com.google.cloud.tasks.v2.Task;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
+import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.UrlConnectionService;
 import google.registry.request.UrlConnectionUtils;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
+import google.registry.util.CloudTasksUtils;
 import google.registry.util.Retrier;
-import google.registry.util.TaskQueueUtils;
 import google.registry.util.UrlConnectionException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -81,6 +83,7 @@ public final class NordnUploadAction implements Runnable {
   static final String PATH = "/_dr/task/nordnUpload";
   static final String LORDN_PHASE_PARAM = "lordn-phase";
 
+  private static final int QUEUE_BATCH_SIZE = 1000;
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Duration LEASE_PERIOD = Duration.standardHours(1);
 
@@ -100,7 +103,9 @@ public final class NordnUploadAction implements Runnable {
   @Inject @Config("tmchMarksdbUrl") String tmchMarksdbUrl;
   @Inject @Parameter(LORDN_PHASE_PARAM) String phase;
   @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
-  @Inject TaskQueueUtils taskQueueUtils;
+
+  @Inject CloudTasksUtils cloudTasksUtils;
+
   @Inject NordnUploadAction() {}
 
   /**
@@ -108,6 +113,7 @@ public final class NordnUploadAction implements Runnable {
    * changed on our end.
    */
   private static final String PARAM_LORDN_PHASE_SUNRISE = "sunrise";
+
   private static final String PARAM_LORDN_PHASE_CLAIMS = "claims";
 
   /** How long to wait before attempting to verify an upload by fetching the log. */
@@ -127,7 +133,7 @@ public final class NordnUploadAction implements Runnable {
    * delimited String.
    */
   static String convertTasksToCsv(List<TaskHandle> tasks, DateTime now, String columns) {
-    // Use a Set for deduping purposes so we can be idempotent in case tasks happened to be
+    // Use a Set for deduping purposes, so we can be idempotent in case tasks happened to be
     // enqueued multiple times for a given domain create.
     ImmutableSortedSet.Builder<String> builder =
         new ImmutableSortedSet.Builder<>(Ordering.natural());
@@ -152,7 +158,7 @@ public final class NordnUploadAction implements Runnable {
                   queue.leaseTasks(
                       LeaseOptions.Builder.withTag(tld)
                           .leasePeriod(LEASE_PERIOD.getMillis(), TimeUnit.MILLISECONDS)
-                          .countLimit(TaskQueueUtils.getBatchSize())),
+                          .countLimit(QUEUE_BATCH_SIZE)),
               TransientFailureException.class,
               DeadlineExceededException.class);
       if (tasks.isEmpty()) {
@@ -163,9 +169,10 @@ public final class NordnUploadAction implements Runnable {
   }
 
   private void processLordnTasks() throws IOException, GeneralSecurityException {
-    checkArgument(phase.equals(PARAM_LORDN_PHASE_SUNRISE)
-        || phase.equals(PARAM_LORDN_PHASE_CLAIMS),
-        "Invalid phase specified to Nordn servlet: %s.", phase);
+    checkArgument(
+        phase.equals(PARAM_LORDN_PHASE_SUNRISE) || phase.equals(PARAM_LORDN_PHASE_CLAIMS),
+        "Invalid phase specified to Nordn servlet: %s.",
+        phase);
     DateTime now = clock.nowUtc();
     Queue queue =
         getQueue(
@@ -182,7 +189,11 @@ public final class NordnUploadAction implements Runnable {
     if (!tasks.isEmpty()) {
       String csvData = convertTasksToCsv(tasks, now, columns);
       uploadCsvToLordn(String.format("/LORDN/%s/%s", tld, phase), csvData);
-      taskQueueUtils.deleteTasks(queue, tasks);
+      Lists.partition(tasks, QUEUE_BATCH_SIZE)
+          .forEach(
+              batch ->
+                  retrier.callWithRetry(
+                      () -> queue.deleteTask(batch), TransientFailureException.class));
     }
   }
 
@@ -231,18 +242,22 @@ public final class NordnUploadAction implements Runnable {
                 actionLogId),
             connection);
       }
-      getQueue(NordnVerifyAction.QUEUE).add(makeVerifyTask(new URL(location)));
+      cloudTasksUtils.enqueue(NordnVerifyAction.QUEUE, makeVerifyTask(new URL(location)));
     } catch (IOException e) {
       throw new IOException(String.format("Error connecting to MarksDB at URL %s", url), e);
     }
   }
 
-  private TaskOptions makeVerifyTask(URL url) {
+  private Task makeVerifyTask(URL url) {
     // The actionLogId is used to uniquely associate the verify task back to the upload task.
-    return withUrl(NordnVerifyAction.PATH)
-        .header(NordnVerifyAction.URL_HEADER, url.toString())
-        .header(NordnVerifyAction.HEADER_ACTION_LOG_ID, actionLogId)
-        .param(RequestParameters.PARAM_TLD, tld)
-        .countdownMillis(VERIFY_DELAY.getMillis());
+    return cloudTasksUtils.createPostTaskWithDelay(
+        NordnVerifyAction.PATH,
+        Service.BACKEND.toString(),
+        ImmutableMultimap.<String, String>builder()
+            .put(NordnVerifyAction.NORDN_URL_PARAM, url.toString())
+            .put(NordnVerifyAction.NORDN_LOG_ID_PARAM, actionLogId)
+            .put(RequestParameters.PARAM_TLD, tld)
+            .build(),
+        Duration.millis(VERIFY_DELAY.getMillis()));
   }
 }

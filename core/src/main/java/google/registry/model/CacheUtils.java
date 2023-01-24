@@ -22,14 +22,14 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Supplier;
 import java.time.Duration;
 
-/** Utility methods related to caching Datastore entities. */
+/** Utility methods related to caching database entities. */
 public class CacheUtils {
 
   /**
    * Memoize a supplier, with a short expiration specified in the environment config.
    *
    * <p>Use this for things that might change while code is running. (For example, the various lists
-   * downloaded from the TMCH get updated in Datastore and the caches need to be refreshed.)
+   * downloaded from the TMCH get updated in the database and the caches need to be refreshed.)
    */
   public static <T> Supplier<T> memoizeWithShortExpiration(Supplier<T> original) {
     return tryMemoizeWithExpiration(getSingletonCacheRefreshDuration(), original);

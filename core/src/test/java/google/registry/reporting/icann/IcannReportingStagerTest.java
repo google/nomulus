@@ -31,13 +31,11 @@ import google.registry.bigquery.BigqueryConnection.DestinationTable;
 import google.registry.bigquery.BigqueryUtils.TableType;
 import google.registry.gcs.GcsUtils;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import org.joda.time.YearMonth;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.icann.IcannReportingStager}. */
 class IcannReportingStagerTest {
@@ -47,10 +45,6 @@ class IcannReportingStagerTest {
   private YearMonth yearMonth = new YearMonth(2017, 6);
   private String subdir = "icann/monthly/2017-06";
   private GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
-
-  @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withCloudSql().withLocalModules().build();
 
   private IcannReportingStager createStager() {
     IcannReportingStager action = new IcannReportingStager();

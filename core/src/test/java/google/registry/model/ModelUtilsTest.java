@@ -17,18 +17,13 @@ package google.registry.model;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.testing.AppEngineExtension;
 import java.lang.reflect.Field;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ModelUtils}. */
 public class ModelUtilsTest {
-
-  @RegisterExtension
-  public AppEngineExtension appEngineExtension = new AppEngineExtension.Builder().build();
 
   /** Test class for reflection methods. */
   public static class TestClass extends ImmutableObject implements Buildable {

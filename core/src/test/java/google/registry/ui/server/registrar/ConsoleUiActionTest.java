@@ -28,16 +28,17 @@ import com.google.appengine.api.users.UserServiceFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.net.MediaType;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.UserInfo;
+import google.registry.testing.UserServiceExtension;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
@@ -49,11 +50,11 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class ConsoleUiActionTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngineExtension =
-      AppEngineExtension.builder()
-          .withCloudSql()
-          .withUserService(UserInfo.create("marla.singer@example.com"))
-          .build();
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+
+  @RegisterExtension
+  final UserServiceExtension userService = new UserServiceExtension("marla.singer@example.com");
 
   private final HttpServletRequest request = mock(HttpServletRequest.class);
   private final FakeResponse response = new FakeResponse();

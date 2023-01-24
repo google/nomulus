@@ -61,6 +61,7 @@ public class RegistryConfigSettings {
     public List<String> availableOauthScopes;
     public List<String> requiredOauthScopes;
     public List<String> allowedOauthClientIds;
+    public String iapClientId;
   }
 
   /** Configuration options for accessing Google APIs. */

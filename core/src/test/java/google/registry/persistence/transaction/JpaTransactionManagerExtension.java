@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.persistence.Entity;
@@ -80,7 +81,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
  * itself, so that all SQL queries will be sent to the database instance created by {@link
  * PostgreSQLContainer} to achieve test purpose.
  */
-abstract class JpaTransactionManagerExtension implements BeforeEachCallback, AfterEachCallback {
+public abstract class JpaTransactionManagerExtension
+    implements BeforeEachCallback, AfterEachCallback {
 
   private static final String DB_CLEANUP_SQL_PATH =
       "google/registry/persistence/transaction/cleanup_database.sql";
@@ -113,8 +115,10 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
   // to false.
   private boolean includeNomulusSchema = true;
 
-  // Whether to prepolulate some registrars for ease of testing.
+  // Whether to pre-polulate some registrars for ease of testing.
   private final boolean withCannedData;
+
+  private TimeZone originalDefaultTimeZone;
 
   JpaTransactionManagerExtension(
       Clock clock,
@@ -206,6 +210,8 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
 
   @Override
   public void beforeEach(ExtensionContext context) throws Exception {
+    originalDefaultTimeZone = TimeZone.getDefault();
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     if (entityHash == emfEntityHash) {
       checkState(emf != null, "Missing EntityManagerFactory.");
       resetTablesAndSequences();
@@ -217,6 +223,16 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
     TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(txnManager));
     TransactionManagerFactory.setReplicaJpaTm(
         Suppliers.ofInstance(new ReplicaSimulatingJpaTransactionManager(txnManager)));
+    // Reset SQL Sequence based id allocation so that ids are deterministic in tests.
+    TransactionManagerFactory.tm()
+        .transact(
+            () ->
+                TransactionManagerFactory.tm()
+                    .getEntityManager()
+                    .createNativeQuery(
+                        "alter sequence if exists project_wide_unique_id_seq start 1 minvalue 1"
+                            + " restart with 1")
+                    .executeUpdate());
     if (withCannedData) {
       loadInitialData();
     }
@@ -227,6 +243,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
     TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(cachedTm));
     TransactionManagerFactory.setReplicaJpaTm(Suppliers.ofInstance(cachedTm));
     cachedTm = null;
+    TimeZone.setDefault(originalDefaultTimeZone);
   }
 
   public JdbcDatabaseContainer getDatabase() {
