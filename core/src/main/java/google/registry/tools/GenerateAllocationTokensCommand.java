@@ -258,11 +258,9 @@ class GenerateAllocationTokensCommand implements Command {
     if (!isNullOrEmpty(tokenStatusTransitions)) {
       // Don't allow package tokens to be created with a scheduled end time since this could allow
       // future domains to be attributed to the package and never be billed. Package promotion
-      // tokens
-      // should only be scheduled to end with a brief time period before the status transition
-      // occurs
-      // so that no new domains are registered using that token between when the status is scheduled
-      // and when the transition occurs.
+      // tokens should only be scheduled to end with a brief time period before the status
+      // transition occurs so that no new domains are registered using that token between when the
+      // status is scheduled and when the transition occurs.
       // TODO(@sarahbot): Create a cleaner way to handle ending packages once we actually have
       // customers using them
       checkArgument(
