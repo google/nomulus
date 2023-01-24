@@ -15,10 +15,7 @@
 package google.registry.reporting.billing;
 
 import static google.registry.beam.BeamUtils.createJobName;
-import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
@@ -32,7 +29,6 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
-import google.registry.model.common.Cursor;
 import google.registry.persistence.PersistenceModule;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
@@ -44,7 +40,6 @@ import google.registry.util.Clock;
 import google.registry.util.CloudTasksUtils;
 import java.io.IOException;
 import javax.inject.Inject;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.YearMonth;
 
@@ -113,19 +108,6 @@ public class GenerateInvoicesAction implements Runnable {
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
     logger.atInfo().log("Launching invoicing pipeline for %s.", yearMonth);
     try {
-      DateTime currentCursorTime =
-          tm().transact(
-                  () ->
-                      tm().loadByKeyIfPresent(Cursor.createGlobalVKey(RECURRING_BILLING))
-                          .orElse(Cursor.createGlobal(RECURRING_BILLING, START_OF_TIME))
-                          .getCursorTime());
-
-      if (!YearMonth.fromDateFields(currentCursorTime.toDate()).isAfter(yearMonth)) {
-        throw new IllegalStateException(
-            "Latest billing events expansion cycle hasn't finished yet, terminating invoicing"
-                + " pipeline");
-      }
-
       LaunchFlexTemplateParameter parameter =
           new LaunchFlexTemplateParameter()
               .setJobName(createJobName("invoicing", clock))

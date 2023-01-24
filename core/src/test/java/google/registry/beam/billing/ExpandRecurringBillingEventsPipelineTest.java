@@ -126,7 +126,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
         assertThrows(IllegalArgumentException.class, this::runPipeline);
     assertThat(thrown)
         .hasMessageThat()
-        .contains("End time 2021-02-02T00:00:05.001Z must be on or before now");
+        .contains("End time 2021-02-02T00:00:05.001Z must be at or before now");
   }
 
   @Test
