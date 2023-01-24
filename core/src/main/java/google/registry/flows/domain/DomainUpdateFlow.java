@@ -307,6 +307,13 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     }
   }
 
+  /**
+   * Checks whether the new state of the domain is valid.
+   *
+   * <p>Note: Before adding or amending conditions, existing data has to be verified for being
+   * compliant with the additions or amendments, otherwise existing data can become invalid and
+   * cause Domain update failure.
+   */
   private void validateNewState(Domain newDomain) throws EppException {
     validateRequiredContactsPresent(newDomain.getRegistrant(), newDomain.getContacts());
     validateDsData(newDomain.getDsData());
