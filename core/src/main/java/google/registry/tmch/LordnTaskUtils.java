@@ -38,10 +38,11 @@ public final class LordnTaskUtils {
 
   public static final String QUEUE_SUNRISE = "lordn-sunrise";
   public static final String QUEUE_CLAIMS = "lordn-claims";
-  public static final String COLUMNS_CLAIMS = "roid,domain-name,notice-id,registrar-id,"
-      + "registration-datetime,ack-datetime,application-datetime";
-  public static final String COLUMNS_SUNRISE = "roid,domain-name,SMD-id,registrar-id,"
-      + "registration-datetime,application-datetime";
+  public static final String COLUMNS_CLAIMS =
+      "roid,domain-name,notice-id,registrar-id,"
+          + "registration-datetime,ack-datetime,application-datetime";
+  public static final String COLUMNS_SUNRISE =
+      "roid,domain-name,SMD-id,registrar-id," + "registration-datetime,application-datetime";
 
   /** Enqueues a task in the LORDN queue representing a line of CSV for LORDN export. */
   public static void enqueueDomainTask(Domain domain) {
@@ -50,15 +51,17 @@ public final class LordnTaskUtils {
     // isn't yet populated when this method is called during the resource flow.
     String tld = domain.getTld();
     if (domain.getLaunchNotice() == null) {
-      getQueue(QUEUE_SUNRISE).add(TaskOptions.Builder
-          .withTag(tld)
-          .method(Method.PULL)
-          .payload(getCsvLineForSunriseDomain(domain, tm().getTransactionTime())));
+      getQueue(QUEUE_SUNRISE)
+          .add(
+              TaskOptions.Builder.withTag(tld)
+                  .method(Method.PULL)
+                  .payload(getCsvLineForSunriseDomain(domain, tm().getTransactionTime())));
     } else {
-      getQueue(QUEUE_CLAIMS).add(TaskOptions.Builder
-          .withTag(tld)
-          .method(Method.PULL)
-          .payload(getCsvLineForClaimsDomain(domain, tm().getTransactionTime())));
+      getQueue(QUEUE_CLAIMS)
+          .add(
+              TaskOptions.Builder.withTag(tld)
+                  .method(Method.PULL)
+                  .payload(getCsvLineForClaimsDomain(domain, tm().getTransactionTime())));
     }
   }
 
@@ -95,4 +98,18 @@ public final class LordnTaskUtils {
   }
 
   private LordnTaskUtils() {}
+
+  public enum LordnPhase {
+    SUNRISE(QUEUE_SUNRISE),
+
+    CLAIMS(QUEUE_CLAIMS),
+
+    NONE(null);
+
+    final String queue;
+
+    LordnPhase(String queue) {
+      this.queue = queue;
+    }
+  }
 }

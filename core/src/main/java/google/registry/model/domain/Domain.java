@@ -59,6 +59,7 @@ import org.joda.time.DateTime;
       @Index(columnList = "tld"),
       @Index(columnList = "registrantContact"),
       @Index(columnList = "dnsRefreshRequestTime"),
+      @Index(columnList = "lordnPhase"),
       @Index(columnList = "billing_recurrence_id"),
       @Index(columnList = "transfer_billing_event_id"),
       @Index(columnList = "transfer_billing_recurrence_id")
@@ -200,6 +201,7 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
           .setStatusValues(domainBase.getStatusValues())
           .setTransferData(domainBase.getTransferData())
           .setDnsRefreshRequestTime(domainBase.getDnsRefreshRequestTime())
+          .setLordnPhase(domainBase.getLordnPhase())
           .setCurrentPackageToken(domainBase.getCurrentPackageToken().orElse(null));
     }
   }

@@ -40,7 +40,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-import google.registry.dns.RefreshDnsAction;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
@@ -61,6 +60,8 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.tldconfig.idn.IdnLabelValidator;
+import google.registry.tmch.LordnTaskUtils.LordnPhase;
+import google.registry.tmch.NordnUploadAction;
 import google.registry.util.CollectionUtils;
 import google.registry.util.DateTimeUtils;
 import java.util.HashSet;
@@ -76,6 +77,8 @@ import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
@@ -247,34 +250,34 @@ public class DomainBase extends EppResource
   DateTime autorenewEndTime;
 
   /**
-   * When this domain's DNS was requested to be refreshed, or null if its DNS is up-to-date.
+   * Which Lordn phase the domain is in after it is created but before the Nordn upload has
+   * processed the domain.
    *
-   * <p>This will almost always be null except in the couple of minutes' interval between when a
-   * DNS-affecting create or update operation takes place and when the {@link RefreshDnsAction}
-   * runs, which resets this back to null upon completion of the DNS refresh task. This is a {@link
-   * DateTime} rather than a simple dirty boolean so that the DNS refresh action can order by the
-   * DNS refresh request time and take action on the oldest ones first.
+   * <p>This will almost always be {@code NONE} except in the interval between when a domain that
+   * contains a signed mark or claims notice has been created, and when {@link NordnUploadAction}
+   * runs, which includes the domain in the CSV uploaded to TMCH and sets this back to {@code NONE}.
    *
-   * <p>Note that this is a Cloud SQL-based replacement for the {@code dns-pull} task queue. The
-   * domains that have a non-null value for this field should be exactly the same as the tasks that
-   * would be in the {@code dns-pull} queue.
-   *
-   * <p>Note that in the {@link DomainHistory} table this value means something slightly different:
-   * It means that the given domain action requested a DNS update. Unlike on the {@code Domain}
-   * table, this value is not then subsequently nulled out once the DNS refresh is complete; rather,
-   * it remains as a permanent record of which actions were DNS-affecting and which were not.
+   * <p>Note that in the {@code DomainHistory} table this value means something slightly different:
+   * It means that the given domain was created with a signed mark ({@code SUNRISE} or a claims
+   * notice ({@code CLAIMS}. Unlike on the {@code Domain} table, this value is not then subsequently
+   * set back to {@code NONE} once the Nordn upload is complete; rather, it remains as a permanent
+   * record of when which phase the domain is in when created.
    */
-  // TODO(mcilwain): Start using this field once we are further along in the DB migration.
-  DateTime dnsRefreshRequestTime;
+  @Enumerated(EnumType.STRING)
+  LordnPhase lordnPhase = LordnPhase.NONE;
 
   /** The {@link AllocationToken} for the package this domain is currently a part of. */
   @Nullable VKey<AllocationToken> currentPackageToken;
 
-  /**
-   * Returns the DNS refresh request time iff this domain's DNS needs refreshing, otherwise absent.
-   */
-  public Optional<DateTime> getDnsRefreshRequestTime() {
-    return Optional.ofNullable(dnsRefreshRequestTime);
+  public LordnPhase getLordnPhase() {
+    return lordnPhase;
+  }
+
+  @Access(AccessType.PROPERTY)
+  @SuppressWarnings("unused")
+  @Column(name = "dnsRefreshRequestTime")
+  private DateTime getInternalDnsRefreshRequestTime() {
+    return getDnsRefreshRequestTime().orElse(null);
   }
 
   public ImmutableSet<String> getSubordinateHosts() {
@@ -861,8 +864,8 @@ public class DomainBase extends EppResource
       return thisCastToDerived();
     }
 
-    public B setDnsRefreshRequestTime(Optional<DateTime> dnsRefreshRequestTime) {
-      getInstance().dnsRefreshRequestTime = dnsRefreshRequestTime.orElse(null);
+    public B setLordnPhase(LordnPhase lordnPhase) {
+      getInstance().lordnPhase = lordnPhase;
       return thisCastToDerived();
     }
 

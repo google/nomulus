@@ -32,6 +32,7 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.MappedSuperclass;
 import org.joda.time.DateTime;
@@ -84,6 +85,13 @@ public class HostBase extends EppResource {
    * superordinate domain.
    */
   DateTime lastSuperordinateChange;
+
+  @Access(AccessType.PROPERTY)
+  @SuppressWarnings("unused")
+  @Column(name = "dnsRefreshRequestTime")
+  private DateTime getInternalDnsRefreshRequestTime() {
+    return getDnsRefreshRequestTime().orElse(null);
+  }
 
   public String getHostName() {
     return hostName;
