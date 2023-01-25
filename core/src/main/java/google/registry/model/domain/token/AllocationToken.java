@@ -274,8 +274,17 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     return STATIC_TOKEN_BEHAVIORS.getOrDefault(token, TokenBehavior.DEFAULT);
   }
 
+  public static Optional<AllocationToken> get(VKey<AllocationToken> key) {
+    return ALLOCATION_TOKENS_CACHE.get(key);
+  }
+
+  public static Map<VKey<AllocationToken>, Optional<AllocationToken>> getAll(
+      ImmutableSet<VKey<AllocationToken>> keys) {
+    return ALLOCATION_TOKENS_CACHE.getAll(keys);
+  }
+
   /** A cache that loads the {@link AllocationToken} object for a given AllocationToken VKey. */
-  public static final LoadingCache<VKey<AllocationToken>, Optional<AllocationToken>>
+  private static final LoadingCache<VKey<AllocationToken>, Optional<AllocationToken>>
       ALLOCATION_TOKENS_CACHE =
           CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
               .build(
