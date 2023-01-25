@@ -16,6 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
@@ -46,7 +47,6 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActi
 import static google.registry.flows.domain.DomainFlowUtils.verifyUnitIsYears;
 import static google.registry.model.EppResourceUtils.createDomainRepoId;
 import static google.registry.model.IdService.allocateId;
-import static google.registry.model.domain.token.AllocationToken.ALLOCATION_TOKENS_CACHE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
@@ -121,9 +121,7 @@ import google.registry.model.tld.Registry.TldType;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
-import google.registry.persistence.VKey;
 import google.registry.tmch.LordnTaskUtils;
-import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -445,12 +443,15 @@ public final class DomainCreateFlow implements TransactionalFlow {
 
   private Optional<AllocationToken> checkForDefaultToken(
       Registry registry, DomainCommand.Create command) throws EppException {
-    Map<VKey<AllocationToken>, Optional<AllocationToken>> tokenMap =
-        ALLOCATION_TOKENS_CACHE.getAll(registry.getDefaultPromoTokens());
+    ImmutableList<Optional<AllocationToken>> tokenList =
+        registry.getDefaultPromoTokens().stream()
+            .map(key -> AllocationToken.get(key))
+            .collect(toImmutableList());
     checkState(
-        !isNullOrEmpty(tokenMap), "Failure while loading default TLD promotions from the database");
+        !isNullOrEmpty(tokenList),
+        "Failure while loading default TLD promotions from the database");
     // Check if any of the tokens are valid for this domain registration
-    for (Optional<AllocationToken> token : tokenMap.values()) {
+    for (Optional<AllocationToken> token : tokenList) {
       if (!token.isPresent()) {
         continue;
       }
@@ -461,6 +462,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
             registrarId,
             tm().getTransactionTime());
       } catch (AssociationProhibitsOperationException e) {
+        // Allocation token was not valid for this registration, continue to check the next token in
+        // the list
         continue;
       }
       // Only use the first valid token in the list
