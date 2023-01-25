@@ -38,6 +38,7 @@ configurations {
 
   // All testing util classes. Other projects may declare dependency as:
   // testImplementation project(path: 'common', configuration: 'testing')
+  create("testing")
   testing.extendsFrom testingCompileOnly
 }
 
