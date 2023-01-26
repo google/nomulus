@@ -33,7 +33,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryConfig;
 import google.registry.dns.RefreshDnsAction;
-import google.registry.model.annotations.IdAllocation;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
@@ -68,7 +67,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    *
    * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 5730</a>
    */
-  @IdAllocation @Transient String repoId;
+  @Transient String repoId;
 
   /**
    * The ID of the registrar that is currently sponsoring this resource.
