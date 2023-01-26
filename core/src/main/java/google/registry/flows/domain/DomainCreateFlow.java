@@ -121,7 +121,9 @@ import google.registry.model.tld.Registry.TldType;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
+import google.registry.persistence.VKey;
 import google.registry.tmch.LordnTaskUtils;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -443,9 +445,11 @@ public final class DomainCreateFlow implements TransactionalFlow {
 
   private Optional<AllocationToken> checkForDefaultToken(
       Registry registry, DomainCommand.Create command) throws EppException {
+    Map<VKey<AllocationToken>, Optional<AllocationToken>> tokens =
+        AllocationToken.getAll(registry.getDefaultPromoTokens());
     ImmutableList<Optional<AllocationToken>> tokenList =
         registry.getDefaultPromoTokens().stream()
-            .map(key -> AllocationToken.get(key))
+            .map(key -> tokens.get(key))
             .collect(toImmutableList());
     checkState(
         !isNullOrEmpty(tokenList),
