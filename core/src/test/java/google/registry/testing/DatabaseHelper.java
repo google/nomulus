@@ -312,6 +312,7 @@ public final class DatabaseHelper {
     return persistResource(domain.asBuilder().setDeletionTime(deletionTime).build());
   }
 
+  // TODO: delete after pull queue migration.
   /** Persists a domain and enqueues a LORDN task of the appropriate type for it. */
   public static Domain persistDomainAndEnqueueLordn(final Domain domain) {
     final Domain persistedDomain = persistResource(domain);

@@ -44,6 +44,8 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  private static boolean useUncachedForTest = false;
+
   public enum PrimaryDatabase {
     CLOUD_SQL,
     DATASTORE
@@ -85,7 +87,10 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
     SQL_ONLY(PrimaryDatabase.CLOUD_SQL, false, ReplayDirection.NO_REPLAY),
 
     /** Toggles SQL Sequence based allocateId */
-    SEQUENCE_BASED_ALLOCATE_ID(PrimaryDatabase.CLOUD_SQL, false, ReplayDirection.NO_REPLAY);
+    SEQUENCE_BASED_ALLOCATE_ID(PrimaryDatabase.CLOUD_SQL, false, ReplayDirection.NO_REPLAY),
+
+    /** Use SQL-based Nordn upload flow instead of the pull queue-based one. */
+    NORDN_SQL(PrimaryDatabase.CLOUD_SQL, false, ReplayDirection.NO_REPLAY);
 
     private final PrimaryDatabase primaryDatabase;
     private final boolean isReadOnly;
@@ -164,7 +169,9 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
                 MigrationState.SQL_ONLY,
                 MigrationState.SQL_PRIMARY_READ_ONLY,
                 MigrationState.SQL_PRIMARY)
-            .putAll(MigrationState.SQL_ONLY, MigrationState.SEQUENCE_BASED_ALLOCATE_ID);
+            .putAll(MigrationState.SQL_ONLY, MigrationState.SEQUENCE_BASED_ALLOCATE_ID)
+            .putAll(MigrationState.SEQUENCE_BASED_ALLOCATE_ID, MigrationState.NORDN_SQL)
+            .putAll(MigrationState.NORDN_SQL, MigrationState.SEQUENCE_BASED_ALLOCATE_ID);
 
     // In addition, we can always transition from a state to itself (useful when updating the map).
     Arrays.stream(MigrationState.values()).forEach(state -> builder.put(state, state));
@@ -181,8 +188,8 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
   public TimedTransitionProperty<MigrationState> migrationTransitions =
       TimedTransitionProperty.withInitialValue(MigrationState.DATASTORE_ONLY);
 
-  // Required for Objectify initialization
-  private DatabaseMigrationStateSchedule() {}
+  // Required for Hibernate initialization
+  protected DatabaseMigrationStateSchedule() {}
 
   @VisibleForTesting
   public DatabaseMigrationStateSchedule(
@@ -205,6 +212,11 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
     CACHE.invalidateAll();
   }
 
+  @VisibleForTesting
+  public static void useUncachedForTest() {
+    useUncachedForTest = true;
+  }
+
   /** Loads the currently-set migration schedule from the cache, or the default if none exists. */
   public static TimedTransitionProperty<MigrationState> get() {
     return CACHE.get(DatabaseMigrationStateSchedule.class);
@@ -212,7 +224,9 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
 
   /** Returns the database migration status at the given time. */
   public static MigrationState getValueAtTime(DateTime dateTime) {
-    return get().getValueAtTime(dateTime);
+    return useUncachedForTest
+        ? getUncached().getValueAtTime(dateTime)
+        : get().getValueAtTime(dateTime);
   }
 
   /** Loads the currently-set migration schedule from SQL, or the default if none exists. */
