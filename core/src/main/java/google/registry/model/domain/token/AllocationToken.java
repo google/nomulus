@@ -31,6 +31,7 @@ import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -279,7 +280,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   }
 
   public static Map<VKey<AllocationToken>, Optional<AllocationToken>> getAll(
-      ImmutableSet<VKey<AllocationToken>> keys) {
+      ImmutableList<VKey<AllocationToken>> keys) {
     return ALLOCATION_TOKENS_CACHE.getAll(keys);
   }
 
