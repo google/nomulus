@@ -16,6 +16,7 @@ package google.registry.tmch;
 
 import static com.google.common.io.Resources.asByteSource;
 import static com.google.common.io.Resources.getResource;
+import static google.registry.request.RequestParameters.extractOptionalBooleanParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 
 import dagger.Module;
@@ -25,6 +26,7 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.bouncycastle.openpgp.PGPPublicKey;
 
@@ -63,5 +65,11 @@ public final class TmchModule {
   @Parameter(NordnVerifyAction.NORDN_LOG_ID_PARAM)
   static String provideNordnLogId(HttpServletRequest req) {
     return extractRequiredParameter(req, NordnVerifyAction.NORDN_LOG_ID_PARAM);
+  }
+
+  @Provides
+  @Parameter(NordnUploadAction.NORDN_PULL_QUEUE)
+  static Optional<Boolean> provideUsePullQueue(HttpServletRequest req) {
+    return extractOptionalBooleanParameter(req, NordnUploadAction.NORDN_PULL_QUEUE);
   }
 }

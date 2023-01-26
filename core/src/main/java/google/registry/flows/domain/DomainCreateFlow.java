@@ -118,6 +118,7 @@ import google.registry.model.tld.label.ReservationType;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.tmch.LordnTaskUtils;
+import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -387,6 +388,10 @@ public final class DomainCreateFlow implements TransactionalFlow {
             .setContacts(command.getContacts())
             .addGracePeriod(
                 GracePeriod.forBillingEvent(GracePeriodStatus.ADD, repoId, createBillingEvent))
+            .setLordnPhase(
+                hasSignedMarks
+                    ? LordnPhase.SUNRISE
+                    : hasClaimsNotice ? LordnPhase.CLAIMS : LordnPhase.NONE)
             .build();
     if (allocationToken.isPresent()
         && allocationToken.get().getTokenType().equals(TokenType.PACKAGE)) {

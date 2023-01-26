@@ -94,10 +94,10 @@ final class GenerateLordnCommand implements Command {
       Domain domain) {
     String status = " ";
     if (domain.getLaunchNotice() == null && domain.getSmdId() != null) {
-      sunriseCsv.add(LordnTaskUtils.getCsvLineForSunriseDomain(domain, domain.getCreationTime()));
+      sunriseCsv.add(LordnTaskUtils.getCsvLineForSunriseDomain(domain));
       status = "S";
     } else if (domain.getLaunchNotice() != null || domain.getSmdId() != null) {
-      claimsCsv.add(LordnTaskUtils.getCsvLineForClaimsDomain(domain, domain.getCreationTime()));
+      claimsCsv.add(LordnTaskUtils.getCsvLineForClaimsDomain(domain));
       status = "C";
     }
     System.out.printf("%s[%s] ", domain.getDomainName(), status);
