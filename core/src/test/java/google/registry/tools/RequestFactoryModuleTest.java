@@ -100,6 +100,7 @@ public class RequestFactoryModuleTest {
 
   @Test
   void test_provideHttpRequestFactory_remote_withIap() throws Exception {
+    when(credentialsBundle.getHttpRequestInitializer()).thenReturn(httpRequestInitializer);
     // Mock the request/response to/from the IAP server requesting an ID token
     UserCredentials mockUserCredentials = mock(UserCredentials.class);
     when(credentialsBundle.getGoogleCredentials()).thenReturn(mockUserCredentials);
@@ -123,9 +124,10 @@ public class RequestFactoryModuleTest {
           RequestFactoryModule.provideHttpRequestFactory(
               credentialsBundle, Optional.of("iapClientId"));
       HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
-      assertThat(request.getHeaders().getAuthorization()).isEqualTo("Bearer iapIdToken");
+      assertThat(request.getHeaders().get("Proxy-Authorization")).isEqualTo("Bearer iapIdToken");
       assertThat(request.getConnectTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
       assertThat(request.getReadTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
+      verify(httpRequestInitializer).initialize(request);
       verifyNoMoreInteractions(httpRequestInitializer);
     } finally {
       RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = origIsLocal;

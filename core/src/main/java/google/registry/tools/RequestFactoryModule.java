@@ -69,14 +69,15 @@ class RequestFactoryModule {
       return new NetHttpTransport()
           .createRequestFactory(
               request -> {
+                // Use the standard credential initializer to set the Authorization header
+                credentialsBundle.getHttpRequestInitializer().initialize(request);
                 // If using IAP, use the refresh token to acquire an IAP-enabled ID token and use
                 // that for authentication.
                 if (iapClientId.isPresent()) {
                   String idToken = getIdToken(credentialsBundle, iapClientId.get());
-                  request.getHeaders().setAuthorization("Bearer " + idToken);
-                } else {
-                  // Otherwise, use the standard credential HTTP initializer
-                  credentialsBundle.getHttpRequestInitializer().initialize(request);
+                  // Set the Proxy-Authentication header so that IAP can read from it, see
+                  // https://cloud.google.com/iap/docs/authentication-howto#authenticating_from_proxy-authorization_header
+                  request.getHeaders().set("Proxy-Authorization", "Bearer " + idToken);
                 }
                 // GAE request times out after 10 min, so here we set the timeout to 10 min. This is
                 // needed to support some nomulus commands like updating premium lists that take
