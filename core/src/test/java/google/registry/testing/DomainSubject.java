@@ -27,6 +27,7 @@ import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.testing.TruthChainer.And;
+import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import java.util.Set;
 import org.joda.time.DateTime;
 
@@ -41,7 +42,7 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
   }
 
   public And<DomainSubject> hasDomainName(String domainName) {
-    return hasValue(domainName, actual.getDomainName(), "has domainName");
+    return hasValue(domainName, actual.getDomainName(), "domainName");
   }
 
   public And<DomainSubject> hasExactlyDsData(DomainDsData... dsData) {
@@ -49,15 +50,19 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
   }
 
   public And<DomainSubject> hasExactlyDsData(Set<DomainDsData> dsData) {
-    return hasValue(dsData, actual.getDsData(), "has dsData");
+    return hasValue(dsData, actual.getDsData(), "dsData");
   }
 
   public And<DomainSubject> hasNumDsData(int num) {
-    return hasValue(num, actual.getDsData().size(), "has num dsData");
+    return hasValue(num, actual.getDsData().size(), "dsData.size()");
   }
 
   public And<DomainSubject> hasLaunchNotice(LaunchNotice launchNotice) {
-    return hasValue(launchNotice, actual.getLaunchNotice(), "has launchNotice");
+    return hasValue(launchNotice, actual.getLaunchNotice(), "launchNotice");
+  }
+
+  public And<DomainSubject> hasLordnPhase(LordnPhase lordnPhase) {
+    return hasValue(lordnPhase, actual.getLordnPhase(), "lordnPhase");
   }
 
   public And<DomainSubject> hasAuthInfoPwd(String pw) {
@@ -67,7 +72,7 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
 
   public And<DomainSubject> hasCurrentSponsorRegistrarId(String registrarId) {
     return hasValue(
-        registrarId, actual.getCurrentSponsorRegistrarId(), "has currentSponsorRegistrarId");
+        registrarId, actual.getCurrentSponsorRegistrarId(), "currentSponsorRegistrarId");
   }
 
   public And<DomainSubject> hasRegistrationExpirationTime(DateTime expiration) {
