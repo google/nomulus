@@ -162,7 +162,7 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_dr/cron/fanout?queue=nordn&endpoint=/_dr/task/nordnUpload&forEachRealTld&lordn-phase=sunrise]]></url>
+    <url><![CDATA[/_dr/cron/fanout?queue=nordn&endpoint=/_dr/task/nordnUpload&forEachRealTld&lordnPhase=sunrise]]></url>
     <description>
       This job uploads LORDN Sunrise CSV files for each TLD to MarksDB. It should be
       run at most every three hours, or at absolute minimum every 26 hours.
@@ -174,10 +174,36 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_dr/cron/fanout?queue=nordn&endpoint=/_dr/task/nordnUpload&forEachRealTld&lordn-phase=claims]]></url>
+    <url><![CDATA[/_dr/cron/fanout?queue=nordn&endpoint=/_dr/task/nordnUpload&forEachRealTld&lordnPhase=claims]]></url>
     <description>
       This job uploads LORDN Claims CSV files for each TLD to MarksDB. It should be
       run at most every three hours, or at absolute minimum every 26 hours.
+    </description>
+    <!-- This may be set anywhere between "every 3 hours" and "every 25 hours". -->
+    <schedule>every 12 hours synchronized</schedule>
+    <timezone>UTC</timezone>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=nordn&endpoint=/_dr/task/nordnUpload&forEachRealTld&lordnPhase=sunrise&pullQueue]]></url>
+    <description>
+      This job uploads LORDN Sunrise CSV files for each TLD to MarksDB using
+      pull queue. It should be run at most every three hours, or at absolute
+      minimum every 26 hours.
+    </description>
+    <!-- This may be set anywhere between "every 3 hours" and "every 25 hours". -->
+    <schedule>every 12 hours synchronized</schedule>
+    <timezone>UTC</timezone>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=nordn&endpoint=/_dr/task/nordnUpload&forEachRealTld&lordnPhase=claims&pullQueue]]></url>
+    <description>
+      This job uploads LORDN Claims CSV files for each TLD to MarksDB using pull
+      queue. It should be run at most every three hours, or at absolute minimum
+      every 26 hours.
     </description>
     <!-- This may be set anywhere between "every 3 hours" and "every 25 hours". -->
     <schedule>every 12 hours synchronized</schedule>

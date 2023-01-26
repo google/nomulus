@@ -86,6 +86,8 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.DomainCommand.Create;
@@ -123,6 +125,7 @@ import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.persistence.VKey;
 import google.registry.tmch.LordnTaskUtils;
+import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -376,7 +379,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
         reservationTypes.contains(NAME_COLLISION)
             ? ImmutableSet.of(SERVER_HOLD)
             : ImmutableSet.of();
-    Domain domain =
+    Domain.Builder domainBuilder =
         new Domain.Builder()
             .setCreationRegistrarId(registrarId)
             .setPersistedCurrentSponsorRegistrarId(registrarId)
@@ -395,8 +398,15 @@ public final class DomainCreateFlow implements TransactionalFlow {
             .setStatusValues(statuses)
             .setContacts(command.getContacts())
             .addGracePeriod(
-                GracePeriod.forBillingEvent(GracePeriodStatus.ADD, repoId, createBillingEvent))
-            .build();
+                GracePeriod.forBillingEvent(GracePeriodStatus.ADD, repoId, createBillingEvent));
+    if (DatabaseMigrationStateSchedule.getValueAtTime(tm().getTransactionTime())
+        .equals(MigrationState.NORDN_SQL)) {
+      domainBuilder.setLordnPhase(
+          hasSignedMarks
+              ? LordnPhase.SUNRISE
+              : hasClaimsNotice ? LordnPhase.CLAIMS : LordnPhase.NONE);
+    }
+    Domain domain = domainBuilder.build();
     if (allocationToken.isPresent()
         && allocationToken.get().getTokenType().equals(TokenType.PACKAGE)) {
       if (years > 1) {
@@ -696,7 +706,9 @@ public final class DomainCreateFlow implements TransactionalFlow {
     if (newDomain.shouldPublishToDns()) {
       dnsQueue.addDomainRefreshTask(newDomain.getDomainName());
     }
-    if (hasClaimsNotice || hasSignedMarks) {
+    if (!DatabaseMigrationStateSchedule.getValueAtTime(tm().getTransactionTime())
+            .equals(MigrationState.NORDN_SQL)
+        && (hasClaimsNotice || hasSignedMarks)) {
       LordnTaskUtils.enqueueDomainTask(newDomain);
     }
   }
