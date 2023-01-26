@@ -180,6 +180,7 @@ import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.TaskQueueExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
@@ -371,7 +372,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .that(reloadResourceByForeignKey())
         .hasSmdId(null)
         .and()
-        .hasLaunchNotice(null);
+        .hasLaunchNotice(null)
+        .and()
+        .hasLordnPhase(LordnPhase.NONE);
+    assertNoTasksEnqueued(QUEUE_CLAIMS, QUEUE_SUNRISE);
     assertNoTasksEnqueued(QUEUE_CLAIMS, QUEUE_SUNRISE);
   }
 
@@ -380,7 +384,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .that(reloadResourceByForeignKey())
         .hasSmdId("0000001761376042759136-65535")
         .and()
-        .hasLaunchNotice(null);
+        .hasLaunchNotice(null)
+        .and()
+        .hasLordnPhase(LordnPhase.SUNRISE);
     String expectedPayload =
         String.format(
             "%s,%s,0000001761376042759136-65535,1,2014-09-09T09:09:09.017Z",
@@ -398,7 +404,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "370d0b7c9223372036854775807",
                 "tmch",
                 DateTime.parse("2010-08-16T09:00:00.0Z"),
-                DateTime.parse("2009-08-16T09:00:00.0Z")));
+                DateTime.parse("2009-08-16T09:00:00.0Z")))
+        .and()
+        .hasLordnPhase(LordnPhase.CLAIMS);
     TaskMatcher task =
         new TaskMatcher()
             .payload(

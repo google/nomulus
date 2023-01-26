@@ -19,8 +19,12 @@ import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.MediaType.FORM_DATA;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ForeignKeyUtils.load;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAndEnqueueLordn;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -46,17 +50,20 @@ import com.google.apphosting.api.DeadlineExceededException;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.launch.LaunchNotice;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
+import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.FakeUrlConnectionService;
 import google.registry.testing.TaskQueueExtension;
+import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import google.registry.util.CloudTasksUtils;
 import google.registry.util.Retrier;
 import google.registry.util.UrlConnectionException;
@@ -68,24 +75,30 @@ import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Unit tests for {@link NordnUploadAction}. */
 class NordnUploadActionTest {
 
   private static final String CLAIMS_CSV =
-      "1,2010-05-01T10:11:12.000Z,1\n"
+      "1,2010-05-04T10:11:12.000Z,2\n"
           + "roid,domain-name,notice-id,registrar-id,registration-datetime,ack-datetime,"
           + "application-datetime\n"
-          + "2-TLD,claims-landrush1.tld,landrush1tcn,99999,2010-05-01T10:11:12.000Z,"
-          + "1969-12-31T23:00:00.000Z\n";
+          + "7-TLD,claims-landrush2.tld,landrush2tcn,88888,2010-05-03T10:11:12.000Z,"
+          + "2010-05-03T08:11:12.000Z\n"
+          + "9-TLD,claims-landrush1.tld,landrush1tcn,99999,2010-05-04T10:11:12.000Z,"
+          + "2010-05-04T09:11:12.000Z\n";
 
   private static final String SUNRISE_CSV =
-      "1,2010-05-01T10:11:12.000Z,1\n"
+      "1,2010-05-04T10:11:12.000Z,2\n"
           + "roid,domain-name,SMD-id,registrar-id,registration-datetime,application-datetime\n"
-          + "2-TLD,sunrise1.tld,my-smdid,99999,2010-05-01T10:11:12.000Z\n";
+          + "3-TLD,sunrise2.tld,new-smdid,88888,2010-05-01T10:11:12.000Z\n"
+          + "5-TLD,sunrise1.tld,my-smdid,99999,2010-05-02T10:11:12.000Z\n";
 
   private static final String LOCATION_URL = "http://trololol";
 
@@ -116,8 +129,14 @@ class NordnUploadActionTest {
     when(httpUrlConnection.getHeaderField(LOCATION)).thenReturn("http://trololol");
     when(httpUrlConnection.getOutputStream()).thenReturn(connectionOutputStream);
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setIanaIdentifier(99999L).build());
+    persistResource(loadRegistrar("NewRegistrar").asBuilder().setIanaIdentifier(88888L).build());
     createTld("tld");
+    createTld("example");
     persistResource(Registry.get("tld").asBuilder().setLordnUsername("lolcat").build());
+    persistResource(Registry.get("example").asBuilder().setLordnUsername("bad_apple").build());
+    persistSunriseModeDomain();
+    clock.advanceBy(Duration.standardDays(1));
+    persistClaimsModeDomain();
     action.clock = clock;
     action.cloudTasksUtils = cloudTasksUtils;
     action.urlConnectionService = urlConnectionService;
@@ -127,6 +146,7 @@ class NordnUploadActionTest {
     action.tmchMarksdbUrl = "http://127.0.0.1";
     action.random = new SecureRandom();
     action.retrier = new Retrier(new FakeSleeper(clock), 3);
+    action.usePullQueue = Optional.of(false);
   }
 
   @Test
@@ -137,7 +157,7 @@ class NordnUploadActionTest {
             makeTaskHandle("task1", "example", "csvLine1", "lordn-sunrise"),
             makeTaskHandle("task3", "example", "ending", "lordn-sunrise"));
     assertThat(NordnUploadAction.convertTasksToCsv(tasks, clock.nowUtc(), "col1,col2"))
-        .isEqualTo("1,2010-05-01T10:11:12.000Z,3\ncol1,col2\ncsvLine1\ncsvLine2\nending\n");
+        .isEqualTo("1,2010-05-04T10:11:12.000Z,3\ncol1,col2\ncsvLine1\ncsvLine2\nending\n");
   }
 
   @Test
@@ -149,13 +169,13 @@ class NordnUploadActionTest {
             makeTaskHandle("task3", "example", "ending", "lordn-sunrise"),
             makeTaskHandle("task1", "example", "csvLine1", "lordn-sunrise"));
     assertThat(NordnUploadAction.convertTasksToCsv(tasks, clock.nowUtc(), "col1,col2"))
-        .isEqualTo("1,2010-05-01T10:11:12.000Z,3\ncol1,col2\ncsvLine1\ncsvLine2\nending\n");
+        .isEqualTo("1,2010-05-04T10:11:12.000Z,3\ncol1,col2\ncsvLine1\ncsvLine2\nending\n");
   }
 
   @Test
   void test_convertTasksToCsv_doesntFailOnEmptyTasks() {
     assertThat(NordnUploadAction.convertTasksToCsv(ImmutableList.of(), clock.nowUtc(), "col1,col2"))
-        .isEqualTo("1,2010-05-01T10:11:12.000Z,0\ncol1,col2\n");
+        .isEqualTo("1,2010-05-04T10:11:12.000Z,0\ncol1,col2\n");
   }
 
   @Test
@@ -188,21 +208,19 @@ class NordnUploadActionTest {
 
   @Test
   void testRun_claimsMode_appendsTldAndClaimsToRequestUrl() throws Exception {
-    persistClaimsModeDomain();
     action.run();
     assertThat(httpUrlConnection.getURL()).isEqualTo(new URL("http://127.0.0.1/LORDN/tld/claims"));
   }
 
   @Test
   void testRun_sunriseMode_appendsTldAndClaimsToRequestUrl() throws Exception {
-    persistSunriseModeDomain();
+    action.phase = "sunrise";
     action.run();
     assertThat(httpUrlConnection.getURL()).isEqualTo(new URL("http://127.0.0.1/LORDN/tld/sunrise"));
   }
 
   @Test
   void testRun_usesMultipartContentType() throws Exception {
-    persistClaimsModeDomain();
     action.run();
     verify(httpUrlConnection)
         .setRequestProperty(eq(CONTENT_TYPE), startsWith("multipart/form-data; boundary="));
@@ -211,7 +229,6 @@ class NordnUploadActionTest {
 
   @Test
   void testRun_hasPassword_setsAuthorizationHeader() {
-    persistClaimsModeDomain();
     action.run();
     verify(httpUrlConnection)
         .setRequestProperty(
@@ -221,21 +238,27 @@ class NordnUploadActionTest {
   @Test
   void testRun_noPassword_doesntSendAuthorizationHeader() {
     action.lordnRequestInitializer = new LordnRequestInitializer(Optional.empty());
-    persistClaimsModeDomain();
     action.run();
     verify(httpUrlConnection, times(0)).setRequestProperty(eq(AUTHORIZATION), anyString());
   }
 
-  @Test
-  void testRun_claimsMode_payloadMatchesClaimsCsv() {
-    persistClaimsModeDomain();
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void testRun_claimsMode_payloadMatchesClaimsCsv(boolean usePullQueue) {
+    action.usePullQueue = Optional.of(usePullQueue);
     action.run();
     assertThat(connectionOutputStream.toString(UTF_8)).contains(CLAIMS_CSV);
   }
 
   @Test
+  void testRun_claimsMode_verifyColumsAndHistory() {
+    action.run();
+    verifyColumnClearedAndHistoryEntryCreated("claims-landrush1.tld");
+    verifyColumnClearedAndHistoryEntryCreated("claims-landrush2.tld");
+  }
+
+  @Test
   void testRun_claimsMode_verifyTaskGetsEnqueuedWithClaimsCsv() {
-    persistClaimsModeDomain();
     action.run();
     cloudTasksHelper.assertTasksEnqueued(
         NordnVerifyAction.QUEUE,
@@ -246,8 +269,18 @@ class NordnUploadActionTest {
   }
 
   @Test
-  void testRun_sunriseMode_payloadMatchesSunriseCsv() {
-    persistSunriseModeDomain();
+  void testRun_sunriseMode_verifyColumsAndHistory() {
+    action.phase = "sunrise";
+    action.run();
+    verifyColumnClearedAndHistoryEntryCreated("sunrise1.tld");
+    verifyColumnClearedAndHistoryEntryCreated("sunrise2.tld");
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void testRun_sunriseMode_payloadMatchesSunriseCsv(boolean usePullQueue) {
+    action.usePullQueue = Optional.of(usePullQueue);
+    action.phase = "sunrise";
     action.run();
     assertThat(connectionOutputStream.toString(UTF_8)).contains(SUNRISE_CSV);
   }
@@ -256,14 +289,14 @@ class NordnUploadActionTest {
   void test_noResponseContent_stillWorksNormally() throws Exception {
     // Returning null only affects logging.
     when(httpUrlConnection.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[] {}));
-    persistSunriseModeDomain();
+    action.phase = "sunrise";
     action.run();
     assertThat(connectionOutputStream.toString(UTF_8)).contains(SUNRISE_CSV);
   }
 
   @Test
   void testRun_sunriseMode_verifyTaskGetsEnqueuedWithSunriseCsv() {
-    persistSunriseModeDomain();
+    action.phase = "sunrise";
     action.run();
     cloudTasksHelper.assertTasksEnqueued(
         NordnVerifyAction.QUEUE,
@@ -275,7 +308,6 @@ class NordnUploadActionTest {
 
   @Test
   void testFailure_nullRegistryUser() {
-    persistClaimsModeDomain();
     persistResource(Registry.get("tld").asBuilder().setLordnUsername(null).build());
     VerifyException thrown = assertThrows(VerifyException.class, action::run);
     assertThat(thrown).hasMessageThat().contains("lordnUsername is not set for tld.");
@@ -283,26 +315,48 @@ class NordnUploadActionTest {
 
   @Test
   void testFetchFailure() throws Exception {
-    persistClaimsModeDomain();
     when(httpUrlConnection.getResponseCode()).thenReturn(SC_INTERNAL_SERVER_ERROR);
     assertThrows(UrlConnectionException.class, action::run);
   }
 
-  private static void persistClaimsModeDomain() {
-    Domain domain = DatabaseHelper.newDomain("claims-landrush1.tld");
+  private void persistClaimsModeDomain() {
     persistDomainAndEnqueueLordn(
-        domain
+        newDomain("claims-landrush2.tld")
             .asBuilder()
+            .setCreationTimeForTest(clock.nowUtc())
+            .setCreationRegistrarId("NewRegistrar")
             .setLaunchNotice(
-                LaunchNotice.create(
-                    "landrush1tcn", null, null, domain.getCreationTime().minusHours(1)))
+                LaunchNotice.create("landrush2tcn", null, null, clock.nowUtc().minusHours(2)))
+            .setLordnPhase(LordnPhase.CLAIMS)
+            .build());
+    clock.advanceBy(Duration.standardDays(1));
+    persistDomainAndEnqueueLordn(
+        newDomain("claims-landrush1.tld")
+            .asBuilder()
+            .setCreationTimeForTest(clock.nowUtc())
+            .setLaunchNotice(
+                LaunchNotice.create("landrush1tcn", null, null, clock.nowUtc().minusHours(1)))
+            .setLordnPhase(LordnPhase.CLAIMS)
             .build());
   }
 
   private void persistSunriseModeDomain() {
-    action.phase = "sunrise";
-    Domain domain = DatabaseHelper.newDomain("sunrise1.tld");
-    persistDomainAndEnqueueLordn(domain.asBuilder().setSmdId("my-smdid").build());
+    persistDomainAndEnqueueLordn(
+        newDomain("sunrise2.tld")
+            .asBuilder()
+            .setCreationTimeForTest(clock.nowUtc())
+            .setCreationRegistrarId("NewRegistrar")
+            .setSmdId("new-smdid")
+            .setLordnPhase(LordnPhase.SUNRISE)
+            .build());
+    clock.advanceBy(Duration.standardDays(1));
+    persistDomainAndEnqueueLordn(
+        newDomain("sunrise1.tld")
+            .asBuilder()
+            .setCreationTimeForTest(clock.nowUtc())
+            .setSmdId("my-smdid")
+            .setLordnPhase(LordnPhase.SUNRISE)
+            .build());
   }
 
   private static TaskHandle makeTaskHandle(
@@ -310,5 +364,15 @@ class NordnUploadActionTest {
     return new TaskHandle(
         TaskOptions.Builder.withPayload(payload).method(Method.PULL).tag(tag).taskName(taskName),
         queue);
+  }
+
+  private void verifyColumnClearedAndHistoryEntryCreated(String domainName) {
+    VKey<Domain> domainKey = load(Domain.class, domainName, clock.nowUtc());
+    Domain domain = loadByKey(domainKey);
+    assertThat(domain.getLordnPhase()).isEqualTo(LordnPhase.NONE);
+    assertThat(
+            getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.SYNTHETIC, DomainHistory.class)
+                .getReason())
+        .isEqualTo("Nordn upload");
   }
 }
