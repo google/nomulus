@@ -66,7 +66,12 @@ public final class LordnTaskUtils {
   }
 
   /** Returns the corresponding CSV LORDN line for a sunrise domain. */
-  public static String getCsvLineForSunriseDomain(Domain domain, DateTime transactionTime) {
+  public static String getCsvLineForSunriseDomain(Domain domain) {
+    return getCsvLineForSunriseDomain(domain, domain.getCreationTime());
+  }
+
+  // TODO: Merge into the function above after pull queue migration.
+  private static String getCsvLineForSunriseDomain(Domain domain, DateTime transactionTime) {
     return Joiner.on(',')
         .join(
             domain.getRepoId(),
@@ -77,7 +82,12 @@ public final class LordnTaskUtils {
   }
 
   /** Returns the corresponding CSV LORDN line for a claims domain. */
-  public static String getCsvLineForClaimsDomain(Domain domain, DateTime transactionTime) {
+  public static String getCsvLineForClaimsDomain(Domain domain) {
+    return getCsvLineForClaimsDomain(domain, domain.getCreationTime());
+  }
+
+  // TODO: Merge into the function above after pull queue migration.
+  private static String getCsvLineForClaimsDomain(Domain domain, DateTime transactionTime) {
     return Joiner.on(',')
         .join(
             domain.getRepoId(),
@@ -100,16 +110,8 @@ public final class LordnTaskUtils {
   private LordnTaskUtils() {}
 
   public enum LordnPhase {
-    SUNRISE(QUEUE_SUNRISE),
-
-    CLAIMS(QUEUE_CLAIMS),
-
-    NONE(null);
-
-    final String queue;
-
-    LordnPhase(String queue) {
-      this.queue = queue;
-    }
+    SUNRISE,
+    CLAIMS,
+    NONE
   }
 }
