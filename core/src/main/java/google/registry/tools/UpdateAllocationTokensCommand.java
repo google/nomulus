@@ -116,7 +116,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   private static final Joiner JOINER = Joiner.on(", ");
 
   private ImmutableSet<AllocationToken> tokensToSave;
-  private boolean endPackage = false;
+  private boolean endToken = false;
 
   @Override
   public void init() {
@@ -132,7 +132,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     if (tokenStatusTransitions != null
         && (tokenStatusTransitions.containsValue(TokenStatus.ENDED)
             || tokenStatusTransitions.containsValue(TokenStatus.CANCELLED))) {
-      endPackage = true;
+      endToken = true;
     }
 
     tokensToSave =
@@ -166,7 +166,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   }
 
   private AllocationToken updateToken(AllocationToken original) {
-    if (endPackage && original.getTokenType().equals(TokenType.PACKAGE)) {
+    if (endToken && original.getTokenType().equals(TokenType.PACKAGE)) {
       Long domainsInPackage =
           tm().query("SELECT COUNT(*) FROM Domain WHERE currentPackageToken = :token", Long.class)
               .setParameter("token", original.createVKey())
@@ -174,10 +174,10 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
 
       checkArgument(
           domainsInPackage == 0,
-          String.format(
-              "Package token %s can not end its promotion because it still has %s domains in the"
-                  + " package",
-              original.getToken(), domainsInPackage));
+          "Package token %s can not end its promotion because it still has %s domains in the"
+              + " package",
+          original.getToken(),
+          domainsInPackage);
     }
     AllocationToken.Builder builder = original.asBuilder();
     Optional.ofNullable(allowedClientIds)

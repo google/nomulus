@@ -263,11 +263,12 @@ class GenerateAllocationTokensCommand implements Command {
       // status is scheduled and when the transition occurs.
       // TODO(@sarahbot): Create a cleaner way to handle ending packages once we actually have
       // customers using them
+      boolean hasEnding =
+          tokenStatusTransitions.containsValue(TokenStatus.ENDED)
+              || tokenStatusTransitions.containsValue(TokenStatus.CANCELLED);
       checkArgument(
-          !(PACKAGE.equals(tokenType)
-              && (tokenStatusTransitions.containsValue(TokenStatus.ENDED)
-                  || tokenStatusTransitions.containsValue(TokenStatus.CANCELLED))),
-          "Don't generate PACKAGE tokens with ENDED or CANCELLED in their transition map.");
+          !(PACKAGE.equals(tokenType) && hasEnding),
+          "PACKAGE tokens should not be generated with ENDED or CANCELLED in their transition map");
     }
 
     if (tokenStrings != null) {

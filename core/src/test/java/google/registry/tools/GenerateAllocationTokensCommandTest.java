@@ -411,7 +411,8 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
                             START_OF_TIME, fakeClock.nowUtc(), fakeClock.nowUtc().plusDays(1)))))
         .hasMessageThat()
         .isEqualTo(
-            "Don't generate PACKAGE tokens with ENDED or CANCELLED in their transition map.");
+            "PACKAGE tokens should not be generated with ENDED or CANCELLED in their transition"
+                + " map");
   }
 
   @Test

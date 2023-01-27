@@ -258,7 +258,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
 
   @Test
   void testUpdateStatusTransitions() throws Exception {
-    DateTime now = DateTime.now(UTC);
+    DateTime now = fakeClock.nowUtc();
     AllocationToken token = persistResource(builderWithPromo().build());
     runCommandForced(
         "--prefix",
@@ -273,7 +273,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
 
   @Test
   void testUpdateStatusTransitions_badTransitions() {
-    DateTime now = DateTime.now(UTC);
+    DateTime now = fakeClock.nowUtc();
     persistResource(builderWithPromo().build());
     IllegalArgumentException thrown =
         assertThrows(
@@ -293,7 +293,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
 
   @Test
   void testUpdateStatusTransitions_endPackageTokenNoDomains() throws Exception {
-    DateTime now = DateTime.now(UTC);
+    DateTime now = fakeClock.nowUtc();
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -320,7 +320,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
 
   @Test
   void testUpdateStatusTransitions_endPackageTokenWithActiveDomainsFails() throws Exception {
-    DateTime now = DateTime.now(UTC);
+    DateTime now = fakeClock.nowUtc();
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
