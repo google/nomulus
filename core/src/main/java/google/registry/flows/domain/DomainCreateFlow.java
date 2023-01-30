@@ -449,16 +449,14 @@ public final class DomainCreateFlow implements TransactionalFlow {
         AllocationToken.getAll(registry.getDefaultPromoTokens());
     ImmutableList<Optional<AllocationToken>> tokenList =
         registry.getDefaultPromoTokens().stream()
-            .map(key -> tokens.get(key))
+            .map(tokens::get)
+            .filter(Optional::isPresent)
             .collect(toImmutableList());
     checkState(
         !isNullOrEmpty(tokenList),
         "Failure while loading default TLD promotions from the database");
     // Check if any of the tokens are valid for this domain registration
     for (Optional<AllocationToken> token : tokenList) {
-      if (!token.isPresent()) {
-        continue;
-      }
       try {
         AllocationTokenFlowUtils.validateToken(
             InternetDomainName.from(command.getDomainName()),
