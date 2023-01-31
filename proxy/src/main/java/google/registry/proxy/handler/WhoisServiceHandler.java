@@ -16,6 +16,7 @@ package google.registry.proxy.handler;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import google.registry.proxy.metric.FrontendMetrics;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
@@ -25,6 +26,7 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponse;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /** Handler that processes WHOIS protocol logic. */
@@ -33,9 +35,10 @@ public final class WhoisServiceHandler extends HttpsRelayServiceHandler {
   public WhoisServiceHandler(
       String relayHost,
       String relayPath,
-      Supplier<String> accessTokenSupplier,
+      Supplier<GoogleCredentials> refreshedCredentialsSupplier,
+      Optional<String> iapClientId,
       FrontendMetrics metrics) {
-    super(relayHost, relayPath, accessTokenSupplier, metrics);
+    super(relayHost, relayPath, refreshedCredentialsSupplier, iapClientId, metrics);
   }
 
   @Override

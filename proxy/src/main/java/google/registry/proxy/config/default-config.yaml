@@ -8,6 +8,9 @@
 # GCP project ID
 projectId: your-gcp-project-id
 
+# IAP client ID, if IAP is enabled for this project
+iapClientId: null
+
 # OAuth scope that the GoogleCredential will be constructed with. This list
 # should include all service scopes that the proxy depends on.
 gcpScopes:

@@ -14,6 +14,7 @@
 
 package google.registry.proxy;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
@@ -34,6 +35,7 @@ import google.registry.util.Clock;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
@@ -91,10 +93,15 @@ public class WhoisProtocolModule {
   @Provides
   static WhoisServiceHandler provideWhoisServiceHandler(
       ProxyConfig config,
-      @Named("accessToken") Supplier<String> accessTokenSupplier,
+      Supplier<GoogleCredentials> refreshedCredentialsSupplier,
+      @Named("iapClientId") Optional<String> iapClientId,
       FrontendMetrics metrics) {
     return new WhoisServiceHandler(
-        config.whois.relayHost, config.whois.relayPath, accessTokenSupplier, metrics);
+        config.whois.relayHost,
+        config.whois.relayPath,
+        refreshedCredentialsSupplier,
+        iapClientId,
+        metrics);
   }
 
   @Provides
