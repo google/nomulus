@@ -17,7 +17,13 @@ package google.registry.proxy;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.proxy.ProxyConfig.Environment.LOCAL;
 import static google.registry.proxy.ProxyConfig.getProxyConfig;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.ComputeEngineCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.IdToken;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -52,7 +58,9 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import java.io.IOException;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -235,6 +243,12 @@ public abstract class ProtocolModuleTest {
       this.fakeClock = fakeClock;
     }
 
+    @Provides
+    @Named("iapClientId")
+    static Optional<String> provideIapClientId() {
+      return Optional.of("iapClientId");
+    }
+
     @Singleton
     @Provides
     static ProxyConfig provideProxyConfig() {
@@ -249,9 +263,18 @@ public abstract class ProtocolModuleTest {
 
     @Singleton
     @Provides
-    @Named("accessToken")
-    static Supplier<String> provideFakeAccessToken() {
-      return Suppliers.ofInstance("fake.test.token");
+    static Supplier<GoogleCredentials> provideFakeCredentials() {
+      ComputeEngineCredentials mockCredentials = mock(ComputeEngineCredentials.class);
+      when(mockCredentials.getAccessToken()).thenReturn(new AccessToken("fake.test.token", null));
+      IdToken mockIdToken = mock(IdToken.class);
+      when(mockIdToken.getTokenValue()).thenReturn("fake.test.id.token");
+      try {
+        when(mockCredentials.idTokenWithAudience("iapClientId", ImmutableList.of()))
+            .thenReturn(mockIdToken);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      return Suppliers.ofInstance(mockCredentials);
     }
 
     @Singleton

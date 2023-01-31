@@ -36,6 +36,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.util.concurrent.Promise;
+import java.io.IOException;
 import java.security.cert.X509Certificate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,14 +97,15 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
     return buffer;
   }
 
-  private FullHttpRequest makeEppHttpRequest(byte[] content, Cookie... cookies) {
+  private FullHttpRequest makeEppHttpRequest(byte[] content, Cookie... cookies) throws IOException {
     return TestUtils.makeEppHttpRequest(
         new String(content, UTF_8),
         PROXY_CONFIG.epp.relayHost,
         PROXY_CONFIG.epp.relayPath,
-        TestModule.provideFakeAccessToken().get(),
+        TestModule.provideFakeCredentials().get(),
         getCertificateHash(certificate),
         CLIENT_ADDRESS,
+        TestModule.provideIapClientId(),
         cookies);
   }
 

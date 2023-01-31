@@ -20,6 +20,7 @@ import static google.registry.networking.handler.SslServerInitializer.CLIENT_CER
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 import static google.registry.util.X509Utils.getCertificateHash;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.flogger.FluentLogger;
 import google.registry.proxy.metric.FrontendMetrics;
 import google.registry.util.ProxyHttpHeaders;
@@ -36,6 +37,7 @@ import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Promise;
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /** Handler that processes EPP protocol logic. */
@@ -60,10 +62,11 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
   public EppServiceHandler(
       String relayHost,
       String relayPath,
-      Supplier<String> accessTokenSupplier,
+      Supplier<GoogleCredentials> refreshedCredentialsSupplier,
       byte[] helloBytes,
-      FrontendMetrics metrics) {
-    super(relayHost, relayPath, accessTokenSupplier, metrics);
+      FrontendMetrics metrics,
+      Optional<String> iapClientId) {
+    super(relayHost, relayPath, refreshedCredentialsSupplier, metrics, iapClientId);
     this.helloBytes = helloBytes;
   }
 

@@ -25,7 +25,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.ComputeEngineCredentials;
 import com.google.common.base.Throwables;
 import google.registry.proxy.TestUtils;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
@@ -44,7 +47,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.util.concurrent.Promise;
+import java.io.IOException;
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -59,9 +64,11 @@ class EppServiceHandlerTest {
 
   private static final String RELAY_HOST = "registry.example.tld";
   private static final String RELAY_PATH = "/epp";
-  private static final String ACCESS_TOKEN = "this.access.token";
   private static final String CLIENT_ADDRESS = "epp.client.tld";
   private static final String PROTOCOL = "epp";
+
+  private static final ComputeEngineCredentials mockCredentials =
+      mock(ComputeEngineCredentials.class);
 
   private X509Certificate clientCertificate;
 
@@ -69,7 +76,12 @@ class EppServiceHandlerTest {
 
   private final EppServiceHandler eppServiceHandler =
       new EppServiceHandler(
-          RELAY_HOST, RELAY_PATH, () -> ACCESS_TOKEN, HELLO.getBytes(UTF_8), metrics);
+          RELAY_HOST,
+          RELAY_PATH,
+          () -> mockCredentials,
+          HELLO.getBytes(UTF_8),
+          metrics,
+          Optional.empty());
 
   private EmbeddedChannel channel;
 
@@ -95,19 +107,21 @@ class EppServiceHandlerTest {
     setHandshakeFailure(channel);
   }
 
-  private FullHttpRequest makeEppHttpRequest(String content, Cookie... cookies) {
+  private FullHttpRequest makeEppHttpRequest(String content, Cookie... cookies) throws IOException {
     return TestUtils.makeEppHttpRequest(
         content,
         RELAY_HOST,
         RELAY_PATH,
-        ACCESS_TOKEN,
+        mockCredentials,
         getCertificateHash(clientCertificate),
         CLIENT_ADDRESS,
+        Optional.empty(),
         cookies);
   }
 
   @BeforeEach
   void beforeEach() throws Exception {
+    when(mockCredentials.getAccessToken()).thenReturn(new AccessToken("this.access.token", null));
     clientCertificate = SelfSignedCaCertificate.create().cert();
     channel = setUpNewChannel(eppServiceHandler);
   }
@@ -140,10 +154,15 @@ class EppServiceHandlerTest {
     String certHash = getCertificateHash(clientCertificate);
     assertThat(channel.isActive()).isTrue();
 
-    // Setup the second channel.
+    // Set up the second channel.
     EppServiceHandler eppServiceHandler2 =
         new EppServiceHandler(
-            RELAY_HOST, RELAY_PATH, () -> ACCESS_TOKEN, HELLO.getBytes(UTF_8), metrics);
+            RELAY_HOST,
+            RELAY_PATH,
+            () -> mockCredentials,
+            HELLO.getBytes(UTF_8),
+            metrics,
+            Optional.empty());
     EmbeddedChannel channel2 = setUpNewChannel(eppServiceHandler2);
     setHandshakeSuccess(channel2, clientCertificate);
 
@@ -160,10 +179,15 @@ class EppServiceHandlerTest {
     String certHash = getCertificateHash(clientCertificate);
     assertThat(channel.isActive()).isTrue();
 
-    // Setup the second channel.
+    // Set up the second channel.
     EppServiceHandler eppServiceHandler2 =
         new EppServiceHandler(
-            RELAY_HOST, RELAY_PATH, () -> ACCESS_TOKEN, HELLO.getBytes(UTF_8), metrics);
+            RELAY_HOST,
+            RELAY_PATH,
+            () -> mockCredentials,
+            HELLO.getBytes(UTF_8),
+            metrics,
+            Optional.empty());
     EmbeddedChannel channel2 = setUpNewChannel(eppServiceHandler2);
     X509Certificate clientCertificate2 = SelfSignedCaCertificate.create().cert();
     setHandshakeSuccess(channel2, clientCertificate2);

@@ -22,7 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.ComputeEngineCredentials;
 import com.google.common.base.Throwables;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
 import google.registry.proxy.metric.FrontendMetrics;
@@ -34,6 +37,7 @@ import io.netty.handler.codec.EncoderException;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -43,18 +47,21 @@ class WhoisServiceHandlerTest {
   private static final String RELAY_HOST = "www.example.tld";
   private static final String RELAY_PATH = "/test";
   private static final String QUERY_CONTENT = "test.tld";
-  private static final String ACCESS_TOKEN = "this.access.token";
   private static final String PROTOCOL = "whois";
   private static final String CLIENT_HASH = "none";
 
+  private static final ComputeEngineCredentials mockCredentials =
+      mock(ComputeEngineCredentials.class);
   private final FrontendMetrics metrics = mock(FrontendMetrics.class);
 
   private final WhoisServiceHandler whoisServiceHandler =
-      new WhoisServiceHandler(RELAY_HOST, RELAY_PATH, () -> ACCESS_TOKEN, metrics);
+      new WhoisServiceHandler(
+          RELAY_HOST, RELAY_PATH, () -> mockCredentials, metrics, Optional.empty());
   private EmbeddedChannel channel;
 
   @BeforeEach
   void beforeEach() {
+    when(mockCredentials.getAccessToken()).thenReturn(new AccessToken("this.access.token", null));
     // Need to reset metrics for each test method, since they are static fields on the class and
     // shared between each run.
     channel = new EmbeddedChannel(whoisServiceHandler);
@@ -74,7 +81,8 @@ class WhoisServiceHandlerTest {
 
     // Setup second channel.
     WhoisServiceHandler whoisServiceHandler2 =
-        new WhoisServiceHandler(RELAY_HOST, RELAY_PATH, () -> ACCESS_TOKEN, metrics);
+        new WhoisServiceHandler(
+            RELAY_HOST, RELAY_PATH, () -> mockCredentials, metrics, Optional.empty());
     EmbeddedChannel channel2 =
         // We need a new channel id so that it has a different hash code.
         // This only is needed for EmbeddedChannel because it has a dummy hash code implementation.
@@ -85,10 +93,11 @@ class WhoisServiceHandlerTest {
   }
 
   @Test
-  void testSuccess_fireInboundHttpRequest() {
+  void testSuccess_fireInboundHttpRequest() throws Exception {
     ByteBuf inputBuffer = Unpooled.wrappedBuffer(QUERY_CONTENT.getBytes(US_ASCII));
     FullHttpRequest expectedRequest =
-        makeWhoisHttpRequest(QUERY_CONTENT, RELAY_HOST, RELAY_PATH, ACCESS_TOKEN);
+        makeWhoisHttpRequest(
+            QUERY_CONTENT, RELAY_HOST, RELAY_PATH, mockCredentials, Optional.empty());
     // Input data passed to next handler
     assertThat(channel.writeInbound(inputBuffer)).isTrue();
     FullHttpRequest inputRequest = channel.readInbound();

@@ -158,6 +158,13 @@ public class ProxyModule {
   }
 
   @Provides
+  @Named("iapClientId")
+  @Singleton
+  Optional<String> provideIapClientId(ProxyConfig config) {
+    return Optional.ofNullable(config.iapClientId);
+  }
+
+  @Provides
   @WhoisProtocol
   int provideWhoisPort(ProxyConfig config) {
     return Optional.ofNullable(whoisPort).orElse(config.whois.port);
@@ -207,7 +214,7 @@ public class ProxyModule {
 
   @Singleton
   @Provides
-  static GoogleCredentialsBundle provideCredential(ProxyConfig config) {
+  static GoogleCredentialsBundle provideCredentialsBundle(ProxyConfig config) {
     try {
       GoogleCredentials credentials = GoogleCredentials.getApplicationDefault();
       if (credentials.createScopedRequired()) {
@@ -219,11 +226,11 @@ public class ProxyModule {
     }
   }
 
-  /** Access token supplier that auto refreshes 1 minute before expiry. */
+  /** Provides a set of credentials that auto refreshes 1 minute before expiry. */
   @Singleton
   @Provides
-  @Named("accessToken")
-  static Supplier<String> provideAccessTokenSupplier(GoogleCredentialsBundle credentialsBundle) {
+  static Supplier<GoogleCredentials> provideRefreshedCredentialsSupplier(
+      GoogleCredentialsBundle credentialsBundle) {
     return () -> {
       GoogleCredentials credentials = credentialsBundle.getGoogleCredentials();
       try {
@@ -231,7 +238,7 @@ public class ProxyModule {
       } catch (IOException e) {
         throw new RuntimeException("Cannot refresh access token.", e);
       }
-      return credentials.getAccessToken().getTokenValue();
+      return credentials;
     };
   }
 

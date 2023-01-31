@@ -16,6 +16,7 @@ package google.registry.proxy;
 
 import static google.registry.util.ResourceUtils.readResourceBytes;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
@@ -43,6 +44,7 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
@@ -147,12 +149,18 @@ public final class EppProtocolModule {
 
   @Provides
   static EppServiceHandler provideEppServiceHandler(
-      @Named("accessToken") Supplier<String> accessTokenSupplier,
+      Supplier<GoogleCredentials> refreshedCredentialsSupplier,
       @Named("hello") byte[] helloBytes,
       FrontendMetrics metrics,
-      ProxyConfig config) {
+      ProxyConfig config,
+      @Named("iapClientId") Optional<String> iapClientId) {
     return new EppServiceHandler(
-        config.epp.relayHost, config.epp.relayPath, accessTokenSupplier, helloBytes, metrics);
+        config.epp.relayHost,
+        config.epp.relayPath,
+        refreshedCredentialsSupplier,
+        helloBytes,
+        metrics,
+        iapClientId);
   }
 
   @Singleton
