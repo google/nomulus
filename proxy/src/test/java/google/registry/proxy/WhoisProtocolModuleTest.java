@@ -41,7 +41,7 @@ class WhoisProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  void testSuccess_singleFrameInboundMessage() {
+  void testSuccess_singleFrameInboundMessage() throws Exception {
     String inputString = "test.tld\r\n";
     // Inbound message processed and passed along.
     assertThat(channel.writeInbound(Unpooled.wrappedBuffer(inputString.getBytes(US_ASCII))))
@@ -53,7 +53,8 @@ class WhoisProtocolModuleTest extends ProtocolModuleTest {
             "test.tld",
             PROXY_CONFIG.whois.relayHost,
             PROXY_CONFIG.whois.relayPath,
-            TestModule.provideFakeAccessToken().get());
+            TestModule.provideFakeCredentials().get(),
+            TestModule.provideIapClientId());
     assertThat(actualRequest).isEqualTo(expectedRequest);
     assertThat(channel.isActive()).isTrue();
     // Nothing more to read.
@@ -70,7 +71,7 @@ class WhoisProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  void testSuccess_multiFrameInboundMessage() {
+  void testSuccess_multiFrameInboundMessage() throws Exception {
     String frame1 = "test";
     String frame2 = "1.tld";
     String frame3 = "\r\nte";
@@ -88,7 +89,8 @@ class WhoisProtocolModuleTest extends ProtocolModuleTest {
             "test1.tld",
             PROXY_CONFIG.whois.relayHost,
             PROXY_CONFIG.whois.relayPath,
-            TestModule.provideFakeAccessToken().get());
+            TestModule.provideFakeCredentials().get(),
+            TestModule.provideIapClientId());
     assertThat(actualRequest1).isEqualTo(expectedRequest1);
     // No more message at this point.
     assertThat((Object) channel.readInbound()).isNull();
@@ -102,7 +104,8 @@ class WhoisProtocolModuleTest extends ProtocolModuleTest {
             "test2.tld",
             PROXY_CONFIG.whois.relayHost,
             PROXY_CONFIG.whois.relayPath,
-            TestModule.provideFakeAccessToken().get());
+            TestModule.provideFakeCredentials().get(),
+            TestModule.provideIapClientId());
     assertThat(actualRequest2).isEqualTo(expectedRequest2);
     // The third message is not complete yet.
     assertThat(channel.isActive()).isTrue();
