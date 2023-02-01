@@ -231,7 +231,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     Optional<FeeUpdateCommandExtension> feeUpdate =
         eppInput.getSingleExtension(FeeUpdateCommandExtension.class);
     FeesAndCredits feesAndCredits = pricingLogic.getUpdatePrice(registry, targetId, now);
-    validateFeesAckedIfPresent(feeUpdate, feesAndCredits);
+    validateFeesAckedIfPresent(feeUpdate, feesAndCredits, false);
     verifyNotInPendingDelete(
         add.getContacts(),
         command.getInnerChange().getRegistrant(),

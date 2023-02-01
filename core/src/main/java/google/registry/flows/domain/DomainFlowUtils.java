@@ -778,12 +778,13 @@ public class DomainFlowUtils {
    */
   public static void validateFeeChallenge(
       final Optional<? extends FeeTransformCommandExtension> feeCommand,
-      FeesAndCredits feesAndCredits)
+      FeesAndCredits feesAndCredits,
+      boolean defaultTokenUsed)
       throws EppException {
     if (feesAndCredits.hasAnyPremiumFees() && !feeCommand.isPresent()) {
       throw new FeesRequiredForPremiumNameException();
     }
-    validateFeesAckedIfPresent(feeCommand, feesAndCredits);
+    validateFeesAckedIfPresent(feeCommand, feesAndCredits, defaultTokenUsed);
   }
 
   /**
@@ -795,7 +796,8 @@ public class DomainFlowUtils {
    */
   public static void validateFeesAckedIfPresent(
       final Optional<? extends FeeTransformCommandExtension> feeCommand,
-      FeesAndCredits feesAndCredits)
+      FeesAndCredits feesAndCredits,
+      boolean defaultTokenUsed)
       throws EppException {
     // Check for the case where a fee command extension was required but not provided.
     // This only happens when the total fees are non-zero and include custom fees requiring the
@@ -856,7 +858,9 @@ public class DomainFlowUtils {
     // Checking if total amount is expected. Extra fees that we are not expecting may be passed in.
     // Or if there is only a single fee type expected.
     if (!feeTotal.equals(feesAndCredits.getTotalCost())) {
-      throw new FeesMismatchException(feesAndCredits.getTotalCost());
+      if (!defaultTokenUsed || feeTotal.isLessThan(feesAndCredits.getTotalCost())) {
+        throw new FeesMismatchException(feesAndCredits.getTotalCost());
+      }
     }
   }
 

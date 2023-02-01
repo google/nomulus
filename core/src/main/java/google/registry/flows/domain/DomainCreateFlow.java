@@ -336,7 +336,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
     FeesAndCredits feesAndCredits =
         pricingLogic.getCreatePrice(
             registry, targetId, now, years, isAnchorTenant, allocationToken);
-    validateFeeChallenge(feeCreate, feesAndCredits);
+    validateFeeChallenge(feeCreate, feesAndCredits, false);
     Optional<SecDnsCreateExtension> secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
     DateTime registrationExpirationTime = leapSafeAddYears(now, years);

@@ -210,7 +210,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     }
 
     if (feesAndCredits.isPresent()) {
-      validateFeeChallenge(feeTransfer, feesAndCredits.get());
+      validateFeeChallenge(feeTransfer, feesAndCredits.get(), false);
     }
     HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder
