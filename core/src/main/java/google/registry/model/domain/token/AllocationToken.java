@@ -16,16 +16,22 @@ package google.registry.model.domain.token;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.CANCELLED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -34,6 +40,7 @@ import com.google.common.collect.Range;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.Buildable;
+import google.registry.model.CacheUtils;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
@@ -41,6 +48,7 @@ import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -266,6 +274,39 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   public TokenBehavior getTokenBehavior() {
     return STATIC_TOKEN_BEHAVIORS.getOrDefault(token, TokenBehavior.DEFAULT);
   }
+
+  public static Optional<AllocationToken> get(VKey<AllocationToken> key) {
+    return ALLOCATION_TOKENS_CACHE.get(key);
+  }
+
+  public static Map<VKey<AllocationToken>, Optional<AllocationToken>> getAll(
+      ImmutableList<VKey<AllocationToken>> keys) {
+    return ALLOCATION_TOKENS_CACHE.getAll(keys);
+  }
+
+  /** A cache that loads the {@link AllocationToken} object for a given AllocationToken VKey. */
+  private static final LoadingCache<VKey<AllocationToken>, Optional<AllocationToken>>
+      ALLOCATION_TOKENS_CACHE =
+          CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
+              .build(
+                  new CacheLoader<VKey<AllocationToken>, Optional<AllocationToken>>() {
+                    @Override
+                    public Optional<AllocationToken> load(VKey<AllocationToken> key) {
+                      return tm().transact(() -> tm().loadByKeyIfPresent(key));
+                    }
+
+                    @Override
+                    public Map<VKey<AllocationToken>, Optional<AllocationToken>> loadAll(
+                        Iterable<? extends VKey<AllocationToken>> keys) {
+                      ImmutableSet<VKey<AllocationToken>> keySet = ImmutableSet.copyOf(keys);
+                      return tm().transact(
+                              () ->
+                                  keySet.stream()
+                                      .collect(
+                                          toImmutableMap(
+                                              key -> key, key -> tm().loadByKeyIfPresent(key))));
+                    }
+                  });
 
   @Override
   public VKey<AllocationToken> createVKey() {

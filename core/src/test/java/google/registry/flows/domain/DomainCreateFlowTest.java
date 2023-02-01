@@ -25,6 +25,7 @@ import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DE
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -1610,6 +1611,239 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions()
         .that(assertThrows(AllocationTokenNotValidForRegistrarException.class, this::runFlow))
         .marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_usesDefaultToken() throws Exception {
+    persistContactsAndHosts();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
+            .build());
+    runTest_defaultToken("bbbbb");
+  }
+
+  @Test
+  void testSuccess_doesNotUseDefaultTokenWhenTokenPassedIn() throws Exception {
+    persistContactsAndHosts();
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
+            .setDiscountFraction(0.5)
+            .build());
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
+            .build());
+    clock.advanceOneMilli();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    runFlowAssertResponse(
+        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
+    assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
+    assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo("abc123");
+  }
+
+  @Test
+  void testSuccess_noValidDefaultToken() throws Exception {
+    persistContactsAndHosts();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("OtherRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
+            .build());
+    doSuccessfulTest();
+  }
+
+  void testSuccess_onlyUseFirstValidDefaultToken() throws Exception {
+    persistContactsAndHosts();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
+            .build());
+    runTest_defaultToken("aaaaa");
+  }
+
+  void testSuccess_registryHasDeletedDefaultToken() throws Exception {
+    persistContactsAndHosts();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
+            .build());
+    DatabaseHelper.deleteResource(defaultToken1);
+    runTest_defaultToken("bbbbb");
+  }
+
+  @Test
+  void testSuccess_defaultTokenAppliesCorrectPrice() throws Exception {
+    persistContactsAndHosts();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
+            .build());
+    BillingEvent.OneTime billingEvent = runTest_defaultToken("bbbbb");
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
+  }
+
+  @Test
+  void testSuccess_skipsOverMissingDefaultToken() throws Exception {
+    persistContactsAndHosts();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
+            .build());
+    DatabaseHelper.deleteResource(defaultToken1);
+    BillingEvent.OneTime billingEvent = runTest_defaultToken("bbbbb");
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
+  }
+
+  BillingEvent.OneTime runTest_defaultToken(String token) throws Exception {
+    setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    runFlowAssertResponse(
+        loadFile(
+            "domain_create_response_wildcard.xml",
+            new ImmutableMap.Builder<String, String>()
+                .put("DOMAIN", "example.tld")
+                .put("CRDATE", "1999-04-03T22:00:00.0Z")
+                .put("EXDATE", "2001-04-03T22:00:00.0Z")
+                .build()));
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
+    assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
+    assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo(token);
+    return billingEvent;
   }
 
   @Test
