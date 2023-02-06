@@ -22,7 +22,7 @@
 # Please refer to verify_deployed_sql_schema.sh for expected volumes and
 # arguments.
 
-FROM marketplace.gcr.io/google/ubuntu1804
+FROM marketplace.gcr.io/google/debian10
 ENV DEBIAN_FRONTEND=noninteractive LANG=en_US.UTF-8
 # Install pg_dump v11 (same as current server version). This needs to be
 # downloaded from postgresql's own repo, because ubuntu1804 is too old. With a
