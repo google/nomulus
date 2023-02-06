@@ -23,7 +23,7 @@
 
 # Although any Linux-based Java image with bash would work (e.g., openjdk:11),
 # as a GCP application we prefer to start with a GCP-approved base image.
-FROM marketplace.gcr.io/google/ubuntu1804
+FROM marketplace.gcr.io/google/debian10
 ENV DEBIAN_FRONTEND=noninteractive LANG=en_US.UTF-8
 # Install openjdk-11
 RUN apt-get update -y \
