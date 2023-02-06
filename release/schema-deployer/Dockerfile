@@ -31,7 +31,7 @@ RUN apt-get update -y \
     && locale-gen en_US.UTF-8 \
     && apt-get install apt-utils -y \
     && apt-get upgrade -y \
-    && apt-get install openjdk-11-jdk-headless -y
+    && apt-get install openjdk-11-jdk-headless curl -y
 
 # Get netstat, used for checking Cloud SQL proxy readiness.
 RUN apt-get install net-tools
