@@ -6,8 +6,8 @@
     <resData>
       <domain:creData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>%DOMAIN%</domain:name>
-        <domain:crDate>2014-09-09T09:09:09Z</domain:crDate>
-        <domain:exDate>2016-09-09T09:09:09Z</domain:exDate>
+        <domain:crDate>%CREATE_TIME%</domain:crDate>
+        <domain:exDate>%EXPIRATION_TIME%</domain:exDate>
       </domain:creData>
     </resData>
     <trID>

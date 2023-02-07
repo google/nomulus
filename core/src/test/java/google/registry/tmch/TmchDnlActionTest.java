@@ -43,8 +43,8 @@ class TmchDnlActionTest extends TmchActionTestCase {
   void testDnl() throws Exception {
     assertThat(ClaimsListDao.get().getClaimKey("xn----7sbejwbn3axu3d")).isEmpty();
     when(httpUrlConnection.getInputStream())
-        .thenReturn(new ByteArrayInputStream(TmchTestData.loadBytes("dnl-latest.csv").read()))
-        .thenReturn(new ByteArrayInputStream(TmchTestData.loadBytes("dnl-latest.sig").read()));
+        .thenReturn(new ByteArrayInputStream(TmchTestData.loadBytes("dnl/dnl-latest.csv").read()))
+        .thenReturn(new ByteArrayInputStream(TmchTestData.loadBytes("dnl/dnl-latest.sig").read()));
     newTmchDnlAction().run();
     verify(httpUrlConnection, times(2)).getInputStream();
     assertThat(connectedUrls.stream().map(URL::toString).collect(toImmutableList()))

@@ -16,22 +16,33 @@ package google.registry.tmch;
 
 import static com.google.common.base.CharMatcher.whitespace;
 import static com.google.common.io.BaseEncoding.base64;
+import static google.registry.tmch.TmchData.BEGIN_ENCODED_SMD;
+import static google.registry.tmch.TmchData.END_ENCODED_SMD;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteSource;
+import com.google.re2j.Matcher;
+import com.google.re2j.Pattern;
 import google.registry.testing.TestDataHelper;
 
-/** Utility class providing easy access to contents of the {@code testdata/} directory. */
+/**
+ * Utility class providing easy access to contents of the {@code
+ * core/src/test/resources/google/registry/tmch/} directory.
+ */
 public final class TmchTestData {
 
-  private static final String BEGIN_ENCODED_SMD = "-----BEGIN ENCODED SMD-----";
-  private static final String END_ENCODED_SMD = "-----END ENCODED SMD-----";
+  private TmchTestData() {}
 
-  /** Returns {@link ByteSource} for file in {@code tmch/testdata/} directory. */
+  /**
+   * Returns {@link ByteSource} for file in {@code core/src/test/resources/google/registry/tmch/}
+   * directory.
+   */
   public static ByteSource loadBytes(String filename) {
     return TestDataHelper.loadBytes(TmchTestData.class, filename);
   }
 
-  /** Loads data from file in {@code tmch/testdata/} as a String. */
+  /** Loads data from file in {@code core/src/test/resources/google/registry/tmch/} as a String. */
   public static String loadFile(String filename) {
     return TestDataHelper.loadFile(TmchTestData.class, filename);
   }
@@ -46,5 +57,16 @@ public final class TmchTestData {
                     data.substring(
                         data.indexOf(BEGIN_ENCODED_SMD) + BEGIN_ENCODED_SMD.length(),
                         data.indexOf(END_ENCODED_SMD))));
+  }
+
+  public static ImmutableList<String> extractLabels(String filepath) {
+    String pattern = "U-labels: ";
+    String content = loadFile(filepath);
+    Matcher matcher = Pattern.compile(pattern + ".*").matcher(content);
+    matcher.find();
+    String matchedString = matcher.group().replace(pattern, "");
+    return matchedString.isEmpty()
+        ? ImmutableList.of()
+        : ImmutableList.copyOf(Splitter.on(',').trimResults().split(matchedString));
   }
 }
