@@ -36,7 +36,7 @@ RUN apt-get update -y \
            'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
            > /etc/apt/sources.list.d/pgdg.list' \
     && apt-get update -y \
-    && apt install postgresql-client-11 -y
+    && apt install postgresql-client-11 procps -y
 
 # Use unzip to extract files from jars.
 RUN apt-get install zip -y
