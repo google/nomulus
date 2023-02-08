@@ -1085,7 +1085,7 @@ CREATE TABLE public."TmchCrl" (
 CREATE TABLE public."User" (
     id bigint NOT NULL,
     email_address text NOT NULL,
-    gaia_id text NOT NULL,
+    gaia_id text,
     registry_lock_password_hash text,
     registry_lock_password_salt text,
     global_role text NOT NULL,
