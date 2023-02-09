@@ -16,6 +16,7 @@ package google.registry.model;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.gson.annotations.Expose;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -28,6 +29,7 @@ import org.joda.time.DateTime;
 public class CreateAutoTimestamp extends ImmutableObject implements UnsafeSerializable {
 
   @Column(nullable = false)
+  @Expose
   DateTime creationTime;
 
   @PrePersist

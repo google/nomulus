@@ -40,6 +40,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
+import com.google.gson.annotations.Expose;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
@@ -121,20 +122,20 @@ public class DomainBase extends EppResource
    *
    * @invariant domainName == domainName.toLowerCase(Locale.ENGLISH)
    */
-  String domainName;
+  @Expose String domainName;
 
   /** The top level domain this is under, de-normalized from {@link #domainName}. */
   String tld;
 
   /** References to hosts that are the nameservers for the domain. */
-  @Transient Set<VKey<Host>> nsHosts;
+  @Expose @Transient Set<VKey<Host>> nsHosts;
 
   /** Contacts. */
-  VKey<Contact> adminContact;
+  @Expose VKey<Contact> adminContact;
 
-  VKey<Contact> billingContact;
-  VKey<Contact> techContact;
-  VKey<Contact> registrantContact;
+  @Expose VKey<Contact> billingContact;
+  @Expose VKey<Contact> techContact;
+  @Expose VKey<Contact> registrantContact;
 
   /** Authorization info (aka transfer secret) of the domain. */
   @Embedded
@@ -175,10 +176,10 @@ public class DomainBase extends EppResource
   String idnTableName;
 
   /** Fully qualified host names of this domain's active subordinate hosts. */
-  Set<String> subordinateHosts;
+  @Expose Set<String> subordinateHosts;
 
   /** When this domain's registration will expire. */
-  DateTime registrationExpirationTime;
+  @Expose DateTime registrationExpirationTime;
 
   /**
    * The poll message associated with this domain being deleted.
@@ -230,7 +231,7 @@ public class DomainBase extends EppResource
    *
    * <p>Can be null if the resource has never been transferred.
    */
-  DateTime lastTransferTime;
+  @Expose DateTime lastTransferTime;
 
   /**
    * When the domain's autorenewal status will expire.
