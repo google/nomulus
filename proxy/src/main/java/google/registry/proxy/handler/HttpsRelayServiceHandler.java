@@ -16,7 +16,12 @@ package google.registry.proxy.handler;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.IdToken;
+import com.google.auth.oauth2.IdTokenProvider;
+import com.google.auth.oauth2.IdTokenProvider.Option;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.proxy.metric.FrontendMetrics;
@@ -37,9 +42,11 @@ import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.timeout.ReadTimeoutException;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLHandshakeException;
 
@@ -72,18 +79,21 @@ public abstract class HttpsRelayServiceHandler extends ByteToMessageCodec<FullHt
   private final Map<String, Cookie> cookieStore = new LinkedHashMap<>();
   private final String relayHost;
   private final String relayPath;
-  private final Supplier<String> accessTokenSupplier;
+  private final Supplier<GoogleCredentials> refreshedCredentialsSupplier;
+  private final Optional<String> iapClientId;
 
   protected final FrontendMetrics metrics;
 
   HttpsRelayServiceHandler(
       String relayHost,
       String relayPath,
-      Supplier<String> accessTokenSupplier,
+      Supplier<GoogleCredentials> refreshedCredentialsSupplier,
+      Optional<String> iapClientId,
       FrontendMetrics metrics) {
     this.relayHost = relayHost;
     this.relayPath = relayPath;
-    this.accessTokenSupplier = accessTokenSupplier;
+    this.refreshedCredentialsSupplier = refreshedCredentialsSupplier;
+    this.iapClientId = iapClientId;
     this.metrics = metrics;
   }
 
@@ -91,19 +101,37 @@ public abstract class HttpsRelayServiceHandler extends ByteToMessageCodec<FullHt
    * Construct the {@link FullHttpRequest}.
    *
    * <p>This default method creates a bare-bone {@link FullHttpRequest} that may need to be
-   * modified, e. g. adding headers specific for each protocol.
+   * modified, e.g. adding headers specific for each protocol.
    *
    * @param byteBuf inbound message.
    */
   protected FullHttpRequest decodeFullHttpRequest(ByteBuf byteBuf) {
     FullHttpRequest request =
         new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, relayPath);
+    GoogleCredentials credentials = refreshedCredentialsSupplier.get();
     request
         .headers()
         .set(HttpHeaderNames.USER_AGENT, "Proxy")
         .set(HttpHeaderNames.HOST, relayHost)
-        .set(HttpHeaderNames.AUTHORIZATION, "Bearer " + accessTokenSupplier.get())
+        .set(
+            HttpHeaderNames.AUTHORIZATION, "Bearer " + credentials.getAccessToken().getTokenValue())
         .setInt(HttpHeaderNames.CONTENT_LENGTH, byteBuf.readableBytes());
+    // Set the Proxy-Authorization header if using IAP
+    if (iapClientId.isPresent()) {
+      IdTokenProvider idTokenProvider = (IdTokenProvider) credentials;
+      try {
+        // Note: we use Option.FORMAT_FULL to make sure the JWT we receive contains the email
+        // address (as is required by IAP)
+        IdToken idToken =
+            idTokenProvider.idTokenWithAudience(
+                iapClientId.get(), ImmutableList.of(Option.FORMAT_FULL));
+        request
+            .headers()
+            .set(HttpHeaderNames.PROXY_AUTHORIZATION, "Bearer " + idToken.getTokenValue());
+      } catch (IOException e) {
+        logger.atSevere().withCause(e).log("Error when attempting to retrieve IAP ID token");
+      }
+    }
     request.content().writeBytes(byteBuf);
     return request;
   }
