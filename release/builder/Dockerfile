@@ -19,7 +19,16 @@
 # 3. Google Cloud SDK for generating the WARs.
 # 4. Git to manipulate the private and the merged repos.
 # 5. Docker to build and push images.
+# 6. cloudSchedulerDeployer for deploying cloud scheduler tasks based on config
+
+FROM golang:1.19 as builder
+WORKDIR /usr/src/cloudSchedulerDeployer
+RUN go mod init cloudSchedulerDeployer
+COPY *.go ./
+RUN go build -o /cloudSchedulerDeployer
+
 FROM marketplace.gcr.io/google/debian10
 ENV DEBIAN_FRONTEND=noninteractive LANG=en_US.UTF-8
+COPY --from=builder /cloudSchedulerDeployer /usr/local/bin/cloudSchedulerDeployer
 ADD ./build.sh .
 RUN ["bash", "./build.sh"]
