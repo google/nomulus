@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cronentries>
+  <cron>
+    <url>/_dr/task/rdeStaging</url>
+    <name>rdeStaging</name>
+    <method>GET</method>
+    <description>
+      This job generates a full RDE escrow deposit as a single gigantic XML document
+      and streams it to cloud storage. When this job has finished successfully, it'll
+      launch a separate task that uploads the deposit file to Iron Mountain via SFTP.
+    </description>
+    <schedule>7 0 * * *</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/readDnsQueue?jitterSeconds=45]]></url>
+    <name>readDnsQueue</name>
+    <method>GET</method>
+    <description>
+      Lease all tasks from the dns-pull queue, group by TLD, and invoke PublishDnsUpdates for each
+      group.
+    </description>
+    <schedule>*/1 * * * *</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=sheet&endpoint=/_dr/task/syncRegistrarsSheet&runInEmpty]]></url>
+    <name>syncRegistrarsSheet</name>
+    <method>GET</method>
+    <description>
+      Synchronize Registrar entities to Google Spreadsheets.
+    </description>
+    <schedule>0 */1 * * *</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/task/resaveAllEppResourcesPipeline?fast=true]]></url>
+    <name>resaveAllEppResourcesPipeline</name>
+    <method>GET</method>
+    <description>
+      This job resaves all our resources, projected in time to "now".
+    </description>
+    <!--
+      AE cron schedule 1st monday of month 09:00 doesn't translate to unix cron,
+      setting 1 day of the month at 09.00
+    -->
+    <schedule>0 9 1 * *</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/syncGroupMembers&runInEmpty]]></url>
+    <name>syncGroupMembers</name>
+    <method>GET</method>
+    <description>
+      Syncs RegistrarContact changes in the past hour to Google Groups.
+    </description>
+    <schedule>0 */1 * * *</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/task/deleteExpiredDomains]]></url>
+    <name>deleteExpiredDomains</name>
+    <method>GET</method>
+    <description>
+      This job runs an action that deletes domains that are past their
+      autorenew end date.
+    </description>
+    <schedule>7 3 * * *</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/task/wipeOutCloudSql]]></url>
+    <name>wipeOutCloudSql</name>
+    <method>GET</method>
+    <description>
+      This job runs an action that deletes all data in Cloud SQL.
+    </description>
+    <schedule>7 3 * * 6</schedule>
+    <target>backend</target>
+  </cron>
+</cronentries>
