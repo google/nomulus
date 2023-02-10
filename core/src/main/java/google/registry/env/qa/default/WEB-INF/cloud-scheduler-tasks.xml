@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<taskentries>
+  <task>
+    <url>/_dr/task/rdeStaging</url>
+    <name>rdeStaging</name>
+    <description>
+      This job generates a full RDE escrow deposit as a single gigantic XML document
+      and streams it to cloud storage. When this job has finished successfully, it'll
+      launch a separate task that uploads the deposit file to Iron Mountain via SFTP.
+    </description>
+    <schedule>7 0 * * *</schedule>
+  </task>
+
+  <task>
+    <url><![CDATA[/_dr/cron/readDnsQueue?jitterSeconds=45]]></url>
+    <name>readDnsQueue</name>
+    <description>
+      Lease all tasks from the dns-pull queue, group by TLD, and invoke PublishDnsUpdates for each
+      group.
+    </description>
+    <schedule>*/1 * * * *</schedule>
+  </task>
+
+  <task>
+    <url><![CDATA[/_dr/cron/fanout?queue=sheet&endpoint=/_dr/task/syncRegistrarsSheet&runInEmpty]]></url>
+    <name>syncRegistrarsSheet</name>
+    <description>
+      Synchronize Registrar entities to Google Spreadsheets.
+    </description>
+    <schedule>0 */1 * * *</schedule>
+  </task>
+
+  <task>
+    <url><![CDATA[/_dr/task/resaveAllEppResourcesPipeline?fast=true]]></url>
+    <name>resaveAllEppResourcesPipeline</name>
+    <description>
+      This job resaves all our resources, projected in time to "now".
+    </description>
+    <!--Deviation from cron tasks schedule: 1st monday of month 09:00 is replaced
+    with 1st of the month 09:00 -->
+    <schedule>0 9 1 * *</schedule>
+  </task>
+
+  <task>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/syncGroupMembers&runInEmpty]]></url>
+    <name>syncGroupMembers</name>
+    <description>
+      Syncs RegistrarContact changes in the past hour to Google Groups.
+    </description>
+    <schedule>0 */1 * * *</schedule>
+  </task>
+
+  <task>
+    <url><![CDATA[/_dr/task/deleteExpiredDomains]]></url>
+    <name>deleteExpiredDomains</name>
+    <description>
+      This job runs an action that deletes domains that are past their
+      autorenew end date.
+    </description>
+    <schedule>7 3 * * *</schedule>
+  </task>
+
+  <task>
+    <url><![CDATA[/_dr/task/wipeOutCloudSql]]></url>
+    <name>wipeOutCloudSql</name>
+    <description>
+      This job runs an action that deletes all data in Cloud SQL.
+    </description>
+    <schedule>7 3 * * 6</schedule>
+  </task>
+</taskentries>

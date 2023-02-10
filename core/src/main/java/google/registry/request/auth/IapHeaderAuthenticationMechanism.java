@@ -14,16 +14,12 @@
 
 package google.registry.request.auth;
 
-import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.auth.oauth2.TokenVerifier;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.flogger.FluentLogger;
-import google.registry.config.RegistryEnvironment;
 import google.registry.model.console.User;
 import google.registry.model.console.UserDao;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -37,41 +33,22 @@ import javax.servlet.http.HttpServletRequest;
  * @see <a href="https://cloud.google.com/iap/docs/signed-headers-howto">the documentation on GCP
  *     IAP's signed headers for more information.</a>
  */
-public class IapHeaderAuthenticationMechanism implements AuthenticationMechanism {
+public class IapHeaderAuthenticationMechanism extends IdTokenAuthenticationBase {
 
   private static final String ID_TOKEN_HEADER_NAME = "X-Goog-IAP-JWT-Assertion";
 
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  // A workaround that allows "use" of the IAP-based authenticator when running local testing, i.e.
-  // the RegistryTestServer
-  private static Optional<User> userForTesting = Optional.empty();
-
-  private final TokenVerifier tokenVerifier;
-
   @Inject
-  public IapHeaderAuthenticationMechanism(TokenVerifier tokenVerifier) {
-    this.tokenVerifier = tokenVerifier;
+  public IapHeaderAuthenticationMechanism(@Named("iap") TokenVerifier tokenVerifier) {
+    super(tokenVerifier);
   }
 
   @Override
-  public AuthResult authenticate(HttpServletRequest request) {
-    if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
-        && userForTesting.isPresent()) {
-      return AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userForTesting.get()));
-    }
-    String rawIdToken = request.getHeader(ID_TOKEN_HEADER_NAME);
-    if (rawIdToken == null) {
-      return AuthResult.NOT_AUTHENTICATED;
-    }
-    JsonWebSignature token;
-    try {
-      token = tokenVerifier.verify(rawIdToken);
-    } catch (TokenVerifier.VerificationException e) {
-      logger.atInfo().withCause(e).log("Error when verifying access token");
-      return AuthResult.NOT_AUTHENTICATED;
-    }
-    String emailAddress = (String) token.getPayload().get("email");
+  String rawTokenFromRequest(HttpServletRequest request) {
+    return request.getHeader(ID_TOKEN_HEADER_NAME);
+  }
+
+  @Override
+  AuthResult authResultFromEmail(String emailAddress) {
     Optional<User> maybeUser = UserDao.loadUser(emailAddress);
     if (!maybeUser.isPresent()) {
       logger.atInfo().log("No user found for email address %s", emailAddress);
@@ -80,8 +57,4 @@ public class IapHeaderAuthenticationMechanism implements AuthenticationMechanism
     return AuthResult.create(AuthLevel.USER, UserAuthInfo.create(maybeUser.get()));
   }
 
-  @VisibleForTesting
-  public static void setUserAuthInfoForTestServer(@Nullable User user) {
-    userForTesting = Optional.ofNullable(user);
-  }
 }

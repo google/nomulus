@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 /**
@@ -30,13 +31,18 @@ import javax.inject.Singleton;
 public class AuthModule {
 
   private static final String IAP_ISSUER_URL = "https://cloud.google.com/iap";
+  private static final String SA_ISSUER_URL = "https://accounts.google.com";
 
   /** Provides the custom authentication mechanisms (including OAuth). */
   @Provides
   ImmutableList<AuthenticationMechanism> provideApiAuthenticationMechanisms(
       OAuthAuthenticationMechanism oauthAuthenticationMechanism,
-      IapHeaderAuthenticationMechanism iapHeaderAuthenticationMechanism) {
-    return ImmutableList.of(oauthAuthenticationMechanism, iapHeaderAuthenticationMechanism);
+      IapHeaderAuthenticationMechanism iapHeaderAuthenticationMechanism,
+      ServiceAccountAuthenticationMechanism serviceAccountAuthenticationMechanism) {
+    return ImmutableList.of(
+        oauthAuthenticationMechanism,
+        iapHeaderAuthenticationMechanism,
+        serviceAccountAuthenticationMechanism);
   }
 
   /** Provides the OAuthService instance. */
@@ -46,10 +52,18 @@ public class AuthModule {
   }
 
   @Provides
+  @Named("iap")
   @Singleton
   TokenVerifier provideTokenVerifier(
       @Config("projectId") String projectId, @Config("projectIdNumber") long projectIdNumber) {
     String audience = String.format("/projects/%d/apps/%s", projectIdNumber, projectId);
     return TokenVerifier.newBuilder().setAudience(audience).setIssuer(IAP_ISSUER_URL).build();
+  }
+
+  @Provides
+  @Named("serviceAccount")
+  @Singleton
+  TokenVerifier provideServiceAccountTokenVerifier(@Config("projectId") String projectId) {
+    return TokenVerifier.newBuilder().setAudience(projectId).setIssuer(SA_ISSUER_URL).build();
   }
 }
