@@ -54,6 +54,7 @@ public class RegistryConfigSettings {
     public String backendServiceUrl;
     public String toolsServiceUrl;
     public String pubapiServiceUrl;
+    public String cloudSchedulerServiceAccountEmail;
   }
 
   /** Configuration options for OAuth settings for authenticating users. */

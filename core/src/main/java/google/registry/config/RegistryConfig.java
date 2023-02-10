@@ -107,6 +107,12 @@ public final class RegistryConfig {
     }
 
     @Provides
+    @Config("cloudSchedulerServiceAccountEmail")
+    public static String provideCloudSchedulerServiceAccountEmail(RegistryConfigSettings config) {
+      return config.gcpProject.cloudSchedulerServiceAccountEmail;
+    }
+
+    @Provides
     @Config("projectIdNumber")
     public static long provideProjectIdNumber(RegistryConfigSettings config) {
       return config.gcpProject.projectIdNumber;
