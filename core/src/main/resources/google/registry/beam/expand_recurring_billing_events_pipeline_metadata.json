@@ -24,12 +24,6 @@
       "is_optional": false
     },
     {
-      "name": "shard",
-      "label": "The exclusive upper bound of the operation window.",
-      "helpText": "The exclusive upper bound of the operation window, in ISO 8601 format.",
-      "is_optional": true
-    },
-    {
       "name": "isDryRun",
       "label": "Whether this job is a dry run.",
       "helpText": "If true, no changes will be saved to the database.",
