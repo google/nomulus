@@ -49,7 +49,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.net.InternetDomainName;
-import google.registry.dns.DnsQueue;
+import google.registry.dns.DnsUtils;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
@@ -156,7 +156,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
   @Inject @Superuser boolean isSuperuser;
   @Inject Trid trid;
   @Inject DomainHistory.Builder historyBuilder;
-  @Inject DnsQueue dnsQueue;
+  @Inject DnsUtils dnsUtils;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainUpdateFlowCustomLogic flowCustomLogic;
   @Inject DomainPricingLogic pricingLogic;
@@ -183,7 +183,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
         historyBuilder.setType(DOMAIN_UPDATE).setDomain(newDomain).build();
     validateNewState(newDomain);
     if (requiresDnsUpdate(existingDomain, newDomain)) {
-      dnsQueue.addDomainRefreshTask(targetId);
+      dnsUtils.requestDomainDnsRefresh(targetId);
     }
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
     entitiesToSave.add(newDomain, domainHistory);
