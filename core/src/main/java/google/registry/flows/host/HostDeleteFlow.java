@@ -24,7 +24,7 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
-import google.registry.dns.DnsQueue;
+import google.registry.dns.DnsUtils;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
@@ -71,7 +71,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
           StatusValue.PENDING_DELETE,
           StatusValue.SERVER_DELETE_PROHIBITED);
 
-  @Inject DnsQueue dnsQueue;
+  @Inject DnsUtils dnsUtils;
   @Inject ExtensionManager extensionManager;
   @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
@@ -104,7 +104,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
     }
     Host newHost = existingHost.asBuilder().setStatusValues(null).setDeletionTime(now).build();
     if (existingHost.isSubordinate()) {
-      dnsQueue.addHostRefreshTask(existingHost.getHostName());
+      dnsUtils.requestHostDnsRefresh(existingHost.getHostName());
       tm().update(
               tm().loadByKey(existingHost.getSuperordinateDomain())
                   .asBuilder()

@@ -24,14 +24,13 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.testing.DnsUtilsHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import org.joda.time.DateTime;
@@ -43,7 +42,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class RefreshDnsOnHostRenameActionTest {
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2015-01-15T11:22:33Z"));
-  private final DnsQueue dnsQueue = mock(DnsQueue.class);
+  private final DnsUtils dnsUtils = mock(DnsUtils.class);
+  private final DnsUtilsHelper dnsUtilsHelper = new DnsUtilsHelper(dnsUtils);
   private final FakeResponse response = new FakeResponse();
 
   @RegisterExtension
@@ -53,20 +53,14 @@ public class RefreshDnsOnHostRenameActionTest {
   private RefreshDnsOnHostRenameAction action;
 
   private void createAction(String hostKey) {
-    action = new RefreshDnsOnHostRenameAction(hostKey, response, dnsQueue);
-  }
-
-  private void assertDnsTasksEnqueued(String... domains) {
-    for (String domain : domains) {
-      verify(dnsQueue).addDomainRefreshTask(domain);
-    }
-    verifyNoMoreInteractions(dnsQueue);
+    action = new RefreshDnsOnHostRenameAction(hostKey, response, dnsUtils);
   }
 
   @BeforeEach
   void beforeEach() {
     createTld("tld");
   }
+
 
   @Test
   void testSuccess() {
@@ -82,7 +76,7 @@ public class RefreshDnsOnHostRenameActionTest {
     persistDomainAsDeleted(newDomain("deleted.tld", host), clock.nowUtc().minusDays(1));
     createAction(host.createVKey().stringify());
     action.run();
-    assertDnsTasksEnqueued("example.tld", "otherexample.tld");
+    dnsUtilsHelper.assertDomainDnsRequests("example.tld", "otherexample.tld");
     assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
@@ -90,7 +84,7 @@ public class RefreshDnsOnHostRenameActionTest {
   void testFailure_nonexistentHost() {
     createAction("kind:Host@sql:rO0ABXQABGJsYWg");
     action.run();
-    assertDnsTasksEnqueued();
+    dnsUtilsHelper.assertNoMoreDnsRequests();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
         .isEqualTo("Host to refresh does not exist: VKey<Host>(sql:blah)");
@@ -102,7 +96,7 @@ public class RefreshDnsOnHostRenameActionTest {
     persistResource(newDomain("example.tld", host));
     createAction(host.createVKey().stringify());
     action.run();
-    assertDnsTasksEnqueued();
+    dnsUtilsHelper.assertNoMoreDnsRequests();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
         .isEqualTo("Host to refresh is already deleted: ns1.example.tld");

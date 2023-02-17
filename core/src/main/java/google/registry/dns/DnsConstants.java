@@ -34,5 +34,8 @@ public class DnsConstants {
   public static final String DNS_TARGET_CREATE_TIME_PARAM = "Create-Time";
 
   /** The possible values of the {@code DNS_TARGET_TYPE_PARAM} parameter. */
-  public enum TargetType { DOMAIN, HOST, ZONE }
+  public enum TargetType {
+    DOMAIN,
+    HOST
+  }
 }

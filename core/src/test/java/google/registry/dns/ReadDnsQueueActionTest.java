@@ -388,21 +388,6 @@ public class ReadDnsQueueActionTest {
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
 
-  @RetryingTest(4)
-  void testSuccess_zone_getsIgnored() {
-    dnsQueue.addHostRefreshTask("ns1.domain.com");
-    dnsQueue.addDomainRefreshTask("domain.net");
-    dnsQueue.addZoneRefreshTask("example");
-
-    run();
-
-    TaskQueueHelper.assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
-    cloudTasksHelper.assertTasksEnqueued(
-        DNS_PUBLISH_PUSH_QUEUE_NAME,
-        new TaskMatcher().url(PublishDnsUpdatesAction.PATH).param("domains", "domain.net"),
-        new TaskMatcher().url(PublishDnsUpdatesAction.PATH).param("hosts", "ns1.domain.com"));
-  }
-
   private static String makeCommaSeparatedRange(int from, int to, String format) {
     return IntStream.range(from, to)
         .mapToObj(i -> String.format(format, i))
