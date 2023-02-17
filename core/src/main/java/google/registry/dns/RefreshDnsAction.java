@@ -39,7 +39,7 @@ import javax.inject.Inject;
 public final class RefreshDnsAction implements Runnable {
 
   private final Clock clock;
-  private final DnsQueue dnsQueue;
+  private final DnsUtils dnsUtils;
   private final String domainOrHostName;
   private final TargetType type;
 
@@ -48,11 +48,11 @@ public final class RefreshDnsAction implements Runnable {
       @Parameter("domainOrHostName") String domainOrHostName,
       @Parameter("type") TargetType type,
       Clock clock,
-      DnsQueue dnsQueue) {
+      DnsUtils dnsUtils) {
     this.domainOrHostName = domainOrHostName;
     this.type = type;
     this.clock = clock;
-    this.dnsQueue = dnsQueue;
+    this.dnsUtils = dnsUtils;
   }
 
   @Override
@@ -63,11 +63,11 @@ public final class RefreshDnsAction implements Runnable {
     switch (type) {
       case DOMAIN:
         loadAndVerifyExistence(Domain.class, domainOrHostName);
-        dnsQueue.addDomainRefreshTask(domainOrHostName);
+        dnsUtils.requestDomainDnsRefresh(domainOrHostName);
         break;
       case HOST:
         verifyHostIsSubordinate(loadAndVerifyExistence(Host.class, domainOrHostName));
-        dnsQueue.addHostRefreshTask(domainOrHostName);
+        dnsUtils.requestHostDnsRefresh(domainOrHostName);
         break;
       default:
         throw new BadRequestException("Unsupported type: " + type);

@@ -45,6 +45,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.DnsUtilsHelper;
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
@@ -84,6 +85,7 @@ public abstract class FlowTestCase<F extends Flow> {
   protected TransportCredentials credentials = new PasswordOnlyTransportCredentials();
   protected EppRequestSource eppRequestSource = EppRequestSource.UNIT_TEST;
   protected CloudTasksHelper cloudTasksHelper;
+  protected DnsUtilsHelper dnsUtilsHelper;
 
   private EppMetric.Builder eppMetricBuilder;
 
@@ -216,6 +218,7 @@ public abstract class FlowTestCase<F extends Flow> {
 
     FakesAndMocksModule fakesAndMocksModule = FakesAndMocksModule.create(clock);
     cloudTasksHelper = fakesAndMocksModule.getCloudTasksHelper();
+    dnsUtilsHelper = fakesAndMocksModule.getDnsUtilsHelper();
     // Run the flow.
     return DaggerEppTestComponent.builder()
         .fakesAndMocksModule(fakesAndMocksModule)

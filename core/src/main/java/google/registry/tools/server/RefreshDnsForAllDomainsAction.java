@@ -21,7 +21,7 @@ import static google.registry.request.RequestParameters.PARAM_TLDS;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import google.registry.dns.DnsQueue;
+import google.registry.dns.DnsUtils;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
@@ -66,7 +66,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   @Parameter("smearMinutes")
   int smearMinutes;
 
-  @Inject DnsQueue dnsQueue;
+  @Inject DnsUtils dnsUtils;
   @Inject Clock clock;
   @Inject Random random;
 
@@ -91,7 +91,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                         domainName -> {
                           try {
                             // Smear the task execution time over the next N minutes.
-                            dnsQueue.addDomainRefreshTask(
+                            dnsUtils.requestDomainDnsRefresh(
                                 domainName, Duration.standardMinutes(random.nextInt(smearMinutes)));
                           } catch (Throwable t) {
                             logger.atSevere().withCause(t).log(

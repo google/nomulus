@@ -255,6 +255,16 @@
         primary key (algorithm, digest, digest_type, domain_repo_id, key_tag)
     );
 
+    create table "DnsRefreshRequest" (
+       id  bigserial not null,
+        last_process_time timestamptz not null,
+        name text not null,
+        request_time timestamptz not null,
+        tld text not null,
+        type text not null,
+        primary key (id)
+    );
+
     create table "Domain" (
        repo_id text not null,
         update_timestamp timestamptz,
@@ -786,6 +796,8 @@ create index IDXhp33wybmb6tbpr1bq7ttwk8je on "ContactHistory" (history_registrar
 create index IDX9q53px6r302ftgisqifmc6put on "ContactHistory" (history_type);
 create index IDXsudwswtwqnfnx2o1hx4s0k0g5 on "ContactHistory" (history_modification_time);
 create index IDXhlqqd5uy98cjyos72d81x9j95 on "DelegationSignerData" (domain_repo_id);
+create index IDX8gtvnbk64yskcvrdp61f5ied3 on "DnsRefreshRequest" (request_time);
+create index IDXfdk2xpil2x1gh0omt84k2y3o1 on "DnsRefreshRequest" (last_process_time);
 create index IDXnb02m43jcx24r64n8rbg22u4q on "Domain" (admin_contact);
 create index IDXlrq7v63pc21uoh3auq6eybyhl on "Domain" (autorenew_end_time);
 create index IDXq9gy8x2xynt9tb16yajn1gcm8 on "Domain" (billing_contact);
