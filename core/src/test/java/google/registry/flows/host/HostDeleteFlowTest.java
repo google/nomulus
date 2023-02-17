@@ -24,8 +24,6 @@ import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HostSubject.assertAboutHosts;
-import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -48,16 +46,12 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.TaskQueueExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostDeleteFlow}. */
 class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
-
-  @RegisterExtension TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   @BeforeEach
   void initFlowTest() {
@@ -320,10 +314,10 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
         .hasType(Type.HOST_DELETE);
     assertNoBillingEvents();
     if (isSubordinate) {
-      assertDnsTasksEnqueued(deletedHost.getHostName());
+      dnsUtilsHelper.assertHostDnsRequests(deletedHost.getHostName());
       assertThat(loadByKey(deletedHost.getSuperordinateDomain()).getSubordinateHosts()).isEmpty();
     } else {
-      assertNoDnsTasksEnqueued();
+      dnsUtilsHelper.assertNoMoreDnsRequests();
     }
     assertLastHistoryContainsResource(deletedHost);
   }

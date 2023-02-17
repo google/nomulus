@@ -26,8 +26,6 @@ import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HostSubject.assertAboutHosts;
-import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Strings;
@@ -54,15 +52,11 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.TaskQueueExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostCreateFlow}. */
 class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
-
-  @RegisterExtension TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private void setEppHostCreateInput(String hostName, String hostAddrs) {
     setEppInput(
@@ -122,7 +116,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
   void testSuccess_externalNeverExisted() throws Exception {
     doSuccessfulTest();
     assertAboutHosts().that(reloadResourceByForeignKey()).hasSuperordinateDomain(null);
-    assertNoDnsTasksEnqueued();
+    dnsUtilsHelper.assertNoMoreDnsRequests();
   }
 
   @Test
@@ -133,7 +127,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
         loadByForeignKey(Domain.class, "example.tld", clock.nowUtc()).get();
     assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
-    assertDnsTasksEnqueued("ns1.example.tld");
+    dnsUtilsHelper.assertHostDnsRequests("ns1.example.tld");
   }
 
   @Test
@@ -150,7 +144,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
     persistDeletedHost(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     doSuccessfulTest();
     assertAboutHosts().that(reloadResourceByForeignKey()).hasSuperordinateDomain(null);
-    assertNoDnsTasksEnqueued();
+    dnsUtilsHelper.assertNoMoreDnsRequests();
   }
 
   @Test
@@ -162,7 +156,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
         loadByForeignKey(Domain.class, "example.tld", clock.nowUtc()).get();
     assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
-    assertDnsTasksEnqueued("ns1.example.tld");
+    dnsUtilsHelper.assertHostDnsRequests("ns1.example.tld");
   }
 
   @Test
