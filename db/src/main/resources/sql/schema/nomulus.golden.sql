@@ -351,7 +351,7 @@ CREATE TABLE public."DnsRefreshRequest" (
     request_time timestamp with time zone NOT NULL,
     tld text NOT NULL,
     type text NOT NULL,
-    process_time timestamp with time zone NOT NULL
+    last_process_time timestamp with time zone NOT NULL
 );
 
 
@@ -1619,13 +1619,6 @@ CREATE INDEX idx2exdfbx6oiiwnhr8j6gjpqt2j ON public."BillingCancellation" USING 
 
 
 --
--- Name: idx3i7i2ktts9d7lcjbs34h0pvwo; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx3i7i2ktts9d7lcjbs34h0pvwo ON public."DnsRefreshRequest" USING btree (process_time);
-
-
---
 -- Name: idx3y3k7m2bkgahm9sixiohgyrga; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1819,6 +1812,13 @@ CREATE INDEX idxe7wu46c7wpvfmfnj4565abibp ON public."PollMessage" USING btree (r
 --
 
 CREATE INDEX idxeokttmxtpq2hohcioe5t2242b ON public."BillingCancellation" USING btree (registrar_id);
+
+
+--
+-- Name: idxfdk2xpil2x1gh0omt84k2y3o1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxfdk2xpil2x1gh0omt84k2y3o1 ON public."DnsRefreshRequest" USING btree (last_process_time);
 
 
 --

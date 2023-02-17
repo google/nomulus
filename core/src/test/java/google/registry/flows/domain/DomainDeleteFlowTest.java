@@ -52,7 +52,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
-import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
@@ -101,19 +100,15 @@ import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.TaskQueueExtension;
 import java.util.Map;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainDeleteFlow}. */
 class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain> {
-
-  @RegisterExtension final TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private Domain domain;
   private DomainHistory earlierHistoryEntry;
@@ -362,7 +357,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // The add grace period is for a billable action, so it should trigger a cancellation.
     assertAutorenewClosedAndCancellationCreatedFor(
         graceBillingEvent, getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE, DomainHistory.class));
-    assertDnsTasksEnqueued("example.tld");
+    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
     // There should be no poll messages. The previous autorenew poll message should now be deleted.
     assertThat(getPollMessages("TheRegistrar")).isEmpty();
   }
@@ -752,7 +747,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .build());
     DateTime eventTime = clock.nowUtc();
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
-    assertDnsTasksEnqueued("example.tld");
+    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
     assertAutorenewClosedAndCancellationCreatedFor(
         graceBillingEvent,
         getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE, DomainHistory.class),
@@ -770,7 +765,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .build());
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
-    assertDnsTasksEnqueued("example.tld");
+    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
     assertOnlyBillingEventIsClosedAutorenew("TheRegistrar");
   }
 
