@@ -32,7 +32,7 @@ import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
-import google.registry.dns.DnsQueue;
+import google.registry.dns.DnsUtils;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.domain.Domain;
@@ -98,7 +98,7 @@ public class DeleteProberDataAction implements Runnable {
   /** Number of domains to retrieve and delete per SQL transaction. */
   private static final int BATCH_SIZE = 1000;
 
-  @Inject DnsQueue dnsQueue;
+  @Inject DnsUtils dnsUtils;
 
   @Inject
   @Parameter(PARAM_DRY_RUN)
@@ -264,6 +264,6 @@ public class DeleteProberDataAction implements Runnable {
     // messages, or auto-renews because those will all be hard-deleted the next time the job runs
     // anyway.
     tm().putAll(ImmutableList.of(deletedDomain, historyEntry));
-    dnsQueue.addDomainRefreshTask(deletedDomain.getDomainName());
+    dnsUtils.requestDomainDnsRefresh(deletedDomain.getDomainName());
   }
 }

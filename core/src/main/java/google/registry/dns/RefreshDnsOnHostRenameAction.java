@@ -45,14 +45,14 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
 
   private final VKey<Host> hostKey;
   private final Response response;
-  private final DnsQueue dnsQueue;
+  private final DnsUtils dnsUtils;
 
   @Inject
   RefreshDnsOnHostRenameAction(
-      @Parameter(PARAM_HOST_KEY) String hostKey, Response response, DnsQueue dnsQueue) {
+      @Parameter(PARAM_HOST_KEY) String hostKey, Response response, DnsUtils dnsUtils) {
     this.hostKey = VKey.createEppVKeyFromString(hostKey);
     this.response = response;
-    this.dnsQueue = dnsQueue;
+    this.dnsUtils = dnsUtils;
   }
 
   @Override
@@ -76,7 +76,7 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
                     .stream()
                     .map(domainKey -> tm().loadByKey(domainKey))
                     .filter(Domain::shouldPublishToDns)
-                    .forEach(domain -> dnsQueue.addDomainRefreshTask(domain.getDomainName()));
+                    .forEach(domain -> dnsUtils.requestDomainDnsRefresh(domain.getDomainName()));
               }
 
               if (!hostValid) {
