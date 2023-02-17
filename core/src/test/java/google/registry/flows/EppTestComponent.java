@@ -23,6 +23,7 @@ import google.registry.batch.AsyncTaskEnqueuerTest;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.dns.DnsQueue;
+import google.registry.dns.DnsUtils;
 import google.registry.flows.custom.CustomLogicFactory;
 import google.registry.flows.custom.TestCustomLogicFactory;
 import google.registry.flows.domain.DomainFlowTmchUtils;
@@ -30,6 +31,7 @@ import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.request.RequestScope;
 import google.registry.request.lock.LockHandler;
 import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.DnsUtilsHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeSleeper;
@@ -59,9 +61,14 @@ public interface EppTestComponent {
     private FakeLockHandler lockHandler;
     private Sleeper sleeper;
     private CloudTasksHelper cloudTasksHelper;
+    private DnsUtilsHelper dnsUtilsHelper;
 
     public CloudTasksHelper getCloudTasksHelper() {
       return cloudTasksHelper;
+    }
+
+    public DnsUtilsHelper getDnsUtilsHelper() {
+      return dnsUtilsHelper;
     }
 
     public EppMetric.Builder getMetricBuilder() {
@@ -82,6 +89,7 @@ public interface EppTestComponent {
       instance.metricBuilder = EppMetric.builderForRequest(clock);
       instance.lockHandler = new FakeLockHandler(true);
       instance.cloudTasksHelper = cloudTasksHelper;
+      instance.dnsUtilsHelper = new DnsUtilsHelper();
       return instance;
     }
 
@@ -93,6 +101,11 @@ public interface EppTestComponent {
     @Provides
     CloudTasksUtils provideCloudTasksUtils() {
       return cloudTasksHelper.getTestCloudTasksUtils();
+    }
+
+    @Provides
+    DnsUtils provideDnsUtils() {
+      return dnsUtilsHelper.getDnsUtils();
     }
 
     @Provides
