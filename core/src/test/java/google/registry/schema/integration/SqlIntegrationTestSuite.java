@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assert_;
 
 import google.registry.model.billing.BillingEventTest;
 import google.registry.model.common.CursorTest;
+import google.registry.model.common.DnsRefreshRequestTest;
 import google.registry.model.console.UserTest;
 import google.registry.model.contact.ContactTest;
 import google.registry.model.domain.DomainSqlTest;
@@ -85,6 +86,7 @@ import org.junit.runner.RunWith;
   ContactHistoryTest.class,
   ContactTest.class,
   CursorTest.class,
+  DnsRefreshRequestTest.class,
   DomainSqlTest.class,
   DomainHistoryTest.class,
   HostHistoryTest.class,
