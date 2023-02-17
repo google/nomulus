@@ -36,7 +36,7 @@ import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.batch.AsyncTaskEnqueuer;
-import google.registry.dns.DnsQueue;
+import google.registry.dns.DnsUtils;
 import google.registry.dns.RefreshDnsOnHostRenameAction;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ObjectAlreadyExistsException;
@@ -124,7 +124,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
   @Inject @Superuser boolean isSuperuser;
   @Inject HostHistory.Builder historyBuilder;
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
-  @Inject DnsQueue dnsQueue;
+  @Inject DnsUtils dnsUtils;
   @Inject EppResponse.Builder responseBuilder;
   @Inject CloudTasksUtils cloudTasksUtils;
 
@@ -266,14 +266,14 @@ public final class HostUpdateFlow implements TransactionalFlow {
     // Only update DNS for subordinate hosts. External hosts have no glue to write, so they
     // are only written as NS records from the referencing domain.
     if (existingHost.isSubordinate()) {
-      dnsQueue.addHostRefreshTask(existingHost.getHostName());
+      dnsUtils.requestHostDnsRefresh(existingHost.getHostName());
     }
     // In case of a rename, there are many updates we need to queue up.
     if (((Update) resourceCommand).getInnerChange().getHostName() != null) {
       // If the renamed host is also subordinate, then we must enqueue an update to write the new
       // glue.
       if (newHost.isSubordinate()) {
-        dnsQueue.addHostRefreshTask(newHost.getHostName());
+        dnsUtils.requestHostDnsRefresh(newHost.getHostName());
       }
       // We must also enqueue updates for all domains that use this host as their nameserver so
       // that their NS records can be updated to point at the new name.

@@ -46,8 +46,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
-import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -106,18 +104,14 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.TaskQueueExtension;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainUpdateFlow}. */
 class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain> {
-
-  @RegisterExtension final TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private static final DomainDsData SOME_DSDATA =
       DomainDsData.create(
@@ -222,7 +216,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         .and()
         .hasNoAutorenewEndTime();
     assertNoBillingEvents();
-    assertDnsTasksEnqueued("example.tld");
+    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
     assertLastHistoryContainsResource(reloadResourceByForeignKey());
   }
 
@@ -351,7 +345,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertThat(domain.getContacts()).hasSize(3);
     assertThat(loadByKey(domain.getRegistrant()).getContactId()).isEqualTo("max_test_7");
     assertNoBillingEvents();
-    assertDnsTasksEnqueued("example.tld");
+    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
   }
 
   @Test
@@ -502,9 +496,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 .map(ds -> ds.cloneWithDomainRepoId(resource.getRepoId()))
                 .collect(toImmutableSet()));
     if (dnsTaskEnqueued) {
-      assertDnsTasksEnqueued("example.tld");
+      dnsUtilsHelper.assertDomainDnsRequests("example.tld");
     } else {
-      assertNoDnsTasksEnqueued();
+      dnsUtilsHelper.assertNoMoreDnsRequests();
     }
   }
 
@@ -1765,7 +1759,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_TRANSFER_PROHIBITED))
             .build());
     runFlowAsSuperuser();
-    assertDnsTasksEnqueued("example.tld");
+    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
   }
 
   @Test
@@ -1781,7 +1775,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setStatusValues(ImmutableSet.of(StatusValue.SERVER_HOLD))
             .build());
     runFlowAsSuperuser();
-    assertDnsTasksEnqueued("example.tld");
+    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
   }
 
   @Test
@@ -1797,6 +1791,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE, StatusValue.SERVER_HOLD))
             .build());
     runFlowAsSuperuser();
-    assertNoDnsTasksEnqueued();
+    dnsUtilsHelper.assertNoMoreDnsRequests();
   }
 }
