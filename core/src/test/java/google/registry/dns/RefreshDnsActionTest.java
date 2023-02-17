@@ -42,11 +42,11 @@ public class RefreshDnsActionTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private final DnsQueue dnsQueue = mock(DnsQueue.class);
+  private final DnsUtils dnsUtils = mock(DnsUtils.class);
   private final FakeClock clock = new FakeClock();
 
   private void run(TargetType type, String name) {
-    new RefreshDnsAction(name, type, clock, dnsQueue).run();
+    new RefreshDnsAction(name, type, clock, dnsUtils).run();
   }
 
   @BeforeEach
@@ -59,8 +59,8 @@ public class RefreshDnsActionTest {
     Domain domain = persistActiveDomain("example.xn--q9jyb4c");
     persistActiveSubordinateHost("ns1.example.xn--q9jyb4c", domain);
     run(TargetType.HOST, "ns1.example.xn--q9jyb4c");
-    verify(dnsQueue).addHostRefreshTask("ns1.example.xn--q9jyb4c");
-    verifyNoMoreInteractions(dnsQueue);
+    verify(dnsUtils).requestHostDnsRefresh("ns1.example.xn--q9jyb4c");
+    verifyNoMoreInteractions(dnsUtils);
   }
 
   @Test
@@ -74,7 +74,7 @@ public class RefreshDnsActionTest {
               try {
                 run(TargetType.HOST, "ns1.example.xn--q9jyb4c");
               } finally {
-                verifyNoMoreInteractions(dnsQueue);
+                verifyNoMoreInteractions(dnsUtils);
               }
             });
     assertThat(thrown)
@@ -86,8 +86,8 @@ public class RefreshDnsActionTest {
   void testSuccess_domain() {
     persistActiveDomain("example.xn--q9jyb4c");
     run(TargetType.DOMAIN, "example.xn--q9jyb4c");
-    verify(dnsQueue).addDomainRefreshTask("example.xn--q9jyb4c");
-    verifyNoMoreInteractions(dnsQueue);
+    verify(dnsUtils).requestDomainDnsRefresh("example.xn--q9jyb4c");
+    verifyNoMoreInteractions(dnsUtils);
   }
 
   @Test

@@ -82,7 +82,7 @@ public class PublishDnsUpdatesActionTest {
   private final FakeLockHandler lockHandler = new FakeLockHandler(true);
   private final DnsWriter dnsWriter = mock(DnsWriter.class);
   private final DnsMetrics dnsMetrics = mock(DnsMetrics.class);
-  private final DnsQueue dnsQueue = mock(DnsQueue.class);
+  private final DnsUtils dnsUtils = mock(DnsUtils.class);
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
   private PublishDnsUpdatesAction action;
   private InternetAddress outgoingRegistry;
@@ -162,7 +162,7 @@ public class PublishDnsUpdatesActionTest {
         outgoingRegistry,
         Optional.ofNullable(retryCount),
         Optional.empty(),
-        dnsQueue,
+        dnsUtils,
         new DnsWriterProxy(ImmutableMap.of("correctWriter", dnsWriter)),
         dnsMetrics,
         lockHandler,
@@ -196,7 +196,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verifyNoMoreInteractions(dnsQueue);
+    verifyNoMoreInteractions(dnsUtils);
     assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
@@ -223,7 +223,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verifyNoMoreInteractions(dnsQueue);
+    verifyNoMoreInteractions(dnsUtils);
     assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
@@ -276,7 +276,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verifyNoMoreInteractions(dnsQueue);
+    verifyNoMoreInteractions(dnsUtils);
   }
 
   @Test
@@ -496,7 +496,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verifyNoMoreInteractions(dnsQueue);
+    verifyNoMoreInteractions(dnsUtils);
   }
 
   @Test
@@ -526,7 +526,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verifyNoMoreInteractions(dnsQueue);
+    verifyNoMoreInteractions(dnsUtils);
   }
 
   @Test
@@ -554,7 +554,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verifyNoMoreInteractions(dnsQueue);
+    verifyNoMoreInteractions(dnsUtils);
   }
 
   @Test
@@ -580,9 +580,9 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verify(dnsQueue).addDomainRefreshTask("example.com");
-    verify(dnsQueue).addHostRefreshTask("ns1.example.com");
-    verifyNoMoreInteractions(dnsQueue);
+    verify(dnsUtils).requestDomainDnsRefresh("example.com");
+    verify(dnsUtils).requestHostDnsRefresh("ns1.example.com");
+    verifyNoMoreInteractions(dnsUtils);
   }
 
   @Test
@@ -608,9 +608,9 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verify(dnsQueue).addDomainRefreshTask("example.com");
-    verify(dnsQueue).addHostRefreshTask("ns1.example.com");
-    verifyNoMoreInteractions(dnsQueue);
+    verify(dnsUtils).requestDomainDnsRefresh("example.com");
+    verify(dnsUtils).requestHostDnsRefresh("ns1.example.com");
+    verifyNoMoreInteractions(dnsUtils);
   }
 
   @Test
@@ -632,11 +632,11 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verify(dnsQueue).addDomainRefreshTask("example.com");
-    verify(dnsQueue).addDomainRefreshTask("example2.com");
-    verify(dnsQueue).addHostRefreshTask("ns1.example.com");
-    verify(dnsQueue).addHostRefreshTask("ns2.example.com");
-    verify(dnsQueue).addHostRefreshTask("ns1.example2.com");
-    verifyNoMoreInteractions(dnsQueue);
+    verify(dnsUtils).requestDomainDnsRefresh("example.com");
+    verify(dnsUtils).requestDomainDnsRefresh("example2.com");
+    verify(dnsUtils).requestHostDnsRefresh("ns1.example.com");
+    verify(dnsUtils).requestHostDnsRefresh("ns2.example.com");
+    verify(dnsUtils).requestHostDnsRefresh("ns1.example2.com");
+    verifyNoMoreInteractions(dnsUtils);
   }
 }

@@ -35,8 +35,6 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static google.registry.testing.GenericEppResourceSubject.assertAboutEppResources;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.HostSubject.assertAboutHosts;
-import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -81,16 +79,12 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.TaskQueueExtension;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostUpdateFlow}. */
 class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
-
-  @RegisterExtension TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private void setEppHostUpdateInput(
       String oldHostName, String newHostName, String ipOrStatusToAdd, String ipOrStatusToRem) {
@@ -189,7 +183,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
     Host renamedHost = doSuccessfulTest();
     assertThat(renamedHost.isSubordinate()).isTrue();
-    assertDnsTasksEnqueued("ns1.example.tld", "ns2.example.tld");
+    dnsUtilsHelper.assertHostDnsRequests("ns1.example.tld", "ns2.example.tld");
     VKey<Host> oldVKeyAfterRename = ForeignKeyUtils.load(Host.class, oldHostName(), clock.nowUtc());
     assertThat(oldVKeyAfterRename).isNull();
   }
@@ -238,7 +232,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         .and()
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.HOST_UPDATE);
-    assertDnsTasksEnqueued("ns1.example.tld");
+    dnsUtilsHelper.assertHostDnsRequests("ns1.example.tld");
   }
 
   @Test
@@ -264,7 +258,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         .and()
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.HOST_UPDATE);
-    assertDnsTasksEnqueued("ns1.example.tld");
+    dnsUtilsHelper.assertHostDnsRequests("ns1.example.tld");
   }
 
   @Test
@@ -298,7 +292,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         .hasLastTransferTime(oneDayAgo);
     Domain reloadedDomain = loadByEntity(domain).cloneProjectedAtTime(now);
     assertThat(reloadedDomain.getSubordinateHosts()).containsExactly("ns2.example.tld");
-    assertDnsTasksEnqueued("ns1.example.tld", "ns2.example.tld");
+    dnsUtilsHelper.assertHostDnsRequests("ns1.example.tld", "ns2.example.tld");
   }
 
   @Test
@@ -333,7 +327,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     assertThat(loadByEntity(foo).cloneProjectedAtTime(now).getSubordinateHosts()).isEmpty();
     assertThat(loadByEntity(example).cloneProjectedAtTime(now).getSubordinateHosts())
         .containsExactly("ns2.example.tld");
-    assertDnsTasksEnqueued("ns2.foo.tld", "ns2.example.tld");
+    dnsUtilsHelper.assertHostDnsRequests("ns2.foo.tld", "ns2.example.tld");
   }
 
   @Test
@@ -370,7 +364,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     assertThat(reloadedFooDomain.getSubordinateHosts()).isEmpty();
     Domain reloadedTldDomain = loadByEntity(tldDomain).cloneProjectedAtTime(now);
     assertThat(reloadedTldDomain.getSubordinateHosts()).containsExactly("ns2.example.tld");
-    assertDnsTasksEnqueued("ns1.example.foo", "ns2.example.tld");
+    dnsUtilsHelper.assertHostDnsRequests("ns1.example.foo", "ns2.example.tld");
   }
 
   @Test
@@ -413,7 +407,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     assertThat(renamedHost.getLastTransferTime()).isEqualTo(oneDayAgo);
     Domain reloadedDomain = loadByEntity(domain).cloneProjectedAtTime(clock.nowUtc());
     assertThat(reloadedDomain.getSubordinateHosts()).isEmpty();
-    assertDnsTasksEnqueued("ns1.example.foo");
+    dnsUtilsHelper.assertHostDnsRequests("ns1.example.foo");
   }
 
   @Test
@@ -425,7 +419,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     persistActiveHost(oldHostName());
     assertThat(domain.getSubordinateHosts()).isEmpty();
     assertThrows(CannotRenameExternalHostException.class, this::runFlow);
-    assertNoDnsTasksEnqueued();
+    dnsUtilsHelper.assertNoDnsRequests();
   }
 
   @Test
@@ -449,7 +443,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         .hasLastTransferTime(null);
     assertThat(loadByEntity(domain).cloneProjectedAtTime(now).getSubordinateHosts())
         .containsExactly("ns2.example.tld");
-    assertDnsTasksEnqueued("ns2.example.tld");
+    dnsUtilsHelper.assertHostDnsRequests("ns2.example.tld");
   }
 
   @Test
@@ -474,7 +468,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(null);
-    assertNoDnsTasksEnqueued();
+    dnsUtilsHelper.assertNoDnsRequests();
   }
 
   @Test

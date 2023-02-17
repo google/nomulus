@@ -85,7 +85,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private final DnsQueue dnsQueue;
+  private final DnsUtils dnsUtils;
   private final DnsWriterProxy dnsWriterProxy;
   private final DnsMetrics dnsMetrics;
   private final Duration timeout;
@@ -139,7 +139,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress,
       @Header(APP_ENGINE_RETRY_HEADER) Optional<Integer> appEngineRetryCount,
       @Header(CLOUD_TASKS_RETRY_HEADER) Optional<Integer> cloudTasksRetryCount,
-      DnsQueue dnsQueue,
+      DnsUtils dnsUtils,
       DnsWriterProxy dnsWriterProxy,
       DnsMetrics dnsMetrics,
       LockHandler lockHandler,
@@ -147,7 +147,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       CloudTasksUtils cloudTasksUtils,
       SendEmailService sendEmailService,
       Response response) {
-    this.dnsQueue = dnsQueue;
+    this.dnsUtils = dnsUtils;
     this.dnsWriterProxy = dnsWriterProxy;
     this.dnsMetrics = dnsMetrics;
     this.timeout = timeout;
@@ -356,10 +356,10 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   private void requeueBatch() {
     logger.atInfo().log("Requeueing batch for retry.");
     for (String domain : nullToEmpty(domains)) {
-      dnsQueue.addDomainRefreshTask(domain);
+      dnsUtils.requestDomainDnsRefresh(domain);
     }
     for (String host : nullToEmpty(hosts)) {
-      dnsQueue.addHostRefreshTask(host);
+      dnsUtils.requestHostDnsRefresh(host);
     }
   }
 

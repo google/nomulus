@@ -90,7 +90,10 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
     SEQUENCE_BASED_ALLOCATE_ID(PrimaryDatabase.CLOUD_SQL, false, ReplayDirection.NO_REPLAY),
 
     /** Use SQL-based Nordn upload flow instead of the pull queue-based one. */
-    NORDN_SQL(PrimaryDatabase.CLOUD_SQL, false, ReplayDirection.NO_REPLAY);
+    NORDN_SQL(PrimaryDatabase.CLOUD_SQL, false, ReplayDirection.NO_REPLAY),
+
+    /** Use SQL-based DNS update flow instead of the pull queue-based one. */
+    DNS_SQL(PrimaryDatabase.CLOUD_SQL, false, ReplayDirection.NO_REPLAY);
 
     private final PrimaryDatabase primaryDatabase;
     private final boolean isReadOnly;
@@ -171,7 +174,11 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton {
                 MigrationState.SQL_PRIMARY)
             .putAll(MigrationState.SQL_ONLY, MigrationState.SEQUENCE_BASED_ALLOCATE_ID)
             .putAll(MigrationState.SEQUENCE_BASED_ALLOCATE_ID, MigrationState.NORDN_SQL)
-            .putAll(MigrationState.NORDN_SQL, MigrationState.SEQUENCE_BASED_ALLOCATE_ID);
+            .putAll(
+                MigrationState.NORDN_SQL,
+                MigrationState.SEQUENCE_BASED_ALLOCATE_ID,
+                MigrationState.DNS_SQL)
+            .putAll(MigrationState.DNS_SQL, MigrationState.NORDN_SQL);
 
     // In addition, we can always transition from a state to itself (useful when updating the map).
     Arrays.stream(MigrationState.values()).forEach(state -> builder.put(state, state));

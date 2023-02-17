@@ -34,7 +34,7 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
-import google.registry.dns.DnsQueue;
+import google.registry.dns.DnsUtils;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
@@ -122,7 +122,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
-  @Inject DnsQueue dnsQueue;
+  @Inject DnsUtils dnsUtils;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainPricingLogic pricingLogic;
   @Inject DomainRestoreRequestFlow() {}
@@ -186,7 +186,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     entitiesToSave.add(newDomain, domainHistory, autorenewEvent, autorenewPollMessage);
     tm().putAll(entitiesToSave.build());
     tm().delete(existingDomain.getDeletePollMessage());
-    dnsQueue.addDomainRefreshTask(existingDomain.getDomainName());
+    dnsUtils.requestDomainDnsRefresh(existingDomain.getDomainName());
     return responseBuilder
         .setExtensions(createResponseExtensions(feesAndCredits, feeUpdate, isExpired))
         .build();
