@@ -43,6 +43,7 @@
     <class>google.registry.model.billing.BillingEvent$Recurring</class>
     <class>google.registry.model.common.Cursor</class>
     <class>google.registry.model.common.DatabaseMigrationStateSchedule</class>
+    <class>google.registry.model.common.DnsRefreshRequest</class>
     <class>google.registry.model.console.User</class>
     <class>google.registry.model.contact.ContactHistory</class>
     <class>google.registry.model.contact.Contact</class>
