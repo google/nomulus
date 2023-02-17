@@ -54,6 +54,7 @@ import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
+import google.registry.testing.DnsUtilsHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
@@ -82,7 +83,8 @@ public class PublishDnsUpdatesActionTest {
   private final FakeLockHandler lockHandler = new FakeLockHandler(true);
   private final DnsWriter dnsWriter = mock(DnsWriter.class);
   private final DnsMetrics dnsMetrics = mock(DnsMetrics.class);
-  private final DnsQueue dnsQueue = mock(DnsQueue.class);
+  private final DnsUtils dnsUtils = mock(DnsUtils.class);
+  private final DnsUtilsHelper dnsUtilsHelper = new DnsUtilsHelper(dnsUtils);
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
   private PublishDnsUpdatesAction action;
   private InternetAddress outgoingRegistry;
@@ -162,7 +164,7 @@ public class PublishDnsUpdatesActionTest {
         outgoingRegistry,
         Optional.ofNullable(retryCount),
         Optional.empty(),
-        dnsQueue,
+        dnsUtils,
         new DnsWriterProxy(ImmutableMap.of("correctWriter", dnsWriter)),
         dnsMetrics,
         lockHandler,
@@ -196,7 +198,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verifyNoMoreInteractions(dnsQueue);
+    dnsUtilsHelper.assertNoMoreDnsRequests();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
@@ -223,7 +225,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verifyNoMoreInteractions(dnsQueue);
+    dnsUtilsHelper.assertNoMoreDnsRequests();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
@@ -276,7 +278,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verifyNoMoreInteractions(dnsQueue);
+    dnsUtilsHelper.assertNoMoreDnsRequests();
   }
 
   @Test
@@ -496,7 +498,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verifyNoMoreInteractions(dnsQueue);
+    dnsUtilsHelper.assertNoMoreDnsRequests();
   }
 
   @Test
@@ -526,7 +528,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verifyNoMoreInteractions(dnsQueue);
+    dnsUtilsHelper.assertNoMoreDnsRequests();
   }
 
   @Test
@@ -554,7 +556,7 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verifyNoMoreInteractions(dnsQueue);
+    dnsUtilsHelper.assertNoMoreDnsRequests();
   }
 
   @Test
@@ -580,9 +582,9 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verify(dnsQueue).addDomainRefreshTask("example.com");
-    verify(dnsQueue).addHostRefreshTask("ns1.example.com");
-    verifyNoMoreInteractions(dnsQueue);
+    dnsUtilsHelper.assertDomainDnsRequests("example.com");
+    dnsUtilsHelper.assertHostDnsRequests("ns1.example.com");
+    dnsUtilsHelper.assertNoMoreDnsRequests();
   }
 
   @Test
@@ -608,9 +610,9 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verify(dnsQueue).addDomainRefreshTask("example.com");
-    verify(dnsQueue).addHostRefreshTask("ns1.example.com");
-    verifyNoMoreInteractions(dnsQueue);
+    dnsUtilsHelper.assertDomainDnsRequests("example.com");
+    dnsUtilsHelper.assertHostDnsRequests("ns1.example.com");
+    dnsUtilsHelper.assertNoMoreDnsRequests();
   }
 
   @Test
@@ -632,11 +634,11 @@ public class PublishDnsUpdatesActionTest {
             Duration.standardHours(2),
             Duration.standardHours(1));
     verifyNoMoreInteractions(dnsMetrics);
-    verify(dnsQueue).addDomainRefreshTask("example.com");
-    verify(dnsQueue).addDomainRefreshTask("example2.com");
-    verify(dnsQueue).addHostRefreshTask("ns1.example.com");
-    verify(dnsQueue).addHostRefreshTask("ns2.example.com");
-    verify(dnsQueue).addHostRefreshTask("ns1.example2.com");
-    verifyNoMoreInteractions(dnsQueue);
+    dnsUtilsHelper.assertDomainDnsRequests("example.com");
+    dnsUtilsHelper.assertDomainDnsRequests("example2.com");
+    dnsUtilsHelper.assertHostDnsRequests("ns1.example.com");
+    dnsUtilsHelper.assertHostDnsRequests("ns2.example.com");
+    dnsUtilsHelper.assertHostDnsRequests("ns1.example2.com");
+    dnsUtilsHelper.assertNoMoreDnsRequests();
   }
 }

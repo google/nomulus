@@ -62,7 +62,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
-import google.registry.dns.DnsQueue;
+import google.registry.dns.DnsUtils;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.CommandUseErrorException;
@@ -235,7 +235,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
   @Inject DomainCreateFlowCustomLogic flowCustomLogic;
   @Inject DomainFlowTmchUtils tmchUtils;
   @Inject DomainPricingLogic pricingLogic;
-  @Inject DnsQueue dnsQueue;
+  @Inject DnsUtils dnsUtils;
+
   @Inject DomainCreateFlow() {}
 
   @Override
@@ -405,8 +406,10 @@ public final class DomainCreateFlow implements TransactionalFlow {
             .addGracePeriod(
                 GracePeriod.forBillingEvent(GracePeriodStatus.ADD, repoId, createBillingEvent))
             .setLordnPhase(
-                !DatabaseMigrationStateSchedule.getValueAtTime(tm().getTransactionTime())
-                        .equals(MigrationState.NORDN_SQL)
+                !(DatabaseMigrationStateSchedule.getValueAtTime(tm().getTransactionTime())
+                            .equals(MigrationState.NORDN_SQL)
+                        || DatabaseMigrationStateSchedule.getValueAtTime(tm().getTransactionTime())
+                            .equals(MigrationState.DNS_SQL))
                     ? LordnPhase.NONE
                     : hasSignedMarks
                         ? LordnPhase.SUNRISE
@@ -709,10 +712,12 @@ public final class DomainCreateFlow implements TransactionalFlow {
 
   private void enqueueTasks(Domain newDomain, boolean hasSignedMarks, boolean hasClaimsNotice) {
     if (newDomain.shouldPublishToDns()) {
-      dnsQueue.addDomainRefreshTask(newDomain.getDomainName());
+      dnsUtils.requestDomainDnsRefresh(newDomain.getDomainName());
     }
-    if (!DatabaseMigrationStateSchedule.getValueAtTime(tm().getTransactionTime())
-            .equals(MigrationState.NORDN_SQL)
+    if (!(DatabaseMigrationStateSchedule.getValueAtTime(tm().getTransactionTime())
+                .equals(MigrationState.NORDN_SQL)
+            || DatabaseMigrationStateSchedule.getValueAtTime(tm().getTransactionTime())
+                .equals(MigrationState.DNS_SQL))
         && (hasClaimsNotice || hasSignedMarks)) {
       LordnTaskUtils.enqueueDomainTask(newDomain);
     }
