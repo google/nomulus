@@ -341,6 +341,38 @@ CREATE TABLE public."DelegationSignerData" (
 
 
 --
+-- Name: DnsRefreshRequest; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DnsRefreshRequest" (
+    id bigint NOT NULL,
+    name text NOT NULL,
+    request_time timestamp with time zone NOT NULL,
+    tld text NOT NULL,
+    type text NOT NULL
+);
+
+
+--
+-- Name: DnsRefreshRequest_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."DnsRefreshRequest_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: DnsRefreshRequest_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."DnsRefreshRequest_id_seq" OWNED BY public."DnsRefreshRequest".id;
+
+
+--
 -- Name: Domain; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1134,6 +1166,13 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
+-- Name: DnsRefreshRequest id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DnsRefreshRequest" ALTER COLUMN id SET DEFAULT nextval('public."DnsRefreshRequest_id_seq"'::regclass);
+
+
+--
 -- Name: DomainTransactionRecord id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1275,6 +1314,14 @@ ALTER TABLE ONLY public."DatabaseMigrationStateSchedule"
 
 ALTER TABLE ONLY public."DelegationSignerData"
     ADD CONSTRAINT "DelegationSignerData_pkey" PRIMARY KEY (domain_repo_id, key_tag, algorithm, digest_type, digest);
+
+
+--
+-- Name: DnsRefreshRequest DnsRefreshRequest_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DnsRefreshRequest"
+    ADD CONSTRAINT "DnsRefreshRequest_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1669,6 +1716,13 @@ CREATE INDEX idx73l103vc5900ig3p4odf0cngt ON public."BillingEvent" USING btree (
 --
 
 CREATE INDEX idx7wg0yn3wdux3xsc4pfaljqf08 ON public."Host" USING btree (dns_refresh_request_time) WHERE (dns_refresh_request_time IS NOT NULL);
+
+
+--
+-- Name: idx8gtvnbk64yskcvrdp61f5ied3; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx8gtvnbk64yskcvrdp61f5ied3 ON public."DnsRefreshRequest" USING btree (request_time);
 
 
 --
