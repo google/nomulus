@@ -49,7 +49,6 @@ U+011F                         # LATIN SMALL LETTER G WITH BREVE
 U+01E7                         # LATIN SMALL LETTER G WITH CARON
 U+0121                         # LATIN SMALL LETTER G WITH DOT ABOVE
 U+0123                         # LATIN SMALL LETTER G WITH CEDILLA
-U+01E5                         # LATIN SMALL LETTER G WITH STROKE
 U+0068                         # LATIN SMALL LETTER H
 U+0127                         # LATIN SMALL LETTER H WITH STROKE
 U+0069                         # LATIN SMALL LETTER I
