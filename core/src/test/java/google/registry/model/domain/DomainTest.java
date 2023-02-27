@@ -221,7 +221,6 @@ public class DomainTest {
                             "TheRegistrar",
                             oneTimeBillKey))
                     .setAutorenewEndTime(Optional.of(fakeClock.nowUtc().plusYears(2)))
-                    .setDnsRefreshRequestTime(Optional.of(fakeClock.nowUtc()))
                     .build()));
   }
 
