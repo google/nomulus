@@ -37,6 +37,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import com.google.common.util.concurrent.RateLimiter;
+import google.registry.config.RegistryConfig;
 import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.tld.Registries;
 import google.registry.util.Clock;
@@ -54,13 +55,13 @@ import org.joda.time.Duration;
  * <p>This includes a {@link RateLimiter} to limit the {@link Queue#leaseTasks} call rate to 9 QPS,
  * to stay under the 10 QPS limit for this function.
  *
- * <p>Note that overlapping calls to {@link ReadDnsQueueAction} (the only place where
- * {@link DnsQueue#leaseTasks} is used) will have different rate limiters, so they could exceed the
- * allowed rate. This should be rare though - because {@link DnsQueue#leaseTasks} is only used in
- * {@link ReadDnsQueueAction}, which is run as a cron job with running time shorter than the cron
- * repeat time - meaning there should never be two instances running at once.
+ * <p>Note that overlapping calls to {@link ReadDnsQueueAction} (the only place where {@link
+ * DnsQueue#leaseTasks} is used) will have different rate limiters, so they could exceed the allowed
+ * rate. This should be rare though - because {@link DnsQueue#leaseTasks} is only used in {@link
+ * ReadDnsQueueAction}, which is run as a cron job with running time shorter than the cron repeat
+ * time - meaning there should never be two instances running at once.
  *
- * @see google.registry.config.RegistryConfig.ConfigModule#provideReadDnsQueueRuntime
+ * @see RegistryConfig.ConfigModule#provideReadDnsRefreshRequestsRuntime()
  */
 public class DnsQueue {
 
