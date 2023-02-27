@@ -22,6 +22,7 @@ import static google.registry.util.ResourceUtils.readResourceUtf8;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.model.CacheUtils;
@@ -55,6 +56,7 @@ public final class TmchCertificateAuthority {
   private static final String ROOT_CRT_PILOT_FILE = "icann-tmch-pilot.crt";
   private static final String CRL_FILE = "icann-tmch.crl";
   private static final String CRL_PILOT_FILE = "icann-tmch-pilot.crl";
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final TmchCaMode tmchCaMode;
   private final Clock clock;
@@ -142,8 +144,14 @@ public final class TmchCertificateAuthority {
    * @see X509Utils#verifyCrl
    */
   public void updateCrl(String asciiCrl, String url) throws GeneralSecurityException {
-    X509CRL crl = X509Utils.loadCrl(asciiCrl);
-    X509Utils.verifyCrl(getAndValidateRoot(), getCrl(), crl, clock.nowUtc().toDate());
+    X509CRL newCrl = X509Utils.loadCrl(asciiCrl);
+    X509CRL oldCrl = null;
+    try {
+      oldCrl = getCrl();
+    } catch (Exception e) {
+      logger.atWarning().withCause(e).log("Old CRL is invalid, ignored during CRL update.");
+    }
+    X509Utils.verifyCrl(getAndValidateRoot(), oldCrl, newCrl, clock.nowUtc().toDate());
     TmchCrl.set(asciiCrl, url);
   }
 

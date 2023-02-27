@@ -44,6 +44,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.annotation.Tainted;
 
 /** X.509 Public Key Infrastructure (PKI) helper functions. */
@@ -163,12 +164,12 @@ public final class X509Utils {
    * are correct with respect to {@code now}.
    *
    * @throws GeneralSecurityException for unsupported protocols, certs not signed by the TMCH,
-   *         incorrect keys, and for invalid, old, not-yet-valid or revoked certificates.
+   *     incorrect keys, and for invalid, old, not-yet-valid or revoked certificates.
    */
   public static void verifyCrl(
-      X509Certificate rootCert, X509CRL oldCrl, @Tainted X509CRL newCrl, Date now)
+      X509Certificate rootCert, @Nullable X509CRL oldCrl, @Tainted X509CRL newCrl, Date now)
       throws GeneralSecurityException {
-    if (newCrl.getThisUpdate().before(oldCrl.getThisUpdate())) {
+    if (oldCrl != null && newCrl.getThisUpdate().before(oldCrl.getThisUpdate())) {
       throw new CRLException(String.format(
           "New CRL is more out of date than our current CRL. %s < %s\n%s",
           newCrl.getThisUpdate(), oldCrl.getThisUpdate(), newCrl));
