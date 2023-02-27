@@ -21,6 +21,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import google.registry.dns.DnsConstants.TargetType;
 import google.registry.dns.PublishDnsUpdatesAction;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.VKey;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -87,6 +88,11 @@ public class DnsRefreshRequest extends ImmutableObject {
    */
   public DateTime getLastProcessTime() {
     return lastProcessTime;
+  }
+
+  @Override
+  public VKey<DnsRefreshRequest> createVKey() {
+    return VKey.create(DnsRefreshRequest.class, id);
   }
 
   protected DnsRefreshRequest() {}

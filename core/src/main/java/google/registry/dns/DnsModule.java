@@ -19,6 +19,7 @@ import static google.registry.dns.DnsConstants.DNS_PULL_QUEUE_NAME;
 import static google.registry.dns.RefreshDnsOnHostRenameAction.PARAM_HOST_KEY;
 import static google.registry.request.RequestParameters.extractEnumParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
+import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfParameters;
 
@@ -48,7 +49,7 @@ public abstract class DnsModule {
   public static final String PARAM_DOMAINS = "domains";
   public static final String PARAM_HOSTS = "hosts";
   public static final String PARAM_PUBLISH_TASK_ENQUEUED = "enqueued";
-  public static final String PARAM_REFRESH_REQUEST_CREATED = "itemsCreated";
+  public static final String PARAM_REFRESH_REQUEST_TIME = "requestTime";
 
   @Binds
   @DnsWriterZone
@@ -83,10 +84,13 @@ public abstract class DnsModule {
     return DateTime.parse(extractRequiredParameter(req, PARAM_PUBLISH_TASK_ENQUEUED));
   }
 
+  // TODO: Retire the old header after DNS pull queue migration.
   @Provides
-  @Parameter(PARAM_REFRESH_REQUEST_CREATED)
+  @Parameter(PARAM_REFRESH_REQUEST_TIME)
   static DateTime provideItemsCreateTime(HttpServletRequest req) {
-    return DateTime.parse(extractRequiredParameter(req, PARAM_REFRESH_REQUEST_CREATED));
+    return DateTime.parse(
+        extractOptionalParameter(req, "itemsCreated")
+            .orElse(extractRequiredParameter(req, PARAM_REFRESH_REQUEST_TIME)));
   }
 
   @Provides
