@@ -1106,8 +1106,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .setCreateBillingCost(Money.of(USD, 8))
             .build());
+    // Expects fee of $26
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6", "CURRENCY", "USD"));
     persistContactsAndHosts();
+    // $12 is equal to 50% off the first year registration and 0% 0ff the 2nd year
     runFlowAssertResponse(
         loadFile(
             "domain_create_response_fee.xml",
@@ -1131,6 +1133,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .setCreateBillingCost(Money.of(USD, 100))
             .build());
+    // Expects fee of $26
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6", "CURRENCY", "USD"));
     persistContactsAndHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -1164,8 +1167,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .setCreateBillingCost(Money.of(USD, 8))
             .build());
+    // Expects fee of $26
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "USD"));
     persistContactsAndHosts();
+    // $12 is equal to 50% off the first year registration and 0% 0ff the 2nd year
     runFlowAssertResponse(
         loadFile(
             "domain_create_response_fee.xml",
@@ -1189,6 +1194,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .setCreateBillingCost(Money.of(USD, 100))
             .build());
+    // Expects fee of $26
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "USD"));
     persistContactsAndHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -1222,8 +1228,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .setCreateBillingCost(Money.of(USD, 8))
             .build());
+    // Expects fee of $26
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "USD"));
     persistContactsAndHosts();
+    // $12 is equal to 50% off the first year registration and 0% 0ff the 2nd year
     runFlowAssertResponse(
         loadFile(
             "domain_create_response_fee.xml",
@@ -1247,6 +1255,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .setCreateBillingCost(Money.of(USD, 100))
             .build());
+    // Expects fee of $26
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "USD"));
     persistContactsAndHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
