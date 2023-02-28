@@ -703,7 +703,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6", "CURRENCY", "USD"));
     persistContactsAndHosts();
     doSuccessfulTest(
-        "tld", "domain_create_response_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
+        "tld",
+        "domain_create_response_fee.xml",
+        ImmutableMap.of("FEE_VERSION", "0.6", "FEE", "26.00"));
   }
 
   @Test
@@ -711,7 +713,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "USD"));
     persistContactsAndHosts();
     doSuccessfulTest(
-        "tld", "domain_create_response_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11"));
+        "tld",
+        "domain_create_response_fee.xml",
+        ImmutableMap.of("FEE_VERSION", "0.11", "FEE", "26.00"));
   }
 
   @Test
@@ -719,7 +723,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "USD"));
     persistContactsAndHosts();
     doSuccessfulTest(
-        "tld", "domain_create_response_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12"));
+        "tld",
+        "domain_create_response_fee.xml",
+        ImmutableMap.of("FEE_VERSION", "0.12", "FEE", "26.00"));
   }
 
   @Test
@@ -727,7 +733,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_fee_defaults.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
     persistContactsAndHosts();
     doSuccessfulTest(
-        "tld", "domain_create_response_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
+        "tld",
+        "domain_create_response_fee.xml",
+        ImmutableMap.of("FEE_VERSION", "0.6", "FEE", "26.00"));
   }
 
   @Test
@@ -735,7 +743,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_fee_defaults.xml", ImmutableMap.of("FEE_VERSION", "0.11"));
     persistContactsAndHosts();
     doSuccessfulTest(
-        "tld", "domain_create_response_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11"));
+        "tld",
+        "domain_create_response_fee.xml",
+        ImmutableMap.of("FEE_VERSION", "0.11", "FEE", "26.00"));
   }
 
   @Test
@@ -743,7 +753,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_fee_defaults.xml", ImmutableMap.of("FEE_VERSION", "0.12"));
     persistContactsAndHosts();
     doSuccessfulTest(
-        "tld", "domain_create_response_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12"));
+        "tld",
+        "domain_create_response_fee.xml",
+        ImmutableMap.of("FEE_VERSION", "0.12", "FEE", "26.00"));
   }
 
   @Test
@@ -1112,6 +1124,57 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
+  void testSuccess_wrongFeeAmountTooHigh_defaultToken_v06() throws Exception {
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .setCreateBillingCost(Money.of(USD, 8))
+            .build());
+    // Expects fee of $26
+    setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6", "CURRENCY", "USD"));
+    persistContactsAndHosts();
+    // $12 is equal to 50% off the first year registration and 0% 0ff the 2nd year
+    runFlowAssertResponse(
+        loadFile(
+            "domain_create_response_fee.xml",
+            ImmutableMap.of("FEE_VERSION", "0.6", "FEE", "12.00")));
+  }
+
+  @Test
+  void testFailure_wrongFeeAmountTooLow_defaultToken_v06() throws Exception {
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .setCreateBillingCost(Money.of(USD, 100))
+            .build());
+    // Expects fee of $26
+    setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6", "CURRENCY", "USD"));
+    persistContactsAndHosts();
+    EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
   void testFailure_wrongFeeAmount_v11() {
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "USD"));
     persistResource(
@@ -1122,10 +1185,112 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
+  void testSuccess_wrongFeeAmountTooHigh_defaultToken_v11() throws Exception {
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .setCreateBillingCost(Money.of(USD, 8))
+            .build());
+    // Expects fee of $26
+    setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "USD"));
+    persistContactsAndHosts();
+    // $12 is equal to 50% off the first year registration and 0% 0ff the 2nd year
+    runFlowAssertResponse(
+        loadFile(
+            "domain_create_response_fee.xml",
+            ImmutableMap.of("FEE_VERSION", "0.11", "FEE", "12.00")));
+  }
+
+  @Test
+  void testFailure_wrongFeeAmountTooLow_defaultToken_v11() throws Exception {
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .setCreateBillingCost(Money.of(USD, 100))
+            .build());
+    // Expects fee of $26
+    setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "USD"));
+    persistContactsAndHosts();
+    EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
   void testFailure_wrongFeeAmount_v12() {
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "USD"));
     persistResource(
         Registry.get("tld").asBuilder().setCreateBillingCost(Money.of(USD, 20)).build());
+    persistContactsAndHosts();
+    EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_wrongFeeAmountTooHigh_defaultToken_v12() throws Exception {
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .setCreateBillingCost(Money.of(USD, 8))
+            .build());
+    // Expects fee of $26
+    setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "USD"));
+    persistContactsAndHosts();
+    // $12 is equal to 50% off the first year registration and 0% 0ff the 2nd year
+    runFlowAssertResponse(
+        loadFile(
+            "domain_create_response_fee.xml",
+            ImmutableMap.of("FEE_VERSION", "0.12", "FEE", "12.00")));
+  }
+
+  @Test
+  void testFailure_wrongFeeAmountTooLow_defaultToken_v12() throws Exception {
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .setCreateBillingCost(Money.of(USD, 100))
+            .build());
+    // Expects fee of $26
+    setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "USD"));
     persistContactsAndHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();

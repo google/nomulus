@@ -280,8 +280,12 @@ public final class DomainCreateFlow implements TransactionalFlow {
             registrarId,
             now,
             eppInput.getSingleExtension(AllocationTokenExtension.class));
+    boolean defaultTokenUsed = false;
     if (!allocationToken.isPresent() && !registry.getDefaultPromoTokens().isEmpty()) {
       allocationToken = checkForDefaultToken(registry, command);
+      if (allocationToken.isPresent()) {
+        defaultTokenUsed = true;
+      }
     }
     boolean isAnchorTenant =
         isAnchorTenant(
@@ -340,7 +344,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
     FeesAndCredits feesAndCredits =
         pricingLogic.getCreatePrice(
             registry, targetId, now, years, isAnchorTenant, allocationToken);
-    validateFeeChallenge(feeCreate, feesAndCredits);
+    validateFeeChallenge(feeCreate, feesAndCredits, defaultTokenUsed);
     Optional<SecDnsCreateExtension> secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
     DateTime registrationExpirationTime = leapSafeAddYears(now, years);

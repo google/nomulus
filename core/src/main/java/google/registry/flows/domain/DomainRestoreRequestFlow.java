@@ -226,7 +226,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     if (!existingDomain.getGracePeriodStatuses().contains(GracePeriodStatus.REDEMPTION)) {
       throw new DomainNotEligibleForRestoreException();
     }
-    validateFeeChallenge(feeUpdate, feesAndCredits);
+    validateFeeChallenge(feeUpdate, feesAndCredits, false);
   }
 
   private static Domain performRestore(

@@ -199,7 +199,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
             now,
             years,
             existingRecurringBillingEvent);
-    validateFeeChallenge(feeRenew, feesAndCredits);
+    validateFeeChallenge(feeRenew, feesAndCredits, false);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder()
             .setExistingDomain(existingDomain)
