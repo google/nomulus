@@ -134,3 +134,4 @@ V133__add_pull_queue_replace_columns.sql
 V134__drop_not_null_request_id_lock_table.sql
 V135__null_gaia_id_user.sql
 V136__add_dns_refresh_request_table.sql
+V137__add_process_time_column.sql
