@@ -22,6 +22,8 @@ gcpProject:
   backendServiceUrl: https://localhost
   toolsServiceUrl: https://localhost
   pubapiServiceUrl: https://localhost
+  # Service account used by Cloud Scheduler to send authenticated requests.
+  cloudSchedulerServiceAccountEmail: cloud-scheduler-email@email.com
 
 gSuite:
   # Publicly accessible domain name of the running G Suite instance.
