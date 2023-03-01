@@ -1720,13 +1720,6 @@ CREATE INDEX idx73l103vc5900ig3p4odf0cngt ON public."BillingEvent" USING btree (
 
 
 --
--- Name: idx7wg0yn3wdux3xsc4pfaljqf08; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx7wg0yn3wdux3xsc4pfaljqf08 ON public."Host" USING btree (dns_refresh_request_time) WHERE (dns_refresh_request_time IS NOT NULL);
-
-
---
 -- Name: idx8gtvnbk64yskcvrdp61f5ied3; Type: INDEX; Schema: public; Owner: -
 --
 
