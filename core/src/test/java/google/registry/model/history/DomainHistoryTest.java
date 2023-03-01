@@ -41,8 +41,6 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.util.SerializeUtils;
-import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -97,7 +95,6 @@ public class DomainHistoryTest extends EntityTestCase {
             .asBuilder()
             .setNameservers(host.createVKey())
             .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
-            .setDnsRefreshRequestTime(Optional.of(DateTime.parse("2020-03-09T16:40:00Z")))
             .build();
     insertInDb(domain);
     return domain;

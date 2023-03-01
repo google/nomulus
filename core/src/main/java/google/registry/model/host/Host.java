@@ -49,7 +49,6 @@ import javax.persistence.Table;
       @Index(columnList = "creationTime"),
       @Index(columnList = "deletionTime"),
       @Index(columnList = "currentSponsorRegistrarId"),
-      @Index(columnList = "dnsRefreshRequestTime")
     })
 @ExternalMessagingName("host")
 @WithVKey(String.class)
@@ -94,7 +93,6 @@ public class Host extends HostBase implements ForeignKeyedEppResource {
           .setPersistedCurrentSponsorRegistrarId(hostBase.getPersistedCurrentSponsorRegistrarId())
           .setRepoId(hostBase.getRepoId())
           .setSuperordinateDomain(hostBase.getSuperordinateDomain())
-          .setDnsRefreshRequestTime(hostBase.getDnsRefreshRequestTime())
           .setStatusValues(hostBase.getStatusValues());
     }
   }

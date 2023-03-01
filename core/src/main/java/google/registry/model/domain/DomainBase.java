@@ -274,13 +274,6 @@ public class DomainBase extends EppResource
     return lordnPhase;
   }
 
-  @Access(AccessType.PROPERTY)
-  @SuppressWarnings("unused")
-  @Column(name = "dnsRefreshRequestTime")
-  private DateTime getInternalDnsRefreshRequestTime() {
-    return getDnsRefreshRequestTime().orElse(null);
-  }
-
   public ImmutableSet<String> getSubordinateHosts() {
     return nullToEmptyImmutableCopy(subordinateHosts);
   }
