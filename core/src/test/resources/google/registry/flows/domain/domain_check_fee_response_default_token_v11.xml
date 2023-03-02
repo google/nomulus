@@ -1,0 +1,57 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:chkData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:cd>
+          <domain:name avail="0">example1.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="1">example2.tld</domain:name>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="1">example3.tld</domain:name>
+        </domain:cd>
+      </domain:chkData>
+    </resData>
+    <extension>
+      <fee:chkData xmlns:fee="urn:ietf:params:xml:ns:fee-0.11"
+          xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <fee:cd avail="1">
+          <fee:object>
+            <domain:name>example1.tld</domain:name>
+          </fee:object>
+          <fee:command>create</fee:command>
+          <fee:currency>USD</fee:currency>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="create">6.50</fee:fee>
+        </fee:cd>
+        <fee:cd avail="1">
+          <fee:object>
+            <domain:name>example2.tld</domain:name>
+          </fee:object>
+          <fee:command>create</fee:command>
+          <fee:currency>USD</fee:currency>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="create">6.50</fee:fee>
+        </fee:cd>
+        <fee:cd avail="1">
+          <fee:object>
+            <domain:name>example3.tld</domain:name>
+          </fee:object>
+          <fee:command>create</fee:command>
+          <fee:currency>USD</fee:currency>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="create">6.50</fee:fee>
+        </fee:cd>
+      </fee:chkData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>
