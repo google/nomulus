@@ -271,6 +271,16 @@ public final class DomainCheckFlow implements Flow {
 
     for (FeeCheckCommandExtensionItem feeCheckItem : feeCheck.getItems()) {
       for (String domainName : getDomainNamesToCheckForFee(feeCheckItem, domainNames.keySet())) {
+        Optional<AllocationToken> defaultToken = Optional.empty();
+        if (feeCheckItem.getCommandName().equals(CommandName.CREATE)
+            && !allocationToken.isPresent()) {
+          defaultToken =
+              DomainFlowUtils.checkForDefaultToken(
+                  Registry.get(InternetDomainName.from(domainName).parent().toString()),
+                  domainName,
+                  registrarId);
+        }
+
         FeeCheckResponseExtensionItem.Builder<?> builder = feeCheckItem.createResponseBuilder();
         Optional<Domain> domain = Optional.ofNullable(domainObjs.get(domainName));
         handleFeeRequest(
@@ -281,7 +291,7 @@ public final class DomainCheckFlow implements Flow {
             feeCheck.getCurrency(),
             now,
             pricingLogic,
-            allocationToken,
+            allocationToken.isPresent() ? allocationToken : defaultToken,
             availableDomains.contains(domainName),
             recurrences.getOrDefault(domainName, null));
         responseItems.add(builder.setDomainNameIfSupported(domainName).build());
