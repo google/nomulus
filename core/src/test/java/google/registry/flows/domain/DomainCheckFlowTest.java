@@ -353,7 +353,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
-  void testSuccess_allocationTokenPromotion_doesNotUseValidDefaultToken_singleYear() throws Exception {
+  void testSuccess_allocationTokenPromotion_doesNotUseValidDefaultToken_singleYear()
+      throws Exception {
     setUpDefaultToken();
     createTld("example");
     persistResource(
@@ -372,6 +373,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     setEppInput("domain_check_allocationtoken_fee.xml");
     runFlowAssertResponse(loadFile("domain_check_allocationtoken_fee_response.xml"));
   }
+
   @Test
   void testSuccess_allocationTokenPromotion_multiYearAndPremiums() throws Exception {
     createTld("example");
