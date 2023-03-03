@@ -1228,11 +1228,14 @@ public class DomainFlowUtils {
         // the list
         continue;
       } catch (StatusProhibitsOperationException e) {
+        // Allocation token was not valid for this registration, continue to check the next token in
+        // the list
         continue;
       }
       // Only use the first valid token in the list
       return token;
     }
+    // No valid default token found
     return Optional.empty();
   }
 
