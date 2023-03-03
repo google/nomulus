@@ -352,8 +352,26 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     runFlowAssertResponse(loadFile("domain_check_allocationtoken_fee_response.xml"));
   }
 
-  // testSuccess_allocationToken_doesNotUseValidDefaultToken_showsFee
-
+  @Test
+  void testSuccess_allocationTokenPromotion_doesNotUseValidDefaultToken_singleYear() throws Exception {
+    setUpDefaultToken();
+    createTld("example");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
+            .setDiscountFraction(0.5)
+            .setDiscountYears(2)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    setEppInput("domain_check_allocationtoken_fee.xml");
+    runFlowAssertResponse(loadFile("domain_check_allocationtoken_fee_response.xml"));
+  }
   @Test
   void testSuccess_allocationTokenPromotion_multiYearAndPremiums() throws Exception {
     createTld("example");
