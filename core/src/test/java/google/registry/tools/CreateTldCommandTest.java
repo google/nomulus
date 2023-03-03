@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_CREATE_PROMO;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -578,7 +578,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
             new AllocationToken()
                 .asBuilder()
                 .setToken("abc123")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
                 .build());
     runCommandForced(
@@ -597,7 +597,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
             new AllocationToken()
                 .asBuilder()
                 .setToken("abc123")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
                 .build());
     AllocationToken token2 =
@@ -605,7 +605,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
             new AllocationToken()
                 .asBuilder()
                 .setToken("token")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
                 .build());
     runCommandForced(

@@ -26,7 +26,7 @@ import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DE
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
-import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_CREATE_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -1129,7 +1129,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setDiscountFraction(0.5)
@@ -1156,7 +1156,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setDiscountFraction(0.5)
@@ -1190,7 +1190,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setDiscountFraction(0.5)
@@ -1217,7 +1217,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setDiscountFraction(0.5)
@@ -1251,7 +1251,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setDiscountFraction(0.5)
@@ -1278,7 +1278,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setDiscountFraction(0.5)
@@ -1862,7 +1862,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("aaaaa")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -1870,7 +1870,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -1896,7 +1896,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("aaaaa")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -1904,7 +1904,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -1934,7 +1934,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("aaaaa")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -1942,7 +1942,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("OtherRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -1961,7 +1961,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("aaaaa")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -1969,7 +1969,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -1988,7 +1988,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("aaaaa")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -1996,7 +1996,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -2017,7 +2017,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("aaaaa")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -2025,7 +2025,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setDiscountFraction(0.5)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
@@ -2047,7 +2047,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("aaaaa")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -2055,7 +2055,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setDiscountFraction(0.5)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))

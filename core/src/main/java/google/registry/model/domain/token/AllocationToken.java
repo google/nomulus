@@ -118,8 +118,17 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
 
   /** Type of the token that indicates how and where it should be used. */
   public enum TokenType {
+    /**
+     * Token soved on a TLD to use on a create request if no other token is passed from the client
+     */
+    DEFAULT_CREATE_PROMO,
     /** Token saved on a TLD to use if no other token is passed from the client */
+    @Deprecated
     DEFAULT_PROMO,
+    /**
+     * Token soved on a TLD to use on a renew request if no other token is passed from the client
+     */
+    DEFAULT_RENEW_PROMO,
     /** Token used for package pricing */
     PACKAGE,
     /** Invalid after use */
