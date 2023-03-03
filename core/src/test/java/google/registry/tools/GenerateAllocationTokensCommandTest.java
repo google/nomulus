@@ -376,8 +376,8 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "Invalid value for -t parameter. Allowed values:[DEFAULT_PROMO, PACKAGE, SINGLE_USE,"
-                + " UNLIMITED_USE]");
+            "Invalid value for -t parameter. Allowed values:[DEFAULT_CREATE_PROMO, DEFAULT_PROMO,"
+                + " DEFAULT_RENEW_PROMO, PACKAGE, SINGLE_USE, UNLIMITED_USE]");
   }
 
   @Test

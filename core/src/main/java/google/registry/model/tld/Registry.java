@@ -926,10 +926,11 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
                 for (VKey<AllocationToken> tokenKey : promoTokens) {
                   AllocationToken token = tm().loadByKey(tokenKey);
                   checkArgument(
-                      token.getTokenType().equals(TokenType.DEFAULT_PROMO),
+                      token.getTokenType().equals(TokenType.DEFAULT_CREATE_PROMO)
+                          || token.getTokenType().equals(TokenType.DEFAULT_RENEW_PROMO),
                       String.format(
                           "Token %s has an invalid token type of %s. DefaultPromoTokens must be of"
-                              + " the type DEFAULT_PROMO",
+                              + " the type DEFAULT_CREATE_PROMO or DEFAULT_RENEW_PROMO",
                           token.getToken(), token.getTokenType()));
                   checkArgument(
                       token.getAllowedTlds().contains(getInstance().tldStr),

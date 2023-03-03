@@ -16,7 +16,8 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_CREATE_PROMO;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_RENEW_PROMO;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
 import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
@@ -184,7 +185,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
             new AllocationToken()
                 .asBuilder()
                 .setToken("abc123")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
                 .build());
     assertThat(Registry.get("xn--q9jyb4c").getDefaultPromoTokens()).isEmpty();
@@ -200,7 +201,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
             new AllocationToken()
                 .asBuilder()
                 .setToken("abc123")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
                 .build());
     AllocationToken token2 =
@@ -208,7 +209,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
             new AllocationToken()
                 .asBuilder()
                 .setToken("token")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_RENEW_PROMO)
                 .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
                 .build());
     assertThat(Registry.get("xn--q9jyb4c").getDefaultPromoTokens()).isEmpty();
@@ -224,7 +225,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
             new AllocationToken()
                 .asBuilder()
                 .setToken("abc123")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
                 .build());
     assertThat(Registry.get("xn--q9jyb4c").getDefaultPromoTokens()).isEmpty();
@@ -246,7 +247,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
             new AllocationToken()
                 .asBuilder()
                 .setToken("abc123")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
                 .build());
     AllocationToken token2 =
@@ -254,7 +255,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
             new AllocationToken()
                 .asBuilder()
                 .setToken("token")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
                 .build());
     AllocationToken token3 =
@@ -262,7 +263,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
             new AllocationToken()
                 .asBuilder()
                 .setToken("othertoken")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_RENEW_PROMO)
                 .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
                 .build());
     assertThat(Registry.get("xn--q9jyb4c").getDefaultPromoTokens()).isEmpty();

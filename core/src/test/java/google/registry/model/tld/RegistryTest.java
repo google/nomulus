@@ -17,7 +17,7 @@ package google.registry.model.tld;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_CREATE_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
@@ -643,7 +643,7 @@ public final class RegistryTest extends EntityTestCase {
             new AllocationToken()
                 .asBuilder()
                 .setToken("abc123")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     AllocationToken token2 =
@@ -651,7 +651,7 @@ public final class RegistryTest extends EntityTestCase {
             new AllocationToken()
                 .asBuilder()
                 .setToken("token")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     ImmutableList<VKey<AllocationToken>> tokens =
@@ -683,7 +683,7 @@ public final class RegistryTest extends EntityTestCase {
     assertThat(thrown.getMessage())
         .isEqualTo(
             "Token abc123 has an invalid token type of SINGLE_USE. DefaultPromoTokens must be of"
-                + " the type DEFAULT_PROMO");
+                + " the type DEFAULT_CREATE_PROMO or DEFAULT_RENEW_PROMO");
   }
 
   @Test
@@ -695,7 +695,7 @@ public final class RegistryTest extends EntityTestCase {
             new AllocationToken()
                 .asBuilder()
                 .setToken("abc123")
-                .setTokenType(DEFAULT_PROMO)
+                .setTokenType(DEFAULT_CREATE_PROMO)
                 .setAllowedTlds(ImmutableSet.of("example"))
                 .build());
     IllegalArgumentException thrown =
