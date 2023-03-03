@@ -1227,6 +1227,8 @@ public class DomainFlowUtils {
         // Allocation token was not valid for this registration, continue to check the next token in
         // the list
         continue;
+      } catch (StatusProhibitsOperationException e) {
+        continue;
       }
       // Only use the first valid token in the list
       return token;
