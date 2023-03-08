@@ -123,6 +123,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
      */
     DEFAULT_CREATE_PROMO,
     /** Token saved on a TLD to use if no other token is passed from the client */
+    // TODO(sarahbot@): Remove this type once we are sure it is safe
     @Deprecated
     DEFAULT_PROMO,
     /**

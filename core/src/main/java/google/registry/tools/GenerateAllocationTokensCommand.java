@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -101,7 +102,9 @@ class GenerateAllocationTokensCommand implements Command {
 
   @Parameter(
       names = {"-t", "--type"},
-      description = "Type of type token, either SINGLE_USE (default) or UNLIMITED_USE")
+      description =
+          "Type of token, either DEFAULT_CREATE_PROMO, DEFAULT_RENEW_PROMO, PACKAGE, SINGLE_USE"
+              + " (default) or UNLIMITED_USE")
   private TokenType tokenType;
 
   @Parameter(
@@ -274,6 +277,12 @@ class GenerateAllocationTokensCommand implements Command {
     if (tokenStrings != null) {
       verifyTokenStringsDoNotExist();
     }
+
+    // Don't allow DEFAULT_TOKEN token type on new tokens so the deprecated type is safe to remove
+    // in the future
+    checkArgument(
+        !DEFAULT_PROMO.equals(tokenType),
+        "DEFAULT_PROMO is a deprecated token type and should not be used");
   }
 
   private void verifyTokenStringsDoNotExist() {
