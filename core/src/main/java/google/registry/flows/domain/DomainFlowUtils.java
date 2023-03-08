@@ -1222,12 +1222,8 @@ public class DomainFlowUtils {
             InternetDomainName.from(domainName),
             token.get(),
             registrarId,
-            tm().transact(() -> tm().getTransactionTime()));
-      } catch (AssociationProhibitsOperationException e) {
-        // Allocation token was not valid for this registration, continue to check the next token in
-        // the list
-        continue;
-      } catch (StatusProhibitsOperationException e) {
+            tm().getTransactionTime());
+      } catch (AssociationProhibitsOperationException | StatusProhibitsOperationException e) {
         // Allocation token was not valid for this registration, continue to check the next token in
         // the list
         continue;
