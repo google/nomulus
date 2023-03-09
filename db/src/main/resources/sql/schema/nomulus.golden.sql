@@ -428,7 +428,6 @@ CREATE TABLE public."Domain" (
     transfer_history_entry_id bigint,
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
-    dns_refresh_request_time timestamp with time zone,
     current_package_token text,
     lordn_phase text DEFAULT 'NONE'::text NOT NULL
 );
@@ -518,7 +517,6 @@ CREATE TABLE public."DomainHistory" (
     transfer_history_entry_id bigint,
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
-    dns_refresh_request_time timestamp with time zone,
     current_package_token text,
     lordn_phase text DEFAULT 'NONE'::text NOT NULL
 );
@@ -630,8 +628,7 @@ CREATE TABLE public."Host" (
     superordinate_domain text,
     inet_addresses text[],
     update_timestamp timestamp with time zone,
-    transfer_poll_message_id_3 bigint,
-    dns_refresh_request_time timestamp with time zone
+    transfer_poll_message_id_3 bigint
 );
 
 
@@ -664,8 +661,7 @@ CREATE TABLE public."HostHistory" (
     statuses text[],
     host_repo_id text NOT NULL,
     update_timestamp timestamp with time zone,
-    transfer_poll_message_id_3 bigint,
-    dns_refresh_request_time timestamp with time zone
+    transfer_poll_message_id_3 bigint
 );
 
 
@@ -1580,13 +1576,6 @@ CREATE UNIQUE INDEX database_migration_state_schedule_singleton ON public."Datab
 
 
 --
--- Name: domain_dns_refresh_request_time_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX domain_dns_refresh_request_time_idx ON public."Domain" USING btree (dns_refresh_request_time);
-
-
---
 -- Name: domain_history_to_ds_data_history_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1717,13 +1706,6 @@ CREATE INDEX idx6w3qbtgce93cal2orjg1tw7b7 ON public."DomainHistory" USING btree 
 --
 
 CREATE INDEX idx73l103vc5900ig3p4odf0cngt ON public."BillingEvent" USING btree (registrar_id);
-
-
---
--- Name: idx7wg0yn3wdux3xsc4pfaljqf08; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx7wg0yn3wdux3xsc4pfaljqf08 ON public."Host" USING btree (dns_refresh_request_time) WHERE (dns_refresh_request_time IS NOT NULL);
 
 
 --
