@@ -40,9 +40,16 @@ apt-get install lsb-release -y
 export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
 echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" \
   | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-curl https://packages.cloud.google.com/apt/doc/apt-key.gpg \
-  | apt-key add -
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+# Install pg_dump v11 (same as current server version). This needs to be
+# downloaded from postgresql's own repo, because ubuntu1804 is too old. With a
+# newer image 'apt-get install postgresql-client-11' may be sufficient.
+curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+           > /etc/apt/sources.list.d/pgdg.list'
 apt-get update -y
+apt-get install postgresql-client-11 procps -y
+
 apt-get install google-cloud-sdk-app-engine-java -y
 # Install git
 apt-get install git -y
@@ -54,6 +61,10 @@ wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 apt install ./google-chrome-stable_current_amd64.deb -y
 # Install libxss1 (needed by Karma)
 apt install libxss1
+# Use unzip to extract files from jars.
+apt-get install zip -y
+# Get netstat, used for checking Cloud SQL proxy readiness.
+apt-get install net-tools
 apt-get remove apt-utils locales -y
 apt-get autoclean -y
 apt-get autoremove -y
