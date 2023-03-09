@@ -22,6 +22,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.CAN
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -370,6 +371,11 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       checkArgument(
           getInstance().discountFraction > 0 || getInstance().discountYears == 1,
           "Discount years can only be specified along with a discount fraction");
+      // Don't allow DEFAULT_TOKEN token type on new tokens so the deprecated type is safe to remove
+      // in the future
+      checkArgument(
+          !getInstance().getTokenType().equals(DEFAULT_PROMO),
+          "DEFAULT_PROMO is a deprecated token type and should not be used");
       if (getInstance().registrationBehavior.equals(RegistrationBehavior.ANCHOR_TENANT)) {
         checkArgumentNotNull(
             getInstance().domainName, "ANCHOR_TENANT tokens must be tied to a domain");
