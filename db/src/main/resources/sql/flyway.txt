@@ -136,3 +136,4 @@ V135__null_gaia_id_user.sql
 V136__add_dns_refresh_request_table.sql
 V137__add_process_time_column.sql
 V138__drop_dns_refresh_request_time_column.sql
+V139__add_allowed_epp_actions_column.sql
