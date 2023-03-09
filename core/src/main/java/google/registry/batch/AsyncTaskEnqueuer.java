@@ -25,7 +25,6 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.model.EppResource;
 import google.registry.persistence.VKey;
 import google.registry.request.Action.Service;
-import google.registry.util.CloudTasksUtils;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -86,6 +85,6 @@ public final class AsyncTaskEnqueuer {
     cloudTasksUtils.enqueue(
         QUEUE_ASYNC_ACTIONS,
         cloudTasksUtils.createPostTaskWithDelay(
-            ResaveEntityAction.PATH, Service.BACKEND.toString(), params, etaDuration));
+            ResaveEntityAction.PATH, Service.BACKEND, params, etaDuration));
   }
 }

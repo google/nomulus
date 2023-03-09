@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
 import google.registry.persistence.PersistenceModule;
@@ -37,7 +38,6 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
-import google.registry.util.CloudTasksUtils;
 import java.io.IOException;
 import javax.inject.Inject;
 import org.joda.time.Duration;
@@ -140,7 +140,7 @@ public class GenerateInvoicesAction implements Runnable {
             ReportingModule.BEAM_QUEUE,
             cloudTasksUtils.createPostTaskWithDelay(
                 PublishInvoicesAction.PATH,
-                Service.BACKEND.toString(),
+                Service.BACKEND,
                 ImmutableMultimap.of(
                     ReportingModule.PARAM_JOB_ID,
                     jobId,
