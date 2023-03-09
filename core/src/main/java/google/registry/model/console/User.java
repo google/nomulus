@@ -24,6 +24,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.Buildable;
 import google.registry.model.UpdateAutoTimestampEntity;
+import google.registry.persistence.VKey;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -47,7 +48,6 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
   private Long id;
 
   /** GAIA ID associated with the user in question. */
-  @Column(nullable = false)
   private String gaiaId;
 
   /** Email address of the user in question. */
@@ -118,6 +118,11 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
     return new Builder(clone(this));
   }
 
+  @Override
+  public VKey<User> createVKey() {
+    return VKey.create(User.class, getId());
+  }
+
   /** Builder for constructing immutable {@link User} objects. */
   public static class Builder extends Buildable.Builder<User> {
 
@@ -129,7 +134,6 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
 
     @Override
     public User build() {
-      checkArgumentNotNull(getInstance().gaiaId, "Gaia ID cannot be null");
       checkArgumentNotNull(getInstance().emailAddress, "Email address cannot be null");
       checkArgumentNotNull(getInstance().userRoles, "User roles cannot be null");
       return super.build();
