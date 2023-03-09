@@ -488,7 +488,6 @@
         scope text not null,
         acquired_time timestamptz not null,
         expiration_time timestamptz not null,
-        request_log_id text,
         primary key (resource_name, scope)
     );
 
