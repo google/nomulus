@@ -107,7 +107,7 @@ steps:
   - -c
   - |
     set -e
-    docker build -t gcr.io/${PROJECT_ID}/schema_deployer:${TAG_NAME} .
+    docker build -t gcr.io/${PROJECT_ID}/schema_deployer:${TAG_NAME} --build-arg TAG_NAME=$TAG_NAME --build-arg PROJECT_ID=$PROJECT_ID .
     docker tag gcr.io/${PROJECT_ID}/schema_deployer:${TAG_NAME} \
       gcr.io/${PROJECT_ID}/schema_deployer:latest
     docker push gcr.io/${PROJECT_ID}/schema_deployer:latest
@@ -120,7 +120,7 @@ steps:
   - -c
   - |
     set -e
-    docker build -t gcr.io/${PROJECT_ID}/schema_verifier:${TAG_NAME} .
+    docker build -t gcr.io/${PROJECT_ID}/schema_verifier:${TAG_NAME} --build-arg TAG_NAME=$TAG_NAME --build-arg PROJECT_ID=$PROJECT_ID .
     docker tag gcr.io/${PROJECT_ID}/schema_verifier:${TAG_NAME} \
       gcr.io/${PROJECT_ID}/schema_verifier:latest
     docker push gcr.io/${PROJECT_ID}/schema_verifier:latest
