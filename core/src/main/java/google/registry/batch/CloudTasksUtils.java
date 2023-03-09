@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.util;
+package google.registry.batch;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -36,6 +36,10 @@ import com.google.common.net.MediaType;
 import com.google.common.net.UrlEscapers;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.util.Timestamps;
+import google.registry.request.Action.Service;
+import google.registry.util.Clock;
+import google.registry.util.CollectionUtils;
+import google.registry.util.Retrier;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -108,7 +112,7 @@ public class CloudTasksUtils implements Serializable {
    *     the worker service</a>
    */
   private Task createTask(
-      String path, HttpMethod method, String service, Multimap<String, String> params) {
+      String path, HttpMethod method, Service service, Multimap<String, String> params) {
     checkArgument(
         path != null && !path.isEmpty() && path.charAt(0) == '/',
         "The path must start with a '/'.");
@@ -119,7 +123,8 @@ public class CloudTasksUtils implements Serializable {
     AppEngineHttpRequest.Builder requestBuilder =
         AppEngineHttpRequest.newBuilder()
             .setHttpMethod(method)
-            .setAppEngineRouting(AppEngineRouting.newBuilder().setService(service).build());
+            .setAppEngineRouting(
+                AppEngineRouting.newBuilder().setService(service.toString()).build());
 
     if (!CollectionUtils.isNullOrEmpty(params)) {
       Escaper escaper = UrlEscapers.urlPathSegmentEscaper();
@@ -165,7 +170,7 @@ public class CloudTasksUtils implements Serializable {
   private Task createTaskWithJitter(
       String path,
       HttpMethod method,
-      String service,
+      Service service,
       Multimap<String, String> params,
       Optional<Integer> jitterSeconds) {
     if (!jitterSeconds.isPresent() || jitterSeconds.get() <= 0) {
@@ -199,7 +204,7 @@ public class CloudTasksUtils implements Serializable {
   private Task createTaskWithDelay(
       String path,
       HttpMethod method,
-      String service,
+      Service service,
       Multimap<String, String> params,
       Duration delay) {
     if (delay.isEqual(Duration.ZERO)) {
@@ -211,11 +216,11 @@ public class CloudTasksUtils implements Serializable {
         .build();
   }
 
-  public Task createPostTask(String path, String service, Multimap<String, String> params) {
+  public Task createPostTask(String path, Service service, Multimap<String, String> params) {
     return createTask(path, HttpMethod.POST, service, params);
   }
 
-  public Task createGetTask(String path, String service, Multimap<String, String> params) {
+  public Task createGetTask(String path, Service service, Multimap<String, String> params) {
     return createTask(path, HttpMethod.GET, service, params);
   }
 
@@ -224,7 +229,7 @@ public class CloudTasksUtils implements Serializable {
    */
   public Task createPostTaskWithJitter(
       String path,
-      String service,
+      Service service,
       Multimap<String, String> params,
       Optional<Integer> jitterSeconds) {
     return createTaskWithJitter(path, HttpMethod.POST, service, params, jitterSeconds);
@@ -235,7 +240,7 @@ public class CloudTasksUtils implements Serializable {
    */
   public Task createGetTaskWithJitter(
       String path,
-      String service,
+      Service service,
       Multimap<String, String> params,
       Optional<Integer> jitterSeconds) {
     return createTaskWithJitter(path, HttpMethod.GET, service, params, jitterSeconds);
@@ -243,13 +248,13 @@ public class CloudTasksUtils implements Serializable {
 
   /** Create a {@link Task} via HTTP.POST that will be delayed for {@code delay}. */
   public Task createPostTaskWithDelay(
-      String path, String service, Multimap<String, String> params, Duration delay) {
+      String path, Service service, Multimap<String, String> params, Duration delay) {
     return createTaskWithDelay(path, HttpMethod.POST, service, params, delay);
   }
 
   /** Create a {@link Task} via HTTP.GET that will be delayed for {@code delay}. */
   public Task createGetTaskWithDelay(
-      String path, String service, Multimap<String, String> params, Duration delay) {
+      String path, Service service, Multimap<String, String> params, Duration delay) {
     return createTaskWithDelay(path, HttpMethod.GET, service, params, delay);
   }
 

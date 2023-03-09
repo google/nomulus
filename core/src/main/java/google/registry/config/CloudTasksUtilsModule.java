@@ -19,16 +19,17 @@ import com.google.cloud.tasks.v2.CloudTasksClient;
 import com.google.cloud.tasks.v2.CloudTasksSettings;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.batch.CloudTasksUtils;
+import google.registry.batch.CloudTasksUtils.GcpCloudTasksClient;
+import google.registry.batch.CloudTasksUtils.SerializableCloudTasksClient;
 import google.registry.config.CredentialModule.DefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
-import google.registry.util.CloudTasksUtils;
-import google.registry.util.CloudTasksUtils.GcpCloudTasksClient;
-import google.registry.util.CloudTasksUtils.SerializableCloudTasksClient;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Optional;
 import java.util.function.Supplier;
 import javax.inject.Singleton;
 
@@ -46,6 +47,7 @@ public abstract class CloudTasksUtilsModule {
   public static CloudTasksUtils provideCloudTasksUtils(
       @Config("projectId") String projectId,
       @Config("locationId") String locationId,
+      @Config("iapClientId") Optional<String> iapClientId,
       SerializableCloudTasksClient client,
       Retrier retrier,
       Clock clock) {

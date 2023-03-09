@@ -30,7 +30,6 @@ import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import google.registry.util.CapturingLogHandler;
-import google.registry.util.CloudTasksUtils;
 import google.registry.util.JdkLoggerConfig;
 import java.util.logging.Level;
 import org.joda.time.DateTime;

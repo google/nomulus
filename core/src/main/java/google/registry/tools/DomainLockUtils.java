@@ -23,6 +23,7 @@ import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STAT
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.batch.RelockDomainAction;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.billing.BillingEvent;
@@ -34,7 +35,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.RegistryLockDao;
 import google.registry.request.Action.Service;
-import google.registry.util.CloudTasksUtils;
 import google.registry.util.StringGenerator;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -223,7 +223,7 @@ public final class DomainLockUtils {
         QUEUE_ASYNC_ACTIONS,
         cloudTasksUtils.createPostTaskWithDelay(
             RelockDomainAction.PATH,
-            Service.BACKEND.toString(),
+            Service.BACKEND,
             ImmutableMultimap.of(
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lockRevisionId),
