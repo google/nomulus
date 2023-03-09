@@ -38,6 +38,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
@@ -45,7 +46,6 @@ import google.registry.request.ParameterMap;
 import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.util.CloudTasksUtils;
 import java.util.Optional;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -158,6 +158,6 @@ public final class TldFanoutAction implements Runnable {
       params.put(RequestParameters.PARAM_TLD, tld);
     }
     return cloudTasksUtils.createPostTaskWithJitter(
-        endpoint, Service.BACKEND.toString(), params, jitterSeconds);
+        endpoint, Service.BACKEND, params, jitterSeconds);
   }
 }

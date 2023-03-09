@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.net.MediaType;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.beam.BeamActionTestBase;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -30,7 +31,6 @@ import google.registry.reporting.ReportingModule;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
-import google.registry.util.CloudTasksUtils;
 import java.io.IOException;
 import org.joda.time.Duration;
 import org.joda.time.YearMonth;

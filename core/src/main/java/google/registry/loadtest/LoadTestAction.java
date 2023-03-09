@@ -28,13 +28,13 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.flogger.FluentLogger;
 import com.google.protobuf.Timestamp;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryEnvironment;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.security.XsrfTokenManager;
-import google.registry.util.CloudTasksUtils;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -337,7 +337,7 @@ public class LoadTestAction implements Runnable {
                   cloudTasksUtils
                       .createPostTask(
                           "/_dr/epptool",
-                          Service.TOOLS.toString(),
+                          Service.TOOLS,
                           ImmutableMultimap.of(
                               "clientId",
                               registrarId,

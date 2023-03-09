@@ -44,6 +44,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.tld.Registries;
@@ -53,7 +54,6 @@ import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
-import google.registry.util.CloudTasksUtils;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.Comparator;
@@ -372,7 +372,7 @@ public final class ReadDnsQueueAction implements Runnable {
         Task task =
             cloudTasksUtils.createPostTaskWithJitter(
                 PublishDnsUpdatesAction.PATH,
-                Service.BACKEND.toString(),
+                Service.BACKEND,
                 ImmutableMultimap.<String, String>builder()
                     .put(PARAM_TLD, tld)
                     .put(PARAM_DNS_WRITER, dnsWriter)

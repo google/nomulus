@@ -26,6 +26,7 @@ import com.google.auto.value.AutoValue;
 import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.PgpHelper;
 import google.registry.model.common.Cursor;
@@ -46,7 +47,6 @@ import google.registry.rde.RdeUtil;
 import google.registry.request.Action.Service;
 import google.registry.request.RequestParameters;
 import google.registry.tldconfig.idn.IdnTableEnum;
-import google.registry.util.CloudTasksUtils;
 import google.registry.xjc.rdeheader.XjcRdeHeader;
 import google.registry.xjc.rdeheader.XjcRdeHeaderElement;
 import google.registry.xml.ValidationMode;
@@ -306,7 +306,7 @@ public class RdeIO {
                       RDE_UPLOAD_QUEUE,
                       cloudTasksUtils.createPostTaskWithDelay(
                           RdeUploadAction.PATH,
-                          Service.BACKEND.getServiceId(),
+                          Service.BACKEND,
                           ImmutableMultimap.of(
                               RequestParameters.PARAM_TLD,
                               key.tld(),
@@ -318,7 +318,7 @@ public class RdeIO {
                       BRDA_QUEUE,
                       cloudTasksUtils.createPostTaskWithDelay(
                           BrdaCopyAction.PATH,
-                          Service.BACKEND.getServiceId(),
+                          Service.BACKEND,
                           ImmutableMultimap.of(
                               RequestParameters.PARAM_TLD,
                               key.tld(),

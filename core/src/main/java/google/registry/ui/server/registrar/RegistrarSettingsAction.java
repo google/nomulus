@@ -36,6 +36,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryEnvironment;
 import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.flows.certs.CertificateChecker;
@@ -58,7 +59,6 @@ import google.registry.ui.forms.FormException;
 import google.registry.ui.forms.FormFieldException;
 import google.registry.ui.server.RegistrarFormFields;
 import google.registry.ui.server.SendEmailUtils;
-import google.registry.util.CloudTasksUtils;
 import google.registry.util.CollectionUtils;
 import google.registry.util.DiffUtils;
 import java.util.HashSet;
@@ -643,7 +643,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       cloudTasksUtils.enqueue(
           SyncRegistrarsSheetAction.QUEUE,
           cloudTasksUtils.createGetTask(
-              SyncRegistrarsSheetAction.PATH, Service.BACKEND.toString(), ImmutableMultimap.of()));
+              SyncRegistrarsSheetAction.PATH, Service.BACKEND, ImmutableMultimap.of()));
     }
     String environment = Ascii.toLowerCase(String.valueOf(RegistryEnvironment.get()));
     sendEmailUtils.sendEmail(

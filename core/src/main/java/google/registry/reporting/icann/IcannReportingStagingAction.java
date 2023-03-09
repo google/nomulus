@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.bigquery.BigqueryJobFailureException;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
@@ -34,7 +35,6 @@ import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.util.CloudTasksUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
 import google.registry.util.SendEmailService;
@@ -123,7 +123,7 @@ public final class IcannReportingStagingAction implements Runnable {
                 CRON_QUEUE,
                 cloudTasksUtils.createPostTaskWithDelay(
                     IcannReportingUploadAction.PATH,
-                    Service.BACKEND.toString(),
+                    Service.BACKEND,
                     null,
                     Duration.standardMinutes(2)));
             return null;

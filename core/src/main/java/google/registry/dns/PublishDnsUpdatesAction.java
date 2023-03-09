@@ -35,6 +35,7 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import dagger.Lazy;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.DnsMetrics.ActionStatus;
 import google.registry.dns.DnsMetrics.CommitStatus;
@@ -54,7 +55,6 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
-import google.registry.util.CloudTasksUtils;
 import google.registry.util.DomainNameUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
@@ -339,7 +339,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
         DNS_PUBLISH_PUSH_QUEUE_NAME,
         cloudTasksUtils.createPostTask(
             PATH,
-            Service.BACKEND.toString(),
+            Service.BACKEND,
             ImmutableMultimap.<String, String>builder()
                 .put(PARAM_TLD, tld)
                 .put(PARAM_DNS_WRITER, dnsWriter)
