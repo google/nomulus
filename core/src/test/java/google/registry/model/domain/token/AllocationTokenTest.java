@@ -37,6 +37,7 @@ import google.registry.model.Buildable;
 import google.registry.model.EntityTestCase;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
@@ -77,6 +78,7 @@ public class AllocationTokenTest extends EntityTestCase {
                         .put(DateTime.now(UTC), TokenStatus.VALID)
                         .put(DateTime.now(UTC).plusWeeks(8), TokenStatus.ENDED)
                         .build())
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RENEW))
                 .build());
     assertThat(loadByEntity(unlimitedUseToken)).isEqualTo(unlimitedUseToken);
 
@@ -113,6 +115,7 @@ public class AllocationTokenTest extends EntityTestCase {
                         .put(DateTime.now(UTC), TokenStatus.VALID)
                         .put(DateTime.now(UTC).plusWeeks(8), TokenStatus.ENDED)
                         .build())
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RENEW))
                 .build());
     AllocationToken persisted = loadByEntity(unlimitedUseToken);
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);

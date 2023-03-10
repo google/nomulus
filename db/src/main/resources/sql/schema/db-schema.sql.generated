@@ -16,6 +16,7 @@
        token text not null,
         update_timestamp timestamptz,
         allowed_registrar_ids text[],
+        allowed_epp_actions text[],
         allowed_tlds text[],
         creation_time timestamptz not null,
         discount_fraction float8 not null,

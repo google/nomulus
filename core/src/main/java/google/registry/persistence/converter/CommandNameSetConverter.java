@@ -19,8 +19,8 @@ import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName
 import javax.persistence.Converter;
 
 @Converter(autoApply = true)
-public class CommandNameListConverter
-    extends StringListConverterBase<FeeQueryCommandExtensionItem.CommandName> {
+public class CommandNameSetConverter
+    extends StringSetConverterBase<FeeQueryCommandExtensionItem.CommandName> {
 
   @Override
   String toString(CommandName element) {
