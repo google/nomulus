@@ -274,18 +274,11 @@ public final class DomainCheckFlow implements Flow {
     for (FeeCheckCommandExtensionItem feeCheckItem : feeCheck.getItems()) {
       for (String domainName : getDomainNamesToCheckForFee(feeCheckItem, domainNames.keySet())) {
         Optional<AllocationToken> defaultToken =
-            tm().transact(
-                    () -> {
-                      try {
-                        return DomainFlowUtils.checkForDefaultToken(
-                            Registry.get(InternetDomainName.from(domainName).parent().toString()),
-                            domainName,
-                            registrarId);
-                      } catch (EppException e) {
-                        logger.atWarning().withCause(e).log("Failure in checkForDefaultToken");
-                      }
-                      return Optional.empty();
-                    });
+            DomainFlowUtils.checkForDefaultToken(
+                Registry.get(InternetDomainName.from(domainName).parent().toString()),
+                domainName,
+                registrarId,
+                now);
         FeeCheckResponseExtensionItem.Builder<?> builder = feeCheckItem.createResponseBuilder();
         Optional<Domain> domain = Optional.ofNullable(domainObjs.get(domainName));
         handleFeeRequest(

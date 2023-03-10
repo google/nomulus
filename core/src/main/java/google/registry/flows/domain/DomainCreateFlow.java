@@ -277,7 +277,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
     boolean defaultTokenUsed = false;
     if (!allocationToken.isPresent() && !registry.getDefaultPromoTokens().isEmpty()) {
       allocationToken =
-          DomainFlowUtils.checkForDefaultToken(registry, command.getDomainName(), registrarId);
+          DomainFlowUtils.checkForDefaultToken(registry, command.getDomainName(), registrarId, now);
       if (allocationToken.isPresent()) {
         defaultTokenUsed = true;
       }
