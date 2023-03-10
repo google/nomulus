@@ -45,9 +45,11 @@ import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.common.TimedTransitionProperty;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -212,6 +214,8 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
    */
   TimedTransitionProperty<TokenStatus> tokenStatusTransitions =
       TimedTransitionProperty.withInitialValue(NOT_STARTED);
+
+  List<CommandName> allowedEppActions;
 
   public String getToken() {
     return token;
