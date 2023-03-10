@@ -1201,7 +1201,7 @@ public class DomainFlowUtils {
    * token found on the TLD's default token list will be returned.
    */
   public static Optional<AllocationToken> checkForDefaultToken(
-      Registry registry, String domainName, String registrarId) throws EppException {
+      Registry registry, String domainName, String registrarId, DateTime now) throws EppException {
     if (isNullOrEmpty(registry.getDefaultPromoTokens())) {
       return Optional.empty();
     }
@@ -1219,10 +1219,7 @@ public class DomainFlowUtils {
     for (Optional<AllocationToken> token : tokenList) {
       try {
         AllocationTokenFlowUtils.validateToken(
-            InternetDomainName.from(domainName),
-            token.get(),
-            registrarId,
-            tm().getTransactionTime());
+            InternetDomainName.from(domainName), token.get(), registrarId, now);
       } catch (AssociationProhibitsOperationException | StatusProhibitsOperationException e) {
         // Allocation token was not valid for this registration, continue to check the next token in
         // the list
