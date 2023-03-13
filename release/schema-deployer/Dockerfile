@@ -23,24 +23,11 @@
 
 # Although any Linux-based Java image with bash would work (e.g., openjdk:11),
 # as a GCP application we prefer to start with a GCP-approved base image.
-FROM marketplace.gcr.io/google/debian10
-ENV DEBIAN_FRONTEND=noninteractive LANG=en_US.UTF-8
-# Install openjdk-11
-RUN apt-get update -y \
-    && apt-get install locales -y \
-    && locale-gen en_US.UTF-8 \
-    && apt-get install apt-utils -y \
-    && apt-get upgrade -y \
-    && apt-get install openjdk-11-jdk-headless curl procps -y
-
-# Get netstat, used for checking Cloud SQL proxy readiness.
-RUN apt-get install net-tools
+ARG PROJECT_ID
+ARG TAG_NAME
+FROM gcr.io/${PROJECT_ID}/builder:${TAG_NAME}
 
 COPY deploy_sql_schema.sh /usr/local/bin/
-ADD https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 \
-    /usr/local/bin/cloud_sql_proxy
-RUN chmod +x /usr/local/bin/cloud_sql_proxy
-# Adapted from https://github.com/flyway/flyway-docker/blob/master/Dockerfile
 RUN \
   FLYWAY_MAVEN=https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline \
   && FLYWAY_VERSION=$(curl ${FLYWAY_MAVEN}/maven-metadata.xml \

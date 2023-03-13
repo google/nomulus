@@ -29,6 +29,13 @@ RUN go build -o /cloudSchedulerDeployer
 
 FROM marketplace.gcr.io/google/debian10
 ENV DEBIAN_FRONTEND=noninteractive LANG=en_US.UTF-8
+# Add script for cloud scheduler deployer
 COPY --from=cloudSchedulerBuilder /cloudSchedulerDeployer /usr/local/bin/cloudSchedulerDeployer
+# Add Cloud sql connector
+ADD https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 \
+    /usr/local/bin/cloud_sql_proxy
+RUN chmod +x /usr/local/bin/cloud_sql_proxy
+
 ADD ./build.sh .
 RUN ["bash", "./build.sh"]
+
