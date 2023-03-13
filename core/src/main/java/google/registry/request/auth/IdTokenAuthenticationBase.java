@@ -55,7 +55,7 @@ public abstract class IdTokenAuthenticationBase implements AuthenticationMechani
     JsonWebSignature token;
     try {
       token = tokenVerifier.verify(rawIdToken);
-    } catch (TokenVerifier.VerificationException e) {
+    } catch (Exception e) {
       logger.atInfo().withCause(e).log("Error when verifying access token");
       return AuthResult.NOT_AUTHENTICATED;
     }
