@@ -698,7 +698,8 @@ public class DomainFlowUtils {
         builder.setAvailIfSupported(true);
         fees =
             pricingLogic
-                .getRenewPrice(registry, domainNameString, now, years, recurringBillingEvent)
+                .getRenewPrice(
+                    registry, domainNameString, now, years, recurringBillingEvent, allocationToken)
                 .getFees();
         break;
       case RESTORE:
