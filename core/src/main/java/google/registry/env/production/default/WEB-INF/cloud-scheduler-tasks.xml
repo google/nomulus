@@ -90,7 +90,18 @@
     <schedule>0 */1 * * *</schedule>
   </task>
 
-  <!-- TODO: @ptkach add resaveAllEppResourcesPipelineAction https://cs.opensource.google/nomulus/nomulus/+/master:core/src/main/java/google/registry/env/production/default/WEB-INF/cron.xml;l=105 -->
+  <task>
+    <url><![CDATA[/_dr/task/resaveAllEppResourcesPipeline?fast=true]]></url>
+    <name>resaveAllEppResourcesPipeline</name>
+    <description>
+      This job resaves all our resources, projected in time to "now".
+    </description>
+    <!--
+    Deviation from cron tasks schedule: 1st monday of month 09:00 is replaced
+    with 1st of the month 09:00
+    -->
+    <schedule>0 9 1 * *</schedule>
+  </task>
 
   <task>
     <url><![CDATA[/_dr/task/updateRegistrarRdapBaseUrls]]></url>
