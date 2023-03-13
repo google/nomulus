@@ -20,6 +20,7 @@ import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DE
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.fee.BaseFee.FeeType.RENEW;
+import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
@@ -37,6 +38,7 @@ import google.registry.flows.FlowMetadata;
 import google.registry.flows.HttpSessionMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.custom.DomainPricingCustomLogic;
+import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
@@ -44,6 +46,7 @@ import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.fee.Fee;
+import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -133,7 +136,8 @@ public class DomainPricingLogicTest {
   void testGetDomainRenewPrice_oneYear_standardDomain_noBilling_isStandardPrice()
       throws EppException {
     assertThat(
-            domainPricingLogic.getRenewPrice(registry, "standard.example", clock.nowUtc(), 1, null))
+            domainPricingLogic.getRenewPrice(
+                registry, "standard.example", clock.nowUtc(), 1, null, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -145,7 +149,8 @@ public class DomainPricingLogicTest {
   void testGetDomainRenewPrice_multiYear_standardDomain_noBilling_isStandardPrice()
       throws EppException {
     assertThat(
-            domainPricingLogic.getRenewPrice(registry, "standard.example", clock.nowUtc(), 5, null))
+            domainPricingLogic.getRenewPrice(
+                registry, "standard.example", clock.nowUtc(), 5, null, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -157,7 +162,8 @@ public class DomainPricingLogicTest {
   void testGetDomainRenewPrice_oneYear_premiumDomain_noBilling_isPremiumPrice()
       throws EppException {
     assertThat(
-            domainPricingLogic.getRenewPrice(registry, "premium.example", clock.nowUtc(), 1, null))
+            domainPricingLogic.getRenewPrice(
+                registry, "premium.example", clock.nowUtc(), 1, null, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -169,7 +175,8 @@ public class DomainPricingLogicTest {
   void testGetDomainRenewPrice_multiYear_premiumDomain_noBilling_isPremiumPrice()
       throws EppException {
     assertThat(
-            domainPricingLogic.getRenewPrice(registry, "premium.example", clock.nowUtc(), 5, null))
+            domainPricingLogic.getRenewPrice(
+                registry, "premium.example", clock.nowUtc(), 5, null, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -186,12 +193,65 @@ public class DomainPricingLogicTest {
                 clock.nowUtc(),
                 1,
                 persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", DEFAULT, Optional.empty())))
+                    "premium.example", DEFAULT, Optional.empty()),
+                Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
                 .addFeeOrCredit(Fee.create(Money.of(USD, 100).getAmount(), RENEW, true))
                 .build());
+  }
+
+  @Test
+  void testGetDomainRenewPrice_oneYear_premiumDomain_default_withToken_isPremiumPrice()
+      throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountFraction(0.5)
+                .setDiscountPremiums(true)
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                registry,
+                "premium.example",
+                clock.nowUtc(),
+                1,
+                persistDomainAndSetRecurringBillingEvent(
+                    "premium.example", DEFAULT, Optional.empty()),
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(Money.of(USD, 50).getAmount(), RENEW, true))
+                .build());
+  }
+
+  @Test
+  void
+      testGetDomainRenewPrice_oneYear_premiumDomain_default_withTokenNotValidForPremiums_throwsException()
+          throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountFraction(0.5)
+                .setDiscountPremiums(false)
+                .build());
+    assertThrows(
+        AllocationTokenInvalidForPremiumNameException.class,
+        () ->
+            domainPricingLogic.getRenewPrice(
+                registry,
+                "premium.example",
+                clock.nowUtc(),
+                1,
+                persistDomainAndSetRecurringBillingEvent(
+                    "premium.example", DEFAULT, Optional.empty()),
+                Optional.of(allocationToken)));
   }
 
   @Test
@@ -203,12 +263,67 @@ public class DomainPricingLogicTest {
                 clock.nowUtc(),
                 5,
                 persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", DEFAULT, Optional.empty())))
+                    "premium.example", DEFAULT, Optional.empty()),
+                Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
                 .addFeeOrCredit(Fee.create(Money.of(USD, 500).getAmount(), RENEW, true))
                 .build());
+  }
+
+  @Test
+  void testGetDomainRenewPrice_multiYear_premiumDomain_default_withToken_isPremiumPrice()
+      throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountFraction(0.5)
+                .setDiscountPremiums(true)
+                .setDiscountYears(2)
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                registry,
+                "premium.example",
+                clock.nowUtc(),
+                5,
+                persistDomainAndSetRecurringBillingEvent(
+                    "premium.example", DEFAULT, Optional.empty()),
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(Money.of(USD, 400).getAmount(), RENEW, true))
+                .build());
+  }
+
+  @Test
+  void
+      testGetDomainRenewPrice_multiYear_premiumDomain_default_withTokenNotValidForPremiums_throwsException()
+          throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountFraction(0.5)
+                .setDiscountPremiums(false)
+                .setDiscountYears(2)
+                .build());
+    assertThrows(
+        AllocationTokenInvalidForPremiumNameException.class,
+        () ->
+            domainPricingLogic.getRenewPrice(
+                registry,
+                "premium.example",
+                clock.nowUtc(),
+                5,
+                persistDomainAndSetRecurringBillingEvent(
+                    "premium.example", DEFAULT, Optional.empty()),
+                Optional.of(allocationToken)));
   }
 
   @Test
@@ -221,11 +336,39 @@ public class DomainPricingLogicTest {
                 clock.nowUtc(),
                 1,
                 persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", DEFAULT, Optional.empty())))
+                    "standard.example", DEFAULT, Optional.empty()),
+                Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
                 .addFeeOrCredit(Fee.create(Money.of(USD, 10).getAmount(), RENEW, false))
+                .build());
+  }
+
+  @Test
+  void testGetDomainRenewPrice_oneYear_standardDomain_default_withToken_isDiscountedPrice()
+      throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountFraction(0.5)
+                .setDiscountPremiums(false)
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                registry,
+                "standard.example",
+                clock.nowUtc(),
+                1,
+                persistDomainAndSetRecurringBillingEvent(
+                    "standard.example", DEFAULT, Optional.empty()),
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(Money.of(USD, 5).getAmount(), RENEW, false))
                 .build());
   }
 
@@ -239,11 +382,40 @@ public class DomainPricingLogicTest {
                 clock.nowUtc(),
                 5,
                 persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", DEFAULT, Optional.empty())))
+                    "standard.example", DEFAULT, Optional.empty()),
+                Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
                 .addFeeOrCredit(Fee.create(Money.of(USD, 50).getAmount(), RENEW, false))
+                .build());
+  }
+
+  @Test
+  void testGetDomainRenewPrice_multiYear_standardDomain_default_withToken_isDiscountedPrice()
+      throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountFraction(0.5)
+                .setDiscountPremiums(false)
+                .setDiscountYears(2)
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                registry,
+                "standard.example",
+                clock.nowUtc(),
+                5,
+                persistDomainAndSetRecurringBillingEvent(
+                    "standard.example", DEFAULT, Optional.empty()),
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(Money.of(USD, 40).getAmount(), RENEW, false))
                 .build());
   }
 
@@ -257,11 +429,40 @@ public class DomainPricingLogicTest {
                 clock.nowUtc(),
                 1,
                 persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", NONPREMIUM, Optional.empty())))
+                    "premium.example", NONPREMIUM, Optional.empty()),
+                Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
                 .addFeeOrCredit(Fee.create(Money.of(USD, 10).getAmount(), RENEW, false))
+                .build());
+  }
+
+  @Test
+  void
+      testGetDomainRenewPrice_oneYear_premiumDomain_anchorTenant__withToken_isDiscountedNonPremiumPrice()
+          throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountFraction(0.5)
+                .setDiscountPremiums(false)
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                registry,
+                "premium.example",
+                clock.nowUtc(),
+                1,
+                persistDomainAndSetRecurringBillingEvent(
+                    "premium.example", NONPREMIUM, Optional.empty()),
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(Money.of(USD, 5).getAmount(), RENEW, false))
                 .build());
   }
 
@@ -275,11 +476,41 @@ public class DomainPricingLogicTest {
                 clock.nowUtc(),
                 5,
                 persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", NONPREMIUM, Optional.empty())))
+                    "premium.example", NONPREMIUM, Optional.empty()),
+                Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
                 .addFeeOrCredit(Fee.create(Money.of(USD, 50).getAmount(), RENEW, false))
+                .build());
+  }
+
+  @Test
+  void
+      testGetDomainRenewPrice_multiYear_premiumDomain_anchorTenant__withToken_isDiscountedNonPremiumPrice()
+          throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountFraction(0.5)
+                .setDiscountPremiums(false)
+                .setDiscountYears(2)
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                registry,
+                "premium.example",
+                clock.nowUtc(),
+                5,
+                persistDomainAndSetRecurringBillingEvent(
+                    "premium.example", NONPREMIUM, Optional.empty()),
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(Money.of(USD, 40).getAmount(), RENEW, false))
                 .build());
   }
 
@@ -293,7 +524,8 @@ public class DomainPricingLogicTest {
                 clock.nowUtc(),
                 1,
                 persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", NONPREMIUM, Optional.empty())))
+                    "standard.example", NONPREMIUM, Optional.empty()),
+                Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -311,7 +543,8 @@ public class DomainPricingLogicTest {
                 clock.nowUtc(),
                 5,
                 persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", NONPREMIUM, Optional.empty())))
+                    "standard.example", NONPREMIUM, Optional.empty()),
+                Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -329,7 +562,36 @@ public class DomainPricingLogicTest {
                 clock.nowUtc(),
                 1,
                 persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1)))))
+                    "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
+                Optional.empty()))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(Money.of(USD, 1).getAmount(), RENEW, false))
+                .build());
+  }
+
+  @Test
+  void
+      testGetDomainRenewPrice_oneYear_standardDomain_internalRegistration_withToken_isSpecifiedPrice()
+          throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountFraction(0.5)
+                .setDiscountPremiums(false)
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                registry,
+                "standard.example",
+                clock.nowUtc(),
+                1,
+                persistDomainAndSetRecurringBillingEvent(
+                    "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
+                Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -347,7 +609,36 @@ public class DomainPricingLogicTest {
                 clock.nowUtc(),
                 5,
                 persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1)))))
+                    "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
+                Optional.empty()))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(Money.of(USD, 5).getAmount(), RENEW, false))
+                .build());
+  }
+
+  @Test
+  void
+      testGetDomainRenewPrice_multiYear_standardDomain_internalRegistration_withToken_isSpecifiedPrice()
+          throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountFraction(0.5)
+                .setDiscountPremiums(false)
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                registry,
+                "standard.example",
+                clock.nowUtc(),
+                5,
+                persistDomainAndSetRecurringBillingEvent(
+                    "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
+                Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -365,7 +656,8 @@ public class DomainPricingLogicTest {
                 clock.nowUtc(),
                 1,
                 persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", SPECIFIED, Optional.of(Money.of(USD, 17)))))
+                    "premium.example", SPECIFIED, Optional.of(Money.of(USD, 17))),
+                Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -383,7 +675,8 @@ public class DomainPricingLogicTest {
                 clock.nowUtc(),
                 5,
                 persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", SPECIFIED, Optional.of(Money.of(USD, 17)))))
+                    "premium.example", SPECIFIED, Optional.of(Money.of(USD, 17))),
+                Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -398,7 +691,7 @@ public class DomainPricingLogicTest {
             IllegalArgumentException.class,
             () ->
                 domainPricingLogic.getRenewPrice(
-                    registry, "standard.example", clock.nowUtc(), -1, null));
+                    registry, "standard.example", clock.nowUtc(), -1, null, Optional.empty()));
     assertThat(thrown).hasMessageThat().isEqualTo("Number of years must be positive");
   }
 

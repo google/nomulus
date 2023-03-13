@@ -34,6 +34,7 @@ import google.registry.model.domain.fee.BaseFee;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenBehavior;
 import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
 import google.registry.model.tld.Registry;
 import java.math.RoundingMode;
@@ -112,21 +113,22 @@ public final class DomainPricingLogic {
       String domainName,
       DateTime dateTime,
       int years,
-      @Nullable Recurring recurringBillingEvent) {
+      @Nullable Recurring recurringBillingEvent,
+      Optional<AllocationToken> allocationToken)
+      throws EppException {
     checkArgument(years > 0, "Number of years must be positive");
     Money renewCost;
+    DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
     boolean isRenewCostPremiumPrice;
     // recurring billing event is null if the domain is still available. Billing events are created
     // in the process of domain creation.
     if (recurringBillingEvent == null) {
-      DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
-      renewCost = domainPrices.getRenewCost().multipliedBy(years);
+      renewCost = getDomainRenewCostWithDiscount(domainPrices, years, allocationToken);
       isRenewCostPremiumPrice = domainPrices.isPremium();
     } else {
       switch (recurringBillingEvent.getRenewalPriceBehavior()) {
         case DEFAULT:
-          DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
-          renewCost = domainPrices.getRenewCost().multipliedBy(years);
+          renewCost = getDomainRenewCostWithDiscount(domainPrices, years, allocationToken);
           isRenewCostPremiumPrice = domainPrices.isPremium();
           break;
           // if the renewal price behavior is specified, then the renewal price should be the same
@@ -136,6 +138,7 @@ public final class DomainPricingLogic {
               recurringBillingEvent.getRenewalPrice(),
               "Unexpected behavior: renewal price cannot be null when renewal behavior is"
                   + " SPECIFIED");
+          // Don't apply allocation token to renewal price when SPECIFIED
           renewCost = recurringBillingEvent.getRenewalPrice().get().multipliedBy(years);
           isRenewCostPremiumPrice = false;
           break;
@@ -143,9 +146,11 @@ public final class DomainPricingLogic {
           // at standard price of domains at the time, even if the domain is premium
         case NONPREMIUM:
           renewCost =
-              Registry.get(getTldFromDomainName(domainName))
-                  .getStandardRenewCost(dateTime)
-                  .multipliedBy(years);
+              getDomainCostWithDiscount(
+                  false,
+                  years,
+                  allocationToken,
+                  Registry.get(getTldFromDomainName(domainName)).getStandardRenewCost(dateTime));
           isRenewCostPremiumPrice = false;
           break;
         default:
@@ -202,7 +207,7 @@ public final class DomainPricingLogic {
       @Nullable Recurring recurringBillingEvent)
       throws EppException {
     FeesAndCredits renewPrice =
-        getRenewPrice(registry, domainName, dateTime, 1, recurringBillingEvent);
+        getRenewPrice(registry, domainName, dateTime, 1, recurringBillingEvent, Optional.empty());
     return customLogic.customizeTransferPrice(
         TransferPriceParameters.newBuilder()
             .setFeesAndCredits(
@@ -242,25 +247,40 @@ public final class DomainPricingLogic {
   private Money getDomainCreateCostWithDiscount(
       DomainPrices domainPrices, int years, Optional<AllocationToken> allocationToken)
       throws EppException {
+    return getDomainCostWithDiscount(
+        domainPrices.isPremium(), years, allocationToken, domainPrices.getCreateCost());
+  }
+
+  /** Returns the domain renew cost with allocation-token-related discounts applied. */
+  private Money getDomainRenewCostWithDiscount(
+      DomainPrices domainPrices, int years, Optional<AllocationToken> allocationToken)
+      throws EppException {
+    return getDomainCostWithDiscount(
+        domainPrices.isPremium(), years, allocationToken, domainPrices.getRenewCost());
+  }
+
+  private Money getDomainCostWithDiscount(
+      Boolean isPremium, int years, Optional<AllocationToken> allocationToken, Money oneYearCost)
+      throws EppException {
     if (allocationToken.isPresent()
         && allocationToken.get().getDiscountFraction() != 0.0
-        && domainPrices.isPremium()
+        && isPremium
         && !allocationToken.get().shouldDiscountPremiums()) {
       throw new AllocationTokenInvalidForPremiumNameException();
     }
-    Money oneYearCreateCost = domainPrices.getCreateCost();
-    Money totalDomainCreateCost = oneYearCreateCost.multipliedBy(years);
+    Money totalDomainFlowCost = oneYearCost.multipliedBy(years);
 
     // Apply the allocation token discount, if applicable.
-    if (allocationToken.isPresent()) {
+    if (allocationToken.isPresent()
+        && allocationToken.get().getTokenBehavior().equals(TokenBehavior.DEFAULT)) {
       int discountedYears = Math.min(years, allocationToken.get().getDiscountYears());
       Money discount =
-          oneYearCreateCost.multipliedBy(
+          oneYearCost.multipliedBy(
               discountedYears * allocationToken.get().getDiscountFraction(),
               RoundingMode.HALF_EVEN);
-      totalDomainCreateCost = totalDomainCreateCost.minus(discount);
+      totalDomainFlowCost = totalDomainFlowCost.minus(discount);
     }
-    return totalDomainCreateCost;
+    return totalDomainFlowCost;
   }
 
   /** An allocation token was provided that is invalid for premium domains. */
