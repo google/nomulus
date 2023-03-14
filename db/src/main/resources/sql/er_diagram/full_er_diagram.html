@@ -261,11 +261,11 @@ td.section {
     </tr>
     <tr>
      <td class="property_name">generated on</td>
-     <td class="property_value">2023-03-09 22:05:23.270136</td>
+     <td class="property_value">2023-03-14 17:02:11.913219</td>
     </tr>
     <tr>
      <td class="property_name">last flyway file</td>
-     <td id="lastFlywayFile" class="property_value">V139__add_allowed_epp_actions_column.sql</td>
+     <td id="lastFlywayFile" class="property_value">V140__rename_process_time_column_in_dns_refresh_request_table.sql</td>
     </tr>
    </tbody>
   </table>
@@ -284,7 +284,7 @@ td.section {
      generated on
     </text>
     <text text-anchor="start" x="4519.5" y="-10.8" font-family="Helvetica,sans-Serif" font-size="14.00">
-     2023-03-09 22:05:23.270136
+     2023-03-14 17:02:11.913219
     </text>
     <polygon fill="none" stroke="#888888" points="4432,-4 4432,-44 4697,-44 4697,-4 4432,-4" /> <!-- allocationtoken_a08ccbef -->
     <g id="node1" class="node">
@@ -5103,12 +5103,12 @@ td.section {
      <text text-anchor="start" x="4319" y="-5486.3" font-family="Helvetica,sans-Serif" font-weight="bold" font-style="italic" font-size="14.00">
       id
      </text>
-     <text text-anchor="start" x="4446" y="-5485.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="4460" y="-5485.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text>
      <text text-anchor="start" x="4496" y="-5485.3" font-family="Helvetica,sans-Serif" font-size="14.00">
       bigserial not null
      </text>
-     <text text-anchor="start" x="4446" y="-5466.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="4460" y="-5466.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text>
      <text text-anchor="start" x="4496" y="-5466.3" font-family="Helvetica,sans-Serif" font-size="14.00">
       auto-incremented
@@ -5116,7 +5116,7 @@ td.section {
      <text text-anchor="start" x="4319" y="-5447.3" font-family="Helvetica,sans-Serif" font-size="14.00">
       name
      </text>
-     <text text-anchor="start" x="4446" y="-5447.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="4460" y="-5447.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text>
      <text text-anchor="start" x="4496" y="-5447.3" font-family="Helvetica,sans-Serif" font-size="14.00">
       text not null
@@ -5124,7 +5124,7 @@ td.section {
      <text text-anchor="start" x="4319" y="-5428.3" font-family="Helvetica,sans-Serif" font-size="14.00">
       request_time
      </text>
-     <text text-anchor="start" x="4446" y="-5428.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="4460" y="-5428.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text>
      <text text-anchor="start" x="4496" y="-5428.3" font-family="Helvetica,sans-Serif" font-size="14.00">
       timestamptz not null
@@ -5132,7 +5132,7 @@ td.section {
      <text text-anchor="start" x="4319" y="-5409.3" font-family="Helvetica,sans-Serif" font-size="14.00">
       tld
      </text>
-     <text text-anchor="start" x="4446" y="-5409.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="4460" y="-5409.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text>
      <text text-anchor="start" x="4496" y="-5409.3" font-family="Helvetica,sans-Serif" font-size="14.00">
       text not null
@@ -5140,15 +5140,15 @@ td.section {
      <text text-anchor="start" x="4319" y="-5390.3" font-family="Helvetica,sans-Serif" font-size="14.00">
       type
      </text>
-     <text text-anchor="start" x="4446" y="-5390.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="4460" y="-5390.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text>
      <text text-anchor="start" x="4496" y="-5390.3" font-family="Helvetica,sans-Serif" font-size="14.00">
       text not null
      </text>
      <text text-anchor="start" x="4319" y="-5371.3" font-family="Helvetica,sans-Serif" font-size="14.00">
-      process_time
+      last_process_time
      </text>
-     <text text-anchor="start" x="4446" y="-5371.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="4460" y="-5371.3" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text>
      <text text-anchor="start" x="4496" y="-5371.3" font-family="Helvetica,sans-Serif" font-size="14.00">
       timestamptz not null
@@ -9199,7 +9199,7 @@ td.section {
     </tr>
     <tr>
      <td class="spacer"></td>
-     <td class="minwidth">process_time</td>
+     <td class="minwidth">last_process_time</td>
      <td class="minwidth">timestamptz not null</td>
     </tr>
     <tr>
@@ -9242,12 +9242,12 @@ td.section {
      <td colspan="3"></td>
     </tr>
     <tr>
-     <td colspan="2" class="name">idx3i7i2ktts9d7lcjbs34h0pvwo</td>
+     <td colspan="2" class="name">idxfdk2xpil2x1gh0omt84k2y3o1</td>
      <td class="description right">[non-unique index]</td>
     </tr>
     <tr>
      <td class="spacer"></td>
-     <td class="minwidth">process_time</td>
+     <td class="minwidth">last_process_time</td>
      <td class="minwidth">ascending</td>
     </tr>
     <tr>
