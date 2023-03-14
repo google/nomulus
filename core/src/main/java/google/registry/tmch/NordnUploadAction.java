@@ -46,6 +46,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.flogger.FluentLogger;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.Domain;
 import google.registry.request.Action;
@@ -57,7 +58,6 @@ import google.registry.request.UrlConnectionUtils;
 import google.registry.request.auth.Auth;
 import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import google.registry.util.Clock;
-import google.registry.util.CloudTasksUtils;
 import google.registry.util.Retrier;
 import google.registry.util.UrlConnectionException;
 import java.io.IOException;
@@ -333,7 +333,7 @@ public final class NordnUploadAction implements Runnable {
     // The actionLogId is used to uniquely associate the verify task back to the upload task.
     return cloudTasksUtils.createPostTaskWithDelay(
         NordnVerifyAction.PATH,
-        Service.BACKEND.toString(),
+        Service.BACKEND,
         ImmutableMultimap.<String, String>builder()
             .put(NordnVerifyAction.NORDN_URL_PARAM, url.toString())
             .put(NordnVerifyAction.NORDN_LOG_ID_PARAM, actionLogId)

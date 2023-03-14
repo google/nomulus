@@ -28,11 +28,11 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableMultimap;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.model.rde.RdeMode;
 import google.registry.rde.RdeStagingAction;
 import google.registry.request.Action.Service;
 import google.registry.tools.params.DateTimeParameter;
-import google.registry.util.CloudTasksUtils;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -122,7 +122,7 @@ final class GenerateEscrowDepositCommand implements Command {
     cloudTasksUtils.enqueue(
         RDE_REPORT_QUEUE,
         cloudTasksUtils.createPostTask(
-            RdeStagingAction.PATH, Service.BACKEND.toString(), paramsBuilder.build()));
+            RdeStagingAction.PATH, Service.BACKEND, paramsBuilder.build()));
   }
 
 }

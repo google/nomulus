@@ -26,6 +26,7 @@ import com.google.api.services.dataflow.model.Job;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
@@ -33,7 +34,6 @@ import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.util.CloudTasksUtils;
 import java.io.IOException;
 import javax.inject.Inject;
 import org.joda.time.YearMonth;
@@ -127,7 +127,7 @@ public class PublishInvoicesAction implements Runnable {
         BillingModule.CRON_QUEUE,
         cloudTasksUtils.createPostTask(
             CopyDetailReportsAction.PATH,
-            Service.BACKEND.toString(),
+            Service.BACKEND,
             ImmutableMultimap.of(PARAM_YEAR_MONTH, yearMonth.toString())));
   }
 }

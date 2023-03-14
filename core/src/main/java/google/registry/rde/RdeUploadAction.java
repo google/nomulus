@@ -38,6 +38,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpProgressMonitor;
 import dagger.Lazy;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.KeyModule.Key;
@@ -56,7 +57,6 @@ import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
-import google.registry.util.CloudTasksUtils;
 import google.registry.util.Retrier;
 import google.registry.util.TeeOutputStream;
 import java.io.ByteArrayInputStream;
@@ -131,8 +131,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     prefix.ifPresent(s -> params.put(RdeModule.PARAM_PREFIX, s));
     cloudTasksUtils.enqueue(
         RDE_REPORT_QUEUE,
-        cloudTasksUtils.createPostTask(
-            RdeReportAction.PATH, Service.BACKEND.getServiceId(), params));
+        cloudTasksUtils.createPostTask(RdeReportAction.PATH, Service.BACKEND, params));
   }
 
   @Override

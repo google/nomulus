@@ -930,7 +930,7 @@ public final class RegistryConfig {
      * <p>Note that this uses {@code @Named} instead of {@code @Config} so that it can be used from
      * the low-level util package, which cannot have a dependency on the config package.
      *
-     * @see google.registry.util.CloudTasksUtils
+     * @see google.registry.batch.CloudTasksUtils
      */
     @Provides
     @Named("transientFailureRetries")

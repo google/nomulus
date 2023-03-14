@@ -36,6 +36,7 @@ import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.batch.AsyncTaskEnqueuer;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.dns.DnsQueue;
 import google.registry.dns.RefreshDnsOnHostRenameAction;
 import google.registry.flows.EppException;
@@ -65,7 +66,6 @@ import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.persistence.VKey;
 import google.registry.request.Action.Service;
-import google.registry.util.CloudTasksUtils;
 import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -280,7 +280,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
       Task task =
           cloudTasksUtils.createPostTask(
               RefreshDnsOnHostRenameAction.PATH,
-              Service.BACKEND.toString(),
+              Service.BACKEND,
               ImmutableMultimap.of(PARAM_HOST_KEY, existingHost.createVKey().stringify()));
       cloudTasksUtils.enqueue(QUEUE_HOST_RENAME, task);
     }
