@@ -18,6 +18,7 @@ import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static google.registry.request.auth.AuthLevel.APP;
 
 import com.google.auth.oauth2.TokenVerifier;
+import com.google.common.collect.ImmutableList;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.auth.AuthModule.ServiceAccount;
 import javax.inject.Inject;
@@ -30,16 +31,16 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class ServiceAccountAuthenticationMechanism extends IdTokenAuthenticationBase {
 
-  private final String cloudSchedulerEmailPrefix;
   private static final String BEARER_PREFIX = "Bearer ";
+
+  private final ImmutableList<String> serviceAccountEmails;
 
   @Inject
   public ServiceAccountAuthenticationMechanism(
       @ServiceAccount TokenVerifier tokenVerifier,
-      @Config("cloudSchedulerServiceAccountEmail") String cloudSchedulerEmailPrefix) {
-
+      @Config("serviceAccountEmails") ImmutableList<String> serviceAccountEmails) {
     super(tokenVerifier);
-    this.cloudSchedulerEmailPrefix = cloudSchedulerEmailPrefix;
+    this.serviceAccountEmails = serviceAccountEmails;
   }
 
   @Override
@@ -53,7 +54,7 @@ public class ServiceAccountAuthenticationMechanism extends IdTokenAuthentication
 
   @Override
   AuthResult authResultFromEmail(String emailAddress) {
-    if (emailAddress.equals(cloudSchedulerEmailPrefix)) {
+    if (serviceAccountEmails.stream().anyMatch(e -> e.equals(emailAddress))) {
       return AuthResult.create(APP);
     } else {
       return AuthResult.NOT_AUTHENTICATED;

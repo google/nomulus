@@ -22,6 +22,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.api.client.json.webtoken.JsonWebSignature.Header;
 import com.google.auth.oauth2.TokenVerifier;
+import com.google.common.collect.ImmutableList;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,8 @@ class ServiceAccountAuthenticationMechanismTest {
   @BeforeEach
   void beforeEach() throws Exception {
     serviceAccountAuthenticationMechanism =
-        new ServiceAccountAuthenticationMechanism(tokenVerifier, "sa-prefix@email.com");
+        new ServiceAccountAuthenticationMechanism(
+            tokenVerifier, ImmutableList.of("sa-prefix@email.com", "cloud-tasks@email.com"));
     when(request.getHeader(AUTHORIZATION)).thenReturn("Bearer jwtValue");
     Payload payload = new Payload();
     payload.setEmail("sa-prefix@email.com");
@@ -54,6 +56,18 @@ class ServiceAccountAuthenticationMechanismTest {
 
   @Test
   void testSuccess_authenticates() throws Exception {
+    AuthResult authResult = serviceAccountAuthenticationMechanism.authenticate(request);
+    assertThat(authResult.isAuthenticated()).isTrue();
+    assertThat(authResult.authLevel()).isEqualTo(AuthLevel.APP);
+  }
+
+  @Test
+  void testSuccess_secondEmail() throws Exception {
+    Payload payload = new Payload();
+    payload.setEmail("cloud-tasks@email.com");
+    token = new JsonWebSignature(new Header(), payload, new byte[0], new byte[0]);
+    when(tokenVerifier.verify("jwtValue")).thenReturn(token);
+
     AuthResult authResult = serviceAccountAuthenticationMechanism.authenticate(request);
     assertThat(authResult.isAuthenticated()).isTrue();
     assertThat(authResult.authLevel()).isEqualTo(AuthLevel.APP);
