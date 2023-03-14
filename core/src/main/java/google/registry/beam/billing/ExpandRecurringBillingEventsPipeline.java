@@ -385,6 +385,10 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
       // It is OK to always create a OneTime, even though the domain might be deleted or transferred
       // later during autorenew grace period, as a cancellation will always be written out in those
       // instances.
+      // The best way to handle any unexpected behavior is to simply drop the recurring from
+      // expansion, if its new state still calls for an expansion, it would be picked up the next
+      // time
+      // the pipeline runs.
       OneTime oneTime = null;
       try {
         oneTime =
