@@ -107,9 +107,9 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("cloudSchedulerServiceAccountEmail")
-    public static String provideCloudSchedulerServiceAccountEmail(RegistryConfigSettings config) {
-      return config.gcpProject.cloudSchedulerServiceAccountEmail;
+    @Config("serviceAccountEmails")
+    public static ImmutableList<String> provideServiceAccountEmails(RegistryConfigSettings config) {
+      return ImmutableList.copyOf(config.gcpProject.serviceAccountEmails);
     }
 
     @Provides
