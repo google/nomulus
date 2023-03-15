@@ -138,3 +138,4 @@ V137__add_process_time_column.sql
 V138__drop_dns_refresh_request_time_column.sql
 V139__add_allowed_epp_actions_column.sql
 V140__rename_process_time_column_in_dns_refresh_request_table.sql
+V141__add_ttl_columns_to_tld.sql
