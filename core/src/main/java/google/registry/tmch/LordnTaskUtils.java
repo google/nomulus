@@ -14,21 +14,15 @@
 
 package google.registry.tmch;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.appengine.api.taskqueue.TaskOptions;
-import com.google.appengine.api.taskqueue.TaskOptions.Method;
 import com.google.common.base.Joiner;
 import google.registry.model.domain.Domain;
 import google.registry.model.registrar.Registrar;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
- * Helper methods for creating tasks containing CSV line data in the lordn-sunrise and lordn-claims
- * queues based on {@link Domain} changes.
+ * Helper methods for creating tasks containing CSV line data based on {@link Domain#getLordnPhase}.
  *
  * <p>Note that, per the <a href="https://tools.ietf.org/html/draft-ietf-regext-tmch-func-spec-04">
  * TMCH RFC</a>, while the application-datetime data is optional (which we never send because there
@@ -36,65 +30,32 @@ import org.joda.time.DateTime;
  */
 public final class LordnTaskUtils {
 
-  public static final String QUEUE_SUNRISE = "lordn-sunrise";
-  public static final String QUEUE_CLAIMS = "lordn-claims";
   public static final String COLUMNS_CLAIMS =
       "roid,domain-name,notice-id,registrar-id,"
           + "registration-datetime,ack-datetime,application-datetime";
   public static final String COLUMNS_SUNRISE =
       "roid,domain-name,SMD-id,registrar-id," + "registration-datetime,application-datetime";
 
-  /** Enqueues a task in the LORDN queue representing a line of CSV for LORDN export. */
-  public static void enqueueDomainTask(Domain domain) {
-    tm().assertInTransaction();
-    // This method needs to use transactionTime as the Domain's creationTime because CreationTime
-    // isn't yet populated when this method is called during the resource flow.
-    String tld = domain.getTld();
-    if (domain.getLaunchNotice() == null) {
-      getQueue(QUEUE_SUNRISE)
-          .add(
-              TaskOptions.Builder.withTag(tld)
-                  .method(Method.PULL)
-                  .payload(getCsvLineForSunriseDomain(domain, tm().getTransactionTime())));
-    } else {
-      getQueue(QUEUE_CLAIMS)
-          .add(
-              TaskOptions.Builder.withTag(tld)
-                  .method(Method.PULL)
-                  .payload(getCsvLineForClaimsDomain(domain, tm().getTransactionTime())));
-    }
-  }
-
   /** Returns the corresponding CSV LORDN line for a sunrise domain. */
   public static String getCsvLineForSunriseDomain(Domain domain) {
-    return getCsvLineForSunriseDomain(domain, domain.getCreationTime());
-  }
-
-  // TODO: Merge into the function above after pull queue migration.
-  private static String getCsvLineForSunriseDomain(Domain domain, DateTime transactionTime) {
     return Joiner.on(',')
         .join(
             domain.getRepoId(),
             domain.getDomainName(),
             domain.getSmdId(),
             getIanaIdentifier(domain.getCreationRegistrarId()),
-            transactionTime); // Used as creation time.
+            domain.getCreationTime()); // Used as creation time.
   }
 
   /** Returns the corresponding CSV LORDN line for a claims domain. */
   public static String getCsvLineForClaimsDomain(Domain domain) {
-    return getCsvLineForClaimsDomain(domain, domain.getCreationTime());
-  }
-
-  // TODO: Merge into the function above after pull queue migration.
-  private static String getCsvLineForClaimsDomain(Domain domain, DateTime transactionTime) {
     return Joiner.on(',')
         .join(
             domain.getRepoId(),
             domain.getDomainName(),
             domain.getLaunchNotice().getNoticeId().getTcnId(),
             getIanaIdentifier(domain.getCreationRegistrarId()),
-            transactionTime, // Used as creation time.
+            domain.getCreationTime(), // Used as creation time.
             domain.getLaunchNotice().getAcceptedTime());
   }
 

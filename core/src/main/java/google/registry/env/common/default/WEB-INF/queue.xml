@@ -6,6 +6,7 @@
     <mode>pull</mode>
   </queue>
 
+  <!-- Queue for publishing DNS updates in batches. -->
   <queue>
     <name>dns-publish</name>
     <rate>100/s</rate>
@@ -18,6 +19,7 @@
     </retry-parameters>
   </queue>
 
+  <!-- Queue for uploading RDE deposits to the escrow provider. -->
   <queue>
     <name>rde-upload</name>
     <rate>10/m</rate>
@@ -28,6 +30,7 @@
     </retry-parameters>
   </queue>
 
+  <!-- Queue for uploading RDE reports to ICANN. -->
   <queue>
     <name>rde-report</name>
     <rate>1/s</rate>
@@ -37,6 +40,7 @@
     </retry-parameters>
   </queue>
 
+  <!-- Queue for copying BRDA deposits to GCS. -->
   <queue>
     <name>brda</name>
     <rate>1/m</rate>
@@ -74,7 +78,7 @@
     </retry-parameters>
   </queue>
 
-  <!-- Queue for tasks to produce LORDN CSV reports, either by the query or queue method. -->
+  <!-- Queue for tasks to produce LORDN CSV reports, populated by a Cloud Scheduler fanout job. -->
   <queue>
     <name>nordn</name>
     <rate>1/s</rate>
@@ -82,18 +86,6 @@
     <retry-parameters>
       <task-age-limit>11h</task-age-limit>  <!-- cron interval minus hour -->
     </retry-parameters>
-  </queue>
-
-  <!-- Queue for LORDN Claims CSV rows to be periodically queried and then uploaded in batches. -->
-  <queue>
-    <name>lordn-claims</name>
-    <mode>pull</mode>
-  </queue>
-
-  <!-- Queue for LORDN Sunrise CSV rows to be periodically queried and then uploaded in batches. -->
-  <queue>
-    <name>lordn-sunrise</name>
-    <mode>pull</mode>
   </queue>
 
   <!-- Queue for tasks that sync data to Google Spreadsheets. -->

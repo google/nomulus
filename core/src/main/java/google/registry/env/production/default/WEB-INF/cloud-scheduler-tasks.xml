@@ -174,30 +174,6 @@
   </task>
 
   <task>
-    <url><![CDATA[/_dr/cron/fanout?queue=nordn&endpoint=/_dr/task/nordnUpload&forEachRealTld&lordnPhase=sunrise&pullQueue]]></url>
-    <name>nordnUploadSunrisePullQueue</name>
-    <description>
-      This job uploads LORDN Sunrise CSV files for each TLD to MarksDB using
-      pull queue. It should be run at most every three hours, or at absolute
-      minimum every 26 hours.
-    </description>
-    <!-- This may be set anywhere between "every 3 hours" and "every 25 hours". -->
-    <schedule>0 */12 * * *</schedule>
-  </task>
-
-  <task>
-    <url><![CDATA[/_dr/cron/fanout?queue=nordn&endpoint=/_dr/task/nordnUpload&forEachRealTld&lordnPhase=claims&pullQueue]]></url>
-    <name>nordnUploadClaimsPullQueue</name>
-    <description>
-      This job uploads LORDN Claims CSV files for each TLD to MarksDB using pull
-      queue. It should be run at most every three hours, or at absolute minimum
-      every 26 hours.
-    </description>
-    <!-- This may be set anywhere between "every 3 hours" and "every 25 hours". -->
-    <schedule>0 */12 * * *</schedule>
-  </task>
-
-  <task>
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/deleteProberData&runInEmpty]]></url>
     <name>deleteProberData</name>
     <description>
