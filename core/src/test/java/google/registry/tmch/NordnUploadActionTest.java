@@ -14,7 +14,6 @@
 
 package google.registry.tmch;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
@@ -25,7 +24,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newDomain;
-import static google.registry.testing.DatabaseHelper.persistDomainAndEnqueueLordn;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
@@ -63,7 +61,6 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.FakeUrlConnectionService;
-import google.registry.testing.TaskQueueExtension;
 import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import google.registry.util.Retrier;
 import google.registry.util.UrlConnectionException;
@@ -74,14 +71,11 @@ import java.net.URL;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 /** Unit tests for {@link NordnUploadAction}. */
 class NordnUploadActionTest {
@@ -110,8 +104,6 @@ class NordnUploadActionTest {
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
-
-  @RegisterExtension final TaskQueueExtension taskQueueExtension = new TaskQueueExtension();
 
   private final LordnRequestInitializer lordnRequestInitializer =
       new LordnRequestInitializer(Optional.of("attack"));
@@ -145,7 +137,6 @@ class NordnUploadActionTest {
     action.tmchMarksdbUrl = "http://127.0.0.1";
     action.random = new SecureRandom();
     action.retrier = new Retrier(new FakeSleeper(clock), 3);
-    action.usePullQueue = Optional.empty();
   }
 
   @Test
@@ -229,23 +220,21 @@ class NordnUploadActionTest {
     cloudTasksHelper.assertNoTasksEnqueued(NordnVerifyAction.QUEUE);
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void testSuccess_claimsMode(boolean usePullQueue) throws Exception {
-    testRun("claims", "claims-landrush1.tld", "claims-landrush2.tld", CLAIMS_CSV, usePullQueue);
+  @Test
+  void testSuccess_claimsMode() throws Exception {
+    testRun("claims", "claims-landrush1.tld", "claims-landrush2.tld", CLAIMS_CSV);
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void testSuccess_sunriseMode(boolean usePullQueue) throws Exception {
-    testRun("sunrise", "sunrise1.tld", "sunrise2.tld", SUNRISE_CSV, usePullQueue);
+  @Test
+  void testSuccess_sunriseMode() throws Exception {
+    testRun("sunrise", "sunrise1.tld", "sunrise2.tld", SUNRISE_CSV);
   }
 
   @Test
   void testSuccess_noResponseContent_stillWorksNormally() throws Exception {
     // Returning null only affects logging.
     when(httpUrlConnection.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[] {}));
-    testRun("claims", "claims-landrush1.tld", "claims-landrush2.tld", CLAIMS_CSV, false);
+    testRun("claims", "claims-landrush1.tld", "claims-landrush2.tld", CLAIMS_CSV);
   }
 
   @Test
@@ -268,7 +257,7 @@ class NordnUploadActionTest {
   }
 
   private void persistClaimsModeDomain() {
-    persistDomainAndEnqueueLordn(
+    persistResource(
         newDomain("claims-landrush2.tld")
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc())
@@ -278,7 +267,7 @@ class NordnUploadActionTest {
             .setLordnPhase(LordnPhase.CLAIMS)
             .build());
     clock.advanceBy(Duration.standardDays(1));
-    persistDomainAndEnqueueLordn(
+    persistResource(
         newDomain("claims-landrush1.tld")
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc())
@@ -289,7 +278,7 @@ class NordnUploadActionTest {
   }
 
   private void persistSunriseModeDomain() {
-    persistDomainAndEnqueueLordn(
+    persistResource(
         newDomain("sunrise2.tld")
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc())
@@ -298,7 +287,7 @@ class NordnUploadActionTest {
             .setLordnPhase(LordnPhase.SUNRISE)
             .build());
     clock.advanceBy(Duration.standardDays(1));
-    persistDomainAndEnqueueLordn(
+    persistResource(
         newDomain("sunrise1.tld")
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc())
@@ -320,10 +309,7 @@ class NordnUploadActionTest {
     assertThat(domain.getLordnPhase()).isEqualTo(LordnPhase.NONE);
   }
 
-  private void testRun(
-      String phase, String domain1, String domain2, String csv, boolean usePullQueue)
-      throws Exception {
-    action.usePullQueue = Optional.of(usePullQueue);
+  private void testRun(String phase, String domain1, String domain2, String csv) throws Exception {
     action.phase = phase;
     action.run();
     verify(httpUrlConnection)
@@ -335,18 +321,8 @@ class NordnUploadActionTest {
     assertThat(httpUrlConnection.getURL())
         .isEqualTo(new URL("http://127.0.0.1/LORDN/tld/" + phase));
     assertThat(connectionOutputStream.toString(UTF_8)).contains(csv);
-    if (!usePullQueue) {
-      verifyColumnCleared(domain1);
-      verifyColumnCleared(domain2);
-    } else {
-      assertThat(
-              getQueue("lordn-" + phase)
-                  .leaseTasks(
-                      LeaseOptions.Builder.withTag("tld")
-                          .leasePeriod(1, TimeUnit.HOURS)
-                          .countLimit(100)))
-          .isEmpty();
-    }
+    verifyColumnCleared(domain1);
+    verifyColumnCleared(domain2);
     cloudTasksHelper.assertTasksEnqueued(
         NordnVerifyAction.QUEUE,
         new TaskMatcher()

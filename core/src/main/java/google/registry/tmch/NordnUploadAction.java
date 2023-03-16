@@ -14,7 +14,6 @@
 
 package google.registry.tmch;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.HttpHeaders.LOCATION;
@@ -43,7 +42,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.flogger.FluentLogger;
 import google.registry.batch.CloudTasksUtils;
@@ -66,7 +64,6 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
@@ -90,8 +87,6 @@ public final class NordnUploadAction implements Runnable {
 
   static final String PATH = "/_dr/task/nordnUpload";
   static final String LORDN_PHASE_PARAM = "lordnPhase";
-  // TODO: Delete after migrating off of pull queue.
-  static final String PULL_QUEUE_PARAM = "pullQueue";
 
   private static final int BATCH_SIZE = 1000;
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -122,10 +117,6 @@ public final class NordnUploadAction implements Runnable {
   @Parameter(RequestParameters.PARAM_TLD)
   String tld;
 
-  @Inject
-  @Parameter(PULL_QUEUE_PARAM)
-  Optional<Boolean> usePullQueue;
-
   @Inject CloudTasksUtils cloudTasksUtils;
 
   @Inject
@@ -146,67 +137,59 @@ public final class NordnUploadAction implements Runnable {
 
   @Override
   public void run() {
-    if (usePullQueue.orElse(false)) {
-      try {
-        processLordnTasks();
-      } catch (IOException | GeneralSecurityException e) {
-        throw new RuntimeException(e);
-      }
-    } else {
-      checkArgument(
-          phase.equals(PARAM_LORDN_PHASE_SUNRISE) || phase.equals(PARAM_LORDN_PHASE_CLAIMS),
-          "Invalid phase specified to NordnUploadAction: %s.",
-          phase);
-      tm().transact(
-              () -> {
-                // Note here that we load all domains pending Nordn in one batch, which should not
-                // be a problem for the rate of domain registration that we see. If we anticipate
-                // a peak in claims during TLD launch (sunrise is NOT first-come-first-serve, so
-                // there should be no expectation of a peak during it), we can consider temporarily
-                // increasing the frequency of Nordn upload to reduce the size of each batch.
-                //
-                // We did not further divide the domains into smaller batches because the
-                // read-upload-write operation per small batch needs to be inside a single
-                // transaction to prevent race conditions, and running several uploads in rapid
-                // sucession will likely overwhelm the MarksDB upload server, which recommands a
-                // maximum upload frequency of every 3 hours.
-                //
-                // See:
-                // https://datatracker.ietf.org/doc/html/draft-ietf-regext-tmch-func-spec-01#section-5.2.3.3
-                List<Domain> domains =
-                    tm().createQueryComposer(Domain.class)
-                        .where("lordnPhase", EQ, LordnPhase.valueOf(Ascii.toUpperCase(phase)))
-                        .where("tld", EQ, tld)
-                        .orderBy("creationTime")
-                        .list();
-                if (domains.isEmpty()) {
-                  return;
-                }
-                StringBuilder csv = new StringBuilder();
-                ImmutableList.Builder<Domain> newDomains = new ImmutableList.Builder<>();
+    checkArgument(
+        phase.equals(PARAM_LORDN_PHASE_SUNRISE) || phase.equals(PARAM_LORDN_PHASE_CLAIMS),
+        "Invalid phase specified to NordnUploadAction: %s.",
+        phase);
+    tm().transact(
+            () -> {
+              // Note here that we load all domains pending Nordn in one batch, which should not
+              // be a problem for the rate of domain registration that we see. If we anticipate
+              // a peak in claims during TLD launch (sunrise is NOT first-come-first-serve, so
+              // there should be no expectation of a peak during it), we can consider temporarily
+              // increasing the frequency of Nordn upload to reduce the size of each batch.
+              //
+              // We did not further divide the domains into smaller batches because the
+              // read-upload-write operation per small batch needs to be inside a single
+              // transaction to prevent race conditions, and running several uploads in rapid
+              // sucession will likely overwhelm the MarksDB upload server, which recommands a
+              // maximum upload frequency of every 3 hours.
+              //
+              // See:
+              // https://datatracker.ietf.org/doc/html/draft-ietf-regext-tmch-func-spec-01#section-5.2.3.3
+              List<Domain> domains =
+                  tm().createQueryComposer(Domain.class)
+                      .where("lordnPhase", EQ, LordnPhase.valueOf(Ascii.toUpperCase(phase)))
+                      .where("tld", EQ, tld)
+                      .orderBy("creationTime")
+                      .list();
+              if (domains.isEmpty()) {
+                return;
+              }
+              StringBuilder csv = new StringBuilder();
+              ImmutableList.Builder<Domain> newDomains = new ImmutableList.Builder<>();
 
-                domains.forEach(
-                    domain -> {
-                      if (phase.equals(PARAM_LORDN_PHASE_SUNRISE)) {
-                        csv.append(getCsvLineForSunriseDomain(domain)).append('\n');
-                      } else {
-                        csv.append(getCsvLineForClaimsDomain(domain)).append('\n');
-                      }
-                      Domain newDomain = domain.asBuilder().setLordnPhase(LordnPhase.NONE).build();
-                      newDomains.add(newDomain);
-                    });
-                String columns =
-                    phase.equals(PARAM_LORDN_PHASE_SUNRISE) ? COLUMNS_SUNRISE : COLUMNS_CLAIMS;
-                String header =
-                    String.format("1,%s,%d\n%s\n", clock.nowUtc(), domains.size(), columns);
-                try {
-                  uploadCsvToLordn(String.format("/LORDN/%s/%s", tld, phase), header + csv);
-                } catch (IOException | GeneralSecurityException e) {
-                  throw new RuntimeException(e);
-                }
-                tm().updateAll(newDomains.build());
-              });
-    }
+              domains.forEach(
+                  domain -> {
+                    if (phase.equals(PARAM_LORDN_PHASE_SUNRISE)) {
+                      csv.append(getCsvLineForSunriseDomain(domain)).append('\n');
+                    } else {
+                      csv.append(getCsvLineForClaimsDomain(domain)).append('\n');
+                    }
+                    Domain newDomain = domain.asBuilder().setLordnPhase(LordnPhase.NONE).build();
+                    newDomains.add(newDomain);
+                  });
+              String columns =
+                  phase.equals(PARAM_LORDN_PHASE_SUNRISE) ? COLUMNS_SUNRISE : COLUMNS_CLAIMS;
+              String header =
+                  String.format("1,%s,%d\n%s\n", clock.nowUtc(), domains.size(), columns);
+              try {
+                uploadCsvToLordn(String.format("/LORDN/%s/%s", tld, phase), header + csv);
+              } catch (IOException | GeneralSecurityException e) {
+                throw new RuntimeException(e);
+              }
+              tm().updateAll(newDomains.build());
+            });
   }
 
   /**
@@ -246,35 +229,6 @@ public final class NordnUploadAction implements Runnable {
         return allTasks.build();
       }
       allTasks.addAll(tasks);
-    }
-  }
-
-  private void processLordnTasks() throws IOException, GeneralSecurityException {
-    checkArgument(
-        phase.equals(PARAM_LORDN_PHASE_SUNRISE) || phase.equals(PARAM_LORDN_PHASE_CLAIMS),
-        "Invalid phase specified to NordnUploadAction: %s.",
-        phase);
-    DateTime now = clock.nowUtc();
-    Queue queue =
-        getQueue(
-            phase.equals(PARAM_LORDN_PHASE_SUNRISE)
-                ? LordnTaskUtils.QUEUE_SUNRISE
-                : LordnTaskUtils.QUEUE_CLAIMS);
-    String columns = phase.equals(PARAM_LORDN_PHASE_SUNRISE) ? COLUMNS_SUNRISE : COLUMNS_CLAIMS;
-    List<TaskHandle> tasks = loadAllTasks(queue, tld);
-    // Note: This upload/task deletion isn't done atomically (it's not clear how one would do so
-    // anyway). As a result, it is possible that the upload might succeed yet the deletion of
-    // enqueued tasks might fail. If so, this would result in the same lines being uploaded to NORDN
-    // across multiple uploads. This is probably OK; all that we really cannot have is a missing
-    // line.
-    if (!tasks.isEmpty()) {
-      String csvData = convertTasksToCsv(tasks, now, columns);
-      uploadCsvToLordn(String.format("/LORDN/%s/%s", tld, phase), csvData);
-      Lists.partition(tasks, BATCH_SIZE)
-          .forEach(
-              batch ->
-                  retrier.callWithRetry(
-                      () -> queue.deleteTask(batch), TransientFailureException.class));
     }
   }
 

@@ -54,10 +54,6 @@ import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
-import static google.registry.tmch.LordnTaskUtils.QUEUE_CLAIMS;
-import static google.registry.tmch.LordnTaskUtils.QUEUE_SUNRISE;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;
@@ -154,7 +150,6 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
-import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -181,7 +176,6 @@ import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.TaskQueueExtension;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import google.registry.tmch.SmdrlCsvParser;
 import google.registry.tmch.TmchData;
@@ -197,8 +191,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
 import org.junitpioneer.jupiter.cartesian.CartesianTest.Values;
 
@@ -402,32 +394,16 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .hasLaunchNotice(null)
         .and()
         .hasLordnPhase(LordnPhase.NONE);
-    assertNoTasksEnqueued(QUEUE_CLAIMS, QUEUE_SUNRISE);
-    assertNoTasksEnqueued(QUEUE_CLAIMS, QUEUE_SUNRISE);
   }
 
-  private void assertSunriseLordn(String domainName) throws Exception {
+  private void assertSunriseLordn() throws Exception {
     assertAboutDomains()
         .that(reloadResourceByForeignKey())
         .hasSmdId(SMD_ID)
         .and()
-        .hasLaunchNotice(null);
-    if (DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc())
-            .equals(MigrationState.NORDN_SQL)
-        || DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc())
-            .equals(MigrationState.DNS_SQL)) {
-      assertAboutDomains().that(reloadResourceByForeignKey()).hasLordnPhase(LordnPhase.SUNRISE);
-    } else {
-      String expectedPayload =
-          String.format(
-              "%s,%s,%s,1,%s",
-              reloadResourceByForeignKey().getRepoId(),
-              domainName,
-              SMD_ID,
-              SMD_VALID_TIME.plusMillis(17));
-      assertTasksEnqueued(QUEUE_SUNRISE, new TaskMatcher().payload(expectedPayload));
-      assertAboutDomains().that(reloadResourceByForeignKey()).hasLordnPhase(LordnPhase.NONE);
-    }
+        .hasLaunchNotice(null)
+        .and()
+        .hasLordnPhase(LordnPhase.SUNRISE);
   }
 
   private void assertClaimsLordn() throws Exception {
@@ -440,22 +416,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "370d0b7c9223372036854775807",
                 "tmch",
                 DateTime.parse("2010-08-16T09:00:00.0Z"),
-                DateTime.parse("2009-08-16T09:00:00.0Z")));
-    if ((DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc())
-            .equals(MigrationState.NORDN_SQL)
-        || DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc())
-            .equals(MigrationState.DNS_SQL))) {
-      assertAboutDomains().that(reloadResourceByForeignKey()).hasLordnPhase(LordnPhase.CLAIMS);
-    } else {
-      TaskMatcher task =
-          new TaskMatcher()
-              .payload(
-                  reloadResourceByForeignKey().getRepoId()
-                      + ",example-one.tld,370d0b7c9223372036854775807,1,"
-                      + "2009-08-16T09:00:00.017Z,2009-08-16T09:00:00.000Z");
-      assertTasksEnqueued(QUEUE_CLAIMS, task);
-      assertAboutDomains().that(reloadResourceByForeignKey()).hasLordnPhase(LordnPhase.NONE);
-    }
+                DateTime.parse("2009-08-16T09:00:00.0Z")))
+        .and()
+        .hasLordnPhase(LordnPhase.CLAIMS);
   }
 
   private void doSuccessfulTest(
@@ -979,12 +942,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void testSuccess_claimsNotice(boolean usePullQueue) throws Exception {
-    if (!usePullQueue) {
-      useNordnSql();
-    }
+  @Test
+  void testSuccess_claimsNotice() throws Exception {
     clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
     setEppInput("domain_create_claim_notice.xml");
     persistContactsAndHosts();
@@ -994,12 +953,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertClaimsLordn();
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void testSuccess_claimsNoticeInQuietPeriod(boolean usePullQueue) throws Exception {
-    if (!usePullQueue) {
-      useNordnSql();
-    }
+  @Test
+  void testSuccess_claimsNoticeInQuietPeriod() throws Exception {
     allocationToken =
         persistResource(
             new AllocationToken.Builder()
@@ -1045,7 +1000,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     EppException thrown = assertThrows(MissingClaimsNoticeException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
-    assertNoTasksEnqueued(QUEUE_CLAIMS, QUEUE_SUNRISE);
   }
 
   @Test
@@ -1421,12 +1375,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void testSuccess_anchorTenant_withClaims(boolean usePullQueue) throws Exception {
-    if (!usePullQueue) {
-      useNordnSql();
-    }
+  @Test
+  void testSuccess_anchorTenant_withClaims() throws Exception {
     persistResource(
         new AllocationToken.Builder()
             .setDomainName("example-one.tld")
@@ -1494,12 +1444,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE, ANCHOR_TENANT));
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void testSuccess_anchorTenantInSunrise_withSignedMark(boolean usePullQueue) throws Exception {
-    if (!usePullQueue) {
-      useNordnSql();
-    }
+  @Test
+  void testSuccess_anchorTenantInSunrise_withSignedMark() throws Exception {
     allocationToken =
         persistResource(
             new AllocationToken.Builder()
@@ -1529,7 +1475,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 SMD_VALID_TIME.plusYears(2).toString())));
     assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT, SUNRISE), allocationToken);
     dnsUtilsHelper.assertDomainDnsRequests("test-validate.tld");
-    assertSunriseLordn("test-validate.tld");
+    assertSunriseLordn();
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
 
@@ -2099,13 +2045,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertSuccessfulCreate("tld", ImmutableSet.of(RESERVED));
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void testSuccess_reservedNameCollisionDomain_inSunrise_setsServerHoldAndPollMessage(
-      boolean usePullQueue) throws Exception {
-    if (!usePullQueue) {
-      useNordnSql();
-    }
+  @Test
+  void testSuccess_reservedNameCollisionDomain_inSunrise_setsServerHoldAndPollMessage()
+      throws Exception {
     persistResource(
         Registry.get("tld")
             .asBuilder()
@@ -2127,7 +2069,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "EXPIRATION_TIME",
                 SMD_VALID_TIME.plusYears(2).toString())));
 
-    assertSunriseLordn("test-and-validate.tld");
+    assertSunriseLordn();
 
     // Check for SERVER_HOLD status, no DNS tasks enqueued, and collision poll message.
     dnsUtilsHelper.assertNoMoreDnsRequests();
@@ -2648,13 +2590,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response.xml", SUPERUSER, ImmutableMap.of("DOMAIN", "example.tld"));
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void testSuccess_startDateSunriseRegistration_withEncodedSignedMark(boolean usePullQueue)
-      throws Exception {
-    if (!usePullQueue) {
-      useNordnSql();
-    }
+  @Test
+  void testSuccess_startDateSunriseRegistration_withEncodedSignedMark() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     clock.setTo(SMD_VALID_TIME);
     setEppInput(
@@ -2672,17 +2609,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "EXPIRATION_TIME",
                 SMD_VALID_TIME.plusYears(2).toString())));
     assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE));
-    assertSunriseLordn("test-validate.tld");
+    assertSunriseLordn();
   }
 
   /** Test that missing type= argument on launch create works in start-date sunrise. */
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void testSuccess_startDateSunriseRegistration_withEncodedSignedMark_noType(boolean usePullQueue)
-      throws Exception {
-    if (!usePullQueue) {
-      useNordnSql();
-    }
+  @Test
+  void testSuccess_startDateSunriseRegistration_withEncodedSignedMark_noType() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     clock.setTo(SMD_VALID_TIME);
     setEppInput(
@@ -2700,7 +2632,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "EXPIRATION_TIME",
                 SMD_VALID_TIME.plusYears(2).toString())));
     assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE));
-    assertSunriseLordn("test-validate.tld");
+    assertSunriseLordn();
   }
 
   @Test
@@ -3734,98 +3666,5 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .hasMessageThat()
         .isEqualTo(
             "The package token abc123 cannot be used to register names for longer than 1 year.");
-  }
-
-  private static void useNordnSql() {
-    tm().transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    new ImmutableSortedMap.Builder<DateTime, MigrationState>(Ordering.natural())
-                        .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
-                        .put(START_OF_TIME.plusMillis(1), MigrationState.DATASTORE_PRIMARY)
-                        .build()));
-    tm().transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    new ImmutableSortedMap.Builder<DateTime, MigrationState>(Ordering.natural())
-                        .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
-                        .put(START_OF_TIME.plusMillis(1), MigrationState.DATASTORE_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(2), MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
-                        .build()));
-    tm().transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    new ImmutableSortedMap.Builder<DateTime, MigrationState>(Ordering.natural())
-                        .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
-                        .put(START_OF_TIME.plusMillis(1), MigrationState.DATASTORE_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(2), MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
-                        .put(
-                            START_OF_TIME.plusMillis(3), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
-                        .build()));
-    tm().transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    new ImmutableSortedMap.Builder<DateTime, MigrationState>(Ordering.natural())
-                        .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
-                        .put(START_OF_TIME.plusMillis(1), MigrationState.DATASTORE_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(2), MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
-                        .put(
-                            START_OF_TIME.plusMillis(3), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(4), MigrationState.SQL_PRIMARY_READ_ONLY)
-                        .build()));
-    tm().transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    new ImmutableSortedMap.Builder<DateTime, MigrationState>(Ordering.natural())
-                        .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
-                        .put(START_OF_TIME.plusMillis(1), MigrationState.DATASTORE_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(2), MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
-                        .put(
-                            START_OF_TIME.plusMillis(3), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(4), MigrationState.SQL_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(5), MigrationState.SQL_PRIMARY)
-                        .build()));
-    tm().transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    new ImmutableSortedMap.Builder<DateTime, MigrationState>(Ordering.natural())
-                        .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
-                        .put(START_OF_TIME.plusMillis(1), MigrationState.DATASTORE_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(2), MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
-                        .put(
-                            START_OF_TIME.plusMillis(3), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(4), MigrationState.SQL_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(5), MigrationState.SQL_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(6), MigrationState.SQL_ONLY)
-                        .build()));
-    tm().transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    new ImmutableSortedMap.Builder<DateTime, MigrationState>(Ordering.natural())
-                        .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
-                        .put(START_OF_TIME.plusMillis(1), MigrationState.DATASTORE_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(2), MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
-                        .put(
-                            START_OF_TIME.plusMillis(3), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(4), MigrationState.SQL_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(5), MigrationState.SQL_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(6), MigrationState.SQL_ONLY)
-                        .put(START_OF_TIME.plusMillis(7), MigrationState.SEQUENCE_BASED_ALLOCATE_ID)
-                        .build()));
-    tm().transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    new ImmutableSortedMap.Builder<DateTime, MigrationState>(Ordering.natural())
-                        .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
-                        .put(START_OF_TIME.plusMillis(1), MigrationState.DATASTORE_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(2), MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
-                        .put(
-                            START_OF_TIME.plusMillis(3), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(4), MigrationState.SQL_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(5), MigrationState.SQL_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(6), MigrationState.SQL_ONLY)
-                        .put(START_OF_TIME.plusMillis(7), MigrationState.SEQUENCE_BASED_ALLOCATE_ID)
-                        .put(START_OF_TIME.plusMillis(8), MigrationState.NORDN_SQL)
-                        .build()));
   }
 }
