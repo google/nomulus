@@ -280,7 +280,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    *
    * <p>When this field is null, the "dnsDefaultATtl" value from the config file will be used.
    */
-  Duration dnsATtl;
+  Duration dnsAPlusAaaaTtl;
 
   /**
    * The time to live for DNS NS records.
@@ -668,11 +668,11 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   }
 
   /** Returns the time to live for A and AAAA records. */
-  public Duration getDnsATtl() {
-    return dnsATtl;
+  public Duration getDnsAPlusAaaaTtl() {
+    return dnsAPlusAaaaTtl;
   }
 
-  /** Returns the time to live for A and AAAA records. */
+  /** Returns the time to live for NS records. */
   public Duration getDnsNsTtl() {
     return dnsNsTtl;
   }
@@ -772,8 +772,8 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
       return this;
     }
 
-    public Builder setDnsATtl(Duration dnsATtl) {
-      getInstance().dnsATtl = dnsATtl;
+    public Builder setDnsAPlusAaaaTtl(Duration dnsAPlusAaaaTtl) {
+      getInstance().dnsAPlusAaaaTtl = dnsAPlusAaaaTtl;
       return this;
     }
 
