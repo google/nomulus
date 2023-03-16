@@ -45,6 +45,7 @@ import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.common.TimedTransitionProperty;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
@@ -213,6 +214,9 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   TimedTransitionProperty<TokenStatus> tokenStatusTransitions =
       TimedTransitionProperty.withInitialValue(NOT_STARTED);
 
+  /** Allowed EPP actions for this token, or null if all actions are allowed. */
+  @Nullable Set<CommandName> allowedEppActions;
+
   public String getToken() {
     return token;
   }
@@ -261,6 +265,10 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
 
   public TimedTransitionProperty<TokenStatus> getTokenStatusTransitions() {
     return tokenStatusTransitions;
+  }
+
+  public ImmutableSet<CommandName> getAllowedEppActions() {
+    return nullToEmptyImmutableCopy(allowedEppActions);
   }
 
   public RenewalPriceBehavior getRenewalPriceBehavior() {
@@ -447,6 +455,11 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
               "tokenStatusTransitions",
               NOT_STARTED,
               "tokenStatusTransitions must start with NOT_STARTED");
+      return this;
+    }
+
+    public Builder setAllowedEppActions(Set<CommandName> allowedEppActions) {
+      getInstance().allowedEppActions = forceEmptyToNull(allowedEppActions);
       return this;
     }
 
