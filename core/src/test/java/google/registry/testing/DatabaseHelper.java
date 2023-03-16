@@ -104,7 +104,6 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
-import google.registry.tmch.LordnTaskUtils;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -310,17 +309,6 @@ public final class DatabaseHelper {
    */
   public static Domain persistDomainAsDeleted(Domain domain, DateTime deletionTime) {
     return persistResource(domain.asBuilder().setDeletionTime(deletionTime).build());
-  }
-
-  // TODO: delete after pull queue migration.
-  /** Persists a domain and enqueues a LORDN task of the appropriate type for it. */
-  public static Domain persistDomainAndEnqueueLordn(final Domain domain) {
-    final Domain persistedDomain = persistResource(domain);
-    // Calls {@link LordnTaskUtils#enqueueDomainTask} wrapped in a transaction so that the
-    // transaction time is set correctly.
-    tm().transact(() -> LordnTaskUtils.enqueueDomainTask(persistedDomain));
-    maybeAdvanceClock();
-    return persistedDomain;
   }
 
   /** Persists a {@link Recurring} and {@link HistoryEntry} for a domain that already exists. */
