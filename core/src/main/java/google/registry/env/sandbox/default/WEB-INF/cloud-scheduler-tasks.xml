@@ -11,9 +11,6 @@
     <!--
       This only needs to run once per day, but we launch additional jobs in case the
       cursor is lagging behind, so it'll catch up to the current date eventually.
-
-      See <a href="../../../production/default/WEB-INF/cron.xml">production config</a> for an
-      explanation of job starting times.
     -->
     <schedule>7 */12 * * *</schedule>
   </task>
