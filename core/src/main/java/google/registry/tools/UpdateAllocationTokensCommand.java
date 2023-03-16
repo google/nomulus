@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -62,6 +63,13 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
           "Comma-separated list of allowed TLDs. Use the empty string to clear the "
               + "existing list.")
   private List<String> allowedTlds;
+
+  @Parameter(
+      names = {"--allowed_epp_actions"},
+      description =
+          "Comma-separated list of allowed EPP actions. Use an empty string to clear the existing"
+              + " list.")
+  private List<String> allowedEppActions;
 
   @Parameter(
       names = {"--discount_fraction"},
@@ -128,6 +136,9 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     if (ImmutableList.of("").equals(allowedTlds)) {
       allowedTlds = ImmutableList.of();
     }
+    if (ImmutableList.of("").equals(allowedEppActions)) {
+      allowedEppActions = ImmutableList.of();
+    }
 
     if (tokenStatusTransitions != null
         && (tokenStatusTransitions.containsValue(TokenStatus.ENDED)
@@ -184,6 +195,11 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
         .ifPresent(clientIds -> builder.setAllowedRegistrarIds(ImmutableSet.copyOf(clientIds)));
     Optional.ofNullable(allowedTlds)
         .ifPresent(tlds -> builder.setAllowedTlds(ImmutableSet.copyOf(tlds)));
+    Optional.ofNullable(allowedEppActions)
+        .ifPresent(
+            eppActions ->
+                builder.setAllowedEppActions(
+                    eppActions.stream().map(CommandName::valueOf).collect(toImmutableSet())));
     Optional.ofNullable(discountFraction).ifPresent(builder::setDiscountFraction);
     Optional.ofNullable(discountPremiums).ifPresent(builder::setDiscountPremiums);
     Optional.ofNullable(discountYears).ifPresent(builder::setDiscountYears);
