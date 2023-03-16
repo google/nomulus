@@ -77,9 +77,13 @@ public class DnsQueue {
   private static final RateLimiter rateLimiter = RateLimiter.create(9);
 
   @Inject
-  public DnsQueue(@Named(DNS_PULL_QUEUE_NAME) Queue queue, Clock clock) {
+  DnsQueue(@Named(DNS_PULL_QUEUE_NAME) Queue queue, Clock clock) {
     this.queue = queue;
     this.clock = clock;
+  }
+
+  Clock getClock() {
+    return clock;
   }
 
   @VisibleForTesting
@@ -108,7 +112,7 @@ public class DnsQueue {
   }
 
   /** Adds a task to the queue to refresh the DNS information for the specified subordinate host. */
-  public TaskHandle addHostRefreshTask(String hostName) {
+  TaskHandle addHostRefreshTask(String hostName) {
     Optional<InternetDomainName> tld = Registries.findTldForName(InternetDomainName.from(hostName));
     checkArgument(
         tld.isPresent(), String.format("%s is not a subordinate host to a known tld", hostName));
@@ -116,22 +120,17 @@ public class DnsQueue {
   }
 
   /** Enqueues a task to refresh DNS for the specified domain now. */
-  public TaskHandle addDomainRefreshTask(String domainName) {
+  TaskHandle addDomainRefreshTask(String domainName) {
     return addDomainRefreshTask(domainName, Duration.ZERO);
   }
 
   /** Enqueues a task to refresh DNS for the specified domain at some point in the future. */
-  public TaskHandle addDomainRefreshTask(String domainName, Duration countdown) {
+  TaskHandle addDomainRefreshTask(String domainName, Duration countdown) {
     return addToQueue(
         TargetType.DOMAIN,
         domainName,
         assertTldExists(getTldFromDomainName(domainName)),
         countdown);
-  }
-
-  /** Adds a task to the queue to refresh the DNS information for the specified zone. */
-  public TaskHandle addZoneRefreshTask(String zoneName) {
-    return addToQueue(TargetType.ZONE, zoneName, zoneName, Duration.ZERO);
   }
 
   /**
