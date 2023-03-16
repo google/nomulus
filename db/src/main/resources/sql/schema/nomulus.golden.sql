@@ -1093,7 +1093,7 @@ CREATE TABLE public."Tld" (
     tld_unicode text NOT NULL,
     transfer_grace_period_length interval NOT NULL,
     default_promo_tokens text[],
-    dns_a_ttl interval,
+    dns_a_plus_aaaa_ttl interval,
     dns_ds_ttl interval,
     dns_ns_ttl interval
 );

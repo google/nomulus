@@ -12,6 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-ALTER TABLE "Tld" ADD COLUMN dns_a_ttl interval;
-ALTER TABLE "Tld" ADD COLUMN dns_ds_ttl interval;
-ALTER TABLE "Tld" ADD COLUMN dns_ns_ttl interval;
+ALTER TABLE "Tld"
+ADD COLUMN dns_a_plus_aaaa_ttl interval,
+ADD COLUMN dns_ds_ttl interval,
+ADD COLUMN dns_ns_ttl interval;
