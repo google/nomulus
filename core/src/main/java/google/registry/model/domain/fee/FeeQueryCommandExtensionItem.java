@@ -37,7 +37,17 @@ public abstract class FeeQueryCommandExtensionItem extends ImmutableObject {
     RENEW,
     TRANSFER,
     RESTORE,
-    UPDATE
+    UPDATE;
+
+    public static CommandName fromString(String string) {
+      try {
+        return valueOf(string);
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException(
+            "Invalid EPP action name. Valid actions are CREATE, RENEW, TRANSFER, RESTORE, and"
+                + " UPDATE");
+      }
+    }
   }
 
   /** The default validity period (if not specified) is 1 year for all operations. */
