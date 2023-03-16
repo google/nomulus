@@ -86,8 +86,6 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
-import google.registry.model.common.DatabaseMigrationStateSchedule;
-import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.DomainCommand.Create;
@@ -124,7 +122,6 @@ import google.registry.model.tld.label.ReservationType;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.persistence.VKey;
-import google.registry.tmch.LordnTaskUtils;
 import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import java.util.Map;
 import java.util.Optional;
@@ -406,14 +403,9 @@ public final class DomainCreateFlow implements TransactionalFlow {
             .addGracePeriod(
                 GracePeriod.forBillingEvent(GracePeriodStatus.ADD, repoId, createBillingEvent))
             .setLordnPhase(
-                !(DatabaseMigrationStateSchedule.getValueAtTime(tm().getTransactionTime())
-                            .equals(MigrationState.NORDN_SQL)
-                        || DatabaseMigrationStateSchedule.getValueAtTime(tm().getTransactionTime())
-                            .equals(MigrationState.DNS_SQL))
-                    ? LordnPhase.NONE
-                    : hasSignedMarks
-                        ? LordnPhase.SUNRISE
-                        : hasClaimsNotice ? LordnPhase.CLAIMS : LordnPhase.NONE);
+                hasSignedMarks
+                    ? LordnPhase.SUNRISE
+                    : hasClaimsNotice ? LordnPhase.CLAIMS : LordnPhase.NONE);
     Domain domain = domainBuilder.build();
     if (allocationToken.isPresent()
         && allocationToken.get().getTokenType().equals(TokenType.PACKAGE)) {
@@ -436,8 +428,9 @@ public final class DomainCreateFlow implements TransactionalFlow {
           allocationTokenFlowUtils.redeemToken(
               allocationToken.get(), domainHistory.getHistoryEntryId()));
     }
-    enqueueTasks(domain, hasSignedMarks, hasClaimsNotice);
-
+    if (domain.shouldPublishToDns()) {
+      dnsUtils.requestDomainDnsRefresh(domain.getDomainName());
+    }
     EntityChanges entityChanges =
         flowCustomLogic.beforeSave(
             DomainCreateFlowCustomLogic.BeforeSaveParameters.newBuilder()
@@ -708,19 +701,6 @@ public final class DomainCreateFlow implements TransactionalFlow {
                     domainName, true, historyEntry.getTrid(), now)))
         .setHistoryEntry(historyEntry)
         .build();
-  }
-
-  private void enqueueTasks(Domain newDomain, boolean hasSignedMarks, boolean hasClaimsNotice) {
-    if (newDomain.shouldPublishToDns()) {
-      dnsUtils.requestDomainDnsRefresh(newDomain.getDomainName());
-    }
-    if (!(DatabaseMigrationStateSchedule.getValueAtTime(tm().getTransactionTime())
-                .equals(MigrationState.NORDN_SQL)
-            || DatabaseMigrationStateSchedule.getValueAtTime(tm().getTransactionTime())
-                .equals(MigrationState.DNS_SQL))
-        && (hasClaimsNotice || hasSignedMarks)) {
-      LordnTaskUtils.enqueueDomainTask(newDomain);
-    }
   }
 
   /**
