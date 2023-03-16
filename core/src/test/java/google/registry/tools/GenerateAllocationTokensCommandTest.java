@@ -35,6 +35,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
@@ -136,6 +137,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         "--type", "UNLIMITED_USE",
         "--allowed_client_ids", "TheRegistrar,NewRegistrar",
         "--allowed_tlds", "tld,example",
+        "--allowed_epp_actions", "CREATE,RENEW",
         "--discount_fraction", "0.5",
         "--discount_premiums", "true",
         "--discount_years", "6",
@@ -148,6 +150,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
             .setTokenType(UNLIMITED_USE)
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar", "NewRegistrar"))
             .setAllowedTlds(ImmutableSet.of("tld", "example"))
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RENEW))
             .setDiscountFraction(0.5)
             .setDiscountPremiums(true)
             .setDiscountYears(6)
