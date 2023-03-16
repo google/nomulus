@@ -84,18 +84,6 @@
     </retry-parameters>
   </queue>
 
-  <!-- Queue for LORDN Claims CSV rows to be periodically queried and then uploaded in batches. -->
-  <queue>
-    <name>lordn-claims</name>
-    <mode>pull</mode>
-  </queue>
-
-  <!-- Queue for LORDN Sunrise CSV rows to be periodically queried and then uploaded in batches. -->
-  <queue>
-    <name>lordn-sunrise</name>
-    <mode>pull</mode>
-  </queue>
-
   <!-- Queue for tasks that sync data to Google Spreadsheets. -->
   <queue>
     <name>sheet</name>
