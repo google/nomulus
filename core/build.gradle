@@ -1028,6 +1028,21 @@ test {
   // TODO(weiminyu): Remove dependency on sqlIntegrationTest
 }.dependsOn(fragileTest, outcastTest, standardTest, registryToolIntegrationTest, sqlIntegrationTest)
 
+// Runs the script, which deploys cloud scheduler tasks based on the config
+task cloudSchedulerDeployer {
+  doLast {
+    def env = rootProject.environment
+    if (env == 'alpha' || env == "qa" || env == "crash") {
+      exec {
+        commandLine 'go', 'run',
+                "${rootProject.projectRootDir}/release/builder/cloudSchedulerDeployer.go",
+                "${project.projectDir}/src/main/java/google/registry/env/${env}/default/WEB-INF/cloud-scheduler-tasks.xml",
+                "domain-registry-${env}"
+      }
+    }
+  }
+}
+
 // When we override tests, we also break the cleanTest command.
 cleanTest.dependsOn(cleanFragileTest, cleanOutcastTest, cleanStandardTest,
                     cleanRegistryToolIntegrationTest, cleanSqlIntegrationTest)
