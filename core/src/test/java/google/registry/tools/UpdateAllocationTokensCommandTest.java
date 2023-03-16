@@ -103,6 +103,22 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
   }
 
   @Test
+  void testUpdateEppActions_invalidEppAction() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo().setAllowedEppActions(ImmutableSet.of(CommandName.CREATE)).build());
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommandForced("--prefix", "token", "--allowed_epp_actions", "FAKE"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Invalid EPP action name. Valid actions are CREATE, RENEW, TRANSFER, RESTORE, and"
+                + " UPDATE");
+  }
+
+  @Test
   void testUpdateDiscountFraction() throws Exception {
     AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
     runCommandForced("--prefix", "token", "--discount_fraction", "0.15");
