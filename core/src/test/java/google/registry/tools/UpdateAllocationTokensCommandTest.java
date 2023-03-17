@@ -104,7 +104,6 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
 
   @Test
   void testUpdateEppActions_invalidEppAction() throws Exception {
-    AllocationToken token =
         persistResource(
             builderWithPromo().setAllowedEppActions(ImmutableSet.of(CommandName.CREATE)).build());
     IllegalArgumentException thrown =
