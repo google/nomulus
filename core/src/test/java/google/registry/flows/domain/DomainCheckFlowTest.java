@@ -17,6 +17,7 @@ package google.registry.flows.domain;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.eppoutput.CheckData.DomainCheck.create;
@@ -38,6 +39,7 @@ import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -332,6 +334,28 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   @Test
   void testSuccess_allocationTokenPromotion_singleYear() throws Exception {
+    createTld("example");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
+            .setDiscountFraction(0.5)
+            .setDiscountYears(2)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    setEppInput("domain_check_allocationtoken_fee.xml");
+    runFlowAssertResponse(loadFile("domain_check_allocationtoken_fee_response.xml"));
+  }
+
+  @Test
+  void testSuccess_allocationTokenPromotion_doesNotUseValidDefaultToken_singleYear()
+      throws Exception {
+    setUpDefaultToken();
     createTld("example");
     persistResource(
         new AllocationToken.Builder()
@@ -760,6 +784,31 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     runFlowAssertResponse(loadFile("domain_check_fee_response_v06.xml"));
   }
 
+  private void setUpDefaultToken() {
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .build());
+  }
+
+  @Test
+  void testFeeExtension_defaultToken_v06() throws Exception {
+    setUpDefaultToken();
+    persistActiveDomain("example1.tld");
+    setEppInput("domain_check_fee_v06.xml", ImmutableMap.of("CURRENCY", "USD"));
+    runFlowAssertResponse(loadFile("domain_check_fee_response_default_token_v06.xml"));
+  }
+
   @Test
   void testFeeExtension_multipleReservations() throws Exception {
     persistResource(
@@ -781,10 +830,26 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
+  void testFeeExtension_defaultToken_v11() throws Exception {
+    setUpDefaultToken();
+    persistActiveDomain("example1.tld");
+    setEppInput("domain_check_fee_v11.xml", ImmutableMap.of("CURRENCY", "USD"));
+    runFlowAssertResponse(loadFile("domain_check_fee_response_default_token_v11.xml"));
+  }
+
+  @Test
   void testFeeExtension_v12() throws Exception {
     persistActiveDomain("example1.tld");
     setEppInput("domain_check_fee_v12.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_response_v12.xml"));
+  }
+
+  @Test
+  void testFeeExtension_defaultToken_v12() throws Exception {
+    setUpDefaultToken();
+    persistActiveDomain("example1.tld");
+    setEppInput("domain_check_fee_v12.xml", ImmutableMap.of("CURRENCY", "USD"));
+    runFlowAssertResponse(loadFile("domain_check_fee_response_default_token_v12.xml"));
   }
 
   @Test
@@ -810,12 +875,94 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     runFlowAssertResponse(loadFile("domain_check_fee_multiple_commands_response_v06.xml"));
   }
 
+  @Test
+  void testFeeExtension_multipleCommands_defaultTokenOnlyOnCreate_v06() throws Exception {
+    setUpDefaultToken();
+    setEppInput("domain_check_fee_multiple_commands_v06.xml");
+    runFlowAssertResponse(
+        loadFile("domain_check_fee_multiple_commands_default_token_response_v06.xml"));
+  }
+
   // Version 11 cannot have multiple commands.
 
   @Test
   void testFeeExtension_multipleCommands_v12() throws Exception {
     setEppInput("domain_check_fee_multiple_commands_v12.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_multiple_commands_response_v12.xml"));
+  }
+
+  @Test
+  void testFeeExtension_multipleCommands_defaultTokenOnlyOnCreate_v12() throws Exception {
+    setUpDefaultToken();
+    setEppInput("domain_check_fee_multiple_commands_v12.xml");
+    runFlowAssertResponse(
+        loadFile("domain_check_fee_multiple_commands_default_token_response_v12.xml"));
+  }
+
+  void testFeeExtension_defaultToken_notValidForAllLabels_v06() throws Exception {
+    createTld("example");
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("example"))
+                .setDiscountPremiums(false)
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Registry.get("example")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .build());
+    setEppInput("domain_check_fee_default_token_multiple_names_v06.xml");
+    runFlowAssertResponse(
+        loadFile("domain_check_fee_default_token_multiple_names_response_v06.xml"));
+  }
+
+  void testFeeExtension_defaultToken_notValidForAllLabels_v11() throws Exception {
+    createTld("example");
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("example"))
+                .setDiscountPremiums(false)
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Registry.get("example")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .build());
+    setEppInput("domain_check_fee_default_token_multiple_names_v11.xml");
+    runFlowAssertResponse(
+        loadFile("domain_check_fee_default_token_multiple_names_response_v11.xml"));
+  }
+
+  void testFeeExtension_defaultToken_notValidForAllLabels_v12() throws Exception {
+    createTld("example");
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("example"))
+                .setDiscountPremiums(false)
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Registry.get("example")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .build());
+    setEppInput("domain_check_fee_default_token_multiple_names_v12.xml");
+    runFlowAssertResponse(
+        loadFile("domain_check_fee_default_token_multiple_names_response_v12.xml"));
   }
 
   /** Test the same as {@link #testFeeExtension_multipleCommands_v06} with premium labels. */
