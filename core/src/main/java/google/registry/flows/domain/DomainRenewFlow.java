@@ -172,7 +172,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
     Renew command = (Renew) resourceCommand;
     // Loads the target resource if it exists
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    // TODO(sarahbot@): Add check for valid EPP actions on the token once PR #1958 is merged
+    // TODO(sarahbot@): Add check for valid EPP actions on the token
     Optional<AllocationToken> allocationToken =
         allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
             existingDomain,

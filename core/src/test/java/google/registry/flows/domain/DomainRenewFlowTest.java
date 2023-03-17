@@ -614,7 +614,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
     assertThat(DatabaseHelper.loadByEntity(allocationToken).getRedemptionHistoryId()).isPresent();
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getAllocationToken().get().getKey())
         .isEqualTo(allocationToken.getToken());
@@ -639,7 +639,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             "domain_renew_response.xml",
             ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo("abc123");
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 16.5));
@@ -652,8 +652,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         loadFile(
             "domain_renew_response.xml",
             ImmutableMap.of("DOMAIN", "other-example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
-    billingEvent =
-        Iterables.getLast(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
+    billingEvent = Iterables.getLast(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("other-example.tld");
     assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo("abc123");
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 16.5));
@@ -680,7 +679,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
     assertThat(DatabaseHelper.loadByEntity(allocationToken).getRedemptionHistoryId()).isPresent();
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getAllocationToken().get().getKey())
         .isEqualTo(allocationToken.getToken());

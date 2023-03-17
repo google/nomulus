@@ -265,7 +265,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
       validateLaunchCreateNotice(launchCreate.get().getNotice(), domainLabel, isSuperuser, now);
     }
     boolean isSunriseCreate = hasSignedMarks && (tldState == START_DATE_SUNRISE);
-    // TODO(sarahbot@): Add check for valid EPP actions on the token once PR #1958 is merged
+    // TODO(sarahbot@): Add check for valid EPP actions on the token
     Optional<AllocationToken> allocationToken =
         allocationTokenFlowUtils.verifyAllocationTokenCreateIfPresent(
             command,

@@ -115,7 +115,7 @@ public final class DomainPricingLogic {
       int years,
       @Nullable Recurring recurringBillingEvent,
       Optional<AllocationToken> allocationToken)
-      throws EppException {
+      throws AllocationTokenInvalidForPremiumNameException {
     checkArgument(years > 0, "Number of years must be positive");
     Money renewCost;
     DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
@@ -254,14 +254,14 @@ public final class DomainPricingLogic {
   /** Returns the domain renew cost with allocation-token-related discounts applied. */
   private Money getDomainRenewCostWithDiscount(
       DomainPrices domainPrices, int years, Optional<AllocationToken> allocationToken)
-      throws EppException {
+      throws AllocationTokenInvalidForPremiumNameException {
     return getDomainCostWithDiscount(
         domainPrices.isPremium(), years, allocationToken, domainPrices.getRenewCost());
   }
 
   private Money getDomainCostWithDiscount(
       Boolean isPremium, int years, Optional<AllocationToken> allocationToken, Money oneYearCost)
-      throws EppException {
+      throws AllocationTokenInvalidForPremiumNameException {
     if (allocationToken.isPresent()
         && allocationToken.get().getDiscountFraction() != 0.0
         && isPremium

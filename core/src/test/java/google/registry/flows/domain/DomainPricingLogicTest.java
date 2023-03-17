@@ -592,6 +592,8 @@ public class DomainPricingLogicTest {
                 persistDomainAndSetRecurringBillingEvent(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
                 Optional.of(allocationToken)))
+
+        // The allocation token should not discount the speicifed price
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
