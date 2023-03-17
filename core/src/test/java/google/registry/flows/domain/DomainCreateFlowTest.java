@@ -1577,7 +1577,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
   }
@@ -1627,7 +1627,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .put("EXDATE", "2004-04-03T22:00:00.0Z")
                 .build()));
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getCost()).isEqualTo(expectedPrice);
   }
@@ -1660,7 +1660,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             "domain_create_response_premium.xml",
             ImmutableMap.of("EXDATE", "2002-04-03T22:00:00.0Z", "FEE", "104.00")));
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("rich.example");
     // 1yr @ $100 + 2yrs @ $100 * (1 - 0.98) = $104
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 104.00));
@@ -1693,7 +1693,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             "domain_create_response_premium.xml",
             ImmutableMap.of("EXDATE", "2002-04-03T22:00:00.0Z", "FEE", "204.44")));
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("rich.example");
     // 2yrs @ $100 + 1yr @ $100 * (1 - 0.95555) = $204.44
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 204.44));
@@ -1862,7 +1862,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
     assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo("abc123");
@@ -2023,7 +2023,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .put("EXDATE", "2001-04-03T22:00:00.0Z")
                 .build()));
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(tm().transact(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo(token);
     return billingEvent;
