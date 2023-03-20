@@ -118,7 +118,7 @@ class GenerateAllocationTokensCommand implements Command {
   @Parameter(
       names = {"--allowed_epp_actions"},
       description = "Comma-separated list of allowed EPP actions, or null if all are allowed")
-  private List<CommandName> allowedEppActions;
+  private List<String> allowedEppActions;
 
   @Parameter(
       names = {"--discount_fraction"},
@@ -215,7 +215,11 @@ class GenerateAllocationTokensCommand implements Command {
                                 ImmutableSet.copyOf(nullToEmpty(allowedClientIds)))
                             .setAllowedTlds(ImmutableSet.copyOf(nullToEmpty(allowedTlds)))
                             .setAllowedEppActions(
-                                ImmutableSet.copyOf(nullToEmpty(allowedEppActions)));
+                                isNullOrEmpty(allowedEppActions)
+                                    ? ImmutableSet.of()
+                                    : allowedEppActions.stream()
+                                        .map(CommandName::parseKnownCommand)
+                                        .collect(toImmutableSet()));
                     Optional.ofNullable(discountFraction).ifPresent(token::setDiscountFraction);
                     Optional.ofNullable(discountPremiums).ifPresent(token::setDiscountPremiums);
                     Optional.ofNullable(discountYears).ifPresent(token::setDiscountYears);
@@ -262,6 +266,10 @@ class GenerateAllocationTokensCommand implements Command {
     checkArgument(
         !ImmutableList.of("").equals(allowedTlds),
         "Either omit --allowed_tlds if all TLDs are allowed, or include a comma-separated list");
+
+    if (ImmutableList.of("").equals(allowedEppActions)) {
+      allowedEppActions = ImmutableList.of();
+    }
 
     if (!isNullOrEmpty(tokenStatusTransitions)) {
       // Don't allow package tokens to be created with a scheduled end time since this could allow
