@@ -1028,6 +1028,7 @@ test {
   // TODO(weiminyu): Remove dependency on sqlIntegrationTest
 }.dependsOn(fragileTest, outcastTest, standardTest, registryToolIntegrationTest, sqlIntegrationTest)
 
+
 // When we override tests, we also break the cleanTest command.
 cleanTest.dependsOn(cleanFragileTest, cleanOutcastTest, cleanStandardTest,
                     cleanRegistryToolIntegrationTest, cleanSqlIntegrationTest)
