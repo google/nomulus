@@ -14,6 +14,8 @@
 
 package google.registry.model.domain.fee;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Period;
 import java.util.Optional;
@@ -39,8 +41,9 @@ public abstract class FeeQueryCommandExtensionItem extends ImmutableObject {
     RESTORE,
     UPDATE;
 
-    public static CommandName fromString(String string) {
+    public static CommandName parseKnownCommand(String string) {
       try {
+        checkArgument(!string.equals("UNKNOWN"));
         return valueOf(string);
       } catch (IllegalArgumentException e) {
         throw new IllegalArgumentException(

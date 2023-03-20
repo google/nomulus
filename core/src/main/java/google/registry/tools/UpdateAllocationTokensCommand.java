@@ -199,7 +199,9 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
         .ifPresent(
             eppActions -> {
               builder.setAllowedEppActions(
-                  eppActions.stream().map(CommandName::fromString).collect(toImmutableSet()));
+                  eppActions.stream()
+                      .map(CommandName::parseKnownCommand)
+                      .collect(toImmutableSet()));
             });
     Optional.ofNullable(discountFraction).ifPresent(builder::setDiscountFraction);
     Optional.ofNullable(discountPremiums).ifPresent(builder::setDiscountPremiums);
