@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Iterables;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowMetadata;
 import google.registry.flows.HttpSessionMetadata;
@@ -599,6 +600,41 @@ public class DomainPricingLogicTest {
                 .setCurrency(USD)
                 .addFeeOrCredit(Fee.create(Money.of(USD, 1).getAmount(), RENEW, false))
                 .build());
+  }
+
+  @Test
+  void
+      testGetDomainRenewPrice_oneYear_standardDomain_internalRegistration_withToken_doesNotChangePriceBehavior()
+          throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountFraction(0.5)
+                .setRenewalPriceBehavior(DEFAULT)
+                .setDiscountPremiums(false)
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                registry,
+                "standard.example",
+                clock.nowUtc(),
+                1,
+                persistDomainAndSetRecurringBillingEvent(
+                    "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
+                Optional.of(allocationToken)))
+
+        // The allocation token should not discount the speicifed price
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(Money.of(USD, 1).getAmount(), RENEW, false))
+                .build());
+    assertThat(
+            Iterables.getLast(DatabaseHelper.loadAllOf(BillingEvent.Recurring.class))
+                .getRenewalPriceBehavior())
+        .isEqualTo(SPECIFIED);
   }
 
   @Test

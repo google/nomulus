@@ -260,7 +260,7 @@ public final class DomainPricingLogic {
   }
 
   private Money getDomainCostWithDiscount(
-      Boolean isPremium, int years, Optional<AllocationToken> allocationToken, Money oneYearCost)
+      boolean isPremium, int years, Optional<AllocationToken> allocationToken, Money oneYearCost)
       throws AllocationTokenInvalidForPremiumNameException {
     if (allocationToken.isPresent()
         && allocationToken.get().getDiscountFraction() != 0.0
