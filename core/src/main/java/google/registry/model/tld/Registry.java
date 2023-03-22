@@ -276,6 +276,26 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   }
 
   /**
+   * The time to live for DNS A and AAAA records.
+   *
+   * <p>When this field is null, the "dnsDefaultATtl" value from the config file will be used.
+   */
+  Duration dnsAPlusAaaaTtl;
+
+  /**
+   * The time to live for DNS NS records.
+   *
+   * <p>When this field is null, the "dnsDefaultNsTtl" value from the config file will be used.
+   */
+  Duration dnsNsTtl;
+
+  /**
+   * The time to live for DNS DS records.
+   *
+   * <p>When this field is null, the "dnsDefaultDsTtl" value from the config file will be used.
+   */
+  Duration dnsDsTtl;
+  /**
    * The unicode-aware representation of the TLD associated with this {@link Registry}.
    *
    * <p>This will be equal to {@link #tldStr} for ASCII TLDs, but will be non-ASCII for IDN TLDs. We
@@ -647,6 +667,21 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     return numDnsPublishLocks;
   }
 
+  /** Returns the time to live for A and AAAA records. */
+  public Duration getDnsAPlusAaaaTtl() {
+    return dnsAPlusAaaaTtl;
+  }
+
+  /** Returns the time to live for NS records. */
+  public Duration getDnsNsTtl() {
+    return dnsNsTtl;
+  }
+
+  /** Returns the time to live for DS records. */
+  public Duration getDnsDsTtl() {
+    return dnsDsTtl;
+  }
+
   public ImmutableSet<String> getAllowedRegistrantContactIds() {
     return nullToEmptyImmutableCopy(allowedRegistrantContactIds);
   }
@@ -734,6 +769,21 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
           numDnsPublishLocks > 0,
           "numDnsPublishLocks must be positive when set explicitly (use 1 for TLD-wide locks)");
       getInstance().numDnsPublishLocks = numDnsPublishLocks;
+      return this;
+    }
+
+    public Builder setDnsAPlusAaaaTtl(Duration dnsAPlusAaaaTtl) {
+      getInstance().dnsAPlusAaaaTtl = dnsAPlusAaaaTtl;
+      return this;
+    }
+
+    public Builder setDnsNsAtl(Duration dnsNsAtl) {
+      getInstance().dnsNsTtl = dnsNsAtl;
+      return this;
+    }
+
+    public Builder setDnsDsAtl(Duration dnsDsAtl) {
+      getInstance().dnsDsTtl = dnsDsAtl;
       return this;
     }
 
