@@ -57,6 +57,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Transfer;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
@@ -173,6 +174,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
         Registry.get(existingDomain.getTld()),
         gainingClientId,
         now,
+        CommandName.TRANSFER,
         eppInput.getSingleExtension(AllocationTokenExtension.class));
     Optional<DomainTransferRequestSuperuserExtension> superuserExtension =
         eppInput.getSingleExtension(DomainTransferRequestSuperuserExtension.class);
