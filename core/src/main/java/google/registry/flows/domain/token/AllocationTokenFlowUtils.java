@@ -30,6 +30,7 @@ import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -78,7 +79,7 @@ public class AllocationTokenFlowUtils {
     ImmutableMap.Builder<InternetDomainName, String> resultsBuilder = new ImmutableMap.Builder<>();
     for (InternetDomainName domainName : domainNames) {
       try {
-        validateToken(domainName, tokenEntity, registrarId, now);
+        validateToken(domainName, tokenEntity, CommandName.CREATE, registrarId, now);
         validDomainNames.add(domainName);
       } catch (EppException e) {
         resultsBuilder.put(domainName, e.getMessage());
@@ -109,11 +110,19 @@ public class AllocationTokenFlowUtils {
    * @throws EppException if the token is invalid in any way
    */
   public static void validateToken(
-      InternetDomainName domainName, AllocationToken token, String registrarId, DateTime now)
+      InternetDomainName domainName,
+      AllocationToken token,
+      CommandName commandName,
+      String registrarId,
+      DateTime now)
       throws EppException {
 
     // Only tokens with default behavior require validation
     if (TokenBehavior.DEFAULT.equals(token.getTokenBehavior())) {
+      if (!token.getAllowedEppActions().isEmpty()
+          && !token.getAllowedEppActions().contains(commandName)) {
+        throw new AllocationTokenNotValidForCommandException();
+      }
       if (!token.getAllowedRegistrarIds().isEmpty()
           && !token.getAllowedRegistrarIds().contains(registrarId)) {
         throw new AllocationTokenNotValidForRegistrarException();
@@ -173,7 +182,12 @@ public class AllocationTokenFlowUtils {
       return Optional.empty();
     }
     AllocationToken tokenEntity = loadToken(extension.get().getAllocationToken());
-    validateToken(InternetDomainName.from(command.getDomainName()), tokenEntity, registrarId, now);
+    validateToken(
+        InternetDomainName.from(command.getDomainName()),
+        tokenEntity,
+        CommandName.CREATE,
+        registrarId,
+        now);
     return Optional.of(
         tokenCustomLogic.validateToken(command, tokenEntity, registry, registrarId, now));
   }
@@ -184,6 +198,7 @@ public class AllocationTokenFlowUtils {
       Registry registry,
       String registrarId,
       DateTime now,
+      CommandName commandName,
       Optional<AllocationTokenExtension> extension)
       throws EppException {
     if (!extension.isPresent()) {
@@ -191,7 +206,11 @@ public class AllocationTokenFlowUtils {
     }
     AllocationToken tokenEntity = loadToken(extension.get().getAllocationToken());
     validateToken(
-        InternetDomainName.from(existingDomain.getDomainName()), tokenEntity, registrarId, now);
+        InternetDomainName.from(existingDomain.getDomainName()),
+        tokenEntity,
+        commandName,
+        registrarId,
+        now);
     return Optional.of(
         tokenCustomLogic.validateToken(existingDomain, tokenEntity, registry, registrarId, now));
   }
@@ -277,6 +296,14 @@ public class AllocationTokenFlowUtils {
       extends AssociationProhibitsOperationException {
     AlreadyRedeemedAllocationTokenException() {
       super("Alloc token was already redeemed");
+    }
+  }
+
+  /** The allocation token is not valid for this EPP command. */
+  public static class AllocationTokenNotValidForCommandException
+      extends AssociationProhibitsOperationException {
+    AllocationTokenNotValidForCommandException() {
+      super("Allocation token not valid for the EPP command");
     }
   }
 
