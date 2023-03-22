@@ -277,6 +277,7 @@ public final class DomainCheckFlow implements Flow {
             DomainFlowUtils.checkForDefaultToken(
                 Registry.get(InternetDomainName.from(domainName).parent().toString()),
                 domainName,
+                feeCheckItem.getCommandName(),
                 registrarId,
                 now);
         FeeCheckResponseExtensionItem.Builder<?> builder = feeCheckItem.createResponseBuilder();

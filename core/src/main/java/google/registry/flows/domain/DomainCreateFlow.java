@@ -89,6 +89,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeCreateCommandExtension;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import google.registry.model.domain.launch.LaunchCreateExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
@@ -276,7 +277,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
     boolean defaultTokenUsed = false;
     if (!allocationToken.isPresent() && !registry.getDefaultPromoTokens().isEmpty()) {
       allocationToken =
-          DomainFlowUtils.checkForDefaultToken(registry, command.getDomainName(), registrarId, now);
+          DomainFlowUtils.checkForDefaultToken(
+              registry, command.getDomainName(), CommandName.CREATE, registrarId, now);
       if (allocationToken.isPresent()) {
         defaultTokenUsed = true;
       }
