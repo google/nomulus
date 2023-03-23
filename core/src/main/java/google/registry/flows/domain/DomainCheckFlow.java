@@ -306,6 +306,7 @@ public final class DomainCheckFlow implements Flow {
               recurrences.getOrDefault(domainName, null));
           responseItems.add(builder.setDomainNameIfSupported(domainName).build());
         } catch (AssociationProhibitsOperationException | StatusProhibitsOperationException e) {
+          Registry registry = Registry.get(InternetDomainName.from(domainName).parent().toString());
           responseItems.add(
               builder
                   .setDomainNameIfSupported(domainName)
@@ -314,7 +315,7 @@ public final class DomainCheckFlow implements Flow {
                       feeCheckItem.getCommandName(),
                       feeCheckItem.getPhase(),
                       feeCheckItem.getSubphase())
-                  .setCurrencyIfSupported(feeCheckItem.getCurrency())
+                  .setCurrencyIfSupported(registry.getCurrency())
                   .setClass("Token Not Supported")
                   .build());
         }
