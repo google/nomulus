@@ -674,6 +674,8 @@ public class DomainFlowUtils {
     String feeClass = null;
     ImmutableList<Fee> fees = ImmutableList.of();
     switch (feeRequest.getCommandName()) {
+        // TODO(sarahbot@): Add check of valid EPP actions on token before passing the token to the
+        // fee request.
       case CREATE:
         // Don't return a create price for reserved names.
         if (isReserved(domainName, isSunrise) && !isAvailable) {
@@ -698,7 +700,8 @@ public class DomainFlowUtils {
         builder.setAvailIfSupported(true);
         fees =
             pricingLogic
-                .getRenewPrice(registry, domainNameString, now, years, recurringBillingEvent)
+                .getRenewPrice(
+                    registry, domainNameString, now, years, recurringBillingEvent, allocationToken)
                 .getFees();
         break;
       case RESTORE:

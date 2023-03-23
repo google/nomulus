@@ -36,6 +36,7 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
 import google.registry.flows.custom.CustomLogicModule;
 import google.registry.flows.domain.DomainPricingLogic;
+import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent.Cancellation;
 import google.registry.model.billing.BillingEvent.Flag;
@@ -53,6 +54,7 @@ import google.registry.util.Clock;
 import google.registry.util.SystemClock;
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.util.Optional;
 import java.util.Set;
 import javax.inject.Singleton;
 import org.apache.beam.sdk.Pipeline;
@@ -383,24 +385,31 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
       // It is OK to always create a OneTime, even though the domain might be deleted or transferred
       // later during autorenew grace period, as a cancellation will always be written out in those
       // instances.
-      OneTime oneTime =
-          new OneTime.Builder()
-              .setBillingTime(billingTime)
-              .setRegistrarId(recurring.getRegistrarId())
-              // Determine the cost for a one-year renewal.
-              .setCost(
-                  domainPricingLogic
-                      .getRenewPrice(tld, recurring.getTargetId(), eventTime, 1, recurring)
-                      .getRenewCost())
-              .setEventTime(eventTime)
-              .setFlags(union(recurring.getFlags(), Flag.SYNTHETIC))
-              .setDomainHistory(historyEntry)
-              .setPeriodYears(1)
-              .setReason(recurring.getReason())
-              .setSyntheticCreationTime(endTime)
-              .setCancellationMatchingBillingEvent(recurring)
-              .setTargetId(recurring.getTargetId())
-              .build();
+      OneTime oneTime = null;
+      try {
+        oneTime =
+            new OneTime.Builder()
+                .setBillingTime(billingTime)
+                .setRegistrarId(recurring.getRegistrarId())
+                // Determine the cost for a one-year renewal.
+                .setCost(
+                    domainPricingLogic
+                        .getRenewPrice(
+                            tld, recurring.getTargetId(), eventTime, 1, recurring, Optional.empty())
+                        .getRenewCost())
+                .setEventTime(eventTime)
+                .setFlags(union(recurring.getFlags(), Flag.SYNTHETIC))
+                .setDomainHistory(historyEntry)
+                .setPeriodYears(1)
+                .setReason(recurring.getReason())
+                .setSyntheticCreationTime(endTime)
+                .setCancellationMatchingBillingEvent(recurring)
+                .setTargetId(recurring.getTargetId())
+                .build();
+      } catch (AllocationTokenInvalidForPremiumNameException e) {
+        // This should not be reached since we are not using an allocation token
+        return;
+      }
       results.add(oneTime);
     }
     results.add(

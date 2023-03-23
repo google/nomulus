@@ -49,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth8;
 import google.registry.flows.EppException;
 import google.registry.flows.EppRequestSource;
@@ -604,12 +605,21 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setToken("abc123")
                 .setTokenType(SINGLE_USE)
                 .setDomainName("example.tld")
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
                 .build());
     runFlowAssertResponse(
         loadFile(
             "domain_renew_response.xml",
             ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
     assertThat(DatabaseHelper.loadByEntity(allocationToken).getRedemptionHistoryId()).isPresent();
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
+    assertThat(billingEvent.getAllocationToken().get().getKey())
+        .isEqualTo(allocationToken.getToken());
+    // Price is 50% off the first year only. Non-discounted price is $11.
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 16.5));
   }
 
   @Test
@@ -619,11 +629,20 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
     persistDomain();
     persistResource(
-        new AllocationToken.Builder().setToken("abc123").setTokenType(UNLIMITED_USE).build());
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
+            .setDiscountFraction(0.5)
+            .build());
     runFlowAssertResponse(
         loadFile(
             "domain_renew_response.xml",
             ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
+    assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo("abc123");
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 16.5));
     clock.advanceOneMilli();
     setEppInput(
         "domain_renew_allocationtoken.xml",
@@ -633,6 +652,38 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         loadFile(
             "domain_renew_response.xml",
             ImmutableMap.of("DOMAIN", "other-example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+    billingEvent = Iterables.getLast(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("other-example.tld");
+    assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo("abc123");
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 16.5));
+  }
+
+  @Test
+  void testSuccess_allocationTokenMultiYearDiscount() throws Exception {
+    setEppInput(
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
+    persistDomain();
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("example.tld")
+                .setDiscountFraction(0.5)
+                .setDiscountYears(10)
+                .build());
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+    assertThat(DatabaseHelper.loadByEntity(allocationToken).getRedemptionHistoryId()).isPresent();
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
+    assertThat(billingEvent.getAllocationToken().get().getKey())
+        .isEqualTo(allocationToken.getToken());
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 11));
   }
 
   @Test
@@ -750,6 +801,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
             .setRedemptionHistoryId(historyEntryId)
+            .setDiscountFraction(0.5)
             .build());
     clock.advanceOneMilli();
     EppException thrown =
