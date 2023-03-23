@@ -42,7 +42,9 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
+import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
+import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
@@ -282,18 +284,40 @@ public final class DomainCheckFlow implements Flow {
                 now);
         FeeCheckResponseExtensionItem.Builder<?> builder = feeCheckItem.createResponseBuilder();
         Optional<Domain> domain = Optional.ofNullable(domainObjs.get(domainName));
-        handleFeeRequest(
-            feeCheckItem,
-            builder,
-            domainNames.get(domainName),
-            domain,
-            feeCheck.getCurrency(),
-            now,
-            pricingLogic,
-            allocationToken.isPresent() ? allocationToken : defaultToken,
-            availableDomains.contains(domainName),
-            recurrences.getOrDefault(domainName, null));
-        responseItems.add(builder.setDomainNameIfSupported(domainName).build());
+        try {
+          if (allocationToken.isPresent()) {
+            AllocationTokenFlowUtils.validateToken(
+                InternetDomainName.from(domainName),
+                allocationToken.get(),
+                feeCheckItem.getCommandName(),
+                registrarId,
+                now);
+          }
+          handleFeeRequest(
+              feeCheckItem,
+              builder,
+              domainNames.get(domainName),
+              domain,
+              feeCheck.getCurrency(),
+              now,
+              pricingLogic,
+              allocationToken.isPresent() ? allocationToken : defaultToken,
+              availableDomains.contains(domainName),
+              recurrences.getOrDefault(domainName, null));
+          responseItems.add(builder.setDomainNameIfSupported(domainName).build());
+        } catch (AssociationProhibitsOperationException | StatusProhibitsOperationException e) {
+          responseItems.add(
+              builder
+                  .setDomainNameIfSupported(domainName)
+                  .setPeriod(feeCheckItem.getPeriod())
+                  .setCommand(
+                      feeCheckItem.getCommandName(),
+                      feeCheckItem.getPhase(),
+                      feeCheckItem.getSubphase())
+                  .setCurrencyIfSupported(feeCheckItem.getCurrency())
+                  .setClass("Token Not Supported")
+                  .build());
+        }
       }
     }
     return ImmutableList.of(feeCheck.createResponse(responseItems.build()));
