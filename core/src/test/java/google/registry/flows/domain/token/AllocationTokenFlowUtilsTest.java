@@ -149,7 +149,7 @@ class AllocationTokenFlowUtilsTest {
 
   @Test
   void test_validateTokenExistingDomain_failsOnNonexistentToken() {
-    assertValidateRenewDomainThrowsEppException(InvalidAllocationTokenException.class);
+    assertValidateExistingDomainThrowsEppException(InvalidAllocationTokenException.class);
   }
 
   @Test
@@ -180,7 +180,7 @@ class AllocationTokenFlowUtilsTest {
                         Registry.get("tld"),
                         "TheRegistrar",
                         DateTime.now(UTC),
-                        CommandName.CREATE,
+                        CommandName.RENEW,
                         Optional.of(allocationTokenExtension))))
         .marshalsToXml();
   }
@@ -221,7 +221,7 @@ class AllocationTokenFlowUtilsTest {
                     Registry.get("tld"),
                     "TheRegistrar",
                     DateTime.now(UTC),
-                    CommandName.CREATE,
+                    CommandName.RENEW,
                     Optional.of(allocationTokenExtension)));
     assertThat(thrown).hasMessageThat().isEqualTo("failed for tests");
   }
@@ -241,7 +241,8 @@ class AllocationTokenFlowUtilsTest {
         createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
             .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
             .build());
-    assertValidateRenewDomainThrowsEppException(AllocationTokenNotValidForRegistrarException.class);
+    assertValidateExistingDomainThrowsEppException(
+        AllocationTokenNotValidForRegistrarException.class);
   }
 
   @Test
@@ -259,7 +260,7 @@ class AllocationTokenFlowUtilsTest {
         createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
             .setAllowedTlds(ImmutableSet.of("nottld"))
             .build());
-    assertValidateRenewDomainThrowsEppException(AllocationTokenNotValidForTldException.class);
+    assertValidateExistingDomainThrowsEppException(AllocationTokenNotValidForTldException.class);
   }
 
   @Test
@@ -271,7 +272,7 @@ class AllocationTokenFlowUtilsTest {
   @Test
   void test_validateTokenExistingDomain_beforePromoStart() {
     persistResource(createOneMonthPromoTokenBuilder(DateTime.now(UTC).plusDays(1)).build());
-    assertValidateRenewDomainThrowsEppException(AllocationTokenNotInPromotionException.class);
+    assertValidateExistingDomainThrowsEppException(AllocationTokenNotInPromotionException.class);
   }
 
   @Test
@@ -283,7 +284,7 @@ class AllocationTokenFlowUtilsTest {
   @Test
   void test_validateTokenExistingDomain_afterPromoEnd() {
     persistResource(createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusMonths(2)).build());
-    assertValidateRenewDomainThrowsEppException(AllocationTokenNotInPromotionException.class);
+    assertValidateExistingDomainThrowsEppException(AllocationTokenNotInPromotionException.class);
   }
 
   @Test
@@ -313,7 +314,7 @@ class AllocationTokenFlowUtilsTest {
                     .put(DateTime.now(UTC).minusHours(12), CANCELLED)
                     .build())
             .build());
-    assertValidateRenewDomainThrowsEppException(AllocationTokenNotInPromotionException.class);
+    assertValidateExistingDomainThrowsEppException(AllocationTokenNotInPromotionException.class);
   }
 
   @Test
@@ -331,7 +332,8 @@ class AllocationTokenFlowUtilsTest {
         createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .build());
-    assertValidateRenewDomainThrowsEppException(AllocationTokenNotValidForCommandException.class);
+    assertValidateExistingDomainThrowsEppException(
+        AllocationTokenNotValidForCommandException.class);
   }
 
   @Test
@@ -439,7 +441,7 @@ class AllocationTokenFlowUtilsTest {
         .marshalsToXml();
   }
 
-  private void assertValidateRenewDomainThrowsEppException(Class<? extends EppException> clazz) {
+  private void assertValidateExistingDomainThrowsEppException(Class<? extends EppException> clazz) {
     assertAboutEppExceptions()
         .that(
             assertThrows(
