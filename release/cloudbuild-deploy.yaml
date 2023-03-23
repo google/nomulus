@@ -59,7 +59,7 @@ steps:
     else
       project_id="domain-registry-${_ENV}"
     fi
-    for filename in cron dispatch queue; do
+    for filename in dispatch queue; do
       gcloud -q --project $project_id app deploy \
         default/WEB-INF/appengine-generated/$filename.yaml
     done
