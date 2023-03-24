@@ -580,6 +580,32 @@ class JpaTransactionManagerImplTest {
                     .isFalse());
   }
 
+  @Test
+  void innerTransactions_noRetry() {
+    JpaTransactionManager spyJpaTm = spy(tm());
+    doThrow(OptimisticLockException.class).when(spyJpaTm).delete(any(VKey.class));
+    spyJpaTm.transact(() -> spyJpaTm.insert(theEntity));
+
+    Supplier<Runnable> supplier =
+        () -> {
+          Runnable work = () -> spyJpaTm.delete(theEntityKey);
+          work.run();
+          return null;
+        };
+
+    assertThrows(
+        OptimisticLockException.class,
+        () ->
+            spyJpaTm.transact(
+                () -> {
+                  spyJpaTm.exists(theEntity);
+                  spyJpaTm.transact(supplier);
+                }));
+
+    verify(spyJpaTm, times(3)).exists(theEntity);
+    verify(spyJpaTm, times(3)).delete(theEntityKey);
+  }
+
   private void insertPerson(int age) {
     tm().getEntityManager()
         .createNativeQuery(String.format("INSERT INTO Person (age) VALUES (%d)", age))
