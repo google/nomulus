@@ -24,7 +24,7 @@
           <fee:currency>USD</fee:currency>
           <fee:command>renew</fee:command>
           <fee:period unit="y">1</fee:period>
-          <fee:class>Token Not Supported</fee:class>
+          <fee:class>token-not-supported</fee:class>
         </fee:cd>
         <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
           <fee:name>example1.tld</fee:name>
@@ -38,14 +38,14 @@
           <fee:currency>USD</fee:currency>
           <fee:command>restore</fee:command>
           <fee:period unit="y">1</fee:period>
-          <fee:class>Token Not Supported</fee:class>
+          <fee:class>token-not-supported</fee:class>
         </fee:cd>
         <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
           <fee:name>example1.tld</fee:name>
           <fee:currency>USD</fee:currency>
           <fee:command>update</fee:command>
           <fee:period unit="y">1</fee:period>
-          <fee:class>Token Not Supported</fee:class>
+          <fee:class>token-not-supported</fee:class>
         </fee:cd>
       </fee:chkData>
     </extension>
