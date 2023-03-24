@@ -43,8 +43,9 @@ public abstract class FeeQueryCommandExtensionItem extends ImmutableObject {
 
     public static CommandName parseKnownCommand(String string) {
       try {
-        checkArgument(!string.equals("UNKNOWN"));
-        return valueOf(string);
+        CommandName command = valueOf(string);
+        checkArgument(!command.equals(UNKNOWN));
+        return command;
       } catch (IllegalArgumentException e) {
         throw new IllegalArgumentException(
             "Invalid EPP action name. Valid actions are CREATE, RENEW, TRANSFER, RESTORE, and"
