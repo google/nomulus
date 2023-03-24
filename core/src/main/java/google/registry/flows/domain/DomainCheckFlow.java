@@ -316,7 +316,7 @@ public final class DomainCheckFlow implements Flow {
                       feeCheckItem.getPhase(),
                       feeCheckItem.getSubphase())
                   .setCurrencyIfSupported(registry.getCurrency())
-                  .setClass("Token Not Supported")
+                  .setClass("token-not-supported")
                   .build());
         }
       }

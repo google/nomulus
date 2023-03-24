@@ -28,7 +28,7 @@
           </fee:object>
           <fee:command name="renew">
             <fee:period unit="y">1</fee:period>
-            <fee:class>Token Not Supported</fee:class>
+            <fee:class>token-not-supported</fee:class>
           </fee:command>
         </fee:cd>
         <fee:cd>
@@ -46,7 +46,7 @@
           </fee:object>
           <fee:command name="restore">
             <fee:period unit="y">1</fee:period>
-            <fee:class>Token Not Supported</fee:class>
+            <fee:class>token-not-supported</fee:class>
           </fee:command>
         </fee:cd>
         <fee:cd>
@@ -55,7 +55,7 @@
           </fee:object>
           <fee:command name="update">
             <fee:period unit="y">1</fee:period>
-            <fee:class>Token Not Supported</fee:class>
+            <fee:class>token-not-supported</fee:class>
           </fee:command>
         </fee:cd>
       </fee:chkData>
