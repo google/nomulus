@@ -175,8 +175,7 @@ public class DomainFlowUtils {
       CharMatcher.inRange('a', 'z').or(CharMatcher.inRange('0', '9').or(CharMatcher.anyOf("-.")));
 
   /** Default validator used to determine if an IDN name can be provisioned on a TLD. */
-  private static final IdnLabelValidator IDN_LABEL_VALIDATOR =
-      IdnLabelValidator.createDefaultIdnLabelValidator();
+  private static final IdnLabelValidator IDN_LABEL_VALIDATOR = new IdnLabelValidator();
 
   /** The maximum number of DS records allowed on a domain. */
   private static final int MAX_DS_RECORDS_PER_DOMAIN = 8;

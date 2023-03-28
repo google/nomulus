@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.tools.UpdateOrDeleteAllocationTokensCommand.getTokenKeys;
 import static google.registry.util.CollectionUtils.findDuplicates;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
@@ -34,9 +35,11 @@ import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.Registry.TldType;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
+import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.tools.params.OptionalStringParameter;
 import google.registry.tools.params.TransitionListParameter.BillingCostTransitions;
 import google.registry.tools.params.TransitionListParameter.TldStateTransitions;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -244,6 +247,15 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
               + " present default tokens.")
   List<String> defaultTokens;
 
+  @Nullable
+  @Parameter(
+      names = "--idn_tables",
+      description =
+          "A comma-separated list of the IDN tables to use for this TLD. Specify an empty list to"
+              + " remove any previously-set tables and to use the default. All elements must be"
+              + " IdnTableEnum values")
+  List<String> idnTables;
+
   /** Returns the existing registry (for update) or null (for creates). */
   @Nullable
   abstract Registry getOldRegistry(String tld);
@@ -390,6 +402,23 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
           builder.setDefaultPromoTokens(ImmutableList.of());
         } else {
           builder.setDefaultPromoTokens(getTokenKeys(defaultTokens, null));
+        }
+      }
+      if (idnTables != null) {
+        if (idnTables.equals(ImmutableList.of(""))) {
+          builder.setIdnTables(ImmutableSet.of());
+        } else {
+          ImmutableSet<String> upperCaseIdnTables =
+              idnTables.stream().map(String::toUpperCase).collect(toImmutableSet());
+          ImmutableSet<String> validIdnStringValues =
+              Arrays.stream(IdnTableEnum.values()).map(Enum::name).collect(toImmutableSet());
+          checkArgument(
+              validIdnStringValues.containsAll(upperCaseIdnTables),
+              "IDN tables %s contained invalid value(s). Valid values: %s",
+              upperCaseIdnTables,
+              validIdnStringValues);
+          builder.setIdnTables(
+              upperCaseIdnTables.stream().map(IdnTableEnum::valueOf).collect(toImmutableSet()));
         }
       }
       // Update the Registry object.
