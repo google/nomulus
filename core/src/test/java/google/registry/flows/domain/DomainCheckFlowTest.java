@@ -878,7 +878,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
-  void testFeeExtension_multipleCommands_tokenNotValidForAll_v06() throws Exception {
+  void testFeeExtension_multipleCommands_tokenNotValidForSome_v06() throws Exception {
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
@@ -907,7 +907,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
-  void testFeeExtension_multipleCommands_tokenNotValidForAll_v12() throws Exception {
+  void testFeeExtension_multipleCommands_tokenNotValidForSome_v12() throws Exception {
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")

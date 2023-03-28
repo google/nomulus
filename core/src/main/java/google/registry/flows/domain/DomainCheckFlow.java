@@ -306,6 +306,8 @@ public final class DomainCheckFlow implements Flow {
               recurrences.getOrDefault(domainName, null));
           responseItems.add(builder.setDomainNameIfSupported(domainName).build());
         } catch (AssociationProhibitsOperationException | StatusProhibitsOperationException e) {
+          // Allocation token is either not an active token or it is not valid for the EPP command,
+          // registrar, domain, or TLD.
           Registry registry = Registry.get(InternetDomainName.from(domainName).parent().toString());
           responseItems.add(
               builder
