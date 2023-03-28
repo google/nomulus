@@ -1094,7 +1094,8 @@ CREATE TABLE public."Tld" (
     default_promo_tokens text[],
     dns_a_plus_aaaa_ttl interval,
     dns_ds_ttl interval,
-    dns_ns_ttl interval
+    dns_ns_ttl interval,
+    idn_tables text[]
 );
 
 
