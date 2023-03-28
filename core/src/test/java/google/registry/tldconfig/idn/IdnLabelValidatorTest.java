@@ -15,17 +15,26 @@
 package google.registry.tldconfig.idn;
 
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link IdnLabelValidator}. */
 class IdnLabelValidatorTest {
 
-  private IdnLabelValidator idnLabelValidator = IdnLabelValidator.createDefaultIdnLabelValidator();
+  @RegisterExtension
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private void doJapaneseLanguageTests(String tld) {
+  private IdnLabelValidator idnLabelValidator = new IdnLabelValidator();
+
+  private void doJapaneseAndLatinLanguageTests(String tld) {
+    createTld(tld);
     assertThat(idnLabelValidator.findValidIdnTableForTld("foo", tld)).isPresent();
     assertThat(idnLabelValidator.findValidIdnTableForTld("12379foar", tld)).isPresent();
     assertThat(idnLabelValidator.findValidIdnTableForTld("みんな", tld)).isPresent();
@@ -84,26 +93,29 @@ class IdnLabelValidatorTest {
 
   @Test
   void testMinna() {
-    doJapaneseLanguageTests("xn--q9jyb4c");
+    doJapaneseAndLatinLanguageTests("xn--q9jyb4c");
   }
 
   @Test
   void testFoo() {
-    doJapaneseLanguageTests("foo");
+    doJapaneseAndLatinLanguageTests("foo");
   }
 
   @Test
   void testSoy() {
-    doJapaneseLanguageTests("soy");
+    doJapaneseAndLatinLanguageTests("soy");
   }
 
   @Test
-  void testOverridenTables() {
-    // Set .tld to have only the extended latin table and not japanese.
-    idnLabelValidator =
-        new IdnLabelValidator(
-            ImmutableMap.of("tld", ImmutableList.of(IdnTableEnum.EXTENDED_LATIN)));
+  void testPerTldConfig() {
+    persistResource(
+        createTld("tld")
+            .asBuilder()
+            .setIdnTables(ImmutableList.of(IdnTableEnum.EXTENDED_LATIN))
+            .build());
     assertThat(idnLabelValidator.findValidIdnTableForTld("foo", "tld")).isPresent();
+    assertThat(idnLabelValidator.findValidIdnTableForTld("abcdefghæ", "tld")).isPresent();
+    // Extended Latin shouldn't include Japanese characters
     assertThat(idnLabelValidator.findValidIdnTableForTld("みんな", "tld")).isEmpty();
   }
 }

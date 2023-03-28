@@ -52,6 +52,7 @@ import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.JodaMoneyType;
+import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.Idn;
 import java.util.List;
 import java.util.Map;
@@ -487,6 +488,9 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    */
   List<VKey<AllocationToken>> defaultPromoTokens;
 
+  /** A lis of allowed {@link IdnTableEnum}s for this TLD, or empty if we should use the default. */
+  List<IdnTableEnum> idnTables;
+
   public String getTldStr() {
     return tldStr;
   }
@@ -692,6 +696,10 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
 
   public ImmutableList<VKey<AllocationToken>> getDefaultPromoTokens() {
     return nullToEmptyImmutableCopy(defaultPromoTokens);
+  }
+
+  public ImmutableList<IdnTableEnum> getIdnTables() {
+    return nullToEmptyImmutableCopy(idnTables);
   }
 
   @Override
@@ -989,6 +997,11 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
                 }
                 getInstance().defaultPromoTokens = promoTokens;
               });
+      return this;
+    }
+
+    public Builder setIdnTables(ImmutableList<IdnTableEnum> idnTables) {
+      getInstance().idnTables = idnTables;
       return this;
     }
 
