@@ -724,6 +724,7 @@
         drive_folder_id text,
         eap_fee_schedule hstore not null,
         escrow_enabled boolean not null,
+        idn_tables text[],
         invoicing_enabled boolean not null,
         lordn_username text,
         num_dns_publish_locks int4 not null,

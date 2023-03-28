@@ -36,6 +36,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Registry;
+import google.registry.tldconfig.idn.IdnTableEnum;
 import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -542,6 +543,35 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getDriveFolderId()).isNull();
+  }
+
+  @Test
+  void testSuccess_setsIdnTables() throws Exception {
+    runCommandForced(
+        "--idn_tables=extended_latin,ja",
+        "--roid_suffix=ASDF",
+        "--dns_writers=VoidDnsWriter",
+        "xn--q9jyb4c");
+    assertThat(Registry.get("xn--q9jyb4c").getIdnTables())
+        .containsExactly(IdnTableEnum.EXTENDED_LATIN, IdnTableEnum.JA);
+  }
+
+  @Test
+  void testFailure_invalidIdnTable() throws Exception {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--idn_tables=extended_latin,bad_value",
+                    "--roid_suffix=ASDF",
+                    "--dns_writers=VoidDnsWriter",
+                    "xn--q9jyb4c"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "IDN tables [EXTENDED_LATIN, BAD_VALUE] contained invalid value(s). Valid values:"
+                + " [EXTENDED_LATIN, JA]");
   }
 
   @Test
