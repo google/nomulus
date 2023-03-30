@@ -75,5 +75,6 @@ while (( "$#" > 0 )); do
     --metadata-file "./core/src/main/resources/${metadata_pathname}" \
     --jar "./core/build/libs/${uberjar_name}.jar" \
     --env FLEX_TEMPLATE_JAVA_MAIN_CLASS="${main_class}" \
+    --additional-experiments=disable_runner_v2 \
     --project "${dev_project}"
 done
