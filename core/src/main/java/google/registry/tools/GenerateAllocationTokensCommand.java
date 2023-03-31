@@ -39,6 +39,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.google.common.io.Files;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -113,6 +114,11 @@ class GenerateAllocationTokensCommand implements Command {
       names = {"--allowed_tlds"},
       description = "Comma-separated list of allowed TLDs, or null if all are allowed")
   private List<String> allowedTlds;
+
+  @Parameter(
+      names = {"--allowed_epp_actions"},
+      description = "Comma-separated list of allowed EPP actions, or null if all are allowed")
+  private List<String> allowedEppActions;
 
   @Parameter(
       names = {"--discount_fraction"},
@@ -207,7 +213,13 @@ class GenerateAllocationTokensCommand implements Command {
                             .setTokenType(tokenType == null ? SINGLE_USE : tokenType)
                             .setAllowedRegistrarIds(
                                 ImmutableSet.copyOf(nullToEmpty(allowedClientIds)))
-                            .setAllowedTlds(ImmutableSet.copyOf(nullToEmpty(allowedTlds)));
+                            .setAllowedTlds(ImmutableSet.copyOf(nullToEmpty(allowedTlds)))
+                            .setAllowedEppActions(
+                                isNullOrEmpty(allowedEppActions)
+                                    ? ImmutableSet.of()
+                                    : allowedEppActions.stream()
+                                        .map(CommandName::parseKnownCommand)
+                                        .collect(toImmutableSet()));
                     Optional.ofNullable(discountFraction).ifPresent(token::setDiscountFraction);
                     Optional.ofNullable(discountPremiums).ifPresent(token::setDiscountPremiums);
                     Optional.ofNullable(discountYears).ifPresent(token::setDiscountYears);
@@ -254,6 +266,10 @@ class GenerateAllocationTokensCommand implements Command {
     checkArgument(
         !ImmutableList.of("").equals(allowedTlds),
         "Either omit --allowed_tlds if all TLDs are allowed, or include a comma-separated list");
+
+    if (ImmutableList.of("").equals(allowedEppActions)) {
+      allowedEppActions = ImmutableList.of();
+    }
 
     if (!isNullOrEmpty(tokenStatusTransitions)) {
       // Don't allow package tokens to be created with a scheduled end time since this could allow

@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -78,6 +79,57 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
             builderWithPromo().setAllowedRegistrarIds(ImmutableSet.of("toRemove")).build());
     runCommandForced("--prefix", "token", "--allowed_client_ids", "");
     assertThat(reloadResource(token).getAllowedRegistrarIds()).isEmpty();
+  }
+
+  @Test
+  void testUpdateEppActions_setEppActions() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo().setAllowedEppActions(ImmutableSet.of(CommandName.CREATE)).build());
+    runCommandForced("--prefix", "token", "--allowed_epp_actions", "RENEW,RESTORE");
+    assertThat(reloadResource(token).getAllowedEppActions())
+        .containsExactly(CommandName.RENEW, CommandName.RESTORE);
+  }
+
+  @Test
+  void testUpdateEppActions_clearEppActions() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo()
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RENEW))
+                .build());
+    runCommandForced("--prefix", "token", "--allowed_epp_actions", "");
+    assertThat(reloadResource(token).getAllowedEppActions()).isEmpty();
+  }
+
+  @Test
+  void testUpdateEppActions_invalidEppAction() throws Exception {
+    persistResource(
+        builderWithPromo().setAllowedEppActions(ImmutableSet.of(CommandName.CREATE)).build());
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommandForced("--prefix", "token", "--allowed_epp_actions", "FAKE"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Invalid EPP action name. Valid actions are CREATE, RENEW, TRANSFER, RESTORE, and"
+                + " UPDATE");
+  }
+
+  @Test
+  void testUpdateEppActions_unknownEppAction() throws Exception {
+    persistResource(
+        builderWithPromo().setAllowedEppActions(ImmutableSet.of(CommandName.CREATE)).build());
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommandForced("--prefix", "token", "--allowed_epp_actions", "UNKNOWN"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Invalid EPP action name. Valid actions are CREATE, RENEW, TRANSFER, RESTORE, and"
+                + " UPDATE");
   }
 
   @Test

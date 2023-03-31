@@ -14,6 +14,8 @@
 
 package google.registry.model.domain.fee;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Period;
 import java.util.Optional;
@@ -37,7 +39,19 @@ public abstract class FeeQueryCommandExtensionItem extends ImmutableObject {
     RENEW,
     TRANSFER,
     RESTORE,
-    UPDATE
+    UPDATE;
+
+    public static CommandName parseKnownCommand(String string) {
+      try {
+        CommandName command = valueOf(string);
+        checkArgument(!command.equals(UNKNOWN));
+        return command;
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException(
+            "Invalid EPP action name. Valid actions are CREATE, RENEW, TRANSFER, RESTORE, and"
+                + " UPDATE");
+      }
+    }
   }
 
   /** The default validity period (if not specified) is 1 year for all operations. */
