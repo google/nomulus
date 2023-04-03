@@ -42,9 +42,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
-import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
@@ -55,6 +53,11 @@ import google.registry.flows.custom.DomainCheckFlowCustomLogic.BeforeResponsePar
 import google.registry.flows.custom.DomainCheckFlowCustomLogic.BeforeResponseReturnData;
 import google.registry.flows.domain.token.AllocationTokenDomainCheckResults;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForCommandException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.model.EppResource;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.billing.BillingEvent;
@@ -305,7 +308,11 @@ public final class DomainCheckFlow implements Flow {
               availableDomains.contains(domainName),
               recurrences.getOrDefault(domainName, null));
           responseItems.add(builder.setDomainNameIfSupported(domainName).build());
-        } catch (AssociationProhibitsOperationException | StatusProhibitsOperationException e) {
+        } catch (AllocationTokenNotValidForCommandException
+            | AllocationTokenNotValidForDomainException
+            | AllocationTokenNotValidForRegistrarException
+            | AllocationTokenNotValidForTldException
+            | AllocationTokenNotInPromotionException e) {
           // Allocation token is either not an active token or it is not valid for the EPP command,
           // registrar, domain, or TLD.
           Registry registry = Registry.get(InternetDomainName.from(domainName).parent().toString());
