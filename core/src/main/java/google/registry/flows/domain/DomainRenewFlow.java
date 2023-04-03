@@ -174,17 +174,17 @@ public final class DomainRenewFlow implements TransactionalFlow {
     // Loads the target resource if it exists
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     String tld = existingDomain.getTld();
+    Registry registry = Registry.get(tld);
     Optional<AllocationToken> allocationToken =
         allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
             existingDomain,
-            Registry.get(tld),
+            registry,
             registrarId,
             now,
             CommandName.RENEW,
             eppInput.getSingleExtension(AllocationTokenExtension.class));
     boolean defaultTokenUsed = false;
-    Registry registry = Registry.get(tld);
-    if (!allocationToken.isPresent() && !registry.getDefaultPromoTokens().isEmpty()) {
+    if (!allocationToken.isPresent()) {
       allocationToken =
           DomainFlowUtils.checkForDefaultToken(
               registry, existingDomain.getDomainName(), CommandName.RENEW, registrarId, now);

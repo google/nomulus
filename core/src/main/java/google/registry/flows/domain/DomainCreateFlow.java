@@ -275,7 +275,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
             now,
             eppInput.getSingleExtension(AllocationTokenExtension.class));
     boolean defaultTokenUsed = false;
-    if (!allocationToken.isPresent() && !registry.getDefaultPromoTokens().isEmpty()) {
+    if (!allocationToken.isPresent()) {
       allocationToken =
           DomainFlowUtils.checkForDefaultToken(
               registry, command.getDomainName(), CommandName.CREATE, registrarId, now);
