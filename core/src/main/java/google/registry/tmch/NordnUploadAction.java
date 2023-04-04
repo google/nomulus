@@ -75,9 +75,7 @@ public final class NordnUploadAction implements Runnable {
   static final String PATH = "/_dr/task/nordnUpload";
   static final String LORDN_PHASE_PARAM = "lordnPhase";
 
-  private static final int BATCH_SIZE = 1000;
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final Duration LEASE_PERIOD = Duration.standardHours(1);
 
   /**
    * A unique (enough) id that is outputted in log lines to make it clear which log lines are

@@ -38,9 +38,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.taskqueue.TaskHandle;
-import com.google.appengine.api.taskqueue.TaskOptions;
-import com.google.appengine.api.taskqueue.TaskOptions.Method;
 import com.google.common.base.VerifyException;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.model.domain.Domain;
@@ -230,13 +227,6 @@ class NordnUploadActionTest {
             .setSmdId("my-smdid")
             .setLordnPhase(LordnPhase.SUNRISE)
             .build());
-  }
-
-  private static TaskHandle makeTaskHandle(
-      String taskName, String tag, String payload, String queue) {
-    return new TaskHandle(
-        TaskOptions.Builder.withPayload(payload).method(Method.PULL).tag(tag).taskName(taskName),
-        queue);
   }
 
   private void verifyColumnCleared(String domainName) {
