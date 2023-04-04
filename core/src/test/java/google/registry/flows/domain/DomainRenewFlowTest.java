@@ -87,6 +87,7 @@ import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -1520,7 +1521,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setToken("aaaaa")
                 .setTokenType(DEFAULT_PROMO)
                 .setDiscountFraction(0.25)
-                .setAllowedRegistrarIds(ImmutableSet.of("OtherRegistrar"))
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setDiscountYears(1)
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
