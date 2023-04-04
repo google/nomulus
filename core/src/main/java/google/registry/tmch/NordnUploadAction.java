@@ -15,7 +15,6 @@
 package google.registry.tmch;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.MediaType.CSV_UTF_8;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
@@ -26,23 +25,13 @@ import static google.registry.tmch.LordnTaskUtils.COLUMNS_SUNRISE;
 import static google.registry.tmch.LordnTaskUtils.getCsvLineForClaimsDomain;
 import static google.registry.tmch.LordnTaskUtils.getCsvLineForSunriseDomain;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 
 import com.google.api.client.http.HttpMethods;
-import com.google.appengine.api.taskqueue.LeaseOptions;
-import com.google.appengine.api.taskqueue.Queue;
-import com.google.appengine.api.taskqueue.TaskHandle;
-import com.google.appengine.api.taskqueue.TransientFailureException;
-import com.google.apphosting.api.DeadlineExceededException;
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.base.Ascii;
-import com.google.common.base.Joiner;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Ordering;
 import com.google.common.flogger.FluentLogger;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
@@ -65,9 +54,7 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
@@ -190,46 +177,6 @@ public final class NordnUploadAction implements Runnable {
               }
               tm().updateAll(newDomains.build());
             });
-  }
-
-  /**
-   * Converts a list of queue tasks, each containing a row of CSV data, into a single newline-
-   * delimited String.
-   */
-  static String convertTasksToCsv(List<TaskHandle> tasks, DateTime now, String columns) {
-    // Use a Set for deduping purposes, so we can be idempotent in case tasks happened to be
-    // enqueued multiple times for a given domain create.
-    ImmutableSortedSet.Builder<String> builder =
-        new ImmutableSortedSet.Builder<>(Ordering.natural());
-    for (TaskHandle task : checkNotNull(tasks)) {
-      String payload = new String(task.getPayload(), UTF_8);
-      if (!Strings.isNullOrEmpty(payload)) {
-        builder.add(payload + '\n');
-      }
-    }
-    ImmutableSortedSet<String> csvLines = builder.build();
-    String header = String.format("1,%s,%d\n%s\n", now, csvLines.size(), columns);
-    return header + Joiner.on("").join(csvLines);
-  }
-
-  /** Leases and returns all tasks from the queue with the specified tag tld, in batches. */
-  List<TaskHandle> loadAllTasks(Queue queue, String tld) {
-    ImmutableList.Builder<TaskHandle> allTasks = new ImmutableList.Builder<>();
-    while (true) {
-      List<TaskHandle> tasks =
-          retrier.callWithRetry(
-              () ->
-                  queue.leaseTasks(
-                      LeaseOptions.Builder.withTag(tld)
-                          .leasePeriod(LEASE_PERIOD.getMillis(), TimeUnit.MILLISECONDS)
-                          .countLimit(BATCH_SIZE)),
-              TransientFailureException.class,
-              DeadlineExceededException.class);
-      if (tasks.isEmpty()) {
-        return allTasks.build();
-      }
-      allTasks.addAll(tasks);
-    }
   }
 
   /**

@@ -38,7 +38,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
@@ -122,7 +121,6 @@ import org.joda.time.DateTime;
 @ReportingSpec(ActivityReportField.DOMAIN_CHECK)
 public final class DomainCheckFlow implements Flow {
 
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
   @Inject EppInput eppInput;
