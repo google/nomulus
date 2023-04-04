@@ -39,11 +39,13 @@ import com.google.common.collect.Maps;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForCommandException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationTokenExtension;
@@ -80,7 +82,11 @@ class AllocationTokenFlowUtilsTest {
   void test_validateToken_successfullyVerifiesValidTokenOnCreate() throws Exception {
     AllocationToken token =
         persistResource(
-            new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
+            new AllocationToken.Builder()
+                .setToken("tokeN")
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RESTORE))
+                .setTokenType(SINGLE_USE)
+                .build());
     when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     assertThat(
             flowUtils
@@ -98,6 +104,29 @@ class AllocationTokenFlowUtilsTest {
   void test_validateToken_successfullyVerifiesValidTokenExistingDomain() throws Exception {
     AllocationToken token =
         persistResource(
+            new AllocationToken.Builder()
+                .setToken("tokeN")
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RENEW))
+                .setTokenType(SINGLE_USE)
+                .build());
+    when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
+    assertThat(
+            flowUtils
+                .verifyAllocationTokenIfPresent(
+                    DatabaseHelper.newDomain("blah.tld"),
+                    Registry.get("tld"),
+                    "TheRegistrar",
+                    DateTime.now(UTC),
+                    CommandName.RENEW,
+                    Optional.of(allocationTokenExtension))
+                .get())
+        .isEqualTo(token);
+  }
+
+  void test_validateToken_emptyAllowedEppActions_successfullyVerifiesValidTokenExistingDomain()
+      throws Exception {
+    AllocationToken token =
+        persistResource(
             new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
     when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     assertThat(
@@ -107,6 +136,7 @@ class AllocationTokenFlowUtilsTest {
                     Registry.get("tld"),
                     "TheRegistrar",
                     DateTime.now(UTC),
+                    CommandName.RENEW,
                     Optional.of(allocationTokenExtension))
                 .get())
         .isEqualTo(token);
@@ -150,6 +180,7 @@ class AllocationTokenFlowUtilsTest {
                         Registry.get("tld"),
                         "TheRegistrar",
                         DateTime.now(UTC),
+                        CommandName.RENEW,
                         Optional.of(allocationTokenExtension))))
         .marshalsToXml();
   }
@@ -190,6 +221,7 @@ class AllocationTokenFlowUtilsTest {
                     Registry.get("tld"),
                     "TheRegistrar",
                     DateTime.now(UTC),
+                    CommandName.RENEW,
                     Optional.of(allocationTokenExtension)));
     assertThat(thrown).hasMessageThat().isEqualTo("failed for tests");
   }
@@ -283,6 +315,25 @@ class AllocationTokenFlowUtilsTest {
                     .build())
             .build());
     assertValidateExistingDomainThrowsEppException(AllocationTokenNotInPromotionException.class);
+  }
+
+  @Test
+  void test_validateTokenCreate_invalidCommand() {
+    persistResource(
+        createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
+            .setAllowedEppActions(ImmutableSet.of(CommandName.RENEW))
+            .build());
+    assertValidateCreateThrowsEppException(AllocationTokenNotValidForCommandException.class);
+  }
+
+  @Test
+  void test_validateTokenExistingDomain_invalidCommand() {
+    persistResource(
+        createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
+            .build());
+    assertValidateExistingDomainThrowsEppException(
+        AllocationTokenNotValidForCommandException.class);
   }
 
   @Test
@@ -401,6 +452,7 @@ class AllocationTokenFlowUtilsTest {
                         Registry.get("tld"),
                         "TheRegistrar",
                         DateTime.now(UTC),
+                        CommandName.RENEW,
                         Optional.of(allocationTokenExtension))))
         .marshalsToXml();
   }

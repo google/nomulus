@@ -53,6 +53,7 @@ import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationTokenExtension;
@@ -135,6 +136,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
         Registry.get(existingDomain.getTld()),
         registrarId,
         now,
+        CommandName.TRANSFER,
         eppInput.getSingleExtension(AllocationTokenExtension.class));
     verifyOptionalAuthInfo(authInfo, existingDomain);
     verifyHasPendingTransfer(existingDomain);

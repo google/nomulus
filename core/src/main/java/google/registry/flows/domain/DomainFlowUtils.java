@@ -97,6 +97,7 @@ import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Credit;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.fee.FeeQueryResponseExtensionItem;
 import google.registry.model.domain.fee.FeeTransformCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
@@ -674,8 +675,6 @@ public class DomainFlowUtils {
     String feeClass = null;
     ImmutableList<Fee> fees = ImmutableList.of();
     switch (feeRequest.getCommandName()) {
-        // TODO(sarahbot@): Add check of valid EPP actions on token before passing the token to the
-        // fee request.
       case CREATE:
         // Don't return a create price for reserved names.
         if (isReserved(domainName, isSunrise) && !isAvailable) {
@@ -1204,7 +1203,12 @@ public class DomainFlowUtils {
    * token found on the TLD's default token list will be returned.
    */
   public static Optional<AllocationToken> checkForDefaultToken(
-      Registry registry, String domainName, String registrarId, DateTime now) throws EppException {
+      Registry registry,
+      String domainName,
+      CommandName commandName,
+      String registrarId,
+      DateTime now)
+      throws EppException {
     if (isNullOrEmpty(registry.getDefaultPromoTokens())) {
       return Optional.empty();
     }
@@ -1222,7 +1226,7 @@ public class DomainFlowUtils {
     for (Optional<AllocationToken> token : tokenList) {
       try {
         AllocationTokenFlowUtils.validateToken(
-            InternetDomainName.from(domainName), token.get(), registrarId, now);
+            InternetDomainName.from(domainName), token.get(), commandName, registrarId, now);
       } catch (AssociationProhibitsOperationException | StatusProhibitsOperationException e) {
         // Allocation token was not valid for this registration, continue to check the next token in
         // the list

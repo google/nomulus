@@ -26,25 +26,25 @@
     <extension>
       <fee:chkData>
         <fee:cd>
-          <fee:name>example2.example</fee:name>
-          <fee:currency>USD</fee:currency>
-          <fee:command>create</fee:command>
-          <fee:period unit="y">1</fee:period>
-          <fee:fee description="create">13.00</fee:fee>
-        </fee:cd>
-        <fee:cd>
           <fee:name>example1.tld</fee:name>
           <fee:currency>USD</fee:currency>
           <fee:command>create</fee:command>
           <fee:period unit="y">1</fee:period>
-          <fee:fee description="create">13.00</fee:fee>
+          <fee:class>token-not-supported</fee:class>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example2.example</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:class>token-not-supported</fee:class>
         </fee:cd>
         <fee:cd>
           <fee:name>reserved.tld</fee:name>
           <fee:currency>USD</fee:currency>
           <fee:command>create</fee:command>
           <fee:period unit="y">1</fee:period>
-          <fee:class>reserved</fee:class>
+          <fee:class>token-not-supported</fee:class>
         </fee:cd>
         <fee:cd>
           <fee:name>specificuse.tld</fee:name>

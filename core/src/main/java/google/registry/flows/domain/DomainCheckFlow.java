@@ -53,6 +53,11 @@ import google.registry.flows.custom.DomainCheckFlowCustomLogic.BeforeResponsePar
 import google.registry.flows.custom.DomainCheckFlowCustomLogic.BeforeResponseReturnData;
 import google.registry.flows.domain.token.AllocationTokenDomainCheckResults;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForCommandException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.model.EppResource;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.billing.BillingEvent;
@@ -277,22 +282,52 @@ public final class DomainCheckFlow implements Flow {
             DomainFlowUtils.checkForDefaultToken(
                 Registry.get(InternetDomainName.from(domainName).parent().toString()),
                 domainName,
+                feeCheckItem.getCommandName(),
                 registrarId,
                 now);
         FeeCheckResponseExtensionItem.Builder<?> builder = feeCheckItem.createResponseBuilder();
         Optional<Domain> domain = Optional.ofNullable(domainObjs.get(domainName));
-        handleFeeRequest(
-            feeCheckItem,
-            builder,
-            domainNames.get(domainName),
-            domain,
-            feeCheck.getCurrency(),
-            now,
-            pricingLogic,
-            allocationToken.isPresent() ? allocationToken : defaultToken,
-            availableDomains.contains(domainName),
-            recurrences.getOrDefault(domainName, null));
-        responseItems.add(builder.setDomainNameIfSupported(domainName).build());
+        try {
+          if (allocationToken.isPresent()) {
+            AllocationTokenFlowUtils.validateToken(
+                InternetDomainName.from(domainName),
+                allocationToken.get(),
+                feeCheckItem.getCommandName(),
+                registrarId,
+                now);
+          }
+          handleFeeRequest(
+              feeCheckItem,
+              builder,
+              domainNames.get(domainName),
+              domain,
+              feeCheck.getCurrency(),
+              now,
+              pricingLogic,
+              allocationToken.isPresent() ? allocationToken : defaultToken,
+              availableDomains.contains(domainName),
+              recurrences.getOrDefault(domainName, null));
+          responseItems.add(builder.setDomainNameIfSupported(domainName).build());
+        } catch (AllocationTokenNotValidForCommandException
+            | AllocationTokenNotValidForDomainException
+            | AllocationTokenNotValidForRegistrarException
+            | AllocationTokenNotValidForTldException
+            | AllocationTokenNotInPromotionException e) {
+          // Allocation token is either not an active token or it is not valid for the EPP command,
+          // registrar, domain, or TLD.
+          Registry registry = Registry.get(InternetDomainName.from(domainName).parent().toString());
+          responseItems.add(
+              builder
+                  .setDomainNameIfSupported(domainName)
+                  .setPeriod(feeCheckItem.getPeriod())
+                  .setCommand(
+                      feeCheckItem.getCommandName(),
+                      feeCheckItem.getPhase(),
+                      feeCheckItem.getSubphase())
+                  .setCurrencyIfSupported(registry.getCurrency())
+                  .setClass("token-not-supported")
+                  .build());
+        }
       }
     }
     return ImmutableList.of(feeCheck.createResponse(responseItems.build()));

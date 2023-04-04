@@ -75,6 +75,7 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.eppcommon.StatusValue;
@@ -792,6 +793,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
                 .setTokenType(DEFAULT_PROMO)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setDiscountFraction(0.5)
                 .build());
     persistResource(
@@ -876,6 +878,19 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
+  void testFeeExtension_multipleCommands_tokenNotValidForSome_v06() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.TRANSFER))
+            .build());
+    setEppInput("domain_check_fee_multiple_commands_allocationtoken_v06.xml");
+    runFlowAssertResponse(
+        loadFile("domain_check_fee_multiple_commands_allocationtoken_response_v06.xml"));
+  }
+
+  @Test
   void testFeeExtension_multipleCommands_defaultTokenOnlyOnCreate_v06() throws Exception {
     setUpDefaultToken();
     setEppInput("domain_check_fee_multiple_commands_v06.xml");
@@ -889,6 +904,19 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   void testFeeExtension_multipleCommands_v12() throws Exception {
     setEppInput("domain_check_fee_multiple_commands_v12.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_multiple_commands_response_v12.xml"));
+  }
+
+  @Test
+  void testFeeExtension_multipleCommands_tokenNotValidForSome_v12() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.TRANSFER))
+            .build());
+    setEppInput("domain_check_fee_multiple_commands_allocationtoken_v12.xml");
+    runFlowAssertResponse(
+        loadFile("domain_check_fee_multiple_commands_allocationtoken_response_v12.xml"));
   }
 
   @Test

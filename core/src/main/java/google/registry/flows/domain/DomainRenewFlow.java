@@ -66,6 +66,7 @@ import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.fee.FeeRenewCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
@@ -172,13 +173,13 @@ public final class DomainRenewFlow implements TransactionalFlow {
     Renew command = (Renew) resourceCommand;
     // Loads the target resource if it exists
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    // TODO(sarahbot@): Add check for valid EPP actions on the token
     Optional<AllocationToken> allocationToken =
         allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
             existingDomain,
             Registry.get(existingDomain.getTld()),
             registrarId,
             now,
+            CommandName.RENEW,
             eppInput.getSingleExtension(AllocationTokenExtension.class));
     verifyRenewAllowed(authInfo, existingDomain, command, allocationToken);
 
