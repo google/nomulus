@@ -29,7 +29,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
@@ -39,15 +38,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.taskqueue.LeaseOptions;
-import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.TaskHandle;
 import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.api.taskqueue.TaskOptions.Method;
-import com.google.appengine.api.taskqueue.TransientFailureException;
-import com.google.apphosting.api.DeadlineExceededException;
 import com.google.common.base.VerifyException;
-import com.google.common.collect.ImmutableList;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.launch.LaunchNotice;
@@ -69,7 +63,6 @@ import java.io.ByteArrayOutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.SecureRandom;
-import java.util.List;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -137,63 +130,6 @@ class NordnUploadActionTest {
     action.tmchMarksdbUrl = "http://127.0.0.1";
     action.random = new SecureRandom();
     action.retrier = new Retrier(new FakeSleeper(clock), 3);
-  }
-
-  @Test
-  void test_convertTasksToCsv() {
-    List<TaskHandle> tasks =
-        ImmutableList.of(
-            makeTaskHandle("task2", "example", "csvLine2", "lordn-sunrise"),
-            makeTaskHandle("task1", "example", "csvLine1", "lordn-sunrise"),
-            makeTaskHandle("task3", "example", "ending", "lordn-sunrise"));
-    assertThat(NordnUploadAction.convertTasksToCsv(tasks, clock.nowUtc(), "col1,col2"))
-        .isEqualTo("1,2010-05-04T10:11:12.000Z,3\ncol1,col2\ncsvLine1\ncsvLine2\nending\n");
-  }
-
-  @Test
-  void test_convertTasksToCsv_dedupesDuplicates() {
-    List<TaskHandle> tasks =
-        ImmutableList.of(
-            makeTaskHandle("task2", "example", "csvLine2", "lordn-sunrise"),
-            makeTaskHandle("task1", "example", "csvLine1", "lordn-sunrise"),
-            makeTaskHandle("task3", "example", "ending", "lordn-sunrise"),
-            makeTaskHandle("task1", "example", "csvLine1", "lordn-sunrise"));
-    assertThat(NordnUploadAction.convertTasksToCsv(tasks, clock.nowUtc(), "col1,col2"))
-        .isEqualTo("1,2010-05-04T10:11:12.000Z,3\ncol1,col2\ncsvLine1\ncsvLine2\nending\n");
-  }
-
-  @Test
-  void test_convertTasksToCsv_doesntFailOnEmptyTasks() {
-    assertThat(NordnUploadAction.convertTasksToCsv(ImmutableList.of(), clock.nowUtc(), "col1,col2"))
-        .isEqualTo("1,2010-05-04T10:11:12.000Z,0\ncol1,col2\n");
-  }
-
-  @Test
-  void test_convertTasksToCsv_throwsNpeOnNullTasks() {
-    assertThrows(
-        NullPointerException.class,
-        () -> NordnUploadAction.convertTasksToCsv(null, clock.nowUtc(), "header"));
-  }
-
-  @Test
-  void test_loadAllTasks_retryLogic_thirdTrysTheCharm() {
-    Queue queue = mock(Queue.class);
-    TaskHandle task = new TaskHandle(TaskOptions.Builder.withTaskName("blah"), "blah");
-    when(queue.leaseTasks(any(LeaseOptions.class)))
-        .thenThrow(TransientFailureException.class)
-        .thenThrow(DeadlineExceededException.class)
-        .thenReturn(ImmutableList.of(task), ImmutableList.of());
-    assertThat(action.loadAllTasks(queue, "tld")).containsExactly(task);
-  }
-
-  @Test
-  void test_loadAllTasks_retryLogic_allFailures() {
-    Queue queue = mock(Queue.class);
-    when(queue.leaseTasks(any(LeaseOptions.class)))
-        .thenThrow(new TransientFailureException("some transient error"));
-    RuntimeException thrown =
-        assertThrows(TransientFailureException.class, () -> action.loadAllTasks(queue, "tld"));
-    assertThat(thrown).hasMessageThat().isEqualTo("some transient error");
   }
 
   @Test
