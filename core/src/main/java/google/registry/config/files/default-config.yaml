@@ -474,8 +474,6 @@ registryTool:
 contactHistory:
   # The number of months that a ContactHistory entity should be stored in the database.
   minMonthsBeforeWipeOut: 18
-  # The batch size for querying ContactHistory table in the database.
-  wipeOutQueryBatchSize: 500
 
 # Configuration options relevant to the DNS update functionality.
 dnsUpdate:

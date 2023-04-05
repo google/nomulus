@@ -243,7 +243,6 @@ public class RegistryConfigSettings {
   /** Configuration for contact history. */
   public static class ContactHistory {
     public int minMonthsBeforeWipeOut;
-    public int wipeOutQueryBatchSize;
   }
 
   /** Configuration for dns update. */
