@@ -15,7 +15,7 @@
 package google.registry.tldconfig.idn;
 
 import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
-import static google.registry.tldconfig.idn.IdnTableEnum.JA;
+import static google.registry.tldconfig.idn.IdnTableEnum.JAPANESE;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -27,11 +27,11 @@ public final class IdnLabelValidator {
 
   /** Most TLDs will use this generic list of IDN tables. */
   private static final ImmutableList<IdnTableEnum> DEFAULT_IDN_TABLES =
-      ImmutableList.of(EXTENDED_LATIN, JA);
+      ImmutableList.of(EXTENDED_LATIN, JAPANESE);
 
   private static final ImmutableMap<String, ImmutableList<IdnTableEnum>>
       DEFAULT_IDN_TABLE_LISTS_PER_TLD =
-          ImmutableMap.of("xn--q9jyb4c", ImmutableList.of(EXTENDED_LATIN, JA));
+          ImmutableMap.of("xn--q9jyb4c", ImmutableList.of(EXTENDED_LATIN, JAPANESE));
 
   /** Some TLDs have their own IDN tables, configured here. */
   private ImmutableMap<String, ImmutableList<IdnTableEnum>> idnTableListsPerTld;
