@@ -14,31 +14,39 @@
 
 package google.registry.batch;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_OK;
+import static google.registry.batch.BatchModule.PARAM_DRY_RUN;
+import static google.registry.beam.BeamUtils.createJobName;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.common.annotations.VisibleForTesting;
+import com.google.api.services.dataflow.Dataflow;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateParameter;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateResponse;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
+import google.registry.beam.wipeout.WipeOutContactHistoryPiiPipeline;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryEnvironment;
 import google.registry.model.contact.ContactHistory;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
+import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
+import java.io.IOException;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**
- * An action that wipes out Personal Identifiable Information (PII) fields of {@link ContactHistory}
- * entities.
+ * An action that launches {@link WipeOutContactHistoryPiiPipeline} to wipe out Personal
+ * Identifiable Information (PII) fields of {@link ContactHistory} entities.
  *
- * <p>ContactHistory entities should be retained in the database for only certain amount of time.
- * This periodic wipe out action only applies to SQL.
+ * <p>{@link ContactHistory} entities should be retained in the database for only certain amount of
+ * time.
  */
 @Action(
     service = Service.BACKEND,
@@ -47,90 +55,89 @@ import org.joda.time.DateTime;
 public class WipeOutContactHistoryPiiAction implements Runnable {
 
   public static final String PATH = "/_dr/task/wipeOutContactHistoryPii";
+  public static final String PARAM_CUTOFF_TIME = "wipeoutTime";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final String PIPELINE_NAME = "wipe_out_contact_history_pii_pipeline";
+
   private final Clock clock;
-  private final Response response;
+  private final boolean isDryRun;
+  private final Optional<DateTime> maybeCutoffTime;
   private final int minMonthsBeforeWipeOut;
-  private final int wipeOutQueryBatchSize;
+  private final String stagingBucketUrl;
+  private final String projectId;
+  private final String jobRegion;
+  private final Dataflow dataflow;
+  private final Response response;
 
   @Inject
   public WipeOutContactHistoryPiiAction(
       Clock clock,
+      @Parameter(PARAM_DRY_RUN) boolean isDryRun,
+      @Parameter(PARAM_CUTOFF_TIME) Optional<DateTime> maybeCutoffTime,
       @Config("minMonthsBeforeWipeOut") int minMonthsBeforeWipeOut,
-      @Config("wipeOutQueryBatchSize") int wipeOutQueryBatchSize,
+      @Config("beamStagingBucketUrl") String stagingBucketUrl,
+      @Config("projectId") String projectId,
+      @Config("defaultJobRegion") String jobRegion,
+      Dataflow dataflow,
       Response response) {
     this.clock = clock;
-    this.response = response;
+    this.isDryRun = isDryRun;
+    this.maybeCutoffTime = maybeCutoffTime;
     this.minMonthsBeforeWipeOut = minMonthsBeforeWipeOut;
-    this.wipeOutQueryBatchSize = wipeOutQueryBatchSize;
+    this.stagingBucketUrl = stagingBucketUrl;
+    this.projectId = projectId;
+    this.jobRegion = jobRegion;
+    this.dataflow = dataflow;
+    this.response = response;
   }
 
   @Override
   public void run() {
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
+    DateTime cutoffTime =
+        maybeCutoffTime.orElse(clock.nowUtc().minusMonths(minMonthsBeforeWipeOut));
+    LaunchFlexTemplateParameter launchParameter =
+        new LaunchFlexTemplateParameter()
+            .setJobName(
+                createJobName(
+                    String.format(
+                        "contact-history-pii-wipeout-%s",
+                        cutoffTime.toString("yyyy-MM-dd't'HH-mm-ss'z'")),
+                    clock))
+            .setContainerSpecGcsPath(
+                String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
+            .setParameters(
+                ImmutableMap.of(
+                    "registryEnvironment",
+                    RegistryEnvironment.get().name(),
+                    "cutoffTime",
+                    cutoffTime.toString("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+                    "isDryRun",
+                    Boolean.toString(isDryRun)));
+    logger.atInfo().log(
+        "Launching Beam pipeline to wipe out all PII of contact history entities prior to %s%s.",
+        cutoffTime, " in dry run mode");
     try {
-      int totalNumOfWipedEntities = 0;
-      DateTime wipeOutTime = clock.nowUtc().minusMonths(minMonthsBeforeWipeOut);
-      logger.atInfo().log(
-          "About to wipe out all PII of contact history entities prior to %s.", wipeOutTime);
-
-      int numOfWipedEntities = 0;
-      do {
-        numOfWipedEntities =
-            tm().transact(
-                    () ->
-                        wipeOutContactHistoryData(
-                            getNextContactHistoryEntitiesWithPiiBatch(wipeOutTime)));
-        totalNumOfWipedEntities += numOfWipedEntities;
-      } while (numOfWipedEntities > 0);
-      String msg =
-          String.format(
-              "Done. Wiped out PII of %d ContactHistory entities in total.",
-              totalNumOfWipedEntities);
-      logger.atInfo().log(msg);
-      response.setPayload(msg);
+      LaunchFlexTemplateResponse launchResponse =
+          dataflow
+              .projects()
+              .locations()
+              .flexTemplates()
+              .launch(
+                  projectId,
+                  jobRegion,
+                  new LaunchFlexTemplateRequest().setLaunchParameter(launchParameter))
+              .execute();
+      logger.atInfo().log("Got response: %s", launchResponse.getJob().toPrettyString());
       response.setStatus(SC_OK);
-
-    } catch (Exception e) {
-      logger.atSevere().withCause(e).log(
-          "Exception thrown during the process of wiping out contact history PII.");
-      response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload(
           String.format(
-              "Exception thrown during the process of wiping out contact history PII with cause"
-                  + ": %s",
-              e));
+              "Launched contact history PII wipeout pipeline: %s",
+              launchResponse.getJob().getId()));
+    } catch (IOException e) {
+      logger.atWarning().withCause(e).log("Pipeline Launch failed");
+      response.setStatus(SC_INTERNAL_SERVER_ERROR);
+      response.setPayload(String.format("Pipeline launch failed: %s", e.getMessage()));
     }
-  }
-
-  /**
-   * Returns a stream of up to {@link #wipeOutQueryBatchSize} {@link ContactHistory} entities
-   * containing PII that are prior to @param wipeOutTime.
-   */
-  @VisibleForTesting
-  Stream<ContactHistory> getNextContactHistoryEntitiesWithPiiBatch(DateTime wipeOutTime) {
-    // email is one of the required fields in EPP, meaning it's initially not null.
-    // Therefore, checking if it's null is one way to avoid processing contact history entities
-    // that have been processed previously. Refer to RFC 5733 for more information.
-    return tm().query(
-            "FROM ContactHistory WHERE modificationTime < :wipeOutTime " + "AND email IS NOT NULL",
-            ContactHistory.class)
-        .setParameter("wipeOutTime", wipeOutTime)
-        .setMaxResults(wipeOutQueryBatchSize)
-        .getResultStream();
-  }
-
-  /** Wipes out the PII of each of the {@link ContactHistory} entities in the stream. */
-  @VisibleForTesting
-  int wipeOutContactHistoryData(Stream<ContactHistory> contactHistoryEntities) {
-    AtomicInteger numOfEntities = new AtomicInteger(0);
-    contactHistoryEntities.forEach(
-        contactHistoryEntity -> {
-          tm().update(contactHistoryEntity.asBuilder().wipeOutPii().build());
-          numOfEntities.incrementAndGet();
-        });
-    logger.atInfo().log(
-        "Wiped out all PII fields of %d ContactHistory entities.", numOfEntities.get());
-    return numOfEntities.get();
   }
 }
