@@ -154,6 +154,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T transact(Supplier<T> work) {
+    // This prevents inner transaction from retrying, thus avoiding a cascade retry effect.
+    if (inTransaction()) {
+      return transactNoRetry(work);
+    }
     return retrier.callWithRetry(() -> transactNoRetry(work), JpaRetries::isFailedTxnRetriable);
   }
 
