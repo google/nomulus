@@ -17,20 +17,20 @@ package google.registry.tldconfig.idn;
 import static com.google.common.io.Resources.readLines;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Ascii;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
 
 /** Wrapper enum that loads all {@link IdnTable} resources into memory. */
 public enum IdnTableEnum {
-  EXTENDED_LATIN,
-  JA;
+  EXTENDED_LATIN("extended_latin.txt"),
+  UNCONFUSABLE_LATIN("unconfusable_latin.txt"),
+  JAPANESE("japanese.txt");
 
   private final IdnTable table;
 
-  IdnTableEnum() {
-    this.table = load(Ascii.toLowerCase(name()));
+  IdnTableEnum(String filename) {
+    this.table = load(filename);
   }
 
   public IdnTable getTable() {
