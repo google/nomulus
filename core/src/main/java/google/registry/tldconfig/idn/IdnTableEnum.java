@@ -17,20 +17,43 @@ package google.registry.tldconfig.idn;
 import static com.google.common.io.Resources.readLines;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Ascii;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
 
 /** Wrapper enum that loads all {@link IdnTable} resources into memory. */
 public enum IdnTableEnum {
-  EXTENDED_LATIN,
-  JA;
+
+  /**
+   * Extended Latin, as used on our existing TLD launches prior to 2023.
+   *
+   * <p>As of 2023 this table is no longer conformant with ICANN's IDN policies for new launches,
+   * so it is retained solely for legacy compatibility with already-launched TLDs.
+   */
+  EXTENDED_LATIN("extended_latin.txt"),
+
+  /**
+   * Extended Latin, but with confusable characters removed.
+   *
+   * <p>This is compatible with ICANN's requirements as of 2023, and is used for the Dads & Grads
+   * TLDs and all subsequent TLD launches. Note that confusable characters consist of various
+   * letters with diacritic marks on them, e.g. U+00EF (LATIN SMALL LETTER I WITH DIAERESIS) is not
+   * allowed because it is confusable with the standard i.
+   */
+  UNCONFUSABLE_LATIN("unconfusable_latin.txt"),
+
+  /**
+   * Japanese, as used on our existing TLD launches prior to 2023.
+   *
+   * <p>As of 2023 this table is no longer conformant with ICANN's IDN policies for new launches,
+   * so it is retained solely for legacy compatibility with already-launched TLDs.
+   */
+  JA("japanese.txt");
 
   private final IdnTable table;
 
-  IdnTableEnum() {
-    this.table = load(Ascii.toLowerCase(name()));
+  IdnTableEnum(String filename) {
+    this.table = load(filename);
   }
 
   public IdnTable getTable() {
