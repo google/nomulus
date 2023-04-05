@@ -20,6 +20,7 @@ import static google.registry.flows.domain.DomainTransferFlowTestCase.persistWit
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -46,6 +47,7 @@ import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -85,6 +87,7 @@ import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -1373,5 +1376,417 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         loadFile(
             "domain_renew_response.xml",
             ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+  }
+
+  @Test
+  void testSuccess_usesDefaultToken() throws Exception {
+    setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistDomain();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.75)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
+            .build());
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
+    assertThat(billingEvent.getAllocationToken().get().getKey())
+        .isEqualTo(defaultToken1.getToken());
+    // Price is 50% off the first year only. Non-discounted price is $11.
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 16.5));
+  }
+
+  @Test
+  void testSuccess_doesNotUseDefaultTokenWhenTokenPassedIn() throws Exception {
+    setEppInput(
+        "domain_renew_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
+    persistDomain();
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .build());
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.25)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.75)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
+            .build());
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
+    assertThat(billingEvent.getAllocationToken().get().getKey())
+        .isEqualTo(allocationToken.getToken());
+    // Price is 50% off the first year only. Non-discounted price is $11.
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 16.5));
+  }
+
+  @Test
+  void testSuccess_noValidDefaultToken() throws Exception {
+    setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistDomain();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .setAllowedRegistrarIds(ImmutableSet.of("OtherRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.75)
+                .setDiscountYears(1)
+                .setAllowedRegistrarIds(ImmutableSet.of("OtherRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
+            .build());
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
+    assertThat(billingEvent.getAllocationToken()).isEmpty();
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 22));
+  }
+
+  @Test
+  void testSuccess_onlyUsesFirstValidToken() throws Exception {
+    setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistDomain();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.25)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken3 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("ccccc")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.75)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(
+                    defaultToken1.createVKey(),
+                    defaultToken2.createVKey(),
+                    defaultToken3.createVKey()))
+            .build());
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
+    assertThat(billingEvent.getAllocationToken().get().getKey())
+        .isEqualTo(defaultToken2.getToken());
+    // Price is 50% off the first year only. Non-discounted price is $11.
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 16.5));
+  }
+
+  @Test
+  void testSuccess_registryHasDeletedDefaultToken() throws Exception {
+    setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    persistDomain();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    AllocationToken defaultToken2 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.75)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(
+                ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
+            .build());
+    DatabaseHelper.deleteResource(defaultToken1);
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
+    assertThat(billingEvent.getAllocationToken().get().getKey())
+        .isEqualTo(defaultToken2.getToken());
+    // Price is 75% off the first year only. Non-discounted price is $11.
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 13.75));
+  }
+
+  @Test
+  void testSuccess_wrongFeeAmountTooHigh_defaultToken_v06() throws Exception {
+    setEppInput("domain_renew_fee.xml", FEE_06_MAP);
+    persistDomain();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
+            .build());
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response_fee.xml",
+            ImmutableMap.of(
+                "NAME",
+                "example.tld",
+                "PERIOD",
+                "5",
+                "EX_DATE",
+                "2005-04-03T22:00:00.0Z",
+                "FEE",
+                "49.50",
+                "CURRENCY",
+                "USD",
+                "FEE_VERSION",
+                "0.6",
+                "FEE_NS",
+                "fee")));
+  }
+
+  @Test
+  void testFailure_wrongFeeAmountTooLow_defaultToken_v06() throws Exception {
+    setEppInput("domain_renew_fee.xml", FEE_06_MAP);
+    persistDomain();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .build());
+    EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_wrongFeeAmountTooHigh_defaultToken_v11() throws Exception {
+    setEppInput("domain_renew_fee.xml", FEE_11_MAP);
+    persistDomain();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
+            .build());
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response_fee.xml",
+            ImmutableMap.of(
+                "NAME",
+                "example.tld",
+                "PERIOD",
+                "5",
+                "EX_DATE",
+                "2005-04-03T22:00:00.0Z",
+                "FEE",
+                "49.50",
+                "CURRENCY",
+                "USD",
+                "FEE_VERSION",
+                "0.11",
+                "FEE_NS",
+                "fee")));
+  }
+
+  @Test
+  void testFailure_wrongFeeAmountTooLow_defaultToken_v11() throws Exception {
+    setEppInput("domain_renew_fee.xml", FEE_11_MAP);
+    persistDomain();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .build());
+    EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_wrongFeeAmountTooHigh_defaultToken_v12() throws Exception {
+    setEppInput("domain_renew_fee.xml", FEE_12_MAP);
+    persistDomain();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
+            .build());
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response_fee.xml",
+            ImmutableMap.of(
+                "NAME",
+                "example.tld",
+                "PERIOD",
+                "5",
+                "EX_DATE",
+                "2005-04-03T22:00:00.0Z",
+                "FEE",
+                "49.50",
+                "CURRENCY",
+                "USD",
+                "FEE_VERSION",
+                "0.12",
+                "FEE_NS",
+                "fee")));
+  }
+
+  @Test
+  void testFailure_wrongFeeAmountTooLow_defaultToken_v12() throws Exception {
+    setEppInput("domain_renew_fee.xml", FEE_06_MAP);
+    persistDomain();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .build());
+    EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 }

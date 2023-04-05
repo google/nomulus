@@ -173,14 +173,25 @@ public final class DomainRenewFlow implements TransactionalFlow {
     Renew command = (Renew) resourceCommand;
     // Loads the target resource if it exists
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
+    String tld = existingDomain.getTld();
+    Registry registry = Registry.get(tld);
     Optional<AllocationToken> allocationToken =
         allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
             existingDomain,
-            Registry.get(existingDomain.getTld()),
+            registry,
             registrarId,
             now,
             CommandName.RENEW,
             eppInput.getSingleExtension(AllocationTokenExtension.class));
+    boolean defaultTokenUsed = false;
+    if (!allocationToken.isPresent()) {
+      allocationToken =
+          DomainFlowUtils.checkForDefaultToken(
+              registry, existingDomain.getDomainName(), CommandName.RENEW, registrarId, now);
+      if (allocationToken.isPresent()) {
+        defaultTokenUsed = true;
+      }
+    }
     verifyRenewAllowed(authInfo, existingDomain, command, allocationToken);
 
     // If client passed an applicable static token this updates the domain
@@ -202,7 +213,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
             years,
             existingRecurringBillingEvent,
             allocationToken);
-    validateFeeChallenge(feeRenew, feesAndCredits, false);
+    validateFeeChallenge(feeRenew, feesAndCredits, defaultTokenUsed);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder()
             .setExistingDomain(existingDomain)
@@ -211,7 +222,6 @@ public final class DomainRenewFlow implements TransactionalFlow {
             .build());
     HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
-    String tld = existingDomain.getTld();
     // Bill for this explicit renew itself.
     BillingEvent.OneTime explicitRenewEvent =
         createRenewBillingEvent(
@@ -244,7 +254,6 @@ public final class DomainRenewFlow implements TransactionalFlow {
                 GracePeriod.forBillingEvent(
                     GracePeriodStatus.RENEW, existingDomain.getRepoId(), explicitRenewEvent))
             .build();
-    Registry registry = Registry.get(existingDomain.getTld());
     DomainHistory domainHistory =
         buildDomainHistory(
             newDomain, now, command.getPeriod(), registry.getRenewGracePeriodLength());
