@@ -1326,12 +1326,6 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("wipeOutQueryBatchSize")
-    public static int provideWipeOutQueryBatchSize(RegistryConfigSettings config) {
-      return config.contactHistory.wipeOutQueryBatchSize;
-    }
-
-    @Provides
     @Config("jdbcBatchSize")
     public static int provideHibernateJdbcBatchSize(RegistryConfigSettings config) {
       return config.hibernate.jdbcBatchSize;
