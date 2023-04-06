@@ -270,6 +270,6 @@
       This job runs weekly to wipe out PII fields of ContactHistory entities
       that have been in the database for a certain period of time.
     </description>
-    <schedule>0 15 * * 1</schedule>
+    <schedule>0 15 * 12 1</schedule>
   </task>
 </taskentries>
