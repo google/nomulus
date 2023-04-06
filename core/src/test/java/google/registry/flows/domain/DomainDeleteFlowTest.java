@@ -1236,4 +1236,16 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     EppException thrown = assertThrows(UnimplementedExtensionException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
+
+  @Test
+  void testSuccess_freeCreation_deletionDuringGracePeriod() throws Exception {
+    // Deletion during the add grace period should still work even if the credit is 0
+    setUpSuccessfulTest();
+    BillingEvent.OneTime graceBillingEvent =
+        persistResource(createBillingEvent(Reason.CREATE, Money.of(USD, 0)));
+    setUpGracePeriods(
+        GracePeriod.forBillingEvent(GracePeriodStatus.ADD, domain.getRepoId(), graceBillingEvent));
+    clock.advanceOneMilli();
+    runFlowAssertResponse(loadFile("domain_delete_response_fee_free_grace.xml"));
+  }
 }

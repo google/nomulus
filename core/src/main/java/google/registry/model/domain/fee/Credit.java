@@ -34,7 +34,7 @@ public class Credit extends BaseFee {
       BigDecimal cost, FeeType type, String description) {
     Credit instance = new Credit();
     instance.cost = checkNotNull(cost);
-    checkArgument(instance.cost.signum() < 0);
+    checkArgument(instance.cost.signum() <= 0, "A credit cannot have a positive cost");
     instance.type = checkNotNull(type);
     instance.description = description;
     return instance;
