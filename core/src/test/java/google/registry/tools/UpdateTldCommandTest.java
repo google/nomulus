@@ -39,6 +39,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Registry;
+import google.registry.tldconfig.idn.IdnTableEnum;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -1051,6 +1052,38 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   void testSuccess_setDriveFolderIdToNull() throws Exception {
     runCommandForced("--drive_folder_id=null", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getDriveFolderId()).isNull();
+  }
+
+  @Test
+  void testSuccess_setsIdnTables() throws Exception {
+    assertThat(Registry.get("xn--q9jyb4c").getIdnTables()).isEmpty();
+    runCommandForced("--idn_tables=extended_latin,ja", "xn--q9jyb4c");
+    assertThat(Registry.get("xn--q9jyb4c").getIdnTables())
+        .containsExactly(IdnTableEnum.EXTENDED_LATIN, IdnTableEnum.JA);
+  }
+
+  @Test
+  void testSuccess_removesIndTables() throws Exception {
+    persistResource(
+        Registry.get("xn--q9jyb4c")
+            .asBuilder()
+            .setIdnTables(ImmutableSet.of(IdnTableEnum.EXTENDED_LATIN, IdnTableEnum.JA))
+            .build());
+    runCommandForced("--idn_tables=", "xn--q9jyb4c");
+    assertThat(Registry.get("xn--q9jyb4c").getIdnTables()).isEmpty();
+  }
+
+  @Test
+  void testFailure_invalidIdnTable() throws Exception {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommandForced("--idn_tables=extended_latin,bad_value", "xn--q9jyb4c"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "IDN tables [EXTENDED_LATIN, BAD_VALUE] contained invalid value(s). Possible values:"
+                + " [EXTENDED_LATIN, UNCONFUSABLE_LATIN, JA]");
   }
 
   @Test
