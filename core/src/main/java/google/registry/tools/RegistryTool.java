@@ -108,6 +108,7 @@ public final class RegistryTool {
           .put("update_keyring_secret", UpdateKeyringSecretCommand.class)
           .put("update_package_promotion", UpdatePackagePromotionCommand.class)
           .put("update_premium_list", UpdatePremiumListCommand.class)
+          .put("update_recurrence", UpdateRecurrenceCommand.class)
           .put("update_registrar", UpdateRegistrarCommand.class)
           .put("update_reserved_list", UpdateReservedListCommand.class)
           .put("update_server_locks", UpdateServerLocksCommand.class)
