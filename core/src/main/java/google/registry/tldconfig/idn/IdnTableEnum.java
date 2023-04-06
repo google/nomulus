@@ -24,23 +24,48 @@ import java.net.URL;
 
 /** Wrapper enum that loads all {@link IdnTable} resources into memory. */
 public enum IdnTableEnum {
-  EXTENDED_LATIN,
-  JA;
+
+  /**
+   * Extended Latin, as used on our existing TLD launches prior to 2023.
+   *
+   * <p>As of 2023 this table is no longer conformant with ICANN's IDN policies for new launches, so
+   * it is retained solely for legacy compatibility with already-launched TLDs.
+   */
+  EXTENDED_LATIN("extended_latin.txt"),
+
+  /**
+   * Extended Latin, but with confusable characters removed.
+   *
+   * <p>This is compatible with ICANN's requirements as of 2023, and is used for the Dads and Grads
+   * TLDs and all subsequent TLD launches. Note that confusable characters consist of various
+   * letters with diacritic marks on them, e.g. U+00EF (LATIN SMALL LETTER I WITH DIAERESIS) is not
+   * allowed because it is confusable with the standard i.
+   */
+  UNCONFUSABLE_LATIN("unconfusable_latin.txt"),
+
+  /**
+   * Japanese, as used on our existing TLD launches prior to 2023.
+   *
+   * <p>As of 2023 this table is no longer conformant with ICANN's IDN policies for new launches, so
+   * it is retained solely for legacy compatibility with already-launched TLDs.
+   */
+  JA("japanese.txt");
 
   private final IdnTable table;
 
-  IdnTableEnum() {
-    this.table = load(Ascii.toLowerCase(name()));
+  IdnTableEnum(String filename) {
+    this.table = load(Ascii.toLowerCase(name()), filename);
   }
 
   public IdnTable getTable() {
     return table;
   }
 
-  private static IdnTable load(String name) {
+  private static IdnTable load(String tableName, String filename) {
     try {
-      URL resource = Resources.getResource(IdnTableEnum.class, name + ".txt");
-      return IdnTable.createFrom(name, readLines(resource, UTF_8), LanguageValidator.get(name));
+      URL resource = Resources.getResource(IdnTableEnum.class, filename);
+      return IdnTable.createFrom(
+          tableName, readLines(resource, UTF_8), LanguageValidator.get(tableName));
     } catch (IOException e) {
       throw new RuntimeException(e);  // should never happen
     }
