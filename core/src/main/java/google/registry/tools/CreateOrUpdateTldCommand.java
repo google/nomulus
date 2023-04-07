@@ -237,6 +237,7 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
   )
   Integer numDnsPublishShards;
 
+  @Nullable
   @Parameter(
       names = {"--dns_a_plus_aaaa_ttl"},
       description = "The time to live for DNS A and AAAA records")

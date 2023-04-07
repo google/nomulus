@@ -74,14 +74,10 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
     assertThat(registry.getPendingDeleteLength()).isEqualTo(Registry.DEFAULT_PENDING_DELETE_LENGTH);
     assertThat(registry.getRegistryLockOrUnlockBillingCost())
         .isEqualTo(Registry.DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST);
-    assertThat(registry.getDnsAPlusAaaaTtl()).isEqualTo(null);
-    assertThat(registry.getDnsDsTtl()).isEqualTo(null);
-    assertThat(registry.getDnsNsTtl()).isEqualTo(null);
   }
 
   @Test
   void testSuccess_ttls() throws Exception {
-    DateTime before = fakeClock.nowUtc();
     runCommandForced(
         "xn--q9jyb4c",
         "--roid_suffix=Q9JYB4C",
@@ -89,8 +85,6 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--dns_a_plus_aaaa_ttl=PT300S",
         "--dns_ds_ttl=PT240S",
         "--dns_ns_ttl=PT180S");
-    DateTime after = fakeClock.nowUtc();
-
     Registry registry = Registry.get("xn--q9jyb4c");
     assertThat(registry).isNotNull();
     assertThat(registry.getDnsAPlusAaaaTtl()).isEqualTo(standardMinutes(5));
