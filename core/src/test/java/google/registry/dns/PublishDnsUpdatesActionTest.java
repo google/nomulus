@@ -22,7 +22,7 @@ import static google.registry.dns.DnsModule.PARAM_HOSTS;
 import static google.registry.dns.DnsModule.PARAM_LOCK_INDEX;
 import static google.registry.dns.DnsModule.PARAM_NUM_PUBLISH_LOCKS;
 import static google.registry.dns.DnsModule.PARAM_PUBLISH_TASK_ENQUEUED;
-import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_CREATED;
+import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_TIME;
 import static google.registry.dns.PublishDnsUpdatesAction.RETRIES_BEFORE_PERMANENT_FAILURE;
 import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -302,7 +302,7 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
             .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_REFRESH_REQUEST_TIME, clock.nowUtc().minusHours(2).toString())
             .param(PARAM_DOMAINS, "example1.xn--q9jyb4c,example2.xn--q9jyb4c")
             .param(PARAM_HOSTS, "")
             .header("content-type", "application/x-www-form-urlencoded"),
@@ -313,7 +313,7 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
             .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_REFRESH_REQUEST_TIME, clock.nowUtc().minusHours(2).toString())
             .param(PARAM_DOMAINS, "example3.xn--q9jyb4c,example4.xn--q9jyb4c")
             .param(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
             .header("content-type", "application/x-www-form-urlencoded"));
@@ -341,7 +341,7 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
             .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_REFRESH_REQUEST_TIME, clock.nowUtc().minusHours(2).toString())
             .param(PARAM_DOMAINS, "example1.xn--q9jyb4c,example2.xn--q9jyb4c")
             .param(PARAM_HOSTS, "")
             .header("content-type", "application/x-www-form-urlencoded"),
@@ -352,7 +352,7 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
             .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_REFRESH_REQUEST_TIME, clock.nowUtc().minusHours(2).toString())
             .param(PARAM_DOMAINS, "example3.xn--q9jyb4c,example4.xn--q9jyb4c,example5.xn--q9jyb4c")
             .param(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
             .header("content-type", "application/x-www-form-urlencoded"));
@@ -378,7 +378,7 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
             .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_REFRESH_REQUEST_TIME, clock.nowUtc().minusHours(2).toString())
             .param(PARAM_DOMAINS, "example1.xn--q9jyb4c")
             .param(PARAM_HOSTS, "")
             .header("content-type", "application/x-www-form-urlencoded"),
@@ -389,7 +389,7 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
             .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_CREATED, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_REFRESH_REQUEST_TIME, clock.nowUtc().minusHours(2).toString())
             .param(PARAM_DOMAINS, "")
             .param(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
             .header("content-type", "application/x-www-form-urlencoded"));

@@ -22,7 +22,7 @@ import static google.registry.dns.DnsModule.PARAM_HOSTS;
 import static google.registry.dns.DnsModule.PARAM_LOCK_INDEX;
 import static google.registry.dns.DnsModule.PARAM_NUM_PUBLISH_LOCKS;
 import static google.registry.dns.DnsModule.PARAM_PUBLISH_TASK_ENQUEUED;
-import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_CREATED;
+import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_TIME;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLD;
@@ -124,7 +124,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   public PublishDnsUpdatesAction(
       @Parameter(PARAM_DNS_WRITER) String dnsWriter,
       @Parameter(PARAM_PUBLISH_TASK_ENQUEUED) DateTime enqueuedTime,
-      @Parameter(PARAM_REFRESH_REQUEST_CREATED) DateTime itemsCreateTime,
+      @Parameter(PARAM_REFRESH_REQUEST_TIME) DateTime itemsCreateTime,
       @Parameter(PARAM_LOCK_INDEX) int lockIndex,
       @Parameter(PARAM_NUM_PUBLISH_LOCKS) int numPublishLocks,
       @Parameter(PARAM_DOMAINS) Set<String> domains,
@@ -346,7 +346,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
                 .put(PARAM_LOCK_INDEX, Integer.toString(lockIndex))
                 .put(PARAM_NUM_PUBLISH_LOCKS, Integer.toString(numPublishLocks))
                 .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-                .put(PARAM_REFRESH_REQUEST_CREATED, itemsCreateTime.toString())
+                .put(PARAM_REFRESH_REQUEST_TIME, itemsCreateTime.toString())
                 .put(PARAM_DOMAINS, Joiner.on(",").join(domains))
                 .put(PARAM_HOSTS, Joiner.on(",").join(hosts))
                 .build()));

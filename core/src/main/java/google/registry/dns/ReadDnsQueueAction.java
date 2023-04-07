@@ -26,7 +26,7 @@ import static google.registry.dns.DnsModule.PARAM_HOSTS;
 import static google.registry.dns.DnsModule.PARAM_LOCK_INDEX;
 import static google.registry.dns.DnsModule.PARAM_NUM_PUBLISH_LOCKS;
 import static google.registry.dns.DnsModule.PARAM_PUBLISH_TASK_ENQUEUED;
-import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_CREATED;
+import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_TIME;
 import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.util.DomainNameUtils.getSecondLevelDomain;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -109,7 +109,7 @@ public final class ReadDnsQueueAction implements Runnable {
   @Inject
   ReadDnsQueueAction(
       @Config("dnsTldUpdateBatchSize") int tldUpdateBatchSize,
-      @Config("readDnsQueueActionRuntime") Duration requestedMaximumDuration,
+      @Config("readDnsRefreshRequestsActionRuntime") Duration requestedMaximumDuration,
       @Parameter(PARAM_JITTER_SECONDS) Optional<Integer> jitterSeconds,
       Clock clock,
       DnsQueue dnsQueue,
@@ -379,7 +379,7 @@ public final class ReadDnsQueueAction implements Runnable {
                     .put(PARAM_LOCK_INDEX, Integer.toString(lockIndex))
                     .put(PARAM_NUM_PUBLISH_LOCKS, Integer.toString(numPublishLocks))
                     .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-                    .put(PARAM_REFRESH_REQUEST_CREATED, earliestCreateTime.toString())
+                    .put(PARAM_REFRESH_REQUEST_TIME, earliestCreateTime.toString())
                     .put(
                         PARAM_DOMAINS,
                         chunk.stream()

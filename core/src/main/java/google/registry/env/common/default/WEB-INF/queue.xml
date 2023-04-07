@@ -6,6 +6,12 @@
     <mode>pull</mode>
   </queue>
 
+  <!-- Queue for reading DNS update requests and batching them off to the dns-publish queue. -->
+  <queue>
+    <name>dns-refresh</name>
+    <rate>100/s</rate>
+  </queue>
+
   <!-- Queue for publishing DNS updates in batches. -->
   <queue>
     <name>dns-publish</name>

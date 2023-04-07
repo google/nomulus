@@ -32,6 +32,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.dns.ReadDnsRefreshRequestsAction;
+import google.registry.model.common.DnsRefreshRequest;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.util.YamlUtils;
 import java.lang.annotation.Documented;
@@ -294,9 +296,9 @@ public final class RegistryConfig {
 
     /**
      * The maximum number of domain and host updates to batch together to send to
-     * PublishDnsUpdatesAction, to avoid exceeding AppEngine's limits.
+     * PublishDnsUpdatesAction, to avoid exceeding HTTP request timeout limits.
      *
-     * @see google.registry.dns.ReadDnsQueueAction
+     * @see google.registry.dns.ReadDnsRefreshRequestsAction
      */
     @Provides
     @Config("dnsTldUpdateBatchSize")
@@ -327,23 +329,30 @@ public final class RegistryConfig {
     }
 
     /**
-     * The requested maximum duration for ReadDnsQueueAction.
+     * The requested maximum duration for {@link ReadDnsRefreshRequestsAction}.
      *
-     * <p>ReadDnsQueueAction reads update tasks from the dns-pull queue. It will continue reading
-     * tasks until either the queue is empty, or this duration has passed.
+     * <p>{@link ReadDnsRefreshRequestsAction} reads refresh requests from {@link DnsRefreshRequest}
+     * It will continue reading requests until either no requests exist that matche the condition,
+     * or this duration has passed.
      *
-     * <p>This time is the maximum duration between the first and last attempt to lease tasks from
-     * the dns-pull queue. The actual running time might be slightly longer, as we process the
-     * tasks.
+     * <p>This time is the maximum duration between the first and last attempt to read requests from
+     * {@link DnsRefreshRequest}. The actual running time might be slightly longer, as we process
+     * the requests.
      *
-     * <p>This value should be less than the cron-job repeat rate for ReadDnsQueueAction, to make
-     * sure we don't have multiple ReadDnsActions leasing tasks simultaneously.
+     * <p>The requests that are read will not be read again by any action until after this period
+     * has passed, so concurrent runs (or runs that are very close to each other) of {@link
+     * ReadDnsRefreshRequestsAction} will not keep reading the same requests with the earliest
+     * request time.
      *
-     * @see google.registry.dns.ReadDnsQueueAction
+     * <p>Still, this value should ideally be less than the cloud scheduler job repeat rate for
+     * {@link ReadDnsRefreshRequestsAction}, to not waste resources on multiple actions running at
+     * the same time.
+     *
+     * <p>see google.registry.dns.ReadDnsRefreshRequestsAction
      */
     @Provides
-    @Config("readDnsQueueActionRuntime")
-    public static Duration provideReadDnsQueueRuntime() {
+    @Config("readDnsRefreshRequestsActionRuntime")
+    public static Duration provideReadDnsRefreshRequestsRuntime() {
       return Duration.standardSeconds(45);
     }
 
