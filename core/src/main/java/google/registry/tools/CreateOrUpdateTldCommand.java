@@ -240,19 +240,19 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
   @Nullable
   @Parameter(
       names = {"--dns_a_plus_aaaa_ttl"},
-      description = "The time to live for DNS A and AAAA records")
+      description = "The time to live for DNS A and AAAA records (Ex: PT240S)")
   Duration dnsAPlusAaaaTtl;
 
   @Nullable
   @Parameter(
       names = {"--dns_ns_ttl"},
-      description = "The time to live for DNS NS records")
+      description = "The time to live for DNS NS records (Ex: PT240S)")
   Duration dnsNsTtl;
 
   @Nullable
   @Parameter(
       names = {"--dns_ds_ttl"},
-      description = "The time to live for DNS DS records")
+      description = "The time to live for DNS DS records (Ex: PT240S)")
   Duration dnsDsTtl;
 
   @Nullable
