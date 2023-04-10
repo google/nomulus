@@ -12,6 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-.spacer {
-    flex: 1;
-}
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { ContactComponent } from './contact.component';
+
+describe('ContactComponent', () => {
+  let component: ContactComponent;
+  let fixture: ComponentFixture<ContactComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [ ContactComponent ]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(ContactComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});

@@ -1,12 +1,15 @@
-<app-header></app-header>
-
-<div class="content" role="main">
-  <nav>
-    <ul>
-      <li><a routerLink="/home" routerLinkActive="active" ariaCurrentWhenActive="page">Home page</a></li>
-      <li><a routerLink="/tlds" routerLinkActive="active" ariaCurrentWhenActive="page">TLDs</a></li>
-    </ul>
-  </nav>
+<div class="console-app">
+  <app-header (toggleNavOpen)="sidenav.toggle()"></app-header>
+  <mat-sidenav-container class="console-app__content-wrapper">
+    <mat-sidenav #sidenav  class="console-app__sidebar">
+      <mat-nav-list>
+        <a mat-list-item [routerLink]="'/home'" routerLinkActive="active"> Home page </a>
+        <a mat-list-item [routerLink]="'/tlds'" routerLinkActive="active"> TLDS </a>
+        <a mat-list-item [routerLink]="'/settings'" routerLinkActive="active"> Settings </a>
+      </mat-nav-list>
+    </mat-sidenav>
+    <mat-sidenav-content class="console-app__content">
+      <router-outlet></router-outlet>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
 </div>
-
-<router-outlet></router-outlet>
