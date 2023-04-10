@@ -1,4 +1,4 @@
-// Copyright 2022 The Nomulus Authors. All Rights Reserved.
+// Copyright 2023 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,15 +21,25 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  margin: 8px 0;
-}
-
-p {
-  margin: 0;
+.console-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  &__content-wrapper {
+    flex: 1;
+    margin-top: -12px;
+    padding-bottom: 36px;
+  }
+  &__sidebar {
+    min-width: 300px;
+    a::before{
+      background-color: transparent;
+    }
+    .active  {
+      background: #eae1e1;
+    }
+  }
+  &__content {
+    margin: 12px 24px;
+  }
 }
