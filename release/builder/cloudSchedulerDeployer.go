@@ -93,7 +93,7 @@ func main() {
 			"http", taskRecord.Name,
 			"--location", "us-central1",
 			"--schedule", taskRecord.Schedule,
-			"--uri", fmt.Sprintf("https://backend-dot-%s.appspot.com%s", projectName, taskRecord.URL),
+			"--uri", fmt.Sprintf("https://backend-dot-%s.appspot.com%s", projectName, strings.TrimSpace(taskRecord.URL)),
 			"--description", description,
 			"--http-method", "get",
 			"--oidc-service-account-email", serviceAccountEmail,
