@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-.spacer {
-    flex: 1;
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-registrars',
+  templateUrl: './registrars.component.html',
+  styleUrls: ['./registrars.component.less']
+})
+export default class RegistrarsComponent {
+
 }
