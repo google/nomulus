@@ -785,13 +785,13 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
       return this;
     }
 
-    public Builder setDnsNsAtl(Duration dnsNsAtl) {
-      getInstance().dnsNsTtl = dnsNsAtl;
+    public Builder setDnsNsTtl(Duration dnsNsTtl) {
+      getInstance().dnsNsTtl = dnsNsTtl;
       return this;
     }
 
-    public Builder setDnsDsAtl(Duration dnsDsAtl) {
-      getInstance().dnsDsTtl = dnsDsAtl;
+    public Builder setDnsDsTtl(Duration dnsDsTtl) {
+      getInstance().dnsDsTtl = dnsDsTtl;
       return this;
     }
 

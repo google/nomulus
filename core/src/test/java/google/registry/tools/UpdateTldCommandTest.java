@@ -1095,6 +1095,19 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
     assertThat(thrown).hasMessageThat().contains("The premium list 'phonies' doesn't exist");
   }
 
+  @Test
+  void testSuccess_setTtls() throws Exception {
+    runCommandForced(
+        "--dns_a_plus_aaaa_ttl=PT300S",
+        "--dns_ds_ttl=PT240S",
+        "--dns_ns_ttl=PT180S",
+        "xn--q9jyb4c");
+    Registry registry = Registry.get("xn--q9jyb4c");
+    assertThat(registry.getDnsAPlusAaaaTtl()).isEqualTo(standardMinutes(5));
+    assertThat(registry.getDnsDsTtl()).isEqualTo(standardMinutes(4));
+    assertThat(registry.getDnsNsTtl()).isEqualTo(standardMinutes(3));
+  }
+
   private void runSuccessfulReservedListsTest(String reservedLists) throws Exception {
     runCommandForced("--reserved_lists", reservedLists, "xn--q9jyb4c");
   }

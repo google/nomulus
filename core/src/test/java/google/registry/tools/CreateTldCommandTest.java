@@ -77,6 +77,22 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
+  void testSuccess_ttls() throws Exception {
+    runCommandForced(
+        "xn--q9jyb4c",
+        "--roid_suffix=Q9JYB4C",
+        "--dns_writers=FooDnsWriter",
+        "--dns_a_plus_aaaa_ttl=PT300S",
+        "--dns_ds_ttl=PT240S",
+        "--dns_ns_ttl=PT180S");
+    Registry registry = Registry.get("xn--q9jyb4c");
+    assertThat(registry).isNotNull();
+    assertThat(registry.getDnsAPlusAaaaTtl()).isEqualTo(standardMinutes(5));
+    assertThat(registry.getDnsDsTtl()).isEqualTo(standardMinutes(4));
+    assertThat(registry.getDnsNsTtl()).isEqualTo(standardMinutes(3));
+  }
+
+  @Test
   void testFailure_multipleArguments() {
     IllegalArgumentException thrown =
         assertThrows(
