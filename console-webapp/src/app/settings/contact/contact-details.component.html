@@ -1,0 +1,65 @@
+<h3 mat-dialog-title>Contact details</h3>
+<div mat-dialog-content>
+    <form>
+        <div>
+            <mat-form-field class="contact-details__input">
+                <mat-label>Name: </mat-label>
+                <input matInput placeholder="" value="">
+            </mat-form-field>
+        </div>
+
+        <div>
+            <mat-form-field class="contact-details__input">
+                <mat-label>Primary account email: </mat-label>
+                <input matInput placeholder="" value="">
+            </mat-form-field>
+        </div>
+
+        <div>
+            <mat-form-field class="contact-details__input">
+                <mat-label>Phone: </mat-label>
+                <input matInput placeholder="" value="">
+            </mat-form-field>
+        </div>
+
+        <div>
+            <mat-form-field class="contact-details__input">
+                <mat-label>Fax: </mat-label>
+                <input matInput placeholder="" value="">
+            </mat-form-field>
+        </div>
+
+        <div class="contact-details__group">
+            <label>Contact type:</label>
+            <div class="contact-details__group-content">
+                <mat-checkbox>Primary contact</mat-checkbox>
+                <mat-checkbox>Billing contact</mat-checkbox>
+                <mat-checkbox>Technical contact</mat-checkbox>
+                <mat-checkbox>Legal contact</mat-checkbox>
+                <mat-checkbox>Marketing contact</mat-checkbox>
+                <mat-checkbox>Abuse contact</mat-checkbox>
+                <mat-checkbox>WHOIS-Inquiry contact</mat-checkbox>
+            </div>
+        </div>
+        
+        <section>
+            <mat-checkbox>Show in Registrar WHOIS record as admin contact</mat-checkbox>
+        </section>
+
+        <section>
+            <mat-checkbox>Show in Registrar WHOIS record as technical contact</mat-checkbox>
+        </section>
+
+        <section>
+            <mat-checkbox>Show Phone and Email in Domain WHOIS Record as registrar abuse contact (per CL&D requirements)</mat-checkbox>
+        </section>
+
+      </form>
+
+      <p></p>
+
+      <mat-dialog-actions>
+        <button mat-button mat-dialog-close>Cancel</button>
+        <button mat-button [mat-dialog-close]="true" (click)="save()">Save</button>
+      </mat-dialog-actions>
+</div>
