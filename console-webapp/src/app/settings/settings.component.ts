@@ -12,6 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-.spacer {
-    flex: 1;
+import { Component, ViewEncapsulation } from '@angular/core';
+
+@Component({
+  selector: 'app-settings',
+  templateUrl: './settings.component.html',
+  styleUrls: ['./settings.component.less'],
+  encapsulation: ViewEncapsulation.None
+})
+export class SettingsComponent {
+
 }

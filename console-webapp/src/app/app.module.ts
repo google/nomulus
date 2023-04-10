@@ -1,4 +1,4 @@
-// Copyright 2022 The Nomulus Authors. All Rights Reserved.
+// Copyright 2023 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import { MaterialModule } from './material.module';
 import { HomeComponent } from './home/home.component';
 import { TldsComponent } from './tlds/tlds.component';
 import { HeaderComponent } from './header/header.component';
+import { SettingsComponent } from './settings/settings.component';
+import SettingsContactComponent, { ContactDetailsDialogComponent } from './settings/contact/contact.component';
 
 @NgModule({
   declarations: [
@@ -30,6 +32,9 @@ import { HeaderComponent } from './header/header.component';
     HomeComponent,
     TldsComponent,
     HeaderComponent,
+    SettingsComponent,
+    SettingsContactComponent,
+    ContactDetailsDialogComponent
   ],
   imports: [
     MaterialModule,
