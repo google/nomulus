@@ -12,6 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-.spacer {
-    flex: 1;
-}
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { WhoisComponent } from './whois.component';
+
+describe('WhoisComponent', () => {
+  let component: WhoisComponent;
+  let fixture: ComponentFixture<WhoisComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [ WhoisComponent ]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(WhoisComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
