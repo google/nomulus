@@ -157,6 +157,12 @@
     <url-pattern>/_dr/cron/readDnsQueue</url-pattern>
   </servlet-mapping>
 
+  <!-- Reads the DNS refresh requests and kick off the appropriate tasks to update zone. -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/readDnsRefreshRequests</url-pattern>
+  </servlet-mapping>
+
   <!-- Publishes DNS updates. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>

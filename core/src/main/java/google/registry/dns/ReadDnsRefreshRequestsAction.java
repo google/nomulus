@@ -16,6 +16,7 @@ package google.registry.dns;
 
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static google.registry.dns.DnsConstants.DNS_PUBLISH_PUSH_QUEUE_NAME;
+import static google.registry.dns.DnsModule.PARAM_DNS_JITTER_SECONDS;
 import static google.registry.dns.DnsModule.PARAM_DNS_WRITER;
 import static google.registry.dns.DnsModule.PARAM_DOMAINS;
 import static google.registry.dns.DnsModule.PARAM_HOSTS;
@@ -62,9 +63,7 @@ import org.joda.time.Duration;
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class ReadDnsRefreshRequestsAction implements Runnable {
 
-  // This parameter cannot be named "jitterSeconds", which will be read by TldFanoutAction and not
-  // be passed to this action.
-  private static final String PARAM_JITTER_SECONDS = "dnsJitterSeconds";
+
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final int tldUpdateBatchSize;
@@ -80,7 +79,7 @@ public final class ReadDnsRefreshRequestsAction implements Runnable {
   ReadDnsRefreshRequestsAction(
       @Config("dnsTldUpdateBatchSize") int tldUpdateBatchSize,
       @Config("readDnsRefreshRequestsActionRuntime") Duration requestedMaximumDuration,
-      @Parameter(PARAM_JITTER_SECONDS) Optional<Integer> jitterSeconds,
+      @Parameter(PARAM_DNS_JITTER_SECONDS) Optional<Integer> jitterSeconds,
       @Parameter(PARAM_TLD) String tld,
       Clock clock,
       DnsUtils dnsUtils,

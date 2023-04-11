@@ -19,6 +19,7 @@ import static google.registry.dns.DnsConstants.DNS_PULL_QUEUE_NAME;
 import static google.registry.dns.RefreshDnsOnHostRenameAction.PARAM_HOST_KEY;
 import static google.registry.request.RequestParameters.extractEnumParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
+import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfParameters;
@@ -34,6 +35,7 @@ import google.registry.dns.DnsConstants.TargetType;
 import google.registry.dns.writer.DnsWriterZone;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
+import java.util.Optional;
 import java.util.Set;
 import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
@@ -50,6 +52,9 @@ public abstract class DnsModule {
   public static final String PARAM_HOSTS = "hosts";
   public static final String PARAM_PUBLISH_TASK_ENQUEUED = "enqueued";
   public static final String PARAM_REFRESH_REQUEST_TIME = "requestTime";
+  // This parameter cannot be named "jitterSeconds", which will be read by TldFanoutAction and not
+  // be passed down to actions.
+  public static final String PARAM_DNS_JITTER_SECONDS = "dnsJitterSeconds";
 
   @Binds
   @DnsWriterZone
@@ -127,6 +132,12 @@ public abstract class DnsModule {
   @Parameter(PARAM_HOST_KEY)
   static String provideResourceKey(HttpServletRequest req) {
     return extractRequiredParameter(req, PARAM_HOST_KEY);
+  }
+
+  @Provides
+  @Parameter(PARAM_DNS_JITTER_SECONDS)
+  static Optional<Integer> provideJitterSeconds(HttpServletRequest req) {
+    return extractOptionalIntParameter(req, PARAM_DNS_JITTER_SECONDS);
   }
 
   @Provides
