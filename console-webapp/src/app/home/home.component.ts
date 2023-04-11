@@ -87,8 +87,4 @@ export class HomeComponent {
   dataSource = MOCK_DATA;
   displayedColumns = this.columns.map(c => c.columnDef);
 
-  constructor() {
-
-
-  }
 }
