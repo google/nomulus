@@ -20,7 +20,7 @@ import { Component, EventEmitter, Output } from '@angular/core';
   styleUrls: ['./header.component.less']
 })
 export class HeaderComponent {
-  private isNavOpen: boolean = false;
+  private isNavOpen = false;
 
   @Output() toggleNavOpen = new EventEmitter<boolean>();
 
