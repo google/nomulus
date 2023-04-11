@@ -33,7 +33,7 @@ import google.registry.model.domain.Period;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
@@ -372,7 +372,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   @Disabled
   @Test
   void testDomainInTestTld_notFound() {
-    persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
+    persistResource(Tld.get("lol").asBuilder().setTldType(Tld.TldType.TEST).build());
     generateActualJson("cat.lol");
     assertThat(response.getStatus()).isEqualTo(404);
   }

@@ -34,7 +34,7 @@ import google.registry.model.server.LockTest;
 import google.registry.model.server.ServerSecretTest;
 import google.registry.model.smd.SignedMarkRevocationListDaoTest;
 import google.registry.model.tld.RegistryLockDaoTest;
-import google.registry.model.tld.RegistryTest;
+import google.registry.model.tld.TldTest;
 import google.registry.model.tld.label.PremiumListDaoTest;
 import google.registry.model.tld.label.ReservedListDaoTest;
 import google.registry.model.tmch.ClaimsListDaoTest;
@@ -96,7 +96,7 @@ import org.junit.runner.RunWith;
   PremiumListDaoTest.class,
   RdeRevisionTest.class,
   RegistrarDaoTest.class,
-  RegistryTest.class,
+  TldTest.class,
   ReservedListDaoTest.class,
   RegistryLockDaoTest.class,
   ServerSecretTest.class,

@@ -42,7 +42,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry.Type;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DatabaseHelper;
@@ -198,7 +198,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
     createTld("tld");
     // Setup a transfer that should have been server approved a day ago.
     DateTime now = clock.nowUtc();
-    DateTime requestTime = now.minusDays(1).minus(Registry.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
+    DateTime requestTime = now.minusDays(1).minus(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
     DateTime transferExpirationTime = now.minusDays(1);
     Domain domain =
         persistResource(
@@ -232,7 +232,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
     createTld("tld");
     // Setup a transfer that should have been server approved a day ago.
     DateTime now = clock.nowUtc();
-    DateTime requestTime = now.minusDays(1).minus(Registry.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
+    DateTime requestTime = now.minusDays(1).minus(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
     DateTime transferExpirationTime = now.minusDays(1);
     Domain domain =
         persistResource(

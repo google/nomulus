@@ -31,7 +31,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.truth.Truth8;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
@@ -94,7 +94,7 @@ public class PendingDepositCheckerTest {
     clock.setTo(DateTime.parse("2000-01-01TZ"));  // Saturday
     createTldWithEscrowEnabled("lol");
     clock.advanceOneMilli();
-    Registry registry = Registry.get("lol");
+    Tld registry = Tld.get("lol");
     Truth8.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(RDE_STAGING, registry))).isEmpty();
     checker.getTldsAndWatermarksPendingDepositForRdeAndBrda();
     assertThat(loadByKey(Cursor.createScopedVKey(RDE_STAGING, registry)).getCursorTime())
@@ -107,10 +107,10 @@ public class PendingDepositCheckerTest {
     createTldWithEscrowEnabled("lol");
     clock.advanceOneMilli();
     DateTime yesterday = DateTime.parse("1999-12-31TZ");
-    setCursor(Registry.get("lol"), RDE_STAGING, yesterday);
+    setCursor(Tld.get("lol"), RDE_STAGING, yesterday);
     clock.advanceOneMilli();
     checker.getTldsAndWatermarksPendingDepositForRdeAndBrda();
-    Cursor cursor = loadByKey(Cursor.createScopedVKey(RDE_STAGING, Registry.get("lol")));
+    Cursor cursor = loadByKey(Cursor.createScopedVKey(RDE_STAGING, Tld.get("lol")));
     assertThat(cursor.getCursorTime()).isEqualTo(yesterday);
   }
 
@@ -118,7 +118,7 @@ public class PendingDepositCheckerTest {
   void testMethod_firstBrdaDepositButNotOnBrdaDay_doesntInitializeCursor() {
     clock.setTo(DateTime.parse("2000-01-01TZ"));  // Saturday
     createTldWithEscrowEnabled("lol");
-    Registry registry = Registry.get("lol");
+    Tld registry = Tld.get("lol");
     clock.advanceOneMilli();
     setCursor(registry, RDE_STAGING, DateTime.parse("2000-01-02TZ")); // assume rde is already done
     clock.advanceOneMilli();
@@ -132,7 +132,7 @@ public class PendingDepositCheckerTest {
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     createTldWithEscrowEnabled("lol");
     clock.advanceOneMilli();
-    setCursor(Registry.get("lol"), RDE_STAGING, DateTime.parse("1999-12-30TZ"));
+    setCursor(Tld.get("lol"), RDE_STAGING, DateTime.parse("1999-12-30TZ"));
     clock.advanceOneMilli();
     assertThat(checker.getTldsAndWatermarksPendingDepositForRdeAndBrda()).isEqualTo(
         ImmutableSetMultimap.of(
@@ -163,13 +163,13 @@ public class PendingDepositCheckerTest {
   }
 
   private static void setCursor(
-      final Registry registry, final CursorType cursorType, final DateTime value) {
+      final Tld registry, final CursorType cursorType, final DateTime value) {
     tm().transact(() -> tm().put(Cursor.createScoped(cursorType, value, registry)));
   }
 
   private static void createTldWithEscrowEnabled(final String tld) {
     createTld(tld);
-    persistResource(Registry.get(tld).asBuilder().setEscrowEnabled(true).build());
+    persistResource(Tld.get(tld).asBuilder().setEscrowEnabled(true).build());
   }
 }
 

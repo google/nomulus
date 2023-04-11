@@ -17,7 +17,7 @@ package google.registry.whois;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.newHost;
-import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
@@ -61,7 +61,7 @@ class WhoisCommandFactoryTest {
 
   @BeforeEach
   void setUp() throws Exception {
-    persistResource(newRegistry("tld", "TLD"));
+    persistResource(newTld("tld", "TLD"));
     host =
         newHost("ns.example.tld")
             .asBuilder()

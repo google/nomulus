@@ -20,7 +20,7 @@ import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DE
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
-import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
+import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
@@ -72,7 +72,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.testing.DatabaseHelper;
@@ -322,7 +322,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   @Test
   void testSuccess_inQuietPeriod() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
             .build());
@@ -853,7 +853,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   void testFeeExtension_renewCommandPremium_anchorTenant() throws Exception {
     createTld("tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setPremiumList(persistPremiumList("tld", USD, "example,USD 70"))
             .build());
@@ -873,7 +873,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   void testFeeExtension_renewCommandPremium_internalRegistration() throws Exception {
     createTld("tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setPremiumList(persistPremiumList("tld", USD, "example,USD 70"))
             .build());
@@ -893,7 +893,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   void testFeeExtension_renewCommandPremium_anchorTenant_multiYear() throws Exception {
     createTld("tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setPremiumList(persistPremiumList("tld", USD, "example,USD 70"))
             .build());
@@ -913,7 +913,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   void testFeeExtension_renewCommandPremium_internalRegistration_multiYear() throws Exception {
     createTld("tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setPremiumList(persistPremiumList("tld", USD, "example,USD 70"))
             .build());

@@ -17,8 +17,8 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registrar.Registrar.State.ACTIVE;
-import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
-import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
@@ -34,8 +34,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.util.CidrAddressBlock;
@@ -67,7 +67,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
       String roidSuffix,
       TldState tldState,
       boolean isEarlyAccess) {
-    Registry registry = Registry.get(tldName);
+    Tld registry = Tld.get(tldName);
     assertThat(registry).isNotNull();
     assertThat(registry.getRoidSuffix()).isEqualTo(roidSuffix);
     assertThat(registry.getTldState(DateTime.now(UTC))).isEqualTo(tldState);
@@ -330,7 +330,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--registrar=blobio",
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
-    assertThat(thrown).hasMessageThat().contains("VKey<Registry>(sql:blobio-sunrise)");
+    assertThat(thrown).hasMessageThat().contains("VKey<Tld>(sql:blobio-sunrise)");
   }
 
   @Test

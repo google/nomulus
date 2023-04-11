@@ -22,7 +22,7 @@ import static google.registry.request.Action.Method.POST;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -35,7 +35,7 @@ import org.joda.time.DateTime;
     path = ListTldsAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
-public final class ListTldsAction extends ListObjectsAction<Registry> {
+public final class ListTldsAction extends ListObjectsAction<Tld> {
 
   public static final String PATH = "/_dr/admin/list/tlds";
 
@@ -48,8 +48,8 @@ public final class ListTldsAction extends ListObjectsAction<Registry> {
   }
 
   @Override
-  public ImmutableSet<Registry> loadObjects() {
-    return getTlds().stream().map(Registry::get).collect(toImmutableSet());
+  public ImmutableSet<Tld> loadObjects() {
+    return getTlds().stream().map(Tld::get).collect(toImmutableSet());
   }
 
   @Override
@@ -61,15 +61,15 @@ public final class ListTldsAction extends ListObjectsAction<Registry> {
   }
 
   @Override
-  public ImmutableMap<String, String> getFieldOverrides(Registry registry) {
+  public ImmutableMap<String, String> getFieldOverrides(Tld tld) {
     final DateTime now = clock.nowUtc();
     return new ImmutableMap.Builder<String, String>()
-        .put("dnsPaused", registry.getDnsPaused() ? "paused" : "-")
-        .put("escrowEnabled", registry.getEscrowEnabled() ? "enabled" : "-")
-        .put("tldState", registry.isPdt(now) ? "PDT" : registry.getTldState(now).toString())
-        .put("tldStateTransitions", registry.getTldStateTransitions().toString())
-        .put("renewBillingCost", registry.getStandardRenewCost(now).toString())
-        .put("renewBillingCostTransitions", registry.getRenewBillingCostTransitions().toString())
+        .put("dnsPaused", tld.getDnsPaused() ? "paused" : "-")
+        .put("escrowEnabled", tld.getEscrowEnabled() ? "enabled" : "-")
+        .put("tldState", tld.isPdt(now) ? "PDT" : tld.getTldState(now).toString())
+        .put("tldStateTransitions", tld.getTldStateTransitions().toString())
+        .put("renewBillingCost", tld.getStandardRenewCost(now).toString())
+        .put("renewBillingCostTransitions", tld.getRenewBillingCostTransitions().toString())
         .build();
   }
 }

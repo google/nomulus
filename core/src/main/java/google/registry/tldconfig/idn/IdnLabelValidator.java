@@ -18,7 +18,7 @@ import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
 import static google.registry.tldconfig.idn.IdnTableEnum.JA;
 
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.util.Idn;
 import java.util.Optional;
 
@@ -37,7 +37,7 @@ public final class IdnLabelValidator {
    */
   public Optional<String> findValidIdnTableForTld(String label, String tldStr) {
     String unicodeString = Idn.toUnicode(label);
-    Registry tld = Registry.get(tldStr); // uses the cache
+    Tld tld = Tld.get(tldStr); // uses the cache
     ImmutableSet<IdnTableEnum> idnTablesForTld = tld.getIdnTables();
     ImmutableSet<IdnTableEnum> idnTables =
         idnTablesForTld.isEmpty() ? DEFAULT_IDN_TABLES : idnTablesForTld;

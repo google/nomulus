@@ -37,7 +37,7 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import java.util.List;
 import java.util.Optional;
@@ -173,7 +173,7 @@ public class AllocationTokenFlowUtils {
   /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
   public Optional<AllocationToken> verifyAllocationTokenCreateIfPresent(
       DomainCommand.Create command,
-      Registry registry,
+      Tld tld,
       String registrarId,
       DateTime now,
       Optional<AllocationTokenExtension> extension)
@@ -188,14 +188,13 @@ public class AllocationTokenFlowUtils {
         CommandName.CREATE,
         registrarId,
         now);
-    return Optional.of(
-        tokenCustomLogic.validateToken(command, tokenEntity, registry, registrarId, now));
+    return Optional.of(tokenCustomLogic.validateToken(command, tokenEntity, tld, registrarId, now));
   }
 
   /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
   public Optional<AllocationToken> verifyAllocationTokenIfPresent(
       Domain existingDomain,
-      Registry registry,
+      Tld tld,
       String registrarId,
       DateTime now,
       CommandName commandName,
@@ -212,7 +211,7 @@ public class AllocationTokenFlowUtils {
         registrarId,
         now);
     return Optional.of(
-        tokenCustomLogic.validateToken(existingDomain, tokenEntity, registry, registrarId, now));
+        tokenCustomLogic.validateToken(existingDomain, tokenEntity, tld, registrarId, now));
   }
 
   public static void verifyTokenAllowedOnDomain(

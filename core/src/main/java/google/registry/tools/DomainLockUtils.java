@@ -32,8 +32,8 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
 import google.registry.model.tld.RegistryLockDao;
+import google.registry.model.tld.Tld;
 import google.registry.request.Action.Service;
 import google.registry.util.StringGenerator;
 import java.util.Optional;
@@ -402,7 +402,7 @@ public final class DomainLockUtils {
               .setReason(Reason.SERVER_STATUS)
               .setTargetId(domain.getForeignKey())
               .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-              .setCost(Registry.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
+              .setCost(Tld.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
               .setEventTime(now)
               .setBillingTime(now)
               .setDomainHistory(domainHistory)

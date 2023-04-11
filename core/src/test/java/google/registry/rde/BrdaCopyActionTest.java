@@ -36,7 +36,7 @@ import google.registry.keyring.api.Keyring;
 import google.registry.model.common.Cursor;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeRevision;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.HttpException.NoContentException;
@@ -126,13 +126,13 @@ public class BrdaCopyActionTest {
             () -> {
               RdeRevision.saveRevision("lol", DateTime.parse("2010-10-17TZ"), RdeMode.THIN, 0);
             });
-    persistResource(Cursor.createScoped(BRDA, action.watermark.plusDays(1), Registry.get("lol")));
+    persistResource(Cursor.createScoped(BRDA, action.watermark.plusDays(1), Tld.get("lol")));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"", "job-name/"})
   void testRun_stagingNotFinished_throws204(String prefix) throws Exception {
-    persistResource(Cursor.createScoped(BRDA, action.watermark, Registry.get("lol")));
+    persistResource(Cursor.createScoped(BRDA, action.watermark, Tld.get("lol")));
     NoContentException thrown = assertThrows(NoContentException.class, () -> runAction(prefix));
     assertThat(thrown)
         .hasMessageThat()

@@ -24,7 +24,7 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT2_HASH;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
@@ -43,8 +43,8 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.tld.Registries;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.SerializeUtils;
 import java.math.BigDecimal;
@@ -63,7 +63,7 @@ class RegistrarTest extends EntityTestCase {
   void setUp() {
     createTld("tld");
     persistResource(
-        newRegistry("xn--q9jyb4c", "MINNA")
+        newTld("xn--q9jyb4c", "MINNA")
             .asBuilder()
             .setCurrency(JPY)
             .setCreateBillingCost(Money.of(JPY, new BigDecimal(1300)))
@@ -608,7 +608,7 @@ class RegistrarTest extends EntityTestCase {
       // This is also important because getTlds fills out the cache when used.
       assertThat(Registries.getTlds()).doesNotContain("newtld");
       // We can't use createTld here because it fails when the cache is used.
-      persistResource(newRegistry("newtld", "NEWTLD"));
+      persistResource(newTld("newtld", "NEWTLD"));
       // Make sure we set up the cache correctly, so the newly created TLD isn't in the cache
       assertThat(Registries.getTlds()).doesNotContain("newtld");
 
@@ -703,7 +703,7 @@ class RegistrarTest extends EntityTestCase {
 
   @Test
   void testSuccess_nonRealTldDoesntNeedEntryInBillingMap() {
-    persistResource(Registry.get("xn--q9jyb4c").asBuilder().setTldType(TldType.TEST).build());
+    persistResource(Tld.get("xn--q9jyb4c").asBuilder().setTldType(TldType.TEST).build());
     // xn--q9jyb4c bills in JPY and we don't have a JPY entry in this billing account map, but it
     // should succeed without throwing an error because xn--q9jyb4c is set to be a TEST TLD.
     registrar

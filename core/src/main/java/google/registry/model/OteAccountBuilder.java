@@ -17,8 +17,8 @@ package google.registry.model;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
-import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -33,9 +33,9 @@ import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.persistence.VKey;
@@ -121,9 +121,9 @@ public final class OteAccountBuilder {
       ImmutableMap.of(CurrencyUnit.USD, "123", CurrencyUnit.JPY, "456");
 
   private final ImmutableMap<String, String> registrarIdToTld;
-  private final Registry sunriseTld;
-  private final Registry gaTld;
-  private final Registry eapTld;
+  private final Tld sunriseTld;
+  private final Tld gaTld;
+  private final Tld eapTld;
   private final ImmutableList.Builder<RegistrarPoc> contactsBuilder = new ImmutableList.Builder<>();
 
   private ImmutableList<Registrar> registrars;
@@ -247,7 +247,7 @@ public final class OteAccountBuilder {
   /** Saves all the OT&amp;E entities we created. */
   private void saveAllEntities() {
     // use ImmutableObject instead of Registry so that the Key generation doesn't break
-    ImmutableList<Registry> registries = ImmutableList.of(sunriseTld, gaTld, eapTld);
+    ImmutableList<Tld> registries = ImmutableList.of(sunriseTld, gaTld, eapTld);
     ImmutableList<RegistrarPoc> contacts = contactsBuilder.build();
 
     tm().transact(
@@ -255,8 +255,7 @@ public final class OteAccountBuilder {
               if (!replaceExisting) {
                 ImmutableList<VKey<? extends ImmutableObject>> keys =
                     Streams.concat(
-                            registries.stream()
-                                .map(registry -> Registry.createVKey(registry.getTldStr())),
+                            registries.stream().map(tld -> Tld.createVKey(tld.getTldStr())),
                             registrars.stream().map(Registrar::createVKey),
                             contacts.stream().map(RegistrarPoc::createVKey))
                         .collect(toImmutableList());
@@ -291,16 +290,13 @@ public final class OteAccountBuilder {
         .build();
   }
 
-  private static Registry createTld(
-      String tldName,
-      TldState initialTldState,
-      boolean isEarlyAccess,
-      int roidSuffix) {
+  private static Tld createTld(
+      String tldName, TldState initialTldState, boolean isEarlyAccess, int roidSuffix) {
     String tldNameAlphaNumerical = tldName.replaceAll("[^a-z\\d]", "");
     Optional<PremiumList> premiumList = PremiumListDao.getLatestRevision(DEFAULT_PREMIUM_LIST);
     checkState(premiumList.isPresent(), "Couldn't find premium list %s.", DEFAULT_PREMIUM_LIST);
-    Registry.Builder builder =
-        new Registry.Builder()
+    Tld.Builder builder =
+        new Tld.Builder()
             .setTldStr(tldName)
             .setPremiumPricingEngine(StaticPremiumListPricingEngine.NAME)
             .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, initialTldState))

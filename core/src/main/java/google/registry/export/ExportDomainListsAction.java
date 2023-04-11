@@ -27,8 +27,8 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.storage.drive.DriveConnection;
@@ -106,27 +106,28 @@ public class ExportDomainListsAction implements Runnable {
   }
 
   protected static boolean exportToDrive(
-      String tld, String domains, DriveConnection driveConnection) {
+      String tldStr, String domains, DriveConnection driveConnection) {
     verifyNotNull(driveConnection, "Expecting non-null driveConnection");
     try {
-      Registry registry = Registry.get(tld);
-      if (registry.getDriveFolderId() == null) {
+      Tld tld = Tld.get(tldStr);
+      if (tld.getDriveFolderId() == null) {
         logger.atInfo().log(
             "Skipping registered domains export for TLD %s because Drive folder isn't specified.",
-            tld);
+            tldStr);
       } else {
         String resultMsg =
             driveConnection.createOrUpdateFile(
                 REGISTERED_DOMAINS_FILENAME,
                 MediaType.PLAIN_TEXT_UTF_8,
-                registry.getDriveFolderId(),
+                tld.getDriveFolderId(),
                 domains.getBytes(UTF_8));
         logger.atInfo().log(
-            "Exporting registered domains succeeded for TLD %s, response was: %s", tld, resultMsg);
+            "Exporting registered domains succeeded for TLD %s, response was: %s",
+            tldStr, resultMsg);
       }
     } catch (Throwable e) {
       logger.atSevere().withCause(e).log(
-          "Error exporting registered domains for TLD %s to Drive, skipping...", tld);
+          "Error exporting registered domains for TLD %s to Drive, skipping...", tldStr);
       return false;
     }
     return true;

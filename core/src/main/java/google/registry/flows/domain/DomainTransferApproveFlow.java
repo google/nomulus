@@ -64,7 +64,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import java.util.Optional;
@@ -133,7 +133,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
         existingDomain,
-        Registry.get(existingDomain.getTld()),
+        Tld.get(existingDomain.getTld()),
         registrarId,
         now,
         CommandName.TRANSFER,
@@ -141,9 +141,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     verifyOptionalAuthInfo(authInfo, existingDomain);
     verifyHasPendingTransfer(existingDomain);
     verifyResourceOwnership(registrarId, existingDomain);
-    String tld = existingDomain.getTld();
+    String tldStr = existingDomain.getTld();
     if (!isSuperuser) {
-      checkAllowedAccessToTld(registrarId, tld);
+      checkAllowedAccessToTld(registrarId, tldStr);
     }
     DomainTransferData transferData = existingDomain.getTransferData();
     String gainingRegistrarId = transferData.getGainingRegistrarId();
@@ -166,7 +166,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .setCost(
                         pricingLogic
                             .getTransferPrice(
-                                Registry.get(tld),
+                                Tld.get(tldStr),
                                 targetId,
                                 transferData.getTransferRequestTime(),
                                 // When removing a domain from a package it should return to the
@@ -175,7 +175,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                                 hasPackageToken ? null : existingRecurring)
                             .getRenewCost())
                     .setEventTime(now)
-                    .setBillingTime(now.plus(Registry.get(tld).getTransferGracePeriodLength()))
+                    .setBillingTime(now.plus(Tld.get(tldStr).getTransferGracePeriodLength()))
                     .setDomainHistoryId(domainHistoryId)
                     .build());
 
@@ -262,8 +262,8 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setCurrentPackageToken(null)
             .build();
 
-    Registry registry = Registry.get(existingDomain.getTld());
-    DomainHistory domainHistory = buildDomainHistory(newDomain, registry, now, gainingRegistrarId);
+    Tld tld = Tld.get(existingDomain.getTld());
+    DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now, gainingRegistrarId);
     // Create a poll message for the gaining client.
     PollMessage gainingClientPollMessage =
         createGainingTransferPollMessage(
@@ -286,12 +286,12 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
   }
 
   private DomainHistory buildDomainHistory(
-      Domain newDomain, Registry registry, DateTime now, String gainingRegistrarId) {
+      Domain newDomain, Tld tld, DateTime now, String gainingRegistrarId) {
     ImmutableSet<DomainTransactionRecord> cancelingRecords =
         createCancelingRecords(
             newDomain,
             now,
-            registry.getAutomaticTransferLength().plus(registry.getTransferGracePeriodLength()),
+            tld.getAutomaticTransferLength().plus(tld.getTransferGracePeriodLength()),
             ImmutableSet.of(TRANSFER_SUCCESSFUL));
     return historyBuilder
         .setType(DOMAIN_TRANSFER_APPROVE)
@@ -302,7 +302,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                 cancelingRecords,
                 DomainTransactionRecord.create(
                     newDomain.getTld(),
-                    now.plus(registry.getTransferGracePeriodLength()),
+                    now.plus(tld.getTransferGracePeriodLength()),
                     TRANSFER_SUCCESSFUL,
                     1)))
         .build();

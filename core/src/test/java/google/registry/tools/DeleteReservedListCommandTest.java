@@ -21,7 +21,7 @@ import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tld.label.ReservedListDao;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,7 +58,7 @@ class DeleteReservedListCommandTest extends CommandTestCase<DeleteReservedListCo
   @Test
   void testFailure_whenReservedListIsInUse() {
     createTld("xn--q9jyb4c");
-    persistResource(Registry.get("xn--q9jyb4c").asBuilder().setReservedLists(reservedList).build());
+    persistResource(Tld.get("xn--q9jyb4c").asBuilder().setReservedLists(reservedList).build());
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

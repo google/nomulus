@@ -42,7 +42,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
@@ -566,7 +566,7 @@ public final class DomainLockUtilsTest {
                         .setReason(Reason.SERVER_STATUS)
                         .setTargetId(domain.getForeignKey())
                         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-                        .setCost(Registry.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
+                        .setCost(Tld.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
                         .setEventTime(clock.nowUtc())
                         .setBillingTime(clock.nowUtc())
                         .setDomainHistory(entry)

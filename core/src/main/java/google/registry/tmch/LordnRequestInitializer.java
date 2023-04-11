@@ -18,7 +18,7 @@ import static com.google.common.base.Verify.verifyNotNull;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.keyring.api.KeyModule.Key;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.request.UrlConnectionUtils;
 import java.net.HttpURLConnection;
 import java.util.Optional;
@@ -45,8 +45,11 @@ final class LordnRequestInitializer {
   /** Returns the username and password for the current TLD to login to the MarksDB server. */
   private Optional<String> getMarksDbLordnCredentials(String tld) {
     if (marksdbLordnPassword.isPresent()) {
-      String lordnUsername = verifyNotNull(Registry.get(tld).getLordnUsername(),
-          "lordnUsername is not set for %s.", Registry.get(tld).getTld());
+      String lordnUsername =
+          verifyNotNull(
+              Tld.get(tld).getLordnUsername(),
+              "lordnUsername is not set for %s.",
+              Tld.get(tld).getTld());
       return Optional.of(String.format("%s:%s", lordnUsername, marksdbLordnPassword.get()));
     } else {
       logger.atWarning().log(

@@ -32,7 +32,7 @@ import static google.registry.model.reporting.DomainTransactionRecord.Transactio
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_DELETE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
-import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
+import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertPollMessages;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -93,8 +93,8 @@ import google.registry.model.poll.PendingActionNotificationResponse.DomainPendin
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
@@ -181,7 +181,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   private void setUpGracePeriodDurations() {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setAddGracePeriodLength(standardDays(3))
             .setRenewGracePeriodLength(standardDays(2))
@@ -291,7 +291,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   @Test
   void testSuccess_asyncActionsAreEnqueued() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setRedemptionGracePeriodLength(standardDays(3))
             .setPendingDeleteLength(standardDays(2))
@@ -365,7 +365,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   @Test
   void testSuccess_updatedEppUpdateTimeAfterPendingRedemption() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setRedemptionGracePeriodLength(standardDays(3))
             .setPendingDeleteLength(standardDays(2))
@@ -443,8 +443,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .hasDeletionTime(
             clock
                 .nowUtc()
-                .plus(Registry.get("tld").getRedemptionGracePeriodLength())
-                .plus(Registry.get("tld").getPendingDeleteLength()))
+                .plus(Tld.get("tld").getRedemptionGracePeriodLength())
+                .plus(Tld.get("tld").getPendingDeleteLength()))
         .and()
         .hasExactlyStatusValues(StatusValue.INACTIVE, StatusValue.PENDING_DELETE)
         .and()
@@ -464,7 +464,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
                 domain.getRepoId(),
-                clock.nowUtc().plus(Registry.get("tld").getRedemptionGracePeriodLength()),
+                clock.nowUtc().plus(Tld.get("tld").getRedemptionGracePeriodLength()),
                 "TheRegistrar",
                 null,
                 resource.getGracePeriods().iterator().next().getGracePeriodId()));
@@ -531,7 +531,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   void testSuccess_nonDefaultRedemptionGracePeriod() throws Exception {
     sessionMetadata.setServiceExtensionUris(ImmutableSet.of());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setRedemptionGracePeriodLength(Duration.standardMinutes(7))
             .build());
@@ -542,10 +542,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   void testSuccess_nonDefaultPendingDeleteLength() throws Exception {
     sessionMetadata.setServiceExtensionUris(ImmutableSet.of());
     persistResource(
-        Registry.get("tld")
-            .asBuilder()
-            .setPendingDeleteLength(Duration.standardMinutes(8))
-            .build());
+        Tld.get("tld").asBuilder().setPendingDeleteLength(Duration.standardMinutes(8)).build());
     doSuccessfulTest_noAddGracePeriod("domain_delete_response_pending.xml");
   }
 
@@ -578,7 +575,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     removeServiceExtensionUri(ServiceExtension.FEE_0_11.getUri());
     removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
@@ -596,7 +593,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   void testSuccess_autoRenewGracePeriod_priceChanges_v11() throws Exception {
     removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
@@ -613,7 +610,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   @Test
   void testSuccess_autoRenewGracePeriod_priceChanges_v12() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
@@ -656,8 +653,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .hasDeletionTime(
             clock
                 .nowUtc()
-                .plus(Registry.get("tld").getRedemptionGracePeriodLength())
-                .plus(Registry.get("tld").getPendingDeleteLength()))
+                .plus(Tld.get("tld").getRedemptionGracePeriodLength())
+                .plus(Tld.get("tld").getPendingDeleteLength()))
         .and()
         .hasOneHistoryEntryEachOfTypes(DOMAIN_CREATE, DOMAIN_TRANSFER_REQUEST, DOMAIN_DELETE);
     // All existing grace periods should be gone, and a new REDEMPTION one should be added.
@@ -666,7 +663,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
                 domain.getRepoId(),
-                clock.nowUtc().plus(Registry.get("tld").getRedemptionGracePeriodLength()),
+                clock.nowUtc().plus(Tld.get("tld").getRedemptionGracePeriodLength()),
                 "TheRegistrar",
                 null,
                 domain.getGracePeriods().iterator().next().getGracePeriodId()));
@@ -960,7 +957,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   void testIcannTransactionRecord_testTld_notStored() throws Exception {
     setUpSuccessfulTest();
     setUpGracePeriodDurations();
-    persistResource(Registry.get("tld").asBuilder().setTldType(TldType.TEST).build());
+    persistResource(Tld.get("tld").asBuilder().setTldType(TldType.TEST).build());
     clock.advanceOneMilli();
     earlierHistoryEntry =
         persistResource(

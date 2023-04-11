@@ -45,7 +45,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -259,7 +259,7 @@ public class WhoisActionTest {
   @Disabled
   @Test
   void testRun_domainInTestTld_isConsideredNotFound() {
-    persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
+    persistResource(Tld.get("lol").asBuilder().setTldType(Tld.TldType.TEST).build());
     Registrar registrar = persistResource(makeRegistrar(
         "evilregistrar", "Yes Virginia", ACTIVE));
     persistResource(
@@ -500,7 +500,7 @@ public class WhoisActionTest {
   @Disabled
   @Test
   void testRun_nameserverInTestTld_notFound() {
-    persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
+    persistResource(Tld.get("lol").asBuilder().setTldType(Tld.TldType.TEST).build());
     persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4"));
     newWhoisAction("nameserver ns1.cat.lol").run();
     assertThat(response.getStatus()).isEqualTo(200);

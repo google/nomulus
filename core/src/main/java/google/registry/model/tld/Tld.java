@@ -77,11 +77,11 @@ import org.joda.time.Duration;
 
 /** Persisted per-TLD configuration data. */
 @Entity(name = "Tld")
-public class Registry extends ImmutableObject implements Buildable, UnsafeSerializable {
+public class Tld extends ImmutableObject implements Buildable, UnsafeSerializable {
 
   /**
-   * The canonical string representation of the TLD associated with this {@link Registry}, which is
-   * the standard ASCII for regular TLDs and punycoded ASCII for IDN TLDs.
+   * The canonical string representation of the TLD associated with this {@link Tld}, which is the
+   * standard ASCII for regular TLDs and punycoded ASCII for IDN TLDs.
    */
   @Id
   @Column(name = "tld_name", nullable = false)
@@ -132,7 +132,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    */
   public enum TldState {
 
-    /** The state of not yet being delegated to this registry in the root zone by IANA. */
+    /** The state of not yet being delegated to this TLD in the root zone by IANA. */
     PREDELEGATION,
 
     /**
@@ -158,19 +158,19 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     PDT
   }
 
-  /** Returns the registry for a given TLD, throwing if none exists. */
-  public static Registry get(String tld) {
-    Registry maybeRegistry = CACHE.get(tld);
-    if (maybeRegistry == null) {
-      throw new RegistryNotFoundException(tld);
+  /** Returns the TLD for a given TLD, throwing if none exists. */
+  public static Tld get(String tld) {
+    Tld maybeTld = CACHE.get(tld);
+    if (maybeTld == null) {
+      throw new TldNotFoundException(tld);
     } else {
-      return maybeRegistry;
+      return maybeTld;
     }
   }
 
-  /** Returns the registry entities for the given TLD strings, throwing if any don't exist. */
-  public static ImmutableSet<Registry> get(Set<String> tlds) {
-    Map<String, Registry> registries = CACHE.getAll(tlds);
+  /** Returns the TLD entities for the given TLD strings, throwing if any don't exist. */
+  public static ImmutableSet<Tld> get(Set<String> tlds) {
+    Map<String, Tld> registries = CACHE.getAll(tlds);
     ImmutableSet<String> missingRegistries =
         registries.entrySet().stream()
             .filter(e -> e.getValue() == null)
@@ -179,48 +179,48 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     if (missingRegistries.isEmpty()) {
       return registries.values().stream().collect(toImmutableSet());
     } else {
-      throw new RegistryNotFoundException(missingRegistries);
+      throw new TldNotFoundException(missingRegistries);
     }
   }
 
   /**
    * Invalidates the cache entry.
    *
-   * <p>This is called automatically when the registry is saved. One should also call it when a
-   * registry is deleted.
+   * <p>This is called automatically when the tld is saved. One should also call it when a tld is
+   * deleted.
    */
   @PostPersist
   public void invalidateInCache() {
     CACHE.invalidate(tldStr);
   }
 
-  /** A cache that loads the {@link Registry} for a given tld. */
-  private static final LoadingCache<String, Registry> CACHE =
+  /** A cache that loads the {@link Tld} for a given tld. */
+  private static final LoadingCache<String, Tld> CACHE =
       CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
-              new CacheLoader<String, Registry>() {
+              new CacheLoader<String, Tld>() {
                 @Override
-                public Registry load(final String tld) {
+                public Tld load(final String tld) {
                   return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(tld))).orElse(null);
                 }
 
                 @Override
-                public Map<String, Registry> loadAll(Iterable<? extends String> tlds) {
-                  ImmutableMap<String, VKey<Registry>> keysMap =
-                      toMap(ImmutableSet.copyOf(tlds), Registry::createVKey);
-                  Map<VKey<? extends Registry>, Registry> entities =
+                public Map<String, Tld> loadAll(Iterable<? extends String> tlds) {
+                  ImmutableMap<String, VKey<Tld>> keysMap =
+                      toMap(ImmutableSet.copyOf(tlds), Tld::createVKey);
+                  Map<VKey<? extends Tld>, Tld> entities =
                       tm().transact(() -> tm().loadByKeysIfPresent(keysMap.values()));
                   return Maps.transformEntries(keysMap, (k, v) -> entities.getOrDefault(v, null));
                 }
               });
 
-  public static VKey<Registry> createVKey(String tld) {
-    return VKey.create(Registry.class, tld);
+  public static VKey<Tld> createVKey(String tld) {
+    return VKey.create(Tld.class, tld);
   }
 
   @Override
-  public VKey<Registry> createVKey() {
-    return VKey.create(Registry.class, tldStr);
+  public VKey<Tld> createVKey() {
+    return VKey.create(Tld.class, tldStr);
   }
 
   /**
@@ -248,7 +248,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   /**
    * The number of locks we allow at once for {@link google.registry.dns.PublishDnsUpdatesAction}.
    *
-   * <p>This should always be a positive integer -- use 1 for TLD-wide locks. All {@link Registry}
+   * <p>This should always be a positive integer -- use 1 for TLD-wide locks. All {@link Tld}
    * objects have this value default to 1.
    *
    * <p>WARNING: changing this parameter changes the lock name for subsequent DNS updates, and thus
@@ -259,7 +259,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    * <ol>
    *   <li>Pause the DNS queue via {@link google.registry.tools.UpdateTldCommand}
    *   <li>Change this number
-   *   <li>Let the Registry caches expire (currently 5 minutes) and drain the DNS publish queue
+   *   <li>Let the Tld caches expire (currently 5 minutes) and drain the DNS publish queue
    *   <li>Unpause the DNS queue
    * </ol>
    *
@@ -297,7 +297,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    */
   Duration dnsDsTtl;
   /**
-   * The unicode-aware representation of the TLD associated with this {@link Registry}.
+   * The unicode-aware representation of the TLD associated with this {@link Tld}.
    *
    * <p>This will be equal to {@link #tldStr} for ASCII TLDs, but will be non-ASCII for IDN TLDs. We
    * store this in a field so that it will be retained upon import into BigQuery.
@@ -335,7 +335,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   @Column(nullable = false)
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
-  /** The set of reserved list names that are applicable to this registry. */
+  /** The set of reserved list names that are applicable to this tld. */
   @Column(name = "reserved_list_names")
   Set<String> reservedListNames;
 
@@ -344,8 +344,8 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    *
    * <p>This set contains only the names of the list and not a reference to the lists. Updates to a
    * reserved list in Cloud SQL are saved as a new ReservedList entity. When using the ReservedList
-   * for a registry, the database should be queried for the entity with this name that has the
-   * largest revision ID.
+   * for a tld, the database should be queried for the entity with this name that has the largest
+   * revision ID.
    */
   public ImmutableSet<String> getReservedListNames() {
     return nullToEmptyImmutableCopy(reservedListNames);
@@ -355,9 +355,8 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
    * The name of the {@link PremiumList} for this TLD, if there is one.
    *
    * <p>This is only the name of the list and not a reference to the list. Updates to the premium
-   * list in Cloud SQL are saved as a new PremiumList entity. When using the PremiumList for a
-   * registry, the database should be queried for the entity with this name that has the largest
-   * revision ID.
+   * list in Cloud SQL are saved as a new PremiumList entity. When using the PremiumList for a tld,
+   * the database should be queried for the entity with this name that has the largest revision ID.
    */
   @Column(name = "premium_list_name")
   String premiumListName;
@@ -591,8 +590,8 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   }
 
   /**
-   * Returns the add-on cost of a domain restore (the flat registry-wide fee charged in addition to
-   * one year of renewal for that name).
+   * Returns the add-on cost of a domain restore (the flat tld-wide fee charged in addition to one
+   * year of renewal for that name).
    */
   public Money getStandardRestoreCost() {
     return restoreBillingCost;
@@ -625,7 +624,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     return renewBillingCostTransitions.toValueMap();
   }
 
-  /** Returns the EAP fee for the registry at the given time. */
+  /** Returns the EAP fee for the tld at the given time. */
   public Fee getEapFeeFor(DateTime now) {
     ImmutableSortedMap<DateTime, Money> valueMap = getEapFeeScheduleAsMap();
     DateTime periodStart = valueMap.floorKey(now);
@@ -707,11 +706,11 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     return new Builder(clone(this));
   }
 
-  /** A builder for constructing {@link Registry} objects, since they are immutable. */
-  public static class Builder extends Buildable.Builder<Registry> {
+  /** A builder for constructing {@link Tld} objects, since they are immutable. */
+  public static class Builder extends Buildable.Builder<Tld> {
     public Builder() {}
 
-    private Builder(Registry instance) {
+    private Builder(Tld instance) {
       super(instance);
     }
 
@@ -1006,8 +1005,8 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     }
 
     @Override
-    public Registry build() {
-      final Registry instance = getInstance();
+    public Tld build() {
+      final Tld instance = getInstance();
       // Pick up the name of the associated TLD from the instance object.
       String tldName = instance.tldStr;
       checkArgument(tldName != null, "No registry TLD specified");
@@ -1019,7 +1018,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
       // Check the validity of all TimedTransitionProperties to ensure that they have values for
       // START_OF_TIME.  The setters above have already checked this for new values, but also check
       // here to catch cases where we loaded an invalid TimedTransitionProperty from the database
-      // and cloned it into a new builder, to block re-building a Registry in an invalid state.
+      // and cloned it into a new builder, to block re-building a Tld in an invalid state.
       instance.tldStateTransitions.checkValidity();
       instance.renewBillingCostTransitions.checkValidity();
       instance.eapFeeSchedule.checkValidity();
@@ -1027,24 +1026,24 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
       checkArgumentNotNull(instance.getCurrency(), "Currency must be set");
       checkArgument(
           instance.getStandardCreateCost().getCurrencyUnit().equals(instance.currency),
-          "Create cost must be in the registry's currency");
+          "Create cost must be in the tld's currency");
       checkArgument(
           instance.getStandardRestoreCost().getCurrencyUnit().equals(instance.currency),
-          "Restore cost must be in the registry's currency");
+          "Restore cost must be in the tld's currency");
       checkArgument(
           instance.getServerStatusChangeCost().getCurrencyUnit().equals(instance.currency),
-          "Server status change cost must be in the registry's currency");
+          "Server status change cost must be in the tld's currency");
       checkArgument(
           instance.getRegistryLockOrUnlockBillingCost().getCurrencyUnit().equals(instance.currency),
-          "Registry lock/unlock cost must be in the registry's currency");
+          "Registry lock/unlock cost must be in the tld's currency");
       Predicate<Money> currencyCheck =
           (Money money) -> money.getCurrencyUnit().equals(instance.currency);
       checkArgument(
           instance.getRenewBillingCostTransitions().values().stream().allMatch(currencyCheck),
-          "Renew cost must be in the registry's currency");
+          "Renew cost must be in the tld's currency");
       checkArgument(
           instance.eapFeeSchedule.toValueMap().values().stream().allMatch(currencyCheck),
-          "All EAP fees must be in the registry's currency");
+          "All EAP fees must be in the tld's currency");
       checkArgumentNotNull(
           instance.pricingEngineClassName, "All registries must have a configured pricing engine");
       checkArgument(
@@ -1062,14 +1061,14 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
     }
   }
 
-  /** Exception to throw when no Registry entity is found for given TLD string(s). */
-  public static class RegistryNotFoundException extends RuntimeException {
+  /** Exception to throw when no Tld entity is found for given TLD string(s). */
+  public static class TldNotFoundException extends RuntimeException {
 
-    RegistryNotFoundException(ImmutableSet<String> tlds) {
-      super("No registry object(s) found for " + Joiner.on(", ").join(tlds));
+    TldNotFoundException(ImmutableSet<String> tlds) {
+      super("No tld object(s) found for " + Joiner.on(", ").join(tlds));
     }
 
-    RegistryNotFoundException(String tld) {
+    TldNotFoundException(String tld) {
       this(ImmutableSet.of(tld));
     }
   }

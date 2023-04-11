@@ -18,7 +18,7 @@ import static google.registry.model.tld.Registries.assertTldsExist;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import java.util.List;
 
 /** Command to show a TLD record. */
@@ -33,7 +33,7 @@ final class GetTldCommand implements Command {
   @Override
   public void run() {
     for (String tld : assertTldsExist(mainParameters)) {
-      System.out.println(Registry.get(tld));
+      System.out.println(Tld.get(tld));
     }
   }
 }

@@ -30,7 +30,7 @@ import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.common.Cursor;
 import google.registry.model.rde.RdeNamingUtils;
 import google.registry.model.rde.RdeRevision;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.request.Action;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.Parameter;
@@ -97,8 +97,7 @@ public final class BrdaCopyAction implements Runnable {
     // TODO(b/217772483): consider guarding this action with a lock and check if there is work.
     // Not urgent since file writes on GCS are atomic.
     Optional<Cursor> cursor =
-        tm().transact(
-                () -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, Registry.get(tld))));
+        tm().transact(() -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, Tld.get(tld))));
     DateTime brdaCursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(brdaCursorTime, watermark)) {
       throw new NoContentException(

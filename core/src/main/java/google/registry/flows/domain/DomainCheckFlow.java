@@ -30,7 +30,7 @@ import static google.registry.flows.domain.DomainFlowUtils.isValidReservedCreate
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainNameWithIdnTables;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPredelegation;
-import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.model.tld.label.ReservationType.getTypeOfHighestSeverity;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -77,8 +77,8 @@ import google.registry.model.eppoutput.CheckData.DomainCheckData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
@@ -164,7 +164,7 @@ public final class DomainCheckFlow implements Flow {
       if (tldFirstTimeSeen && !isSuperuser) {
         checkAllowedAccessToTld(registrarId, tld);
         checkHasBillingAccount(registrarId, tld);
-        verifyNotInPredelegation(Registry.get(tld), now);
+        verifyNotInPredelegation(Tld.get(tld), now);
       }
     }
     ImmutableMap<String, InternetDomainName> parsedDomains = parsedDomainsBuilder.build();
@@ -190,7 +190,7 @@ public final class DomainCheckFlow implements Flow {
     ImmutableList.Builder<DomainCheck> checksBuilder = new ImmutableList.Builder<>();
     ImmutableSet.Builder<String> availableDomains = new ImmutableSet.Builder<>();
     ImmutableMap<String, TldState> tldStates =
-        Maps.toMap(seenTlds, tld -> Registry.get(tld).getTldState(now));
+        Maps.toMap(seenTlds, tld -> Tld.get(tld).getTldState(now));
     ImmutableMap<InternetDomainName, String> domainCheckResults =
         tokenDomainCheckResults
             .map(AllocationTokenDomainCheckResults::domainCheckResults)
@@ -278,7 +278,7 @@ public final class DomainCheckFlow implements Flow {
       for (String domainName : getDomainNamesToCheckForFee(feeCheckItem, domainNames.keySet())) {
         Optional<AllocationToken> defaultToken =
             DomainFlowUtils.checkForDefaultToken(
-                Registry.get(InternetDomainName.from(domainName).parent().toString()),
+                Tld.get(InternetDomainName.from(domainName).parent().toString()),
                 domainName,
                 feeCheckItem.getCommandName(),
                 registrarId,
@@ -313,7 +313,7 @@ public final class DomainCheckFlow implements Flow {
             | AllocationTokenNotInPromotionException e) {
           // Allocation token is either not an active token or it is not valid for the EPP command,
           // registrar, domain, or TLD.
-          Registry registry = Registry.get(InternetDomainName.from(domainName).parent().toString());
+          Tld tld = Tld.get(InternetDomainName.from(domainName).parent().toString());
           responseItems.add(
               builder
                   .setDomainNameIfSupported(domainName)
@@ -322,7 +322,7 @@ public final class DomainCheckFlow implements Flow {
                       feeCheckItem.getCommandName(),
                       feeCheckItem.getPhase(),
                       feeCheckItem.getSubphase())
-                  .setCurrencyIfSupported(registry.getCurrency())
+                  .setCurrencyIfSupported(tld.getCurrency())
                   .setClass("token-not-supported")
                   .build());
         }

@@ -35,7 +35,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
@@ -73,7 +73,7 @@ public final class EppResourceUtils {
 
   /** Returns the full domain repoId in the format HEX-TLD for the specified long id and tld. */
   public static String createDomainRepoId(long repoId, String tld) {
-    return createRepoId(repoId, Registry.get(tld).getRoidSuffix());
+    return createRepoId(repoId, Tld.get(tld).getRoidSuffix());
   }
 
   /** Returns the full repoId in the format HEX-TLD for the specified long id and ROID suffix. */

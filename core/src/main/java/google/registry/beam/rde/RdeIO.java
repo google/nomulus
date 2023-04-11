@@ -33,7 +33,7 @@ import google.registry.model.common.Cursor;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeNamingUtils;
 import google.registry.model.rde.RdeRevision;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.rde.BrdaCopyAction;
 import google.registry.rde.DepositFragment;
 import google.registry.rde.Ghostryde;
@@ -272,12 +272,12 @@ public class RdeIO {
       tm().transact(
               () -> {
                 PendingDeposit key = input.getKey();
-                Registry registry = Registry.get(key.tld());
+                Tld tld = Tld.get(key.tld());
                 Optional<Cursor> cursor =
                     tm().transact(
                             () ->
                                 tm().loadByKeyIfPresent(
-                                        Cursor.createScopedVKey(key.cursor(), registry)));
+                                        Cursor.createScopedVKey(key.cursor(), tld)));
                 DateTime position = getCursorTimeOrStartOfTime(cursor);
                 checkState(key.interval() != null, "Interval must be present");
                 DateTime newPosition = key.watermark().plus(key.interval());
@@ -290,7 +290,7 @@ public class RdeIO {
                     "Partial ordering of RDE deposits broken: %s %s",
                     position,
                     key);
-                tm().put(Cursor.createScoped(key.cursor(), newPosition, registry));
+                tm().put(Cursor.createScoped(key.cursor(), newPosition, tld));
                 logger.atInfo().log(
                     "Rolled forward %s on %s cursor to %s.", key.cursor(), key.tld(), newPosition);
                 RdeRevision.saveRevision(key.tld(), key.watermark(), key.mode(), input.getValue());

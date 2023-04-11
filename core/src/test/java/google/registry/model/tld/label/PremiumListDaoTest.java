@@ -18,7 +18,7 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
@@ -205,8 +205,7 @@ public class PremiumListDaoTest {
                 .setLabelsToPrices(TEST_PRICES)
                 .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
-    persistResource(
-        newRegistry("foobar", "FOOBAR").asBuilder().setPremiumList(premiumList).build());
+    persistResource(newTld("foobar", "FOOBAR").asBuilder().setPremiumList(premiumList).build());
     assertThat(PremiumListDao.getPremiumPrice("premlist", "silver")).hasValue(Money.of(USD, 10.23));
     assertThat(PremiumListDao.getPremiumPrice("premlist", "gold")).hasValue(Money.of(USD, 1305.47));
     assertThat(PremiumListDao.getPremiumPrice("premlist", "zirconium")).isEmpty();
@@ -229,8 +228,7 @@ public class PremiumListDaoTest {
                         BigDecimal.valueOf(15000)))
                 .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
-    persistResource(
-        newRegistry("foobar", "FOOBAR").asBuilder().setPremiumList(premiumList).build());
+    persistResource(newTld("foobar", "FOOBAR").asBuilder().setPremiumList(premiumList).build());
     assertThat(PremiumListDao.getPremiumPrice("premlist", "silver")).hasValue(moneyOf(JPY, 10));
     assertThat(PremiumListDao.getPremiumPrice("premlist", "gold")).hasValue(moneyOf(JPY, 1000));
     assertThat(PremiumListDao.getPremiumPrice("premlist", "palladium"))

@@ -18,7 +18,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.ReservedList;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +34,7 @@ class ListReservedListsActionTest extends ListActionTestCase {
     ReservedList rl1 = persistReservedList("xn--q9jyb4c-published", true, "blah,FULLY_BLOCKED");
     ReservedList rl2 = persistReservedList("xn--q9jyb4c-private", false, "dugong,FULLY_BLOCKED");
     createTld("xn--q9jyb4c");
-    persistResource(Registry.get("xn--q9jyb4c").asBuilder().setReservedLists(rl1, rl2).build());
+    persistResource(Tld.get("xn--q9jyb4c").asBuilder().setReservedLists(rl1, rl2).build());
     action = new ListReservedListsAction();
   }
 

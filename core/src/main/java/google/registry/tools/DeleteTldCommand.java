@@ -21,25 +21,25 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.domain.Domain;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 
 /**
- * Command to delete the {@link Registry} associated with the specified TLD in the database.
+ * Command to delete the {@link Tld} associated with the specified TLD in the database.
  *
  * <p>This command will fail if any domains are currently registered on the TLD.
  */
 @Parameters(separators = " =", commandDescription = "Delete a TLD from the database.")
 final class DeleteTldCommand extends ConfirmingCommand {
 
-  private Registry registry;
+  private Tld tld;
 
   @Parameter(
       names = {"-t", "--tld"},
       description = "The TLD to delete.",
       required = true)
-  private String tld;
+  private String tldStr;
 
   /**
    * Perform the command by deleting the TLD.
@@ -52,28 +52,28 @@ final class DeleteTldCommand extends ConfirmingCommand {
    */
   @Override
   protected void init() {
-    registry = Registry.get(tld);
-    checkState(registry.getTldType().equals(TldType.TEST), "Cannot delete a real TLD");
+    tld = Tld.get(tldStr);
+    checkState(tld.getTldType().equals(TldType.TEST), "Cannot delete a real TLD");
 
     for (Registrar registrar : Registrar.loadAll()) {
       checkState(
-          !registrar.getAllowedTlds().contains(tld),
+          !registrar.getAllowedTlds().contains(tldStr),
           "Cannot delete TLD because registrar %s lists it as an allowed TLD",
           registrar.getRegistrarId());
     }
-    checkState(!tldContainsDomains(tld), "Cannot delete TLD because a domain is defined on it");
+    checkState(!tldContainsDomains(tldStr), "Cannot delete TLD because a domain is defined on it");
   }
 
   @Override
   protected String prompt() {
-    return "You are about to delete TLD: " + tld;
+    return "You are about to delete TLD: " + tldStr;
   }
 
   @Override
   protected String execute() {
-    tm().transact(() -> tm().delete(registry));
-    registry.invalidateInCache();
-    return String.format("Deleted TLD '%s'.\n", tld);
+    tm().transact(() -> tm().delete(tld));
+    tld.invalidateInCache();
+    return String.format("Deleted TLD '%s'.\n", tldStr);
   }
 
   private boolean tldContainsDomains(String tld) {

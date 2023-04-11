@@ -23,7 +23,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.BloomFilter;
 import google.registry.model.Buildable;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -200,8 +200,8 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
   }
 
   @Override
-  public boolean refersToList(Registry registry, String name) {
-    return Objects.equals(registry.getPremiumListName().orElse(null), name);
+  public boolean refersToList(Tld tld, String name) {
+    return Objects.equals(tld.getPremiumListName().orElse(null), name);
   }
 
   @Override

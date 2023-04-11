@@ -24,8 +24,8 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.tld.Registries;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.util.Clock;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -83,23 +83,22 @@ public final class PendingDepositChecker {
     ImmutableSetMultimap.Builder<String, PendingDeposit> builder =
         new ImmutableSetMultimap.Builder<>();
     DateTime now = clock.nowUtc();
-    for (String tld : Registries.getTldsOfType(TldType.REAL)) {
-      Registry registry = Registry.get(tld);
-      if (!registry.getEscrowEnabled()) {
+    for (String tldStr : Registries.getTldsOfType(TldType.REAL)) {
+      Tld tld = Tld.get(tldStr);
+      if (!tld.getEscrowEnabled()) {
         continue;
       }
       // Avoid creating a transaction unless absolutely necessary.
       Optional<Cursor> maybeCursor =
-          tm().transact(
-                  () -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, registry)));
+          tm().transact(() -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, tld)));
       DateTime cursorValue = maybeCursor.map(Cursor::getCursorTime).orElse(startingPoint);
       if (isBeforeOrAt(cursorValue, now)) {
         DateTime watermark =
             maybeCursor
                 .map(Cursor::getCursorTime)
-                .orElse(transactionallyInitializeCursor(registry, cursorType, startingPoint));
+                .orElse(transactionallyInitializeCursor(tld, cursorType, startingPoint));
         if (isBeforeOrAt(watermark, now)) {
-          builder.put(tld, PendingDeposit.create(tld, watermark, mode, cursorType, interval));
+          builder.put(tldStr, PendingDeposit.create(tldStr, watermark, mode, cursorType, interval));
         }
       }
     }
@@ -107,15 +106,15 @@ public final class PendingDepositChecker {
   }
 
   private DateTime transactionallyInitializeCursor(
-      final Registry registry, final CursorType cursorType, final DateTime initialValue) {
+      final Tld tld, final CursorType cursorType, final DateTime initialValue) {
     return tm().transact(
             () -> {
               Optional<Cursor> maybeCursor =
-                  tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, registry));
+                  tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, tld));
               if (maybeCursor.isPresent()) {
                 return maybeCursor.get().getCursorTime();
               }
-              tm().put(Cursor.createScoped(cursorType, initialValue, registry));
+              tm().put(Cursor.createScoped(cursorType, initialValue, tld));
               return initialValue;
             });
   }

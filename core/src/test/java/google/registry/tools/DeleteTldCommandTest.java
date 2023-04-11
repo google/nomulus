@@ -14,9 +14,9 @@
 
 package google.registry.tools;
 
-import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.testing.DatabaseHelper.allowRegistrarAccess;
-import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -24,9 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableSortedMap;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.RegistryNotFoundException;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldNotFoundException;
+import google.registry.model.tld.Tld.TldType;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,13 +40,13 @@ class DeleteTldCommandTest extends CommandTestCase<DeleteTldCommand> {
   @BeforeEach
   void beforeEach() {
     persistResource(
-        newRegistry(
+        newTld(
             TLD_REAL,
             Ascii.toUpperCase(TLD_REAL),
             ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY),
             TldType.REAL));
     persistResource(
-        newRegistry(
+        newTld(
             TLD_TEST,
             Ascii.toUpperCase(TLD_TEST),
             ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY),
@@ -57,13 +57,13 @@ class DeleteTldCommandTest extends CommandTestCase<DeleteTldCommand> {
   void testSuccess_otherTldUnaffected() throws Exception {
     runCommandForced("--tld=" + TLD_TEST);
 
-    Registry.get(TLD_REAL);
-    assertThrows(RegistryNotFoundException.class, () -> Registry.get(TLD_TEST));
+    Tld.get(TLD_REAL);
+    assertThrows(TldNotFoundException.class, () -> Tld.get(TLD_TEST));
   }
 
   @Test
   void testFailure_whenTldDoesNotExist() {
-    assertThrows(RegistryNotFoundException.class, () -> runCommandForced("--tld=nonexistenttld"));
+    assertThrows(TldNotFoundException.class, () -> runCommandForced("--tld=nonexistenttld"));
   }
 
   @Test

@@ -50,7 +50,7 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.TransferStatus;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -94,7 +94,7 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    Registry registry = Registry.get(existingDomain.getTld());
+    Tld tld = Tld.get(existingDomain.getTld());
     HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder
         .setRevisionId(domainHistoryId.getRevisionId())
@@ -108,7 +108,7 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
     }
     Domain newDomain =
         denyPendingTransfer(existingDomain, TransferStatus.CLIENT_REJECTED, now, registrarId);
-    DomainHistory domainHistory = buildDomainHistory(newDomain, registry, now);
+    DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now);
     tm().putAll(
             newDomain,
             domainHistory,
@@ -127,12 +127,12 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
         .build();
   }
 
-  private DomainHistory buildDomainHistory(Domain newDomain, Registry registry, DateTime now) {
+  private DomainHistory buildDomainHistory(Domain newDomain, Tld tld, DateTime now) {
     ImmutableSet<DomainTransactionRecord> cancelingRecords =
         createCancelingRecords(
             newDomain,
             now,
-            registry.getAutomaticTransferLength().plus(registry.getTransferGracePeriodLength()),
+            tld.getAutomaticTransferLength().plus(tld.getTransferGracePeriodLength()),
             ImmutableSet.of(TRANSFER_SUCCESSFUL));
     return historyBuilder
         .setType(DOMAIN_TRANSFER_REJECT)

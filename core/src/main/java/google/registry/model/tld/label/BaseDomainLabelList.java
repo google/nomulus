@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multiset;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -138,11 +138,11 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
   /** Gets the names of the tlds that reference this list. */
   public final ImmutableSet<String> getReferencingTlds() {
     return getTlds().stream()
-        .filter((tld) -> refersToList(Registry.get(tld), name))
+        .filter((tld) -> refersToList(Tld.get(tld), name))
         .collect(toImmutableSet());
   }
 
-  protected abstract boolean refersToList(Registry registry, String name);
+  protected abstract boolean refersToList(Tld tld, String name);
 
   /** Base builder for derived classes of {@link BaseDomainLabelList}. */
   public abstract static class Builder<T extends BaseDomainLabelList<?, ?>, B extends Builder<T, ?>>

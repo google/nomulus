@@ -50,7 +50,7 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
@@ -92,7 +92,7 @@ class AllocationTokenFlowUtilsTest {
             flowUtils
                 .verifyAllocationTokenCreateIfPresent(
                     createCommand("blah.tld"),
-                    Registry.get("tld"),
+                    Tld.get("tld"),
                     "TheRegistrar",
                     DateTime.now(UTC),
                     Optional.of(allocationTokenExtension))
@@ -114,7 +114,7 @@ class AllocationTokenFlowUtilsTest {
             flowUtils
                 .verifyAllocationTokenIfPresent(
                     DatabaseHelper.newDomain("blah.tld"),
-                    Registry.get("tld"),
+                    Tld.get("tld"),
                     "TheRegistrar",
                     DateTime.now(UTC),
                     CommandName.RENEW,
@@ -133,7 +133,7 @@ class AllocationTokenFlowUtilsTest {
             flowUtils
                 .verifyAllocationTokenIfPresent(
                     DatabaseHelper.newDomain("blah.tld"),
-                    Registry.get("tld"),
+                    Tld.get("tld"),
                     "TheRegistrar",
                     DateTime.now(UTC),
                     CommandName.RENEW,
@@ -161,7 +161,7 @@ class AllocationTokenFlowUtilsTest {
                 () ->
                     flowUtils.verifyAllocationTokenCreateIfPresent(
                         createCommand("blah.tld"),
-                        Registry.get("tld"),
+                        Tld.get("tld"),
                         "TheRegistrar",
                         DateTime.now(UTC),
                         Optional.of(allocationTokenExtension))))
@@ -177,7 +177,7 @@ class AllocationTokenFlowUtilsTest {
                 () ->
                     flowUtils.verifyAllocationTokenIfPresent(
                         DatabaseHelper.newDomain("blah.tld"),
-                        Registry.get("tld"),
+                        Tld.get("tld"),
                         "TheRegistrar",
                         DateTime.now(UTC),
                         CommandName.RENEW,
@@ -198,7 +198,7 @@ class AllocationTokenFlowUtilsTest {
             () ->
                 failingFlowUtils.verifyAllocationTokenCreateIfPresent(
                     createCommand("blah.tld"),
-                    Registry.get("tld"),
+                    Tld.get("tld"),
                     "TheRegistrar",
                     DateTime.now(UTC),
                     Optional.of(allocationTokenExtension)));
@@ -218,7 +218,7 @@ class AllocationTokenFlowUtilsTest {
             () ->
                 failingFlowUtils.verifyAllocationTokenIfPresent(
                     DatabaseHelper.newDomain("blah.tld"),
-                    Registry.get("tld"),
+                    Tld.get("tld"),
                     "TheRegistrar",
                     DateTime.now(UTC),
                     CommandName.RENEW,
@@ -434,7 +434,7 @@ class AllocationTokenFlowUtilsTest {
                 () ->
                     flowUtils.verifyAllocationTokenCreateIfPresent(
                         createCommand("blah.tld"),
-                        Registry.get("tld"),
+                        Tld.get("tld"),
                         "TheRegistrar",
                         DateTime.now(UTC),
                         Optional.of(allocationTokenExtension))))
@@ -449,7 +449,7 @@ class AllocationTokenFlowUtilsTest {
                 () ->
                     flowUtils.verifyAllocationTokenIfPresent(
                         DatabaseHelper.newDomain("blah.tld"),
-                        Registry.get("tld"),
+                        Tld.get("tld"),
                         "TheRegistrar",
                         DateTime.now(UTC),
                         CommandName.RENEW,
@@ -483,7 +483,7 @@ class AllocationTokenFlowUtilsTest {
     public AllocationToken validateToken(
         DomainCommand.Create command,
         AllocationToken token,
-        Registry registry,
+        Tld tld,
         String registrarId,
         DateTime now) {
       throw new IllegalStateException("failed for tests");
@@ -491,7 +491,7 @@ class AllocationTokenFlowUtilsTest {
 
     @Override
     public AllocationToken validateToken(
-        Domain domain, AllocationToken token, Registry registry, String registrarId, DateTime now) {
+        Domain domain, AllocationToken token, Tld tld, String registrarId, DateTime now) {
       throw new IllegalStateException("failed for tests");
     }
 

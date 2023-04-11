@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -70,7 +70,7 @@ public class ExportPremiumTermsActionTest {
     action.response = response;
     action.driveConnection = driveConnection;
     action.exportDisclaimer = DISCLAIMER_WITH_NEWLINE;
-    action.tld = tld;
+    action.tldStr = tld;
     action.run();
   }
 
@@ -79,7 +79,7 @@ public class ExportPremiumTermsActionTest {
     createTld("tld");
     PremiumList pl = PremiumListDao.save("pl-name", USD, PREMIUM_NAMES);
     persistResource(
-        Registry.get("tld").asBuilder().setPremiumList(pl).setDriveFolderId("folder_id").build());
+        Tld.get("tld").asBuilder().setPremiumList(pl).setDriveFolderId("folder_id").build());
     when(driveConnection.createOrUpdateFile(
             anyString(), any(MediaType.class), eq("folder_id"), any(byte[].class)))
         .thenReturn("file_id");
@@ -108,7 +108,7 @@ public class ExportPremiumTermsActionTest {
 
   @Test
   void test_exportPremiumTerms_doNothing_listNotConfigured() {
-    persistResource(Registry.get("tld").asBuilder().setPremiumList(null).build());
+    persistResource(Tld.get("tld").asBuilder().setPremiumList(null).build());
     runAction("tld");
 
     verifyNoInteractions(driveConnection);
@@ -120,7 +120,7 @@ public class ExportPremiumTermsActionTest {
 
   @Test
   void testExportPremiumTerms_doNothing_driveIdNotConfiguredInTld() {
-    persistResource(Registry.get("tld").asBuilder().setDriveFolderId(null).build());
+    persistResource(Tld.get("tld").asBuilder().setDriveFolderId(null).build());
     runAction("tld");
 
     verifyNoInteractions(driveConnection);
@@ -157,7 +157,7 @@ public class ExportPremiumTermsActionTest {
 
   @Test
   void testExportPremiumTerms_failure_driveIdThrowsException() throws IOException {
-    persistResource(Registry.get("tld").asBuilder().setDriveFolderId("bad_folder_id").build());
+    persistResource(Tld.get("tld").asBuilder().setDriveFolderId("bad_folder_id").build());
     assertThrows(RuntimeException.class, () -> runAction("tld"));
 
     verify(driveConnection)

@@ -19,8 +19,9 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.io.Files;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumListDao;
+import google.registry.testing.DatabaseHelper;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,11 +30,11 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link CreatePremiumListCommand}. */
 class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
     extends CreateOrUpdatePremiumListCommandTestCase<C> {
-  Registry registry;
+  Tld registry;
 
   @BeforeEach
   void beforeEach() {
-    registry = createRegistry(TLD_TEST, null, null);
+    registry = createTld(TLD_TEST, null, null);
   }
 
   @Test
@@ -82,7 +83,7 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
   @Test
   void commandPrompt_failurePremiumListAlreadyExists() {
     String randomStr = "random";
-    createTld(randomStr);
+    DatabaseHelper.createTld(randomStr);
     CreatePremiumListCommand command = new CreatePremiumListCommand();
     command.name = randomStr;
     command.currencyUnit = "USD";
