@@ -16,9 +16,9 @@ import { Component } from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 
 interface Contact {
-  name:String,
-  phoneNumber:String,
-  emailAddress: String
+  name:string,
+  phoneNumber:string,
+  emailAddress: string
 }
 
 interface GroupedContacts {
@@ -29,16 +29,15 @@ interface GroupedContacts {
 }
 
 @Component({
-  selector: 'contact-details-dialog',
+  selector: 'app-contact-details-dialog',
   templateUrl: 'contact-details.component.html',
   styleUrls: ['./contact.component.less']
 })
 export class ContactDetailsDialogComponent {
   save() {
-
+    // TODO: Add save call to the sever here
   }
 }
-
 
 @Component({
   selector: 'app-contact',
@@ -128,4 +127,3 @@ export default class ContactComponent {
     });
   }
 }
-
