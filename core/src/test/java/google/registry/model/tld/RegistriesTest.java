@@ -17,12 +17,12 @@ package google.registry.model.tld;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.net.InternetDomainName;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import org.junit.jupiter.api.Test;
@@ -48,11 +48,10 @@ class RegistriesTest {
   @Test
   void test_getTldEntities() {
     initTestTlds();
-    persistResource(newRegistry("testtld", "TESTTLD").asBuilder().setTldType(TldType.TEST).build());
+    persistResource(newTld("testtld", "TESTTLD").asBuilder().setTldType(TldType.TEST).build());
     assertThat(Registries.getTldEntitiesOfType(TldType.REAL))
-        .containsExactly(Registry.get("foo"), Registry.get("a.b.c"));
-    assertThat(Registries.getTldEntitiesOfType(TldType.TEST))
-        .containsExactly(Registry.get("testtld"));
+        .containsExactly(Tld.get("foo"), Tld.get("a.b.c"));
+    assertThat(Registries.getTldEntitiesOfType(TldType.TEST)).containsExactly(Tld.get("testtld"));
   }
 
   @Test

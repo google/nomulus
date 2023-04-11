@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.dns.writer.DnsWriter;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import java.util.Map;
 import javax.inject.Inject;
 
@@ -41,7 +41,7 @@ public final class DnsWriterProxy {
    * If the DnsWriter doesn't belong to this TLD, will return null.
    */
   public DnsWriter getByClassNameForTld(String className, String tld) {
-    if (!Registry.get(tld).getDnsWriters().contains(className)) {
+    if (!Tld.get(tld).getDnsWriters().contains(className)) {
       logger.atWarning().log(
           "Loaded potentially stale DNS writer %s which is not active on TLD %s.", className, tld);
       return null;

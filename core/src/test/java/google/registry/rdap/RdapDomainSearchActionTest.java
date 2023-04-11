@@ -41,7 +41,7 @@ import google.registry.model.domain.Period;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
@@ -1024,7 +1024,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   @Disabled
   @Test
   void testDomainMatchDomainInTestTld_notFound() {
-    persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
+    persistResource(Tld.get("lol").asBuilder().setTldType(Tld.TldType.TEST).build());
     runNotFoundTest(RequestType.NAME, "cat.lol", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
@@ -1392,7 +1392,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   @Disabled
   @Test
   void testNameserverMatchDomainsInTestTld_notFound() {
-    persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
+    persistResource(Tld.get("lol").asBuilder().setTldType(Tld.TldType.TEST).build());
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns2.cat.lol", "No matching nameservers found");
   }
 
@@ -1663,8 +1663,8 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   @Disabled
   @Test
   void testAddressMatchDomainsInTestTld_notFound() {
-    persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
-    persistResource(Registry.get("example").asBuilder().setTldType(Registry.TldType.TEST).build());
+    persistResource(Tld.get("lol").asBuilder().setTldType(Tld.TldType.TEST).build());
+    persistResource(Tld.get("example").asBuilder().setTldType(Tld.TldType.TEST).build());
     runNotFoundTest(RequestType.NS_IP, "127.0.0.1", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS);
   }

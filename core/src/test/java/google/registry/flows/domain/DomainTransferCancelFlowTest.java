@@ -52,7 +52,7 @@ import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
@@ -391,7 +391,7 @@ class DomainTransferCancelFlowTest
   void testIcannTransactionRecord_cancelsPreviousRecords() throws Exception {
     clock.advanceOneMilli();
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setAutomaticTransferLength(Duration.standardDays(2))
             .setTransferGracePeriodLength(Duration.standardDays(3))

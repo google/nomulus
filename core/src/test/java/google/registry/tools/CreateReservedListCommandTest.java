@@ -24,7 +24,7 @@ import static google.registry.tools.CreateReservedListCommand.INVALID_FORMAT_ERR
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.io.Files;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.ReservedList;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -80,7 +80,7 @@ class CreateReservedListCommandTest
   @Test
   void testFailure_reservedListWithThatNameAlreadyExists() {
     ReservedList rl = persistReservedList("xn--q9jyb4c_foo", "jones,FULLY_BLOCKED");
-    persistResource(Registry.get("xn--q9jyb4c").asBuilder().setReservedLists(rl).build());
+    persistResource(Tld.get("xn--q9jyb4c").asBuilder().setReservedLists(rl).build());
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

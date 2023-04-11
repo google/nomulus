@@ -16,8 +16,8 @@ package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
-import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar1;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
@@ -31,8 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.util.CidrAddressBlock;
@@ -67,7 +67,7 @@ public final class OteAccountBuilderTest {
   }
 
   private static void assertTldExists(String tld, TldState tldState, Money eapFee) {
-    Registry registry = Registry.get(tld);
+    Tld registry = Tld.get(tld);
     assertThat(registry).isNotNull();
     assertThat(registry.getPremiumListName()).hasValue("default_sandbox_list");
     assertThat(registry.getTldStateTransitions()).containsExactly(START_OF_TIME, tldState);

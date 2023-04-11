@@ -86,7 +86,7 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -219,18 +219,18 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     verifyOptionalAuthInfo(authInfo, existingDomain);
     AddRemove add = command.getInnerAdd();
     AddRemove remove = command.getInnerRemove();
-    String tld = existingDomain.getTld();
+    String tldStr = existingDomain.getTld();
     if (!isSuperuser) {
       verifyNoDisallowedStatuses(existingDomain, UPDATE_DISALLOWED_STATUSES);
       verifyResourceOwnership(registrarId, existingDomain);
       verifyClientUpdateNotProhibited(command, existingDomain);
       verifyAllStatusesAreClientSettable(union(add.getStatusValues(), remove.getStatusValues()));
-      checkAllowedAccessToTld(registrarId, tld);
+      checkAllowedAccessToTld(registrarId, tldStr);
     }
-    Registry registry = Registry.get(tld);
+    Tld tld = Tld.get(tldStr);
     Optional<FeeUpdateCommandExtension> feeUpdate =
         eppInput.getSingleExtension(FeeUpdateCommandExtension.class);
-    FeesAndCredits feesAndCredits = pricingLogic.getUpdatePrice(registry, targetId, now);
+    FeesAndCredits feesAndCredits = pricingLogic.getUpdatePrice(tld, targetId, now);
     validateFeesAckedIfPresent(feeUpdate, feesAndCredits, false);
     verifyNotInPendingDelete(
         add.getContacts(),
@@ -238,8 +238,8 @@ public final class DomainUpdateFlow implements TransactionalFlow {
         add.getNameservers());
     validateContactsHaveTypes(add.getContacts());
     validateContactsHaveTypes(remove.getContacts());
-    validateRegistrantAllowedOnTld(tld, command.getInnerChange().getRegistrantContactId());
-    validateNameserversAllowedOnTld(tld, add.getNameserverHostNames());
+    validateRegistrantAllowedOnTld(tldStr, command.getInnerChange().getRegistrantContactId());
+    validateNameserversAllowedOnTld(tldStr, add.getNameserverHostNames());
   }
 
   private Domain performUpdate(Update command, Domain domain, DateTime now) throws EppException {
@@ -338,7 +338,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
                   .setReason(Reason.SERVER_STATUS)
                   .setTargetId(targetId)
                   .setRegistrarId(registrarId)
-                  .setCost(Registry.get(existingDomain.getTld()).getServerStatusChangeCost())
+                  .setCost(Tld.get(existingDomain.getTld()).getServerStatusChangeCost())
                   .setEventTime(now)
                   .setBillingTime(now)
                   .setDomainHistory(historyEntry)

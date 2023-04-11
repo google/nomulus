@@ -39,7 +39,7 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.common.DnsRefreshRequest;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
@@ -102,14 +102,14 @@ public final class ReadDnsRefreshRequestsAction implements Runnable {
    */
   @Override
   public void run() {
-    if (Registry.get(tld).getDnsPaused()) {
+    if (Tld.get(tld).getDnsPaused()) {
       logger.atInfo().log("The queue updated is paused for TLD: %s.", tld);
       return;
     }
     DateTime requestedEndTime = clock.nowUtc().plus(requestedMaximumDuration);
     // See getLockIndex(), requests are evenly distributed to [1, numDnsPublishLocks], so each
     // bucket would be roughly the size of tldUpdateBatchSize.
-    int processBatchSize = tldUpdateBatchSize * Registry.get(tld).getNumDnsPublishLocks();
+    int processBatchSize = tldUpdateBatchSize * Tld.get(tld).getNumDnsPublishLocks();
     while (requestedEndTime.isAfter(clock.nowUtc())) {
       ImmutableList<DnsRefreshRequest> requests =
           dnsUtils.readAndUpdateRequestsWithLatestProcessTime(
@@ -128,7 +128,7 @@ public final class ReadDnsRefreshRequestsAction implements Runnable {
    * bucket, and then delete the requests in each bucket.
    */
   void processRequests(Collection<DnsRefreshRequest> requests) {
-    int numPublishLocks = Registry.get(tld).getNumDnsPublishLocks();
+    int numPublishLocks = Tld.get(tld).getNumDnsPublishLocks();
     requests.stream()
         .collect(
             toImmutableSetMultimap(
@@ -181,7 +181,7 @@ public final class ReadDnsRefreshRequestsAction implements Runnable {
     }
     ImmutableList<String> domains = domainsBuilder.build();
     ImmutableList<String> hosts = hostsBuilder.build();
-    for (String dnsWriter : Registry.get(tld).getDnsWriters()) {
+    for (String dnsWriter : Tld.get(tld).getDnsWriters()) {
       Task task =
           cloudTasksUtils.createPostTaskWithJitter(
               PublishDnsUpdatesAction.PATH,

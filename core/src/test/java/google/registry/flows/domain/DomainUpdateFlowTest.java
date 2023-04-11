@@ -28,7 +28,7 @@ import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIB
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
-import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
+import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertPollMessagesForResource;
@@ -101,7 +101,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import java.util.Optional;
@@ -265,7 +265,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   @Test
   void testSuccess_inQuietPeriod() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
             .build());
@@ -1529,7 +1529,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistReferencedEntities();
     persistDomain();
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setAllowedRegistrantContactIds(ImmutableSet.of("contact1234"))
             .build());
@@ -1543,7 +1543,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistReferencedEntities();
     persistDomain();
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("ns1.example.foo"))
             .build());
@@ -1560,7 +1560,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistDomain();
     // No registrant is given but both nameserver and registrant allow list exist.
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setAllowedRegistrantContactIds(ImmutableSet.of("sh8013"))
             .setAllowedFullyQualifiedHostNames(
@@ -1582,7 +1582,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistDomain();
     // Only changes registrant, with both nameserver and registrant allow list on the TLD.
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setAllowedRegistrantContactIds(ImmutableSet.of("sh8013"))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("ns1.example.foo"))
@@ -1622,7 +1622,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistReferencedEntities();
     persistDomain();
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setAllowedRegistrantContactIds(ImmutableSet.of("sh8013"))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("ns2.example.foo"))
@@ -1642,7 +1642,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 loadByForeignKey(Host.class, "ns2.example.foo", clock.nowUtc()).get().createVKey())
             .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setAllowedFullyQualifiedHostNames(
                 ImmutableSet.of("ns1.example.foo", "ns2.example.foo"))
@@ -1665,7 +1665,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistDomain();
     setEppInput("domain_update_remove_nameserver.xml");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("ns1.example.foo"))
             .build());

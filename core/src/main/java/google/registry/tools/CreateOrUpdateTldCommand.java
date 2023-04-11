@@ -30,9 +30,9 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.tld.Registries;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.tldconfig.idn.IdnTableEnum;
@@ -274,20 +274,20 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
               + " IdnTableEnum values")
   List<String> idnTables;
 
-  /** Returns the existing registry (for update) or null (for creates). */
+  /** Returns the existing tld (for update) or null (for creates). */
   @Nullable
-  abstract Registry getOldRegistry(String tld);
+  abstract Tld getOldTld(String tld);
 
-  abstract ImmutableSet<String> getAllowedRegistrants(Registry oldRegistry);
+  abstract ImmutableSet<String> getAllowedRegistrants(Tld oldTld);
 
-  abstract ImmutableSet<String> getAllowedNameservers(Registry oldRegistry);
+  abstract ImmutableSet<String> getAllowedNameservers(Tld oldTld);
 
-  abstract ImmutableSet<String> getReservedLists(Registry oldRegistry);
+  abstract ImmutableSet<String> getReservedLists(Tld oldTld);
 
   abstract Optional<Map.Entry<DateTime, TldState>> getTldStateTransitionToAdd();
 
   /** Subclasses can override this to set their own properties. */
-  void setCommandSpecificProperties(@SuppressWarnings("unused") Registry.Builder builder) {}
+  void setCommandSpecificProperties(@SuppressWarnings("unused") Tld.Builder builder) {}
 
   /** Subclasses can override this to assert that the command can be run in this environment. */
   void assertAllowedEnvironment() {}
@@ -312,14 +312,14 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
       checkArgument(
           !Character.isDigit(tld.charAt(0)),
           "TLDs cannot begin with a number");
-      Registry oldRegistry = getOldRegistry(tld);
+      Tld oldTld = getOldTld(tld);
       // TODO(b/26901539): Add a flag to set the pricing engine once we have more than one option.
-      Registry.Builder builder =
-          oldRegistry == null
-              ? new Registry.Builder()
+      Tld.Builder builder =
+          oldTld == null
+              ? new Tld.Builder()
                   .setTldStr(tld)
                   .setPremiumPricingEngine(StaticPremiumListPricingEngine.NAME)
-              : oldRegistry.asBuilder();
+              : oldTld.asBuilder();
 
       if (escrow != null) {
         builder.setEscrowEnabled(escrow);
@@ -336,14 +336,16 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
       } else if (tldStateTransitionToAdd.isPresent()) {
         ImmutableSortedMap.Builder<DateTime, TldState> newTldStateTransitions =
             ImmutableSortedMap.naturalOrder();
-        if (oldRegistry != null) {
+        if (oldTld != null) {
           checkArgument(
-              oldRegistry.getTldStateTransitions().lastKey().isBefore(
-                  tldStateTransitionToAdd.get().getKey()),
+              oldTld
+                  .getTldStateTransitions()
+                  .lastKey()
+                  .isBefore(tldStateTransitionToAdd.get().getKey()),
               "Cannot add %s at %s when there is a later transition already scheduled",
               tldStateTransitionToAdd.get().getValue(),
               tldStateTransitionToAdd.get().getKey());
-          newTldStateTransitions.putAll(oldRegistry.getTldStateTransitions());
+          newTldStateTransitions.putAll(oldTld.getTldStateTransitions());
         }
         builder.setTldStateTransitions(
             newTldStateTransitions.put(getTldStateTransitionToAdd().get()).build());
@@ -410,13 +412,13 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
         builder.setDnsWriters(dnsWritersSet);
       }
 
-      ImmutableSet<String> newReservedListNames = getReservedLists(oldRegistry);
+      ImmutableSet<String> newReservedListNames = getReservedLists(oldTld);
       checkReservedListValidityForTld(tld, newReservedListNames);
       builder.setReservedListsByName(newReservedListNames);
 
-      builder.setAllowedRegistrantContactIds(getAllowedRegistrants(oldRegistry));
+      builder.setAllowedRegistrantContactIds(getAllowedRegistrants(oldTld));
 
-      builder.setAllowedFullyQualifiedHostNames(getAllowedNameservers(oldRegistry));
+      builder.setAllowedFullyQualifiedHostNames(getAllowedNameservers(oldTld));
 
       if (!isNullOrEmpty(defaultTokens)) {
         if (defaultTokens.equals(ImmutableList.of(""))) {
@@ -444,7 +446,7 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
       }
       // Update the Registry object.
       setCommandSpecificProperties(builder);
-      stageEntityChange(oldRegistry, builder.build());
+      stageEntityChange(oldTld, builder.build());
     }
   }
 

@@ -31,7 +31,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.config.RegistryEnvironment;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Action.Method;
@@ -151,7 +151,7 @@ public final class ConsoleOteSetupActionTest {
     // We just check some samples to make sure OteAccountBuilder was called successfully. We aren't
     // checking that all the entities are there or that they have the correct values.
     assertThat(loadByRegistrarId("myclientid-3")).isPresent();
-    assertThat(Registry.get("myclientid-ga")).isNotNull();
+    assertThat(Tld.get("myclientid-ga")).isNotNull();
     assertThat(
             loadByRegistrarId("myclientid-5").get().getContacts().asList().get(0).getEmailAddress())
         .isEqualTo("contact@registry.example");

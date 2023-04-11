@@ -72,7 +72,7 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.testing.DatabaseHelper;
 import java.util.Map;
 import java.util.Optional;
@@ -469,7 +469,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   @Test
   void testSuccess_superuserOverridesReservedList() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(persistReservedList("tld-reserved", "example,FULLY_BLOCKED"))
             .build());
@@ -529,8 +529,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   void testFailure_wrongFeeAmount_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
-    persistResource(
-        Registry.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 100)).build());
+    persistResource(Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 100)).build());
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -539,8 +538,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   void testFailure_wrongFeeAmount_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
-    persistResource(
-        Registry.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 100)).build());
+    persistResource(Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 100)).build());
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -549,8 +547,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   void testFailure_wrongFeeAmount_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
-    persistResource(
-        Registry.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 100)).build());
+    persistResource(Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 100)).build());
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -559,7 +556,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     setEppInput("domain_update_restore_request_fee.xml", substitutions);
     persistPendingDeleteDomain();
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setCurrency(EUR)
             .setCreateBillingCost(Money.of(EUR, 13))
@@ -702,7 +699,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   void testFailure_missingBillingAccount() throws Exception {
     persistPendingDeleteDomain();
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
             .setCreateBillingCost(Money.ofMajor(JPY, 800))
@@ -741,7 +738,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   void testFailure_reservedBlocked() throws Exception {
     createTld("tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(persistReservedList("tld-reserved", "example,FULLY_BLOCKED"))
             .build());

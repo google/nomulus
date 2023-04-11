@@ -33,7 +33,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
@@ -127,7 +127,7 @@ public final class DomainTransferUtils {
             .setTransferredRegistrationExpirationTime(serverApproveNewExpirationTime)
             .setTransferStatus(TransferStatus.SERVER_APPROVED)
             .build();
-    Registry registry = Registry.get(existingDomain.getTld());
+    Tld tld = Tld.get(existingDomain.getTld());
     ImmutableSet.Builder<TransferServerApproveEntity> builder = new ImmutableSet.Builder<>();
     transferCost.ifPresent(
         cost ->
@@ -137,7 +137,7 @@ public final class DomainTransferUtils {
                     domainHistoryId,
                     targetId,
                     gainingRegistrarId,
-                    registry,
+                    tld,
                     cost)));
     createOptionalAutorenewCancellation(
             automaticTransferTime, now, domainHistoryId, targetId, existingDomain, transferCost)
@@ -308,7 +308,7 @@ public final class DomainTransferUtils {
       HistoryEntryId domainHistoryId,
       String targetId,
       String gainingRegistrarId,
-      Registry registry,
+      Tld registry,
       Money transferCost) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.TRANSFER)

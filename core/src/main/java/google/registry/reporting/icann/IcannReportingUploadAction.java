@@ -30,8 +30,8 @@ import google.registry.gcs.GcsUtils;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Registries;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.HttpException.ServiceUnavailableException;
@@ -169,7 +169,7 @@ public final class IcannReportingUploadAction implements Runnable {
           Cursor.createScoped(
               cursorType,
               cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1),
-              Registry.get(tldStr));
+              Tld.get(tldStr));
       // In order to keep the transactions short-lived, we load all of the cursors in a single
       // transaction then later use per-cursor transactions when checking + saving the cursors. We
       // run behind a lock so the cursors shouldn't be changed, but double check to be sure.
@@ -203,11 +203,11 @@ public final class IcannReportingUploadAction implements Runnable {
   /** Returns a map of each cursor to the tld. */
   private ImmutableMap<Cursor, String> loadCursors() {
 
-    ImmutableSet<Registry> registries = Registries.getTldEntitiesOfType(TldType.REAL);
+    ImmutableSet<Tld> registries = Registries.getTldEntitiesOfType(TldType.REAL);
 
-    ImmutableMap<VKey<? extends Cursor>, Registry> activityKeyMap =
+    ImmutableMap<VKey<? extends Cursor>, Tld> activityKeyMap =
         loadKeyMap(registries, CursorType.ICANN_UPLOAD_ACTIVITY);
-    ImmutableMap<VKey<? extends Cursor>, Registry> transactionKeyMap =
+    ImmutableMap<VKey<? extends Cursor>, Tld> transactionKeyMap =
         loadKeyMap(registries, CursorType.ICANN_UPLOAD_TX);
 
     ImmutableSet.Builder<VKey<? extends Cursor>> keys = new ImmutableSet.Builder<>();
@@ -225,8 +225,8 @@ public final class IcannReportingUploadAction implements Runnable {
     return cursors.build();
   }
 
-  private ImmutableMap<VKey<? extends Cursor>, Registry> loadKeyMap(
-      ImmutableSet<Registry> registries, CursorType type) {
+  private ImmutableMap<VKey<? extends Cursor>, Tld> loadKeyMap(
+      ImmutableSet<Tld> registries, CursorType type) {
     return Maps.uniqueIndex(registries, r -> Cursor.createScopedVKey(type, r));
   }
 
@@ -236,7 +236,7 @@ public final class IcannReportingUploadAction implements Runnable {
    * next month.
    */
   private ImmutableMap<Cursor, String> defaultNullCursorsToNextMonthAndAddToMap(
-      Map<VKey<? extends Cursor>, Registry> keyMap,
+      Map<VKey<? extends Cursor>, Tld> keyMap,
       CursorType type,
       Map<VKey<? extends Cursor>, Cursor> cursorMap) {
     ImmutableMap.Builder<Cursor, String> cursors = new ImmutableMap.Builder<>();

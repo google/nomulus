@@ -26,8 +26,8 @@ import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import google.registry.config.RegistryEnvironment;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,35 +83,35 @@ public class UpdateTldCommand extends CreateOrUpdateTldCommand {
   TldState setCurrentTldState;
 
   @Override
-  Registry getOldRegistry(String tld) {
-    return Registry.get(assertTldExists(tld));
+  Tld getOldTld(String tld) {
+    return Tld.get(assertTldExists(tld));
   }
 
   @Override
-  ImmutableSet<String> getAllowedRegistrants(Registry oldRegistry) {
+  ImmutableSet<String> getAllowedRegistrants(Tld oldTld) {
     return formUpdatedList(
         "allowed registrants",
-        oldRegistry.getAllowedRegistrantContactIds(),
+        oldTld.getAllowedRegistrantContactIds(),
         allowedRegistrants,
         allowedRegistrantsAdd,
         allowedRegistrantsRemove);
   }
 
   @Override
-  ImmutableSet<String> getAllowedNameservers(Registry oldRegistry) {
+  ImmutableSet<String> getAllowedNameservers(Tld oldTld) {
     return formUpdatedList(
         "allowed nameservers",
-        oldRegistry.getAllowedFullyQualifiedHostNames(),
+        oldTld.getAllowedFullyQualifiedHostNames(),
         allowedNameservers,
         allowedNameserversAdd,
         allowedNameserversRemove);
   }
 
   @Override
-  ImmutableSet<String> getReservedLists(Registry oldRegistry) {
+  ImmutableSet<String> getReservedLists(Tld oldTld) {
     return formUpdatedList(
         "reserved lists",
-        oldRegistry.getReservedListNames(),
+        oldTld.getReservedListNames(),
         reservedListNames,
         reservedListsAdd,
         reservedListsRemove);

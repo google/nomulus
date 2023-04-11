@@ -41,7 +41,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
@@ -63,7 +63,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
 
   static final DateTime TRANSFER_REQUEST_TIME = DateTime.parse("2000-06-06T22:00:00.0Z");
   static final DateTime TRANSFER_EXPIRATION_TIME =
-      TRANSFER_REQUEST_TIME.plus(Registry.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
+      TRANSFER_REQUEST_TIME.plus(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
   private static final Duration TIME_SINCE_REQUEST = Duration.standardDays(3);
   private static final int EXTENDED_REGISTRATION_YEARS = 1;
   private static final DateTime REGISTRATION_EXPIRATION_TIME =
@@ -77,7 +77,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   private DomainHistory historyEntryDomainCreate;
 
   DomainTransferFlowTestCase() {
-    checkState(!Registry.DEFAULT_TRANSFER_GRACE_PERIOD.isShorterThan(TIME_SINCE_REQUEST));
+    checkState(!Tld.DEFAULT_TRANSFER_GRACE_PERIOD.isShorterThan(TIME_SINCE_REQUEST));
     clock.setTo(TRANSFER_REQUEST_TIME.plus(TIME_SINCE_REQUEST));
   }
 

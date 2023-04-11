@@ -44,7 +44,7 @@ import google.registry.model.poll.PendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.Type;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
@@ -90,7 +90,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
         persistContactWithPendingTransfer(
                 persistActiveContact(getUniqueIdFromCommand()),
                 transferRequestTime,
-                transferRequestTime.plus(Registry.DEFAULT_TRANSFER_GRACE_PERIOD),
+                transferRequestTime.plus(Tld.DEFAULT_TRANSFER_GRACE_PERIOD),
                 clock.nowUtc())
             .getTransferData();
     clock.advanceOneMilli();

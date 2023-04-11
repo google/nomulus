@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.truth.Truth;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.common.RegistryJpaIO.Read;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
@@ -67,7 +67,7 @@ public class DatabaseSnapshotTest {
   static JpaTransactionManager origJpa;
   static JpaTransactionManager jpa;
 
-  static Registry registry;
+  static Tld registry;
 
   @BeforeAll
   static void setup() {
@@ -84,7 +84,7 @@ public class DatabaseSnapshotTest {
     origJpa = tm();
     TransactionManagerFactory.setJpaTm(() -> jpa);
 
-    Registry tld = DatabaseHelper.newRegistry("tld", "TLD");
+    Tld tld = DatabaseHelper.newTld("tld", "TLD");
     tm().transact(() -> tm().put(tld));
     registry = tm().transact(() -> tm().loadByEntity(tld));
   }
@@ -112,7 +112,7 @@ public class DatabaseSnapshotTest {
   @Test
   void readSnapshot() {
     try (DatabaseSnapshot databaseSnapshot = DatabaseSnapshot.createSnapshot()) {
-      Registry snapshotRegistry =
+      Tld snapshotRegistry =
           tm().transact(
                   () ->
                       tm().setDatabaseSnapshot(databaseSnapshot.getSnapshotId())
@@ -124,17 +124,17 @@ public class DatabaseSnapshotTest {
   @Test
   void readSnapshot_withSubsequentChange() {
     try (DatabaseSnapshot databaseSnapshot = DatabaseSnapshot.createSnapshot()) {
-      Registry updated =
+      Tld updated =
           registry
               .asBuilder()
               .setCreateBillingCost(registry.getStandardCreateCost().plus(1))
               .build();
       tm().transact(() -> tm().put(updated));
 
-      Registry persistedUpdate = tm().transact(() -> tm().loadByEntity(registry));
+      Tld persistedUpdate = tm().transact(() -> tm().loadByEntity(registry));
       Truth.assertThat(persistedUpdate).isNotEqualTo(registry);
 
-      Registry snapshotRegistry =
+      Tld snapshotRegistry =
           tm().transact(
                   () ->
                       tm().setDatabaseSnapshot(databaseSnapshot.getSnapshotId())
@@ -149,18 +149,18 @@ public class DatabaseSnapshotTest {
   @Test
   void readWithRegistryJpaIO() {
     try (DatabaseSnapshot databaseSnapshot = DatabaseSnapshot.createSnapshot()) {
-      Registry updated =
+      Tld updated =
           registry
               .asBuilder()
               .setCreateBillingCost(registry.getStandardCreateCost().plus(1))
               .build();
       tm().transact(() -> tm().put(updated));
 
-      Read<Registry, Registry> read =
-          RegistryJpaIO.read(() -> CriteriaQueryBuilder.create(Registry.class).build(), x -> x)
-              .withCoder(SerializableCoder.of(Registry.class))
+      Read<Tld, Tld> read =
+          RegistryJpaIO.read(() -> CriteriaQueryBuilder.create(Tld.class).build(), x -> x)
+              .withCoder(SerializableCoder.of(Tld.class))
               .withSnapshot(databaseSnapshot.getSnapshotId());
-      PCollection<Registry> registries = testPipeline.apply(read);
+      PCollection<Tld> registries = testPipeline.apply(read);
 
       // This assertion depends on Registry being Serializable, which may change if the
       // UnsafeSerializable interface is removed after migration.

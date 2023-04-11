@@ -33,7 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.DomainLabelMetrics.MetricsReservedListMatch;
 import java.io.Serializable;
 import java.util.List;
@@ -173,8 +173,8 @@ public final class ReservedList
   }
 
   @Override
-  protected boolean refersToList(Registry registry, String name) {
-    return registry.getReservedListNames().contains(name);
+  protected boolean refersToList(Tld tld, String name) {
+    return tld.getReservedListNames().contains(name);
   }
 
   /** Determines whether the ReservedList is in use on any Registry */
@@ -243,15 +243,16 @@ public final class ReservedList
    * Helper function to retrieve the entries associated with this label and TLD, or an empty set if
    * no such entry exists.
    */
-  private static ImmutableSet<ReservedListEntry> getReservedListEntries(String label, String tld) {
+  private static ImmutableSet<ReservedListEntry> getReservedListEntries(
+      String label, String tldStr) {
     DateTime startTime = DateTime.now(UTC);
-    Registry registry = Registry.get(checkNotNull(tld, "tld must not be null"));
+    Tld tld = Tld.get(checkNotNull(tldStr, "tld must not be null"));
     ImmutableSet.Builder<ReservedListEntry> entriesBuilder = new ImmutableSet.Builder<>();
     ImmutableSet.Builder<MetricsReservedListMatch> metricMatchesBuilder =
         new ImmutableSet.Builder<>();
 
     // Loop through all reservation lists and add each of them.
-    for (ReservedList rl : loadReservedLists(registry.getReservedListNames())) {
+    for (ReservedList rl : loadReservedLists(tld.getReservedListNames())) {
       if (rl.getReservedListEntries().containsKey(label)) {
         ReservedListEntry entry = rl.getReservedListEntries().get(label);
         entriesBuilder.add(entry);
@@ -261,7 +262,9 @@ public final class ReservedList
     }
     ImmutableSet<ReservedListEntry> entries = entriesBuilder.build();
     DomainLabelMetrics.recordReservedListCheckOutcome(
-        tld, metricMatchesBuilder.build(), DateTime.now(UTC).getMillis() - startTime.getMillis());
+        tldStr,
+        metricMatchesBuilder.build(),
+        DateTime.now(UTC).getMillis() - startTime.getMillis());
     return entries;
   }
 

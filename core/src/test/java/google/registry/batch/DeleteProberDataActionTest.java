@@ -42,8 +42,8 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
@@ -82,7 +82,7 @@ class DeleteProberDataActionTest {
     // Since "example" doesn't end with .test, its entities won't be deleted even though it is of
     // TEST type.
     createTld("example", "EXAMPLE");
-    persistResource(Registry.get("example").asBuilder().setTldType(TldType.TEST).build());
+    persistResource(Tld.get("example").asBuilder().setTldType(TldType.TEST).build());
 
     // Since "not-test.test" isn't of TEST type, its entities won't be deleted even though it ends
     // with .test.
@@ -90,9 +90,9 @@ class DeleteProberDataActionTest {
 
     // Entities in these two should be deleted.
     createTld("ib-any.test", "IBANYT");
-    persistResource(Registry.get("ib-any.test").asBuilder().setTldType(TldType.TEST).build());
+    persistResource(Tld.get("ib-any.test").asBuilder().setTldType(TldType.TEST).build());
     createTld("oa-canary.test", "OACANT");
-    persistResource(Registry.get("oa-canary.test").asBuilder().setTldType(TldType.TEST).build());
+    persistResource(Tld.get("oa-canary.test").asBuilder().setTldType(TldType.TEST).build());
 
     resetAction();
   }

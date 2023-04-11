@@ -28,10 +28,10 @@ import static com.google.common.collect.Sets.union;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
 import static google.registry.model.tld.Registries.findTldForName;
 import static google.registry.model.tld.Registries.getTlds;
-import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
-import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
-import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
-import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
+import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
+import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.model.tld.label.ReservationType.ALLOWED_IN_SUNRISE;
 import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.model.tld.label.ReservationType.NAME_COLLISION;
@@ -124,9 +124,9 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tmch.ClaimsList;
@@ -302,17 +302,17 @@ public class DomainFlowUtils {
   }
 
   /** Check if the registrar has the correct billing account map configured. */
-  public static void checkHasBillingAccount(String registrarId, String tld) throws EppException {
-    Registry registry = Registry.get(tld);
+  public static void checkHasBillingAccount(String registrarId, String tldStr) throws EppException {
+    Tld tld = Tld.get(tldStr);
     // Don't enforce the billing account check on test (i.e. prober/OT&E) TLDs.
-    if (registry.getTldType() == TldType.TEST) {
+    if (tld.getTldType() == TldType.TEST) {
       return;
     }
     if (!Registrar.loadByRegistrarIdCached(registrarId)
         .get()
         .getBillingAccountMap()
-        .containsKey(registry.getCurrency())) {
-      throw new DomainFlowUtils.MissingBillingAccountMapException(registry.getCurrency());
+        .containsKey(tld.getCurrency())) {
+      throw new DomainFlowUtils.MissingBillingAccountMapException(tld.getCurrency());
     }
   }
 
@@ -412,8 +412,7 @@ public class DomainFlowUtils {
   static void validateNameserversCountForTld(String tld, InternetDomainName domainName, int count)
       throws EppException {
     // For TLDs with a nameserver allow list, all domains must have at least 1 nameserver.
-    ImmutableSet<String> tldNameserversAllowList =
-        Registry.get(tld).getAllowedFullyQualifiedHostNames();
+    ImmutableSet<String> tldNameserversAllowList = Tld.get(tld).getAllowedFullyQualifiedHostNames();
     if (!tldNameserversAllowList.isEmpty() && count == 0) {
       throw new NameserversNotSpecifiedForTldWithNameserverAllowListException(
           domainName.toString());
@@ -470,7 +469,7 @@ public class DomainFlowUtils {
 
   static void validateRegistrantAllowedOnTld(String tld, String registrantContactId)
       throws RegistrantNotAllowedException {
-    ImmutableSet<String> allowedRegistrants = Registry.get(tld).getAllowedRegistrantContactIds();
+    ImmutableSet<String> allowedRegistrants = Tld.get(tld).getAllowedRegistrantContactIds();
     // Empty allow list or null registrantContactId are ignored.
     if (registrantContactId != null
         && !allowedRegistrants.isEmpty()
@@ -481,7 +480,7 @@ public class DomainFlowUtils {
 
   static void validateNameserversAllowedOnTld(String tld, Set<String> fullyQualifiedHostNames)
       throws EppException {
-    ImmutableSet<String> allowedHostNames = Registry.get(tld).getAllowedFullyQualifiedHostNames();
+    ImmutableSet<String> allowedHostNames = Tld.get(tld).getAllowedFullyQualifiedHostNames();
     Set<String> hostnames = nullToEmpty(fullyQualifiedHostNames);
     if (!allowedHostNames.isEmpty()) { // Empty allow list is ignored.
       Set<String> disallowedNameservers = difference(hostnames, allowedHostNames);
@@ -514,13 +513,13 @@ public class DomainFlowUtils {
         domainName.parts().get(0), domainName.parent().toString());
   }
 
-  /** Verifies that a launch extension's specified phase matches the specified registry's phase. */
+  /** Verifies that a launch extension's specified phase matches the specified tld's phase. */
   static void verifyLaunchPhaseMatchesRegistryPhase(
-      Registry registry, LaunchExtension launchExtension, DateTime now) throws EppException {
+      Tld tld, LaunchExtension launchExtension, DateTime now) throws EppException {
     if (!LAUNCH_PHASE_TO_TLD_STATES.containsKey(launchExtension.getPhase())
         || !LAUNCH_PHASE_TO_TLD_STATES
             .get(launchExtension.getPhase())
-            .contains(registry.getTldState(now))) {
+            .contains(tld.getTldState(now))) {
       // No launch operations are allowed during the quiet period or predelegation.
       throw new LaunchPhaseMismatchException();
     }
@@ -652,9 +651,9 @@ public class DomainFlowUtils {
       builder.setEffectiveDateIfSupported(now);
     }
     String domainNameString = domainName.toString();
-    Registry registry = Registry.get(domainName.parent().toString());
+    Tld tld = Tld.get(domainName.parent().toString());
     int years = verifyUnitIsYears(feeRequest.getPeriod()).getValue();
-    boolean isSunrise = (registry.getTldState(now) == START_DATE_SUNRISE);
+    boolean isSunrise = (tld.getTldState(now) == START_DATE_SUNRISE);
 
     if (feeRequest.getPhase() != null || feeRequest.getSubphase() != null) {
       throw new FeeChecksDontSupportPhasesException();
@@ -662,13 +661,13 @@ public class DomainFlowUtils {
 
     CurrencyUnit currency =
         feeRequest.getCurrency() != null ? feeRequest.getCurrency() : topLevelCurrency;
-    if ((currency != null) && !currency.equals(registry.getCurrency())) {
+    if ((currency != null) && !currency.equals(tld.getCurrency())) {
       throw new CurrencyUnitMismatchException();
     }
 
     builder
         .setCommand(feeRequest.getCommandName(), feeRequest.getPhase(), feeRequest.getSubphase())
-        .setCurrencyIfSupported(registry.getCurrency())
+        .setCurrencyIfSupported(tld.getCurrency())
         .setPeriod(feeRequest.getPeriod());
 
     String feeClass = null;
@@ -685,7 +684,7 @@ public class DomainFlowUtils {
           fees =
               pricingLogic
                   .getCreatePrice(
-                      registry,
+                      tld,
                       domainNameString,
                       now,
                       years,
@@ -699,7 +698,7 @@ public class DomainFlowUtils {
         fees =
             pricingLogic
                 .getRenewPrice(
-                    registry, domainNameString, now, years, recurringBillingEvent, allocationToken)
+                    tld, domainNameString, now, years, recurringBillingEvent, allocationToken)
                 .getFees();
         break;
       case RESTORE:
@@ -717,7 +716,7 @@ public class DomainFlowUtils {
         // restore because they can't be restored in the first place.
         boolean isExpired =
             domain.isPresent() && domain.get().getRegistrationExpirationTime().isBefore(now);
-        fees = pricingLogic.getRestorePrice(registry, domainNameString, now, isExpired).getFees();
+        fees = pricingLogic.getRestorePrice(tld, domainNameString, now, isExpired).getFees();
         break;
       case TRANSFER:
         if (years != 1) {
@@ -726,12 +725,12 @@ public class DomainFlowUtils {
         builder.setAvailIfSupported(true);
         fees =
             pricingLogic
-                .getTransferPrice(registry, domainNameString, now, recurringBillingEvent)
+                .getTransferPrice(tld, domainNameString, now, recurringBillingEvent)
                 .getFees();
         break;
       case UPDATE:
         builder.setAvailIfSupported(true);
-        fees = pricingLogic.getUpdatePrice(registry, domainNameString, now).getFees();
+        fees = pricingLogic.getUpdatePrice(tld, domainNameString, now).getFees();
         break;
       default:
         throw new UnknownFeeCommandException(feeRequest.getUnparsedCommandName());
@@ -742,7 +741,7 @@ public class DomainFlowUtils {
       // are returning any premium fees, but only if the fee class isn't already set (i.e. because
       // the domain is reserved, which overrides any other classes).
       boolean isNameCollisionInSunrise =
-          registry.getTldState(now).equals(START_DATE_SUNRISE)
+          tld.getTldState(now).equals(START_DATE_SUNRISE)
               && getReservationTypes(domainName).contains(NAME_COLLISION);
       boolean isPremium = fees.stream().anyMatch(BaseFee::isPremium);
       feeClass =
@@ -993,7 +992,7 @@ public class DomainFlowUtils {
   }
 
   /** Check that the registry phase is not predelegation, during which some flows are forbidden. */
-  public static void verifyNotInPredelegation(Registry registry, DateTime now)
+  public static void verifyNotInPredelegation(Tld registry, DateTime now)
       throws BadCommandForRegistryPhaseException {
     if (registry.getTldState(now) == PREDELEGATION) {
       throw new BadCommandForRegistryPhaseException();
@@ -1002,17 +1001,17 @@ public class DomainFlowUtils {
 
   /** Validate the contacts and nameservers specified in a domain create command. */
   static void validateCreateCommandContactsAndNameservers(
-      Create command, Registry registry, InternetDomainName domainName) throws EppException {
+      Create command, Tld tld, InternetDomainName domainName) throws EppException {
     verifyNotInPendingDelete(
         command.getContacts(), command.getRegistrant(), command.getNameservers());
     validateContactsHaveTypes(command.getContacts());
-    String tld = registry.getTldStr();
-    validateRegistrantAllowedOnTld(tld, command.getRegistrantContactId());
+    String tldStr = tld.getTldStr();
+    validateRegistrantAllowedOnTld(tldStr, command.getRegistrantContactId());
     validateNoDuplicateContacts(command.getContacts());
     validateRequiredContactsPresent(command.getRegistrant(), command.getContacts());
     ImmutableSet<String> hostNames = command.getNameserverHostNames();
-    validateNameserversCountForTld(tld, domainName, hostNames.size());
-    validateNameserversAllowedOnTld(tld, hostNames);
+    validateNameserversCountForTld(tldStr, domainName, hostNames.size());
+    validateNameserversAllowedOnTld(tldStr, hostNames);
   }
 
   /** Validate the secDNS extension, if present. */
@@ -1061,10 +1060,9 @@ public class DomainFlowUtils {
   }
 
   /** Check that the claims period hasn't ended. */
-  static void verifyClaimsPeriodNotEnded(Registry registry, DateTime now)
-      throws ClaimsPeriodEndedException {
-    if (isAtOrAfter(now, registry.getClaimsPeriodEnd())) {
-      throw new ClaimsPeriodEndedException(registry.getTldStr());
+  static void verifyClaimsPeriodNotEnded(Tld tld, DateTime now) throws ClaimsPeriodEndedException {
+    if (isAtOrAfter(now, tld.getClaimsPeriodEnd())) {
+      throw new ClaimsPeriodEndedException(tld.getTldStr());
     }
   }
 
@@ -1202,19 +1200,15 @@ public class DomainFlowUtils {
    * token found on the TLD's default token list will be returned.
    */
   public static Optional<AllocationToken> checkForDefaultToken(
-      Registry registry,
-      String domainName,
-      CommandName commandName,
-      String registrarId,
-      DateTime now)
+      Tld tld, String domainName, CommandName commandName, String registrarId, DateTime now)
       throws EppException {
-    if (isNullOrEmpty(registry.getDefaultPromoTokens())) {
+    if (isNullOrEmpty(tld.getDefaultPromoTokens())) {
       return Optional.empty();
     }
     Map<VKey<AllocationToken>, Optional<AllocationToken>> tokens =
-        AllocationToken.getAll(registry.getDefaultPromoTokens());
+        AllocationToken.getAll(tld.getDefaultPromoTokens());
     ImmutableList<Optional<AllocationToken>> tokenList =
-        registry.getDefaultPromoTokens().stream()
+        tld.getDefaultPromoTokens().stream()
             .map(tokens::get)
             .filter(Optional::isPresent)
             .collect(toImmutableList());

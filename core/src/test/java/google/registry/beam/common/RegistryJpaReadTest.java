@@ -17,7 +17,7 @@ package google.registry.beam.common;
 import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newContact;
-import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -37,7 +37,7 @@ import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -161,7 +161,7 @@ public class RegistryJpaReadTest {
   }
 
   private void setupForJoinQuery() {
-    Registry registry = newRegistry("com", "ABCD_APP");
+    Tld registry = newTld("com", "ABCD_APP");
     Registrar registrar =
         makeRegistrar1()
             .asBuilder()

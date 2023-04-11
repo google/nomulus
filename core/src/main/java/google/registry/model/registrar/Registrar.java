@@ -57,8 +57,8 @@ import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestampEntity;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.VKey;
 import google.registry.util.CidrAddressBlock;
 import java.security.cert.CertificateParsingException;
@@ -723,11 +723,11 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
      * to set the allowed TLDs.
      */
     public Builder setAllowedTldsUncached(Set<String> allowedTlds) {
-      ImmutableSet<VKey<Registry>> newTldKeys =
+      ImmutableSet<VKey<Tld>> newTldKeys =
           Sets.difference(allowedTlds, getInstance().getAllowedTlds()).stream()
-              .map(Registry::createVKey)
+              .map(Tld::createVKey)
               .collect(toImmutableSet());
-      Set<VKey<Registry>> missingTldKeys =
+      Set<VKey<Tld>> missingTldKeys =
           Sets.difference(
               newTldKeys, tm().transact(() -> tm().loadByKeysIfPresent(newTldKeys)).keySet());
       checkArgument(missingTldKeys.isEmpty(), "Trying to set nonexistent TLDs: %s", missingTldKeys);
@@ -903,10 +903,10 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
       // In order to grant access to real TLDs, the registrar must have a corresponding billing
       // account ID for that TLD's billing currency.
       ImmutableSet<String> nonBillableTlds =
-          Registry.get(getInstance().getAllowedTlds()).stream()
+          Tld.get(getInstance().getAllowedTlds()).stream()
               .filter(r -> r.getTldType() == TldType.REAL)
               .filter(r -> !getInstance().getBillingAccountMap().containsKey(r.getCurrency()))
-              .map(Registry::getTldStr)
+              .map(Tld::getTldStr)
               .collect(toImmutableSet());
       checkArgument(
           nonBillableTlds.isEmpty(),

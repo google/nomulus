@@ -19,7 +19,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -48,9 +48,9 @@ class ExportUtilsTest {
         false,
         "tine,FULLY_BLOCKED");
     createTld("tld");
-    persistResource(Registry.get("tld").asBuilder().setReservedLists(rl1, rl2, rl3).build());
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1, rl2, rl3).build());
     // Should not contain jimmy, tine, or oval.
-    assertThat(new ExportUtils("# This is a disclaimer.").exportReservedTerms(Registry.get("tld")))
+    assertThat(new ExportUtils("# This is a disclaimer.").exportReservedTerms(Tld.get("tld")))
         .isEqualTo("# This is a disclaimer.\ncat\nlol\nsnow\n");
   }
 }

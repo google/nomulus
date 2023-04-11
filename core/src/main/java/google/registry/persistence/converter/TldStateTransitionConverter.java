@@ -14,7 +14,7 @@
 
 package google.registry.persistence.converter;
 
-import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Tld.TldState;
 import javax.persistence.Converter;
 
 /** JPA converter for storing/retrieving {@code TimedTransitionProperty<TldState>} objects. */

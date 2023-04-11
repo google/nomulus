@@ -73,7 +73,7 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -247,8 +247,8 @@ public class RdePipelineTest {
 
     tm().transact(
             () -> {
-              tm().put(Cursor.createScoped(CursorType.BRDA, now, Registry.get("soy")));
-              tm().put(Cursor.createScoped(RDE_STAGING, now, Registry.get("soy")));
+              tm().put(Cursor.createScoped(CursorType.BRDA, now, Tld.get("soy")));
+              tm().put(Cursor.createScoped(RDE_STAGING, now, Tld.get("soy")));
               RdeRevision.saveRevision("soy", now, THIN, 0);
               RdeRevision.saveRevision("soy", now, FULL, 0);
             });
@@ -562,8 +562,7 @@ public class RdePipelineTest {
 
   private static DateTime loadCursorTime(CursorType type) {
     return tm().transact(
-            () ->
-                tm().loadByKey(Cursor.createScopedVKey(type, Registry.get("soy"))).getCursorTime());
+            () -> tm().loadByKey(Cursor.createScopedVKey(type, Tld.get("soy"))).getCursorTime());
   }
 
   private static Function<DepositFragment, String> getXmlElement(String pattern) {

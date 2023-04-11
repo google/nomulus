@@ -30,7 +30,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.HttpException.ConflictException;
@@ -89,7 +89,7 @@ class NordnVerifyActionTest {
   @BeforeEach
   void beforeEach() throws Exception {
     createTld("gtld");
-    persistResource(Registry.get("gtld").asBuilder().setLordnUsername("lolcat").build());
+    persistResource(Tld.get("gtld").asBuilder().setLordnUsername("lolcat").build());
     action.tld = "gtld";
     action.urlConnectionService = urlConnectionService;
     when(httpUrlConnection.getResponseCode()).thenReturn(SC_OK);

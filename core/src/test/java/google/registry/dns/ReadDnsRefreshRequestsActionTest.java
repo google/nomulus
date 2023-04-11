@@ -43,7 +43,7 @@ import com.google.common.collect.Ordering;
 import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.model.common.DnsRefreshRequestTest;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
@@ -151,7 +151,7 @@ public class ReadDnsRefreshRequestsActionTest {
   @Test
   void testSuccess_runAction_twoBatches() {
     // Make the read batch size 2 * 1 = 2.
-    persistResource(Registry.get("tld").asBuilder().setNumDnsPublishLocks(1).build());
+    persistResource(Tld.get("tld").asBuilder().setNumDnsPublishLocks(1).build());
     doReturn(1).when(action).getLockIndex(anyInt(), any(DnsRefreshRequest.class));
     doAnswer(
             invocation -> {
@@ -181,7 +181,7 @@ public class ReadDnsRefreshRequestsActionTest {
   @Test
   void testSuccess_runAction_timeOutAfterFirstRead() {
     // Make the process batch size 2 * 1 = 2.
-    persistResource(Registry.get("tld").asBuilder().setNumDnsPublishLocks(1).build());
+    persistResource(Tld.get("tld").asBuilder().setNumDnsPublishLocks(1).build());
     // Both requests in the first batch will be bucketed to the same bucket.
     doReturn(1).when(action).getLockIndex(anyInt(), any(DnsRefreshRequest.class));
     doAnswer(

@@ -22,7 +22,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.common.Cursor.CursorId;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import java.util.Optional;
 import javax.persistence.AttributeOverride;
@@ -134,7 +134,7 @@ public class Cursor extends UpdateAutoTimestampEntity {
     return createVKey(type, GLOBAL);
   }
 
-  public static VKey<Cursor> createScopedVKey(CursorType type, Registry tld) {
+  public static VKey<Cursor> createScopedVKey(CursorType type, Tld tld) {
     return createVKey(type, tld.getTldStr());
   }
 
@@ -172,8 +172,8 @@ public class Cursor extends UpdateAutoTimestampEntity {
     return create(cursorType, cursorTime, GLOBAL);
   }
 
-  /** Creates a new cursor instance with a given {@link Registry} scope. */
-  public static Cursor createScoped(CursorType cursorType, DateTime cursorTime, Registry scope) {
+  /** Creates a new cursor instance with a given {@link Tld} scope. */
+  public static Cursor createScoped(CursorType cursorType, DateTime cursorTime, Tld scope) {
     checkNotNull(scope, "Cursor scope cannot be null");
     return create(cursorType, cursorTime, scope.getTldStr());
   }
