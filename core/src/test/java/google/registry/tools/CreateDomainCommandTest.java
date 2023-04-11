@@ -26,7 +26,7 @@ import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.testing.DeterministicStringGenerator;
 import org.junit.jupiter.api.BeforeEach;
@@ -135,8 +135,8 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
 
   @Test
   void testSuccess_premiumListNull() throws Exception {
-    Registry registry =
-        new Registry.Builder()
+    Tld registry =
+        new Tld.Builder()
             .setTldStr("abc")
             .setPremiumPricingEngine(StaticPremiumListPricingEngine.NAME)
             .setDnsWriters(ImmutableSet.of(VoidDnsWriter.NAME))
@@ -160,7 +160,7 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
     createTld("baar");
     persistPremiumList("baar", JPY, "parajiumu,JPY 96083");
     persistResource(
-        Registry.get("baar")
+        Tld.get("baar")
             .asBuilder()
             .setPremiumList(PremiumListDao.getLatestRevision("baar").get())
             .build());

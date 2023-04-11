@@ -46,7 +46,7 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeNamingUtils;
 import google.registry.model.rde.RdeRevision;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.rde.EscrowTaskRunner.EscrowTask;
 import google.registry.rde.JSchSshSession.JSchSshSessionFactory;
 import google.registry.request.Action;
@@ -125,7 +125,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   @Override
   public void run() {
     logger.atInfo().log("Attempting to acquire RDE upload lock for TLD '%s'.", tld);
-    runner.lockRunAndRollForward(this, Registry.get(tld), timeout, CursorType.RDE_UPLOAD, interval);
+    runner.lockRunAndRollForward(this, Tld.get(tld), timeout, CursorType.RDE_UPLOAD, interval);
     HashMultimap<String, String> params = HashMultimap.create();
     params.put(RequestParameters.PARAM_TLD, tld);
     prefix.ifPresent(s -> params.put(RdeModule.PARAM_PREFIX, s));
@@ -160,9 +160,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     logger.atInfo().log("Verifying readiness to upload the RDE deposit.");
     Optional<Cursor> cursor =
         tm().transact(
-                () ->
-                    tm().loadByKeyIfPresent(
-                            Cursor.createScopedVKey(RDE_STAGING, Registry.get(tld))));
+                () -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(RDE_STAGING, Tld.get(tld))));
     DateTime stagingCursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(stagingCursorTime, watermark)) {
       throw new NoContentException(
@@ -174,8 +172,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     DateTime sftpCursorTime =
         tm().transact(
                 () ->
-                    tm().loadByKeyIfPresent(
-                            Cursor.createScopedVKey(RDE_UPLOAD_SFTP, Registry.get(tld))))
+                    tm().loadByKeyIfPresent(Cursor.createScopedVKey(RDE_UPLOAD_SFTP, Tld.get(tld))))
             .map(Cursor::getCursorTime)
             .orElse(START_OF_TIME);
     Duration timeSinceLastSftp = new Duration(sftpCursorTime, clock.nowUtc());
@@ -214,7 +211,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
             () ->
                 tm().put(
                         Cursor.createScoped(
-                            RDE_UPLOAD_SFTP, tm().getTransactionTime(), Registry.get(tld))));
+                            RDE_UPLOAD_SFTP, tm().getTransactionTime(), Tld.get(tld))));
     response.setContentType(PLAIN_TEXT_UTF_8);
     response.setPayload(String.format("OK %s %s\n", tld, watermark));
   }

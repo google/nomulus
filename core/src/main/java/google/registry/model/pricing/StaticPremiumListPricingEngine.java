@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 
 import com.google.common.net.InternetDomainName;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumListDao;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -35,14 +35,14 @@ public final class StaticPremiumListPricingEngine implements PremiumPricingEngin
 
   @Override
   public DomainPrices getDomainPrices(String domainName, DateTime priceTime) {
-    String tld = getTldFromDomainName(domainName);
+    String tldStr = getTldFromDomainName(domainName);
     String label = InternetDomainName.from(domainName).parts().get(0);
-    Registry registry = Registry.get(checkNotNull(tld, "tld"));
+    Tld tld = Tld.get(checkNotNull(tldStr, "tld"));
     Optional<Money> premiumPrice =
-        registry.getPremiumListName().flatMap(pl -> PremiumListDao.getPremiumPrice(pl, label));
+        tld.getPremiumListName().flatMap(pl -> PremiumListDao.getPremiumPrice(pl, label));
     return DomainPrices.create(
         premiumPrice.isPresent(),
-        premiumPrice.orElse(registry.getStandardCreateCost()),
-        premiumPrice.orElse(registry.getStandardRenewCost(priceTime)));
+        premiumPrice.orElse(tld.getStandardCreateCost()),
+        premiumPrice.orElse(tld.getStandardRenewCost(priceTime)));
   }
 }

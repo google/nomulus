@@ -23,7 +23,7 @@ import google.registry.flows.domain.DomainPricingLogic;
 import google.registry.flows.domain.FeesAndCredits;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
@@ -81,7 +81,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
     public abstract FeesAndCredits feesAndCredits();
 
-    public abstract Registry registry();
+    public abstract Tld tld();
 
     public abstract InternetDomainName domainName();
 
@@ -99,7 +99,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
       public abstract Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
 
-      public abstract Builder setRegistry(Registry registry);
+      public abstract Builder setTld(Tld tld);
 
       public abstract Builder setDomainName(InternetDomainName domainName);
 
@@ -117,7 +117,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
     public abstract FeesAndCredits feesAndCredits();
 
-    public abstract Registry registry();
+    public abstract Tld tld();
 
     public abstract InternetDomainName domainName();
 
@@ -135,7 +135,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
       public abstract Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
 
-      public abstract Builder setRegistry(Registry registry);
+      public abstract Builder setTld(Tld tld);
 
       public abstract Builder setDomainName(InternetDomainName domainName);
 
@@ -153,7 +153,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
     public abstract FeesAndCredits feesAndCredits();
 
-    public abstract Registry registry();
+    public abstract Tld tld();
 
     public abstract InternetDomainName domainName();
 
@@ -169,7 +169,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
       public abstract Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
 
-      public abstract Builder setRegistry(Registry registry);
+      public abstract Builder setTld(Tld tld);
 
       public abstract Builder setDomainName(InternetDomainName domainName);
 
@@ -185,7 +185,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
     public abstract FeesAndCredits feesAndCredits();
 
-    public abstract Registry registry();
+    public abstract Tld tld();
 
     public abstract InternetDomainName domainName();
 
@@ -201,7 +201,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
       public abstract Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
 
-      public abstract Builder setRegistry(Registry registry);
+      public abstract Builder setTld(Tld tld);
 
       public abstract Builder setDomainName(InternetDomainName domainName);
 
@@ -217,7 +217,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
     public abstract FeesAndCredits feesAndCredits();
 
-    public abstract Registry registry();
+    public abstract Tld tld();
 
     public abstract InternetDomainName domainName();
 
@@ -233,7 +233,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
       public abstract Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
 
-      public abstract Builder setRegistry(Registry registry);
+      public abstract Builder setTld(Tld tld);
 
       public abstract Builder setDomainName(InternetDomainName domainName);
 

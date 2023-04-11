@@ -26,8 +26,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Maps;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -68,40 +68,39 @@ class CreateTldCommand extends CreateOrUpdateTldCommand {
   }
 
   @Override
-  void setCommandSpecificProperties(Registry.Builder builder) {
+  void setCommandSpecificProperties(Tld.Builder builder) {
     // Pick up the currency from the create cost. Since all costs must be in one currency, and that
     // condition is enforced by the builder, it doesn't matter which cost we choose it from.
-    CurrencyUnit currency = createBillingCost != null
-        ? createBillingCost.getCurrencyUnit()
-        : Registry.DEFAULT_CURRENCY;
+    CurrencyUnit currency =
+        createBillingCost != null ? createBillingCost.getCurrencyUnit() : Tld.DEFAULT_CURRENCY;
 
     builder.setCurrency(currency);
 
     // If this is a non-default currency and the user hasn't specified an EAP fee schedule, set the
     // EAP fee schedule to a matching currency.
-    if (!currency.equals(Registry.DEFAULT_CURRENCY) && eapFeeSchedule.isEmpty()) {
+    if (!currency.equals(Tld.DEFAULT_CURRENCY) && eapFeeSchedule.isEmpty()) {
       builder.setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(currency)));
     }
   }
 
   @Override
-  Registry getOldRegistry(String tld) {
+  Tld getOldTld(String tld) {
     checkState(!getTlds().contains(tld), "TLD '%s' already exists", tld);
     return null;
   }
 
   @Override
-  ImmutableSet<String> getAllowedRegistrants(Registry oldRegistry) {
+  ImmutableSet<String> getAllowedRegistrants(Tld oldTld) {
     return ImmutableSet.copyOf(nullToEmpty(allowedRegistrants));
   }
 
   @Override
-  ImmutableSet<String> getAllowedNameservers(Registry oldRegistry) {
+  ImmutableSet<String> getAllowedNameservers(Tld oldTld) {
     return ImmutableSet.copyOf(nullToEmpty(allowedNameservers));
   }
 
   @Override
-  ImmutableSet<String> getReservedLists(Registry oldRegistry) {
+  ImmutableSet<String> getReservedLists(Tld oldTld) {
     return ImmutableSet.copyOf(nullToEmpty(reservedListNames));
   }
 

@@ -67,7 +67,7 @@
     <class>google.registry.model.tld.label.PremiumList$PremiumEntry</class>
     <class>google.registry.model.tld.label.ReservedList</class>
     <class>google.registry.model.tld.label.ReservedList$ReservedListEntry</class>
-    <class>google.registry.model.tld.Registry</class>
+    <class>google.registry.model.tld.Tld</class>
     <class>google.registry.model.reporting.DomainTransactionRecord</class>
     <class>google.registry.model.reporting.Spec11ThreatMatch</class>
     <class>google.registry.model.server.Lock</class>

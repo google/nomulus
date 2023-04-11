@@ -45,7 +45,7 @@ import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.util.Clock;
 import java.util.HashSet;
@@ -96,16 +96,16 @@ public final class DomainClaimsCheckFlow implements Flow {
     for (String domainName : ImmutableSet.copyOf(domainNames)) {
       InternetDomainName parsedDomain = validateDomainName(domainName);
       validateDomainNameWithIdnTables(parsedDomain);
-      String tld = parsedDomain.parent().toString();
+      String tldStr = parsedDomain.parent().toString();
       // Only validate access to a TLD the first time it is encountered.
-      if (seenTlds.add(tld)) {
+      if (seenTlds.add(tldStr)) {
         if (!isSuperuser) {
-          checkAllowedAccessToTld(registrarId, tld);
-          checkHasBillingAccount(registrarId, tld);
-          Registry registry = Registry.get(tld);
+          checkAllowedAccessToTld(registrarId, tldStr);
+          checkHasBillingAccount(registrarId, tldStr);
+          Tld tld = Tld.get(tldStr);
           DateTime now = clock.nowUtc();
-          verifyNotInPredelegation(registry, now);
-          verifyClaimsPeriodNotEnded(registry, now);
+          verifyNotInPredelegation(tld, now);
+          verifyClaimsPeriodNotEnded(tld, now);
         }
       }
       Optional<String> claimKey = ClaimsListDao.get().getClaimKey(parsedDomain.parts().get(0));

@@ -29,7 +29,7 @@ import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableSet;
 import google.registry.beam.BeamActionTestBase;
 import google.registry.gcs.GcsUtils;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.HttpException.BadRequestException;
@@ -127,7 +127,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   @Test
   void testRun_tldWithoutEscrowEnabled_returns204() {
     createTld("lol");
-    persistResource(Registry.get("lol").asBuilder().setEscrowEnabled(false).build());
+    persistResource(Tld.get("lol").asBuilder().setEscrowEnabled(false).build());
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(204);
@@ -259,6 +259,6 @@ public class RdeStagingActionTest extends BeamActionTestBase {
 
   private static void createTldWithEscrowEnabled(final String tld) {
     createTld(tld);
-    persistResource(Registry.get(tld).asBuilder().setEscrowEnabled(true).build());
+    persistResource(Tld.get(tld).asBuilder().setEscrowEnabled(true).build());
   }
 }

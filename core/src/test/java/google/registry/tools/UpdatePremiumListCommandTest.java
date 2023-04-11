@@ -22,7 +22,7 @@ import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.io.Files;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.model.tld.label.PremiumListDao;
@@ -37,11 +37,11 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link UpdatePremiumListCommand}. */
 class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     extends CreateOrUpdatePremiumListCommandTestCase<C> {
-  Registry registry;
+  Tld registry;
 
   @BeforeEach
   void beforeEach() {
-    registry = createRegistry(TLD_TEST, USD, initialPremiumListData);
+    registry = createTld(TLD_TEST, USD, initialPremiumListData);
   }
 
   @Test
@@ -135,7 +135,7 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   @Test
   void commandPrompt_failureNoPreviousVersion() {
     String fileName = "random";
-    registry = createRegistry(fileName, null, null);
+    registry = createTld(fileName, null, null);
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.name = fileName;
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);

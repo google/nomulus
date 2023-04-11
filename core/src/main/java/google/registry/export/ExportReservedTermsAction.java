@@ -23,7 +23,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
@@ -46,7 +46,11 @@ public class ExportReservedTermsAction implements Runnable {
 
   @Inject DriveConnection driveConnection;
   @Inject ExportUtils exportUtils;
-  @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
+
+  @Inject
+  @Parameter(RequestParameters.PARAM_TLD)
+  String tldStr;
+
   @Inject Response response;
   @Inject ExportReservedTermsAction() {}
 
@@ -61,23 +65,25 @@ public class ExportReservedTermsAction implements Runnable {
   public void run() {
     response.setContentType(PLAIN_TEXT_UTF_8);
     try {
-      Registry registry = Registry.get(tld);
+      Tld tld = Tld.get(tldStr);
       String resultMsg;
-      if (registry.getReservedListNames().isEmpty() && isNullOrEmpty(registry.getDriveFolderId())) {
+      if (tld.getReservedListNames().isEmpty() && isNullOrEmpty(tld.getDriveFolderId())) {
         resultMsg = "No reserved lists configured";
-        logger.atInfo().log("No reserved terms to export for TLD '%s'.", tld);
-      } else if (registry.getDriveFolderId() == null) {
+        logger.atInfo().log("No reserved terms to export for TLD '%s'.", tldStr);
+      } else if (tld.getDriveFolderId() == null) {
         resultMsg = "Skipping export because no Drive folder is associated with this TLD";
         logger.atInfo().log(
-            "Skipping reserved terms export for TLD %s because Drive folder isn't specified.", tld);
+            "Skipping reserved terms export for TLD %s because Drive folder isn't specified.",
+            tldStr);
       } else {
-        resultMsg = driveConnection.createOrUpdateFile(
-            RESERVED_TERMS_FILENAME,
-            EXPORT_MIME_TYPE,
-            registry.getDriveFolderId(),
-            exportUtils.exportReservedTerms(registry).getBytes(UTF_8));
+        resultMsg =
+            driveConnection.createOrUpdateFile(
+                RESERVED_TERMS_FILENAME,
+                EXPORT_MIME_TYPE,
+                tld.getDriveFolderId(),
+                exportUtils.exportReservedTerms(tld).getBytes(UTF_8));
         logger.atInfo().log(
-            "Exporting reserved terms succeeded for TLD %s, response was: %s", tld, resultMsg);
+            "Exporting reserved terms succeeded for TLD %s, response was: %s", tldStr, resultMsg);
       }
       response.setStatus(SC_OK);
       response.setPayload(resultMsg);
@@ -85,7 +91,8 @@ public class ExportReservedTermsAction implements Runnable {
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload(e.getMessage());
       throw new RuntimeException(
-          String.format("Exception occurred while exporting reserved terms for TLD %s.", tld), e);
+          String.format("Exception occurred while exporting reserved terms for TLD %s.", tldStr),
+          e);
     }
   }
 }

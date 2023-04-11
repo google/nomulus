@@ -19,7 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;
@@ -74,24 +74,23 @@ class EscrowTaskRunner {
    * Acquires lock, checks cursor, invokes {@code task}, and advances cursor.
    *
    * @param task the task to run
-   * @param registry the {@link Registry} that we are performing escrow for
+   * @param tld the {@link Tld} that we are performing escrow for
    * @param timeout time when we assume failure, kill the task (and instance) and release the lock
    * @param cursorType the cursor to advance on success, indicating the next required runtime
    * @param interval how far to advance the cursor (e.g. a day for RDE, a week for BRDA)
    */
   void lockRunAndRollForward(
       final EscrowTask task,
-      final Registry registry,
+      final Tld tld,
       Duration timeout,
       final CursorType cursorType,
       final Duration interval) {
     Callable<Void> lockRunner =
         () -> {
-          logger.atInfo().log("Performing escrow for TLD '%s'.", registry.getTld());
+          logger.atInfo().log("Performing escrow for TLD '%s'.", tld.getTld());
           DateTime startOfToday = clock.nowUtc().withTimeAtStartOfDay();
           DateTime nextRequiredRun =
-              tm().transact(
-                      () -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, registry)))
+              tm().transact(() -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, tld)))
                   .map(Cursor::getCursorTime)
                   .orElse(startOfToday);
           if (nextRequiredRun.isAfter(startOfToday)) {
@@ -101,16 +100,16 @@ class EscrowTaskRunner {
           task.runWithLock(nextRequiredRun);
           DateTime nextRun = nextRequiredRun.plus(interval);
           logger.atInfo().log("Rolling cursor forward to %s.", nextRun);
-          tm().transact(() -> tm().put(Cursor.createScoped(cursorType, nextRun, registry)));
+          tm().transact(() -> tm().put(Cursor.createScoped(cursorType, nextRun, tld)));
           return null;
         };
     String lockName = String.format("EscrowTaskRunner %s", task.getClass().getSimpleName());
-    if (!lockHandler.executeWithLocks(lockRunner, registry.getTldStr(), timeout, lockName)) {
+    if (!lockHandler.executeWithLocks(lockRunner, tld.getTldStr(), timeout, lockName)) {
       // This will happen if either: a) the task is double-executed; b) the task takes a long time
       // to run and the retry task got executed while the first one is still running. In both
       // situations the safest thing to do is to just return 503 so the task gets retried later.
       throw new ServiceUnavailableException(
-          String.format("Lock in use: %s for TLD: %s", lockName, registry.getTldStr()));
+          String.format("Lock in use: %s for TLD: %s", lockName, tld.getTldStr()));
     }
   }
 }

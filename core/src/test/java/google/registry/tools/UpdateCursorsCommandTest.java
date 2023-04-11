@@ -25,8 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.RegistryNotFoundException;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldNotFoundException;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link UpdateCursorsCommand}. */
 class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
-  private Registry registry;
+  private Tld registry;
 
   @BeforeEach
   void beforeEach() {
@@ -88,8 +88,8 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
   @Test
   void testSuccess_multipleTlds_hasOldValue() throws Exception {
-    Registry barRegistry = createTld("bar");
-    Registry registry2 = Registry.get("bar");
+    Tld barRegistry = createTld("bar");
+    Tld registry2 = Tld.get("bar");
     persistResource(Cursor.createScoped(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry));
     persistResource(
         Cursor.createScoped(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry2));
@@ -107,7 +107,7 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
   @Test
   void testSuccess_multipleTlds_oldValueisEmpty() throws Exception {
-    Registry barRegistry = createTld("bar");
+    Tld barRegistry = createTld("bar");
     assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(CursorType.BRDA, registry))).isEmpty();
     assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(CursorType.BRDA, barRegistry))).isEmpty();
     runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "foo", "bar");
@@ -125,7 +125,7 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
   @Test
   void testFailure_badTld() {
     assertThrows(
-        RegistryNotFoundException.class,
+        TldNotFoundException.class,
         () -> runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "bar"));
   }
 

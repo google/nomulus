@@ -22,7 +22,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.tools.server.ListDomainsAction;
 import java.util.List;
 

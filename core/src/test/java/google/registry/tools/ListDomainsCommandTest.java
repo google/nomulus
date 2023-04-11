@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verify;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.tools.server.ListDomainsAction;
 import org.junit.jupiter.api.Test;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -73,7 +73,7 @@ public class ListDomainsCommandTest extends ListObjectsCommandTestCase<ListDomai
   @Test
   void test_defaultsToAllRealTlds() throws Exception {
     createTlds("tldone", "tldtwo");
-    persistResource(newRegistry("fake", "FAKE").asBuilder().setTldType(TldType.TEST).build());
+    persistResource(newTld("fake", "FAKE").asBuilder().setTldType(TldType.TEST).build());
     runCommand();
     verify(connection)
         .sendPostRequest(

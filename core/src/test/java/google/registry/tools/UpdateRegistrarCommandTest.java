@@ -21,7 +21,7 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3_HASH;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;
@@ -403,7 +403,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   @Test
   void testSuccess_billingAccountMap_onlyAppliesToRealRegistrar() throws Exception {
     persistResource(
-        newRegistry("foo", "FOO")
+        newTld("foo", "FOO")
             .asBuilder()
             .setCurrency(JPY)
             .setCreateBillingCost(Money.of(JPY, new BigDecimal(1300)))

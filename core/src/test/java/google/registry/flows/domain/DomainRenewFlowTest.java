@@ -99,7 +99,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import java.util.Map;
@@ -281,7 +281,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setCost(totalRenewCost)
             .setPeriodYears(renewalYears)
             .setEventTime(clock.nowUtc())
-            .setBillingTime(clock.nowUtc().plus(Registry.get("tld").getRenewGracePeriodLength()))
+            .setBillingTime(clock.nowUtc().plus(Tld.get("tld").getRenewGracePeriodLength()))
             .setDomainHistory(historyEntryDomainRenew)
             .build();
     assertBillingEvents(
@@ -327,7 +327,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             GracePeriod.create(
                 GracePeriodStatus.RENEW,
                 domain.getRepoId(),
-                clock.nowUtc().plus(Registry.get("tld").getRenewGracePeriodLength()),
+                clock.nowUtc().plus(Tld.get("tld").getRenewGracePeriodLength()),
                 renewalClientId,
                 null),
             renewBillingEvent));
@@ -397,7 +397,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   void testSuccess_internalRegiration_premiumDomain() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setPremiumList(persistPremiumList("tld", USD, "example,USD 100"))
             .build());
@@ -434,7 +434,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   void testSuccess_anchorTenant_premiumDomain() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setPremiumList(persistPremiumList("tld", USD, "example,USD 100"))
             .build());
@@ -842,10 +842,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   void testSuccess_nonDefaultRenewGracePeriod() throws Exception {
     persistResource(
-        Registry.get("tld")
-            .asBuilder()
-            .setRenewGracePeriodLength(Duration.standardMinutes(9))
-            .build());
+        Tld.get("tld").asBuilder().setRenewGracePeriodLength(Duration.standardMinutes(9)).build());
     persistDomain();
     doSuccessfulTest(
         "domain_renew_response.xml",
@@ -994,7 +991,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   void testFailure_wrongFeeAmount_v06() throws Exception {
     setEppInput("domain_renew_fee.xml", FEE_06_MAP);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
             .build());
@@ -1007,7 +1004,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   void testFailure_wrongFeeAmount_v11() throws Exception {
     setEppInput("domain_renew_fee.xml", FEE_11_MAP);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
             .build());
@@ -1020,7 +1017,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   void testFailure_wrongFeeAmount_v12() throws Exception {
     setEppInput("domain_renew_fee.xml", FEE_12_MAP);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
             .build());
@@ -1033,7 +1030,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   void testFailure_wrongCurrency_v06() throws Exception {
     setEppInput("domain_renew_fee.xml", FEE_06_MAP);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setCurrency(EUR)
             .setCreateBillingCost(Money.of(EUR, 13))
@@ -1052,7 +1049,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   void testFailure_wrongCurrency_v11() throws Exception {
     setEppInput("domain_renew_fee.xml", FEE_11_MAP);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setCurrency(EUR)
             .setCreateBillingCost(Money.of(EUR, 13))
@@ -1071,7 +1068,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   void testFailure_wrongCurrency_v12() throws Exception {
     setEppInput("domain_renew_fee.xml", FEE_12_MAP);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setCurrency(EUR)
             .setCreateBillingCost(Money.of(EUR, 13))
@@ -1114,7 +1111,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   void testFailure_missingBillingAccountMap() throws Exception {
     persistDomain();
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
             .setCreateBillingCost(Money.ofMajor(JPY, 800))
@@ -1236,10 +1233,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     persistDomain();
     // Test with a nonstandard Renew period to ensure the reporting time is correct regardless
     persistResource(
-        Registry.get("tld")
-            .asBuilder()
-            .setRenewGracePeriodLength(Duration.standardMinutes(9))
-            .build());
+        Tld.get("tld").asBuilder().setRenewGracePeriodLength(Duration.standardMinutes(9)).build());
     runFlow();
     Domain domain = reloadResourceByForeignKey();
     DomainHistory historyEntry =
@@ -1401,7 +1395,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(
                 ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
@@ -1452,7 +1446,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(
                 ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
@@ -1495,7 +1489,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(
                 ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
@@ -1544,7 +1538,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(
                 ImmutableList.of(
@@ -1588,7 +1582,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(
                 ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
@@ -1621,7 +1615,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
             .build());
@@ -1659,7 +1653,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
@@ -1682,7 +1676,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
             .build());
@@ -1720,7 +1714,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
@@ -1743,7 +1737,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
             .build());
@@ -1781,7 +1775,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))

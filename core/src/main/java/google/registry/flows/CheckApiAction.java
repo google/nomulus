@@ -46,7 +46,7 @@ import google.registry.flows.domain.DomainFlowUtils.BadCommandForRegistryPhaseEx
 import google.registry.flows.domain.DomainFlowUtils.InvalidIdnDomainLabelException;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.monitoring.whitebox.CheckApiMetric;
 import google.registry.monitoring.whitebox.CheckApiMetric.Availability;
@@ -116,9 +116,9 @@ public class CheckApiAction implements Runnable {
       validateDomainNameWithIdnTables(domainName);
 
       DateTime now = clock.nowUtc();
-      Registry registry = Registry.get(domainName.parent().toString());
+      Tld tld = Tld.get(domainName.parent().toString());
       try {
-        verifyNotInPredelegation(registry, now);
+        verifyNotInPredelegation(tld, now);
       } catch (BadCommandForRegistryPhaseException e) {
         metricBuilder.status(INVALID_REGISTRY_PHASE);
         return fail("Check in this TLD is not allowed in the current registry phase");

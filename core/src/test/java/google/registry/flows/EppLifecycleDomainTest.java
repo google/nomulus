@@ -18,9 +18,9 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_AND_CLOSE;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
-import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
-import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
-import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
+import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
@@ -44,8 +44,8 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.TaskQueueExtension;
@@ -512,13 +512,16 @@ class EppLifecycleDomainTest extends EppTestCase {
 
     // Set the EAP schedule.
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setEapFeeSchedule(
                 ImmutableSortedMap.of(
-                    START_OF_TIME, Money.of(USD, 0),
-                    DateTime.parse("2000-06-01T00:00:00Z"), Money.of(USD, 100),
-                    DateTime.parse("2000-06-02T00:00:00Z"), Money.of(USD, 0)))
+                    START_OF_TIME,
+                    Money.of(USD, 0),
+                    DateTime.parse("2000-06-01T00:00:00Z"),
+                    Money.of(USD, 100),
+                    DateTime.parse("2000-06-02T00:00:00Z"),
+                    Money.of(USD, 0)))
             .build());
 
     // Create domain example.tld, which should have an EAP fee of USD 100.
@@ -546,7 +549,7 @@ class EppLifecycleDomainTest extends EppTestCase {
             .setPeriodYears(1)
             .setCost(Money.parse("USD 100.00"))
             .setEventTime(createTime)
-            .setBillingTime(createTime.plus(Registry.get("tld").getRenewGracePeriodLength()))
+            .setBillingTime(createTime.plus(Tld.get("tld").getRenewGracePeriodLength()))
             .setDomainHistory(
                 getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
             .build();

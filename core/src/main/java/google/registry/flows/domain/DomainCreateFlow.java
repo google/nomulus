@@ -47,9 +47,9 @@ import static google.registry.model.EppResourceUtils.createDomainRepoId;
 import static google.registry.model.IdService.allocateId;
 import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
-import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
-import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
-import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
+import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.model.tld.label.ReservationType.NAME_COLLISION;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -112,9 +112,9 @@ import google.registry.model.reporting.DomainTransactionRecord.TransactionReport
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
@@ -253,9 +253,9 @@ public final class DomainCreateFlow implements TransactionalFlow {
     // Validate that this is actually a legal domain name on a TLD that the registrar has access to.
     InternetDomainName domainName = validateDomainName(command.getDomainName());
     String domainLabel = domainName.parts().get(0);
-    Registry registry = Registry.get(domainName.parent().toString());
-    validateCreateCommandContactsAndNameservers(command, registry, domainName);
-    TldState tldState = registry.getTldState(now);
+    Tld tld = Tld.get(domainName.parent().toString());
+    validateCreateCommandContactsAndNameservers(command, tld, domainName);
+    TldState tldState = tld.getTldState(now);
     Optional<LaunchCreateExtension> launchCreate =
         eppInput.getSingleExtension(LaunchCreateExtension.class);
     boolean hasSignedMarks =
@@ -270,7 +270,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
     Optional<AllocationToken> allocationToken =
         allocationTokenFlowUtils.verifyAllocationTokenCreateIfPresent(
             command,
-            registry,
+            tld,
             registrarId,
             now,
             eppInput.getSingleExtension(AllocationTokenExtension.class));
@@ -278,7 +278,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
     if (!allocationToken.isPresent()) {
       allocationToken =
           DomainFlowUtils.checkForDefaultToken(
-              registry, command.getDomainName(), CommandName.CREATE, registrarId, now);
+              tld, command.getDomainName(), CommandName.CREATE, registrarId, now);
       if (allocationToken.isPresent()) {
         defaultTokenUsed = true;
       }
@@ -291,12 +291,12 @@ public final class DomainCreateFlow implements TransactionalFlow {
     // notice without specifying a claims key, ignore the registry phase, and override blocks on
     // registering premium domains.
     if (!isSuperuser) {
-      checkAllowedAccessToTld(registrarId, registry.getTldStr());
-      checkHasBillingAccount(registrarId, registry.getTldStr());
+      checkAllowedAccessToTld(registrarId, tld.getTldStr());
+      checkHasBillingAccount(registrarId, tld.getTldStr());
       boolean isValidReservedCreate = isValidReservedCreate(domainName, allocationToken);
       ClaimsList claimsList = ClaimsListDao.get();
       verifyIsGaOrSpecialCase(
-          registry,
+          tld,
           claimsList,
           now,
           domainLabel,
@@ -305,15 +305,15 @@ public final class DomainCreateFlow implements TransactionalFlow {
           isValidReservedCreate,
           hasSignedMarks);
       if (launchCreate.isPresent()) {
-        verifyLaunchPhaseMatchesRegistryPhase(registry, launchCreate.get(), now);
+        verifyLaunchPhaseMatchesRegistryPhase(tld, launchCreate.get(), now);
       }
       if (!isAnchorTenant && !isValidReservedCreate) {
         verifyNotReserved(domainName, isSunriseCreate);
       }
       if (hasClaimsNotice) {
-        verifyClaimsPeriodNotEnded(registry, now);
+        verifyClaimsPeriodNotEnded(tld, now);
       }
-      if (now.isBefore(registry.getClaimsPeriodEnd())) {
+      if (now.isBefore(tld.getClaimsPeriodEnd())) {
         verifyClaimsNoticeIfAndOnlyIfNeeded(
             domainName, claimsList, hasSignedMarks, hasClaimsNotice);
       }
@@ -338,20 +338,19 @@ public final class DomainCreateFlow implements TransactionalFlow {
     Optional<FeeCreateCommandExtension> feeCreate =
         eppInput.getSingleExtension(FeeCreateCommandExtension.class);
     FeesAndCredits feesAndCredits =
-        pricingLogic.getCreatePrice(
-            registry, targetId, now, years, isAnchorTenant, allocationToken);
+        pricingLogic.getCreatePrice(tld, targetId, now, years, isAnchorTenant, allocationToken);
     validateFeeChallenge(feeCreate, feesAndCredits, defaultTokenUsed);
     Optional<SecDnsCreateExtension> secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
     DateTime registrationExpirationTime = leapSafeAddYears(now, years);
-    String repoId = createDomainRepoId(allocateId(), registry.getTldStr());
+    String repoId = createDomainRepoId(allocateId(), tld.getTldStr());
     long historyRevisionId = allocateId();
     HistoryEntryId domainHistoryId = new HistoryEntryId(repoId, historyRevisionId);
     historyBuilder.setRevisionId(historyRevisionId);
     // Bill for the create.
     BillingEvent.OneTime createBillingEvent =
         createOneTimeBillingEvent(
-            registry,
+            tld,
             isAnchorTenant,
             isSunriseCreate,
             isReserved(domainName, isSunriseCreate),
@@ -414,7 +413,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
           domain.asBuilder().setCurrentPackageToken(allocationToken.get().createVKey()).build();
     }
     DomainHistory domainHistory =
-        buildDomainHistory(domain, registry, now, period, registry.getAddGracePeriodLength());
+        buildDomainHistory(domain, tld, now, period, tld.getAddGracePeriodLength());
     if (reservationTypes.contains(NAME_COLLISION)) {
       entitiesToSave.add(
           createNameCollisionOneTimePollMessage(targetId, domainHistory, registrarId, now));
@@ -493,7 +492,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
    * non-superusers.
    */
   private void verifyIsGaOrSpecialCase(
-      Registry registry,
+      Tld tld,
       ClaimsList claimsList,
       DateTime now,
       String domainLabel,
@@ -505,7 +504,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
           MustHaveSignedMarksInCurrentPhaseException,
           NoTrademarkedRegistrationsBeforeSunriseException {
     // We allow general registration during GA.
-    TldState currentState = registry.getTldState(now);
+    TldState currentState = tld.getTldState(now);
     if (currentState.equals(GENERAL_AVAILABILITY)) {
       return;
     }
@@ -526,7 +525,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
         // Trademarked domains cannot be registered until after the sunrise period has ended, unless
         // a valid signed mark is provided. Signed marks can only be provided during sunrise.
         // Thus, when bypassing TLD state checks, a post-sunrise state is always fine.
-        if (registry.getTldStateTransitions().headMap(now).containsValue(START_DATE_SUNRISE)) {
+        if (tld.getTldStateTransitions().headMap(now).containsValue(START_DATE_SUNRISE)) {
           return;
         } else {
           // If sunrise hasn't happened yet, trademarked domains are unavailable
@@ -559,23 +558,22 @@ public final class DomainCreateFlow implements TransactionalFlow {
   }
 
   private DomainHistory buildDomainHistory(
-      Domain domain, Registry registry, DateTime now, Period period, Duration addGracePeriod) {
+      Domain domain, Tld tld, DateTime now, Period period, Duration addGracePeriod) {
     // We ignore prober transactions
-    if (registry.getTldType() == TldType.REAL) {
-      historyBuilder
-          .setDomainTransactionRecords(
-              ImmutableSet.of(
-                  DomainTransactionRecord.create(
-                      registry.getTldStr(),
-                      now.plus(addGracePeriod),
-                      TransactionReportField.netAddsFieldFromYears(period.getValue()),
-                      1)));
+    if (tld.getTldType() == TldType.REAL) {
+      historyBuilder.setDomainTransactionRecords(
+          ImmutableSet.of(
+              DomainTransactionRecord.create(
+                  tld.getTldStr(),
+                  now.plus(addGracePeriod),
+                  TransactionReportField.netAddsFieldFromYears(period.getValue()),
+                  1)));
     }
     return historyBuilder.setType(DOMAIN_CREATE).setPeriod(period).setDomain(domain).build();
   }
 
   private BillingEvent.OneTime createOneTimeBillingEvent(
-      Registry registry,
+      Tld tld,
       boolean isAnchorTenant,
       boolean isSunriseCreate,
       boolean isReserved,
@@ -607,8 +605,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
         .setBillingTime(
             now.plus(
                 isAnchorTenant
-                    ? registry.getAnchorTenantAddGracePeriodLength()
-                    : registry.getAddGracePeriodLength()))
+                    ? tld.getAnchorTenantAddGracePeriodLength()
+                    : tld.getAddGracePeriodLength()))
         .setFlags(flagsBuilder.build())
         .setDomainHistoryId(domainHistoryId)
         .build();

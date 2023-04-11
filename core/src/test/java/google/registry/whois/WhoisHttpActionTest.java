@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 
 import google.registry.model.contact.Contact;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
@@ -115,7 +115,7 @@ class WhoisHttpActionTest {
   @Disabled
   @Test
   void testRun_domainInTestTld_isConsideredNotFound() {
-    persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
+    persistResource(Tld.get("lol").asBuilder().setTldType(Tld.TldType.TEST).build());
     Registrar registrar = persistResource(makeRegistrar(
         "evilregistrar", "Yes Virginia", Registrar.State.ACTIVE));
     persistResource(

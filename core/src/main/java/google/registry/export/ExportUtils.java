@@ -16,7 +16,7 @@ package google.registry.export;
 
 import com.google.common.base.Joiner;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tld.label.ReservedList.ReservedListEntry;
 import google.registry.model.tld.label.ReservedListDao;
@@ -36,10 +36,10 @@ public final class ExportUtils {
   }
 
   /** Returns the file contents of the auto-export reserved terms document for the given TLD. */
-  public String exportReservedTerms(Registry registry) {
+  public String exportReservedTerms(Tld tld) {
     StringBuilder termsBuilder = new StringBuilder(reservedTermsExportDisclaimer).append("\n");
     Set<String> reservedTerms = new TreeSet<>();
-    for (String reservedListName : registry.getReservedListNames()) {
+    for (String reservedListName : tld.getReservedListNames()) {
       ReservedList reservedList =
           ReservedListDao.getLatestRevision(reservedListName)
               .orElseThrow(

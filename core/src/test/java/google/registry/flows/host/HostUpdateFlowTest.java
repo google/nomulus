@@ -73,7 +73,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
@@ -112,7 +112,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
    */
   private Domain createDomainWithServerApprovedTransfer(String domainName) {
     DateTime now = clock.nowUtc();
-    DateTime requestTime = now.minusDays(1).minus(Registry.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
+    DateTime requestTime = now.minusDays(1).minus(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
     DateTime transferExpirationTime = now.minusDays(1);
     return DatabaseHelper.newDomain(domainName)
         .asBuilder()

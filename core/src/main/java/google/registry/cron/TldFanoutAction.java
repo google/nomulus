@@ -28,8 +28,8 @@ import static google.registry.cron.CronModule.JITTER_SECONDS_PARAM;
 import static google.registry.cron.CronModule.QUEUE_PARAM;
 import static google.registry.cron.CronModule.RUN_IN_EMPTY_PARAM;
 import static google.registry.model.tld.Registries.getTldsOfType;
-import static google.registry.model.tld.Registry.TldType.REAL;
-import static google.registry.model.tld.Registry.TldType.TEST;
+import static google.registry.model.tld.Tld.TldType.REAL;
+import static google.registry.model.tld.Tld.TldType.TEST;
 
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ArrayListMultimap;

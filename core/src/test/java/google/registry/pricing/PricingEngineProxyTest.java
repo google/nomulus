@@ -26,7 +26,7 @@ import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSortedMap;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -53,7 +53,7 @@ public class PricingEngineProxyTest {
         persistPremiumList(
             "premium list", USD, "rich,USD 100", "richer,USD 999", "fraction,USD 20.50");
     createTld("moka");
-    persistResource(Registry.get("moka").asBuilder().setPremiumList(premiumList).build());
+    persistResource(Tld.get("moka").asBuilder().setPremiumList(premiumList).build());
     clock = new FakeClock(DateTime.parse("2016-03-17T12:01:00Z"));
   }
 
@@ -107,7 +107,7 @@ public class PricingEngineProxyTest {
     // The example tld has a premium price for "rich".
     createTld("example");
     persistResource(
-        Registry.get("example")
+        Tld.get("example")
             .asBuilder()
             .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
@@ -126,7 +126,7 @@ public class PricingEngineProxyTest {
   @Test
   void testFailure_cantLoadPricingEngine() {
     createTld("example");
-    persistResource(Registry.get("example").asBuilder().setPremiumPricingEngine("fake").build());
+    persistResource(Tld.get("example").asBuilder().setPremiumPricingEngine("fake").build());
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,

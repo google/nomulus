@@ -14,7 +14,7 @@
 
 package google.registry.tools.params;
 
-import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Tld.TldState;
 
 /**
  * {@link TldState} CLI parameter converter/validator. Required to support multi-value

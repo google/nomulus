@@ -61,7 +61,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
@@ -414,7 +414,7 @@ public class DomainTest {
                     fakeClock
                         .nowUtc()
                         .plusDays(1)
-                        .plus(Registry.get("com").getTransferGracePeriodLength()))
+                        .plus(Tld.get("com").getTransferGracePeriodLength()))
                 .setCost(Money.of(USD, 11))
                 .setPeriodYears(1)
                 .setDomainHistory(historyEntry)
@@ -457,20 +457,14 @@ public class DomainTest {
             GracePeriod.create(
                 GracePeriodStatus.TRANSFER,
                 domain.getRepoId(),
-                fakeClock
-                    .nowUtc()
-                    .plusDays(1)
-                    .plus(Registry.get("com").getTransferGracePeriodLength()),
+                fakeClock.nowUtc().plusDays(1).plus(Tld.get("com").getTransferGracePeriodLength()),
                 "TheRegistrar",
                 transferBillingEvent.createVKey(),
                 afterTransfer.getGracePeriods().iterator().next().getGracePeriodId()));
     // If we project after the grace period expires all should be the same except the grace period.
     Domain afterGracePeriod =
         domain.cloneProjectedAtTime(
-            fakeClock
-                .nowUtc()
-                .plusDays(2)
-                .plus(Registry.get("com").getTransferGracePeriodLength()));
+            fakeClock.nowUtc().plusDays(2).plus(Tld.get("com").getTransferGracePeriodLength()));
     assertTransferred(afterGracePeriod, newExpirationTime, serverApproveAutorenewEvent);
     assertThat(afterGracePeriod.getGracePeriods()).isEmpty();
   }
@@ -676,7 +670,7 @@ public class DomainTest {
     // autorenew time as the lookup time for the cost.
     DateTime oldExpirationTime = domain.getRegistrationExpirationTime();
     persistResource(
-        Registry.get("com")
+        Tld.get("com")
             .asBuilder()
             .setRenewBillingCostTransitions(
                 new ImmutableSortedMap.Builder<DateTime, Money>(Ordering.natural())
@@ -698,9 +692,7 @@ public class DomainTest {
             GracePeriod.createForRecurring(
                 GracePeriodStatus.AUTO_RENEW,
                 domain.getRepoId(),
-                oldExpirationTime
-                    .plusYears(2)
-                    .plus(Registry.get("com").getAutoRenewGracePeriodLength()),
+                oldExpirationTime.plusYears(2).plus(Tld.get("com").getAutoRenewGracePeriodLength()),
                 renewedThreeTimes.getCurrentSponsorRegistrarId(),
                 renewedThreeTimes.autorenewBillingEvent,
                 renewedThreeTimes.getGracePeriods().iterator().next().getGracePeriodId()));

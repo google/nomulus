@@ -14,9 +14,9 @@
 
 package google.registry.tools;
 
-import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -28,8 +28,8 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.io.Files;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import java.io.File;
 import java.io.IOException;
 import org.joda.money.CurrencyUnit;
@@ -52,11 +52,11 @@ abstract class CreateOrUpdatePremiumListCommandTestCase<T extends CreateOrUpdate
     premiumTermsPath = premiumTermsFile.getPath();
   }
 
-  Registry createRegistry(String tldStr, CurrencyUnit currency, String premiumListInput) {
-    Registry registry;
+  Tld createTld(String tldStr, CurrencyUnit currency, String premiumListInput) {
+    Tld registry;
     if (premiumListInput != null) {
       registry =
-          newRegistry(
+          newTld(
               tldStr,
               Ascii.toUpperCase(tldStr),
               ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY),
@@ -65,7 +65,7 @@ abstract class CreateOrUpdatePremiumListCommandTestCase<T extends CreateOrUpdate
       persistResource(registry);
     } else {
       registry =
-          new Registry.Builder()
+          new Tld.Builder()
               .setTldStr(tldStr)
               .setPremiumPricingEngine(StaticPremiumListPricingEngine.NAME)
               .setDnsWriters(ImmutableSet.of(VoidDnsWriter.NAME))

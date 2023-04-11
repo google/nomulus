@@ -32,7 +32,7 @@ import static google.registry.model.IdService.allocateId;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.ResourceTransferUtils.createTransferResponse;
-import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.difference;
@@ -91,9 +91,9 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.model.tld.label.PremiumListDao;
@@ -211,29 +211,29 @@ public final class DatabaseHelper {
         .build();
   }
 
-  public static Registry newRegistry(String tld, String roidSuffix) {
-    return newRegistry(tld, roidSuffix, ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
+  public static Tld newTld(String tld, String roidSuffix) {
+    return newTld(tld, roidSuffix, ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
   }
 
-  public static Registry newRegistry(
+  public static Tld newTld(
       String tld, String roidSuffix, ImmutableSortedMap<DateTime, TldState> tldStates) {
-    return setupRegistry(new Registry.Builder(), tld, roidSuffix, tldStates);
+    return setupTld(new Tld.Builder(), tld, roidSuffix, tldStates);
   }
 
-  public static Registry newRegistry(
+  public static Tld newTld(
       String tld,
       String roidSuffix,
       ImmutableSortedMap<DateTime, TldState> tldStates,
       TldType tldType) {
-    return setupRegistry(new Registry.Builder().setTldType(tldType), tld, roidSuffix, tldStates);
+    return setupTld(new Tld.Builder().setTldType(tldType), tld, roidSuffix, tldStates);
   }
 
-  private static Registry setupRegistry(
-      Registry.Builder registryBuilder,
+  private static Tld setupTld(
+      Tld.Builder tldBuilder,
       String tld,
       String roidSuffix,
       ImmutableSortedMap<DateTime, TldState> tldStates) {
-    return registryBuilder
+    return tldBuilder
         .setTldStr(tld)
         .setRoidSuffix(roidSuffix)
         .setTldStateTransitions(tldStates)
@@ -396,11 +396,11 @@ public final class DatabaseHelper {
   }
 
   /** Creates and persists a tld. */
-  public static Registry createTld(String tld) {
+  public static Tld createTld(String tld) {
     return createTld(tld, GENERAL_AVAILABILITY);
   }
 
-  public static Registry createTld(String tld, String roidSuffix) {
+  public static Tld createTld(String tld, String roidSuffix) {
     return createTld(tld, roidSuffix, ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
   }
 
@@ -411,11 +411,11 @@ public final class DatabaseHelper {
     }
   }
 
-  public static Registry createTld(String tld, TldState tldState) {
+  public static Tld createTld(String tld, TldState tldState) {
     return createTld(tld, ImmutableSortedMap.of(START_OF_TIME, tldState));
   }
 
-  public static Registry createTld(String tld, ImmutableSortedMap<DateTime, TldState> tldStates) {
+  public static Tld createTld(String tld, ImmutableSortedMap<DateTime, TldState> tldStates) {
     // Coerce the TLD string into a valid ROID suffix.
     String roidSuffix =
         Ascii.toUpperCase(tld.replaceFirst(ACE_PREFIX_REGEX, "").replace('.', '_'))
@@ -424,16 +424,16 @@ public final class DatabaseHelper {
         tld, roidSuffix.length() > 8 ? roidSuffix.substring(0, 8) : roidSuffix, tldStates);
   }
 
-  public static Registry createTld(
+  public static Tld createTld(
       String tld, String roidSuffix, ImmutableSortedMap<DateTime, TldState> tldStates) {
-    Registry registry = persistResource(newRegistry(tld, roidSuffix, tldStates));
+    Tld registry = persistResource(newTld(tld, roidSuffix, tldStates));
     allowRegistrarAccess("TheRegistrar", tld);
     allowRegistrarAccess("NewRegistrar", tld);
     return registry;
   }
 
   public static void deleteTld(String tld) {
-    deleteResource(Registry.get(tld));
+    deleteResource(Tld.get(tld));
     disallowRegistrarAccess("TheRegistrar", tld);
     disallowRegistrarAccess("NewRegistrar", tld);
   }
@@ -527,8 +527,7 @@ public final class DatabaseHelper {
         .setReason(Reason.TRANSFER)
         .setTargetId(domain.getDomainName())
         .setEventTime(eventTime)
-        .setBillingTime(
-            eventTime.plus(Registry.get(domain.getTld()).getTransferGracePeriodLength()))
+        .setBillingTime(eventTime.plus(Tld.get(domain.getTld()).getTransferGracePeriodLength()))
         .setRegistrarId("NewRegistrar")
         .setPeriodYears(1)
         .setCost(getDomainRenewCost(domain.getDomainName(), costLookupTime, 1))

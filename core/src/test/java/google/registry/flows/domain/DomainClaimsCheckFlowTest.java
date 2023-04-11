@@ -14,7 +14,7 @@
 
 package google.registry.flows.domain;
 
-import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
+import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
@@ -39,8 +39,8 @@ import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException
 import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.domain.Domain;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -131,7 +131,7 @@ public class DomainClaimsCheckFlowTest extends ResourceFlowTestCase<DomainClaims
   @Test
   void testFailure_missingBillingAccount() {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
             .setCreateBillingCost(Money.ofMajor(JPY, 800))
@@ -180,7 +180,7 @@ public class DomainClaimsCheckFlowTest extends ResourceFlowTestCase<DomainClaims
   void testFailure_multipleTlds_oneHasEndedClaims() {
     createTlds("tld1", "tld2");
     persistResource(
-        Registry.get("tld2").asBuilder().setClaimsPeriodEnd(clock.nowUtc().minusMillis(1)).build());
+        Tld.get("tld2").asBuilder().setClaimsPeriodEnd(clock.nowUtc().minusMillis(1)).build());
     setEppInput("domain_check_claims_multiple_tlds.xml");
     EppException thrown = assertThrows(ClaimsPeriodEndedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();

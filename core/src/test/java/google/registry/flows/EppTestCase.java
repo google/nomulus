@@ -36,7 +36,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.EppXmlTransformer;
 import google.registry.model.reporting.HistoryEntry.Type;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
@@ -310,7 +310,7 @@ public class EppTestCase {
         .setCost(Money.parse("USD 26.00"))
         .setPeriodYears(2)
         .setEventTime(createTime)
-        .setBillingTime(createTime.plus(Registry.get(domain.getTld()).getAddGracePeriodLength()))
+        .setBillingTime(createTime.plus(Tld.get(domain.getTld()).getAddGracePeriodLength()))
         .setDomainHistory(
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
         .build();
@@ -325,7 +325,7 @@ public class EppTestCase {
         .setCost(Money.parse("USD 33.00"))
         .setPeriodYears(3)
         .setEventTime(renewTime)
-        .setBillingTime(renewTime.plus(Registry.get(domain.getTld()).getRenewGracePeriodLength()))
+        .setBillingTime(renewTime.plus(Tld.get(domain.getTld()).getRenewGracePeriodLength()))
         .setDomainHistory(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class))
         .build();
   }
@@ -372,7 +372,7 @@ public class EppTestCase {
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(deleteTime)
         .setOneTimeEventKey(findKeyToActualOneTimeBillingEvent(billingEventToCancel))
-        .setBillingTime(createTime.plus(Registry.get(domain.getTld()).getAddGracePeriodLength()))
+        .setBillingTime(createTime.plus(Tld.get(domain.getTld()).getAddGracePeriodLength()))
         .setReason(Reason.CREATE)
         .setDomainHistory(
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE, DomainHistory.class))
@@ -387,7 +387,7 @@ public class EppTestCase {
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(deleteTime)
         .setOneTimeEventKey(findKeyToActualOneTimeBillingEvent(billingEventToCancel))
-        .setBillingTime(renewTime.plus(Registry.get(domain.getTld()).getRenewGracePeriodLength()))
+        .setBillingTime(renewTime.plus(Tld.get(domain.getTld()).getRenewGracePeriodLength()))
         .setReason(Reason.RENEW)
         .setDomainHistory(
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE, DomainHistory.class))

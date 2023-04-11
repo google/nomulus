@@ -48,7 +48,7 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.tld.Registries;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
@@ -292,7 +292,7 @@ public final class ReadDnsQueueAction implements Runnable {
         } else if (!tlds.contains(tld)) {
           classifiedTasksBuilder.tasksToKeepBuilder().add(task);
           classifiedTasksBuilder.unknownTldsBuilder().add(tld);
-        } else if (Registry.get(tld).getDnsPaused()) {
+        } else if (Tld.get(tld).getDnsPaused()) {
           classifiedTasksBuilder.tasksToKeepBuilder().add(task);
           classifiedTasksBuilder.pausedTldsBuilder().add(tld);
         } else {
@@ -330,7 +330,7 @@ public final class ReadDnsQueueAction implements Runnable {
     for (Map.Entry<String, Collection<RefreshItem>> tldRefreshItemsEntry
         : refreshItemsByTld.asMap().entrySet()) {
       String tld = tldRefreshItemsEntry.getKey();
-      int numPublishLocks = Registry.get(tld).getNumDnsPublishLocks();
+      int numPublishLocks = Tld.get(tld).getNumDnsPublishLocks();
       // 1 lock or less implies no TLD-wide locks, simply enqueue everything under lock 1 of 1
       if (numPublishLocks <= 1) {
         enqueueUpdates(tld, 1, 1, tldRefreshItemsEntry.getValue());
@@ -368,7 +368,7 @@ public final class ReadDnsQueueAction implements Runnable {
     for (List<RefreshItem> chunk : Iterables.partition(items, tldUpdateBatchSize)) {
       DateTime earliestCreateTime =
           chunk.stream().map(RefreshItem::creationTime).min(Comparator.naturalOrder()).get();
-      for (String dnsWriter : Registry.get(tld).getDnsWriters()) {
+      for (String dnsWriter : Tld.get(tld).getDnsWriters()) {
         Task task =
             cloudTasksUtils.createPostTaskWithJitter(
                 PublishDnsUpdatesAction.PATH,

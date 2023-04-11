@@ -32,14 +32,14 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.util.DomainNameUtils;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 
-/** Utilities for finding and listing {@link Registry} entities. */
+/** Utilities for finding and listing {@link Tld} entities. */
 public final class Registries {
 
   private Registries() {}
@@ -85,8 +85,8 @@ public final class Registries {
   }
 
   /** Returns the Registry entities themselves of the given type loaded fresh from the database. */
-  public static ImmutableSet<Registry> getTldEntitiesOfType(TldType type) {
-    return Registry.get(filterValues(cache.get(), equalTo(type)).keySet());
+  public static ImmutableSet<Tld> getTldEntitiesOfType(TldType type) {
+    return Tld.get(filterValues(cache.get(), equalTo(type)).keySet());
   }
 
   /** Pass-through check that the specified TLD exists, otherwise throw an IAE. */

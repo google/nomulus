@@ -29,7 +29,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.request.Action;
@@ -61,7 +61,10 @@ public class ExportPremiumTermsAction implements Runnable {
   @Config("premiumTermsExportDisclaimer")
   String exportDisclaimer;
 
-  @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
+  @Inject
+  @Parameter(RequestParameters.PARAM_TLD)
+  String tldStr;
+
   @Inject Response response;
 
   @Inject
@@ -88,59 +91,59 @@ public class ExportPremiumTermsAction implements Runnable {
   public void run() {
     response.setContentType(PLAIN_TEXT_UTF_8);
     try {
-      Registry registry = Registry.get(tld);
-      String resultMsg = checkConfig(registry).orElseGet(() -> exportPremiumTerms(registry));
+      Tld tld = Tld.get(tldStr);
+      String resultMsg = checkConfig(tld).orElseGet(() -> exportPremiumTerms(tld));
       response.setStatus(SC_OK);
       response.setPayload(resultMsg);
     } catch (Throwable e) {
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload(e.getMessage());
       throw new RuntimeException(
-          String.format("Exception occurred while exporting premium terms for TLD %s.", tld), e);
+          String.format("Exception occurred while exporting premium terms for TLD %s.", tldStr), e);
     }
   }
 
   /**
-   * Checks if {@code registry} is properly configured to export premium terms.
+   * Checks if {@code tld} is properly configured to export premium terms.
    *
-   * @return {@link Optional#empty()} if {@code registry} export may proceed. Otherwise returns an
+   * @return {@link Optional#empty()} if {@code tld export may proceed. Otherwise returns an
    *     error message
    */
-  private Optional<String> checkConfig(Registry registry) {
-    if (isNullOrEmpty(registry.getDriveFolderId())) {
+  private Optional<String> checkConfig(Tld tld) {
+    if (isNullOrEmpty(tld.getDriveFolderId())) {
       logger.atInfo().log(
-          "Skipping premium terms export for TLD %s because Drive folder isn't specified.", tld);
+          "Skipping premium terms export for TLD %s because Drive folder isn't specified.", tldStr);
       return Optional.of("Skipping export because no Drive folder is associated with this TLD");
     }
-    if (!registry.getPremiumListName().isPresent()) {
-      logger.atInfo().log("No premium terms to export for TLD '%s'.", tld);
+    if (!tld.getPremiumListName().isPresent()) {
+      logger.atInfo().log("No premium terms to export for TLD '%s'.", tldStr);
       return Optional.of("No premium lists configured");
     }
     return Optional.empty();
   }
 
-  private String exportPremiumTerms(Registry registry) {
+  private String exportPremiumTerms(Tld tld) {
     try {
       String fileId =
           driveConnection.createOrUpdateFile(
               PREMIUM_TERMS_FILENAME,
               EXPORT_MIME_TYPE,
-              registry.getDriveFolderId(),
-              getFormattedPremiumTerms(registry).getBytes(UTF_8));
+              tld.getDriveFolderId(),
+              getFormattedPremiumTerms(tld).getBytes(UTF_8));
       logger.atInfo().log(
-          "Exporting premium terms succeeded for TLD %s, file ID is: %s", tld, fileId);
+          "Exporting premium terms succeeded for TLD %s, file ID is: %s", tldStr, fileId);
       return fileId;
     } catch (IOException e) {
       throw new RuntimeException("Error exporting premium terms file to Drive.", e);
     }
   }
 
-  private String getFormattedPremiumTerms(Registry registry) {
-    checkState(registry.getPremiumListName().isPresent(), "%s does not have a premium list", tld);
-    String premiumListName = registry.getPremiumListName().get();
+  private String getFormattedPremiumTerms(Tld tld) {
+    checkState(tld.getPremiumListName().isPresent(), "%s does not have a premium list", tldStr);
+    String premiumListName = tld.getPremiumListName().get();
     checkState(
         PremiumListDao.getLatestRevision(premiumListName).isPresent(),
-        "Could not load premium list for " + tld);
+        "Could not load premium list for " + tldStr);
     SortedSet<String> premiumTerms =
         PremiumListDao.loadAllPremiumEntries(premiumListName).stream()
             .map(PremiumEntry::toString)

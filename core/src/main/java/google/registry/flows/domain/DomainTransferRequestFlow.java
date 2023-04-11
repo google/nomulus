@@ -74,7 +74,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
@@ -171,7 +171,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
         existingDomain,
-        Registry.get(existingDomain.getTld()),
+        Tld.get(existingDomain.getTld()),
         gainingClientId,
         now,
         CommandName.TRANSFER,
@@ -184,8 +184,8 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             : ((Transfer) resourceCommand).getPeriod();
     verifyTransferAllowed(existingDomain, period, now, superuserExtension);
 
-    String tld = existingDomain.getTld();
-    Registry registry = Registry.get(tld);
+    String tldStr = existingDomain.getTld();
+    Tld tld = Tld.get(tldStr);
     // An optional extension from the client specifying what they think the transfer should cost.
     Optional<FeeTransferCommandExtension> feeTransfer =
         eppInput.getSingleExtension(FeeTransferCommandExtension.class);
@@ -201,14 +201,14 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
       feesAndCredits = Optional.empty();
     } else if (!existingDomain.getCurrentPackageToken().isPresent()) {
       feesAndCredits =
-          Optional.of(pricingLogic.getTransferPrice(registry, targetId, now, existingRecurring));
+          Optional.of(pricingLogic.getTransferPrice(tld, targetId, now, existingRecurring));
     } else {
       // If existing domain is in a package, calculate the transfer price with default renewal price
       // behavior
       feesAndCredits =
           period.getValue() == 0
               ? Optional.empty()
-              : Optional.of(pricingLogic.getTransferPrice(registry, targetId, now, null));
+              : Optional.of(pricingLogic.getTransferPrice(tld, targetId, now, null));
     }
 
     if (feesAndCredits.isPresent()) {
@@ -224,7 +224,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
                 domainTransferRequestSuperuserExtension ->
                     now.plusDays(
                         domainTransferRequestSuperuserExtension.getAutomaticTransferLength()))
-            .orElseGet(() -> now.plus(registry.getAutomaticTransferLength()));
+            .orElseGet(() -> now.plus(tld.getAutomaticTransferLength()));
     // If the domain will be in the auto-renew grace period at the moment of transfer, the transfer
     // will subsume the autorenew, so we don't add the normal extra year from the transfer.
     // The gaining registrar is still billed for the extra year; the losing registrar will get a
@@ -283,7 +283,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(gainingClientId)
             .build();
-    DomainHistory domainHistory = buildDomainHistory(newDomain, registry, now, period);
+    DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now, period);
 
     asyncTaskEnqueuer.enqueueAsyncResave(newDomain.createVKey(), now, automaticTransferTime);
     tm().putAll(
@@ -363,8 +363,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     }
   }
 
-  private DomainHistory buildDomainHistory(
-      Domain newDomain, Registry registry, DateTime now, Period period) {
+  private DomainHistory buildDomainHistory(Domain newDomain, Tld tld, DateTime now, Period period) {
     return historyBuilder
         .setType(DOMAIN_TRANSFER_REQUEST)
         .setPeriod(period)
@@ -372,9 +371,9 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
         .setDomainTransactionRecords(
             ImmutableSet.of(
                 DomainTransactionRecord.create(
-                    registry.getTldStr(),
-                    now.plus(registry.getAutomaticTransferLength())
-                        .plus(registry.getTransferGracePeriodLength()),
+                    tld.getTldStr(),
+                    now.plus(tld.getAutomaticTransferLength())
+                        .plus(tld.getTransferGracePeriodLength()),
                     TransactionReportField.TRANSFER_SUCCESSFUL,
                     1)))
         .build();

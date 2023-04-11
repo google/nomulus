@@ -48,7 +48,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.util.Clock;
 import google.registry.util.SystemClock;
@@ -281,7 +281,7 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
       return;
     }
     Domain domain = tm().loadByKey(Domain.createVKey(recurring.getDomainRepoId()));
-    Registry tld = Registry.get(domain.getTld());
+    Tld tld = Tld.get(domain.getTld());
 
     // Find the times for which the OneTime billing event are already created, making this expansion
     // idempotent. There is no need to match to the domain repo ID as the cancellation matching

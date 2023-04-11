@@ -20,7 +20,7 @@ import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 
 import google.registry.model.pricing.PremiumPricingEngine;
 import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import java.util.Map;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -58,7 +58,7 @@ public final class PricingEngineProxy {
    */
   public static DomainPrices getPricesForDomainName(String domainName, DateTime priceTime) {
     String tld = getTldFromDomainName(domainName);
-    String clazz = Registry.get(tld).getPremiumPricingEngineClassName();
+    String clazz = Tld.get(tld).getPremiumPricingEngineClassName();
     PremiumPricingEngine engine = premiumPricingEngines.get(clazz);
     checkState(engine != null, "Could not load pricing engine %s for TLD %s", clazz, tld);
     return engine.getDomainPrices(domainName, priceTime);

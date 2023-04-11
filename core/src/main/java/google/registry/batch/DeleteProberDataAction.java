@@ -37,7 +37,7 @@ import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;

@@ -21,7 +21,7 @@ import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.testing.DeterministicStringGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,7 +75,7 @@ class CreateAnchorTenantCommandTest extends EppToolCommandTestCase<CreateAnchorT
   void testSuccess_feePremium() throws Exception {
     createTld("tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setPremiumList(persistPremiumList("tld", JPY, "premium,JPY 20000"))
             .build());

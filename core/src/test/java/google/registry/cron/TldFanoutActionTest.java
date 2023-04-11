@@ -25,8 +25,8 @@ import com.google.cloud.tasks.v2.Task;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
@@ -81,7 +81,7 @@ class TldFanoutActionTest {
   @BeforeEach
   void beforeEach() {
     createTlds("com", "net", "org", "example");
-    persistResource(Registry.get("example").asBuilder().setTldType(TldType.TEST).build());
+    persistResource(Tld.get("example").asBuilder().setTldType(TldType.TEST).build());
   }
 
   private void assertTasks(String... tasks) {

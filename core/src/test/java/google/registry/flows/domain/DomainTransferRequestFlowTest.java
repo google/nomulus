@@ -27,7 +27,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIM
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
-import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
+import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsEqual;
@@ -115,7 +115,7 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.transfer.DomainTransferData;
@@ -259,7 +259,7 @@ class DomainTransferRequestFlowTest
       ImmutableSet<GracePeriod> originalGracePeriods,
       boolean expectTransferBillingEvent,
       BillingEvent.Cancellation.Builder... extraExpectedBillingEvents) {
-    Registry registry = Registry.get(domain.getTld());
+    Tld registry = Tld.get(domain.getTld());
     final DomainHistory historyEntryTransferRequest =
         getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REQUEST, DomainHistory.class);
 
@@ -435,7 +435,7 @@ class DomainTransferRequestFlowTest
   private void assertAboutDomainAfterAutomaticTransfer(
       DateTime expectedExpirationTime, DateTime implicitTransferTime, Period expectedPeriod)
       throws Exception {
-    Registry registry = Registry.get(domain.getTld());
+    Tld registry = Tld.get(domain.getTld());
     Domain domainAfterAutomaticTransfer = domain.cloneProjectedAtTime(implicitTransferTime);
     assertTransferApproved(domainAfterAutomaticTransfer, implicitTransferTime, expectedPeriod);
     assertAboutDomains()
@@ -477,7 +477,7 @@ class DomainTransferRequestFlowTest
     // For all of the other transfer flow tests, 'now' corresponds to day 3 of the transfer, but
     // for the request test we want that same 'now' to be the initial request time, so we shift
     // the transfer timeline 3 days later by adjusting the implicit transfer time here.
-    Registry registry = Registry.get(domain.getTld());
+    Tld registry = Tld.get(domain.getTld());
     DateTime implicitTransferTime = clock.nowUtc().plus(registry.getAutomaticTransferLength());
     // Setup done; run the test.
     assertTransactionalFlow(true);
@@ -845,7 +845,7 @@ class DomainTransferRequestFlowTest
   void testSuccess_nonDefaultAutomaticTransferLength() throws Exception {
     setupDomain("example", "tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setAutomaticTransferLength(Duration.standardMinutes(15))
             .build());
@@ -857,7 +857,7 @@ class DomainTransferRequestFlowTest
   void testSuccess_nonDefaultTransferGracePeriod() throws Exception {
     setupDomain("example", "tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setTransferGracePeriodLength(Duration.standardMinutes(5))
             .build());
@@ -888,7 +888,7 @@ class DomainTransferRequestFlowTest
   void testSuccess_inQuietPeriod() throws Exception {
     setupDomain("example", "tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
             .build());
@@ -966,7 +966,7 @@ class DomainTransferRequestFlowTest
                     GracePeriod.createForRecurring(
                         GracePeriodStatus.AUTO_RENEW,
                         domain.getRepoId(),
-                        autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()),
+                        autorenewTime.plus(Tld.get("tld").getAutoRenewGracePeriodLength()),
                         "TheRegistrar",
                         existingAutorenewEvent))
                 .build());
@@ -1023,7 +1023,7 @@ class DomainTransferRequestFlowTest
     doSuccessfulTest(
         "domain_transfer_request.xml",
         "domain_transfer_request_response_10_year_cap.xml",
-        clock.nowUtc().plus(Registry.get("tld").getAutomaticTransferLength()).plusYears(10));
+        clock.nowUtc().plus(Tld.get("tld").getAutomaticTransferLength()).plusYears(10));
   }
 
   @Test
@@ -1070,7 +1070,7 @@ class DomainTransferRequestFlowTest
   void testFailure_missingBillingAccount() {
     setupDomain("example", "tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
             .setCreateBillingCost(Money.ofMajor(JPY, 800))
@@ -1106,7 +1106,7 @@ class DomainTransferRequestFlowTest
     // Set the domain to have auto-renewed long enough ago that it is still in the autorenew grace
     // period at the transfer request time, but will have exited it by the automatic transfer time.
     DateTime autorenewTime =
-        clock.nowUtc().minus(Registry.get("tld").getAutoRenewGracePeriodLength()).plusDays(1);
+        clock.nowUtc().minus(Tld.get("tld").getAutoRenewGracePeriodLength()).plusDays(1);
     DateTime expirationTime = autorenewTime.plusYears(1);
     domain =
         persistResource(
@@ -1117,7 +1117,7 @@ class DomainTransferRequestFlowTest
                     GracePeriod.createForRecurring(
                         GracePeriodStatus.AUTO_RENEW,
                         domain.getRepoId(),
-                        autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()),
+                        autorenewTime.plus(Tld.get("tld").getAutoRenewGracePeriodLength()),
                         "TheRegistrar",
                         domain.getAutorenewBillingEvent()))
                 .build());
@@ -1147,7 +1147,7 @@ class DomainTransferRequestFlowTest
                     GracePeriod.createForRecurring(
                         GracePeriodStatus.AUTO_RENEW,
                         domain.getRepoId(),
-                        autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()),
+                        autorenewTime.plus(Tld.get("tld").getAutoRenewGracePeriodLength()),
                         "TheRegistrar",
                         existingAutorenewEvent))
                 .build());
@@ -1163,8 +1163,8 @@ class DomainTransferRequestFlowTest
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
             // The cancellation happens at the moment of transfer.
-            .setEventTime(clock.nowUtc().plus(Registry.get("tld").getAutomaticTransferLength()))
-            .setBillingTime(autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
+            .setEventTime(clock.nowUtc().plus(Tld.get("tld").getAutomaticTransferLength()))
+            .setBillingTime(autorenewTime.plus(Tld.get("tld").getAutoRenewGracePeriodLength()))
             // The cancellation should refer to the old autorenew billing event.
             .setRecurringEventKey(existingAutorenewEvent));
   }
@@ -1190,9 +1190,8 @@ class DomainTransferRequestFlowTest
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
             // The cancellation happens at the moment of transfer.
-            .setEventTime(clock.nowUtc().plus(Registry.get("tld").getAutomaticTransferLength()))
-            .setBillingTime(
-                expirationTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
+            .setEventTime(clock.nowUtc().plus(Tld.get("tld").getAutomaticTransferLength()))
+            .setBillingTime(expirationTime.plus(Tld.get("tld").getAutoRenewGracePeriodLength()))
             // The cancellation should refer to the old autorenew billing event.
             .setRecurringEventKey(existingAutorenewEvent));
   }
@@ -1226,7 +1225,7 @@ class DomainTransferRequestFlowTest
                 .setName("tld")
                 .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
                 .build());
-    persistResource(Registry.get("tld").asBuilder().setPremiumList(pl).build());
+    persistResource(Tld.get("tld").asBuilder().setPremiumList(pl).build());
     domain = loadByEntity(domain);
     persistResource(
         loadByKey(domain.getAutorenewBillingEvent())
@@ -1281,7 +1280,7 @@ class DomainTransferRequestFlowTest
                 .setName("tld")
                 .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
                 .build());
-    persistResource(Registry.get("tld").asBuilder().setPremiumList(pl).build());
+    persistResource(Tld.get("tld").asBuilder().setPremiumList(pl).build());
     domain = loadByEntity(domain);
     persistResource(
         loadByKey(domain.getAutorenewBillingEvent())
@@ -1329,7 +1328,7 @@ class DomainTransferRequestFlowTest
   @Test
   void testSuccess_specifiedRenewalPrice_notCarriedOverForPackageName() throws Exception {
     setupDomain("example", "tld");
-    persistResource(Registry.get("tld").asBuilder().build());
+    persistResource(Tld.get("tld").asBuilder().build());
     domain = loadByEntity(domain);
     persistResource(
         loadByKey(domain.getAutorenewBillingEvent())
@@ -1388,7 +1387,7 @@ class DomainTransferRequestFlowTest
   @Test
   void testSuccess_defaultRenewalPrice_carriedOverForPackageName() throws Exception {
     setupDomain("example", "tld");
-    persistResource(Registry.get("tld").asBuilder().build());
+    persistResource(Tld.get("tld").asBuilder().build());
     domain = loadByEntity(domain);
     persistResource(
         loadByKey(domain.getAutorenewBillingEvent())
@@ -1445,7 +1444,7 @@ class DomainTransferRequestFlowTest
   @Test
   void testSuccess_packageName_zeroPeriod() throws Exception {
     setupDomain("example", "tld");
-    persistResource(Registry.get("tld").asBuilder().build());
+    persistResource(Tld.get("tld").asBuilder().build());
     domain = loadByEntity(domain);
     persistResource(
         loadByKey(domain.getAutorenewBillingEvent())
@@ -1544,7 +1543,7 @@ class DomainTransferRequestFlowTest
 
   private void runWrongFeeAmountTest(Map<String, String> substitutions) {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
             .build());
@@ -1818,7 +1817,7 @@ class DomainTransferRequestFlowTest
   void testIcannTransactionRecord_getsStored() throws Exception {
     setupDomain("example", "tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setAutomaticTransferLength(Duration.standardDays(2))
             .setTransferGracePeriodLength(Duration.standardDays(3))
