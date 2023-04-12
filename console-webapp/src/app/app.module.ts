@@ -24,7 +24,9 @@ import { HomeComponent } from './home/home.component';
 import { TldsComponent } from './tlds/tlds.component';
 import { HeaderComponent } from './header/header.component';
 import { SettingsComponent } from './settings/settings.component';
-import SettingsContactComponent, { ContactDetailsDialogComponent } from './settings/contact/contact.component';
+import SettingsContactComponent, {
+  ContactDetailsDialogComponent,
+} from './settings/contact/contact.component';
 
 @NgModule({
   declarations: [
@@ -34,15 +36,15 @@ import SettingsContactComponent, { ContactDetailsDialogComponent } from './setti
     HeaderComponent,
     SettingsComponent,
     SettingsContactComponent,
-    ContactDetailsDialogComponent
+    ContactDetailsDialogComponent,
   ],
   imports: [
     MaterialModule,
     BrowserModule,
     AppRoutingModule,
-    BrowserAnimationsModule
+    BrowserAnimationsModule,
   ],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}

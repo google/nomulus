@@ -22,9 +22,8 @@ describe('RegistrarsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ RegistrarsComponent ]
-    })
-    .compileComponents();
+      declarations: [RegistrarsComponent],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(RegistrarsComponent);
     component = fixture.componentInstance;
