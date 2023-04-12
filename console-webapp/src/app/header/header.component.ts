@@ -17,7 +17,7 @@ import { Component, EventEmitter, Output } from '@angular/core';
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
-  styleUrls: ['./header.component.less']
+  styleUrls: ['./header.component.less'],
 })
 export class HeaderComponent {
   private isNavOpen = false;
@@ -28,5 +28,4 @@ export class HeaderComponent {
     this.isNavOpen = !this.isNavOpen;
     this.toggleNavOpen.emit(this.isNavOpen);
   }
-
 }

@@ -13,25 +13,25 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
-import {MatDialog} from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 
 interface Contact {
-  name:string,
-  phoneNumber:string,
-  emailAddress: string
+  name: string;
+  phoneNumber: string;
+  emailAddress: string;
 }
 
 interface GroupedContacts {
-  ADMIN: Array<Contact>,
-  BILLING: Array<Contact>,
-  TECH: Array<Contact>,
-  OTHER: Array<Contact>
+  ADMIN: Array<Contact>;
+  BILLING: Array<Contact>;
+  TECH: Array<Contact>;
+  OTHER: Array<Contact>;
 }
 
 @Component({
   selector: 'app-contact-details-dialog',
   templateUrl: 'contact-details.component.html',
-  styleUrls: ['./contact.component.less']
+  styleUrls: ['./contact.component.less'],
 })
 export class ContactDetailsDialogComponent {
   save() {
@@ -42,87 +42,95 @@ export class ContactDetailsDialogComponent {
 @Component({
   selector: 'app-contact',
   templateUrl: './contact.component.html',
-  styleUrls: ['./contact.component.less']
+  styleUrls: ['./contact.component.less'],
 })
 export default class ContactComponent {
   constructor(public dialog: MatDialog) {}
   mockData = [
     {
-      "name": "Michael Scott",
-      "emailAddress": "michaelscott@google.com",
-      "registryLockEmailAddress": null,
-      "phoneNumber": null,
-      "faxNumber": null,
-      "types": "",
-      "visibleInWhoisAsAdmin": false,
-      "visibleInWhoisAsTech": false,
-      "visibleInDomainWhoisAsAbuse": false,
-      "allowedToSetRegistryLockPassword": false,
-      "registryLockAllowed": false,
-      "loginEmailAddress": "michaelscott@google.com"
+      name: 'Michael Scott',
+      emailAddress: 'michaelscott@google.com',
+      registryLockEmailAddress: null,
+      phoneNumber: null,
+      faxNumber: null,
+      types: '',
+      visibleInWhoisAsAdmin: false,
+      visibleInWhoisAsTech: false,
+      visibleInDomainWhoisAsAbuse: false,
+      allowedToSetRegistryLockPassword: false,
+      registryLockAllowed: false,
+      loginEmailAddress: 'michaelscott@google.com',
     },
     {
-      "name": "Dwight Schrute",
-      "emailAddress": "dwightschrute@google.com",
-      "registryLockEmailAddress": null,
-      "phoneNumber": null,
-      "faxNumber": null,
-      "types": "ADMIN",
-      "visibleInWhoisAsAdmin": false,
-      "visibleInWhoisAsTech": false,
-      "visibleInDomainWhoisAsAbuse": false,
-      "allowedToSetRegistryLockPassword": false,
-      "registryLockAllowed": false,
-      "loginEmailAddress": "dwightschrute@google.com"
+      name: 'Dwight Schrute',
+      emailAddress: 'dwightschrute@google.com',
+      registryLockEmailAddress: null,
+      phoneNumber: null,
+      faxNumber: null,
+      types: 'ADMIN',
+      visibleInWhoisAsAdmin: false,
+      visibleInWhoisAsTech: false,
+      visibleInDomainWhoisAsAbuse: false,
+      allowedToSetRegistryLockPassword: false,
+      registryLockAllowed: false,
+      loginEmailAddress: 'dwightschrute@google.com',
     },
     {
-      "name": "Pam",
-      "emailAddress": "dundermifflin1@google.com",
-      "registryLockEmailAddress": null,
-      "phoneNumber": null,
-      "faxNumber": null,
-      "types": "BILLING",
-      "visibleInWhoisAsAdmin": false,
-      "visibleInWhoisAsTech": false,
-      "visibleInDomainWhoisAsAbuse": false,
-      "allowedToSetRegistryLockPassword": false,
-      "registryLockAllowed": false,
-      "loginEmailAddress": "dundermifflin1@google.com"
+      name: 'Pam',
+      emailAddress: 'dundermifflin1@google.com',
+      registryLockEmailAddress: null,
+      phoneNumber: null,
+      faxNumber: null,
+      types: 'BILLING',
+      visibleInWhoisAsAdmin: false,
+      visibleInWhoisAsTech: false,
+      visibleInDomainWhoisAsAbuse: false,
+      allowedToSetRegistryLockPassword: false,
+      registryLockAllowed: false,
+      loginEmailAddress: 'dundermifflin1@google.com',
     },
     {
-      "name": "Jim",
-      "emailAddress": "dundermifflin2@google.com",
-      "registryLockEmailAddress": null,
-      "phoneNumber": null,
-      "faxNumber": null,
-      "types": "BILLING",
-      "visibleInWhoisAsAdmin": false,
-      "visibleInWhoisAsTech": false,
-      "visibleInDomainWhoisAsAbuse": false,
-      "allowedToSetRegistryLockPassword": false,
-      "registryLockAllowed": false,
-      "loginEmailAddress": "dundermifflin2@google.com"
+      name: 'Jim',
+      emailAddress: 'dundermifflin2@google.com',
+      registryLockEmailAddress: null,
+      phoneNumber: null,
+      faxNumber: null,
+      types: 'BILLING',
+      visibleInWhoisAsAdmin: false,
+      visibleInWhoisAsTech: false,
+      visibleInDomainWhoisAsAbuse: false,
+      allowedToSetRegistryLockPassword: false,
+      registryLockAllowed: false,
+      loginEmailAddress: 'dundermifflin2@google.com',
     },
-  ]
+  ];
 
   public get groupedData() {
-    const data: GroupedContacts = { ADMIN: [], BILLING: [], OTHER: [], TECH: [] };
-    return this.mockData.reduce((acc, {name, phoneNumber, emailAddress, types}) => {
-      const type = types || "OTHER";
-      acc[type as keyof typeof data].push({
-        name,
-        phoneNumber: phoneNumber || "",
-        emailAddress
-      });
-      return acc;
-    }, data);
+    const data: GroupedContacts = {
+      ADMIN: [],
+      BILLING: [],
+      OTHER: [],
+      TECH: [],
+    };
+    return this.mockData.reduce(
+      (acc, { name, phoneNumber, emailAddress, types }) => {
+        const type = types || 'OTHER';
+        acc[type as keyof typeof data].push({
+          name,
+          phoneNumber: phoneNumber || '',
+          emailAddress,
+        });
+        return acc;
+      },
+      data
+    );
   }
 
   openDialog(e: Event) {
     e.preventDefault();
     const dialogRef = this.dialog.open(ContactDetailsDialogComponent);
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe((result) => {
       console.log(`Dialog result: ${result}`);
     });
   }

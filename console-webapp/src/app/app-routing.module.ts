@@ -24,7 +24,7 @@ import SettingsUsersComponent from './settings/users/users.component';
 import SettingsSecurityComponent from './settings/security/security.component';
 
 const routes: Routes = [
-  { path: '',   redirectTo: '/settings/contact', pathMatch: 'full' },
+  { path: '', redirectTo: '/settings/contact', pathMatch: 'full' },
   { path: 'home', component: HomeComponent },
   { path: 'tlds', component: TldsComponent },
   {
@@ -32,9 +32,9 @@ const routes: Routes = [
     component: SettingsComponent,
     children: [
       {
-        path:'',
+        path: '',
         redirectTo: 'contact',
-        pathMatch: 'full'
+        pathMatch: 'full',
       },
       {
         path: 'contact',
@@ -66,6 +66,6 @@ const routes: Routes = [
 
 @NgModule({
   imports: [RouterModule.forRoot(routes, { useHash: true })],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}
