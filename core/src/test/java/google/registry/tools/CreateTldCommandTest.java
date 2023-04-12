@@ -85,7 +85,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--dns_a_plus_aaaa_ttl=PT300S",
         "--dns_ds_ttl=PT240S",
         "--dns_ns_ttl=PT180S");
-    Registry registry = Registry.get("xn--q9jyb4c");
+    Tld registry = Tld.get("xn--q9jyb4c");
     assertThat(registry).isNotNull();
     assertThat(registry.getDnsAPlusAaaaTtl()).isEqualTo(standardMinutes(5));
     assertThat(registry.getDnsDsTtl()).isEqualTo(standardMinutes(4));
