@@ -1,27 +1,14 @@
 <p>
   <mat-toolbar color="primary">
-    <button
-      mat-icon-button
-      class="example-icon"
-      aria-label="Example icon-button with menu icon"
-      (click)="emitNewNav()"
-    >
+    <button mat-icon-button aria-label="Open menu" (click)="toggleNavPane()">
       <mat-icon>menu</mat-icon>
     </button>
     <span>Google Registry</span>
     <span class="spacer"></span>
-    <button
-      mat-icon-button
-      class="example-icon favorite-icon"
-      aria-label="Example icon-button with heart icon"
-    >
+    <button mat-icon-button aria-label="Open faq">
       <mat-icon>question_mark</mat-icon>
     </button>
-    <button
-      mat-icon-button
-      class="example-icon"
-      aria-label="Example icon-button with share icon"
-    >
+    <button mat-icon-button aria-label="Open user info">
       <mat-icon>person</mat-icon>
     </button>
   </mat-toolbar>

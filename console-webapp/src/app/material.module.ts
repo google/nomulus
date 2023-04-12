@@ -43,6 +43,7 @@ import { OverlayModule } from '@angular/cdk/overlay';
 import { CdkMenuModule } from '@angular/cdk/menu';
 import { DialogModule } from '@angular/cdk/dialog';
 import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 @NgModule({
   exports: [
@@ -77,6 +78,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
     MatTreeModule,
     OverlayModule,
     DialogModule,
+    MatSnackBarModule,
   ],
 })
 export class MaterialModule {}
