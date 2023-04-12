@@ -18,8 +18,6 @@ import { Component, ViewEncapsulation } from '@angular/core';
   selector: 'app-settings',
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.less'],
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
 })
-export class SettingsComponent {
-
-}
+export class SettingsComponent {}

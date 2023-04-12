@@ -17,8 +17,6 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-registrars',
   templateUrl: './registrars.component.html',
-  styleUrls: ['./registrars.component.less']
+  styleUrls: ['./registrars.component.less'],
 })
-export default class RegistrarsComponent {
-
-}
+export default class RegistrarsComponent {}
