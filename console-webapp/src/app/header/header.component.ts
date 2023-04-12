@@ -24,7 +24,7 @@ export class HeaderComponent {
 
   @Output() toggleNavOpen = new EventEmitter<boolean>();
 
-  emitNewNav() {
+  toggleNavPane() {
     this.isNavOpen = !this.isNavOpen;
     this.toggleNavOpen.emit(this.isNavOpen);
   }
