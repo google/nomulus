@@ -12,10 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
-import { MatBottomSheet } from '@angular/material/bottom-sheet';
+import { Component, Inject } from '@angular/core';
+import {
+  MatDialog,
+  MAT_DIALOG_DATA,
+  MatDialogRef,
+} from '@angular/material/dialog';
+import {
+  MatBottomSheet,
+  MAT_BOTTOM_SHEET_DATA,
+  MatBottomSheetRef,
+} from '@angular/material/bottom-sheet';
 import { BreakpointObserver } from '@angular/cdk/layout';
+
+let isMobile: boolean = false;
 
 interface Contact {
   name: string;
@@ -30,14 +40,52 @@ interface GroupedContacts {
   OTHER: Array<Contact>;
 }
 
+interface iContactDetailsEventsResponder {
+  onSave: Function;
+  onClose: Function;
+  setRef: Function;
+}
+
+class ContactDetailsEventsResponder implements iContactDetailsEventsResponder {
+  private ref?: MatDialogRef<any> | MatBottomSheetRef;
+  constructor() {
+    this.onClose = this.onClose.bind(this);
+    this.onSave = this.onSave.bind(this);
+  }
+
+  setRef(ref: MatDialogRef<any> | MatBottomSheetRef) {
+    this.ref = ref;
+  }
+  onClose() {
+    if (this.ref === undefined) {
+      throw "Reference to ContactDetailsDialogComponent hasn't been set. ";
+    }
+    if (this.ref instanceof MatBottomSheetRef) {
+      this.ref.dismiss();
+    } else if (this.ref instanceof MatDialogRef) {
+      this.ref.close();
+    }
+  }
+  onSave() {
+    // TODO: Submit a save request here
+    this.onClose();
+  }
+}
+
 @Component({
   selector: 'app-contact-details-dialog',
   templateUrl: 'contact-details.component.html',
   styleUrls: ['./contact.component.less'],
 })
 export class ContactDetailsDialogComponent {
-  save() {
-    // TODO: Add save call to the sever here
+  onSave!: Function;
+  onClose!: Function;
+
+  constructor(
+    @Inject(isMobile ? MAT_BOTTOM_SHEET_DATA : MAT_DIALOG_DATA) public data: any
+  ) {
+    this.onSave = data.onSave;
+    this.onClose = data.onClose;
   }
 }
 
@@ -49,7 +97,7 @@ export class ContactDetailsDialogComponent {
 export default class ContactComponent {
   constructor(
     private dialog: MatDialog,
-    private _bottomSheet: MatBottomSheet,
+    private bottomSheet: MatBottomSheet,
     private breakpointObserver: BreakpointObserver
   ) {}
   mockData = [
@@ -132,17 +180,18 @@ export default class ContactComponent {
     );
   }
 
-  openDialog(e: Event) {
+  openDetails(e: Event) {
     e.preventDefault();
-
-    if (this.breakpointObserver.isMatched('(max-width: 599px)')) {
-      this._bottomSheet.open(ContactDetailsDialogComponent);
+    isMobile = this.breakpointObserver.isMatched('(max-width: 599px)');
+    const responder = new ContactDetailsEventsResponder();
+    const config = { data: { onClose: responder.onClose, onSave: responder.onSave } };
+    
+    if (isMobile) {
+      const bottomSheetRef = this.bottomSheet.open(ContactDetailsDialogComponent, config);
+      responder.setRef(bottomSheetRef);
     } else {
-      const dialogRef = this.dialog.open(ContactDetailsDialogComponent);
-
-      dialogRef.afterClosed().subscribe((result) => {
-        console.log(`Dialog result: ${result}`);
-      });
+      const dialogRef = this.dialog.open(ContactDetailsDialogComponent, config);
+      responder.setRef(dialogRef);
     }
   }
 }

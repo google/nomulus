@@ -8,7 +8,7 @@
         <p *ngIf="contact.phoneNumber">{{ contact.phoneNumber }}</p>
         <p *ngIf="contact.emailAddress">{{ contact.emailAddress }}</p>
         <mat-card-actions class="contact__card-actions">
-          <button mat-button color="primary" (click)="openDialog($event)">
+          <button mat-button color="primary" (click)="openDetails($event)">
             <mat-icon>edit</mat-icon>Edit
           </button>
           <button mat-button color="accent">
