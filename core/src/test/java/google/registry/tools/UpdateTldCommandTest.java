@@ -1111,7 +1111,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
         "--dns_ds_ttl=PT240S",
         "--dns_ns_ttl=PT180S",
         "xn--q9jyb4c");
-    Registry registry = Registry.get("xn--q9jyb4c");
+    Tld registry = Tld.get("xn--q9jyb4c");
     assertThat(registry.getDnsAPlusAaaaTtl()).isEqualTo(standardMinutes(5));
     assertThat(registry.getDnsDsTtl()).isEqualTo(standardMinutes(4));
     assertThat(registry.getDnsNsTtl()).isEqualTo(standardMinutes(3));
