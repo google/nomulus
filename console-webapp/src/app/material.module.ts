@@ -19,6 +19,7 @@ import { CdkTreeModule } from '@angular/cdk/tree';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -52,6 +53,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
     MatBadgeModule,
     MatButtonModule,
     MatButtonToggleModule,
+    MatBottomSheetModule,
     MatCardModule,
     MatCheckboxModule,
     MatDialogModule,

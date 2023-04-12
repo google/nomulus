@@ -14,6 +14,8 @@
 
 import { Component } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
+import { BreakpointObserver } from '@angular/cdk/layout';
 
 interface Contact {
   name: string;
@@ -45,7 +47,11 @@ export class ContactDetailsDialogComponent {
   styleUrls: ['./contact.component.less'],
 })
 export default class ContactComponent {
-  constructor(public dialog: MatDialog) {}
+  constructor(
+    private dialog: MatDialog,
+    private _bottomSheet: MatBottomSheet,
+    private breakpointObserver: BreakpointObserver
+  ) {}
   mockData = [
     {
       name: 'Michael Scott',
@@ -128,10 +134,15 @@ export default class ContactComponent {
 
   openDialog(e: Event) {
     e.preventDefault();
-    const dialogRef = this.dialog.open(ContactDetailsDialogComponent);
 
-    dialogRef.afterClosed().subscribe((result) => {
-      console.log(`Dialog result: ${result}`);
-    });
+    if (this.breakpointObserver.isMatched('(max-width: 599px)')) {
+      this._bottomSheet.open(ContactDetailsDialogComponent);
+    } else {
+      const dialogRef = this.dialog.open(ContactDetailsDialogComponent);
+
+      dialogRef.afterClosed().subscribe((result) => {
+        console.log(`Dialog result: ${result}`);
+      });
+    }
   }
 }
