@@ -22,9 +22,8 @@ describe('WhoisComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ WhoisComponent ]
-    })
-    .compileComponents();
+      declarations: [WhoisComponent],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(WhoisComponent);
     component = fixture.componentInstance;

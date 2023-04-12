@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 import { NgModule } from '@angular/core';
 import { A11yModule } from '@angular/cdk/a11y';
 import { CdkTableModule } from '@angular/cdk/table';
@@ -43,7 +42,6 @@ import { OverlayModule } from '@angular/cdk/overlay';
 import { CdkMenuModule } from '@angular/cdk/menu';
 import { DialogModule } from '@angular/cdk/dialog';
 import { MatSidenavModule } from '@angular/material/sidenav';
-
 
 @NgModule({
   exports: [
@@ -77,7 +75,6 @@ import { MatSidenavModule } from '@angular/material/sidenav';
     MatTreeModule,
     OverlayModule,
     DialogModule,
-  ]
+  ],
 })
-export class MaterialModule {
-}
+export class MaterialModule {}
