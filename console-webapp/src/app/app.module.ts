@@ -14,11 +14,14 @@
 
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from './material.module';
+
+import { BackendService } from './shared/services/backend.service';
 
 import { HomeComponent } from './home/home.component';
 import { TldsComponent } from './tlds/tlds.component';
@@ -27,6 +30,7 @@ import { SettingsComponent } from './settings/settings.component';
 import SettingsContactComponent, {
   ContactDetailsDialogComponent,
 } from './settings/contact/contact.component';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [
@@ -39,12 +43,14 @@ import SettingsContactComponent, {
     ContactDetailsDialogComponent,
   ],
   imports: [
+    HttpClientModule,
+    FormsModule,
     MaterialModule,
     BrowserModule,
     AppRoutingModule,
     BrowserAnimationsModule,
   ],
-  providers: [],
+  providers: [BackendService],
   bootstrap: [AppComponent],
 })
 export class AppModule {}
