@@ -441,7 +441,7 @@ public class DomainPricingLogicTest {
 
   @Test
   void
-      testGetDomainRenewPrice_oneYear_premiumDomain_anchorTenant__withToken_isDiscountedNonPremiumPrice()
+      testGetDomainRenewPrice_oneYear_premiumDomain_anchorTenant_withToken_isDiscountedNonPremiumPrice()
           throws EppException {
     AllocationToken allocationToken =
         persistResource(
@@ -488,7 +488,7 @@ public class DomainPricingLogicTest {
 
   @Test
   void
-      testGetDomainRenewPrice_multiYear_premiumDomain_anchorTenant__withToken_isDiscountedNonPremiumPrice()
+      testGetDomainRenewPrice_multiYear_premiumDomain_anchorTenant_withToken_isDiscountedNonPremiumPrice()
           throws EppException {
     AllocationToken allocationToken =
         persistResource(
