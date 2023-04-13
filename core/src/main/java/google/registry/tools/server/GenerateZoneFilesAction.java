@@ -31,6 +31,7 @@ import google.registry.gcs.GcsUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
+import google.registry.model.tld.Registry;
 import google.registry.request.Action;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.JsonActionRunner;
@@ -230,12 +231,15 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   private String domainStanza(Domain domain, DateTime exportTime) {
     StringBuilder result = new StringBuilder();
     String domainLabel = stripTld(domain.getDomainName(), domain.getTld());
+    Registry tld = Registry.get(domain.getTld());
     for (Host nameserver : tm().loadByKeys(domain.getNameservers()).values()) {
       result.append(
           String.format(
               NS_FORMAT,
               domainLabel,
-              dnsDefaultNsTtl.getStandardSeconds(),
+              tld.getDnsNsTtl() != null
+                  ? tld.getDnsNsTtl().getStandardSeconds()
+                  : dnsDefaultNsTtl.getStandardSeconds(),
               // Load the nameservers at the export time in case they've been renamed or deleted.
               loadAtPointInTime(nameserver, exportTime).getHostName()));
     }
@@ -244,7 +248,9 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
           String.format(
               DS_FORMAT,
               domainLabel,
-              dnsDefaultDsTtl.getStandardSeconds(),
+              tld.getDnsDsTtl() != null
+                  ? tld.getDnsDsTtl().getStandardSeconds()
+                  : dnsDefaultDsTtl.getStandardSeconds(),
               dsData.getKeyTag(),
               dsData.getAlgorithm(),
               dsData.getDigestType(),
@@ -265,16 +271,19 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
    * }
    * </pre>
    */
-  private String hostStanza(Host host, String tld) {
+  private String hostStanza(Host host, String tldStr) {
     StringBuilder result = new StringBuilder();
+    Registry tld = Registry.get(tldStr);
     for (InetAddress addr : host.getInetAddresses()) {
       // must be either IPv4 or IPv6
       String rrSetClass = (addr instanceof Inet4Address) ? "A" : "AAAA";
       result.append(
           String.format(
               A_FORMAT,
-              stripTld(host.getHostName(), tld),
-              dnsDefaultATtl.getStandardSeconds(),
+              stripTld(host.getHostName(), tldStr),
+              tld.getDnsAPlusAaaaTtl() != null
+                  ? tld.getDnsAPlusAaaaTtl().getStandardSeconds()
+                  : dnsDefaultATtl.getStandardSeconds(),
               rrSetClass,
               addr.getHostAddress()));
     }
