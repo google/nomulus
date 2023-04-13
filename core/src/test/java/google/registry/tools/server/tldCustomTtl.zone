@@ -1,0 +1,14 @@
+$ORIGIN tld.
+
+bar 400 IN NS ns.bar.tld.
+bar 400 IN NS ns.foo.tld.
+
+ns.bar 300 IN A 127.0.0.1
+ns.bar 300 IN AAAA 0:0:0:0:0:0:0:1
+
+ns-only 400 IN NS ns.foo.tld.
+ns-only 400 IN NS ns.bar.tld.
+
+ns-and-ds 400 IN NS ns.foo.tld.
+ns-and-ds 400 IN NS ns.bar.tld.
+ns-and-ds 500 IN DS 1 2 3 000102
