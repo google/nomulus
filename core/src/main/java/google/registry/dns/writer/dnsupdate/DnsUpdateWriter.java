@@ -31,7 +31,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
 import google.registry.model.tld.Registries;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.util.Clock;
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -186,14 +186,14 @@ public class DnsUpdateWriter extends BaseDnsWriter {
 
   private RRset makeDelegationSignerSet(Domain domain) {
     RRset signerSet = new RRset();
-    Registry tld = Registry.get(domain.getTld());
+    Tld tld = Tld.get(domain.getTld());
     for (DomainDsData signerData : domain.getDsData()) {
       DSRecord dsRecord =
           new DSRecord(
               toAbsoluteName(domain.getDomainName()),
               DClass.IN,
-              tld.getDnsDsTtl() != null
-                  ? tld.getDnsDsTtl().getStandardSeconds()
+              tld.getDnsDsTtl().isPresent()
+                  ? tld.getDnsDsTtl().get().getStandardSeconds()
                   : dnsDefaultDsTtl.getStandardSeconds(),
               signerData.getKeyTag(),
               signerData.getAlgorithm(),
@@ -228,14 +228,14 @@ public class DnsUpdateWriter extends BaseDnsWriter {
 
   private RRset makeNameServerSet(Domain domain) {
     RRset nameServerSet = new RRset();
-    Registry tld = Registry.get(domain.getTld());
+    Tld tld = Tld.get(domain.getTld());
     for (String hostName : domain.loadNameserverHostNames()) {
       NSRecord record =
           new NSRecord(
               toAbsoluteName(domain.getDomainName()),
               DClass.IN,
-              tld.getDnsNsTtl() != null
-                  ? tld.getDnsNsTtl().getStandardSeconds()
+              tld.getDnsNsTtl().isPresent()
+                  ? tld.getDnsNsTtl().get().getStandardSeconds()
                   : dnsDefaultNsTtl.getStandardSeconds(),
               toAbsoluteName(hostName));
       nameServerSet.addRR(record);
@@ -280,9 +280,9 @@ public class DnsUpdateWriter extends BaseDnsWriter {
         Registries.findTldForName(InternetDomainName.from(host.getHostName()));
     Duration dnsAPlusAaaaTtl = dnsDefaultATtl;
     if (tldName.isPresent()) {
-      Registry tld = Registry.get(tldName.get().toString());
-      if (tld.getDnsAPlusAaaaTtl() != null) {
-        dnsAPlusAaaaTtl = tld.getDnsAPlusAaaaTtl();
+      Tld tld = Tld.get(tldName.get().toString());
+      if (tld.getDnsAPlusAaaaTtl().isPresent()) {
+        dnsAPlusAaaaTtl = tld.getDnsAPlusAaaaTtl().get();
       }
     }
     return dnsAPlusAaaaTtl;

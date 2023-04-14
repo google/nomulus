@@ -40,7 +40,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
 import google.registry.model.tld.Registries;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.util.Clock;
 import google.registry.util.Concurrent;
 import google.registry.util.Retrier;
@@ -132,7 +132,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
       return;
     }
 
-    Registry tld = Registry.get(domain.get().getTld());
+    Tld tld = Tld.get(domain.get().getTld());
     ImmutableSet.Builder<ResourceRecordSet> domainRecords = new ImmutableSet.Builder<>();
 
     // Construct DS records (if any).
@@ -149,8 +149,8 @@ public class CloudDnsWriter extends BaseDnsWriter {
                 .setName(absoluteDomainName)
                 .setTtl(
                     (int)
-                        (tld.getDnsDsTtl() != null
-                            ? tld.getDnsDsTtl().getStandardSeconds()
+                        (tld.getDnsDsTtl().isPresent()
+                            ? tld.getDnsDsTtl().get().getStandardSeconds()
                             : defaultDsTtl.getStandardSeconds()))
                 .setType("DS")
                 .setKind("dns#resourceRecordSet")
@@ -178,8 +178,8 @@ public class CloudDnsWriter extends BaseDnsWriter {
                 .setName(absoluteDomainName)
                 .setTtl(
                     (int)
-                        (tld.getDnsNsTtl() != null
-                            ? tld.getDnsNsTtl().getStandardSeconds()
+                        (tld.getDnsNsTtl().isPresent()
+                            ? tld.getDnsNsTtl().get().getStandardSeconds()
                             : defaultNsTtl.getStandardSeconds()))
                 .setType("NS")
                 .setKind("dns#resourceRecordSet")
@@ -249,9 +249,9 @@ public class CloudDnsWriter extends BaseDnsWriter {
     Optional<InternetDomainName> tldName = Registries.findTldForName(InternetDomainName.from(host));
     Duration dnsAPlusAaaaTtl = defaultATtl;
     if (tldName.isPresent()) {
-      Registry tld = Registry.get(tldName.get().toString());
-      if (tld.getDnsAPlusAaaaTtl() != null) {
-        dnsAPlusAaaaTtl = tld.getDnsAPlusAaaaTtl();
+      Tld tld = Tld.get(tldName.get().toString());
+      if (tld.getDnsAPlusAaaaTtl().isPresent()) {
+        dnsAPlusAaaaTtl = tld.getDnsAPlusAaaaTtl().get();
       }
     }
     return dnsAPlusAaaaTtl;

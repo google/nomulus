@@ -42,7 +42,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -118,7 +118,7 @@ public class CloudDnsWriterTest {
   void beforeEach() throws Exception {
     createTld("tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDnsAPlusAaaaTtl(Duration.standardSeconds(11))
             .setDnsNsTtl(Duration.standardSeconds(222))
@@ -391,7 +391,7 @@ public class CloudDnsWriterTest {
   @Test
   void testLoadDomain_defaultTtls() {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDnsAPlusAaaaTtl(null)
             .setDnsNsTtl(null)

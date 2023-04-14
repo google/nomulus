@@ -39,7 +39,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
@@ -212,7 +212,7 @@ public class DnsUpdateWriterTest {
   @Test
   void testPublishDomainCreate_publishesDelegationSigner_usesTldConfiguredTtl() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDnsNsTtl(Duration.millis(500))
             .setDnsDsTtl(Duration.millis(400))
@@ -330,7 +330,7 @@ public class DnsUpdateWriterTest {
   @Test
   void testPublishHostCreate_publishesAddressRecords_usesTldConfiguredTtl() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDnsAPlusAaaaTtl(Duration.millis(500))
             .setDnsNsTtl(Duration.millis(400))

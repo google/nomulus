@@ -35,7 +35,7 @@ import google.registry.gcs.GcsUtils;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -68,7 +68,7 @@ class GenerateZoneFilesActionTest {
   void testGenerate_customTldTtls() throws Exception {
     createTlds("tld", "com");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDnsAPlusAaaaTtl(Duration.standardSeconds(300))
             .setDnsNsTtl(Duration.standardSeconds(400))

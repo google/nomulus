@@ -671,18 +671,27 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   /** Returns the time to live for A and AAAA records. */
-  public Duration getDnsAPlusAaaaTtl() {
-    return dnsAPlusAaaaTtl;
+  public Optional<Duration> getDnsAPlusAaaaTtl() {
+    if (dnsAPlusAaaaTtl == null) {
+      return Optional.empty();
+    }
+    return Optional.of(dnsAPlusAaaaTtl);
   }
 
   /** Returns the time to live for NS records. */
-  public Duration getDnsNsTtl() {
-    return dnsNsTtl;
+  public Optional<Duration> getDnsNsTtl() {
+    if (dnsNsTtl == null) {
+      return Optional.empty();
+    }
+    return Optional.of(dnsNsTtl);
   }
 
   /** Returns the time to live for DS records. */
-  public Duration getDnsDsTtl() {
-    return dnsDsTtl;
+  public Optional<Duration> getDnsDsTtl() {
+    if (dnsDsTtl == null) {
+      return Optional.empty();
+    }
+    return Optional.of(dnsDsTtl);
   }
 
   public ImmutableSet<String> getAllowedRegistrantContactIds() {
