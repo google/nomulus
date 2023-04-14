@@ -192,8 +192,8 @@ public class DnsUpdateWriter extends BaseDnsWriter {
           new DSRecord(
               toAbsoluteName(domain.getDomainName()),
               DClass.IN,
-              tld.getDnsDsTtl() != null
-                  ? tld.getDnsDsTtl().getStandardSeconds()
+              tld.getDnsDsTtl().isPresent()
+                  ? tld.getDnsDsTtl().get().getStandardSeconds()
                   : dnsDefaultDsTtl.getStandardSeconds(),
               signerData.getKeyTag(),
               signerData.getAlgorithm(),
@@ -234,8 +234,8 @@ public class DnsUpdateWriter extends BaseDnsWriter {
           new NSRecord(
               toAbsoluteName(domain.getDomainName()),
               DClass.IN,
-              tld.getDnsNsTtl() != null
-                  ? tld.getDnsNsTtl().getStandardSeconds()
+              tld.getDnsNsTtl().isPresent()
+                  ? tld.getDnsNsTtl().get().getStandardSeconds()
                   : dnsDefaultNsTtl.getStandardSeconds(),
               toAbsoluteName(hostName));
       nameServerSet.addRR(record);
@@ -281,8 +281,8 @@ public class DnsUpdateWriter extends BaseDnsWriter {
     Duration dnsAPlusAaaaTtl = dnsDefaultATtl;
     if (tldName.isPresent()) {
       Registry tld = Registry.get(tldName.get().toString());
-      if (tld.getDnsAPlusAaaaTtl() != null) {
-        dnsAPlusAaaaTtl = tld.getDnsAPlusAaaaTtl();
+      if (tld.getDnsAPlusAaaaTtl().isPresent()) {
+        dnsAPlusAaaaTtl = tld.getDnsAPlusAaaaTtl().get();
       }
     }
     return dnsAPlusAaaaTtl;

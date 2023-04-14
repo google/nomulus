@@ -1103,9 +1103,9 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
         "--dns_ns_ttl=PT180S",
         "xn--q9jyb4c");
     Registry registry = Registry.get("xn--q9jyb4c");
-    assertThat(registry.getDnsAPlusAaaaTtl()).isEqualTo(standardMinutes(5));
-    assertThat(registry.getDnsDsTtl()).isEqualTo(standardMinutes(4));
-    assertThat(registry.getDnsNsTtl()).isEqualTo(standardMinutes(3));
+    assertThat(registry.getDnsAPlusAaaaTtl().get()).isEqualTo(standardMinutes(5));
+    assertThat(registry.getDnsDsTtl().get()).isEqualTo(standardMinutes(4));
+    assertThat(registry.getDnsNsTtl().get()).isEqualTo(standardMinutes(3));
   }
 
   private void runSuccessfulReservedListsTest(String reservedLists) throws Exception {
