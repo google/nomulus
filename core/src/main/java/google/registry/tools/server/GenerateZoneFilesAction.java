@@ -237,8 +237,8 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
           String.format(
               NS_FORMAT,
               domainLabel,
-              tld.getDnsNsTtl() != null
-                  ? tld.getDnsNsTtl().getStandardSeconds()
+              tld.getDnsNsTtl().isPresent()
+                  ? tld.getDnsNsTtl().get().getStandardSeconds()
                   : dnsDefaultNsTtl.getStandardSeconds(),
               // Load the nameservers at the export time in case they've been renamed or deleted.
               loadAtPointInTime(nameserver, exportTime).getHostName()));
@@ -248,8 +248,8 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
           String.format(
               DS_FORMAT,
               domainLabel,
-              tld.getDnsDsTtl() != null
-                  ? tld.getDnsDsTtl().getStandardSeconds()
+              tld.getDnsDsTtl().isPresent()
+                  ? tld.getDnsDsTtl().get().getStandardSeconds()
                   : dnsDefaultDsTtl.getStandardSeconds(),
               dsData.getKeyTag(),
               dsData.getAlgorithm(),
@@ -281,8 +281,8 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
           String.format(
               A_FORMAT,
               stripTld(host.getHostName(), tldStr),
-              tld.getDnsAPlusAaaaTtl() != null
-                  ? tld.getDnsAPlusAaaaTtl().getStandardSeconds()
+              tld.getDnsAPlusAaaaTtl().isPresent()
+                  ? tld.getDnsAPlusAaaaTtl().get().getStandardSeconds()
                   : dnsDefaultATtl.getStandardSeconds(),
               rrSetClass,
               addr.getHostAddress()));

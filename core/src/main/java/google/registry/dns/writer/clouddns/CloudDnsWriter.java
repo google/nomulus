@@ -149,8 +149,8 @@ public class CloudDnsWriter extends BaseDnsWriter {
                 .setName(absoluteDomainName)
                 .setTtl(
                     (int)
-                        (tld.getDnsDsTtl() != null
-                            ? tld.getDnsDsTtl().getStandardSeconds()
+                        (tld.getDnsDsTtl().isPresent()
+                            ? tld.getDnsDsTtl().get().getStandardSeconds()
                             : defaultDsTtl.getStandardSeconds()))
                 .setType("DS")
                 .setKind("dns#resourceRecordSet")
@@ -178,8 +178,8 @@ public class CloudDnsWriter extends BaseDnsWriter {
                 .setName(absoluteDomainName)
                 .setTtl(
                     (int)
-                        (tld.getDnsNsTtl() != null
-                            ? tld.getDnsNsTtl().getStandardSeconds()
+                        (tld.getDnsNsTtl().isPresent()
+                            ? tld.getDnsNsTtl().get().getStandardSeconds()
                             : defaultNsTtl.getStandardSeconds()))
                 .setType("NS")
                 .setKind("dns#resourceRecordSet")
@@ -250,8 +250,8 @@ public class CloudDnsWriter extends BaseDnsWriter {
     Duration dnsAPlusAaaaTtl = defaultATtl;
     if (tldName.isPresent()) {
       Registry tld = Registry.get(tldName.get().toString());
-      if (tld.getDnsAPlusAaaaTtl() != null) {
-        dnsAPlusAaaaTtl = tld.getDnsAPlusAaaaTtl();
+      if (tld.getDnsAPlusAaaaTtl().isPresent()) {
+        dnsAPlusAaaaTtl = tld.getDnsAPlusAaaaTtl().get();
       }
     }
     return dnsAPlusAaaaTtl;
