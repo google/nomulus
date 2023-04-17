@@ -80,7 +80,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
@@ -360,7 +360,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
             allocationToken,
             now);
     // Create a new autorenew billing event and poll message starting at the expiration time.
-    BillingEvent.Recurring autorenewBillingEvent =
+    Recurrence autorenewBillingEvent =
         createAutorenewBillingEvent(
             domainHistoryId,
             registrationExpirationTime,
@@ -612,11 +612,11 @@ public final class DomainCreateFlow implements TransactionalFlow {
         .build();
   }
 
-  private Recurring createAutorenewBillingEvent(
+  private Recurrence createAutorenewBillingEvent(
       HistoryEntryId domainHistoryId,
       DateTime registrationExpirationTime,
       RenewalPriceInfo renewalpriceInfo) {
-    return new BillingEvent.Recurring.Builder()
+    return new Recurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(targetId)
@@ -671,7 +671,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
 
   /**
    * Determines the {@link RenewalPriceBehavior} and the renewal price that needs be stored in the
-   * {@link Recurring} billing events.
+   * {@link Recurrence} billing events.
    *
    * <p>By default, the renewal price is calculated during the process of renewal. Renewal price
    * should be the createCost if and only if the renewal price behavior in the {@link
@@ -697,7 +697,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
     }
   }
 
-  /** A class to store renewal info used in {@link Recurring} billing events. */
+  /** A class to store renewal info used in {@link Recurrence} billing events. */
   @AutoValue
   public abstract static class RenewalPriceInfo {
     static DomainCreateFlow.RenewalPriceInfo create(

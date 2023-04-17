@@ -200,10 +200,9 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRestore)
             .build());
-    // There should be a onetime for the restore and a new recurring billing event, but no renew
-    // onetime.
+    // There should be a onetime for the restore and a new recurrence, but no renew onetime.
     assertBillingEvents(
-        new BillingEvent.Recurring.Builder()
+        new BillingEvent.Recurrence.Builder()
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId("example.tld")
@@ -269,10 +268,10 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRestore)
             .build());
-    // There should be a bill for the restore and an explicit renew, along with a new recurring
+    // There should be a bill for the restore and an explicit renew, along with a new recurrence
     // autorenew event.
     assertBillingEvents(
-        new BillingEvent.Recurring.Builder()
+        new BillingEvent.Recurrence.Builder()
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId("example.tld")

@@ -315,7 +315,7 @@ public class DomainToXjcConverterTest {
                     StatusValue.SERVER_UPDATE_PROHIBITED))
             .setAutorenewBillingEvent(
                 persistResource(
-                        new BillingEvent.Recurring.Builder()
+                        new BillingEvent.Recurrence.Builder()
                             .setReason(Reason.RENEW)
                             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                             .setTargetId("lol")
@@ -344,7 +344,7 @@ public class DomainToXjcConverterTest {
                     .setServerApproveBillingEvent(billingEvent.createVKey())
                     .setServerApproveAutorenewEvent(
                         persistResource(
-                                new BillingEvent.Recurring.Builder()
+                                new BillingEvent.Recurrence.Builder()
                                     .setReason(Reason.RENEW)
                                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                                     .setTargetId("example.xn--q9jyb4c")

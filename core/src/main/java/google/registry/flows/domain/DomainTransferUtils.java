@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
@@ -75,8 +75,8 @@ public final class DomainTransferUtils {
         .setTransferStatus(TransferStatus.PENDING)
         .setServerApproveAutorenewEvent(
             serverApproveEntities.stream()
-                .filter(BillingEvent.Recurring.class::isInstance)
-                .map(BillingEvent.Recurring.class::cast)
+                .filter(Recurrence.class::isInstance)
+                .map(Recurrence.class::cast)
                 .collect(onlyElement())
                 .createVKey())
         .setServerApproveAutorenewPollMessage(
@@ -110,7 +110,7 @@ public final class DomainTransferUtils {
       DateTime serverApproveNewExpirationTime,
       HistoryEntryId domainHistoryId,
       Domain existingDomain,
-      Recurring existingRecurring,
+      Recurrence existingRecurrence,
       Trid trid,
       String gainingRegistrarId,
       Optional<Money> transferCost,
@@ -146,12 +146,12 @@ public final class DomainTransferUtils {
         .add(
             createGainingClientAutorenewEvent(
                 existingDomain.getCurrentPackageToken().isPresent()
-                    ? existingRecurring
+                    ? existingRecurrence
                         .asBuilder()
                         .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
                         .setRenewalPrice(null)
                         .build()
-                    : existingRecurring,
+                    : existingRecurrence,
                 serverApproveNewExpirationTime,
                 domainHistoryId,
                 targetId,
@@ -246,21 +246,21 @@ public final class DomainTransferUtils {
         .build();
   }
 
-  private static BillingEvent.Recurring createGainingClientAutorenewEvent(
-      Recurring existingRecurring,
+  private static Recurrence createGainingClientAutorenewEvent(
+      Recurrence existingRecurrence,
       DateTime serverApproveNewExpirationTime,
       HistoryEntryId domainHistoryId,
       String targetId,
       String gainingRegistrarId) {
-    return new BillingEvent.Recurring.Builder()
+    return new Recurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(targetId)
         .setRegistrarId(gainingRegistrarId)
         .setEventTime(serverApproveNewExpirationTime)
         .setRecurrenceEndTime(END_OF_TIME)
-        .setRenewalPriceBehavior(existingRecurring.getRenewalPriceBehavior())
-        .setRenewalPrice(existingRecurring.getRenewalPrice().orElse(null))
+        .setRenewalPriceBehavior(existingRecurrence.getRenewalPriceBehavior())
+        .setRenewalPrice(existingRecurrence.getRenewalPrice().orElse(null))
         .setDomainHistoryId(domainHistoryId)
         .build();
   }

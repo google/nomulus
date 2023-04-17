@@ -290,12 +290,12 @@ class DomainTransferRequestFlowTest
     // all of the other transfer flow tests happen on day 3 of the transfer, but the initial
     // request by definition takes place on day 1, so we need to edit the times in the
     // autorenew events from the base test case.
-    BillingEvent.Recurring losingClientAutorenew =
+    BillingEvent.Recurrence losingClientAutorenew =
         getLosingClientAutorenewEvent()
             .asBuilder()
             .setRecurrenceEndTime(implicitTransferTime)
             .build();
-    BillingEvent.Recurring gainingClientAutorenew =
+    BillingEvent.Recurrence gainingClientAutorenew =
         getGainingClientAutorenewEvent()
             .asBuilder()
             .setEventTime(expectedExpirationTime)
@@ -335,7 +335,7 @@ class DomainTransferRequestFlowTest
             loadByKeys(domain.getTransferData().getServerApproveEntities()), BillingEvent.class),
         Sets.union(expectedServeApproveBillingEvents, extraBillingEvents));
     // The domain's autorenew billing event should still point to the losing client's event.
-    BillingEvent.Recurring domainAutorenewEvent = loadByKey(domain.getAutorenewBillingEvent());
+    BillingEvent.Recurrence domainAutorenewEvent = loadByKey(domain.getAutorenewBillingEvent());
     assertThat(domainAutorenewEvent.getRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(domainAutorenewEvent.getRecurrenceEndTime()).isEqualTo(implicitTransferTime);
     // The original grace periods should remain untouched.
@@ -952,7 +952,7 @@ class DomainTransferRequestFlowTest
   @Test
   void testSuccess_superuserExtension_zeroPeriod_autorenewGraceActive() throws Exception {
     setupDomain("example", "tld");
-    VKey<BillingEvent.Recurring> existingAutorenewEvent = domain.getAutorenewBillingEvent();
+    VKey<BillingEvent.Recurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to have auto-renewed just before the transfer request, so that it will have an
     // active autorenew grace period spanning the entire transfer window.
     DateTime autorenewTime = clock.nowUtc().minusDays(1);
@@ -963,7 +963,7 @@ class DomainTransferRequestFlowTest
                 .asBuilder()
                 .setRegistrationExpirationTime(expirationTime)
                 .addGracePeriod(
-                    GracePeriod.createForRecurring(
+                    GracePeriod.createForRecurrence(
                         GracePeriodStatus.AUTO_RENEW,
                         domain.getRepoId(),
                         autorenewTime.plus(Tld.get("tld").getAutoRenewGracePeriodLength()),
@@ -1114,7 +1114,7 @@ class DomainTransferRequestFlowTest
                 .asBuilder()
                 .setRegistrationExpirationTime(expirationTime)
                 .addGracePeriod(
-                    GracePeriod.createForRecurring(
+                    GracePeriod.createForRecurrence(
                         GracePeriodStatus.AUTO_RENEW,
                         domain.getRepoId(),
                         autorenewTime.plus(Tld.get("tld").getAutoRenewGracePeriodLength()),
@@ -1133,7 +1133,7 @@ class DomainTransferRequestFlowTest
   @Test
   void testSuccess_autorenewGraceActive_throughoutTransferWindow() throws Exception {
     setupDomain("example", "tld");
-    VKey<BillingEvent.Recurring> existingAutorenewEvent = domain.getAutorenewBillingEvent();
+    VKey<BillingEvent.Recurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to have auto-renewed just before the transfer request, so that it will have an
     // active autorenew grace period spanning the entire transfer window.
     DateTime autorenewTime = clock.nowUtc().minusDays(1);
@@ -1144,7 +1144,7 @@ class DomainTransferRequestFlowTest
                 .asBuilder()
                 .setRegistrationExpirationTime(expirationTime)
                 .addGracePeriod(
-                    GracePeriod.createForRecurring(
+                    GracePeriod.createForRecurrence(
                         GracePeriodStatus.AUTO_RENEW,
                         domain.getRepoId(),
                         autorenewTime.plus(Tld.get("tld").getAutoRenewGracePeriodLength()),
@@ -1166,13 +1166,13 @@ class DomainTransferRequestFlowTest
             .setEventTime(clock.nowUtc().plus(Tld.get("tld").getAutomaticTransferLength()))
             .setBillingTime(autorenewTime.plus(Tld.get("tld").getAutoRenewGracePeriodLength()))
             // The cancellation should refer to the old autorenew billing event.
-            .setRecurringEventKey(existingAutorenewEvent));
+            .setRecurrence(existingAutorenewEvent));
   }
 
   @Test
   void testSuccess_autorenewGraceActive_onlyAtAutomaticTransferTime() throws Exception {
     setupDomain("example", "tld");
-    VKey<BillingEvent.Recurring> existingAutorenewEvent = domain.getAutorenewBillingEvent();
+    VKey<BillingEvent.Recurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to expire in 1 day, so that it will be in the autorenew grace period by the
     // automatic transfer time, even though it isn't yet.
     DateTime expirationTime = clock.nowUtc().plusDays(1);
@@ -1193,7 +1193,7 @@ class DomainTransferRequestFlowTest
             .setEventTime(clock.nowUtc().plus(Tld.get("tld").getAutomaticTransferLength()))
             .setBillingTime(expirationTime.plus(Tld.get("tld").getAutoRenewGracePeriodLength()))
             // The cancellation should refer to the old autorenew billing event.
-            .setRecurringEventKey(existingAutorenewEvent));
+            .setRecurrence(existingAutorenewEvent));
   }
 
   @Test

@@ -45,9 +45,9 @@ import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.ImmutableObject;
-import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainHistory;
@@ -161,7 +161,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     entitiesToSave.add(
         createRestoreBillingEvent(domainHistoryId, feesAndCredits.getRestoreCost(), now));
 
-    BillingEvent.Recurring autorenewEvent =
+    Recurrence autorenewEvent =
         newAutorenewBillingEvent(existingDomain)
             .setEventTime(newExpirationTime)
             .setRecurrenceEndTime(END_OF_TIME)
@@ -231,7 +231,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
   private static Domain performRestore(
       Domain existingDomain,
       DateTime newExpirationTime,
-      BillingEvent.Recurring autorenewEvent,
+      Recurrence autorenewEvent,
       PollMessage.Autorenew autorenewPollMessage,
       DateTime now,
       String registrarId) {
@@ -257,14 +257,14 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     return prepareBillingEvent(domainHistoryId, renewCost, now).setReason(Reason.RENEW).build();
   }
 
-  private BillingEvent.OneTime createRestoreBillingEvent(
+  private OneTime createRestoreBillingEvent(
       HistoryEntryId domainHistoryId, Money restoreCost, DateTime now) {
     return prepareBillingEvent(domainHistoryId, restoreCost, now).setReason(Reason.RESTORE).build();
   }
 
   private OneTime.Builder prepareBillingEvent(
       HistoryEntryId domainHistoryId, Money cost, DateTime now) {
-    return new BillingEvent.OneTime.Builder()
+    return new OneTime.Builder()
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
         .setEventTime(now)

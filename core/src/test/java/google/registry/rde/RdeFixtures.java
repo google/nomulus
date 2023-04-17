@@ -154,7 +154,7 @@ final class RdeFixtures {
                     StatusValue.SERVER_UPDATE_PROHIBITED))
             .setAutorenewBillingEvent(
                 persistResource(
-                        new BillingEvent.Recurring.Builder()
+                        new BillingEvent.Recurrence.Builder()
                             .setReason(Reason.RENEW)
                             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                             .setTargetId(tld)
@@ -183,7 +183,7 @@ final class RdeFixtures {
                     .setServerApproveBillingEvent(billingEvent.createVKey())
                     .setServerApproveAutorenewEvent(
                         persistResource(
-                                new BillingEvent.Recurring.Builder()
+                                new BillingEvent.Recurrence.Builder()
                                     .setReason(Reason.RENEW)
                                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                                     .setTargetId("example." + tld)

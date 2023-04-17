@@ -87,7 +87,7 @@ public class DomainTransferData extends TransferData {
    * being transferred is not a domain.
    */
   @Column(name = "transfer_billing_recurrence_id")
-  VKey<BillingEvent.Recurring> serverApproveAutorenewEvent;
+  VKey<BillingEvent.Recurrence> serverApproveAutorenewEvent;
 
   /**
    * The autorenew poll message that should be associated with this resource after the transfer.
@@ -125,7 +125,7 @@ public class DomainTransferData extends TransferData {
   }
 
   @Nullable
-  public VKey<BillingEvent.Recurring> getServerApproveAutorenewEvent() {
+  public VKey<BillingEvent.Recurrence> getServerApproveAutorenewEvent() {
     return serverApproveAutorenewEvent;
   }
 
@@ -211,7 +211,7 @@ public class DomainTransferData extends TransferData {
     }
 
     public Builder setServerApproveAutorenewEvent(
-        VKey<BillingEvent.Recurring> serverApproveAutorenewEvent) {
+        VKey<BillingEvent.Recurrence> serverApproveAutorenewEvent) {
       getInstance().serverApproveAutorenewEvent = serverApproveAutorenewEvent;
       return this;
     }

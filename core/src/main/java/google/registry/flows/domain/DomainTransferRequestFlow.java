@@ -52,7 +52,7 @@ import google.registry.flows.exceptions.InvalidTransferPeriodValueException;
 import google.registry.flows.exceptions.ObjectAlreadySponsoredException;
 import google.registry.flows.exceptions.TransferPeriodMustBeOneYearException;
 import google.registry.flows.exceptions.TransferPeriodZeroAndFeeTransferExtensionException;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Transfer;
 import google.registry.model.domain.DomainHistory;
@@ -195,13 +195,13 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
       throw new TransferPeriodZeroAndFeeTransferExtensionException();
     }
     // If the period is zero, then there is no fee for the transfer.
-    Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
+    Recurrence existingRecurrence = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     Optional<FeesAndCredits> feesAndCredits;
     if (period.getValue() == 0) {
       feesAndCredits = Optional.empty();
     } else if (!existingDomain.getCurrentPackageToken().isPresent()) {
       feesAndCredits =
-          Optional.of(pricingLogic.getTransferPrice(tld, targetId, now, existingRecurring));
+          Optional.of(pricingLogic.getTransferPrice(tld, targetId, now, existingRecurrence));
     } else {
       // If existing domain is in a package, calculate the transfer price with default renewal price
       // behavior
@@ -243,7 +243,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             serverApproveNewExpirationTime,
             domainHistoryId,
             existingDomain,
-            existingRecurring,
+            existingRecurrence,
             trid,
             gainingClientId,
             feesAndCredits.map(FeesAndCredits::getTotalCost),
@@ -274,7 +274,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     // cloneProjectedAtTime() will replace these old autorenew entities with the server approve ones
     // that we've created in this flow and stored in pendingTransferData.
     updateAutorenewRecurrenceEndTime(
-        existingDomain, existingRecurring, automaticTransferTime, domainHistoryId);
+        existingDomain, existingRecurrence, automaticTransferTime, domainHistoryId);
     Domain newDomain =
         existingDomain
             .asBuilder()

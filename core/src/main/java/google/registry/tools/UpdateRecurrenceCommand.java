@@ -25,7 +25,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.EppResourceUtils;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -38,7 +38,7 @@ import org.joda.money.Money;
 import org.joda.time.DateTime;
 
 /**
- * Command to update {@link Recurring} billing events with a new behavior and/or price.
+ * Command to update {@link Recurrence} billing events with a new behavior and/or price.
  *
  * <p>More specifically, this closes the existing recurrence object and creates a new, similar,
  * object as well as a corresponding synthetic {@link DomainHistory} object. This is done to
@@ -85,11 +85,11 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
                 + " SPECIFIED");
       }
     }
-    ImmutableMap<Domain, Recurring> domainsAndRecurrings =
-        tm().transact(this::loadDomainsAndRecurrings);
+    ImmutableMap<Domain, Recurrence> domainsAndRecurrences =
+        tm().transact(this::loadDomainsAndRecurrences);
     if (renewalPriceBehavior == null) {
       // Allow users to specify only a price only if all renewals are already SPECIFIED
-      domainsAndRecurrings.forEach(
+      domainsAndRecurrences.forEach(
           (d, r) ->
               checkArgument(
                   r.getRenewalPriceBehavior().equals(RenewalPriceBehavior.SPECIFIED),
@@ -103,41 +103,41 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
         "Update the following with behavior %s%s?\n%s",
         renewalPriceBehavior,
         specifiedPriceString,
-        Joiner.on('\n').withKeyValueSeparator(':').join(domainsAndRecurrings));
+        Joiner.on('\n').withKeyValueSeparator(':').join(domainsAndRecurrences));
   }
 
   @Override
   protected String execute() throws Exception {
-    ImmutableList<Recurring> newRecurrings = tm().transact(this::internalExecute);
-    return "Updated new recurring(s): " + newRecurrings;
+    ImmutableList<Recurrence> newRecurrences = tm().transact(this::internalExecute);
+    return "Updated new recurrence(s): " + newRecurrences;
   }
 
-  private ImmutableList<Recurring> internalExecute() {
-    ImmutableMap<Domain, Recurring> domainsAndRecurrings = loadDomainsAndRecurrings();
+  private ImmutableList<Recurrence> internalExecute() {
+    ImmutableMap<Domain, Recurrence> domainsAndRecurrences = loadDomainsAndRecurrences();
     DateTime now = tm().getTransactionTime();
-    ImmutableList.Builder<Recurring> resultBuilder = new ImmutableList.Builder<>();
-    domainsAndRecurrings.forEach(
-        (domain, existingRecurring) -> {
-          // Make a new history ID to break the (recurring, history, domain) circular dep chain
+    ImmutableList.Builder<Recurrence> resultBuilder = new ImmutableList.Builder<>();
+    domainsAndRecurrences.forEach(
+        (domain, existingRecurrence) -> {
+          // Make a new history ID to break the (recurrence, history, domain) circular dep chain
           long newHistoryId = allocateId();
           HistoryEntryId newDomainHistoryId = new HistoryEntryId(domain.getRepoId(), newHistoryId);
-          Recurring endingNow = existingRecurring.asBuilder().setRecurrenceEndTime(now).build();
-          Recurring.Builder newRecurringBuilder =
-              existingRecurring
+          Recurrence endingNow = existingRecurrence.asBuilder().setRecurrenceEndTime(now).build();
+          Recurrence.Builder newRecurrenceBuilder =
+              existingRecurrence
                   .asBuilder()
                   // set the ID to be 0 (null) to create a new object
                   .setId(0)
                   .setDomainHistoryId(newDomainHistoryId);
           if (renewalPriceBehavior != null) {
-            newRecurringBuilder.setRenewalPriceBehavior(renewalPriceBehavior);
-            newRecurringBuilder.setRenewalPrice(null);
+            newRecurrenceBuilder.setRenewalPriceBehavior(renewalPriceBehavior);
+            newRecurrenceBuilder.setRenewalPrice(null);
           }
           if (specifiedRenewalPrice != null) {
-            newRecurringBuilder.setRenewalPrice(specifiedRenewalPrice);
+            newRecurrenceBuilder.setRenewalPrice(specifiedRenewalPrice);
           }
-          Recurring newRecurring = newRecurringBuilder.build();
+          Recurrence newRecurrence = newRecurrenceBuilder.build();
           Domain newDomain =
-              domain.asBuilder().setAutorenewBillingEvent(newRecurring.createVKey()).build();
+              domain.asBuilder().setAutorenewBillingEvent(newRecurrence.createVKey()).build();
           DomainHistory newDomainHistory =
               new DomainHistory.Builder()
                   .setRevisionId(newDomainHistoryId.getRevisionId())
@@ -149,14 +149,14 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
                   .setType(HistoryEntry.Type.SYNTHETIC)
                   .setModificationTime(now)
                   .build();
-          tm().putAll(endingNow, newRecurring, newDomain, newDomainHistory);
-          resultBuilder.add(newRecurring);
+          tm().putAll(endingNow, newRecurrence, newDomain, newDomainHistory);
+          resultBuilder.add(newRecurrence);
         });
     return resultBuilder.build();
   }
 
-  private ImmutableMap<Domain, Recurring> loadDomainsAndRecurrings() {
-    ImmutableMap.Builder<Domain, Recurring> result = new ImmutableMap.Builder<>();
+  private ImmutableMap<Domain, Recurrence> loadDomainsAndRecurrences() {
+    ImmutableMap.Builder<Domain, Recurrence> result = new ImmutableMap.Builder<>();
     DateTime now = tm().getTransactionTime();
     for (String domainName : mainParameters) {
       Domain domain =
@@ -183,12 +183,12 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
                   "Domain %s autorenew ended prior to now at %s",
                   domainName,
                   endTime));
-      Recurring recurring = tm().loadByKey(domain.getAutorenewBillingEvent());
+      Recurrence recurrence = tm().loadByKey(domain.getAutorenewBillingEvent());
       checkArgument(
-          recurring.getRecurrenceEndTime().equals(END_OF_TIME),
+          recurrence.getRecurrenceEndTime().equals(END_OF_TIME),
           "Domain %s's recurrence's end date is not END_OF_TIME",
           domainName);
-      result.put(domain, recurring);
+      result.put(domain, recurrence);
     }
     return result.build();
   }

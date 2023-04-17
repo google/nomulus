@@ -311,7 +311,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     RenewalPriceInfo renewalPriceInfo =
         DomainCreateFlow.getRenewalPriceInfo(
             isAnchorTenant, Optional.ofNullable(allocationToken), feesAndCredits);
-    // There should be one bill for the create and one for the recurring autorenew event.
+    // There should be one bill for the create and one for the recurrence autorenew event.
     BillingEvent.OneTime createBillingEvent =
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.CREATE)
@@ -326,8 +326,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setAllocationToken(allocationToken == null ? null : allocationToken.createVKey())
             .build();
 
-    BillingEvent.Recurring renewBillingEvent =
-        new BillingEvent.Recurring.Builder()
+    BillingEvent.Recurrence renewBillingEvent =
+        new BillingEvent.Recurrence.Builder()
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(getUniqueIdFromCommand())

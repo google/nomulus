@@ -59,7 +59,7 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTok
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.model.EppResource;
 import google.registry.model.ForeignKeyUtils;
-import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Check;
 import google.registry.model.domain.fee.FeeCheckCommandExtension;
@@ -271,8 +271,7 @@ public final class DomainCheckFlow implements Flow {
         new ImmutableList.Builder<>();
     ImmutableMap<String, Domain> domainObjs =
         loadDomainsForRestoreChecks(feeCheck, domainNames, existingDomains);
-    ImmutableMap<String, BillingEvent.Recurring> recurrences =
-        loadRecurrencesForDomains(domainObjs);
+    ImmutableMap<String, Recurrence> recurrences = loadRecurrencesForDomains(domainObjs);
 
     for (FeeCheckCommandExtensionItem feeCheckItem : feeCheck.getItems()) {
       for (String domainName : getDomainNamesToCheckForFee(feeCheckItem, domainNames.keySet())) {
@@ -377,16 +376,15 @@ public final class DomainCheckFlow implements Flow {
         Maps.transformEntries(existingDomainsToLoad, (k, v) -> (Domain) loadedDomains.get(v)));
   }
 
-  private ImmutableMap<String, BillingEvent.Recurring> loadRecurrencesForDomains(
+  private ImmutableMap<String, Recurrence> loadRecurrencesForDomains(
       ImmutableMap<String, Domain> domainObjs) {
     return tm().transact(
             () -> {
-              ImmutableMap<VKey<? extends BillingEvent.Recurring>, BillingEvent.Recurring>
-                  recurrences =
-                      tm().loadByKeys(
-                              domainObjs.values().stream()
-                                  .map(Domain::getAutorenewBillingEvent)
-                                  .collect(toImmutableSet()));
+              ImmutableMap<VKey<? extends Recurrence>, Recurrence> recurrences =
+                  tm().loadByKeys(
+                          domainObjs.values().stream()
+                              .map(Domain::getAutorenewBillingEvent)
+                              .collect(toImmutableSet()));
               return ImmutableMap.copyOf(
                   Maps.transformValues(
                       domainObjs, d -> recurrences.get(d.getAutorenewBillingEvent())));

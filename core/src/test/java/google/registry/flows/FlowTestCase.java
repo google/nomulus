@@ -195,7 +195,7 @@ public abstract class FlowTestCase<F extends Flow> {
                 tm().loadByKey(
                         firstNonNull(
                             gracePeriod.getOneTimeBillingEvent(),
-                            gracePeriod.getRecurringBillingEvent())));
+                            gracePeriod.getRecurrenceBillingEvent())));
   }
 
   /**
