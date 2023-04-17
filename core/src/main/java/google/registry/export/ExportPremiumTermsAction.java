@@ -104,10 +104,10 @@ public class ExportPremiumTermsAction implements Runnable {
   }
 
   /**
-   * Checks if {@code tld} is properly configured to export premium terms.
+   * Checks if {@link Tld} is properly configured to export premium terms.
    *
-   * @return {@link Optional#empty()} if {@code tld export may proceed. Otherwise returns an
-   *     error message
+   * @return {@link Optional#empty()} if {@link Tld} export may proceed. Otherwise returns an error
+   *     message
    */
   private Optional<String> checkConfig(Tld tld) {
     if (isNullOrEmpty(tld.getDriveFolderId())) {

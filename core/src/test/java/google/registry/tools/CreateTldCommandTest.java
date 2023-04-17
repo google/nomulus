@@ -399,7 +399,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
                     "--roid_suffix=Q9JYB4C",
                     "--dns_writers=VoidDnsWriter",
                     "xn--q9jyb4c"));
-    assertThat(thrown).hasMessageThat().contains("All EAP fees must be in the tld's currency");
+    assertThat(thrown).hasMessageThat().contains("All EAP fees must be in the TLD's currency");
   }
 
   @Test

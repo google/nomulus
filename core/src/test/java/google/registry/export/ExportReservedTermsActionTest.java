@@ -128,6 +128,6 @@ public class ExportReservedTermsActionTest {
     assertThat(thrown)
         .hasCauseThat()
         .hasMessageThat()
-        .isEqualTo("No tld object(s) found for fakeTld");
+        .isEqualTo("No TLD object(s) found for fakeTld");
   }
 }

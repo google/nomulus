@@ -76,7 +76,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /** Persisted per-TLD configuration data. */
-@Entity(name = "Tld")
+@Entity
 public class Tld extends ImmutableObject implements Buildable, UnsafeSerializable {
 
   /**
@@ -1029,21 +1029,21 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
           "Create cost must be in the tld's currency");
       checkArgument(
           instance.getStandardRestoreCost().getCurrencyUnit().equals(instance.currency),
-          "Restore cost must be in the tld's currency");
+          "Restore cost must be in the TLD's currency");
       checkArgument(
           instance.getServerStatusChangeCost().getCurrencyUnit().equals(instance.currency),
-          "Server status change cost must be in the tld's currency");
+          "Server status change cost must be in the TLD's currency");
       checkArgument(
           instance.getRegistryLockOrUnlockBillingCost().getCurrencyUnit().equals(instance.currency),
-          "Registry lock/unlock cost must be in the tld's currency");
+          "Registry lock/unlock cost must be in the TLD's currency");
       Predicate<Money> currencyCheck =
           (Money money) -> money.getCurrencyUnit().equals(instance.currency);
       checkArgument(
           instance.getRenewBillingCostTransitions().values().stream().allMatch(currencyCheck),
-          "Renew cost must be in the tld's currency");
+          "Renew cost must be in the TLD's currency");
       checkArgument(
           instance.eapFeeSchedule.toValueMap().values().stream().allMatch(currencyCheck),
-          "All EAP fees must be in the tld's currency");
+          "All EAP fees must be in the TLD's currency");
       checkArgumentNotNull(
           instance.pricingEngineClassName, "All registries must have a configured pricing engine");
       checkArgument(
@@ -1065,7 +1065,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   public static class TldNotFoundException extends RuntimeException {
 
     TldNotFoundException(ImmutableSet<String> tlds) {
-      super("No tld object(s) found for " + Joiner.on(", ").join(tlds));
+      super("No TLD object(s) found for " + Joiner.on(", ").join(tlds));
     }
 
     TldNotFoundException(String tld) {
