@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
+import static google.registry.dns.DnsUtils.getDnsAPlusAAAATtlForHost;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 
 import com.google.common.base.Joiner;
@@ -192,9 +193,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
           new DSRecord(
               toAbsoluteName(domain.getDomainName()),
               DClass.IN,
-              tld.getDnsDsTtl().isPresent()
-                  ? tld.getDnsDsTtl().get().getStandardSeconds()
-                  : dnsDefaultDsTtl.getStandardSeconds(),
+              tld.getDnsDsTtl().orElse(dnsDefaultDsTtl).getStandardSeconds(),
               signerData.getKeyTag(),
               signerData.getAlgorithm(),
               signerData.getDigestType(),
@@ -234,9 +233,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
           new NSRecord(
               toAbsoluteName(domain.getDomainName()),
               DClass.IN,
-              tld.getDnsNsTtl().isPresent()
-                  ? tld.getDnsNsTtl().get().getStandardSeconds()
-                  : dnsDefaultNsTtl.getStandardSeconds(),
+              tld.getDnsNsTtl().orElse(dnsDefaultNsTtl).getStandardSeconds(),
               toAbsoluteName(hostName));
       nameServerSet.addRR(record);
     }
@@ -251,7 +248,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
             new ARecord(
                 toAbsoluteName(host.getHostName()),
                 DClass.IN,
-                selectDnsAPlusAAAATtl(host).getStandardSeconds(),
+                getDnsAPlusAAAATtlForHost(host.getHostName(), dnsDefaultATtl),
                 address);
         addressSet.addRR(record);
       }
@@ -267,25 +264,12 @@ public class DnsUpdateWriter extends BaseDnsWriter {
             new AAAARecord(
                 toAbsoluteName(host.getHostName()),
                 DClass.IN,
-                selectDnsAPlusAAAATtl(host).getStandardSeconds(),
+                getDnsAPlusAAAATtlForHost(host.getHostName(), dnsDefaultATtl),
                 address);
         addressSet.addRR(record);
       }
     }
     return addressSet;
-  }
-
-  private Duration selectDnsAPlusAAAATtl(Host host) {
-    Optional<InternetDomainName> tldName =
-        Registries.findTldForName(InternetDomainName.from(host.getHostName()));
-    Duration dnsAPlusAaaaTtl = dnsDefaultATtl;
-    if (tldName.isPresent()) {
-      Tld tld = Tld.get(tldName.get().toString());
-      if (tld.getDnsAPlusAaaaTtl().isPresent()) {
-        dnsAPlusAaaaTtl = tld.getDnsAPlusAaaaTtl().get();
-      }
-    }
-    return dnsAPlusAaaaTtl;
   }
 
   private Name toAbsoluteName(String name) {
