@@ -62,9 +62,9 @@ public class BillingEventTest extends EntityTestCase {
   private Domain domain;
   private BillingEvent.OneTime oneTime;
   private BillingEvent.OneTime oneTimeSynthetic;
-  private BillingEvent.Recurring recurring;
+  private BillingEvent.Recurrence recurrence;
   private BillingEvent.Cancellation cancellationOneTime;
-  private BillingEvent.Cancellation cancellationRecurring;
+  private BillingEvent.Cancellation cancellationRecurrence;
 
   @BeforeEach
   void setUp() {
@@ -118,10 +118,10 @@ public class BillingEventTest extends EntityTestCase {
                     .setBillingTime(now.plusDays(5))
                     .setAllocationToken(allocationToken.createVKey())));
 
-    recurring =
+    recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
@@ -137,7 +137,7 @@ public class BillingEventTest extends EntityTestCase {
                         ImmutableSet.of(
                             BillingEvent.Flag.ANCHOR_TENANT, BillingEvent.Flag.SYNTHETIC))
                     .setSyntheticCreationTime(now.plusDays(10))
-                    .setCancellationMatchingBillingEvent(recurring)
+                    .setCancellationMatchingBillingEvent(recurrence)
                     .setPeriodYears(2)
                     .setCost(Money.of(USD, 1))
                     .setEventTime(now)
@@ -151,9 +151,9 @@ public class BillingEventTest extends EntityTestCase {
                     .setReason(Reason.CREATE)
                     .setEventTime(now.plusDays(1))
                     .setBillingTime(now.plusDays(5))
-                    .setOneTimeEventKey(oneTime.createVKey())));
+                    .setOneTime(oneTime.createVKey())));
 
-    cancellationRecurring =
+    cancellationRecurrence =
         persistResource(
             commonInit(
                 new BillingEvent.Cancellation.Builder()
@@ -161,7 +161,7 @@ public class BillingEventTest extends EntityTestCase {
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusDays(1))
                     .setBillingTime(now.plusYears(1).plusDays(45))
-                    .setRecurringEventKey(recurring.createVKey())));
+                    .setRecurrence(recurrence.createVKey())));
   }
 
   private static <E extends BillingEvent, B extends BillingEvent.Builder<E, B>> E commonInit(
@@ -173,9 +173,9 @@ public class BillingEventTest extends EntityTestCase {
   void testPersistence() {
     assertThat(loadByEntity(oneTime)).isEqualTo(oneTime);
     assertThat(loadByEntity(oneTimeSynthetic)).isEqualTo(oneTimeSynthetic);
-    assertThat(loadByEntity(recurring)).isEqualTo(recurring);
+    assertThat(loadByEntity(recurrence)).isEqualTo(recurrence);
     assertThat(loadByEntity(cancellationOneTime)).isEqualTo(cancellationOneTime);
-    assertThat(loadByEntity(cancellationRecurring)).isEqualTo(cancellationRecurring);
+    assertThat(loadByEntity(cancellationRecurrence)).isEqualTo(cancellationRecurrence);
   }
 
   @Test
@@ -184,18 +184,18 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(serializeDeserialize(persisted)).isEqualTo(persisted);
     persisted = loadByEntity(oneTimeSynthetic);
     assertThat(serializeDeserialize(persisted)).isEqualTo(persisted);
-    persisted = loadByEntity(recurring);
+    persisted = loadByEntity(recurrence);
     assertThat(serializeDeserialize(persisted)).isEqualTo(persisted);
     persisted = loadByEntity(cancellationOneTime);
     assertThat(serializeDeserialize(persisted)).isEqualTo(persisted);
-    persisted = loadByEntity(cancellationRecurring);
+    persisted = loadByEntity(cancellationRecurrence);
     assertThat(serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @Test
   void testCancellationMatching() {
-    VKey<?> recurringKey = loadByEntity(oneTimeSynthetic).getCancellationMatchingBillingEvent();
-    assertThat(loadByKey(recurringKey)).isEqualTo(recurring);
+    VKey<?> recurrenceKey = loadByEntity(oneTimeSynthetic).getCancellationMatchingBillingEvent();
+    assertThat(loadByKey(recurrenceKey)).isEqualTo(recurrence);
   }
 
   @Test
@@ -207,7 +207,7 @@ public class BillingEventTest extends EntityTestCase {
                 oneTime
                     .asBuilder()
                     .setFlags(ImmutableSet.of(BillingEvent.Flag.SYNTHETIC))
-                    .setCancellationMatchingBillingEvent(recurring)
+                    .setCancellationMatchingBillingEvent(recurrence)
                     .build());
     assertThat(thrown)
         .hasMessageThat()
@@ -248,7 +248,7 @@ public class BillingEventTest extends EntityTestCase {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
-            () -> oneTime.asBuilder().setCancellationMatchingBillingEvent(recurring).build());
+            () -> oneTime.asBuilder().setCancellationMatchingBillingEvent(recurrence).build());
     assertThat(thrown)
         .hasMessageThat()
         .contains(
@@ -270,21 +270,21 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  void testSuccess_cancellation_forGracePeriod_withRecurring() {
+  void testSuccess_cancellation_forGracePeriod_withRecurrence() {
     BillingEvent.Cancellation newCancellation =
         BillingEvent.Cancellation.forGracePeriod(
-            GracePeriod.createForRecurring(
+            GracePeriod.createForRecurrence(
                 GracePeriodStatus.AUTO_RENEW,
                 domain.getRepoId(),
                 now.plusYears(1).plusDays(45),
                 "TheRegistrar",
-                recurring.createVKey()),
+                recurrence.createVKey()),
             domainHistory2.getModificationTime(),
             domainHistory2.getHistoryEntryId(),
             "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
-    assertThat(newCancellation.asBuilder().setId(cancellationRecurring.getId()).build())
-        .isEqualTo(cancellationRecurring);
+    assertThat(newCancellation.asBuilder().setId(cancellationRecurrence.getId()).build())
+        .isEqualTo(cancellationRecurrence);
   }
 
   @Test
@@ -310,12 +310,7 @@ public class BillingEventTest extends EntityTestCase {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
-            () ->
-                cancellationOneTime
-                    .asBuilder()
-                    .setOneTimeEventKey(null)
-                    .setRecurringEventKey(null)
-                    .build());
+            () -> cancellationOneTime.asBuilder().setOneTime(null).setRecurrence(null).build());
     assertThat(thrown).hasMessageThat().contains("exactly one billing event");
   }
 
@@ -327,8 +322,8 @@ public class BillingEventTest extends EntityTestCase {
             () ->
                 cancellationOneTime
                     .asBuilder()
-                    .setOneTimeEventKey(oneTime.createVKey())
-                    .setRecurringEventKey(recurring.createVKey())
+                    .setOneTime(oneTime.createVKey())
+                    .setRecurrence(recurrence.createVKey())
                     .build());
     assertThat(thrown).hasMessageThat().contains("exactly one billing event");
   }
@@ -393,132 +388,132 @@ public class BillingEventTest extends EntityTestCase {
 
   @Test
   void testSuccess_defaultRenewalPriceBehavior_assertsIsDefault() {
-    assertThat(recurring.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
-    assertThat(recurring.getRenewalPrice()).isEmpty();
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
+    assertThat(recurrence.getRenewalPrice()).isEmpty();
   }
 
   @Test
   void testSuccess_getRenewalPriceBehavior_returnsRightBehavior() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusYears(1))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.NONPREMIUM);
-    assertThat(recurringEvent.getRenewalPrice()).isEmpty();
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.NONPREMIUM);
+    assertThat(recurrence.getRenewalPrice()).isEmpty();
   }
 
   @Test
   void testSuccess_setRenewalPriceBehaviorThenBuild_defaultToSpecified() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusYears(1))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
-    assertThat(recurringEvent.getRenewalPrice()).isEmpty();
-    BillingEvent.Recurring loadedEntity = loadByEntity(recurringEvent);
-    assertThat(loadedEntity).isEqualTo(recurringEvent);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
+    assertThat(recurrence.getRenewalPrice()).isEmpty();
+    BillingEvent.Recurrence loadedEntity = loadByEntity(recurrence);
+    assertThat(loadedEntity).isEqualTo(recurrence);
     persistResource(
         loadedEntity
             .asBuilder()
             .setRenewalPrice(Money.of(USD, 100))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .build());
-    assertThat(loadByEntity(recurringEvent).getRenewalPriceBehavior())
+    assertThat(loadByEntity(recurrence).getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.SPECIFIED);
-    assertThat(loadByEntity(recurringEvent).getRenewalPrice()).hasValue(Money.of(USD, 100));
+    assertThat(loadByEntity(recurrence).getRenewalPrice()).hasValue(Money.of(USD, 100));
   }
 
   @Test
   void testSuccess_setRenewalPriceBehaviorThenBuild_defaultToNonPremium() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusYears(1))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
-    assertThat(recurringEvent.getRenewalPrice()).isEmpty();
-    BillingEvent.Recurring loadedEntity = loadByEntity(recurringEvent);
-    assertThat(loadedEntity).isEqualTo(recurringEvent);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
+    assertThat(recurrence.getRenewalPrice()).isEmpty();
+    BillingEvent.Recurrence loadedEntity = loadByEntity(recurrence);
+    assertThat(loadedEntity).isEqualTo(recurrence);
     persistResource(
         loadedEntity.asBuilder().setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM).build());
-    assertThat(loadByEntity(recurringEvent).getRenewalPriceBehavior())
+    assertThat(loadByEntity(recurrence).getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.NONPREMIUM);
-    assertThat(loadByEntity(recurringEvent).getRenewalPrice()).isEmpty();
+    assertThat(loadByEntity(recurrence).getRenewalPrice()).isEmpty();
   }
 
   @Test
   void testSuccess_setRenewalPriceBehaviorThenBuild_nonPremiumToSpecified() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusYears(1))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.NONPREMIUM);
-    assertThat(recurringEvent.getRenewalPrice()).isEmpty();
-    BillingEvent.Recurring loadedEntity = loadByEntity(recurringEvent);
-    assertThat(loadedEntity).isEqualTo(recurringEvent);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.NONPREMIUM);
+    assertThat(recurrence.getRenewalPrice()).isEmpty();
+    BillingEvent.Recurrence loadedEntity = loadByEntity(recurrence);
+    assertThat(loadedEntity).isEqualTo(recurrence);
     persistResource(
         loadedEntity
             .asBuilder()
             .setRenewalPrice(Money.of(USD, 100))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .build());
-    assertThat(loadByEntity(recurringEvent).getRenewalPriceBehavior())
+    assertThat(loadByEntity(recurrence).getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.SPECIFIED);
-    assertThat(loadByEntity(recurringEvent).getRenewalPrice()).hasValue(Money.of(USD, 100));
+    assertThat(loadByEntity(recurrence).getRenewalPrice()).hasValue(Money.of(USD, 100));
   }
 
   @Test
   void testSuccess_setRenewalPriceBehaviorThenBuild_nonPremiumToDefault() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusYears(1))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.NONPREMIUM);
-    assertThat(recurringEvent.getRenewalPrice()).isEmpty();
-    BillingEvent.Recurring loadedEntity = loadByEntity(recurringEvent);
-    assertThat(loadedEntity).isEqualTo(recurringEvent);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.NONPREMIUM);
+    assertThat(recurrence.getRenewalPrice()).isEmpty();
+    BillingEvent.Recurrence loadedEntity = loadByEntity(recurrence);
+    assertThat(loadedEntity).isEqualTo(recurrence);
     persistResource(
         loadedEntity.asBuilder().setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT).build());
-    assertThat(loadByEntity(recurringEvent).getRenewalPriceBehavior())
+    assertThat(loadByEntity(recurrence).getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.DEFAULT);
-    assertThat(loadByEntity(recurringEvent).getRenewalPrice()).isEmpty();
+    assertThat(loadByEntity(recurrence).getRenewalPrice()).isEmpty();
   }
 
   @Test
   void testSuccess_setRenewalPriceBehaviorThenBuild_specifiedToDefault() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
@@ -526,27 +521,27 @@ public class BillingEventTest extends EntityTestCase {
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                     .setRenewalPrice(Money.of(USD, 100))
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
-    assertThat(recurringEvent.getRenewalPrice()).hasValue(Money.of(USD, 100));
-    BillingEvent.Recurring loadedEntity = loadByEntity(recurringEvent);
-    assertThat(loadedEntity).isEqualTo(recurringEvent);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
+    assertThat(recurrence.getRenewalPrice()).hasValue(Money.of(USD, 100));
+    BillingEvent.Recurrence loadedEntity = loadByEntity(recurrence);
+    assertThat(loadedEntity).isEqualTo(recurrence);
     persistResource(
         loadedEntity
             .asBuilder()
             .setRenewalPrice(null)
             .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
             .build());
-    assertThat(loadByEntity(recurringEvent).getRenewalPriceBehavior())
+    assertThat(loadByEntity(recurrence).getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.DEFAULT);
-    assertThat(loadByEntity(recurringEvent).getRenewalPrice()).isEmpty();
+    assertThat(loadByEntity(recurrence).getRenewalPrice()).isEmpty();
   }
 
   @Test
   void testSuccess_setRenewalPriceBehaviorThenBuild_specifiedToNonPremium() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
@@ -554,37 +549,37 @@ public class BillingEventTest extends EntityTestCase {
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                     .setRenewalPrice(Money.of(USD, 100))
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
-    assertThat(recurringEvent.getRenewalPrice()).hasValue(Money.of(USD, 100));
-    BillingEvent.Recurring loadedEntity = loadByEntity(recurringEvent);
-    assertThat(loadedEntity).isEqualTo(recurringEvent);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
+    assertThat(recurrence.getRenewalPrice()).hasValue(Money.of(USD, 100));
+    BillingEvent.Recurrence loadedEntity = loadByEntity(recurrence);
+    assertThat(loadedEntity).isEqualTo(recurrence);
     persistResource(
         loadedEntity
             .asBuilder()
             .setRenewalPrice(null)
             .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
             .build());
-    assertThat(loadByEntity(recurringEvent).getRenewalPriceBehavior())
+    assertThat(loadByEntity(recurrence).getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.NONPREMIUM);
-    assertThat(loadByEntity(recurringEvent).getRenewalPrice()).isEmpty();
+    assertThat(loadByEntity(recurrence).getRenewalPrice()).isEmpty();
   }
 
   @Test
   void testFailure_setRenewalPriceBehaviorThenBuild_defaultToSpecified_needRenewalPrice() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusYears(1))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
-    assertThat(recurringEvent.getRenewalPrice()).isEmpty();
-    BillingEvent.Recurring loadedEntity = loadByEntity(recurringEvent);
-    assertThat(loadedEntity).isEqualTo(recurringEvent);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
+    assertThat(recurrence.getRenewalPrice()).isEmpty();
+    BillingEvent.Recurrence loadedEntity = loadByEntity(recurrence);
+    assertThat(loadedEntity).isEqualTo(recurrence);
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -602,20 +597,20 @@ public class BillingEventTest extends EntityTestCase {
 
   @Test
   void testFailure_setRenewalPriceBehaviorThenBuild_defaultToPremium_noNeedToAddRenewalPrice() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusYears(1))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
-    assertThat(recurringEvent.getRenewalPrice()).isEmpty();
-    BillingEvent.Recurring loadedEntity = loadByEntity(recurringEvent);
-    assertThat(loadedEntity).isEqualTo(recurringEvent);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
+    assertThat(recurrence.getRenewalPrice()).isEmpty();
+    BillingEvent.Recurrence loadedEntity = loadByEntity(recurrence);
+    assertThat(loadedEntity).isEqualTo(recurrence);
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -634,20 +629,20 @@ public class BillingEventTest extends EntityTestCase {
 
   @Test
   void testFailure_setRenewalPriceBehaviorThenBuild_nonPremiumToDefault_noNeedToAddRenewalPrice() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusYears(1))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.NONPREMIUM);
-    assertThat(recurringEvent.getRenewalPrice()).isEmpty();
-    BillingEvent.Recurring loadedEntity = loadByEntity(recurringEvent);
-    assertThat(loadedEntity).isEqualTo(recurringEvent);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.NONPREMIUM);
+    assertThat(recurrence.getRenewalPrice()).isEmpty();
+    BillingEvent.Recurrence loadedEntity = loadByEntity(recurrence);
+    assertThat(loadedEntity).isEqualTo(recurrence);
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -666,20 +661,20 @@ public class BillingEventTest extends EntityTestCase {
 
   @Test
   void testFailure_setRenewalPriceBehaviorThenBuild_nonPremiumToSpecified_needRenewalPrice() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusYears(1))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.NONPREMIUM);
-    assertThat(recurringEvent.getRenewalPrice()).isEmpty();
-    BillingEvent.Recurring loadedEntity = loadByEntity(recurringEvent);
-    assertThat(loadedEntity).isEqualTo(recurringEvent);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.NONPREMIUM);
+    assertThat(recurrence.getRenewalPrice()).isEmpty();
+    BillingEvent.Recurrence loadedEntity = loadByEntity(recurrence);
+    assertThat(loadedEntity).isEqualTo(recurrence);
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -697,10 +692,10 @@ public class BillingEventTest extends EntityTestCase {
 
   @Test
   void testFailure_setRenewalPriceBehaviorThenBuild_specifiedToNonPremium_removeRenewalPrice() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
@@ -708,10 +703,10 @@ public class BillingEventTest extends EntityTestCase {
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                     .setRenewalPrice(Money.of(USD, 100))
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
-    assertThat(recurringEvent.getRenewalPrice()).hasValue(Money.of(USD, 100));
-    BillingEvent.Recurring loadedEntity = loadByEntity(recurringEvent);
-    assertThat(loadedEntity).isEqualTo(recurringEvent);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
+    assertThat(recurrence.getRenewalPrice()).hasValue(Money.of(USD, 100));
+    BillingEvent.Recurrence loadedEntity = loadByEntity(recurrence);
+    assertThat(loadedEntity).isEqualTo(recurrence);
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -729,10 +724,10 @@ public class BillingEventTest extends EntityTestCase {
 
   @Test
   void testFailure_setRenewalPriceBehaviorThenBuild_specifiedToDefault_removeRenewalPrice() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
@@ -740,10 +735,10 @@ public class BillingEventTest extends EntityTestCase {
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                     .setRenewalPrice(Money.of(USD, 100))
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
-    assertThat(recurringEvent.getRenewalPrice()).hasValue(Money.of(USD, 100));
-    BillingEvent.Recurring loadedEntity = loadByEntity(recurringEvent);
-    assertThat(loadedEntity).isEqualTo(recurringEvent);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
+    assertThat(recurrence.getRenewalPrice()).hasValue(Money.of(USD, 100));
+    BillingEvent.Recurrence loadedEntity = loadByEntity(recurrence);
+    assertThat(loadedEntity).isEqualTo(recurrence);
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -761,10 +756,10 @@ public class BillingEventTest extends EntityTestCase {
 
   @Test
   void testSuccess_buildWithDefaultRenewalBehavior() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
@@ -772,33 +767,33 @@ public class BillingEventTest extends EntityTestCase {
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                     .setRenewalPrice(Money.of(USD, BigDecimal.valueOf(100)))
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
-    assertThat(recurringEvent.getRenewalPrice()).hasValue(Money.of(USD, 100));
-    assertThat(recurringEvent.getRecurrenceLastExpansion()).isEqualTo(now);
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
+    assertThat(recurrence.getRenewalPrice()).hasValue(Money.of(USD, 100));
+    assertThat(recurrence.getRecurrenceLastExpansion()).isEqualTo(now);
   }
 
   @Test
   void testSuccess_buildWithNonPremiumRenewalBehavior() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusYears(1))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.NONPREMIUM);
-    assertThat(loadByEntity(recurringEvent).getRenewalPrice()).isEmpty();
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.NONPREMIUM);
+    assertThat(loadByEntity(recurrence).getRenewalPrice()).isEmpty();
   }
 
   @Test
   void testSuccess_buildWithSpecifiedRenewalBehavior() {
-    BillingEvent.Recurring recurringEvent =
+    BillingEvent.Recurrence recurrence =
         persistResource(
             commonInit(
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
@@ -806,8 +801,8 @@ public class BillingEventTest extends EntityTestCase {
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                     .setRenewalPrice(Money.of(USD, BigDecimal.valueOf(100)))
                     .setRecurrenceEndTime(END_OF_TIME)));
-    assertThat(recurringEvent.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
-    assertThat(recurringEvent.getRenewalPrice()).hasValue(Money.of(USD, 100));
+    assertThat(recurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
+    assertThat(recurrence.getRenewalPrice()).hasValue(Money.of(USD, 100));
   }
 
   @Test
@@ -816,7 +811,7 @@ public class BillingEventTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
@@ -837,7 +832,7 @@ public class BillingEventTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
@@ -859,7 +854,7 @@ public class BillingEventTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                new BillingEvent.Recurring.Builder()
+                new BillingEvent.Recurrence.Builder()
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)

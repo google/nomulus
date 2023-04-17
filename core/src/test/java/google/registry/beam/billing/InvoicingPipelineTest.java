@@ -40,7 +40,7 @@ import google.registry.model.billing.BillingEvent.Cancellation;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.registrar.Registrar;
@@ -352,9 +352,9 @@ class InvoicingPipelineTest {
                 + "JOIN Registrar r ON b.clientId = r.registrarId\n"
                 + "JOIN Domain d ON b.domainRepoId = d.repoId\n"
                 + "JOIN Tld t ON t.tldStr = d.tld\n"
-                + "LEFT JOIN BillingCancellation c ON b.id = c.refOneTime\n"
+                + "LEFT JOIN BillingCancellation c ON b.id = c.oneTime\n"
                 + "LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent ="
-                + " cr.refRecurring\n"
+                + " cr.recurrence\n"
                 + "WHERE r.billingAccountMap IS NOT NULL\n"
                 + "AND r.type = 'REAL'\n"
                 + "AND t.invoicingEnabled IS TRUE\n"
@@ -492,53 +492,53 @@ class InvoicingPipelineTest {
             .setRegistrarId(registrar1.getRegistrarId())
             .setEventTime(DateTime.parse("2017-10-05T00:00:00.0Z"))
             .setBillingTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
-            .setOneTimeEventKey(oneTime.createVKey())
+            .setOneTime(oneTime.createVKey())
             .setTargetId(domain12.getDomainName())
             .setReason(Reason.RENEW)
             .setDomainHistory(domainHistory)
             .build();
     persistResource(cancellation);
 
-    // Add billing event with a corresponding recurring billing event and cancellation
-    Domain domain13 = persistActiveDomain("cancel-recurring.test");
-    DomainHistory domainHistoryRecurring = persistDomainHistory(domain13, registrar1);
+    // Add billing event with a corresponding recurrence billing event and cancellation
+    Domain domain13 = persistActiveDomain("cancel-recurrence.test");
+    DomainHistory domainHistoryRecurrence = persistDomainHistory(domain13, registrar1);
 
-    Recurring recurring =
-        new Recurring()
+    Recurrence recurrence =
+        new Recurrence()
             .asBuilder()
             .setRegistrarId(registrar1.getRegistrarId())
             .setRecurrenceEndTime(END_OF_TIME)
             .setId(1)
-            .setDomainHistory(domainHistoryRecurring)
+            .setDomainHistory(domainHistoryRecurrence)
             .setTargetId(domain13.getDomainName())
             .setEventTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
             .setReason(Reason.RENEW)
             .build();
-    persistResource(recurring);
-    OneTime oneTimeRecurring =
+    persistResource(recurrence);
+    OneTime oneTimeRecurrence =
         persistOneTimeBillingEvent(13, domain13, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
-    oneTimeRecurring =
-        oneTimeRecurring
+    oneTimeRecurrence =
+        oneTimeRecurrence
             .asBuilder()
-            .setCancellationMatchingBillingEvent(recurring)
+            .setCancellationMatchingBillingEvent(recurrence)
             .setFlags(ImmutableSet.of(Flag.SYNTHETIC))
             .setSyntheticCreationTime(DateTime.parse("2017-10-03T00:00:00.0Z"))
             .build();
-    persistResource(oneTimeRecurring);
+    persistResource(oneTimeRecurrence);
 
-    Cancellation cancellationRecurring =
+    Cancellation cancellationRecurrence =
         new Cancellation()
             .asBuilder()
             .setId(2)
             .setRegistrarId(registrar1.getRegistrarId())
             .setEventTime(DateTime.parse("2017-10-05T00:00:00.0Z"))
             .setBillingTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
-            .setRecurringEventKey(recurring.createVKey())
+            .setRecurrence(recurrence.createVKey())
             .setTargetId(domain13.getDomainName())
             .setReason(Reason.RENEW)
-            .setDomainHistory(domainHistoryRecurring)
+            .setDomainHistory(domainHistoryRecurrence)
             .build();
-    persistResource(cancellationRecurring);
+    persistResource(cancellationRecurrence);
   }
 
   private static DomainHistory persistDomainHistory(Domain domain, Registrar registrar) {

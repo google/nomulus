@@ -105,22 +105,21 @@ public class BatchModule {
   }
 
   @Provides
-  @Parameter(ExpandRecurringBillingEventsAction.PARAM_START_TIME)
+  @Parameter(ExpandRecurrencesAction.PARAM_START_TIME)
   static Optional<DateTime> provideStartTime(HttpServletRequest req) {
-    return extractOptionalDatetimeParameter(
-        req, ExpandRecurringBillingEventsAction.PARAM_START_TIME);
+    return extractOptionalDatetimeParameter(req, ExpandRecurrencesAction.PARAM_START_TIME);
   }
 
   @Provides
-  @Parameter(ExpandRecurringBillingEventsAction.PARAM_END_TIME)
+  @Parameter(ExpandRecurrencesAction.PARAM_END_TIME)
   static Optional<DateTime> provideEndTime(HttpServletRequest req) {
-    return extractOptionalDatetimeParameter(req, ExpandRecurringBillingEventsAction.PARAM_END_TIME);
+    return extractOptionalDatetimeParameter(req, ExpandRecurrencesAction.PARAM_END_TIME);
   }
 
   @Provides
-  @Parameter(ExpandRecurringBillingEventsAction.PARAM_ADVANCE_CURSOR)
+  @Parameter(ExpandRecurrencesAction.PARAM_ADVANCE_CURSOR)
   static boolean provideAdvanceCursor(HttpServletRequest req) {
-    return extractBooleanParameter(req, ExpandRecurringBillingEventsAction.PARAM_ADVANCE_CURSOR);
+    return extractBooleanParameter(req, ExpandRecurrencesAction.PARAM_ADVANCE_CURSOR);
   }
 
   @Provides

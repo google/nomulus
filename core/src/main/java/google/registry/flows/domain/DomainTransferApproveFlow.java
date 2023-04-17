@@ -48,7 +48,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -149,11 +149,11 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     String gainingRegistrarId = transferData.getGainingRegistrarId();
     // Create a transfer billing event for 1 year, unless the superuser extension was used to set
     // the transfer period to zero. There is not a transfer cost if the transfer period is zero.
-    Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
+    Recurrence existingRecurrence = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
     boolean hasPackageToken = existingDomain.getCurrentPackageToken().isPresent();
-    Money renewalPrice = hasPackageToken ? null : existingRecurring.getRenewalPrice().orElse(null);
+    Money renewalPrice = hasPackageToken ? null : existingRecurrence.getRenewalPrice().orElse(null);
     Optional<BillingEvent.OneTime> billingEvent =
         transferData.getTransferPeriod().getValue() == 0
             ? Optional.empty()
@@ -170,9 +170,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                                 targetId,
                                 transferData.getTransferRequestTime(),
                                 // When removing a domain from a package it should return to the
-                                // default recurring billing behavior so the existing recurring
+                                // default recurrence billing behavior so the existing recurrence
                                 // billing event should not be passed in.
-                                hasPackageToken ? null : existingRecurring)
+                                hasPackageToken ? null : existingRecurrence)
                             .getRenewCost())
                     .setEventTime(now)
                     .setBillingTime(now.plus(Registry.get(tld).getTransferGracePeriodLength()))
@@ -198,12 +198,12 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     }
     // Close the old autorenew event and poll message at the transfer time (aka now). This may end
     // up deleting the poll message.
-    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, now, domainHistoryId);
+    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurrence, now, domainHistoryId);
     DateTime newExpirationTime =
         computeExDateForApprovalTime(existingDomain, now, transferData.getTransferPeriod());
     // Create a new autorenew event starting at the expiration time.
-    BillingEvent.Recurring autorenewEvent =
-        new BillingEvent.Recurring.Builder()
+    Recurrence autorenewEvent =
+        new Recurrence.Builder()
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(targetId)
@@ -212,7 +212,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setRenewalPriceBehavior(
                 hasPackageToken
                     ? RenewalPriceBehavior.DEFAULT
-                    : existingRecurring.getRenewalPriceBehavior())
+                    : existingRecurrence.getRenewalPriceBehavior())
             .setRenewalPrice(renewalPrice)
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistoryId(domainHistoryId)

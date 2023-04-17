@@ -80,11 +80,11 @@
   </task>
 
   <task>
-    <url><![CDATA[/_dr/task/expandRecurringBillingEvents?advanceCursor]]></url>
-    <name>expandRecurringBillingEvents</name>
+    <url><![CDATA[/_dr/task/expandRecurrences?advanceCursor]]></url>
+    <name>expandRecurrences</name>
     <description>
-      This job runs an action that creates synthetic OneTime billing events from Recurring billing
-      events. Events are created for all instances of Recurring billing events that should exist
+      This job runs an action that creates synthetic OneTime billing events from Recurrence billing
+      events. Events are created for all instances of Recurrence billing events that should exist
       between the RECURRING_BILLING cursor's time and the execution time of the action.
     </description>
     <schedule>0 3 * * *</schedule>

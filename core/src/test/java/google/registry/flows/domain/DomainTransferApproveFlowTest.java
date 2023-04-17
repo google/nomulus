@@ -63,7 +63,7 @@ import google.registry.flows.exceptions.NotPendingTransferException;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.domain.Domain;
@@ -517,7 +517,7 @@ class DomainTransferApproveFlowTest
             .setEventTime(clock.nowUtc()) // The cancellation happens at the moment of transfer.
             .setBillingTime(
                 oldExpirationTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
-            .setRecurringEventKey(domain.getAutorenewBillingEvent()));
+            .setRecurrence(domain.getAutorenewBillingEvent()));
   }
 
   @Test
@@ -846,7 +846,7 @@ class DomainTransferApproveFlowTest
   @Test
   void testSuccess_superuserExtension_transferPeriodZero_autorenewGraceActive() throws Exception {
     Domain domain = reloadResourceByForeignKey();
-    VKey<Recurring> existingAutorenewEvent = domain.getAutorenewBillingEvent();
+    VKey<Recurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to have auto-renewed just before the transfer request, so that it will have an
     // active autorenew grace period spanning the entire transfer window.
     DateTime autorenewTime = clock.nowUtc().minusDays(1);
@@ -860,7 +860,7 @@ class DomainTransferApproveFlowTest
                     transferDataBuilder.setTransferPeriod(Period.create(0, Unit.YEARS)).build())
                 .setRegistrationExpirationTime(expirationTime)
                 .addGracePeriod(
-                    GracePeriod.createForRecurring(
+                    GracePeriod.createForRecurrence(
                         GracePeriodStatus.AUTO_RENEW,
                         domain.getRepoId(),
                         autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()),

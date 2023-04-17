@@ -372,8 +372,8 @@ class EppLifecycleDomainTest extends EppTestCase {
         oneTimeRenewBillingEvent,
         // There should be two ended recurring billing events, one each from the create and renew.
         // (The former was ended by the renew and the latter was ended by the delete.)
-        makeRecurringCreateBillingEvent(domain, createTime.plusYears(2), renewTime),
-        makeRecurringRenewBillingEvent(domain, createTime.plusYears(5), deleteTime),
+        makeCreateRecurrence(domain, createTime.plusYears(2), renewTime),
+        makeRenewRecurrence(domain, createTime.plusYears(5), deleteTime),
         // There should be Cancellations offsetting both of the one-times.
         makeCancellationBillingEventForCreate(
             domain, oneTimeCreateBillingEvent, createTime, deleteTime),
@@ -430,7 +430,7 @@ class EppLifecycleDomainTest extends EppTestCase {
         domain,
         // Check the existence of the expected create one-time billing event.
         oneTimeCreateBillingEvent,
-        makeRecurringCreateBillingEvent(domain, createTime.plusYears(2), deleteTime),
+        makeCreateRecurrence(domain, createTime.plusYears(2), deleteTime),
         // Check for the existence of a cancellation for the given one-time billing event.
         makeCancellationBillingEventForCreate(
             domain, oneTimeCreateBillingEvent, createTime, deleteTime));
@@ -495,7 +495,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertBillingEventsForResource(
         domain,
         makeOneTimeCreateBillingEvent(domain, createTime),
-        makeRecurringCreateBillingEvent(domain, createTime.plusYears(2), deleteTime));
+        makeCreateRecurrence(domain, createTime.plusYears(2), deleteTime));
 
     assertThatLogoutSucceeds();
 
@@ -559,7 +559,7 @@ class EppLifecycleDomainTest extends EppTestCase {
         expectedOneTimeCreateBillingEvent,
         // ... and the expected one-time EAP fee billing event ...
         expectedCreateEapBillingEvent,
-        makeRecurringCreateBillingEvent(domain, createTime.plusYears(2), deleteTime),
+        makeCreateRecurrence(domain, createTime.plusYears(2), deleteTime),
         // ... and verify that the create one-time billing event was canceled ...
         makeCancellationBillingEventForCreate(
             domain, expectedOneTimeCreateBillingEvent, createTime, deleteTime));

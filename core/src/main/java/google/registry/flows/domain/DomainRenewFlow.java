@@ -57,7 +57,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Renew;
 import google.registry.model.domain.DomainHistory;
@@ -203,15 +203,14 @@ public final class DomainRenewFlow implements TransactionalFlow {
     validateRegistrationPeriod(now, newExpirationTime);
     Optional<FeeRenewCommandExtension> feeRenew =
         eppInput.getSingleExtension(FeeRenewCommandExtension.class);
-    Recurring existingRecurringBillingEvent =
-        tm().loadByKey(existingDomain.getAutorenewBillingEvent());
+    Recurrence existingRecurrence = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     FeesAndCredits feesAndCredits =
         pricingLogic.getRenewPrice(
             Registry.get(existingDomain.getTld()),
             targetId,
             now,
             years,
-            existingRecurringBillingEvent,
+            existingRecurrence,
             allocationToken);
     validateFeeChallenge(feeRenew, feesAndCredits, defaultTokenUsed);
     flowCustomLogic.afterValidation(
@@ -227,11 +226,11 @@ public final class DomainRenewFlow implements TransactionalFlow {
         createRenewBillingEvent(
             tld, feesAndCredits.getTotalCost(), years, domainHistoryId, allocationToken, now);
     // Create a new autorenew billing event and poll message starting at the new expiration time.
-    BillingEvent.Recurring newAutorenewEvent =
+    Recurrence newAutorenewEvent =
         newAutorenewBillingEvent(existingDomain)
             .setEventTime(newExpirationTime)
-            .setRenewalPrice(existingRecurringBillingEvent.getRenewalPrice().orElse(null))
-            .setRenewalPriceBehavior(existingRecurringBillingEvent.getRenewalPriceBehavior())
+            .setRenewalPrice(existingRecurrence.getRenewalPrice().orElse(null))
+            .setRenewalPriceBehavior(existingRecurrence.getRenewalPriceBehavior())
             .setDomainHistoryId(domainHistoryId)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
@@ -240,8 +239,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
             .setDomainHistoryId(domainHistoryId)
             .build();
     // End the old autorenew billing event and poll message now. This may delete the poll message.
-    Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
-    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, now, domainHistoryId);
+    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurrence, now, domainHistoryId);
     Domain newDomain =
         existingDomain
             .asBuilder()

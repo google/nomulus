@@ -70,9 +70,9 @@ import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.flows.domain.DomainFlowUtils.TransfersAreAlwaysForOneYearException;
 import google.registry.flows.domain.DomainFlowUtils.UnknownFeeCommandException;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
-import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
@@ -1613,9 +1613,9 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
                 .setModificationTime(existingDomain.getCreationTime())
                 .setRegistrarId(existingDomain.getCreationRegistrarId())
                 .build());
-    BillingEvent.Recurring renewEvent =
+    Recurrence renewEvent =
         persistResource(
-            new BillingEvent.Recurring.Builder()
+            new Recurrence.Builder()
                 .setReason(Reason.RENEW)
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(existingDomain.getDomainName())

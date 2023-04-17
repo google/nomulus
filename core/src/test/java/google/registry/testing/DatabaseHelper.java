@@ -64,7 +64,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
@@ -311,7 +311,7 @@ public final class DatabaseHelper {
     return persistResource(domain.asBuilder().setDeletionTime(deletionTime).build());
   }
 
-  /** Persists a {@link Recurring} and {@link HistoryEntry} for a domain that already exists. */
+  /** Persists a {@link Recurrence} and {@link HistoryEntry} for a domain that already exists. */
   public static Domain persistBillingRecurrenceForDomain(
       Domain domain, RenewalPriceBehavior renewalPriceBehavior, @Nullable Money renewalPrice) {
     DomainHistory historyEntry =
@@ -322,9 +322,9 @@ public final class DatabaseHelper {
                 .setModificationTime(domain.getCreationTime())
                 .setDomain(domain)
                 .build());
-    Recurring recurring =
+    Recurrence recurrence =
         persistResource(
-            new BillingEvent.Recurring.Builder()
+            new Recurrence.Builder()
                 .setDomainHistory(historyEntry)
                 .setRenewalPrice(renewalPrice)
                 .setRenewalPriceBehavior(renewalPriceBehavior)
@@ -337,7 +337,7 @@ public final class DatabaseHelper {
                 .setTargetId(domain.getDomainName())
                 .build());
     return persistResource(
-        domain.asBuilder().setAutorenewBillingEvent(recurring.createVKey()).build());
+        domain.asBuilder().setAutorenewBillingEvent(recurrence.createVKey()).build());
   }
 
   public static ReservedList persistReservedList(String listName, String... lines) {
@@ -619,9 +619,9 @@ public final class DatabaseHelper {
                 .setDomain(domain)
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
-    BillingEvent.Recurring autorenewEvent =
+    Recurrence autorenewEvent =
         persistResource(
-            new BillingEvent.Recurring.Builder()
+            new Recurrence.Builder()
                 .setReason(Reason.RENEW)
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(domainName)
@@ -665,9 +665,9 @@ public final class DatabaseHelper {
         persistResource(
             createBillingEventForTransfer(
                 domain, historyEntryDomainTransfer, requestTime, expirationTime));
-    BillingEvent.Recurring gainingClientAutorenewEvent =
+    Recurrence gainingClientAutorenewEvent =
         persistResource(
-            new BillingEvent.Recurring.Builder()
+            new Recurrence.Builder()
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setReason(Reason.RENEW)
                 .setTargetId(domain.getDomainName())
@@ -791,7 +791,7 @@ public final class DatabaseHelper {
             () ->
                 Iterables.concat(
                     tm().loadAllOf(BillingEvent.OneTime.class),
-                    tm().loadAllOf(BillingEvent.Recurring.class),
+                    tm().loadAllOf(Recurrence.class),
                     tm().loadAllOf(BillingEvent.Cancellation.class)));
   }
 
@@ -802,9 +802,9 @@ public final class DatabaseHelper {
                     tm().loadAllOfStream(BillingEvent.OneTime.class)
                         .filter(oneTime -> oneTime.getDomainRepoId().equals(resource.getRepoId()))
                         .collect(toImmutableList()),
-                    tm().loadAllOfStream(BillingEvent.Recurring.class)
+                    tm().loadAllOfStream(Recurrence.class)
                         .filter(
-                            recurring -> recurring.getDomainRepoId().equals(resource.getRepoId()))
+                            recurrence -> recurrence.getDomainRepoId().equals(resource.getRepoId()))
                         .collect(toImmutableList()),
                     tm().loadAllOfStream(BillingEvent.Cancellation.class)
                         .filter(

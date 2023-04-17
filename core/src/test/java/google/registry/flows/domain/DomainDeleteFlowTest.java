@@ -136,7 +136,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   private void setUpSuccessfulTest() throws Exception {
     createReferencedEntities(A_MONTH_FROM_NOW);
-    BillingEvent.Recurring autorenewBillingEvent =
+    BillingEvent.Recurrence autorenewBillingEvent =
         persistResource(createAutorenewBillingEvent("TheRegistrar").build());
     PollMessage.Autorenew autorenewPollMessage =
         persistResource(createAutorenewPollMessage("TheRegistrar").build());
@@ -193,7 +193,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   private void setUpAutorenewGracePeriod() throws Exception {
     createReferencedEntities(A_MONTH_AGO.plusYears(1));
-    BillingEvent.Recurring autorenewBillingEvent =
+    BillingEvent.Recurrence autorenewBillingEvent =
         persistResource(
             createAutorenewBillingEvent("TheRegistrar").setEventTime(A_MONTH_AGO).build());
     PollMessage.Autorenew autorenewPollMessage =
@@ -205,7 +205,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 .asBuilder()
                 .setGracePeriods(
                     ImmutableSet.of(
-                        GracePeriod.createForRecurring(
+                        GracePeriod.createForRecurrence(
                             GracePeriodStatus.AUTO_RENEW,
                             domain.getRepoId(),
                             A_MONTH_AGO.plusDays(45),
@@ -236,7 +236,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setRegistrarId("TheRegistrar")
             .setEventTime(eventTime)
             .setBillingTime(TIME_BEFORE_FLOW.plusDays(1))
-            .setOneTimeEventKey(graceBillingEvent.createVKey())
+            .setOneTime(graceBillingEvent.createVKey())
             .setDomainHistory(historyEntryDomainDelete)
             .build());
   }
@@ -261,8 +261,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .build();
   }
 
-  private BillingEvent.Recurring.Builder createAutorenewBillingEvent(String registrarId) {
-    return new BillingEvent.Recurring.Builder()
+  private BillingEvent.Recurrence.Builder createAutorenewBillingEvent(String registrarId) {
+    return new BillingEvent.Recurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId("example.tld")

@@ -108,7 +108,7 @@ public abstract class BillingEvent extends ImmutableObject
     SUNRISE,
     /**
      * This flag will be added to any {@link OneTime} events that are created via, e.g., an
-     * automated process to expand {@link Recurring} events.
+     * automated process to expand {@link Recurrence} events.
      */
     SYNTHETIC
   }
@@ -137,7 +137,7 @@ public abstract class BillingEvent extends ImmutableObject
      */
     NONPREMIUM,
     /**
-     * This indicates that the renewalPrice in {@link Recurring} will be used for domain renewal.
+     * This indicates that the renewalPrice in {@link Recurrence} will be used for domain renewal.
      *
      * <p>The renewalPrice has a non-null value iff the price behavior is set to "SPECIFIED". This
      * behavior is used with internal registrations.
@@ -160,7 +160,7 @@ public abstract class BillingEvent extends ImmutableObject
   @Column(nullable = false)
   String domainRepoId;
 
-  /** When this event was created. For recurring events, this is also the recurrence start time. */
+  /** When this event was created. For recurrence events, this is also the recurrence start time. */
   @Column(nullable = false)
   DateTime eventTime;
 
@@ -320,20 +320,20 @@ public abstract class BillingEvent extends ImmutableObject
     DateTime syntheticCreationTime;
 
     /**
-     * For {@link Flag#SYNTHETIC} events, a {@link VKey} to the {@link Recurring} from which this
+     * For {@link Flag#SYNTHETIC} events, a {@link VKey} to the {@link Recurrence} from which this
      * {@link OneTime} was created. This is needed in order to properly match billing events against
      * {@link Cancellation}s.
      */
     @Column(name = "cancellation_matching_billing_recurrence_id")
-    VKey<Recurring> cancellationMatchingBillingEvent;
+    VKey<Recurrence> cancellationMatchingBillingEvent;
 
     /**
      * For {@link Flag#SYNTHETIC} events, the {@link DomainHistory} revision ID of the {@link
-     * Recurring} from which this {@link OneTime} was created. This is needed in order to recreate
+     * Recurrence} from which this {@link OneTime} was created. This is needed in order to recreate
      * the {@link VKey} when reading from SQL.
      */
     @Column(name = "recurrence_history_revision_id")
-    Long recurringEventHistoryRevisionId;
+    Long recurrenceHistoryRevisionId;
 
     /**
      * The {@link AllocationToken} used in the creation of this event, or null if one was not used.
@@ -356,12 +356,12 @@ public abstract class BillingEvent extends ImmutableObject
       return syntheticCreationTime;
     }
 
-    public VKey<Recurring> getCancellationMatchingBillingEvent() {
+    public VKey<Recurrence> getCancellationMatchingBillingEvent() {
       return cancellationMatchingBillingEvent;
     }
 
-    public Long getRecurringEventHistoryRevisionId() {
-      return recurringEventHistoryRevisionId;
+    public Long getRecurrenceHistoryRevisionId() {
+      return recurrenceHistoryRevisionId;
     }
 
     public Optional<VKey<AllocationToken>> getAllocationToken() {
@@ -414,10 +414,10 @@ public abstract class BillingEvent extends ImmutableObject
       }
 
       public Builder setCancellationMatchingBillingEvent(
-          Recurring cancellationMatchingBillingEvent) {
+          Recurrence cancellationMatchingBillingEvent) {
         getInstance().cancellationMatchingBillingEvent =
             cancellationMatchingBillingEvent.createVKey();
-        getInstance().recurringEventHistoryRevisionId =
+        getInstance().recurrenceHistoryRevisionId =
             cancellationMatchingBillingEvent.getDomainHistoryRevisionId();
         return this;
       }
@@ -474,7 +474,7 @@ public abstract class BillingEvent extends ImmutableObject
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_recurrence_id"))
   @WithVKey(Long.class)
-  public static class Recurring extends BillingEvent {
+  public static class Recurrence extends BillingEvent {
 
     /**
      * The billing event recurs every year between {@link #eventTime} and this time on the [month,
@@ -547,12 +547,12 @@ public abstract class BillingEvent extends ImmutableObject
     }
 
     @Override
-    public VKey<Recurring> createVKey() {
+    public VKey<Recurrence> createVKey() {
       return createVKey(getId());
     }
 
-    public static VKey<Recurring> createVKey(Long id) {
-      return VKey.create(Recurring.class, id);
+    public static VKey<Recurrence> createVKey(Long id) {
+      return VKey.create(Recurrence.class, id);
     }
 
     @Override
@@ -560,12 +560,12 @@ public abstract class BillingEvent extends ImmutableObject
       return new Builder(clone(this));
     }
 
-    /** A builder for {@link Recurring} since it is immutable. */
-    public static class Builder extends BillingEvent.Builder<Recurring, Builder> {
+    /** A builder for {@link Recurrence} since it is immutable. */
+    public static class Builder extends BillingEvent.Builder<Recurrence, Builder> {
 
       public Builder() {}
 
-      private Builder(Recurring instance) {
+      private Builder(Recurrence instance) {
         super(instance);
       }
 
@@ -590,8 +590,8 @@ public abstract class BillingEvent extends ImmutableObject
       }
 
       @Override
-      public Recurring build() {
-        Recurring instance = getInstance();
+      public Recurrence build() {
+        Recurrence instance = getInstance();
         checkNotNull(instance.eventTime);
         checkNotNull(instance.reason);
         // Don't require recurrenceLastExpansion to be individually set on every new Recurrence.
@@ -636,28 +636,20 @@ public abstract class BillingEvent extends ImmutableObject
     /** The billing time of the charge that is being cancelled. */
     DateTime billingTime;
 
-    /**
-     * The one-time billing event to cancel, or null for autorenew cancellations.
-     *
-     * <p>Although the type is {@link VKey} the name "ref" is preserved for historical reasons.
-     */
+    /** The one-time billing event to cancel, or null for autorenew cancellations. */
     @Column(name = "billing_event_id")
-    VKey<OneTime> refOneTime;
+    VKey<OneTime> oneTime;
 
-    /**
-     * The recurring billing event to cancel, or null for non-autorenew cancellations.
-     *
-     * <p>Although the type is {@link VKey} the name "ref" is preserved for historical reasons.
-     */
+    /** The Recurrence to cancel, or null for non-autorenew cancellations. */
     @Column(name = "billing_recurrence_id")
-    VKey<Recurring> refRecurring;
+    VKey<Recurrence> recurrence;
 
     public DateTime getBillingTime() {
       return billingTime;
     }
 
     public VKey<? extends BillingEvent> getEventKey() {
-      return firstNonNull(refOneTime, refRecurring);
+      return firstNonNull(oneTime, recurrence);
     }
 
     /** The mapping from billable grace period types to originating billing event reasons. */
@@ -693,9 +685,9 @@ public abstract class BillingEvent extends ImmutableObject
               .setDomainHistoryId(domainHistoryId);
       // Set the grace period's billing event using the appropriate Cancellation builder method.
       if (gracePeriod.getOneTimeBillingEvent() != null) {
-        builder.setOneTimeEventKey(gracePeriod.getOneTimeBillingEvent());
-      } else if (gracePeriod.getRecurringBillingEvent() != null) {
-        builder.setRecurringEventKey(gracePeriod.getRecurringBillingEvent());
+        builder.setOneTime(gracePeriod.getOneTimeBillingEvent());
+      } else if (gracePeriod.getRecurrenceBillingEvent() != null) {
+        builder.setRecurrence(gracePeriod.getRecurrenceBillingEvent());
       }
       return builder.build();
     }
@@ -728,13 +720,13 @@ public abstract class BillingEvent extends ImmutableObject
         return this;
       }
 
-      public Builder setOneTimeEventKey(VKey<OneTime> eventKey) {
-        getInstance().refOneTime = eventKey;
+      public Builder setOneTime(VKey<OneTime> oneTime) {
+        getInstance().oneTime = oneTime;
         return this;
       }
 
-      public Builder setRecurringEventKey(VKey<Recurring> eventKey) {
-        getInstance().refRecurring = eventKey;
+      public Builder setRecurrence(VKey<Recurrence> recurrence) {
+        getInstance().recurrence = recurrence;
         return this;
       }
 
@@ -744,7 +736,7 @@ public abstract class BillingEvent extends ImmutableObject
         checkNotNull(instance.billingTime, "Must set billing time");
         checkNotNull(instance.reason, "Must set reason");
         checkState(
-            (instance.refOneTime == null) != (instance.refRecurring == null),
+            (instance.oneTime == null) != (instance.recurrence == null),
             "Cancellations must have exactly one billing event key set");
         return super.build();
       }

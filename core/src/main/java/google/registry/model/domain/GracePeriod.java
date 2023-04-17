@@ -20,7 +20,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
@@ -61,14 +61,14 @@ public class GracePeriod extends GracePeriodBase {
       DateTime expirationTime,
       String registrarId,
       @Nullable VKey<BillingEvent.OneTime> billingEventOneTime,
-      @Nullable VKey<BillingEvent.Recurring> billingEventRecurring,
+      @Nullable VKey<Recurrence> billingEventRecurrence,
       @Nullable Long gracePeriodId) {
     checkArgument(
-        billingEventOneTime == null || billingEventRecurring == null,
+        billingEventOneTime == null || billingEventRecurrence == null,
         "A grace period can have at most one billing event");
     checkArgument(
-        (billingEventRecurring != null) == GracePeriodStatus.AUTO_RENEW.equals(type),
-        "Recurring billing events must be present on (and only on) autorenew grace periods");
+        (billingEventRecurrence != null) == GracePeriodStatus.AUTO_RENEW.equals(type),
+        "Recurrences must be present on (and only on) autorenew grace periods");
     GracePeriod instance = new GracePeriod();
     instance.gracePeriodId = gracePeriodId == null ? allocateId() : gracePeriodId;
     instance.type = checkArgumentNotNull(type);
@@ -76,7 +76,7 @@ public class GracePeriod extends GracePeriodBase {
     instance.expirationTime = checkArgumentNotNull(expirationTime);
     instance.clientId = checkArgumentNotNull(registrarId);
     instance.billingEventOneTime = billingEventOneTime;
-    instance.billingEventRecurring = billingEventRecurring;
+    instance.billingEventRecurrence = billingEventRecurrence;
     return instance;
   }
 
@@ -124,39 +124,39 @@ public class GracePeriod extends GracePeriodBase {
         history.expirationTime,
         history.clientId,
         history.billingEventOneTime,
-        history.billingEventRecurring,
+        history.billingEventRecurrence,
         history.gracePeriodId);
   }
 
-  /** Creates a GracePeriod for a Recurring billing event. */
-  public static GracePeriod createForRecurring(
+  /** Creates a GracePeriod for a Recurrence billing event. */
+  public static GracePeriod createForRecurrence(
       GracePeriodStatus type,
       String domainRepoId,
       DateTime expirationTime,
       String registrarId,
-      VKey<Recurring> billingEventRecurring) {
-    checkArgumentNotNull(billingEventRecurring, "billingEventRecurring cannot be null");
+      VKey<Recurrence> billingEventRecurrence) {
+    checkArgumentNotNull(billingEventRecurrence, "billingEventRecurrence cannot be null");
     return createInternal(
-        type, domainRepoId, expirationTime, registrarId, null, billingEventRecurring, null);
+        type, domainRepoId, expirationTime, registrarId, null, billingEventRecurrence, null);
   }
 
-  /** Creates a GracePeriod for a Recurring billing event and a given {@link #gracePeriodId}. */
+  /** Creates a GracePeriod for a Recurrence billing event and a given {@link #gracePeriodId}. */
   @VisibleForTesting
-  public static GracePeriod createForRecurring(
+  public static GracePeriod createForRecurrence(
       GracePeriodStatus type,
       String domainRepoId,
       DateTime expirationTime,
       String registrarId,
-      VKey<Recurring> billingEventRecurring,
+      VKey<Recurrence> billingEventRecurrence,
       @Nullable Long gracePeriodId) {
-    checkArgumentNotNull(billingEventRecurring, "billingEventRecurring cannot be null");
+    checkArgumentNotNull(billingEventRecurrence, "billingEventRecurrence cannot be null");
     return createInternal(
         type,
         domainRepoId,
         expirationTime,
         registrarId,
         null,
-        billingEventRecurring,
+        billingEventRecurrence,
         gracePeriodId);
   }
 
@@ -206,7 +206,7 @@ public class GracePeriod extends GracePeriodBase {
       instance.expirationTime = gracePeriod.expirationTime;
       instance.clientId = gracePeriod.clientId;
       instance.billingEventOneTime = gracePeriod.billingEventOneTime;
-      instance.billingEventRecurring = gracePeriod.billingEventRecurring;
+      instance.billingEventRecurrence = gracePeriod.billingEventRecurrence;
       return instance;
     }
   }

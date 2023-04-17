@@ -40,7 +40,7 @@
 
     <class>google.registry.model.billing.BillingEvent$Cancellation</class>
     <class>google.registry.model.billing.BillingEvent$OneTime</class>
-    <class>google.registry.model.billing.BillingEvent$Recurring</class>
+    <class>google.registry.model.billing.BillingEvent$Recurrence</class>
     <class>google.registry.model.common.Cursor</class>
     <class>google.registry.model.common.DatabaseMigrationStateSchedule</class>
     <class>google.registry.model.common.DnsRefreshRequest</class>
@@ -107,7 +107,7 @@
     <!-- Generated converters for VKey -->
     <class>google.registry.model.billing.VKeyConverter_Cancellation</class>
     <class>google.registry.model.billing.VKeyConverter_OneTime</class>
-    <class>google.registry.model.billing.VKeyConverter_Recurring</class>
+    <class>google.registry.model.billing.VKeyConverter_Recurrence</class>
     <class>google.registry.model.contact.VKeyConverter_Contact</class>
     <class>google.registry.model.domain.VKeyConverter_Domain</class>
     <class>google.registry.model.domain.token.VKeyConverter_AllocationToken</class>
