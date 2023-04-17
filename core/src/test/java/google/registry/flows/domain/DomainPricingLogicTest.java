@@ -40,9 +40,8 @@ import google.registry.flows.HttpSessionMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.custom.DomainPricingCustomLogic;
 import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
-import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -98,8 +97,8 @@ public class DomainPricingLogicTest {
                 .build());
   }
 
-  /** helps to set up the domain info and returns a recurring billing event for testing */
-  private Recurring persistDomainAndSetRecurringBillingEvent(
+  /** helps to set up the domain info and returns a recurrence billing event for testing */
+  private Recurrence persistDomainAndSetRecurrence(
       String domainName, RenewalPriceBehavior renewalPriceBehavior, Optional<Money> renewalPrice) {
     domain =
         persistResource(
@@ -115,9 +114,9 @@ public class DomainPricingLogicTest {
                 .setModificationTime(DateTime.parse("1999-01-05T00:00:00Z"))
                 .setDomain(domain)
                 .build());
-    Recurring recurring =
+    Recurrence recurrence =
         persistResource(
-            new BillingEvent.Recurring.Builder()
+            new Recurrence.Builder()
                 .setDomainHistory(historyEntry)
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .setEventTime(DateTime.parse("1999-01-05T00:00:00Z"))
@@ -129,8 +128,8 @@ public class DomainPricingLogicTest {
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setTargetId(domain.getDomainName())
                 .build());
-    persistResource(domain.asBuilder().setAutorenewBillingEvent(recurring.createVKey()).build());
-    return recurring;
+    persistResource(domain.asBuilder().setAutorenewBillingEvent(recurrence.createVKey()).build());
+    return recurrence;
   }
 
   @Test
@@ -193,8 +192,7 @@ public class DomainPricingLogicTest {
                 "premium.example",
                 clock.nowUtc(),
                 1,
-                persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", DEFAULT, Optional.empty()),
+                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
                 Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -220,8 +218,7 @@ public class DomainPricingLogicTest {
                 "premium.example",
                 clock.nowUtc(),
                 1,
-                persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", DEFAULT, Optional.empty()),
+                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -250,8 +247,7 @@ public class DomainPricingLogicTest {
                 "premium.example",
                 clock.nowUtc(),
                 1,
-                persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", DEFAULT, Optional.empty()),
+                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)));
   }
 
@@ -263,8 +259,7 @@ public class DomainPricingLogicTest {
                 "premium.example",
                 clock.nowUtc(),
                 5,
-                persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", DEFAULT, Optional.empty()),
+                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
                 Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -291,8 +286,7 @@ public class DomainPricingLogicTest {
                 "premium.example",
                 clock.nowUtc(),
                 5,
-                persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", DEFAULT, Optional.empty()),
+                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -322,8 +316,7 @@ public class DomainPricingLogicTest {
                 "premium.example",
                 clock.nowUtc(),
                 5,
-                persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", DEFAULT, Optional.empty()),
+                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)));
   }
 
@@ -336,8 +329,7 @@ public class DomainPricingLogicTest {
                 "standard.example",
                 clock.nowUtc(),
                 1,
-                persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", DEFAULT, Optional.empty()),
+                persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty()),
                 Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -363,8 +355,7 @@ public class DomainPricingLogicTest {
                 "standard.example",
                 clock.nowUtc(),
                 1,
-                persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", DEFAULT, Optional.empty()),
+                persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -382,8 +373,7 @@ public class DomainPricingLogicTest {
                 "standard.example",
                 clock.nowUtc(),
                 5,
-                persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", DEFAULT, Optional.empty()),
+                persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty()),
                 Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -410,8 +400,7 @@ public class DomainPricingLogicTest {
                 "standard.example",
                 clock.nowUtc(),
                 5,
-                persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", DEFAULT, Optional.empty()),
+                persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -429,8 +418,7 @@ public class DomainPricingLogicTest {
                 "premium.example",
                 clock.nowUtc(),
                 1,
-                persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", NONPREMIUM, Optional.empty()),
+                persistDomainAndSetRecurrence("premium.example", NONPREMIUM, Optional.empty()),
                 Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -457,8 +445,7 @@ public class DomainPricingLogicTest {
                 "premium.example",
                 clock.nowUtc(),
                 1,
-                persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", NONPREMIUM, Optional.empty()),
+                persistDomainAndSetRecurrence("premium.example", NONPREMIUM, Optional.empty()),
                 Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -476,8 +463,7 @@ public class DomainPricingLogicTest {
                 "premium.example",
                 clock.nowUtc(),
                 5,
-                persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", NONPREMIUM, Optional.empty()),
+                persistDomainAndSetRecurrence("premium.example", NONPREMIUM, Optional.empty()),
                 Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -505,8 +491,7 @@ public class DomainPricingLogicTest {
                 "premium.example",
                 clock.nowUtc(),
                 5,
-                persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", NONPREMIUM, Optional.empty()),
+                persistDomainAndSetRecurrence("premium.example", NONPREMIUM, Optional.empty()),
                 Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -524,8 +509,7 @@ public class DomainPricingLogicTest {
                 "standard.example",
                 clock.nowUtc(),
                 1,
-                persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", NONPREMIUM, Optional.empty()),
+                persistDomainAndSetRecurrence("standard.example", NONPREMIUM, Optional.empty()),
                 Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -543,8 +527,7 @@ public class DomainPricingLogicTest {
                 "standard.example",
                 clock.nowUtc(),
                 5,
-                persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", NONPREMIUM, Optional.empty()),
+                persistDomainAndSetRecurrence("standard.example", NONPREMIUM, Optional.empty()),
                 Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -562,7 +545,7 @@ public class DomainPricingLogicTest {
                 "standard.example",
                 clock.nowUtc(),
                 1,
-                persistDomainAndSetRecurringBillingEvent(
+                persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
                 Optional.empty()))
         .isEqualTo(
@@ -590,7 +573,7 @@ public class DomainPricingLogicTest {
                 "standard.example",
                 clock.nowUtc(),
                 1,
-                persistDomainAndSetRecurringBillingEvent(
+                persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
                 Optional.of(allocationToken)))
 
@@ -621,7 +604,7 @@ public class DomainPricingLogicTest {
                 "standard.example",
                 clock.nowUtc(),
                 1,
-                persistDomainAndSetRecurringBillingEvent(
+                persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
                 Optional.of(allocationToken)))
 
@@ -632,8 +615,7 @@ public class DomainPricingLogicTest {
                 .addFeeOrCredit(Fee.create(Money.of(USD, 1).getAmount(), RENEW, false))
                 .build());
     assertThat(
-            Iterables.getLast(DatabaseHelper.loadAllOf(BillingEvent.Recurring.class))
-                .getRenewalPriceBehavior())
+            Iterables.getLast(DatabaseHelper.loadAllOf(Recurrence.class)).getRenewalPriceBehavior())
         .isEqualTo(SPECIFIED);
   }
 
@@ -646,7 +628,7 @@ public class DomainPricingLogicTest {
                 "standard.example",
                 clock.nowUtc(),
                 5,
-                persistDomainAndSetRecurringBillingEvent(
+                persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
                 Optional.empty()))
         .isEqualTo(
@@ -674,7 +656,7 @@ public class DomainPricingLogicTest {
                 "standard.example",
                 clock.nowUtc(),
                 5,
-                persistDomainAndSetRecurringBillingEvent(
+                persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
                 Optional.of(allocationToken)))
         .isEqualTo(
@@ -693,7 +675,7 @@ public class DomainPricingLogicTest {
                 "premium.example",
                 clock.nowUtc(),
                 1,
-                persistDomainAndSetRecurringBillingEvent(
+                persistDomainAndSetRecurrence(
                     "premium.example", SPECIFIED, Optional.of(Money.of(USD, 17))),
                 Optional.empty()))
         .isEqualTo(
@@ -712,7 +694,7 @@ public class DomainPricingLogicTest {
                 "premium.example",
                 clock.nowUtc(),
                 5,
-                persistDomainAndSetRecurringBillingEvent(
+                persistDomainAndSetRecurrence(
                     "premium.example", SPECIFIED, Optional.of(Money.of(USD, 17))),
                 Optional.empty()))
         .isEqualTo(
@@ -764,8 +746,7 @@ public class DomainPricingLogicTest {
                 registry,
                 "standard.example",
                 clock.nowUtc(),
-                persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", DEFAULT, Optional.empty())))
+                persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty())))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -780,8 +761,7 @@ public class DomainPricingLogicTest {
                 registry,
                 "premium.example",
                 clock.nowUtc(),
-                persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", DEFAULT, Optional.empty())))
+                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty())))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -797,8 +777,7 @@ public class DomainPricingLogicTest {
                 registry,
                 "standard.example",
                 clock.nowUtc(),
-                persistDomainAndSetRecurringBillingEvent(
-                    "standard.example", NONPREMIUM, Optional.empty())))
+                persistDomainAndSetRecurrence("standard.example", NONPREMIUM, Optional.empty())))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -814,8 +793,7 @@ public class DomainPricingLogicTest {
                 registry,
                 "premium.example",
                 clock.nowUtc(),
-                persistDomainAndSetRecurringBillingEvent(
-                    "premium.example", NONPREMIUM, Optional.empty())))
+                persistDomainAndSetRecurrence("premium.example", NONPREMIUM, Optional.empty())))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -831,7 +809,7 @@ public class DomainPricingLogicTest {
                 registry,
                 "standard.example",
                 clock.nowUtc(),
-                persistDomainAndSetRecurringBillingEvent(
+                persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1.23)))))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -848,7 +826,7 @@ public class DomainPricingLogicTest {
                 registry,
                 "premium.example",
                 clock.nowUtc(),
-                persistDomainAndSetRecurringBillingEvent(
+                persistDomainAndSetRecurrence(
                     "premium.example", SPECIFIED, Optional.of(Money.of(USD, 1.23)))))
         .isEqualTo(
             new FeesAndCredits.Builder()

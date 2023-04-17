@@ -164,19 +164,19 @@ class EppLifecycleToolsTest extends EppTestCase {
         makeOneTimeCreateBillingEvent(domain, createTime),
         renewBillingEvent,
         // The initial autorenew billing event, which was closed at the time of the explicit renew.
-        makeRecurringBillingEvent(
+        makeRecurrence(
             domain,
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class),
             createTime.plusYears(2),
             DateTime.parse("2000-06-07T00:00:00.000Z")),
         // The renew's autorenew billing event, which was closed at the time of the unrenew.
-        makeRecurringBillingEvent(
+        makeRecurrence(
             domain,
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class),
             DateTime.parse("2006-06-01T00:02:00.000Z"),
             DateTime.parse("2001-06-07T00:00:00.000Z")),
         // The remaining active autorenew billing event which was created by the unrenew.
-        makeRecurringBillingEvent(
+        makeRecurrence(
             domain,
             getOnlyHistoryEntryOfType(domain, Type.SYNTHETIC, DomainHistory.class),
             DateTime.parse("2003-06-01T00:02:00.000Z"),

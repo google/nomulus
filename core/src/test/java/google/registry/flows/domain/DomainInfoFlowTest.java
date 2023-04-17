@@ -53,7 +53,7 @@ import google.registry.flows.domain.DomainFlowUtils.RestoresAreAlwaysForOneYearE
 import google.registry.flows.domain.DomainFlowUtils.TransfersAreAlwaysForOneYearException;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
@@ -384,9 +384,9 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setModificationTime(clock.nowUtc())
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
-    Recurring renewEvent =
+    Recurrence renewEvent =
         persistResource(
-            new Recurring.Builder()
+            new Recurrence.Builder()
                 .setReason(Reason.RENEW)
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(getUniqueIdFromCommand())
@@ -395,18 +395,18 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setDomainHistory(historyEntry)
                 .build());
-    VKey<Recurring> recurringVKey = renewEvent.createVKey();
+    VKey<Recurrence> recurrenceVKey = renewEvent.createVKey();
     // Add an AUTO_RENEW grace period to the saved resource.
     persistResource(
         domain
             .asBuilder()
             .addGracePeriod(
-                GracePeriod.createForRecurring(
+                GracePeriod.createForRecurrence(
                     GracePeriodStatus.AUTO_RENEW,
                     domain.getRepoId(),
                     clock.nowUtc().plusDays(1),
                     "TheRegistrar",
-                    recurringVKey))
+                    recurrenceVKey))
             .build());
     doSuccessfulTest("domain_info_response_autorenewperiod.xml", false, ImmutableMap.of(), true);
   }

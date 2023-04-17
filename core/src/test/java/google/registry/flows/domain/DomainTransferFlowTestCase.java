@@ -138,8 +138,8 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   }
 
   /** Get the autorenew event that the losing client will have after a SERVER_APPROVED transfer. */
-  BillingEvent.Recurring getLosingClientAutorenewEvent() {
-    return new BillingEvent.Recurring.Builder()
+  BillingEvent.Recurrence getLosingClientAutorenewEvent() {
+    return new BillingEvent.Recurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())
@@ -151,8 +151,8 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   }
 
   /** Get the autorenew event that the gaining client will have after a SERVER_APPROVED transfer. */
-  BillingEvent.Recurring getGainingClientAutorenewEvent() {
-    return new BillingEvent.Recurring.Builder()
+  BillingEvent.Recurrence getGainingClientAutorenewEvent() {
+    return new BillingEvent.Recurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())

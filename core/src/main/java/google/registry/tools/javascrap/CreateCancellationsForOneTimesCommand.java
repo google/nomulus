@@ -99,7 +99,7 @@ public class CreateCancellationsForOneTimesCommand extends ConfirmingCommand {
                     }
                     tm().put(
                             new Cancellation.Builder()
-                                .setOneTimeEventKey(oneTime.createVKey())
+                                .setOneTime(oneTime.createVKey())
                                 .setBillingTime(oneTime.getBillingTime())
                                 .setDomainHistoryId(oneTime.getHistoryEntryId())
                                 .setRegistrarId(oneTime.getRegistrarId())
@@ -117,7 +117,7 @@ public class CreateCancellationsForOneTimesCommand extends ConfirmingCommand {
 
   private boolean alreadyCancelled(OneTime oneTime) {
     return tm().createQueryComposer(Cancellation.class)
-        .where("refOneTime", Comparator.EQ, oneTime.getId())
+        .where("oneTime", Comparator.EQ, oneTime.getId())
         .first()
         .isPresent();
   }

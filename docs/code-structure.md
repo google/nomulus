@@ -72,7 +72,7 @@ The following cursor types are defined:
 *   **`RDE_UPLOAD`** - RDE (thick) escrow deposit upload
 *   **`RDE_UPLOAD_SFTP`** - Cursor that tracks the last time we talked to the
     escrow provider's SFTP server for a given TLD.
-*   **`RECURRING_BILLING`** - Expansion of `Recurring` (renew) billing events
+*   **`RECURRING_BILLING`** - Expansion of `Recurrence` (renew) billing events
     into `OneTime` events.
 *   **`SYNC_REGISTRAR_SHEET`** - Tracks the last time the registrar spreadsheet
     was successfully synced.
@@ -265,10 +265,10 @@ There are 4 types of billing events, all of which extend the abstract
 `BillingEvent` base class:
 
 *   **`OneTime`**, a one-time billing event.
-*   **`Recurring`**, a recurring billing event (used for events such as domain
+*   **`Recurrence`**, a recurring billing event (used for events such as domain
     renewals).
 *   **`Cancellation`**, which represents the cancellation of either a `OneTime`
-    or `Recurring` billing event. This is implemented as a distinct event to
+    or `Recurrence` billing event. This is implemented as a distinct event to
     preserve the immutability of billing events.
 *   **`Modification`**, a change to an existing `OneTime` billing event (for
     instance, to represent a discount or refund).

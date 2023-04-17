@@ -162,8 +162,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                         .setModificationTime(clock.nowUtc())
                         .setRegistrarId(domain.getCreationRegistrarId())
                         .build();
-                BillingEvent.Recurring autorenewEvent =
-                    new BillingEvent.Recurring.Builder()
+                BillingEvent.Recurrence autorenewEvent =
+                    new BillingEvent.Recurrence.Builder()
                         .setReason(Reason.RENEW)
                         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                         .setTargetId(getUniqueIdFromCommand())
@@ -286,7 +286,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .build();
     assertBillingEvents(
         renewBillingEvent,
-        new BillingEvent.Recurring.Builder()
+        new BillingEvent.Recurrence.Builder()
             .setReason(Reason.RENEW)
             .setRenewalPriceBehavior(renewalPriceBehavior)
             .setRenewalPrice(renewalPrice)
@@ -299,7 +299,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 getOnlyHistoryEntryOfType(
                     domain, HistoryEntry.Type.DOMAIN_CREATE, DomainHistory.class))
             .build(),
-        new BillingEvent.Recurring.Builder()
+        new BillingEvent.Recurrence.Builder()
             .setReason(Reason.RENEW)
             .setRenewalPriceBehavior(renewalPriceBehavior)
             .setRenewalPrice(renewalPrice)

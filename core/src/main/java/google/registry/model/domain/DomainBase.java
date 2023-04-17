@@ -44,7 +44,7 @@ import com.google.gson.annotations.Expose;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Recurrence;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -200,7 +200,7 @@ public class DomainBase extends EppResource
    * should be created, and this field should be updated to point to the new one.
    */
   @Column(name = "billing_recurrence_id")
-  VKey<Recurring> autorenewBillingEvent;
+  VKey<Recurrence> autorenewBillingEvent;
 
   /**
    * The recurring poll message associated with this domain's autorenewals.
@@ -286,7 +286,7 @@ public class DomainBase extends EppResource
     return deletePollMessage;
   }
 
-  public VKey<Recurring> getAutorenewBillingEvent() {
+  public VKey<Recurrence> getAutorenewBillingEvent() {
     return autorenewBillingEvent;
   }
 
@@ -520,7 +520,7 @@ public class DomainBase extends EppResource
       builder
           .setRegistrationExpirationTime(newExpirationTime)
           .addGracePeriod(
-              GracePeriod.createForRecurring(
+              GracePeriod.createForRecurrence(
                   GracePeriodStatus.AUTO_RENEW,
                   domain.getRepoId(),
                   lastAutorenewTime.plus(Tld.get(domain.getTld()).getAutoRenewGracePeriodLength()),
@@ -847,7 +847,7 @@ public class DomainBase extends EppResource
       return thisCastToDerived();
     }
 
-    public B setAutorenewBillingEvent(VKey<Recurring> autorenewBillingEvent) {
+    public B setAutorenewBillingEvent(VKey<Recurrence> autorenewBillingEvent) {
       getInstance().autorenewBillingEvent = autorenewBillingEvent;
       return thisCastToDerived();
     }
