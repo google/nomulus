@@ -673,26 +673,17 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
 
   /** Returns the time to live for A and AAAA records. */
   public Optional<Duration> getDnsAPlusAaaaTtl() {
-    if (dnsAPlusAaaaTtl == null) {
-      return Optional.empty();
-    }
-    return Optional.of(dnsAPlusAaaaTtl);
+    return Optional.ofNullable(dnsAPlusAaaaTtl);
   }
 
   /** Returns the time to live for NS records. */
   public Optional<Duration> getDnsNsTtl() {
-    if (dnsNsTtl == null) {
-      return Optional.empty();
-    }
-    return Optional.of(dnsNsTtl);
+    return Optional.ofNullable(dnsNsTtl);
   }
 
   /** Returns the time to live for DS records. */
   public Optional<Duration> getDnsDsTtl() {
-    if (dnsDsTtl == null) {
-      return Optional.empty();
-    }
-    return Optional.of(dnsDsTtl);
+    return Optional.ofNullable(dnsDsTtl);
   }
 
   public ImmutableSet<String> getAllowedRegistrantContactIds() {

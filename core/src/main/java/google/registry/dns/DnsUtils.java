@@ -24,7 +24,9 @@ import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.model.tld.Registries;
+import google.registry.model.tld.Registry;
 import java.util.Collection;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -124,6 +126,18 @@ public class DnsUtils {
                         requests.stream()
                             .map(DnsRefreshRequest::createVKey)
                             .collect(toImmutableList())));
+  }
+
+  public static long getDnsAPlusAAAATtlForHost(String host, Duration dnsDefaultATtl) {
+    Optional<InternetDomainName> tldName = Registries.findTldForName(InternetDomainName.from(host));
+    Duration dnsAPlusAaaaTtl = dnsDefaultATtl;
+    if (tldName.isPresent()) {
+      Registry tld = Registry.get(tldName.get().toString());
+      if (tld.getDnsAPlusAaaaTtl().isPresent()) {
+        dnsAPlusAaaaTtl = tld.getDnsAPlusAaaaTtl().get();
+      }
+    }
+    return dnsAPlusAaaaTtl.getStandardSeconds();
   }
 
   private boolean usePullQueue() {
