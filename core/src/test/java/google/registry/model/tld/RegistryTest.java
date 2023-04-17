@@ -128,9 +128,9 @@ public final class RegistryTest extends EntityTestCase {
   }
 
   @Test
-  void testDefaultNumDnsPublishShards_equalToOne() {
+  void testDefaultNumDnsPublishShards_equalToFour() {
     Registry registry = Registry.get("tld").asBuilder().build();
-    assertThat(registry.getNumDnsPublishLocks()).isEqualTo(1);
+    assertThat(registry.getNumDnsPublishLocks()).isEqualTo(4);
   }
 
   @Test

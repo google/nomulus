@@ -269,10 +269,14 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
   @Column(nullable = false)
   int numDnsPublishLocks;
 
-  /** Updates an unset numDnsPublishLocks (0) to the standard default of 1. */
+  /**
+   * Updates an unset numDnsPublishLocks (0) to the standard default of 4.
+   *
+   * <p>This is the suitable default for {@link CloudDnsWriter}.
+   */
   void setDefaultNumDnsPublishLocks() {
     if (numDnsPublishLocks == 0) {
-      numDnsPublishLocks = 1;
+      numDnsPublishLocks = 4;
     }
   }
 
@@ -1051,7 +1055,7 @@ public class Registry extends ImmutableObject implements Buildable, UnsafeSerial
           instance.dnsWriters != null && !instance.dnsWriters.isEmpty(),
           "At least one DNS writer must be specified."
               + " VoidDnsWriter can be used if DNS writing isn't desired");
-      // If not set explicitly, numDnsPublishLocks defaults to 1.
+      // If not set explicitly, numDnsPublishLocks defaults to 4.
       instance.setDefaultNumDnsPublishLocks();
       checkArgument(
           instance.numDnsPublishLocks > 0,
