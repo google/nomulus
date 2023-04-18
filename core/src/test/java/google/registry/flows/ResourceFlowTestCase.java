@@ -14,12 +14,10 @@
 
 package google.registry.flows;
 
-import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -30,7 +28,6 @@ import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.host.HostBase;
@@ -39,14 +36,13 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestCacheExtension;
 import google.registry.util.JdkLoggerConfig;
 import google.registry.util.TypeUtils.TypeInstantiator;
+import java.time.Duration;
 import java.util.logging.Level;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.json.simple.JSONValue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -64,11 +60,11 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
 
   @RegisterExtension
   public final TestCacheExtension testCacheExtension =
-      new TestCacheExtension.Builder().withClaimsListCache(java.time.Duration.ofHours(6)).build();
+      new TestCacheExtension.Builder().withClaimsListCache(Duration.ofHours(6)).build();
 
   @BeforeEach
   void beforeResourceFlowTestCase() {
-    // Attach TestLogHandler to the root logger so it has access to all log messages.
+    // Attach TestLogHandler to the root logger, so it has access to all log messages.
     // Note that in theory for assertIcannReportingActivityFieldLogged() below it would suffice to
     // attach it only to the FlowRunner logger, but for some reason this doesn't work for all flows.
     JdkLoggerConfig.getConfig("").addHandler(logHandler);
@@ -108,22 +104,6 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
   /** Persists a testing claims list to Cloud SQL. */
   protected void persistClaimsList(ImmutableMap<String, String> labelsToKeys) {
     ClaimsListDao.save(ClaimsList.create(clock.nowUtc(), labelsToKeys));
-  }
-
-  /** Asserts the presence of a single enqueued async contact or host deletion */
-  protected <T extends EppResource> void assertAsyncDeletionTaskEnqueued(
-      T resource, String requestingClientId, Trid trid, boolean isSuperuser) {
-    TaskMatcher expected =
-        new TaskMatcher()
-            .etaDelta(Duration.standardSeconds(75), Duration.standardSeconds(105)) // expected: 90
-            .param(PARAM_RESOURCE_KEY, resource.createVKey().stringify())
-            .param("requestingClientId", requestingClientId)
-            .param("serverTransactionId", trid.getServerTransactionId())
-            .param("isSuperuser", Boolean.toString(isSuperuser))
-            .param("requestedTime", clock.nowUtc().toString());
-    trid.getClientTransactionId()
-        .ifPresent(clTrid -> expected.param("clientTransactionId", clTrid));
-    assertTasksEnqueued("async-delete-pull", expected);
   }
 
   protected void assertClientIdFieldLogged(String registrarId) {

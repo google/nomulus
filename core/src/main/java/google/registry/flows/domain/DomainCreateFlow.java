@@ -16,6 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist;
@@ -59,7 +60,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
-import google.registry.dns.DnsUtils;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
@@ -227,7 +227,6 @@ public final class DomainCreateFlow implements TransactionalFlow {
   @Inject DomainCreateFlowCustomLogic flowCustomLogic;
   @Inject DomainFlowTmchUtils tmchUtils;
   @Inject DomainPricingLogic pricingLogic;
-  @Inject DnsUtils dnsUtils;
 
   @Inject DomainCreateFlow() {}
 
@@ -426,7 +425,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
               allocationToken.get(), domainHistory.getHistoryEntryId()));
     }
     if (domain.shouldPublishToDns()) {
-      dnsUtils.requestDomainDnsRefresh(domain.getDomainName());
+      requestDomainDnsRefresh(domain.getDomainName());
     }
     EntityChanges entityChanges =
         flowCustomLogic.beforeSave(

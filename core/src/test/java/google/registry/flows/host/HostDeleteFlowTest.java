@@ -15,7 +15,9 @@
 package google.registry.flows.host;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatabaseHelper.assertHostDnsRequests;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
+import static google.registry.testing.DatabaseHelper.assertNoDnsRequestsExcept;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.newHost;
@@ -314,10 +316,10 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
         .hasType(Type.HOST_DELETE);
     assertNoBillingEvents();
     if (isSubordinate) {
-      dnsUtilsHelper.assertHostDnsRequests(deletedHost.getHostName());
+      assertHostDnsRequests(deletedHost.getHostName());
       assertThat(loadByKey(deletedHost.getSuperordinateDomain()).getSubordinateHosts()).isEmpty();
     } else {
-      dnsUtilsHelper.assertNoMoreDnsRequests();
+      assertNoDnsRequestsExcept();
     }
     assertLastHistoryContainsResource(deletedHost);
   }

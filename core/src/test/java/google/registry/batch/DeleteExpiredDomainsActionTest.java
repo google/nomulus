@@ -43,7 +43,6 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.TaskQueueExtension;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,8 +57,6 @@ class DeleteExpiredDomainsActionTest {
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
-
-  @RegisterExtension final TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private final FakeResponse response = new FakeResponse();
   private DeleteExpiredDomainsAction action;

@@ -16,6 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.flows.FlowUtils.createHistoryEntryId;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
@@ -44,7 +45,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
 import google.registry.batch.AsyncTaskEnqueuer;
-import google.registry.dns.DnsUtils;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.ExtensionManager;
@@ -129,7 +129,6 @@ public final class DomainDeleteFlow implements TransactionalFlow {
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
-  @Inject DnsUtils dnsUtils;
   @Inject Trid trid;
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject EppResponse.Builder responseBuilder;
@@ -260,7 +259,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     // If there's a pending transfer, the gaining client's autorenew billing
     // event and poll message will already have been deleted in
     // ResourceDeleteFlow since it's listed in serverApproveEntities.
-    dnsUtils.requestDomainDnsRefresh(existingDomain.getDomainName());
+    requestDomainDnsRefresh(existingDomain.getDomainName());
 
     entitiesToSave.add(newDomain, domainHistory);
     EntityChanges entityChanges =
@@ -429,7 +428,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
 
   /** Domain to be deleted has subordinate hosts. */
   static class DomainToDeleteHasHostsException extends AssociationProhibitsOperationException {
-    public DomainToDeleteHasHostsException() {
+    DomainToDeleteHasHostsException() {
       super("Domain to be deleted has subordinate hosts");
     }
   }
