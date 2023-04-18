@@ -33,6 +33,7 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.ResourceTransferUtils.createTransferResponse;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
+import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.difference;
@@ -56,6 +57,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.net.InetAddresses;
+import google.registry.dns.DnsConstants.TargetType;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
@@ -68,6 +70,7 @@ import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.model.common.DnsRefreshRequest;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactHistory;
@@ -1347,6 +1350,47 @@ public final class DatabaseHelper {
                         new DatabaseMigrationStateSchedule(
                             DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP)));
     DatabaseMigrationStateSchedule.CACHE.invalidateAll();
+  }
+
+  private static ImmutableList<String> getDnsRefreshRequests(TargetType type, String... names) {
+    return tm()
+        .transact(
+            () -> tm().createQueryComposer(DnsRefreshRequest.class).where("type", EQ, type).list())
+        .stream()
+        .map(DnsRefreshRequest::getName)
+        .filter(e -> ImmutableList.copyOf(names).contains(e))
+        .collect(toImmutableList());
+  }
+
+  public static void assertDomainDnsRequests(String... domainNames) {
+    assertThat(getDnsRefreshRequests(TargetType.DOMAIN, domainNames))
+        .containsExactlyElementsIn(domainNames);
+  }
+
+  public static void assertHostDnsRequests(String... hostNames) {
+    assertThat(getDnsRefreshRequests(TargetType.HOST, hostNames))
+        .containsExactlyElementsIn(hostNames);
+  }
+
+  public static void assertNoDnsRequestsExcept(String... names) {
+    assertThat(
+            loadAllOf(DnsRefreshRequest.class).stream()
+                .filter(e -> !ImmutableList.copyOf(names).contains(e.getName()))
+                .count())
+        .isEqualTo(0);
+  }
+
+  public static void assertDomainDnsRequestWithRequestTime(
+      String domainName, DateTime requestTime) {
+    assertThat(
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(DnsRefreshRequest.class)
+                            .where("type", EQ, TargetType.DOMAIN)
+                            .where("name", EQ, domainName)
+                            .where("requestTime", EQ, requestTime)
+                            .count()))
+        .isEqualTo(1);
   }
 
   private DatabaseHelper() {}

@@ -20,20 +20,11 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Ordering;
 import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
-import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -54,8 +45,6 @@ public class DnsUtilsTest {
   private static final String domainName = "test.tld";
   private static final String hostName = "ns1.test.tld";
 
-  private final DnsQueue dnsQueue = mock(DnsQueue.class);
-  private final DnsUtils dnsUtils = new DnsUtils(dnsQueue);
   private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T01:23:45Z"));
 
   @RegisterExtension
@@ -70,36 +59,13 @@ public class DnsUtilsTest {
   @BeforeEach
   void beforeEach() {
     createTld(tld);
-    when(dnsQueue.getClock()).thenReturn(clock);
-  }
-
-  @Test
-  void testSuccess_hostRefresh_pullQueue() {
-    dnsUtils.requestHostDnsRefresh(hostName);
-    verify(dnsQueue).addHostRefreshTask(hostName);
-    assertThat(loadAllOf(DnsRefreshRequest.class)).isEmpty();
-  }
-
-  @Test
-  void testSuccess_domainRefresh_pullQueue() {
-    dnsUtils.requestDomainDnsRefresh(domainName);
-    verify(dnsQueue).addDomainRefreshTask(domainName, Duration.ZERO);
-    assertThat(loadAllOf(DnsRefreshRequest.class)).isEmpty();
-  }
-
-  @Test
-  void testSuccess_domainRefreshWithDelay_pullQueue() {
-    dnsUtils.requestDomainDnsRefresh(domainName, Duration.standardMinutes(3));
-    verify(dnsQueue).addDomainRefreshTask(domainName, Duration.standardMinutes(3));
-    assertThat(loadAllOf(DnsRefreshRequest.class)).isEmpty();
   }
 
   @Test
   void testFailure_hostRefresh_unmanagedHost() {
     String unmanagedHostName = "ns1.another.example";
     Assertions.assertThrows(
-        IllegalArgumentException.class, () -> dnsUtils.requestHostDnsRefresh(unmanagedHostName));
-    verify(dnsQueue, never()).addHostRefreshTask(anyString());
+        IllegalArgumentException.class, () -> DnsUtils.requestHostDnsRefresh(unmanagedHostName));
     assertThat(loadAllOf(DnsRefreshRequest.class)).isEmpty();
   }
 
@@ -108,34 +74,27 @@ public class DnsUtilsTest {
     String unmanagedDomainName = "another.example";
     Assertions.assertThrows(
         IllegalArgumentException.class,
-        () -> dnsUtils.requestDomainDnsRefresh(unmanagedDomainName));
-    verify(dnsQueue, never()).addDomainRefreshTask(anyString(), any(Duration.class));
+        () -> DnsUtils.requestDomainDnsRefresh(unmanagedDomainName));
     assertThat(loadAllOf(DnsRefreshRequest.class)).isEmpty();
   }
 
   @Test
   void testSuccess_hostRefresh() {
-    useDnsSql();
-    dnsUtils.requestHostDnsRefresh(hostName);
-    verify(dnsQueue, never()).addHostRefreshTask(anyString());
+    DnsUtils.requestHostDnsRefresh(hostName);
     DnsRefreshRequest request = Iterables.getOnlyElement(loadAllOf(DnsRefreshRequest.class));
     assertRequest(request, TargetType.HOST, hostName, tld, clock.nowUtc());
   }
 
   @Test
   void testSuccess_domainRefresh() {
-    useDnsSql();
-    dnsUtils.requestDomainDnsRefresh(domainName);
-    verify(dnsQueue, never()).addDomainRefreshTask(anyString(), any(Duration.class));
+    DnsUtils.requestDomainDnsRefresh(domainName);
     DnsRefreshRequest request = Iterables.getOnlyElement(loadAllOf(DnsRefreshRequest.class));
     assertRequest(request, TargetType.DOMAIN, domainName, tld, clock.nowUtc());
   }
 
   @Test
   void testSuccess_domainRefreshWithDelay() {
-    useDnsSql();
-    dnsUtils.requestDomainDnsRefresh(domainName, Duration.standardMinutes(3));
-    verify(dnsQueue, never()).addDomainRefreshTask(anyString(), any(Duration.class));
+    DnsUtils.requestDomainDnsRefresh(domainName, Duration.standardMinutes(3));
     DnsRefreshRequest request = Iterables.getOnlyElement(loadAllOf(DnsRefreshRequest.class));
     assertRequest(request, TargetType.DOMAIN, domainName, tld, clock.nowUtc().plusMinutes(3));
   }
@@ -182,7 +141,7 @@ public class DnsUtilsTest {
 
     // Requests within cooldown period not included.
     requests =
-        dnsUtils.readAndUpdateRequestsWithLatestProcessTime("tld", Duration.standardMinutes(1), 4);
+        DnsUtils.readAndUpdateRequestsWithLatestProcessTime("tld", Duration.standardMinutes(1), 4);
     assertThat(requests.size()).isEqualTo(1);
     assertRequest(
         requests.get(0),
@@ -195,7 +154,7 @@ public class DnsUtilsTest {
 
   @Test
   void testSuccess_deleteRequests() {
-    dnsUtils.deleteRequests(processRequests());
+    DnsUtils.deleteRequests(processRequests());
     ImmutableList<DnsRefreshRequest> remainingRequests =
         loadAllOf(DnsRefreshRequest.class).stream()
             .sorted(Comparator.comparing(DnsRefreshRequest::getRequestTime))
@@ -222,31 +181,30 @@ public class DnsUtilsTest {
     tm().transact(() -> tm().delete(remainingRequests.get(2)));
     assertThat(loadAllOf(DnsRefreshRequest.class).size()).isEqualTo(2);
     // Should not throw even though one of the request is already deleted.
-    dnsUtils.deleteRequests(remainingRequests);
+    DnsUtils.deleteRequests(remainingRequests);
     assertThat(loadAllOf(DnsRefreshRequest.class).size()).isEqualTo(0);
   }
 
   private ImmutableList<DnsRefreshRequest> processRequests() {
-    useDnsSql();
     createTld("example");
     // Domain Included.
-    dnsUtils.requestDomainDnsRefresh("test1.tld", Duration.standardMinutes(1));
+    DnsUtils.requestDomainDnsRefresh("test1.tld", Duration.standardMinutes(1));
     // This one should be returned before test1.tld, even though it's added later, because of
     // the delay specified in test1.tld.
-    dnsUtils.requestDomainDnsRefresh("test2.tld");
+    DnsUtils.requestDomainDnsRefresh("test2.tld");
     // Not included because the TLD is not under management.
-    dnsUtils.requestDomainDnsRefresh("something.example", Duration.standardMinutes(2));
+    DnsUtils.requestDomainDnsRefresh("something.example", Duration.standardMinutes(2));
     clock.advanceBy(Duration.standardMinutes(3));
     // Host included.
-    dnsUtils.requestHostDnsRefresh("ns1.test2.tld");
+    DnsUtils.requestHostDnsRefresh("ns1.test2.tld");
     // Not included because the request time is in the future
-    dnsUtils.requestDomainDnsRefresh("test4.tld", Duration.standardMinutes(2));
+    DnsUtils.requestDomainDnsRefresh("test4.tld", Duration.standardMinutes(2));
     // Included after the previous one. Same request time, order by insertion order (i.e. ID);
-    dnsUtils.requestDomainDnsRefresh("test5.tld");
+    DnsUtils.requestDomainDnsRefresh("test5.tld");
     // Not included because batch size is exceeded;
-    dnsUtils.requestDomainDnsRefresh("test6.tld");
+    DnsUtils.requestDomainDnsRefresh("test6.tld");
     clock.advanceBy(Duration.standardMinutes(1));
-    return dnsUtils.readAndUpdateRequestsWithLatestProcessTime(
+    return DnsUtils.readAndUpdateRequestsWithLatestProcessTime(
         "tld", Duration.standardMinutes(1), 4);
   }
 
@@ -267,27 +225,5 @@ public class DnsUtilsTest {
     assertThat(request.getTld()).isEqualTo(tld);
     assertThat(request.getRequestTime()).isEqualTo(requestTime);
     assertThat(request.getLastProcessTime()).isEqualTo(processTime);
-  }
-
-  private void useDnsSql() {
-    DateTime currentTime = clock.nowUtc();
-    clock.setTo(START_OF_TIME);
-    tm().transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    new ImmutableSortedMap.Builder<DateTime, MigrationState>(Ordering.natural())
-                        .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
-                        .put(START_OF_TIME.plusMillis(1), MigrationState.DATASTORE_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(2), MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
-                        .put(
-                            START_OF_TIME.plusMillis(3), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(4), MigrationState.SQL_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(5), MigrationState.SQL_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(6), MigrationState.SQL_ONLY)
-                        .put(START_OF_TIME.plusMillis(7), MigrationState.SEQUENCE_BASED_ALLOCATE_ID)
-                        .put(START_OF_TIME.plusMillis(8), MigrationState.NORDN_SQL)
-                        .put(START_OF_TIME.plusMillis(9), MigrationState.DNS_SQL)
-                        .build()));
-    clock.setTo(currentTime);
   }
 }

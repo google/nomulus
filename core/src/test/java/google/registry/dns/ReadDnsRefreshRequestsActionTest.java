@@ -15,10 +15,7 @@
 package google.registry.dns;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
-import static google.registry.model.common.DatabaseMigrationStateSchedule.set;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.useUncachedForTest;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -38,8 +35,6 @@ import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Ordering;
 import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.model.common.DnsRefreshRequestTest;
@@ -65,7 +60,6 @@ public class ReadDnsRefreshRequestsActionTest {
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T01:23:45Z"));
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
-  private final DnsUtils dnsUtils = new DnsUtils(null);
   private final Optional<Integer> jitterSeconds = Optional.of(5);
 
   @RegisterExtension
@@ -80,7 +74,6 @@ public class ReadDnsRefreshRequestsActionTest {
               jitterSeconds,
               "tld",
               clock,
-              dnsUtils,
               null,
               cloudTasksHelper.getTestCloudTasksUtils()));
 
@@ -93,7 +86,6 @@ public class ReadDnsRefreshRequestsActionTest {
 
   @BeforeEach
   void beforeEach() {
-    useDnsSql();
     persistResource(
         createTld("tld")
             .asBuilder()
@@ -270,27 +262,5 @@ public class ReadDnsRefreshRequestsActionTest {
               assertThat(new Duration(clock.nowUtc(), scheduledTime))
                   .isAtMost(Duration.standardSeconds(jitterSeconds.get()));
             });
-  }
-
-  private void useDnsSql() {
-    DateTime currentTime = clock.nowUtc();
-    clock.setTo(START_OF_TIME);
-    tm().transact(
-            () ->
-                set(
-                    new ImmutableSortedMap.Builder<DateTime, MigrationState>(Ordering.natural())
-                        .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
-                        .put(START_OF_TIME.plusMillis(1), MigrationState.DATASTORE_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(2), MigrationState.DATASTORE_PRIMARY_NO_ASYNC)
-                        .put(
-                            START_OF_TIME.plusMillis(3), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(4), MigrationState.SQL_PRIMARY_READ_ONLY)
-                        .put(START_OF_TIME.plusMillis(5), MigrationState.SQL_PRIMARY)
-                        .put(START_OF_TIME.plusMillis(6), MigrationState.SQL_ONLY)
-                        .put(START_OF_TIME.plusMillis(7), MigrationState.SEQUENCE_BASED_ALLOCATE_ID)
-                        .put(START_OF_TIME.plusMillis(8), MigrationState.NORDN_SQL)
-                        .put(START_OF_TIME.plusMillis(9), MigrationState.DNS_SQL)
-                        .build()));
-    clock.setTo(currentTime);
   }
 }
