@@ -54,7 +54,7 @@ import google.registry.model.poll.PendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
@@ -343,7 +343,7 @@ class DomainTransferRejectFlowTest
 
   private void setUpGracePeriodDurations() {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setAutomaticTransferLength(Duration.standardDays(2))
             .setTransferGracePeriodLength(Duration.standardDays(3))

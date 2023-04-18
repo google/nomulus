@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.rde.EscrowTaskRunner.EscrowTask;
@@ -53,12 +53,12 @@ public class EscrowTaskRunnerTest {
 
   private DateTimeZone previousDateTimeZone;
   private EscrowTaskRunner runner;
-  private Registry registry;
+  private Tld registry;
 
   @BeforeEach
   void beforeEach() {
     createTld("lol");
-    registry = Registry.get("lol");
+    registry = Tld.get("lol");
     runner = new EscrowTaskRunner();
     runner.clock = clock;
     runner.lockHandler = new FakeLockHandler(true);

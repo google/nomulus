@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,7 +58,7 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
   void testListCursors_twoTldsOneAbsent_printsAbsentAndTimestampSorted() throws Exception {
     createTlds("foo", "bar");
     persistResource(
-        Cursor.createScoped(CursorType.BRDA, DateTime.parse("1984-12-18TZ"), Registry.get("bar")));
+        Cursor.createScoped(CursorType.BRDA, DateTime.parse("1984-12-18TZ"), Tld.get("bar")));
     runCommand("--type=BRDA");
     assertThat(getStdoutAsLines())
         .containsExactly(
@@ -84,7 +84,7 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
   @Test
   void testListCursors_filterEscrowEnabled_doesWhatItSays() throws Exception {
     createTlds("foo", "bar");
-    persistResource(Registry.get("bar").asBuilder().setEscrowEnabled(true).build());
+    persistResource(Tld.get("bar").asBuilder().setEscrowEnabled(true).build());
     runCommand("--type=BRDA", "--escrow_enabled");
     assertThat(getStdoutAsLines())
         .containsExactly(

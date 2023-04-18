@@ -16,9 +16,9 @@ package google.registry.beam.billing;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -45,7 +45,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
@@ -291,8 +291,8 @@ class InvoicingPipelineTest {
             .setPoNumber(Optional.of("22446688"))
             .build();
     persistResource(registrar);
-    Registry test =
-        newRegistry("test", "_TEST", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
+    Tld test =
+        newTld("test", "_TEST", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
             .asBuilder()
             .setInvoicingEnabled(true)
             .build();
@@ -395,14 +395,14 @@ class InvoicingPipelineTest {
     registrar3 = registrar3.asBuilder().setBillingAccountMap(ImmutableMap.of(USD, "789")).build();
     persistResource(registrar3);
 
-    Registry test =
-        newRegistry("test", "_TEST", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
+    Tld test =
+        newTld("test", "_TEST", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
             .asBuilder()
             .setInvoicingEnabled(true)
             .build();
     persistResource(test);
-    Registry hello =
-        newRegistry("hello", "_HELLO", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
+    Tld hello =
+        newTld("hello", "_HELLO", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
             .asBuilder()
             .setInvoicingEnabled(true)
             .build();

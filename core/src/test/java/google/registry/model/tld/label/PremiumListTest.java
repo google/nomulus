@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.hash.BloomFilter;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -51,7 +51,7 @@ public class PremiumListTest {
     PremiumList pl =
         persistPremiumList(
             "tld", USD, "lol, 999", "rich, 1999", "icann, 100", "johnny-be-goode, 20.50");
-    persistResource(Registry.get("tld").asBuilder().setPremiumList(pl).build());
+    persistResource(Tld.get("tld").asBuilder().setPremiumList(pl).build());
   }
 
   @Test

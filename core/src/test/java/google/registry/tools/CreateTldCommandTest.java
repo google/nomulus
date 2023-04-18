@@ -17,8 +17,8 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
-import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
-import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
+import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
@@ -35,7 +35,7 @@ import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import google.registry.model.domain.token.AllocationToken;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import java.math.BigDecimal;
 import org.joda.money.Money;
@@ -63,17 +63,17 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
     runCommandForced("xn--q9jyb4c", "--roid_suffix=Q9JYB4C", "--dns_writers=FooDnsWriter");
     DateTime after = fakeClock.nowUtc();
 
-    Registry registry = Registry.get("xn--q9jyb4c");
+    Tld registry = Tld.get("xn--q9jyb4c");
     assertThat(registry).isNotNull();
-    assertThat(registry.getAddGracePeriodLength()).isEqualTo(Registry.DEFAULT_ADD_GRACE_PERIOD);
+    assertThat(registry.getAddGracePeriodLength()).isEqualTo(Tld.DEFAULT_ADD_GRACE_PERIOD);
     assertThat(registry.getCreationTime()).isIn(Range.closed(before, after));
     assertThat(registry.getDnsWriters()).containsExactly("FooDnsWriter");
     assertThat(registry.getTldState(registry.getCreationTime())).isEqualTo(PREDELEGATION);
     assertThat(registry.getRedemptionGracePeriodLength())
-        .isEqualTo(Registry.DEFAULT_REDEMPTION_GRACE_PERIOD);
-    assertThat(registry.getPendingDeleteLength()).isEqualTo(Registry.DEFAULT_PENDING_DELETE_LENGTH);
+        .isEqualTo(Tld.DEFAULT_REDEMPTION_GRACE_PERIOD);
+    assertThat(registry.getPendingDeleteLength()).isEqualTo(Tld.DEFAULT_PENDING_DELETE_LENGTH);
     assertThat(registry.getRegistryLockOrUnlockBillingCost())
-        .isEqualTo(Registry.DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST);
+        .isEqualTo(Tld.DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST);
   }
 
   @Test
@@ -85,7 +85,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--dns_a_plus_aaaa_ttl=PT300S",
         "--dns_ds_ttl=PT240S",
         "--dns_ns_ttl=PT180S");
-    Registry registry = Registry.get("xn--q9jyb4c");
+    Tld registry = Tld.get("xn--q9jyb4c");
     assertThat(registry).isNotNull();
     assertThat(registry.getDnsAPlusAaaaTtl()).isEqualTo(standardMinutes(5));
     assertThat(registry.getDnsDsTtl()).isEqualTo(standardMinutes(4));
@@ -121,7 +121,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getTldState(DateTime.now(UTC)))
+    assertThat(Tld.get("xn--q9jyb4c").getTldState(DateTime.now(UTC)))
         .isEqualTo(GENERAL_AVAILABILITY);
   }
 
@@ -132,7 +132,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getStandardRenewCost(DateTime.now(UTC)))
+    assertThat(Tld.get("xn--q9jyb4c").getStandardRenewCost(DateTime.now(UTC)))
         .isEqualTo(Money.of(USD, 42.42));
   }
 
@@ -148,7 +148,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
 
-    Registry registry = Registry.get("xn--q9jyb4c");
+    Tld registry = Tld.get("xn--q9jyb4c");
     assertThat(registry.getEapFeeFor(now.minusHours(1)).getCost())
         .isEqualTo(BigDecimal.ZERO.setScale(2, ROUND_UNNECESSARY));
     assertThat(registry.getEapFeeFor(now.plusHours(1)).getCost())
@@ -164,27 +164,27 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getAddGracePeriodLength()).isEqualTo(standardMinutes(5));
+    assertThat(Tld.get("xn--q9jyb4c").getAddGracePeriodLength()).isEqualTo(standardMinutes(5));
   }
 
   @Test
   void testSuccess_roidSuffixWorks() throws Exception {
     runCommandForced("--roid_suffix=RSUFFIX", "--dns_writers=VoidDnsWriter", "tld");
-    assertThat(Registry.get("tld").getRoidSuffix()).isEqualTo("RSUFFIX");
+    assertThat(Tld.get("tld").getRoidSuffix()).isEqualTo("RSUFFIX");
   }
 
   @Test
   void testSuccess_escrow() throws Exception {
     runCommandForced(
         "--escrow=true", "--roid_suffix=Q9JYB4C", "--dns_writers=VoidDnsWriter", "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getEscrowEnabled()).isTrue();
+    assertThat(Tld.get("xn--q9jyb4c").getEscrowEnabled()).isTrue();
   }
 
   @Test
   void testSuccess_noEscrow() throws Exception {
     runCommandForced(
         "--escrow=false", "--roid_suffix=Q9JYB4C", "--dns_writers=VoidDnsWriter", "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getEscrowEnabled()).isFalse();
+    assertThat(Tld.get("xn--q9jyb4c").getEscrowEnabled()).isFalse();
   }
 
   @Test
@@ -194,7 +194,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getRedemptionGracePeriodLength())
+    assertThat(Tld.get("xn--q9jyb4c").getRedemptionGracePeriodLength())
         .isEqualTo(standardMinutes(5));
   }
 
@@ -205,7 +205,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getPendingDeleteLength()).isEqualTo(standardMinutes(5));
+    assertThat(Tld.get("xn--q9jyb4c").getPendingDeleteLength()).isEqualTo(standardMinutes(5));
   }
 
   @Test
@@ -215,8 +215,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getAutomaticTransferLength())
-        .isEqualTo(standardMinutes(5));
+    assertThat(Tld.get("xn--q9jyb4c").getAutomaticTransferLength()).isEqualTo(standardMinutes(5));
   }
 
   @Test
@@ -226,7 +225,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getStandardCreateCost()).isEqualTo(Money.of(USD, 42.42));
+    assertThat(Tld.get("xn--q9jyb4c").getStandardCreateCost()).isEqualTo(Money.of(USD, 42.42));
   }
 
   @Test
@@ -236,8 +235,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getStandardRestoreCost())
-        .isEqualTo(Money.of(USD, 42.42));
+    assertThat(Tld.get("xn--q9jyb4c").getStandardRestoreCost()).isEqualTo(Money.of(USD, 42.42));
   }
 
   @Test
@@ -247,8 +245,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getServerStatusChangeCost())
-        .isEqualTo(Money.of(USD, 42.42));
+    assertThat(Tld.get("xn--q9jyb4c").getServerStatusChangeCost()).isEqualTo(Money.of(USD, 42.42));
   }
 
   @Test
@@ -258,7 +255,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getRegistryLockOrUnlockBillingCost())
+    assertThat(Tld.get("xn--q9jyb4c").getRegistryLockOrUnlockBillingCost())
         .isEqualTo(Money.of(USD, 42.42));
   }
 
@@ -273,7 +270,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    Registry registry = Registry.get("xn--q9jyb4c");
+    Tld registry = Tld.get("xn--q9jyb4c");
     assertThat(registry.getStandardCreateCost()).isEqualTo(Money.ofMajor(JPY, 12345));
     assertThat(registry.getStandardRestoreCost()).isEqualTo(Money.ofMajor(JPY, 67890));
     assertThat(registry.getStandardRenewCost(START_OF_TIME)).isEqualTo(Money.ofMajor(JPY, 101112));
@@ -283,12 +280,12 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   void testSuccess_multipartTld() throws Exception {
     runCommandForced("co.uk", "--roid_suffix=COUK", "--dns_writers=VoidDnsWriter");
 
-    Registry registry = Registry.get("co.uk");
+    Tld registry = Tld.get("co.uk");
     assertThat(registry.getTldState(new DateTime())).isEqualTo(PREDELEGATION);
-    assertThat(registry.getAddGracePeriodLength()).isEqualTo(Registry.DEFAULT_ADD_GRACE_PERIOD);
+    assertThat(registry.getAddGracePeriodLength()).isEqualTo(Tld.DEFAULT_ADD_GRACE_PERIOD);
     assertThat(registry.getRedemptionGracePeriodLength())
-        .isEqualTo(Registry.DEFAULT_REDEMPTION_GRACE_PERIOD);
-    assertThat(registry.getPendingDeleteLength()).isEqualTo(Registry.DEFAULT_PENDING_DELETE_LENGTH);
+        .isEqualTo(Tld.DEFAULT_REDEMPTION_GRACE_PERIOD);
+    assertThat(registry.getPendingDeleteLength()).isEqualTo(Tld.DEFAULT_PENDING_DELETE_LENGTH);
   }
 
   @Test
@@ -298,7 +295,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getReservedListNames())
+    assertThat(Tld.get("xn--q9jyb4c").getReservedListNames())
         .containsExactly("xn--q9jyb4c_abuse", "common_abuse");
   }
 
@@ -402,7 +399,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
                     "--roid_suffix=Q9JYB4C",
                     "--dns_writers=VoidDnsWriter",
                     "xn--q9jyb4c"));
-    assertThat(thrown).hasMessageThat().contains("All EAP fees must be in the registry's currency");
+    assertThat(thrown).hasMessageThat().contains("All EAP fees must be in the TLD's currency");
   }
 
   @Test
@@ -450,7 +447,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getAllowedRegistrantContactIds())
+    assertThat(Tld.get("xn--q9jyb4c").getAllowedRegistrantContactIds())
         .containsExactly("alice", "bob");
   }
 
@@ -461,7 +458,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=FooDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getAllowedFullyQualifiedHostNames())
+    assertThat(Tld.get("xn--q9jyb4c").getAllowedFullyQualifiedHostNames())
         .containsExactly("ns1.example.com", "ns2.example.com");
   }
 
@@ -538,7 +535,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=FooDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getPremiumListName()).hasValue("xn--q9jyb4c");
+    assertThat(Tld.get("xn--q9jyb4c").getPremiumListName()).hasValue("xn--q9jyb4c");
   }
 
   @Test
@@ -548,7 +545,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getDriveFolderId()).isEqualTo("madmax2030");
+    assertThat(Tld.get("xn--q9jyb4c").getDriveFolderId()).isEqualTo("madmax2030");
   }
 
   @Test
@@ -558,7 +555,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getDriveFolderId()).isNull();
+    assertThat(Tld.get("xn--q9jyb4c").getDriveFolderId()).isNull();
   }
 
   @Test
@@ -568,7 +565,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=ASDF",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getIdnTables())
+    assertThat(Tld.get("xn--q9jyb4c").getIdnTables())
         .containsExactly(IdnTableEnum.EXTENDED_LATIN, IdnTableEnum.JA);
   }
 
@@ -632,8 +629,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=FooDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getDefaultPromoTokens())
-        .containsExactly(token.createVKey());
+    assertThat(Tld.get("xn--q9jyb4c").getDefaultPromoTokens()).containsExactly(token.createVKey());
   }
 
   @Test
@@ -659,7 +655,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=FooDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getDefaultPromoTokens())
+    assertThat(Tld.get("xn--q9jyb4c").getDefaultPromoTokens())
         .containsExactly(token.createVKey(), token2.createVKey());
   }
 

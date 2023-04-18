@@ -22,7 +22,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.tools.params.DateTimeParameter;
 import java.util.List;
 import org.joda.time.DateTime;
@@ -52,9 +52,9 @@ final class UpdateCursorsCommand extends ConfirmingCommand implements Command {
     if (isNullOrEmpty(tlds)) {
       result.add(Cursor.createGlobal(cursorType, newTimestamp));
     } else {
-      for (String tld : tlds) {
-        Registry registry = Registry.get(tld);
-        result.add(Cursor.createScoped(cursorType, newTimestamp, registry));
+      for (String tldStr : tlds) {
+        Tld tld = Tld.get(tldStr);
+        result.add(Cursor.createScoped(cursorType, newTimestamp, tld));
       }
     }
     cursorsToUpdate = result.build();

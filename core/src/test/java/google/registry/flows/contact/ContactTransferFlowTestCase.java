@@ -23,7 +23,7 @@ import google.registry.flows.Flow;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.model.EppResource;
 import google.registry.model.contact.Contact;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import org.joda.time.DateTime;
@@ -44,13 +44,13 @@ abstract class ContactTransferFlowTestCase<F extends Flow, R extends EppResource
 
   private static final DateTime TRANSFER_REQUEST_TIME = DateTime.parse("2000-06-06T22:00:00.0Z");
   private static final DateTime TRANSFER_EXPIRATION_TIME =
-      TRANSFER_REQUEST_TIME.plus(Registry.DEFAULT_TRANSFER_GRACE_PERIOD);
+      TRANSFER_REQUEST_TIME.plus(Tld.DEFAULT_TRANSFER_GRACE_PERIOD);
   private static final Duration TIME_SINCE_REQUEST = Duration.standardDays(3);
 
   protected Contact contact;
 
   ContactTransferFlowTestCase() {
-    checkState(!Registry.DEFAULT_TRANSFER_GRACE_PERIOD.isShorterThan(TIME_SINCE_REQUEST));
+    checkState(!Tld.DEFAULT_TRANSFER_GRACE_PERIOD.isShorterThan(TIME_SINCE_REQUEST));
     clock.setTo(TRANSFER_REQUEST_TIME.plus(TIME_SINCE_REQUEST));
   }
 

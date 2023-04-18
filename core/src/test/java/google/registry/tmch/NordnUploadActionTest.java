@@ -42,7 +42,7 @@ import com.google.common.base.VerifyException;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.launch.LaunchNotice;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -114,7 +114,7 @@ class NordnUploadActionTest {
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setIanaIdentifier(99999L).build());
     persistResource(loadRegistrar("NewRegistrar").asBuilder().setIanaIdentifier(88888L).build());
     createTld("tld");
-    persistResource(Registry.get("tld").asBuilder().setLordnUsername("lolcat").build());
+    persistResource(Tld.get("tld").asBuilder().setLordnUsername("lolcat").build());
     persistSunriseModeDomain();
     clock.advanceBy(Duration.standardDays(1));
     persistClaimsModeDomain();
@@ -172,7 +172,7 @@ class NordnUploadActionTest {
 
   @Test
   void testFailure_nullRegistryUser() {
-    persistResource(Registry.get("tld").asBuilder().setLordnUsername(null).build());
+    persistResource(Tld.get("tld").asBuilder().setLordnUsername(null).build());
     VerifyException thrown = assertThrows(VerifyException.class, action::run);
     assertThat(thrown).hasMessageThat().contains("lordnUsername is not set for tld.");
   }

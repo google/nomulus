@@ -23,7 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import org.junit.jupiter.api.Test;
@@ -52,7 +52,7 @@ class DeletePremiumListCommandTest extends CommandTestCase<DeletePremiumListComm
   void testFailure_whenPremiumListIsInUse() {
     PremiumList premiumList = persistPremiumList("xn--q9jyb4c", USD, "blah,USD 100");
     createTld("xn--q9jyb4c");
-    persistResource(Registry.get("xn--q9jyb4c").asBuilder().setPremiumList(premiumList).build());
+    persistResource(Tld.get("xn--q9jyb4c").asBuilder().setPremiumList(premiumList).build());
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

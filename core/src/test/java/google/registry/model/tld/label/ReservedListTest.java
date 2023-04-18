@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
@@ -73,7 +73,7 @@ class ReservedListTest {
 
   @Test
   void testGetReservationTypes_allLabelsAreUnreserved_withNoReservedLists() {
-    assertThat(Registry.get("tld").getReservedListNames()).isEmpty();
+    assertThat(Tld.get("tld").getReservedListNames()).isEmpty();
     assertThat(getReservationTypes("doodle", "tld")).isEmpty();
     assertThat(getReservationTypes("access", "tld")).isEmpty();
     assertThat(getReservationTypes("rich", "tld")).isEmpty();
@@ -114,7 +114,7 @@ class ReservedListTest {
         "roflcopter,FULLY_BLOCKED",
         "snowcrash,FULLY_BLOCKED");
     createTld("tld");
-    persistResource(Registry.get("tld").asBuilder().setReservedLists(rl1, rl2).build());
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1, rl2).build());
 
     assertThat(getReservationTypes("lol", "tld")).containsExactly(FULLY_BLOCKED);
     assertThat(getReservationTypes("cat", "tld")).containsExactly(FULLY_BLOCKED);
@@ -152,7 +152,7 @@ class ReservedListTest {
     ReservedList rl2 =
         persistReservedList("reserved2", "lol,ALLOWED_IN_SUNRISE", "snowcrash,FULLY_BLOCKED");
     createTld("tld");
-    persistResource(Registry.get("tld").asBuilder().setReservedLists(rl1, rl2).build());
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1, rl2).build());
 
     assertThat(getReservationTypes("lol", "tld"))
         .containsExactly(NAME_COLLISION, ALLOWED_IN_SUNRISE);
@@ -167,9 +167,9 @@ class ReservedListTest {
     ReservedList rl2 = persistReservedList(
         "reserved2", "roflcopter,FULLY_BLOCKED", "snowcrash,FULLY_BLOCKED");
     createTld("tld");
-    persistResource(Registry.get("tld").asBuilder().setReservedLists(rl1, rl2).build());
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1, rl2).build());
     assertThat(getReservationTypes("roflcopter", "tld")).containsExactly(FULLY_BLOCKED);
-    persistResource(Registry.get("tld").asBuilder().setReservedLists(rl1).build());
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1).build());
     assertWithMessage(
             "roflcopter.tld should be unreserved"
                 + " after unsetting the registry's second reserved list")
@@ -199,7 +199,7 @@ class ReservedListTest {
         "reserved1", "lol,NAME_COLLISION", "roflcopter,ALLOWED_IN_SUNRISE");
     ReservedList rl2 = persistReservedList("reserved2", "lol,FULLY_BLOCKED");
     createTld("tld");
-    persistResource(Registry.get("tld").asBuilder().setReservedLists(rl1, rl2).build());
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1, rl2).build());
     assertThat(getReservationTypes("lol", "tld")).containsExactly(FULLY_BLOCKED, NAME_COLLISION);
     assertThat(getReservationTypes("roflcopter", "tld")).containsExactly(ALLOWED_IN_SUNRISE);
     assertThat(reservedListChecks)
@@ -228,7 +228,7 @@ class ReservedListTest {
   void testSave() {
     ReservedList rl = persistReservedList("tld-reserved", "lol,FULLY_BLOCKED # yup");
     createTld("tld");
-    persistResource(Registry.get("tld").asBuilder().setReservedLists(rl).build());
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(rl).build());
     assertThat(getReservationTypes("lol", "tld")).containsExactly(FULLY_BLOCKED);
   }
 
@@ -260,7 +260,7 @@ class ReservedListTest {
   @Test
   void testIsInUse_returnsTrueWhenInUse() {
     ReservedList rl = persistReservedList("reserved", "trombone,FULLY_BLOCKED");
-    persistResource(Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl)).build());
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl)).build());
     assertThat(rl.isInUse()).isTrue();
   }
 

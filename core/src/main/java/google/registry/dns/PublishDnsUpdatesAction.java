@@ -45,7 +45,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.Header;
@@ -96,8 +96,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
    *
    * <p>This comes from the fanout in {@link ReadDnsQueueAction} which dispatches each batch to be
    * published by each DNS writer on the TLD. So this field contains the value of one of the DNS
-   * writers configured in {@link Registry#getDnsWriters()}, as of the time the batch was written
-   * out (and not necessarily currently).
+   * writers configured in {@link Tld#getDnsWriters()}, as of the time the batch was written out
+   * (and not necessarily currently).
    */
   private final String dnsWriter;
 
@@ -372,11 +372,11 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       return false;
     }
     // Check if the Registry object's num locks has changed since this task was batched
-    int registryNumPublishLocks = Registry.get(tld).getNumDnsPublishLocks();
-    if (registryNumPublishLocks != numPublishLocks) {
+    int tldNumPublishLocks = Tld.get(tld).getNumDnsPublishLocks();
+    if (tldNumPublishLocks != numPublishLocks) {
       logger.atWarning().log(
           "Registry numDnsPublishLocks %d out of sync with parameter %d.",
-          registryNumPublishLocks, numPublishLocks);
+          tldNumPublishLocks, numPublishLocks);
       return false;
     }
     return true;

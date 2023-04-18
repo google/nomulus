@@ -16,7 +16,7 @@ package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
+import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.AVAILABLE;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.REGISTERED;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.RESERVED;
@@ -28,7 +28,7 @@ import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.mockito.Mockito.verify;
 
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.monitoring.whitebox.CheckApiMetric;
 import google.registry.monitoring.whitebox.CheckApiMetric.Availability;
 import google.registry.monitoring.whitebox.CheckApiMetric.Status;
@@ -68,7 +68,7 @@ class CheckApiActionTest {
   void beforeEach() {
     createTld("example");
     persistResource(
-        Registry.get("example")
+        Tld.get("example")
             .asBuilder()
             .setReservedLists(
                 persistReservedList(

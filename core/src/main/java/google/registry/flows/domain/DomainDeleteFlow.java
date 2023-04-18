@@ -88,8 +88,8 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.model.transfer.TransferStatus;
 import java.util.Collections;
 import java.util.Optional;
@@ -146,8 +146,8 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     DateTime now = tm().getTransactionTime();
     // Loads the target resource if it exists
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    Registry registry = Registry.get(existingDomain.getTld());
-    verifyDeleteAllowed(existingDomain, registry, now);
+    Tld tld = Tld.get(existingDomain.getTld());
+    verifyDeleteAllowed(existingDomain, tld, now);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setExistingDomain(existingDomain).build());
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
@@ -160,8 +160,8 @@ public final class DomainDeleteFlow implements TransactionalFlow {
       builder = existingDomain.asBuilder();
     }
     builder.setLastEppUpdateTime(now).setLastEppUpdateRegistrarId(registrarId);
-    Duration redemptionGracePeriodLength = registry.getRedemptionGracePeriodLength();
-    Duration pendingDeleteLength = registry.getPendingDeleteLength();
+    Duration redemptionGracePeriodLength = tld.getRedemptionGracePeriodLength();
+    Duration pendingDeleteLength = tld.getPendingDeleteLength();
     Optional<DomainDeleteSuperuserExtension> domainDeleteSuperuserExtension =
         eppInput.getSingleExtension(DomainDeleteSuperuserExtension.class);
     if (domainDeleteSuperuserExtension.isPresent()) {
@@ -249,7 +249,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
 
     Domain newDomain = builder.build();
     DomainHistory domainHistory =
-        buildDomainHistory(newDomain, registry, now, durationUntilDelete, inAddGracePeriod);
+        buildDomainHistory(newDomain, tld, now, durationUntilDelete, inAddGracePeriod);
     handlePendingTransferOnDelete(existingDomain, newDomain, now, domainHistory);
     // Close the autorenew billing event and poll message. This may delete the poll message.  Store
     // the updated recurring billing event, we'll need it later and can't reload it.
@@ -289,14 +289,14 @@ public final class DomainDeleteFlow implements TransactionalFlow {
         .build();
   }
 
-  private void verifyDeleteAllowed(Domain existingDomain, Registry registry, DateTime now)
+  private void verifyDeleteAllowed(Domain existingDomain, Tld tld, DateTime now)
       throws EppException {
     verifyNoDisallowedStatuses(existingDomain, DISALLOWED_STATUSES);
     verifyOptionalAuthInfo(authInfo, existingDomain);
     if (!isSuperuser) {
       verifyResourceOwnership(registrarId, existingDomain);
-      verifyNotInPredelegation(registry, now);
-      checkAllowedAccessToTld(registrarId, registry.getTld().toString());
+      verifyNotInPredelegation(tld, now);
+      checkAllowedAccessToTld(registrarId, tld.getTld().toString());
     }
     if (!existingDomain.getSubordinateHosts().isEmpty()) {
       throw new DomainToDeleteHasHostsException();
@@ -305,17 +305,18 @@ public final class DomainDeleteFlow implements TransactionalFlow {
 
   private DomainHistory buildDomainHistory(
       Domain domain,
-      Registry registry,
+      Tld tld,
       DateTime now,
       Duration durationUntilDelete,
       boolean inAddGracePeriod) {
     // We ignore prober transactions
-    if (registry.getTldType() == TldType.REAL) {
-      Duration maxGracePeriod = Collections.max(
-          ImmutableSet.of(
-              registry.getAddGracePeriodLength(),
-              registry.getAutoRenewGracePeriodLength(),
-              registry.getRenewGracePeriodLength()));
+    if (tld.getTldType() == TldType.REAL) {
+      Duration maxGracePeriod =
+          Collections.max(
+              ImmutableSet.of(
+                  tld.getAddGracePeriodLength(),
+                  tld.getAutoRenewGracePeriodLength(),
+                  tld.getRenewGracePeriodLength()));
       ImmutableSet<DomainTransactionRecord> cancelledRecords =
           createCancelingRecords(
               domain,

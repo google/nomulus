@@ -24,7 +24,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.util.SerializeUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,7 +53,7 @@ public class CursorTest extends EntityTestCase {
 
   @Test
   void testSuccess_persistScopedCursor() {
-    Registry tld = createTld("tld");
+    Tld tld = createTld("tld");
     this.fakeClock.advanceOneMilli();
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
     Cursor cursor = Cursor.createScoped(RDE_UPLOAD, time, tld);
@@ -78,7 +78,7 @@ public class CursorTest extends EntityTestCase {
 
   @Test
   void testFailure_VKeyWrongScope() {
-    Registry tld = createTld("tld");
+    Tld tld = createTld("tld");
     assertThrows(
         IllegalArgumentException.class,
         () -> Cursor.createGlobalVKey(RDE_UPLOAD),
@@ -106,7 +106,7 @@ public class CursorTest extends EntityTestCase {
     NullPointerException thrown =
         assertThrows(
             NullPointerException.class,
-            () -> Cursor.createScoped(null, START_OF_TIME, Registry.get("tld")));
+            () -> Cursor.createScoped(null, START_OF_TIME, Tld.get("tld")));
     assertThat(thrown).hasMessageThat().contains("Cursor type cannot be null");
   }
 
@@ -116,7 +116,7 @@ public class CursorTest extends EntityTestCase {
     NullPointerException thrown =
         assertThrows(
             NullPointerException.class,
-            () -> Cursor.createScoped(RDE_UPLOAD, null, Registry.get("tld")));
+            () -> Cursor.createScoped(RDE_UPLOAD, null, Tld.get("tld")));
     assertThat(thrown).hasMessageThat().contains("Cursor time cannot be null");
   }
 }

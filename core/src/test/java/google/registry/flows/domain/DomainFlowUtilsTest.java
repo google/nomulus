@@ -17,7 +17,7 @@ package google.registry.flows.domain;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccount;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -38,7 +38,7 @@ import google.registry.flows.domain.DomainFlowUtils.MissingBillingAccountMapExce
 import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.model.domain.Domain;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -182,7 +182,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
 
   private void persistFoobarTld(TldType tldType) {
     persistResource(
-        newRegistry("foobar", "FOOBAR")
+        newTld("foobar", "FOOBAR")
             .asBuilder()
             .setTldType(tldType)
             .setCurrency(CHF)

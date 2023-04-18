@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -57,7 +57,7 @@ public class ExportReservedTermsActionTest {
     action.response = response;
     action.driveConnection = driveConnection;
     action.exportUtils = new ExportUtils("# This is a disclaimer.");
-    action.tld = tld;
+    action.tldStr = tld;
     action.run();
   }
 
@@ -68,9 +68,8 @@ public class ExportReservedTermsActionTest {
         "lol,FULLY_BLOCKED",
         "cat,FULLY_BLOCKED");
     createTld("tld");
-    persistResource(Registry.get("tld").asBuilder()
-        .setReservedLists(rl)
-        .setDriveFolderId("brouhaha").build());
+    persistResource(
+        Tld.get("tld").asBuilder().setReservedLists(rl).setDriveFolderId("brouhaha").build());
     when(driveConnection.createOrUpdateFile(
         anyString(),
         any(MediaType.class),
@@ -91,7 +90,7 @@ public class ExportReservedTermsActionTest {
   @Test
   void test_uploadFileToDrive_doesNothingIfReservedListsNotConfigured() {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(ImmutableSet.of())
             .setDriveFolderId(null)
@@ -103,7 +102,7 @@ public class ExportReservedTermsActionTest {
 
   @Test
   void test_uploadFileToDrive_doesNothingWhenDriveFolderIdIsNull() {
-    persistResource(Registry.get("tld").asBuilder().setDriveFolderId(null).build());
+    persistResource(Tld.get("tld").asBuilder().setDriveFolderId(null).build());
     runAction("tld");
     verify(response).setStatus(SC_OK);
     verify(response)
@@ -129,6 +128,6 @@ public class ExportReservedTermsActionTest {
     assertThat(thrown)
         .hasCauseThat()
         .hasMessageThat()
-        .isEqualTo("No registry object(s) found for fakeTld");
+        .isEqualTo("No TLD object(s) found for fakeTld");
   }
 }

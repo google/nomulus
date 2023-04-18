@@ -21,8 +21,8 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAU
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.eppoutput.CheckData.DomainCheck.create;
-import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
-import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
+import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
@@ -81,8 +81,8 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.testing.DatabaseHelper;
 import java.math.BigDecimal;
@@ -119,7 +119,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @BeforeEach
   void initCheckTest() {
     createTld("tld", TldState.QUIET_PERIOD);
-    persistResource(Registry.get("tld").asBuilder().setReservedLists(createReservedList()).build());
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(createReservedList()).build());
   }
 
   @Test
@@ -195,7 +195,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   void testSuccess_allocationToken_premiumAnchorTenant_noFee() throws Exception {
     createTld("example");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setPremiumList(persistPremiumList("example1", USD, "example1,USD 100"))
             .build());
@@ -509,7 +509,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_oneReservedInSunrise() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
-    persistResource(Registry.get("tld").asBuilder().setReservedLists(createReservedList()).build());
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(createReservedList()).build());
     setEppInput("domain_check_one_tld_reserved.xml");
     doCheckTest(
         create(false, "reserved.tld", "Reserved"),
@@ -531,7 +531,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_domainWithMultipleReservationType_useMostSevereMessage() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(
                 createReservedList(),
@@ -567,7 +567,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   void testSuccess_multipartTld_oneReserved() throws Exception {
     createTld("tld.foo");
     persistResource(
-        Registry.get("tld.foo")
+        Tld.get("tld.foo")
             .asBuilder()
             .setReservedLists(
                 persistReservedList(
@@ -643,7 +643,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFailure_missingBillingAccount() {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
             .setCreateBillingCost(Money.ofMajor(JPY, 800))
@@ -797,7 +797,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
                 .setDiscountFraction(0.5)
                 .build());
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .build());
@@ -814,7 +814,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_multipleReservations() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(
                 persistReservedList("example-sunrise", "allowedinsunrise,ALLOWED_IN_SUNRISE"))
@@ -940,7 +940,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
                 .setDiscountFraction(0.5)
                 .build());
     persistResource(
-        Registry.get("example")
+        Tld.get("example")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .build());
@@ -962,7 +962,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
                 .setDiscountFraction(0.5)
                 .build());
     persistResource(
-        Registry.get("example")
+        Tld.get("example")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .build());
@@ -984,7 +984,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
                 .setDiscountFraction(0.5)
                 .build());
     persistResource(
-        Registry.get("example")
+        Tld.get("example")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .build());
@@ -1030,7 +1030,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     setEppInput("domain_check_fee_premium_v06.xml");
     clock.setTo(DateTime.parse("2010-01-01T10:00:00Z"));
     persistResource(
-        Registry.get("example")
+        Tld.get("example")
             .asBuilder()
             .setEapFeeSchedule(
                 new ImmutableSortedMap.Builder<DateTime, Money>(Ordering.natural())
@@ -1059,7 +1059,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistPendingDeleteDomain("rich.example");
     setEppInput("domain_check_fee_premium_v06.xml");
     persistResource(
-        Registry.get("example")
+        Tld.get("example")
             .asBuilder()
             .setEapFeeSchedule(
                 new ImmutableSortedMap.Builder<DateTime, Money>(Ordering.natural())
@@ -1136,8 +1136,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     // Note that the response xml expects to see "11.10" with two digits after the decimal point.
     // This works because Money.getAmount(), used in the flow, returns a BigDecimal that is set to
     // display the number of digits that is conventional for the given currency.
-    persistResource(
-        Registry.get("tld").asBuilder().setCreateBillingCost(Money.of(USD, 11.1)).build());
+    persistResource(Tld.get("tld").asBuilder().setCreateBillingCost(Money.of(USD, 11.1)).build());
     setEppInput("domain_check_fee_fractional.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_fractional_response.xml"));
   }
@@ -1146,7 +1145,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_reservedName_v06() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1158,7 +1157,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_reservedName_restoreFeeWithDupes_v06() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1173,7 +1172,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_reservedName_v11_create() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1185,7 +1184,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_reservedName_v11_renew() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1197,7 +1196,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_reservedName_v11_transfer() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1209,7 +1208,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_reservedName_v11_restore() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1221,7 +1220,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_reservedName_v11_restore_withRenewals() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1238,7 +1237,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_reservedName_v12() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1250,7 +1249,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_reservedName_restoreFeeWithDupes_v12() throws Exception {
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1265,7 +1264,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   void testFeeExtension_feesNotOmittedOnReservedNamesInSunrise_v06() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1279,7 +1278,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
       throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1297,7 +1296,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   void testFeeExtension_feesNotOmittedOnReservedNamesInSunrise_v11_create() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1310,7 +1309,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   void testFeeExtension_feesNotOmittedOnReservedNamesInSunrise_v11_renew() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1323,7 +1322,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   void testFeeExtension_feesNotOmittedOnReservedNamesInSunrise_v11_transfer() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1336,7 +1335,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   void testFeeExtension_feesNotOmittedOnReservedNamesInSunrise_v11_restore() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1349,7 +1348,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   void testFeeExtension_feesNotOmittedOnReservedNamesInSunrise_v12() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
             .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
@@ -1546,7 +1545,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     clock.setTo(DateTime.parse("2010-01-01T10:00:00Z"));
     persistActiveDomain("example1.tld");
     persistResource(
-        Registry.get("tld")
+        Tld.get("tld")
             .asBuilder()
             .setEapFeeSchedule(
                 new ImmutableSortedMap.Builder<DateTime, Money>(Ordering.natural())

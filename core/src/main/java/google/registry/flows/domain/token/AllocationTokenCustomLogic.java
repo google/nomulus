@@ -22,7 +22,7 @@ import google.registry.flows.EppException;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import org.joda.time.DateTime;
 
 /**
@@ -36,7 +36,7 @@ public class AllocationTokenCustomLogic {
   public AllocationToken validateToken(
       DomainCommand.Create command,
       AllocationToken token,
-      Registry registry,
+      Tld tld,
       String registrarId,
       DateTime now)
       throws EppException {
@@ -46,7 +46,7 @@ public class AllocationTokenCustomLogic {
 
   /** Performs additional custom logic for validating a token on an existing domain. */
   public AllocationToken validateToken(
-      Domain domain, AllocationToken token, Registry registry, String registrarId, DateTime now)
+      Domain domain, AllocationToken token, Tld tld, String registrarId, DateTime now)
       throws EppException {
     // Do nothing.
     return token;

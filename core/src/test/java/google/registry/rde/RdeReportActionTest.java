@@ -47,7 +47,7 @@ import com.google.common.io.ByteSource;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.common.Cursor;
 import google.registry.model.rde.RdeRevision;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.HttpException.InternalServerErrorException;
@@ -96,7 +96,7 @@ public class RdeReportActionTest {
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final BlobId reportFile =
       BlobId.of("tub", "test_2006-06-06_full_S1_R0-report.xml.ghostryde");
-  private Registry registry;
+  private Tld registry;
 
   private RdeReportAction createAction() {
     RdeReporter reporter = new RdeReporter();
@@ -133,8 +133,9 @@ public class RdeReportActionTest {
     RdeReportAction action = createAction();
     action.tld = "lol";
     action.run();
-    verify(runner).lockRunAndRollForward(
-        action, Registry.get("lol"), standardSeconds(30), RDE_REPORT, standardDays(1));
+    verify(runner)
+        .lockRunAndRollForward(
+            action, Tld.get("lol"), standardSeconds(30), RDE_REPORT, standardDays(1));
     verifyNoMoreInteractions(runner);
   }
 
@@ -209,7 +210,7 @@ public class RdeReportActionTest {
   }
 
   void testRunWithLock_nonexistentCursor_throws204() {
-    tm().transact(() -> tm().delete(Cursor.createScopedVKey(RDE_UPLOAD, Registry.get("test"))));
+    tm().transact(() -> tm().delete(Cursor.createScopedVKey(RDE_UPLOAD, Tld.get("test"))));
     NoContentException thrown =
         assertThrows(
             NoContentException.class, () -> createAction().runWithLock(loadRdeReportCursor()));
@@ -223,7 +224,7 @@ public class RdeReportActionTest {
   @Test
   void testRunWithLock_uploadNotFinished_throws204() {
     persistResource(
-        Cursor.createScoped(RDE_UPLOAD, DateTime.parse("2006-06-06TZ"), Registry.get("test")));
+        Cursor.createScoped(RDE_UPLOAD, DateTime.parse("2006-06-06TZ"), Tld.get("test")));
     NoContentException thrown =
         assertThrows(
             NoContentException.class, () -> createAction().runWithLock(loadRdeReportCursor()));

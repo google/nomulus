@@ -32,7 +32,7 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeNamingUtils;
 import google.registry.model.rde.RdeRevision;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.rde.EscrowTaskRunner.EscrowTask;
 import google.registry.request.Action;
 import google.registry.request.HttpException.NoContentException;
@@ -76,7 +76,7 @@ public final class RdeReportAction implements Runnable, EscrowTask {
 
   @Override
   public void run() {
-    runner.lockRunAndRollForward(this, Registry.get(tld), timeout, CursorType.RDE_REPORT, interval);
+    runner.lockRunAndRollForward(this, Tld.get(tld), timeout, CursorType.RDE_REPORT, interval);
   }
 
   @Override
@@ -85,7 +85,7 @@ public final class RdeReportAction implements Runnable, EscrowTask {
         tm().transact(
                 () ->
                     tm().loadByKeyIfPresent(
-                            Cursor.createScopedVKey(CursorType.RDE_UPLOAD, Registry.get(tld))));
+                            Cursor.createScopedVKey(CursorType.RDE_UPLOAD, Tld.get(tld))));
     DateTime cursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(cursorTime, watermark)) {
       throw new NoContentException(

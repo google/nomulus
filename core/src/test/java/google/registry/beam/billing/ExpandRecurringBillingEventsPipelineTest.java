@@ -48,7 +48,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -313,7 +313,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
   void testSuccess_expandMultipleEvents_multipleDomains(int numOfThreads) {
     createTld("test");
     persistResource(
-        Registry.get("test")
+        Tld.get("test")
             .asBuilder()
             .setPremiumList(persistPremiumList("premium", USD, "other,USD 100"))
             .build());
@@ -370,7 +370,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
                         domain
                             .getCreationTime()
                             .plusYears(2)
-                            .plus(Registry.DEFAULT_AUTO_RENEW_GRACE_PERIOD),
+                            .plus(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD),
                         TransactionReportField.netRenewsFieldFromYears(1),
                         1)))
             .build());
@@ -394,10 +394,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
             .asBuilder()
             .setEventTime(domain.getCreationTime().plusYears(2))
             .setBillingTime(
-                domain
-                    .getCreationTime()
-                    .plusYears(2)
-                    .plus(Registry.DEFAULT_AUTO_RENEW_GRACE_PERIOD))
+                domain.getCreationTime().plusYears(2).plus(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD))
             .build(),
         recurring
             .asBuilder()
@@ -455,10 +452,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
                 DomainTransactionRecord.create(
                     domain.getTld(),
                     // We report this when the autorenew grace period ends.
-                    domain
-                        .getCreationTime()
-                        .plusYears(1)
-                        .plus(Registry.DEFAULT_AUTO_RENEW_GRACE_PERIOD),
+                    domain.getCreationTime().plusYears(1).plus(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD),
                     TransactionReportField.netRenewsFieldFromYears(1),
                     1)))
         .build();
@@ -472,7 +466,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
       Domain domain, DomainHistory history, Recurring recurring, int cost) {
     return new BillingEvent.OneTime.Builder()
         .setBillingTime(
-            domain.getCreationTime().plusYears(1).plus(Registry.DEFAULT_AUTO_RENEW_GRACE_PERIOD))
+            domain.getCreationTime().plusYears(1).plus(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD))
         .setRegistrarId("TheRegistrar")
         .setCost(Money.of(USD, cost))
         .setEventTime(domain.getCreationTime().plusYears(1))

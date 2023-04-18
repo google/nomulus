@@ -22,7 +22,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
-import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Tld.TldState;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import javax.persistence.Entity;

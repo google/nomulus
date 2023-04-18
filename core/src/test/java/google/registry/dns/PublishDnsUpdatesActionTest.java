@@ -47,7 +47,7 @@ import google.registry.dns.DnsMetrics.CommitStatus;
 import google.registry.dns.DnsMetrics.PublishStatus;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.model.domain.Domain;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.HttpException.ServiceUnavailableException;
@@ -99,10 +99,7 @@ public class PublishDnsUpdatesActionTest {
     registrySupportEmail = Lazies.of(new InternetAddress("registry@test.com"));
     registryCcEmail = Lazies.of(new InternetAddress("registry-cc@test.com"));
     persistResource(
-        Registry.get("xn--q9jyb4c")
-            .asBuilder()
-            .setDnsWriters(ImmutableSet.of("correctWriter"))
-            .build());
+        Tld.get("xn--q9jyb4c").asBuilder().setDnsWriters(ImmutableSet.of("correctWriter")).build());
     Domain domain1 = persistActiveDomain("example.xn--q9jyb4c");
     persistActiveSubordinateHost("ns1.example.xn--q9jyb4c", domain1);
     persistActiveSubordinateHost("ns2.example.xn--q9jyb4c", domain1);
@@ -231,7 +228,7 @@ public class PublishDnsUpdatesActionTest {
 
   @Test
   void testAction_acquiresCorrectLock() {
-    persistResource(Registry.get("xn--q9jyb4c").asBuilder().setNumDnsPublishLocks(4).build());
+    persistResource(Tld.get("xn--q9jyb4c").asBuilder().setNumDnsPublishLocks(4).build());
     LockHandler mockLockHandler = mock(LockHandler.class);
     when(mockLockHandler.executeWithLocks(any(), any(), any(), any())).thenReturn(true);
     action =
@@ -561,7 +558,7 @@ public class PublishDnsUpdatesActionTest {
 
   @Test
   void testParam_invalidLockIndex() {
-    persistResource(Registry.get("xn--q9jyb4c").asBuilder().setNumDnsPublishLocks(4).build());
+    persistResource(Tld.get("xn--q9jyb4c").asBuilder().setNumDnsPublishLocks(4).build());
     action =
         createActionWithCustomLocks(
             "xn--q9jyb4c",
@@ -589,7 +586,7 @@ public class PublishDnsUpdatesActionTest {
 
   @Test
   void testRegistryParam_mismatchedMaxLocks() {
-    persistResource(Registry.get("xn--q9jyb4c").asBuilder().setNumDnsPublishLocks(4).build());
+    persistResource(Tld.get("xn--q9jyb4c").asBuilder().setNumDnsPublishLocks(4).build());
     action =
         createActionWithCustomLocks(
             "xn--q9jyb4c",

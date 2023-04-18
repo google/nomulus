@@ -17,7 +17,7 @@ package google.registry.tools.params;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.Tld.TldState;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link EnumParameter}. */
@@ -38,6 +38,6 @@ class EnumParameterTest {
         assertThrows(IllegalArgumentException.class, () -> instance.convert("FREE_DOMAINS"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("No enum constant google.registry.model.tld.Registry.TldState.FREE_DOMAINS");
+        .contains("No enum constant google.registry.model.tld.Tld.TldState.FREE_DOMAINS");
   }
 }

@@ -67,7 +67,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.money.Money;
@@ -141,8 +141,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     boolean isExpired = existingDomain.getRegistrationExpirationTime().isBefore(now);
     FeesAndCredits feesAndCredits =
-        pricingLogic.getRestorePrice(
-            Registry.get(existingDomain.getTld()), targetId, now, isExpired);
+        pricingLogic.getRestorePrice(Tld.get(existingDomain.getTld()), targetId, now, isExpired);
     Optional<FeeUpdateCommandExtension> feeUpdate =
         eppInput.getSingleExtension(FeeUpdateCommandExtension.class);
     verifyRestoreAllowed(command, existingDomain, feeUpdate, feesAndCredits, now);

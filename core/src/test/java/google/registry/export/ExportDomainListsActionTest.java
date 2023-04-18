@@ -33,8 +33,8 @@ import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import google.registry.gcs.GcsUtils;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.storage.drive.DriveConnection;
@@ -62,8 +62,8 @@ class ExportDomainListsActionTest {
   void beforeEach() {
     createTld("tld");
     createTld("testtld");
-    persistResource(Registry.get("tld").asBuilder().setDriveFolderId("brouhaha").build());
-    persistResource(Registry.get("testtld").asBuilder().setTldType(TldType.TEST).build());
+    persistResource(Tld.get("tld").asBuilder().setDriveFolderId("brouhaha").build());
+    persistResource(Tld.get("testtld").asBuilder().setTldType(TldType.TEST).build());
 
     action = new ExportDomainListsAction();
     action.gcsBucket = "outputbucket";
@@ -118,7 +118,7 @@ class ExportDomainListsActionTest {
   @Test
   void test_outputsDomainsFromDifferentTldsToMultipleFiles() throws Exception {
     createTld("tldtwo");
-    persistResource(Registry.get("tldtwo").asBuilder().setDriveFolderId("hooray").build());
+    persistResource(Tld.get("tldtwo").asBuilder().setDriveFolderId("hooray").build());
 
     createTld("tldthree");
     // You'd think this test was written around Christmas, but it wasn't.

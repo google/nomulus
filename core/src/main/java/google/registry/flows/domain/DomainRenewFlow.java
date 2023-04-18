@@ -84,7 +84,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.money.Money;
@@ -173,12 +173,12 @@ public final class DomainRenewFlow implements TransactionalFlow {
     Renew command = (Renew) resourceCommand;
     // Loads the target resource if it exists
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    String tld = existingDomain.getTld();
-    Registry registry = Registry.get(tld);
+    String tldStr = existingDomain.getTld();
+    Tld tld = Tld.get(tldStr);
     Optional<AllocationToken> allocationToken =
         allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
             existingDomain,
-            registry,
+            tld,
             registrarId,
             now,
             CommandName.RENEW,
@@ -187,7 +187,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
     if (!allocationToken.isPresent()) {
       allocationToken =
           DomainFlowUtils.checkForDefaultToken(
-              registry, existingDomain.getDomainName(), CommandName.RENEW, registrarId, now);
+              tld, existingDomain.getDomainName(), CommandName.RENEW, registrarId, now);
       if (allocationToken.isPresent()) {
         defaultTokenUsed = true;
       }
@@ -207,7 +207,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
         tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     FeesAndCredits feesAndCredits =
         pricingLogic.getRenewPrice(
-            Registry.get(existingDomain.getTld()),
+            Tld.get(existingDomain.getTld()),
             targetId,
             now,
             years,
@@ -225,7 +225,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
     // Bill for this explicit renew itself.
     BillingEvent.OneTime explicitRenewEvent =
         createRenewBillingEvent(
-            tld, feesAndCredits.getTotalCost(), years, domainHistoryId, allocationToken, now);
+            tldStr, feesAndCredits.getTotalCost(), years, domainHistoryId, allocationToken, now);
     // Create a new autorenew billing event and poll message starting at the new expiration time.
     BillingEvent.Recurring newAutorenewEvent =
         newAutorenewBillingEvent(existingDomain)
@@ -255,8 +255,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
                     GracePeriodStatus.RENEW, existingDomain.getRepoId(), explicitRenewEvent))
             .build();
     DomainHistory domainHistory =
-        buildDomainHistory(
-            newDomain, now, command.getPeriod(), registry.getRenewGracePeriodLength());
+        buildDomainHistory(newDomain, now, command.getPeriod(), tld.getRenewGracePeriodLength());
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
     entitiesToSave.add(
         newDomain, domainHistory, explicitRenewEvent, newAutorenewEvent, newAutorenewPollMessage);
@@ -358,7 +357,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
                 .filter(t -> AllocationToken.TokenBehavior.DEFAULT.equals(t.getTokenBehavior()))
                 .map(AllocationToken::createVKey)
                 .orElse(null))
-        .setBillingTime(now.plus(Registry.get(tld).getRenewGracePeriodLength()))
+        .setBillingTime(now.plus(Tld.get(tld).getRenewGracePeriodLength()))
         .setDomainHistoryId(domainHistoryId)
         .build();
   }

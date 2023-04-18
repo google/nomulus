@@ -39,8 +39,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.Hashing;
 import com.google.common.net.InternetDomainName;
 import google.registry.dns.DnsConstants.TargetType;
-import google.registry.model.tld.Registry;
-import google.registry.model.tld.Registry.TldType;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
@@ -82,18 +82,16 @@ public class ReadDnsQueueActionTest {
     // To make sure it's never in the past, we set the date far-far into the future
     clock.setTo(DateTime.parse("3000-01-01TZ"));
     createTlds("com", "net", "example", "multilock.uk");
+    persistResource(Tld.get("com").asBuilder().setDnsWriters(ImmutableSet.of("comWriter")).build());
+    persistResource(Tld.get("net").asBuilder().setDnsWriters(ImmutableSet.of("netWriter")).build());
     persistResource(
-        Registry.get("com").asBuilder().setDnsWriters(ImmutableSet.of("comWriter")).build());
-    persistResource(
-        Registry.get("net").asBuilder().setDnsWriters(ImmutableSet.of("netWriter")).build());
-    persistResource(
-        Registry.get("example")
+        Tld.get("example")
             .asBuilder()
             .setTldType(TldType.TEST)
             .setDnsWriters(ImmutableSet.of("exampleWriter"))
             .build());
     persistResource(
-        Registry.get("multilock.uk")
+        Tld.get("multilock.uk")
             .asBuilder()
             .setNumDnsPublishLocks(1000)
             .setDnsWriters(ImmutableSet.of("multilockWriter"))
@@ -217,7 +215,7 @@ public class ReadDnsQueueActionTest {
   @RetryingTest(4)
   void testSuccess_twoDnsWriters() {
     persistResource(
-        Registry.get("com")
+        Tld.get("com")
             .asBuilder()
             .setDnsWriters(ImmutableSet.of("comWriter", "otherWriter"))
             .build());
@@ -256,7 +254,7 @@ public class ReadDnsQueueActionTest {
 
   @RetryingTest(4)
   void testSuccess_oneTldPaused_returnedToQueue() {
-    persistResource(Registry.get("net").asBuilder().setDnsPaused(true).build());
+    persistResource(Tld.get("net").asBuilder().setDnsPaused(true).build());
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.net");
     dnsQueue.addDomainRefreshTask("domain.example");

@@ -56,7 +56,7 @@ import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
-import google.registry.model.tld.Registry;
+import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
@@ -488,7 +488,7 @@ public class DomainBase extends EppResource
                     GracePeriodStatus.TRANSFER,
                     domain.getRepoId(),
                     transferExpirationTime.plus(
-                        Registry.get(domain.getTld()).getTransferGracePeriodLength()),
+                        Tld.get(domain.getTld()).getTransferGracePeriodLength()),
                     transferData.getGainingRegistrarId(),
                     transferData.getServerApproveBillingEvent())));
       } else {
@@ -523,8 +523,7 @@ public class DomainBase extends EppResource
               GracePeriod.createForRecurring(
                   GracePeriodStatus.AUTO_RENEW,
                   domain.getRepoId(),
-                  lastAutorenewTime.plus(
-                      Registry.get(domain.getTld()).getAutoRenewGracePeriodLength()),
+                  lastAutorenewTime.plus(Tld.get(domain.getTld()).getAutoRenewGracePeriodLength()),
                   domain.getCurrentSponsorRegistrarId(),
                   domain.getAutorenewBillingEvent()));
       newLastEppUpdateTime = Optional.of(lastAutorenewTime);
