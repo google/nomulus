@@ -32,7 +32,6 @@ import google.registry.cron.CronModule;
 import google.registry.cron.TldFanoutAction;
 import google.registry.dns.DnsModule;
 import google.registry.dns.PublishDnsUpdatesAction;
-import google.registry.dns.ReadDnsQueueAction;
 import google.registry.dns.ReadDnsRefreshRequestsAction;
 import google.registry.dns.RefreshDnsAction;
 import google.registry.dns.RefreshDnsOnHostRenameAction;
@@ -142,8 +141,6 @@ interface BackendRequestComponent {
   PublishInvoicesAction uploadInvoicesAction();
 
   PublishSpec11ReportAction publishSpec11ReportAction();
-
-  ReadDnsQueueAction readDnsQueueAction();
 
   ReadDnsRefreshRequestsAction readDnsRefreshRequestsAction();
 

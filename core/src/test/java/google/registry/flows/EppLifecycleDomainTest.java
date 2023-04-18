@@ -48,7 +48,6 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.testing.TaskQueueExtension;
 import google.registry.tmch.TmchData;
 import google.registry.tmch.TmchTestData;
 import org.joda.money.Money;
@@ -72,8 +71,6 @@ class EppLifecycleDomainTest extends EppTestCase {
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
-
-  @RegisterExtension final TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   @BeforeEach
   void beforeEach() {

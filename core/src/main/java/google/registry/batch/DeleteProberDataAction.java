@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.batch.BatchModule.PARAM_DRY_RUN;
 import static google.registry.config.RegistryEnvironment.PRODUCTION;
+import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_DELETE;
 import static google.registry.model.tld.Registries.getTldsOfType;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -32,7 +33,6 @@ import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
-import google.registry.dns.DnsUtils;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.domain.Domain;
@@ -97,8 +97,6 @@ public class DeleteProberDataAction implements Runnable {
 
   /** Number of domains to retrieve and delete per SQL transaction. */
   private static final int BATCH_SIZE = 1000;
-
-  @Inject DnsUtils dnsUtils;
 
   @Inject
   @Parameter(PARAM_DRY_RUN)
@@ -222,7 +220,7 @@ public class DeleteProberDataAction implements Runnable {
     }
   }
 
-  private void hardDeleteDomainsAndHosts(
+  private static void hardDeleteDomainsAndHosts(
       ImmutableList<String> domainRepoIds, ImmutableList<String> hostNames) {
     tm().query("DELETE FROM Host WHERE hostName IN :hostNames")
         .setParameter("hostNames", hostNames)
@@ -264,6 +262,6 @@ public class DeleteProberDataAction implements Runnable {
     // messages, or auto-renews because those will all be hard-deleted the next time the job runs
     // anyway.
     tm().putAll(ImmutableList.of(deletedDomain, historyEntry));
-    dnsUtils.requestDomainDnsRefresh(deletedDomain.getDomainName());
+    requestDomainDnsRefresh(deletedDomain.getDomainName());
   }
 }

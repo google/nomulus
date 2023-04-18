@@ -15,12 +15,14 @@
 package google.registry.dns;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatabaseHelper.assertDomainDnsRequests;
+import static google.registry.testing.DatabaseHelper.assertHostDnsRequests;
+import static google.registry.testing.DatabaseHelper.assertNoDnsRequestsExcept;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHost;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 
 import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.domain.Domain;
@@ -28,7 +30,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.NotFoundException;
-import google.registry.testing.DnsUtilsHelper;
 import google.registry.testing.FakeClock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,12 +42,10 @@ public class RefreshDnsActionTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private final DnsUtils dnsUtils = mock(DnsUtils.class);
-  private final DnsUtilsHelper dnsUtilsHelper = new DnsUtilsHelper(dnsUtils);
   private final FakeClock clock = new FakeClock();
 
   private void run(TargetType type, String name) {
-    new RefreshDnsAction(name, type, clock, dnsUtils).run();
+    new RefreshDnsAction(name, type, clock).run();
   }
 
   @BeforeEach
@@ -59,8 +58,8 @@ public class RefreshDnsActionTest {
     Domain domain = persistActiveDomain("example.xn--q9jyb4c");
     persistActiveSubordinateHost("ns1.example.xn--q9jyb4c", domain);
     run(TargetType.HOST, "ns1.example.xn--q9jyb4c");
-    dnsUtilsHelper.assertHostDnsRequests("ns1.example.xn--q9jyb4c");
-    dnsUtilsHelper.assertNoMoreDnsRequests();
+    assertHostDnsRequests("ns1.example.xn--q9jyb4c");
+    assertNoDnsRequestsExcept("ns1.example.xn--q9jyb4c");
   }
 
   @Test
@@ -74,7 +73,7 @@ public class RefreshDnsActionTest {
               try {
                 run(TargetType.HOST, "ns1.example.xn--q9jyb4c");
               } finally {
-                dnsUtilsHelper.assertNoMoreDnsRequests();
+                assertNoDnsRequestsExcept();
               }
             });
     assertThat(thrown)
@@ -86,8 +85,8 @@ public class RefreshDnsActionTest {
   void testSuccess_domain() {
     persistActiveDomain("example.xn--q9jyb4c");
     run(TargetType.DOMAIN, "example.xn--q9jyb4c");
-    dnsUtilsHelper.assertDomainDnsRequests("example.xn--q9jyb4c");
-    dnsUtilsHelper.assertNoMoreDnsRequests();
+    assertDomainDnsRequests("example.xn--q9jyb4c");
+    assertNoDnsRequestsExcept("example.xn--q9jyb4c");
   }
 
   @Test

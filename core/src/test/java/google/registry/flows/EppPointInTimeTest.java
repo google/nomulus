@@ -36,7 +36,6 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
-import google.registry.testing.TaskQueueExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,8 +49,6 @@ class EppPointInTimeTest {
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
-
-  @RegisterExtension final TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private EppLoader eppLoader;
 
