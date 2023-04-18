@@ -14,6 +14,7 @@
 
 package google.registry.dns;
 
+import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.dns.RefreshDnsOnHostRenameAction.PATH;
 import static google.registry.model.EppResourceUtils.getLinkedDomainKeys;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -45,14 +46,11 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
 
   private final VKey<Host> hostKey;
   private final Response response;
-  private final DnsUtils dnsUtils;
 
   @Inject
-  RefreshDnsOnHostRenameAction(
-      @Parameter(PARAM_HOST_KEY) String hostKey, Response response, DnsUtils dnsUtils) {
+  RefreshDnsOnHostRenameAction(@Parameter(PARAM_HOST_KEY) String hostKey, Response response) {
     this.hostKey = VKey.createEppVKeyFromString(hostKey);
     this.response = response;
-    this.dnsUtils = dnsUtils;
   }
 
   @Override
@@ -76,7 +74,7 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
                     .stream()
                     .map(domainKey -> tm().loadByKey(domainKey))
                     .filter(Domain::shouldPublishToDns)
-                    .forEach(domain -> dnsUtils.requestDomainDnsRefresh(domain.getDomainName()));
+                    .forEach(domain -> requestDomainDnsRefresh(domain.getDomainName()));
               }
 
               if (!hostValid) {

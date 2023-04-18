@@ -201,16 +201,6 @@
   </task>
 
   <task>
-    <url><![CDATA[/_dr/cron/readDnsQueue?jitterSeconds=45]]></url>
-    <name>readDnsQueue</name>
-    <description>
-      Lease all tasks from the dns-pull queue, group by TLD, and invoke PublishDnsUpdates for each
-      group.
-    </description>
-    <schedule>*/1 * * * *</schedule>
-  </task>
-
-  <task>
     <url>
       <![CDATA[/_dr/cron/fanout?queue=dns-refresh&forEachRealTld&forEachTestTld&endpoint=/_dr/task/readDnsRefreshRequests&dnsJitterSeconds=45]]></url>
     <name>readDnsRefreshRequests</name>

@@ -15,11 +15,11 @@
 package google.registry.dns;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatabaseHelper.assertHostDnsRequests;
+import static google.registry.testing.DatabaseHelper.assertNoDnsRequestsExcept;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHost;
-import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -30,7 +30,6 @@ import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.RequestModule;
 import google.registry.testing.CloudTasksHelper.CloudTasksHelperModule;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TaskQueueExtension;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.servlet.http.HttpServletRequest;
@@ -43,18 +42,15 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for Dagger injection of the DNS package. */
 public final class DnsInjectionTest {
 
-  @RegisterExtension
-  final JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
-
-  @RegisterExtension final TaskQueueExtension taskQueue = new TaskQueueExtension();
-
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);
   private final StringWriter httpOutput = new StringWriter();
   private final FakeClock clock = new FakeClock(DateTime.parse("2014-01-01TZ"));
   private DnsTestComponent component;
-  private DnsQueue dnsQueue;
+
+  @RegisterExtension
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -64,18 +60,18 @@ public final class DnsInjectionTest {
             .requestModule(new RequestModule(req, rsp))
             .cloudTasksHelperModule(new CloudTasksHelperModule(clock))
             .build();
-    dnsQueue = component.dnsQueue();
     createTld("lol");
   }
 
   @Test
-  void testReadDnsQueueAction_injectsAndWorks() {
+  void testReadDnsRefreshRequestsAction_injectsAndWorks() {
     persistActiveSubordinateHost("ns1.example.lol", persistActiveDomain("example.lol"));
     clock.advanceOneMilli();
-    dnsQueue.addDomainRefreshTask("example.lol");
+    DnsUtils.requestDomainDnsRefresh("example.lol");
     when(req.getParameter("tld")).thenReturn("lol");
-    component.readDnsQueueAction().run();
-    assertNoDnsTasksEnqueued();
+    clock.advanceOneMilli();
+    component.readDnsRefreshRequestsAction().run();
+    assertNoDnsRequestsExcept();
   }
 
   @Test
@@ -84,7 +80,7 @@ public final class DnsInjectionTest {
     when(req.getParameter("type")).thenReturn("domain");
     when(req.getParameter("name")).thenReturn("example.lol");
     component.refreshDns().run();
-    assertDnsTasksEnqueued("example.lol");
+    assertNoDnsRequestsExcept("example.lol");
   }
 
   @Test
@@ -102,7 +98,7 @@ public final class DnsInjectionTest {
     when(req.getParameter("type")).thenReturn("host");
     when(req.getParameter("name")).thenReturn("ns1.example.lol");
     component.refreshDns().run();
-    assertDnsTasksEnqueued("ns1.example.lol");
+    assertHostDnsRequests("ns1.example.lol");
   }
 
   @Test

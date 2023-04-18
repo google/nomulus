@@ -15,23 +15,12 @@
 package google.registry.dns;
 
 /** Static class for DNS-related constants. */
-public class DnsConstants {
+public final class DnsConstants {
+
   private DnsConstants() {}
 
-  /** The name of the DNS pull queue. */
-  public static final String DNS_PULL_QUEUE_NAME = "dns-pull";  // See queue.xml.
-
   /** The name of the DNS publish push queue. */
-  public static final String DNS_PUBLISH_PUSH_QUEUE_NAME = "dns-publish";  // See queue.xml.
-
-  /** The parameter to use for storing the target type ("domain" or "host" or "zone"). */
-  public static final String DNS_TARGET_TYPE_PARAM = "Target-Type";
-
-  /** The parameter to use for storing the target name (domain or host name) with the task. */
-  public static final String DNS_TARGET_NAME_PARAM = "Target-Name";
-
-  /** The parameter to use for storing the creation time with the task. */
-  public static final String DNS_TARGET_CREATE_TIME_PARAM = "Create-Time";
+  public static final String DNS_PUBLISH_PUSH_QUEUE_NAME = "dns-publish"; // See queue.xml.
 
   /** The possible values of the {@code DNS_TARGET_TYPE_PARAM} parameter. */
   public enum TargetType {

@@ -19,7 +19,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.dns.RefreshDnsOnHostRenameAction.PARAM_HOST_KEY;
 import static google.registry.dns.RefreshDnsOnHostRenameAction.QUEUE_HOST_RENAME;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.testing.DatabaseHelper.assertHostDnsRequests;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
+import static google.registry.testing.DatabaseHelper.assertNoDnsRequestsExcept;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
@@ -183,7 +185,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
     Host renamedHost = doSuccessfulTest();
     assertThat(renamedHost.isSubordinate()).isTrue();
-    dnsUtilsHelper.assertHostDnsRequests("ns1.example.tld", "ns2.example.tld");
+    assertHostDnsRequests("ns1.example.tld", "ns2.example.tld");
     VKey<Host> oldVKeyAfterRename = ForeignKeyUtils.load(Host.class, oldHostName(), clock.nowUtc());
     assertThat(oldVKeyAfterRename).isNull();
   }
@@ -232,7 +234,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         .and()
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.HOST_UPDATE);
-    dnsUtilsHelper.assertHostDnsRequests("ns1.example.tld");
+    assertHostDnsRequests("ns1.example.tld");
   }
 
   @Test
@@ -258,7 +260,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         .and()
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.HOST_UPDATE);
-    dnsUtilsHelper.assertHostDnsRequests("ns1.example.tld");
+    assertHostDnsRequests("ns1.example.tld");
   }
 
   @Test
@@ -292,7 +294,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         .hasLastTransferTime(oneDayAgo);
     Domain reloadedDomain = loadByEntity(domain).cloneProjectedAtTime(now);
     assertThat(reloadedDomain.getSubordinateHosts()).containsExactly("ns2.example.tld");
-    dnsUtilsHelper.assertHostDnsRequests("ns1.example.tld", "ns2.example.tld");
+    assertHostDnsRequests("ns1.example.tld", "ns2.example.tld");
   }
 
   @Test
@@ -327,7 +329,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     assertThat(loadByEntity(foo).cloneProjectedAtTime(now).getSubordinateHosts()).isEmpty();
     assertThat(loadByEntity(example).cloneProjectedAtTime(now).getSubordinateHosts())
         .containsExactly("ns2.example.tld");
-    dnsUtilsHelper.assertHostDnsRequests("ns2.foo.tld", "ns2.example.tld");
+    assertHostDnsRequests("ns2.foo.tld", "ns2.example.tld");
   }
 
   @Test
@@ -364,7 +366,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     assertThat(reloadedFooDomain.getSubordinateHosts()).isEmpty();
     Domain reloadedTldDomain = loadByEntity(tldDomain).cloneProjectedAtTime(now);
     assertThat(reloadedTldDomain.getSubordinateHosts()).containsExactly("ns2.example.tld");
-    dnsUtilsHelper.assertHostDnsRequests("ns1.example.foo", "ns2.example.tld");
+    assertHostDnsRequests("ns1.example.foo", "ns2.example.tld");
   }
 
   @Test
@@ -407,7 +409,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     assertThat(renamedHost.getLastTransferTime()).isEqualTo(oneDayAgo);
     Domain reloadedDomain = loadByEntity(domain).cloneProjectedAtTime(clock.nowUtc());
     assertThat(reloadedDomain.getSubordinateHosts()).isEmpty();
-    dnsUtilsHelper.assertHostDnsRequests("ns1.example.foo");
+    assertHostDnsRequests("ns1.example.foo");
   }
 
   @Test
@@ -419,7 +421,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     persistActiveHost(oldHostName());
     assertThat(domain.getSubordinateHosts()).isEmpty();
     assertThrows(CannotRenameExternalHostException.class, this::runFlow);
-    dnsUtilsHelper.assertNoMoreDnsRequests();
+    assertNoDnsRequestsExcept();
   }
 
   @Test
@@ -443,7 +445,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         .hasLastTransferTime(null);
     assertThat(loadByEntity(domain).cloneProjectedAtTime(now).getSubordinateHosts())
         .containsExactly("ns2.example.tld");
-    dnsUtilsHelper.assertHostDnsRequests("ns2.example.tld");
+    assertHostDnsRequests("ns2.example.tld");
   }
 
   @Test
@@ -468,7 +470,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(null);
-    dnsUtilsHelper.assertNoMoreDnsRequests();
+    assertNoDnsRequestsExcept();
   }
 
   @Test
