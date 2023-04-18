@@ -1,6 +1,5 @@
 PATH                                               CLASS                                          METHODS  OK AUTH_METHODS MIN USER_POLICY
 /_dr/cron/fanout                                   TldFanoutAction                                GET      y  INTERNAL,API APP ADMIN
-/_dr/cron/readDnsQueue                             ReadDnsQueueAction                             GET      y  INTERNAL,API APP ADMIN
 /_dr/dnsRefresh                                    RefreshDnsAction                               GET      y  INTERNAL,API APP ADMIN
 /_dr/task/brdaCopy                                 BrdaCopyAction                                 POST     y  INTERNAL,API APP ADMIN
 /_dr/task/copyDetailReports                        CopyDetailReportsAction                        POST     n  INTERNAL,API APP ADMIN
