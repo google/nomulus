@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_CREATE;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
+import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.hibernate.cfg.AvailableSettings.ISOLATION;
@@ -50,7 +51,8 @@ public class WipeOutContactHistoryPiiPipelineTest {
   private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T12:34:56Z"));
   private final WipeOutContactHistoryPiiPipelineOptions options =
       PipelineOptionsFactory.create().as(WipeOutContactHistoryPiiPipelineOptions.class);
-  private Contact contact;
+  private Contact contact1;
+  private Contact contact2;
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -65,7 +67,7 @@ public class WipeOutContactHistoryPiiPipelineTest {
 
   @BeforeEach
   void beforeEach() {
-    contact =
+    contact1 =
         persistResource(
             newContact("my-contact1")
                 .asBuilder()
@@ -73,23 +75,58 @@ public class WipeOutContactHistoryPiiPipelineTest {
                 .setFaxNumber(
                     new ContactPhoneNumber.Builder().setPhoneNumber("+12122122122").build())
                 .build());
+    contact2 =
+        persistResource(
+            newContact("my-contact2")
+                .asBuilder()
+                .setEmailAddress("test@example.tld")
+                .setVoiceNumber(
+                    new ContactPhoneNumber.Builder().setPhoneNumber("+19177199177").build())
+                .build());
     // T = 0 month;
-    persistResource(createHistory(contact));
+    persistResource(createHistory(contact1));
+    // T = 5 months;
+    advanceMonths(5);
+    persistResource(createHistory(contact2));
     // T = 10 months;
+    advanceMonths(5);
+    persistResource(createHistory(contact1));
+    persistResource(createHistory(contact2));
+    // T = 20 months;
     advanceMonths(10);
-    persistResource(createHistory(contact));
+    persistResource(createHistory(contact2));
     // T = 30 months;
-    advanceMonths(20);
+    advanceMonths(10);
     options.setCutoffTime(DATE_TIME_FORMATTER.print(clock.nowUtc().minusMonths(MIN_AGE_IN_MONTHS)));
   }
 
   @Test
   void testSuccess() {
+    // Before the pipeline runs, every history entry should have an emali address.
+    assertThat(
+            loadAllOf(ContactHistory.class).stream()
+                .filter(e -> e.getContactBase().get().getEmailAddress() != null)
+                .count())
+        .isEqualTo(5);
+    // Before the pipeline runs, contact history for contact1 should have fax numbers.
+    ImmutableList<ContactHistory> histories =
+        HistoryEntryDao.loadHistoryObjectsForResource(contact1.createVKey(), ContactHistory.class);
+    assertThat(
+            histories.stream().filter(e -> e.getContactBase().get().getFaxNumber() != null).count())
+        .isEqualTo(2);
+    // Before the pipeline runs, contact history for contact2 should have voice numbers.
+    histories =
+        HistoryEntryDao.loadHistoryObjectsForResource(contact2.createVKey(), ContactHistory.class);
+    assertThat(
+            histories.stream()
+                .filter(e -> e.getContactBase().get().getVoiceNumber() != null)
+                .count())
+        .isEqualTo(3);
     WipeOutContactHistoryPiiPipeline wipeOutContactHistoryPiiPipeline =
         new WipeOutContactHistoryPiiPipeline(options);
     wipeOutContactHistoryPiiPipeline.run(pipeline).waitUntilFinish();
-    ImmutableList<ContactHistory> histories =
-        HistoryEntryDao.loadHistoryObjectsForResource(contact.createVKey(), ContactHistory.class);
+    histories =
+        HistoryEntryDao.loadHistoryObjectsForResource(contact1.createVKey(), ContactHistory.class);
     assertThat(histories.size()).isEqualTo(2);
     ImmutableList<ContactHistory> wipedEntries =
         histories.stream()
@@ -101,16 +138,29 @@ public class WipeOutContactHistoryPiiPipelineTest {
     assertThat(wipedEntries.get(0).getContactBase().get().getFaxNumber()).isNull();
     // With a new history entry at T = 30, the one at T = 10 is eligible for wipe out. Note the
     // current time itself (therefore the cutoff time) has not changed.
-    persistResource(createHistory(contact));
+    persistResource(createHistory(contact1));
     wipeOutContactHistoryPiiPipeline.run(pipeline).waitUntilFinish();
     histories =
-        HistoryEntryDao.loadHistoryObjectsForResource(contact.createVKey(), ContactHistory.class);
+        HistoryEntryDao.loadHistoryObjectsForResource(contact1.createVKey(), ContactHistory.class);
     assertThat(histories.size()).isEqualTo(3);
     wipedEntries =
         histories.stream()
             .filter(e -> e.getContactBase().get().getEmailAddress() == null)
             .collect(toImmutableList());
     assertThat(wipedEntries.size()).isEqualTo(2);
+    // Check that the pipeline deals with multiple contacts correctly.
+    histories =
+        HistoryEntryDao.loadHistoryObjectsForResource(contact2.createVKey(), ContactHistory.class);
+    assertThat(histories.size()).isEqualTo(3);
+    wipedEntries =
+        histories.stream()
+            .filter(e -> e.getContactBase().get().getEmailAddress() == null)
+            .collect(toImmutableList());
+    // Only the history entry at T = 10 is wiped. The one at T = 10 is over 18 months old, but it
+    // is the most recent entry, so it is kept.
+    assertThat(wipedEntries.size()).isEqualTo(2);
+    assertThat(wipedEntries.get(0).getContactBase().get().getVoiceNumber()).isNull();
+    assertThat(wipedEntries.get(1).getContactBase().get().getVoiceNumber()).isNull();
   }
 
   @Test
@@ -120,7 +170,7 @@ public class WipeOutContactHistoryPiiPipelineTest {
         new WipeOutContactHistoryPiiPipeline(options);
     wipeOutContactHistoryPiiPipeline.run(pipeline).waitUntilFinish();
     ImmutableList<ContactHistory> histories =
-        HistoryEntryDao.loadHistoryObjectsForResource(contact.createVKey(), ContactHistory.class);
+        HistoryEntryDao.loadHistoryObjectsForResource(contact1.createVKey(), ContactHistory.class);
     assertThat(histories.size()).isEqualTo(2);
     assertThat(
             histories.stream()
