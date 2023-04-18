@@ -14,8 +14,6 @@
 
 package google.registry.dns;
 
-import static google.registry.dns.DnsConstants.DNS_PUBLISH_PUSH_QUEUE_NAME;
-import static google.registry.dns.DnsConstants.DNS_PULL_QUEUE_NAME;
 import static google.registry.dns.RefreshDnsOnHostRenameAction.PARAM_HOST_KEY;
 import static google.registry.request.RequestParameters.extractEnumParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
@@ -24,20 +22,17 @@ import static google.registry.request.RequestParameters.extractOptionalParameter
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfParameters;
 
-import com.google.appengine.api.taskqueue.Queue;
-import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.dns.DnsConstants.TargetType;
+import google.registry.dns.DnsUtils.TargetType;
 import google.registry.dns.writer.DnsWriterZone;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import java.util.Optional;
 import java.util.Set;
-import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
 
@@ -69,18 +64,6 @@ public abstract class DnsModule {
   @Provides
   static HashFunction provideHashFunction() {
     return Hashing.murmur3_32_fixed();
-  }
-
-  @Provides
-  @Named(DNS_PULL_QUEUE_NAME)
-  static Queue provideDnsPullQueue() {
-    return QueueFactory.getQueue(DNS_PULL_QUEUE_NAME);
-  }
-
-  @Provides
-  @Named(DNS_PUBLISH_PUSH_QUEUE_NAME)
-  static Queue provideDnsUpdatePushQueue() {
-    return QueueFactory.getQueue(DNS_PUBLISH_PUSH_QUEUE_NAME);
   }
 
   @Provides

@@ -14,6 +14,7 @@
 
 package google.registry.flows.domain;
 
+import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.flows.FlowUtils.createHistoryEntryId;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -34,7 +35,6 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
-import google.registry.dns.DnsUtils;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
@@ -122,7 +122,6 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
-  @Inject DnsUtils dnsUtils;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainPricingLogic pricingLogic;
   @Inject DomainRestoreRequestFlow() {}
@@ -185,7 +184,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
     entitiesToSave.add(newDomain, domainHistory, autorenewEvent, autorenewPollMessage);
     tm().putAll(entitiesToSave.build());
     tm().delete(existingDomain.getDeletePollMessage());
-    dnsUtils.requestDomainDnsRefresh(existingDomain.getDomainName());
+    requestDomainDnsRefresh(existingDomain.getDomainName());
     return responseBuilder
         .setExtensions(createResponseExtensions(feesAndCredits, feeUpdate, isExpired))
         .build();
@@ -305,14 +304,14 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow {
 
   /** Restore command cannot have other changes specified. */
   static class RestoreCommandIncludesChangesException extends CommandUseErrorException {
-    public RestoreCommandIncludesChangesException() {
+    RestoreCommandIncludesChangesException() {
       super("Restore command cannot have other changes specified");
     }
   }
 
   /** Domain is not eligible for restore. */
   static class DomainNotEligibleForRestoreException extends StatusProhibitsOperationException {
-    public DomainNotEligibleForRestoreException() {
+    DomainNotEligibleForRestoreException() {
       super("Domain is not eligible for restore");
     }
   }

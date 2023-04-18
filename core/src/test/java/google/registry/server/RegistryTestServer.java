@@ -71,9 +71,6 @@ public final class RegistryTestServer {
           route("/_dr/task/nordnUpload", BackendServlet.class),
           route("/_dr/task/nordnVerify", BackendServlet.class),
 
-          // Process DNS pull queue
-          route("/_dr/cron/readDnsQueue", BackendServlet.class),
-
           // Registrar Console
           route("/registrar", FrontendServlet.class),
           route("/registrar-create", FrontendServlet.class),

@@ -14,9 +14,11 @@
 
 package google.registry.dns;
 
+import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
+import static google.registry.dns.DnsUtils.requestHostDnsRefresh;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 
-import google.registry.dns.DnsConstants.TargetType;
+import google.registry.dns.DnsUtils.TargetType;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
@@ -39,7 +41,6 @@ import javax.inject.Inject;
 public final class RefreshDnsAction implements Runnable {
 
   private final Clock clock;
-  private final DnsUtils dnsUtils;
   private final String domainOrHostName;
   private final TargetType type;
 
@@ -47,12 +48,10 @@ public final class RefreshDnsAction implements Runnable {
   RefreshDnsAction(
       @Parameter("domainOrHostName") String domainOrHostName,
       @Parameter("type") TargetType type,
-      Clock clock,
-      DnsUtils dnsUtils) {
+      Clock clock) {
     this.domainOrHostName = domainOrHostName;
     this.type = type;
     this.clock = clock;
-    this.dnsUtils = dnsUtils;
   }
 
   @Override
@@ -63,11 +62,11 @@ public final class RefreshDnsAction implements Runnable {
     switch (type) {
       case DOMAIN:
         loadAndVerifyExistence(Domain.class, domainOrHostName);
-        dnsUtils.requestDomainDnsRefresh(domainOrHostName);
+        requestDomainDnsRefresh(domainOrHostName);
         break;
       case HOST:
         verifyHostIsSubordinate(loadAndVerifyExistence(Host.class, domainOrHostName));
-        dnsUtils.requestHostDnsRefresh(domainOrHostName);
+        requestHostDnsRefresh(domainOrHostName);
         break;
       default:
         throw new BadRequestException("Unsupported type: " + type);

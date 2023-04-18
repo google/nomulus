@@ -151,12 +151,6 @@
     <url-pattern>/_dr/task/nordnVerify</url-pattern>
   </servlet-mapping>
 
-  <!-- Reads the DNS push and pull queues and kick off the appropriate tasks to update zone. -->
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/cron/readDnsQueue</url-pattern>
-  </servlet-mapping>
-
   <!-- Reads the DNS refresh requests and kick off the appropriate tasks to update zone. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>

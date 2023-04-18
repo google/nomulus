@@ -15,13 +15,13 @@
 package google.registry.tools.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.model.tld.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import google.registry.dns.DnsUtils;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
@@ -43,10 +43,10 @@ import org.joda.time.Duration;
  * run internally, or by pretending to be internal by setting the X-AppEngine-QueueName header,
  * which only admin users can do.
  *
- * <p>You must pass in a number of <code>smearMinutes</code> as a URL parameter so that the DNS
- * queue doesn't get overloaded. A rough rule of thumb for Cloud DNS is 1 minute per every 1,000
- * domains. This smears the updates out over the next N minutes. For small TLDs consisting of fewer
- * than 1,000 domains, passing in 1 is fine (which will execute all the updates immediately).
+ * <p>You must pass in a number of {@code smearMinutes} as a URL parameter so that the DNS queue
+ * doesn't get overloaded. A rough rule of thumb for Cloud DNS is 1 minute per every 1,000 domains.
+ * This smears the updates out over the next N minutes. For small TLDs consisting of fewer than
+ * 1,000 domains, passing in 1 is fine (which will execute all the updates immediately).
  */
 @Action(
     service = Action.Service.TOOLS,
@@ -66,7 +66,6 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   @Parameter("smearMinutes")
   int smearMinutes;
 
-  @Inject DnsUtils dnsUtils;
   @Inject Clock clock;
   @Inject Random random;
 
@@ -91,7 +90,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                         domainName -> {
                           try {
                             // Smear the task execution time over the next N minutes.
-                            dnsUtils.requestDomainDnsRefresh(
+                            requestDomainDnsRefresh(
                                 domainName, Duration.standardMinutes(random.nextInt(smearMinutes)));
                           } catch (Throwable t) {
                             logger.atSevere().withCause(t).log(
