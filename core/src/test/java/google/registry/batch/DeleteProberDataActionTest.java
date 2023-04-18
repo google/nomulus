@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.testing.DatabaseHelper.assertDomainDnsRequests;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntitiesIfPresent;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
@@ -30,11 +31,9 @@ import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryEnvironment;
-import google.registry.dns.DnsUtils;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -47,7 +46,6 @@ import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.DnsUtilsHelper;
 import google.registry.testing.SystemPropertyExtension;
 import java.util.Optional;
 import java.util.Set;
@@ -71,9 +69,6 @@ class DeleteProberDataActionTest {
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   private DeleteProberDataAction action;
-
-  private final DnsUtils dnsUtils = mock(DnsUtils.class);
-  private final DnsUtilsHelper dnsUtilsHelper = new DnsUtilsHelper(dnsUtils);
 
   @BeforeEach
   void beforeEach() {
@@ -99,7 +94,6 @@ class DeleteProberDataActionTest {
 
   private void resetAction() {
     action = new DeleteProberDataAction();
-    action.dnsUtils = dnsUtils;
     action.isDryRun = false;
     action.tlds = ImmutableSet.of();
     action.registryAdminRegistrarId = "TheRegistrar";
@@ -201,7 +195,7 @@ class DeleteProberDataActionTest {
     DateTime timeAfterDeletion = DateTime.now(UTC);
     assertThat(loadByForeignKey(Domain.class, "blah.ib-any.test", timeAfterDeletion)).isEmpty();
     assertThat(loadByEntity(domain).getDeletionTime()).isLessThan(timeAfterDeletion);
-    dnsUtilsHelper.assertDomainDnsRequests("blah.ib-any.test");
+    assertDomainDnsRequests("blah.ib-any.test");
   }
 
   @Test
@@ -218,7 +212,7 @@ class DeleteProberDataActionTest {
     action.run();
     assertThat(loadByForeignKey(Domain.class, "blah.ib-any.test", timeAfterDeletion)).isEmpty();
     assertThat(loadByEntity(domain).getDeletionTime()).isLessThan(timeAfterDeletion);
-    dnsUtilsHelper.assertDomainDnsRequests("blah.ib-any.test");
+    assertDomainDnsRequests("blah.ib-any.test");
   }
 
   @Test

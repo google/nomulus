@@ -15,7 +15,6 @@
 package google.registry.dns;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.dns.DnsConstants.DNS_PUBLISH_PUSH_QUEUE_NAME;
 import static google.registry.dns.DnsModule.PARAM_DNS_WRITER;
 import static google.registry.dns.DnsModule.PARAM_DOMAINS;
 import static google.registry.dns.DnsModule.PARAM_HOSTS;
@@ -23,6 +22,9 @@ import static google.registry.dns.DnsModule.PARAM_LOCK_INDEX;
 import static google.registry.dns.DnsModule.PARAM_NUM_PUBLISH_LOCKS;
 import static google.registry.dns.DnsModule.PARAM_PUBLISH_TASK_ENQUEUED;
 import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_TIME;
+import static google.registry.dns.DnsUtils.DNS_PUBLISH_PUSH_QUEUE_NAME;
+import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
+import static google.registry.dns.DnsUtils.requestHostDnsRefresh;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLD;
@@ -85,7 +87,6 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private final DnsUtils dnsUtils;
   private final DnsWriterProxy dnsWriterProxy;
   private final DnsMetrics dnsMetrics;
   private final Duration timeout;
@@ -94,10 +95,10 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   /**
    * The DNS writer to use for this batch.
    *
-   * <p>This comes from the fanout in {@link ReadDnsQueueAction} which dispatches each batch to be
-   * published by each DNS writer on the TLD. So this field contains the value of one of the DNS
-   * writers configured in {@link Tld#getDnsWriters()}, as of the time the batch was written out
-   * (and not necessarily currently).
+   * <p>This comes from the fanout in {@link ReadDnsRefreshRequestsAction} which dispatches each
+   * batch to be published by each DNS writer on the TLD. So this field contains the value of one of
+   * the DNS writers configured in {@link Tld#getDnsWriters()}, as of the time the batch was written
+   * out (and not necessarily currently).
    */
   private final String dnsWriter;
 
@@ -139,7 +140,6 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress,
       @Header(APP_ENGINE_RETRY_HEADER) Optional<Integer> appEngineRetryCount,
       @Header(CLOUD_TASKS_RETRY_HEADER) Optional<Integer> cloudTasksRetryCount,
-      DnsUtils dnsUtils,
       DnsWriterProxy dnsWriterProxy,
       DnsMetrics dnsMetrics,
       LockHandler lockHandler,
@@ -147,12 +147,11 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       CloudTasksUtils cloudTasksUtils,
       SendEmailService sendEmailService,
       Response response) {
-    this.dnsUtils = dnsUtils;
     this.dnsWriterProxy = dnsWriterProxy;
     this.dnsMetrics = dnsMetrics;
     this.timeout = timeout;
     this.sendEmailService = sendEmailService;
-    this.retryCount =
+    retryCount =
         cloudTasksRetryCount.orElse(
             appEngineRetryCount.orElseThrow(
                 () -> new IllegalStateException("Missing a valid retry count header")));
@@ -276,7 +275,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     return null;
   }
 
-  private InternetAddress emailToInternetAddress(String email) {
+  private static InternetAddress emailToInternetAddress(String email) {
     try {
       return new InternetAddress(email, true);
     } catch (Exception e) {
@@ -306,7 +305,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
           registrar.get().getContacts().stream()
               .filter(c -> c.getTypes().contains(RegistrarPoc.Type.ADMIN))
               .map(RegistrarPoc::getEmailAddress)
-              .map(this::emailToInternetAddress)
+              .map(PublishDnsUpdatesAction::emailToInternetAddress)
               .collect(toImmutableList());
 
       sendEmailService.sendEmail(
@@ -356,10 +355,10 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   private void requeueBatch() {
     logger.atInfo().log("Requeueing batch for retry.");
     for (String domain : nullToEmpty(domains)) {
-      dnsUtils.requestDomainDnsRefresh(domain);
+      requestDomainDnsRefresh(domain);
     }
     for (String host : nullToEmpty(hosts)) {
-      dnsUtils.requestHostDnsRefresh(host);
+      requestHostDnsRefresh(host);
     }
   }
 

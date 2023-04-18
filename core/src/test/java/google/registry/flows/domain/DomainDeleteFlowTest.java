@@ -34,6 +34,7 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_DELETE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
 import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
+import static google.registry.testing.DatabaseHelper.assertDomainDnsRequests;
 import static google.registry.testing.DatabaseHelper.assertPollMessages;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
@@ -357,7 +358,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // The add grace period is for a billable action, so it should trigger a cancellation.
     assertAutorenewClosedAndCancellationCreatedFor(
         graceBillingEvent, getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE, DomainHistory.class));
-    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
+    assertDomainDnsRequests("example.tld");
     // There should be no poll messages. The previous autorenew poll message should now be deleted.
     assertThat(getPollMessages("TheRegistrar")).isEmpty();
   }
@@ -744,7 +745,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .build());
     DateTime eventTime = clock.nowUtc();
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
-    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
+    assertDomainDnsRequests("example.tld");
     assertAutorenewClosedAndCancellationCreatedFor(
         graceBillingEvent,
         getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE, DomainHistory.class),
@@ -762,7 +763,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .build());
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
-    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
+    assertDomainDnsRequests("example.tld");
     assertOnlyBillingEventIsClosedAutorenew("TheRegistrar");
   }
 

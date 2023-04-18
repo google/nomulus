@@ -39,6 +39,8 @@ import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
+import static google.registry.testing.DatabaseHelper.assertDomainDnsRequests;
+import static google.registry.testing.DatabaseHelper.assertNoDnsRequests;
 import static google.registry.testing.DatabaseHelper.assertPollMessagesForResource;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
@@ -174,7 +176,6 @@ import google.registry.model.tld.Tld.TldType;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.TaskQueueExtension;
 import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import google.registry.tmch.SmdrlCsvParser;
 import google.registry.tmch.TmchData;
@@ -188,14 +189,11 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
 import org.junitpioneer.jupiter.cartesian.CartesianTest.Values;
 
 /** Unit tests for {@link DomainCreateFlow}. */
 class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain> {
-
-  @RegisterExtension TaskQueueExtension taskQueue = new TaskQueueExtension();
 
   private static final String CLAIMS_KEY = "2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001";
   // This is a time when SMD itself is not valid, but its signing certificates are. It will
@@ -376,7 +374,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             GracePeriod.create(
                 GracePeriodStatus.ADD, domain.getRepoId(), billingTime, "TheRegistrar", null),
             createBillingEvent));
-    dnsUtilsHelper.assertDomainDnsRequests(getUniqueIdFromCommand());
+    assertDomainDnsRequests(getUniqueIdFromCommand());
   }
 
   private void assertNoLordn() throws Exception {
@@ -899,7 +897,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts("net");
     runFlowAssertResponse(loadFile("domain_create_response_idn_minna.xml"));
     assertSuccessfulCreate("xn--q9jyb4c", ImmutableSet.of());
-    dnsUtilsHelper.assertDomainDnsRequests("xn--abc-873b2e7eb1k8a4lpjvv.xn--q9jyb4c");
+    assertDomainDnsRequests("xn--abc-873b2e7eb1k8a4lpjvv.xn--q9jyb4c");
   }
 
   @Test
@@ -908,7 +906,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
-    dnsUtilsHelper.assertNoMoreDnsRequests();
+    assertNoDnsRequests();
   }
 
   @Test
@@ -921,7 +919,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutDomains()
         .that(reloadResourceByForeignKey())
         .hasRegistrationExpirationTime(clock.nowUtc().plusYears(1));
-    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
+    assertDomainDnsRequests("example.tld");
   }
 
   @Test
@@ -939,7 +937,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     runFlowAssertResponse(loadFile("domain_create_response_claims.xml"));
     assertSuccessfulCreate("tld", ImmutableSet.of());
-    dnsUtilsHelper.assertDomainDnsRequests("example-one.tld");
+    assertDomainDnsRequests("example-one.tld");
     assertClaimsLordn();
   }
 
@@ -968,7 +966,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     runFlowAssertResponse(loadFile("domain_create_response_claims.xml"));
     assertSuccessfulCreate("tld", ImmutableSet.of(RESERVED), allocationToken);
-    dnsUtilsHelper.assertDomainDnsRequests("example-one.tld");
+    assertDomainDnsRequests("example-one.tld");
     assertClaimsLordn();
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
@@ -981,7 +979,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
     assertSuccessfulCreate("tld", ImmutableSet.of());
-    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
+    assertDomainDnsRequests("example.tld");
   }
 
   @Test
@@ -1381,7 +1379,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     runFlowAssertResponse(loadFile("domain_create_response_claims.xml"));
     assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken);
-    dnsUtilsHelper.assertDomainDnsRequests("example-one.tld");
+    assertDomainDnsRequests("example-one.tld");
     assertClaimsLordn();
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
@@ -1461,7 +1459,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "EXPIRATION_TIME",
                 SMD_VALID_TIME.plusYears(2).toString())));
     assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT, SUNRISE), allocationToken);
-    dnsUtilsHelper.assertDomainDnsRequests("test-validate.tld");
+    assertDomainDnsRequests("test-validate.tld");
     assertSunriseLordn();
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
@@ -2094,7 +2092,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertSunriseLordn();
 
     // Check for SERVER_HOLD status, no DNS tasks enqueued, and collision poll message.
-    dnsUtilsHelper.assertNoMoreDnsRequests();
+    assertNoDnsRequests();
     Domain domain = reloadResourceByForeignKey();
     assertThat(domain.getStatusValues()).contains(SERVER_HOLD);
     assertPollMessagesWithCollisionOneTime(domain);
@@ -2111,7 +2109,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "badcrash.tld")));
 
     // Check for SERVER_HOLD status, no DNS tasks enqueued, and collision poll message.
-    dnsUtilsHelper.assertNoMoreDnsRequests();
+    assertNoDnsRequests();
     Domain domain = reloadResourceByForeignKey();
     assertThat(domain.getStatusValues()).contains(SERVER_HOLD);
     assertPollMessagesWithCollisionOneTime(domain);

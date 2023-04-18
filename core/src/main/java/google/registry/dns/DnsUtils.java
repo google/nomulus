@@ -19,57 +19,42 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InternetDomainName;
-import google.registry.dns.DnsConstants.TargetType;
-import google.registry.model.common.DatabaseMigrationStateSchedule;
-import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.model.tld.Registries;
 import google.registry.model.tld.Tld;
 import java.util.Collection;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /** Utility class to handle DNS refresh requests. */
-// TODO: Make this a static util function once we are done with the DNS pull queue migration.
-public class DnsUtils {
+public final class DnsUtils {
 
-  private final DnsQueue dnsQueue;
+  /** The name of the DNS publish push queue. */
+  public static final String DNS_PUBLISH_PUSH_QUEUE_NAME = "dns-publish"; // See queue.xml.
 
-  @Inject
-  DnsUtils(DnsQueue dnsQueue) {
-    this.dnsQueue = dnsQueue;
-  }
+  private DnsUtils() {}
 
-  private void requestDnsRefresh(String name, TargetType type, Duration delay) {
+  private static void requestDnsRefresh(String name, TargetType type, Duration delay) {
     // Throws an IllegalArgumentException if the name is not under a managed TLD -- we only update
     // DNS for names that are under our management.
     String tld = Registries.findTldForNameOrThrow(InternetDomainName.from(name)).toString();
-    if (usePullQueue()) {
-      if (TargetType.HOST.equals(type)) {
-        dnsQueue.addHostRefreshTask(name);
-      } else {
-        dnsQueue.addDomainRefreshTask(name, delay);
-      }
-    } else {
-      tm().transact(
-              () ->
-                  tm().insert(
-                          new DnsRefreshRequest(
-                              type, name, tld, tm().getTransactionTime().plus(delay))));
-    }
+    tm().transact(
+            () ->
+                tm().insert(
+                        new DnsRefreshRequest(
+                            type, name, tld, tm().getTransactionTime().plus(delay))));
   }
 
-  public void requestDomainDnsRefresh(String domainName, Duration delay) {
+  public static void requestDomainDnsRefresh(String domainName, Duration delay) {
     requestDnsRefresh(domainName, TargetType.DOMAIN, delay);
   }
 
-  public void requestDomainDnsRefresh(String domainName) {
+  public static void requestDomainDnsRefresh(String domainName) {
     requestDomainDnsRefresh(domainName, Duration.ZERO);
   }
 
-  public void requestHostDnsRefresh(String hostName) {
+  public static void requestHostDnsRefresh(String hostName) {
     requestDnsRefresh(hostName, TargetType.HOST, Duration.ZERO);
   }
 
@@ -85,7 +70,7 @@ public class DnsUtils {
    *   <li>The last time they were processed is before the cooldown period.
    * </ul>
    */
-  public ImmutableList<DnsRefreshRequest> readAndUpdateRequestsWithLatestProcessTime(
+  public static ImmutableList<DnsRefreshRequest> readAndUpdateRequestsWithLatestProcessTime(
       String tld, Duration cooldown, int batchSize) {
     return tm().transact(
             () -> {
@@ -105,7 +90,7 @@ public class DnsUtils {
                       // queued up for publishing, not when it is actually published by the DNS
                       // writer. This timestamp acts as a cooldown so the same request will not be
                       // retried too frequently. See DnsRefreshRequest.getLastProcessTime for a
-                      // detailed explaination.
+                      // detailed explanation.
                       .map(e -> e.updateProcessTime(transactionTime))
                       .collect(toImmutableList());
               tm().updateAll(requests);
@@ -119,7 +104,7 @@ public class DnsUtils {
    * <p>Note that if a request entity has already been deleted, the method still succeeds without
    * error because all we care about is that it no longer exists after the method runs.
    */
-  public void deleteRequests(Collection<DnsRefreshRequest> requests) {
+  public static void deleteRequests(Collection<DnsRefreshRequest> requests) {
     tm().transact(
             () ->
                 tm().delete(
@@ -140,8 +125,9 @@ public class DnsUtils {
     return dnsAPlusAaaaTtl.getStandardSeconds();
   }
 
-  private boolean usePullQueue() {
-    return !DatabaseMigrationStateSchedule.getValueAtTime(dnsQueue.getClock().nowUtc())
-        .equals(MigrationState.DNS_SQL);
+  /** The possible values of the {@code DNS_TARGET_TYPE_PARAM} parameter. */
+  public enum TargetType {
+    DOMAIN,
+    HOST
   }
 }

@@ -22,7 +22,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.dns.DnsConstants.TargetType;
+import google.registry.dns.DnsUtils;
 import google.registry.model.EntityTestCase;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +34,8 @@ public class DnsRefreshRequestTest extends EntityTestCase {
   }
 
   private final DnsRefreshRequest request =
-      new DnsRefreshRequest(TargetType.DOMAIN, "test.example", "example", fakeClock.nowUtc());
+      new DnsRefreshRequest(
+          DnsUtils.TargetType.DOMAIN, "test.example", "example", fakeClock.nowUtc());
 
   @Test
   void testPersistence() {
@@ -56,15 +57,18 @@ public class DnsRefreshRequestTest extends EntityTestCase {
     // name
     assertThrows(
         NullPointerException.class,
-        () -> new DnsRefreshRequest(TargetType.DOMAIN, null, "example", fakeClock.nowUtc()));
+        () ->
+            new DnsRefreshRequest(DnsUtils.TargetType.DOMAIN, null, "example", fakeClock.nowUtc()));
     // tld
     assertThrows(
         NullPointerException.class,
-        () -> new DnsRefreshRequest(TargetType.DOMAIN, "test.example", null, fakeClock.nowUtc()));
+        () ->
+            new DnsRefreshRequest(
+                DnsUtils.TargetType.DOMAIN, "test.example", null, fakeClock.nowUtc()));
     // request time
     assertThrows(
         NullPointerException.class,
-        () -> new DnsRefreshRequest(TargetType.DOMAIN, "test.example", "example", null));
+        () -> new DnsRefreshRequest(DnsUtils.TargetType.DOMAIN, "test.example", "example", null));
   }
 
   @Test
