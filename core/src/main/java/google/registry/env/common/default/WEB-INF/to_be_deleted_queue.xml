@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- TODO: @ptkach - Delete once Cloud Api deployer is up and running -->
 <queue-entries>
 
   <queue>

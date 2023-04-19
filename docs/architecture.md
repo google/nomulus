@@ -110,7 +110,8 @@ the push queue will, upon execution, poll the corresponding pull queue for a
 specified number of tasks and execute them in a batch. This allows the code to
 execute in the background while taking advantage of batch processing.
 
-The task queues used by Nomulus are configured in the `queue.xml` file. Note
+The task queues used by Nomulus are configured in the 
+`cloud-scheduler-and-queue.xml` file, which is different per environment. Note
 that many push queues have a direct one-to-one correspondence with entries in
 `cron.xml` because they need to be fanned-out on a per-TLD or other basis (see
 the Cron section below for more explanation). The exact queue that a given cron

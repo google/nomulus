@@ -35,12 +35,13 @@ App Engine configuration isn't covered in depth in this document as it is
 thoroughly documented in the [App Engine configuration docs][app-engine-config].
 The main files of note that come pre-configured in Nomulus are:
 
-*   `cron.xml` -- Configuration of cronjobs
-*   `web.xml` -- Configuration of URL paths on the webserver
-*   `appengine-web.xml` -- Overall App Engine settings including number and type
+* `cron.xml` -- Configuration of cronjobs
+* `web.xml` -- Configuration of URL paths on the webserver
+* `appengine-web.xml` -- Overall App Engine settings including number and type
     of instances
-*   `queue.xml` -- Configuration of App Engine task queues
-*   `application.xml` -- Configuration of the application name and its services
+* `cloud-scheduler-and-queue.xml` -- Configuration of Cloud Scheduler and Cloud 
+Tasks queues
+* `application.xml` -- Configuration of the application name and its services
 
 Cron, web, and queue are covered in more detail in the "App Engine architecture"
 doc, and the rest are covered in the general App Engine documentation.
