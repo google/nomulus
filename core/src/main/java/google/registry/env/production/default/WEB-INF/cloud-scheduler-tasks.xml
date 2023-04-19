@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<taskentries>
+<entries>
   <task>
     <url>/_dr/task/rdeStaging</url>
     <name>rdeStaging</name>
@@ -283,4 +283,4 @@
     </description>
     <schedule>0 15 * * 1</schedule>
   </task>
-</taskentries>
+</entries>

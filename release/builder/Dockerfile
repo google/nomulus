@@ -19,18 +19,18 @@
 # 3. Google Cloud SDK for generating the WARs.
 # 4. Git to manipulate the private and the merged repos.
 # 5. Docker to build and push images.
-# 6. cloudSchedulerDeployer for deploying cloud scheduler tasks based on config
+# 6. deployerForSchedulerAndTasks for deploying cloud scheduler and cloud tasks
 
-FROM golang:1.19 as cloudSchedulerBuilder
-WORKDIR /usr/src/cloudSchedulerDeployer
-RUN go mod init cloudSchedulerDeployer
+FROM golang:1.19 as deployCloudSchedulerAndQueueBuilder
+WORKDIR /usr/src/deployCloudSchedulerAndQueue
+RUN go mod init deployCloudSchedulerAndQueue
 COPY *.go ./
-RUN go build -o /cloudSchedulerDeployer
+RUN go build -o /deployCloudSchedulerAndQueue
 
 FROM marketplace.gcr.io/google/debian10
 ENV DEBIAN_FRONTEND=noninteractive LANG=en_US.UTF-8
-# Add script for cloud scheduler deployer
-COPY --from=cloudSchedulerBuilder /cloudSchedulerDeployer /usr/local/bin/cloudSchedulerDeployer
+# Add script for cloud scheduler and cloud tasks deployment
+COPY --from=deployCloudSchedulerAndQueueBuilder /deployCloudSchedulerAndQueue /usr/local/bin/deployCloudSchedulerAndQueue
 # Add Cloud sql connector
 ADD https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 \
     /usr/local/bin/cloud_sql_proxy

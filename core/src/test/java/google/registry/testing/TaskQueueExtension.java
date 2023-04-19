@@ -37,7 +37,7 @@ public final class TaskQueueExtension implements BeforeEachCallback, AfterEachCa
    * in here and write it to a temporary file later.
    */
   private static final String QUEUE_XML =
-      readResourceUtf8("google/registry/env/common/default/WEB-INF/queue.xml");
+      readResourceUtf8("google/registry/env/common/default/WEB-INF/to_be_deleted_queue.xml");
 
   private LocalServiceTestHelper helper;
   private Path queueFile;
