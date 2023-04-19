@@ -102,7 +102,9 @@ class GenerateAllocationTokensCommand implements Command {
 
   @Parameter(
       names = {"-t", "--type"},
-      description = "Type of type token, either SINGLE_USE (default) or UNLIMITED_USE")
+      description =
+          "Type of type token, either DEFAULT_PROMO, PACKAGE, SINGLE_USE (default) or"
+              + " UNLIMITED_USE")
   private TokenType tokenType;
 
   @Parameter(
