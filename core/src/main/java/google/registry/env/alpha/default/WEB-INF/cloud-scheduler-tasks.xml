@@ -140,7 +140,7 @@
 
   <task>
     <url>
-      <![CDATA[/_dr/cron/fanout?queue=dns-refresh&forEachRealTld&ForEachTestTld&endpoint=/_dr/task/readDnsRefreshRequests&dnsJitterSeconds=45]]></url>
+      <![CDATA[/_dr/cron/fanout?queue=dns-refresh&forEachRealTld&forEachTestTld&endpoint=/_dr/task/readDnsRefreshRequests&dnsJitterSeconds=45]]></url>
     <name>readDnsRefreshRequests</name>
     <description>
       Enqueue a ReadDnsRefreshRequestAction for each TLD.
