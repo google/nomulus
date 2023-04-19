@@ -558,15 +558,21 @@ task coreDev {
 
 javadocDependentTasks.each { tasks.javadoc.dependsOn(it) }
 
-// Runs the script, which deploys cloud scheduler tasks based on the config
-task cloudSchedulerDeployer {
+// Runs the script, which deploys cloud scheduler and tasks based on the config
+task deployCloudSchedulerAndQueue {
   doLast {
     def env = environment
     if (!prodOrSandboxEnv) {
       exec {
         commandLine 'go', 'run',
-                "${rootDir}/release/builder/cloudSchedulerDeployer.go",
+                "${rootDir}/release/builder/deployCloudSchedulerAndQueue.go",
                 "${rootDir}/core/src/main/java/google/registry/env/${env}/default/WEB-INF/cloud-scheduler-tasks.xml",
+                "domain-registry-${env}"
+      }
+      exec {
+        commandLine 'go', 'run',
+                "${rootDir}/release/builder/deployCloudSchedulerAndQueue.go",
+                "${rootDir}/core/src/main/java/google/registry/env/common/default/WEB-INF/cloud-tasks-queue.xml",
                 "domain-registry-${env}"
       }
     }
