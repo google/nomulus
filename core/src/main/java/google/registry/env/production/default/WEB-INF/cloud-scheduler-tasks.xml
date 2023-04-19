@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<taskentries>
+<entries>
+  <!-- Cloud Scheduler tasks begin -->
   <task>
     <url>/_dr/task/rdeStaging</url>
     <name>rdeStaging</name>
@@ -282,4 +283,116 @@
     </description>
     <schedule>0 15 * * 1</schedule>
   </task>
-</taskentries>
+  <!-- Cloud Scheduler tasks end -->
+
+  <!-- Queue template with all supported params -->
+  <!--
+    <queue>
+      <name></name>
+      <max-attempts></max-attempts>
+      <max-backoff></max-backoff>
+      <max-concurrent-dispatches></max-concurrent-dispatches>
+      <max-dispatches-per-second></max-dispatches-per-second>
+      <max-doublings></max-doublings>
+      <max-retry-duration></max-retry-duration>
+      <min-backoff></min-backoff>
+      <routing-override></routing-override>
+    </queue>
+  -->
+
+  <!-- Queue for reading DNS update requests and batching them off to the dns-publish queue. -->
+  <queue>
+    <name>dns-refresh</name>
+    <max-dispatches-per-second>100</max-dispatches-per-second>
+  </queue>
+
+  <!-- Queue for publishing DNS updates in batches. -->
+  <queue>
+    <name>dns-publish</name>
+    <max-dispatches-per-second>100</max-dispatches-per-second>
+    <!-- 30 sec backoff increasing linearly up to 30 minutes. -->
+    <min-backoff>30s</min-backoff>
+    <max-backoff>1800s</max-backoff>
+    <max-doublings>0</max-doublings>
+  </queue>
+
+  <!-- Queue for uploading RDE deposits to the escrow provider. -->
+  <queue>
+    <name>rde-upload</name>
+    <max-dispatches-per-second>0.166666667</max-dispatches-per-second>
+    <max-concurrent-dispatches>5</max-concurrent-dispatches>
+    <max-retry-duration>14400s</max-retry-duration>
+  </queue>
+
+  <!-- Queue for uploading RDE reports to ICANN. -->
+  <queue>
+    <name>rde-report</name>
+    <max-dispatches-per-second>1</max-dispatches-per-second>
+    <max-concurrent-dispatches>1</max-concurrent-dispatches>
+    <max-retry-duration>14400s</max-retry-duration>
+  </queue>
+
+  <!-- Queue for copying BRDA deposits to GCS. -->
+  <queue>
+    <name>brda</name>
+    <max-dispatches-per-second>0.016666667</max-dispatches-per-second>
+    <max-concurrent-dispatches>10</max-concurrent-dispatches>
+    <max-retry-duration>82800s</max-retry-duration>
+  </queue>
+
+  <!-- Queue for tasks that trigger domain DNS update upon host rename. -->
+  <queue>
+    <name>async-host-rename</name>
+    <max-dispatches-per-second>1</max-dispatches-per-second>
+  </queue>
+
+  <!-- Queue for tasks that wait for a Beam pipeline to complete (i.e. Spec11 and invoicing). -->
+  <queue>
+    <name>beam-reporting</name>
+    <max-dispatches-per-second>0.016666667</max-dispatches-per-second>
+    <max-concurrent-dispatches>1</max-concurrent-dispatches>
+    <max-attempts>5</max-attempts>
+    <min-backoff>180s</min-backoff>
+    <max-backoff>180s</max-backoff>
+  </queue>
+
+
+  <!-- Queue for tasks that communicate with TMCH MarksDB webserver. -->
+  <queue>
+    <name>marksdb</name>
+    <max-dispatches-per-second>0.016666667</max-dispatches-per-second>
+    <max-concurrent-dispatches>1</max-concurrent-dispatches>
+    <max-retry-duration>39600s</max-retry-duration>  <!-- cron interval minus hour -->
+  </queue>
+
+  <!-- Queue for tasks to produce LORDN CSV reports, populated by a Cloud Scheduler fanout job. -->
+  <queue>
+    <name>nordn</name>
+    <max-dispatches-per-second>1</max-dispatches-per-second>
+    <max-concurrent-dispatches>10</max-concurrent-dispatches>
+    <max-retry-duration>39600s</max-retry-duration>  <!-- cron interval minus hour -->
+  </queue>
+
+  <!-- Queue for tasks that sync data to Google Spreadsheets. -->
+  <queue>
+    <name>sheet</name>
+    <max-dispatches-per-second>1</max-dispatches-per-second>
+    <!-- max-concurrent-requests is intentionally omitted. -->
+    <max-retry-duration>3600s</max-retry-duration>
+  </queue>
+
+  <!-- Queue for infrequent cron tasks (i.e. hourly or less often) that should retry three times on failure. -->
+  <queue>
+    <name>retryable-cron-tasks</name>
+    <max-dispatches-per-second>1</max-dispatches-per-second>
+    <max-attempts>3</max-attempts>
+  </queue>
+
+  <!--  &lt;!&ndash; Queue for async actions that should be run at some point in the future. &ndash;&gt;-->
+  <queue>
+    <name>async-actions</name>
+    <max-dispatches-per-second>1</max-dispatches-per-second>
+    <max-concurrent-dispatches>5</max-concurrent-dispatches>
+  </queue>
+
+</entries>

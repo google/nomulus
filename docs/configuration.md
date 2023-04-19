@@ -39,7 +39,7 @@ The main files of note that come pre-configured in Nomulus are:
 *   `web.xml` -- Configuration of URL paths on the webserver
 *   `appengine-web.xml` -- Overall App Engine settings including number and type
     of instances
-*   `queue.xml` -- Configuration of App Engine task queues
+*   `cloud-scheduler-tasks.xml` -- Configuration of Cloud Scheduler and Tasks
 *   `application.xml` -- Configuration of the application name and its services
 
 Cron, web, and queue are covered in more detail in the "App Engine architecture"

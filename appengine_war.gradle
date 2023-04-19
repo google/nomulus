@@ -103,7 +103,7 @@ explodeWar.doLast {
     file("${it.explodedAppDirectory}/WEB-INF/lib/tools.jar").setWritable(true)
 }
 
-appengineDeployAll.finalizedBy ':cloudSchedulerDeployer'
+appengineDeployAll.finalizedBy ':deployCloudSchedulerAndTasks'
 rootProject.deploy.dependsOn appengineDeployAll
 rootProject.stage.dependsOn appengineStage
 tasks['war'].dependsOn ':console-webapp:buildConsoleWebappProd'
