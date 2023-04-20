@@ -33,8 +33,7 @@ class RollbackStep:
     Two steps are handled differently. The _UpdateDeployTag step gets a piped
     shell command, which needs to be handled differently. The
     _SetManualScalingNumInstances step uses the AppEngine Admin API client in
-    this package to set the number of instances. The Nomulus set_num_instances
-    command is not working right now.
+    this package to set the number of instances.
     """
 
     description: str
