@@ -42,7 +42,6 @@
     <class>google.registry.model.billing.BillingEvent</class>
     <class>google.registry.model.billing.BillingRecurrence</class>
     <class>google.registry.model.common.Cursor</class>
-    <class>google.registry.model.common.DatabaseMigrationStateSchedule</class>
     <class>google.registry.model.common.DnsRefreshRequest</class>
     <class>google.registry.model.console.User</class>
     <class>google.registry.model.contact.ContactHistory</class>
@@ -88,7 +87,6 @@
     <class>google.registry.persistence.converter.CommandNameSetConverter</class>
     <class>google.registry.persistence.converter.CurrencyToBillingConverter</class>
     <class>google.registry.persistence.converter.CurrencyUnitConverter</class>
-    <class>google.registry.persistence.converter.DatabaseMigrationScheduleTransitionConverter</class>
     <class>google.registry.persistence.converter.DateTimeConverter</class>
     <class>google.registry.persistence.converter.DurationConverter</class>
     <class>google.registry.persistence.converter.IdnTableEnumSetConverter</class>

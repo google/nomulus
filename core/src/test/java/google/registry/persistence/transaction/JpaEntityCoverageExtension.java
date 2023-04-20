@@ -39,17 +39,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  */
 public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEachCallback {
 
-  private static final ImmutableSet<String> IGNORE_ENTITIES =
-      ImmutableSet.of(
-          // DatabaseMigrationStateSchedule is persisted in tests, however any test that sets it
-          // needs to remove it in order to avoid affecting any other tests running in the same JVM.
-          // TODO(gbrodman): remove this when we implement proper read-only modes for the
-          // transaction managers.
-          "DatabaseMigrationStateSchedule");
-
   public static final ImmutableSet<Class<?>> ALL_JPA_ENTITIES =
       PersistenceXmlUtility.getManagedClasses().stream()
-          .filter(e -> !IGNORE_ENTITIES.contains(e.getSimpleName()))
           .filter(e -> e.isAnnotationPresent(Entity.class))
           .filter(e -> !e.isAnnotationPresent(DiscriminatorValue.class))
           .collect(ImmutableSet.toImmutableSet());
