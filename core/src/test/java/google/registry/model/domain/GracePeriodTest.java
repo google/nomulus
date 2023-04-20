@@ -18,9 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurrence;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
@@ -41,13 +41,13 @@ public class GracePeriodTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final DateTime now = DateTime.now(UTC);
-  private BillingEvent.OneTime onetime;
-  private VKey<Recurrence> recurrenceKey;
+  private BillingEvent onetime;
+  private VKey<BillingRecurrence> recurrenceKey;
 
   @BeforeEach
   void before() {
     onetime =
-        new BillingEvent.OneTime.Builder()
+        new BillingEvent.Builder()
             .setEventTime(now)
             .setBillingTime(now.plusDays(1))
             .setRegistrarId("TheRegistrar")
@@ -57,7 +57,7 @@ public class GracePeriodTest {
             .setPeriodYears(1)
             .setTargetId("foo.google")
             .build();
-    recurrenceKey = Recurrence.createVKey(12345L);
+    recurrenceKey = BillingRecurrence.createVKey(12345L);
   }
 
   @Test

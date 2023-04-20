@@ -14,9 +14,9 @@
 
 package google.registry.flows.domain;
 
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -70,9 +70,9 @@ import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.flows.domain.DomainFlowUtils.TransfersAreAlwaysForOneYearException;
 import google.registry.flows.domain.DomainFlowUtils.UnknownFeeCommandException;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurrence;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
@@ -1612,9 +1612,9 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
                 .setModificationTime(existingDomain.getCreationTime())
                 .setRegistrarId(existingDomain.getCreationRegistrarId())
                 .build());
-    Recurrence renewEvent =
+    BillingRecurrence renewEvent =
         persistResource(
-            new Recurrence.Builder()
+            new BillingRecurrence.Builder()
                 .setReason(Reason.RENEW)
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(existingDomain.getDomainName())

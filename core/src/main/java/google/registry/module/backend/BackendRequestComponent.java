@@ -21,7 +21,7 @@ import google.registry.batch.CannedScriptExecutionAction;
 import google.registry.batch.DeleteExpiredDomainsAction;
 import google.registry.batch.DeleteLoadTestDataAction;
 import google.registry.batch.DeleteProberDataAction;
-import google.registry.batch.ExpandRecurrencesAction;
+import google.registry.batch.ExpandBillingRecurrencesAction;
 import google.registry.batch.RelockDomainAction;
 import google.registry.batch.ResaveAllEppResourcesPipelineAction;
 import google.registry.batch.ResaveEntityAction;
@@ -115,7 +115,7 @@ interface BackendRequestComponent {
 
   DeleteProberDataAction deleteProberDataAction();
 
-  ExpandRecurrencesAction expandRecurrencesAction();
+  ExpandBillingRecurrencesAction expandBillingRecurrencesAction();
 
   ExportDomainListsAction exportDomainListsAction();
 

@@ -77,9 +77,9 @@ import google.registry.flows.EppException.UnimplementedOptionException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.EppResource;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurrence;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -555,8 +555,8 @@ public class DomainFlowUtils {
    * Fills in a builder with the data needed for an autorenew billing event for this domain. This
    * does not copy over the id of the current autorenew billing event.
    */
-  public static Recurrence.Builder newAutorenewBillingEvent(Domain domain) {
-    return new Recurrence.Builder()
+  public static BillingRecurrence.Builder newAutorenewBillingEvent(Domain domain) {
+    return new BillingRecurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())
@@ -585,9 +585,9 @@ public class DomainFlowUtils {
    *
    * <p>Returns the new autorenew recurrence billing event.
    */
-  public static Recurrence updateAutorenewRecurrenceEndTime(
+  public static BillingRecurrence updateAutorenewRecurrenceEndTime(
       Domain domain,
-      Recurrence existingRecurrence,
+      BillingRecurrence existingBillingRecurrence,
       DateTime newEndTime,
       @Nullable HistoryEntryId historyId) {
     Optional<PollMessage.Autorenew> autorenewPollMessage =
@@ -622,10 +622,10 @@ public class DomainFlowUtils {
       tm().put(updatedAutorenewPollMessage);
     }
 
-    Recurrence newRecurrence =
-        existingRecurrence.asBuilder().setRecurrenceEndTime(newEndTime).build();
-    tm().put(newRecurrence);
-    return newRecurrence;
+    BillingRecurrence newBillingRecurrence =
+        existingBillingRecurrence.asBuilder().setRecurrenceEndTime(newEndTime).build();
+    tm().put(newBillingRecurrence);
+    return newBillingRecurrence;
   }
 
   /**
@@ -642,7 +642,7 @@ public class DomainFlowUtils {
       DomainPricingLogic pricingLogic,
       Optional<AllocationToken> allocationToken,
       boolean isAvailable,
-      @Nullable Recurrence recurrence)
+      @Nullable BillingRecurrence billingRecurrence)
       throws EppException {
     DateTime now = currentDate;
     // Use the custom effective date specified in the fee check request, if there is one.
@@ -697,7 +697,8 @@ public class DomainFlowUtils {
         builder.setAvailIfSupported(true);
         fees =
             pricingLogic
-                .getRenewPrice(tld, domainNameString, now, years, recurrence, allocationToken)
+                .getRenewPrice(
+                    tld, domainNameString, now, years, billingRecurrence, allocationToken)
                 .getFees();
         break;
       case RESTORE:
@@ -722,7 +723,8 @@ public class DomainFlowUtils {
           throw new TransfersAreAlwaysForOneYearException();
         }
         builder.setAvailIfSupported(true);
-        fees = pricingLogic.getTransferPrice(tld, domainNameString, now, recurrence).getFees();
+        fees =
+            pricingLogic.getTransferPrice(tld, domainNameString, now, billingRecurrence).getFees();
         break;
       case UPDATE:
         builder.setAvailIfSupported(true);

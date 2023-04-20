@@ -92,9 +92,12 @@ import google.registry.flows.exceptions.ObjectAlreadySponsoredException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.flows.exceptions.TransferPeriodMustBeOneYearException;
 import google.registry.flows.exceptions.TransferPeriodZeroAndFeeTransferExtensionException;
+import google.registry.model.billing.BillingBase;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
+import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
@@ -258,20 +261,20 @@ class DomainTransferRequestFlowTest
       Optional<Money> transferCost,
       ImmutableSet<GracePeriod> originalGracePeriods,
       boolean expectTransferBillingEvent,
-      BillingEvent.Cancellation.Builder... extraExpectedBillingEvents) {
+      BillingCancellation.Builder... extraExpectedBillingEvents) {
     Tld registry = Tld.get(domain.getTld());
     final DomainHistory historyEntryTransferRequest =
         getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REQUEST, DomainHistory.class);
 
     // Construct the billing events we expect to exist, starting with the (optional) billing
     // event for the transfer itself.
-    Optional<BillingEvent.OneTime> optionalTransferBillingEvent;
+    Optional<BillingEvent> optionalTransferBillingEvent;
     if (expectTransferBillingEvent) {
       // For normal transfers, a BillingEvent should be created AUTOMATIC_TRANSFER_DAYS in the
       // future, for the case when the transfer is implicitly acked.
       optionalTransferBillingEvent =
           Optional.of(
-              new BillingEvent.OneTime.Builder()
+              new BillingEvent.Builder()
                   .setReason(Reason.TRANSFER)
                   .setTargetId(domain.getDomainName())
                   .setEventTime(implicitTransferTime)
@@ -290,29 +293,29 @@ class DomainTransferRequestFlowTest
     // all of the other transfer flow tests happen on day 3 of the transfer, but the initial
     // request by definition takes place on day 1, so we need to edit the times in the
     // autorenew events from the base test case.
-    BillingEvent.Recurrence losingClientAutorenew =
+    BillingRecurrence losingClientAutorenew =
         getLosingClientAutorenewEvent()
             .asBuilder()
             .setRecurrenceEndTime(implicitTransferTime)
             .build();
-    BillingEvent.Recurrence gainingClientAutorenew =
+    BillingRecurrence gainingClientAutorenew =
         getGainingClientAutorenewEvent()
             .asBuilder()
             .setEventTime(expectedExpirationTime)
             .setRecurrenceLastExpansion(expectedExpirationTime.minusYears(1))
             .build();
     // Construct extra billing events expected by the specific test.
-    ImmutableSet<BillingEvent> extraBillingEvents =
+    ImmutableSet<BillingBase> extraBillingBases =
         Stream.of(extraExpectedBillingEvents)
             .map(builder -> builder.setDomainHistory(historyEntryTransferRequest).build())
             .collect(toImmutableSet());
     // Assert that the billing events we constructed above actually exist in the database.
-    ImmutableSet<BillingEvent> expectedBillingEvents =
+    ImmutableSet<BillingBase> expectedBillingBases =
         Streams.concat(
                 Stream.of(losingClientAutorenew, gainingClientAutorenew),
                 optionalToStream(optionalTransferBillingEvent))
             .collect(toImmutableSet());
-    assertBillingEvents(Sets.union(expectedBillingEvents, extraBillingEvents));
+    assertBillingEvents(Sets.union(expectedBillingBases, extraBillingBases));
     // Assert that the domain's TransferData server-approve billing events match the above.
     if (expectTransferBillingEvent) {
       assertBillingEventsEqual(
@@ -326,16 +329,16 @@ class DomainTransferRequestFlowTest
         gainingClientAutorenew);
     // Assert that the full set of server-approve billing events is exactly the extra ones plus
     // the transfer billing event (if present) and the gaining client autorenew.
-    ImmutableSet<BillingEvent> expectedServeApproveBillingEvents =
+    ImmutableSet<BillingBase> expectedServeApproveBillingBases =
         Streams.concat(
                 Stream.of(gainingClientAutorenew), optionalToStream(optionalTransferBillingEvent))
             .collect(toImmutableSet());
     assertBillingEventsEqual(
         Iterables.filter(
-            loadByKeys(domain.getTransferData().getServerApproveEntities()), BillingEvent.class),
-        Sets.union(expectedServeApproveBillingEvents, extraBillingEvents));
+            loadByKeys(domain.getTransferData().getServerApproveEntities()), BillingBase.class),
+        Sets.union(expectedServeApproveBillingBases, extraBillingBases));
     // The domain's autorenew billing event should still point to the losing client's event.
-    BillingEvent.Recurrence domainAutorenewEvent = loadByKey(domain.getAutorenewBillingEvent());
+    BillingRecurrence domainAutorenewEvent = loadByKey(domain.getAutorenewBillingEvent());
     assertThat(domainAutorenewEvent.getRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(domainAutorenewEvent.getRecurrenceEndTime()).isEqualTo(implicitTransferTime);
     // The original grace periods should remain untouched.
@@ -468,7 +471,7 @@ class DomainTransferRequestFlowTest
       DateTime expectedExpirationTime,
       Map<String, String> substitutions,
       Optional<Money> transferCost,
-      BillingEvent.Cancellation.Builder... extraExpectedBillingEvents)
+      BillingCancellation.Builder... extraExpectedBillingEvents)
       throws Exception {
     setEppInput(commandFilename, substitutions);
     ImmutableSet<GracePeriod> originalGracePeriods = domain.getGracePeriods();
@@ -530,7 +533,7 @@ class DomainTransferRequestFlowTest
       String commandFilename,
       String expectedXmlFilename,
       DateTime expectedExpirationTime,
-      BillingEvent.Cancellation.Builder... extraExpectedBillingEvents)
+      BillingCancellation.Builder... extraExpectedBillingEvents)
       throws Exception {
     doSuccessfulTest(
         commandFilename,
@@ -568,7 +571,7 @@ class DomainTransferRequestFlowTest
       Optional<Money> transferCost,
       Period expectedPeriod,
       Duration expectedAutomaticTransferLength,
-      BillingEvent.Cancellation.Builder... extraExpectedBillingEvents)
+      BillingCancellation.Builder... extraExpectedBillingEvents)
       throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput(commandFilename, substitutions);
@@ -952,7 +955,7 @@ class DomainTransferRequestFlowTest
   @Test
   void testSuccess_superuserExtension_zeroPeriod_autorenewGraceActive() throws Exception {
     setupDomain("example", "tld");
-    VKey<BillingEvent.Recurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
+    VKey<BillingRecurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to have auto-renewed just before the transfer request, so that it will have an
     // active autorenew grace period spanning the entire transfer window.
     DateTime autorenewTime = clock.nowUtc().minusDays(1);
@@ -1133,7 +1136,7 @@ class DomainTransferRequestFlowTest
   @Test
   void testSuccess_autorenewGraceActive_throughoutTransferWindow() throws Exception {
     setupDomain("example", "tld");
-    VKey<BillingEvent.Recurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
+    VKey<BillingRecurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to have auto-renewed just before the transfer request, so that it will have an
     // active autorenew grace period spanning the entire transfer window.
     DateTime autorenewTime = clock.nowUtc().minusDays(1);
@@ -1158,7 +1161,7 @@ class DomainTransferRequestFlowTest
         "domain_transfer_request.xml",
         "domain_transfer_request_response_autorenew_grace_throughout_transfer_window.xml",
         expirationTime,
-        new BillingEvent.Cancellation.Builder()
+        new BillingCancellation.Builder()
             .setReason(Reason.RENEW)
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
@@ -1172,7 +1175,7 @@ class DomainTransferRequestFlowTest
   @Test
   void testSuccess_autorenewGraceActive_onlyAtAutomaticTransferTime() throws Exception {
     setupDomain("example", "tld");
-    VKey<BillingEvent.Recurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
+    VKey<BillingRecurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to expire in 1 day, so that it will be in the autorenew grace period by the
     // automatic transfer time, even though it isn't yet.
     DateTime expirationTime = clock.nowUtc().plusDays(1);
@@ -1185,7 +1188,7 @@ class DomainTransferRequestFlowTest
         "domain_transfer_request.xml",
         "domain_transfer_request_response_autorenew_grace_at_transfer_only.xml",
         expirationTime.plusYears(1),
-        new BillingEvent.Cancellation.Builder()
+        new BillingCancellation.Builder()
             .setReason(Reason.RENEW)
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
@@ -1247,7 +1250,7 @@ class DomainTransferRequestFlowTest
     // transfer is not explicitly acked) maintains the non-premium behavior.
     assertBillingEventsForResource(
         domain,
-        new BillingEvent.OneTime.Builder()
+        new BillingEvent.Builder()
             .setBillingTime(now.plusDays(10)) // 5 day pending transfer + 5 day billing grace period
             .setEventTime(now.plusDays(5))
             .setRegistrarId("NewRegistrar")
@@ -1301,7 +1304,7 @@ class DomainTransferRequestFlowTest
     // transfer is not explicitly acked) maintains the non-premium behavior.
     assertBillingEventsForResource(
         domain,
-        new BillingEvent.OneTime.Builder()
+        new BillingEvent.Builder()
             .setBillingTime(now.plusDays(10)) // 5 day pending transfer + 5 day billing grace period
             .setEventTime(now.plusDays(5))
             .setRegistrarId("NewRegistrar")
@@ -1360,7 +1363,7 @@ class DomainTransferRequestFlowTest
     // transfer is not explicitly acked) maintains the non-premium behavior.
     assertBillingEventsForResource(
         domain,
-        new BillingEvent.OneTime.Builder()
+        new BillingEvent.Builder()
             .setBillingTime(now.plusDays(10)) // 5 day pending transfer + 5 day billing grace period
             .setEventTime(now.plusDays(5))
             .setRegistrarId("NewRegistrar")
@@ -1418,7 +1421,7 @@ class DomainTransferRequestFlowTest
     // transfer is not explicitly acked) maintains the non-premium behavior.
     assertBillingEventsForResource(
         domain,
-        new BillingEvent.OneTime.Builder()
+        new BillingEvent.Builder()
             .setBillingTime(now.plusDays(10)) // 5 day pending transfer + 5 day billing grace period
             .setEventTime(now.plusDays(5))
             .setRegistrarId("NewRegistrar")

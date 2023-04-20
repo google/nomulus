@@ -20,7 +20,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Recurrence;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
@@ -60,8 +60,8 @@ public class GracePeriod extends GracePeriodBase {
       String domainRepoId,
       DateTime expirationTime,
       String registrarId,
-      @Nullable VKey<BillingEvent.OneTime> billingEventOneTime,
-      @Nullable VKey<Recurrence> billingEventRecurrence,
+      @Nullable VKey<BillingEvent> billingEventOneTime,
+      @Nullable VKey<BillingRecurrence> billingEventRecurrence,
       @Nullable Long gracePeriodId) {
     checkArgument(
         billingEventOneTime == null || billingEventRecurrence == null,
@@ -92,7 +92,7 @@ public class GracePeriod extends GracePeriodBase {
       String domainRepoId,
       DateTime expirationTime,
       String registrarId,
-      @Nullable VKey<BillingEvent.OneTime> billingEventOneTime) {
+      @Nullable VKey<BillingEvent> billingEventOneTime) {
     return createInternal(
         type, domainRepoId, expirationTime, registrarId, billingEventOneTime, null, null);
   }
@@ -111,7 +111,7 @@ public class GracePeriod extends GracePeriodBase {
       String domainRepoId,
       DateTime expirationTime,
       String registrarId,
-      @Nullable VKey<BillingEvent.OneTime> billingEventOneTime,
+      @Nullable VKey<BillingEvent> billingEventOneTime,
       @Nullable Long gracePeriodId) {
     return createInternal(
         type, domainRepoId, expirationTime, registrarId, billingEventOneTime, null, gracePeriodId);
@@ -134,7 +134,7 @@ public class GracePeriod extends GracePeriodBase {
       String domainRepoId,
       DateTime expirationTime,
       String registrarId,
-      VKey<Recurrence> billingEventRecurrence) {
+      VKey<BillingRecurrence> billingEventRecurrence) {
     checkArgumentNotNull(billingEventRecurrence, "billingEventRecurrence cannot be null");
     return createInternal(
         type, domainRepoId, expirationTime, registrarId, null, billingEventRecurrence, null);
@@ -147,7 +147,7 @@ public class GracePeriod extends GracePeriodBase {
       String domainRepoId,
       DateTime expirationTime,
       String registrarId,
-      VKey<Recurrence> billingEventRecurrence,
+      VKey<BillingRecurrence> billingEventRecurrence,
       @Nullable Long gracePeriodId) {
     checkArgumentNotNull(billingEventRecurrence, "billingEventRecurrence cannot be null");
     return createInternal(
@@ -168,7 +168,7 @@ public class GracePeriod extends GracePeriodBase {
 
   /** Constructs a GracePeriod of the given type from the provided one-time BillingEvent. */
   public static GracePeriod forBillingEvent(
-      GracePeriodStatus type, String domainRepoId, BillingEvent.OneTime billingEvent) {
+      GracePeriodStatus type, String domainRepoId, BillingEvent billingEvent) {
     return create(
         type,
         domainRepoId,

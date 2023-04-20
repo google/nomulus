@@ -23,8 +23,8 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.flows.EppTestCase;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
@@ -146,8 +146,8 @@ class EppLifecycleToolsTest extends EppTestCase {
     DateTime createTime = DateTime.parse("2000-06-01T00:02:00Z");
     Domain domain =
         loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2003-06-02T00:02:00Z")).get();
-    BillingEvent.OneTime renewBillingEvent =
-        new BillingEvent.OneTime.Builder()
+    BillingEvent renewBillingEvent =
+        new BillingEvent.Builder()
             .setReason(Reason.RENEW)
             .setTargetId(domain.getDomainName())
             .setRegistrarId(domain.getCurrentSponsorRegistrarId())

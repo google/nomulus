@@ -34,9 +34,9 @@ import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntr
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurrence;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -127,7 +127,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
 
     assertBillingEventsEqual(
         loadByKey(domain.getAutorenewBillingEvent()),
-        new Recurrence.Builder()
+        new BillingRecurrence.Builder()
             .setDomainHistory(synthetic)
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))

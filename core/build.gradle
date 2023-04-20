@@ -749,8 +749,8 @@ if (environment == 'alpha') {
           ],
       expandBilling      :
           [
-              mainClass: 'google.registry.beam.billing.ExpandRecurrencesPipeline',
-              metaData : 'google/registry/beam/expand_recurrences_pipeline_metadata.json'
+              mainClass: 'google.registry.beam.billing.ExpandBillingRecurrencesPipeline',
+              metaData : 'google/registry/beam/expand_billing_recurrences_pipeline_metadata.json'
           ],
       rde                :
           [

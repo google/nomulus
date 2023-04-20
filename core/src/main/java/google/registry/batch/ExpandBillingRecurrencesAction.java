@@ -29,11 +29,11 @@ import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
 import com.google.api.services.dataflow.model.LaunchFlexTemplateResponse;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
-import google.registry.beam.billing.ExpandRecurrencesPipeline;
+import google.registry.beam.billing.ExpandBillingRecurrencesPipeline;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
-import google.registry.model.billing.BillingEvent.OneTime;
-import google.registry.model.billing.BillingEvent.Recurrence;
+import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.common.Cursor;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
@@ -46,20 +46,20 @@ import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**
- * An action that kicks off a {@link ExpandRecurrencesPipeline} dataflow job to expand {@link
- * Recurrence} billing events into synthetic {@link OneTime} events.
+ * An action that kicks off a {@link ExpandBillingRecurrencesPipeline} dataflow job to expand {@link
+ * BillingRecurrence} billing events into synthetic {@link BillingEvent} events.
  */
 @Action(
     service = Action.Service.BACKEND,
-    path = "/_dr/task/expandRecurrences",
+    path = "/_dr/task/expandBillingRecurrences",
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
-public class ExpandRecurrencesAction implements Runnable {
+public class ExpandBillingRecurrencesAction implements Runnable {
 
   public static final String PARAM_START_TIME = "startTime";
   public static final String PARAM_END_TIME = "endTime";
   public static final String PARAM_ADVANCE_CURSOR = "advanceCursor";
 
-  private static final String PIPELINE_NAME = "expand_recurrences_pipeline";
+  private static final String PIPELINE_NAME = "expand_billing_recurrences_pipeline";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject Clock clock;
@@ -97,7 +97,7 @@ public class ExpandRecurrencesAction implements Runnable {
   @Inject Response response;
 
   @Inject
-  ExpandRecurrencesAction() {}
+  ExpandBillingRecurrencesAction() {}
 
   @Override
   public void run() {

@@ -16,9 +16,9 @@ package google.registry.flows.domain;
 
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
 import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
@@ -51,10 +51,10 @@ import google.registry.flows.domain.DomainFlowUtils.CurrencyUnitMismatchExceptio
 import google.registry.flows.domain.DomainFlowUtils.FeeChecksDontSupportPhasesException;
 import google.registry.flows.domain.DomainFlowUtils.RestoresAreAlwaysForOneYearException;
 import google.registry.flows.domain.DomainFlowUtils.TransfersAreAlwaysForOneYearException;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurrence;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.domain.DesignatedContact;
@@ -384,9 +384,9 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setModificationTime(clock.nowUtc())
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
-    Recurrence renewEvent =
+    BillingRecurrence renewEvent =
         persistResource(
-            new Recurrence.Builder()
+            new BillingRecurrence.Builder()
                 .setReason(Reason.RENEW)
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(getUniqueIdFromCommand())
@@ -395,7 +395,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setDomainHistory(historyEntry)
                 .build());
-    VKey<Recurrence> recurrenceVKey = renewEvent.createVKey();
+    VKey<BillingRecurrence> recurrenceVKey = renewEvent.createVKey();
     // Add an AUTO_RENEW grace period to the saved resource.
     persistResource(
         domain

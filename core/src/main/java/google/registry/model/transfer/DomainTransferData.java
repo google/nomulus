@@ -17,7 +17,9 @@ package google.registry.model.transfer;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
 import google.registry.model.poll.PollMessage;
@@ -69,7 +71,7 @@ public class DomainTransferData extends TransferData {
   DateTime transferredRegistrationExpirationTime;
 
   @Column(name = "transfer_billing_cancellation_id")
-  public VKey<BillingEvent.Cancellation> billingCancellationId;
+  public VKey<BillingCancellation> billingCancellationId;
 
   /**
    * The regular one-time billing event that will be charged for a server-approved transfer.
@@ -78,7 +80,7 @@ public class DomainTransferData extends TransferData {
    * being transferred is not a domain.
    */
   @Column(name = "transfer_billing_event_id")
-  VKey<BillingEvent.OneTime> serverApproveBillingEvent;
+  VKey<BillingEvent> serverApproveBillingEvent;
 
   /**
    * The autorenew billing event that should be associated with this resource after the transfer.
@@ -87,7 +89,7 @@ public class DomainTransferData extends TransferData {
    * being transferred is not a domain.
    */
   @Column(name = "transfer_billing_recurrence_id")
-  VKey<BillingEvent.Recurrence> serverApproveAutorenewEvent;
+  VKey<BillingRecurrence> serverApproveAutorenewEvent;
 
   /**
    * The autorenew poll message that should be associated with this resource after the transfer.
@@ -120,12 +122,12 @@ public class DomainTransferData extends TransferData {
   }
 
   @Nullable
-  public VKey<BillingEvent.OneTime> getServerApproveBillingEvent() {
+  public VKey<BillingEvent> getServerApproveBillingEvent() {
     return serverApproveBillingEvent;
   }
 
   @Nullable
-  public VKey<BillingEvent.Recurrence> getServerApproveAutorenewEvent() {
+  public VKey<BillingRecurrence> getServerApproveAutorenewEvent() {
     return serverApproveAutorenewEvent;
   }
 
@@ -176,9 +178,9 @@ public class DomainTransferData extends TransferData {
       domainTransferData.billingCancellationId = null;
     } else {
       domainTransferData.billingCancellationId =
-          (VKey<BillingEvent.Cancellation>)
+          (VKey<BillingCancellation>)
               serverApproveEntities.stream()
-                  .filter(k -> k.getKind().equals(BillingEvent.Cancellation.class))
+                  .filter(k -> k.getKind().equals(BillingCancellation.class))
                   .findFirst()
                   .orElse(null);
     }
@@ -204,14 +206,13 @@ public class DomainTransferData extends TransferData {
       return this;
     }
 
-    public Builder setServerApproveBillingEvent(
-        VKey<BillingEvent.OneTime> serverApproveBillingEvent) {
+    public Builder setServerApproveBillingEvent(VKey<BillingEvent> serverApproveBillingEvent) {
       getInstance().serverApproveBillingEvent = serverApproveBillingEvent;
       return this;
     }
 
     public Builder setServerApproveAutorenewEvent(
-        VKey<BillingEvent.Recurrence> serverApproveAutorenewEvent) {
+        VKey<BillingRecurrence> serverApproveAutorenewEvent) {
       getInstance().serverApproveAutorenewEvent = serverApproveAutorenewEvent;
       return this;
     }

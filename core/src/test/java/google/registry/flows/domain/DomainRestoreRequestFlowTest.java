@@ -58,9 +58,10 @@ import google.registry.flows.domain.DomainFlowUtils.RegistrarMustBeActiveForThis
 import google.registry.flows.domain.DomainFlowUtils.UnsupportedFeeAttributeException;
 import google.registry.flows.domain.DomainRestoreRequestFlow.DomainNotEligibleForRestoreException;
 import google.registry.flows.domain.DomainRestoreRequestFlow.RestoreCommandIncludesChangesException;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -202,7 +203,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .build());
     // There should be a onetime for the restore and a new recurrence, but no renew onetime.
     assertBillingEvents(
-        new BillingEvent.Recurrence.Builder()
+        new BillingRecurrence.Builder()
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId("example.tld")
@@ -211,7 +212,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistory(historyEntryDomainRestore)
             .build(),
-        new BillingEvent.OneTime.Builder()
+        new BillingEvent.Builder()
             .setReason(Reason.RESTORE)
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
@@ -271,7 +272,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     // There should be a bill for the restore and an explicit renew, along with a new recurrence
     // autorenew event.
     assertBillingEvents(
-        new BillingEvent.Recurrence.Builder()
+        new BillingRecurrence.Builder()
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId("example.tld")
@@ -280,7 +281,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistory(historyEntryDomainRestore)
             .build(),
-        new BillingEvent.OneTime.Builder()
+        new BillingEvent.Builder()
             .setReason(Reason.RESTORE)
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
@@ -290,7 +291,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setBillingTime(clock.nowUtc())
             .setDomainHistory(historyEntryDomainRestore)
             .build(),
-        new BillingEvent.OneTime.Builder()
+        new BillingEvent.Builder()
             .setReason(Reason.RENEW)
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")

@@ -26,8 +26,8 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
-import google.registry.model.billing.BillingEvent.Recurrence;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
@@ -236,7 +236,7 @@ public class AllocationTokenFlowUtils {
       return domain;
     }
 
-    Recurrence newRecurrence =
+    BillingRecurrence newBillingRecurrence =
         tm().loadByKey(domain.getAutorenewBillingEvent())
             .asBuilder()
             .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
@@ -245,7 +245,7 @@ public class AllocationTokenFlowUtils {
 
     // the Recurrence is reloaded later in the renew flow, so we synchronize changed
     // Recurrences with storage manually
-    tm().put(newRecurrence);
+    tm().put(newBillingRecurrence);
     tm().getEntityManager().flush();
     tm().getEntityManager().clear();
 
@@ -253,7 +253,7 @@ public class AllocationTokenFlowUtils {
     return domain
         .asBuilder()
         .setCurrentPackageToken(null)
-        .setAutorenewBillingEvent(newRecurrence.createVKey())
+        .setAutorenewBillingEvent(newBillingRecurrence.createVKey())
         .build();
   }
 

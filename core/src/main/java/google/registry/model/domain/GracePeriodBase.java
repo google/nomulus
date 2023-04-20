@@ -17,6 +17,7 @@ package google.registry.model.domain;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.persistence.VKey;
 import javax.persistence.Access;
@@ -61,7 +62,7 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Access(AccessType.FIELD)
   @Column(name = "billing_event_id")
-  VKey<BillingEvent.OneTime> billingEventOneTime = null;
+  VKey<BillingEvent> billingEventOneTime = null;
 
   /**
    * The Recurrence corresponding to the action that triggered this grace period, if applicable -
@@ -70,7 +71,7 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Access(AccessType.FIELD)
   @Column(name = "billing_recurrence_id")
-  VKey<BillingEvent.Recurrence> billingEventRecurrence = null;
+  VKey<BillingRecurrence> billingEventRecurrence = null;
 
   public long getGracePeriodId() {
     return gracePeriodId;
@@ -107,7 +108,7 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
    * Returns the one time billing event. The value will only be non-null if the type of this grace
    * period is not AUTO_RENEW.
    */
-  public VKey<BillingEvent.OneTime> getOneTimeBillingEvent() {
+  public VKey<BillingEvent> getOneTimeBillingEvent() {
     return billingEventOneTime;
   }
 
@@ -115,7 +116,7 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
    * Returns the Recurrence. The value will only be non-null if the type of this grace period is
    * AUTO_RENEW.
    */
-  public VKey<BillingEvent.Recurrence> getRecurrenceBillingEvent() {
+  public VKey<BillingRecurrence> getRecurrenceBillingEvent() {
     return billingEventRecurrence;
   }
 }

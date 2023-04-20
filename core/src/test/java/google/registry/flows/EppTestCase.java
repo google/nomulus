@@ -28,11 +28,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
-import google.registry.model.billing.BillingEvent.Cancellation;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.OneTime;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurrence;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingCancellation;
+import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.EppXmlTransformer;
@@ -302,8 +302,8 @@ public class EppTestCase {
   }
 
   /** Makes a one-time billing event corresponding to the given domain's creation. */
-  protected static OneTime makeOneTimeCreateBillingEvent(Domain domain, DateTime createTime) {
-    return new OneTime.Builder()
+  protected static BillingEvent makeOneTimeCreateBillingEvent(Domain domain, DateTime createTime) {
+    return new BillingEvent.Builder()
         .setReason(Reason.CREATE)
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
@@ -317,8 +317,8 @@ public class EppTestCase {
   }
 
   /** Makes a one-time billing event corresponding to the given domain's renewal. */
-  static OneTime makeOneTimeRenewBillingEvent(Domain domain, DateTime renewTime) {
-    return new OneTime.Builder()
+  static BillingEvent makeOneTimeRenewBillingEvent(Domain domain, DateTime renewTime) {
+    return new BillingEvent.Builder()
         .setReason(Reason.RENEW)
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
@@ -331,7 +331,8 @@ public class EppTestCase {
   }
 
   /** Makes a recurrence billing event corresponding to the given domain's creation. */
-  static Recurrence makeCreateRecurrence(Domain domain, DateTime eventTime, DateTime endTime) {
+  static BillingRecurrence makeCreateRecurrence(
+      Domain domain, DateTime eventTime, DateTime endTime) {
     return makeRecurrence(
         domain,
         getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class),
@@ -340,7 +341,8 @@ public class EppTestCase {
   }
 
   /** Makes a recurrence billing event corresponding to the given domain's renewal. */
-  static Recurrence makeRenewRecurrence(Domain domain, DateTime eventTime, DateTime endTime) {
+  static BillingRecurrence makeRenewRecurrence(
+      Domain domain, DateTime eventTime, DateTime endTime) {
     return makeRecurrence(
         domain,
         getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class),
@@ -349,9 +351,9 @@ public class EppTestCase {
   }
 
   /** Makes a recurrence corresponding to the given history entry. */
-  protected static Recurrence makeRecurrence(
+  protected static BillingRecurrence makeRecurrence(
       Domain domain, DomainHistory historyEntry, DateTime eventTime, DateTime endTime) {
-    return new Recurrence.Builder()
+    return new BillingRecurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())
@@ -363,9 +365,9 @@ public class EppTestCase {
   }
 
   /** Makes a cancellation billing event cancelling out the given domain create billing event. */
-  static Cancellation makeCancellationBillingEventForCreate(
-      Domain domain, OneTime billingEventToCancel, DateTime createTime, DateTime deleteTime) {
-    return new Cancellation.Builder()
+  static BillingCancellation makeCancellationBillingEventForCreate(
+      Domain domain, BillingEvent billingEventToCancel, DateTime createTime, DateTime deleteTime) {
+    return new BillingCancellation.Builder()
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(deleteTime)
@@ -378,9 +380,9 @@ public class EppTestCase {
   }
 
   /** Makes a cancellation billing event cancelling out the given domain renew billing event. */
-  static Cancellation makeCancellationBillingEventForRenew(
-      Domain domain, OneTime billingEventToCancel, DateTime renewTime, DateTime deleteTime) {
-    return new Cancellation.Builder()
+  static BillingCancellation makeCancellationBillingEventForRenew(
+      Domain domain, BillingEvent billingEventToCancel, DateTime renewTime, DateTime deleteTime) {
+    return new BillingCancellation.Builder()
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(deleteTime)
@@ -401,9 +403,10 @@ public class EppTestCase {
    * This is necessary because the ID will be different even though all the rest of the fields are
    * the same.
    */
-  private static VKey<OneTime> findKeyToActualOneTimeBillingEvent(OneTime expectedBillingEvent) {
-    Optional<OneTime> actualCreateBillingEvent =
-        loadAllOf(OneTime.class).stream()
+  private static VKey<BillingEvent> findKeyToActualOneTimeBillingEvent(
+      BillingEvent expectedBillingEvent) {
+    Optional<BillingEvent> actualCreateBillingEvent =
+        loadAllOf(BillingEvent.class).stream()
             .filter(
                 b ->
                     Objects.equals(

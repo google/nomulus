@@ -92,8 +92,8 @@ steps:
       google/registry/beam/spec11_pipeline_metadata.json \
       google.registry.beam.billing.InvoicingPipeline \
       google/registry/beam/invoicing_pipeline_metadata.json \
-      google.registry.beam.billing.ExpandRecurrencesPipeline \
-      google/registry/beam/expand_recurrences_metadata.json \
+      google.registry.beam.billing.ExpandBillingRecurrencesPipeline \
+      google/registry/beam/expand_billing_recurrences_metadata.json \
       google.registry.beam.rde.RdePipeline \
       google/registry/beam/rde_pipeline_metadata.json \
       google.registry.beam.resave.ResaveAllEppResourcesPipeline \

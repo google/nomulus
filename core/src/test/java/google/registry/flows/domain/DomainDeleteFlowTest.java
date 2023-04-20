@@ -76,9 +76,11 @@ import google.registry.flows.domain.DomainFlowUtils.BadCommandForRegistryPhaseEx
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
 import google.registry.flows.exceptions.OnlyToolCanPassMetadataException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -136,7 +138,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   private void setUpSuccessfulTest() throws Exception {
     createReferencedEntities(A_MONTH_FROM_NOW);
-    BillingEvent.Recurrence autorenewBillingEvent =
+    BillingRecurrence autorenewBillingEvent =
         persistResource(createAutorenewBillingEvent("TheRegistrar").build());
     PollMessage.Autorenew autorenewPollMessage =
         persistResource(createAutorenewPollMessage("TheRegistrar").build());
@@ -193,7 +195,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   private void setUpAutorenewGracePeriod() throws Exception {
     createReferencedEntities(A_MONTH_AGO.plusYears(1));
-    BillingEvent.Recurrence autorenewBillingEvent =
+    BillingRecurrence autorenewBillingEvent =
         persistResource(
             createAutorenewBillingEvent("TheRegistrar").setEventTime(A_MONTH_AGO).build());
     PollMessage.Autorenew autorenewPollMessage =
@@ -218,19 +220,17 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   }
 
   private void assertAutorenewClosedAndCancellationCreatedFor(
-      BillingEvent.OneTime graceBillingEvent, DomainHistory historyEntryDomainDelete) {
+      BillingEvent graceBillingEvent, DomainHistory historyEntryDomainDelete) {
     assertAutorenewClosedAndCancellationCreatedFor(
         graceBillingEvent, historyEntryDomainDelete, clock.nowUtc());
   }
 
   private void assertAutorenewClosedAndCancellationCreatedFor(
-      BillingEvent.OneTime graceBillingEvent,
-      DomainHistory historyEntryDomainDelete,
-      DateTime eventTime) {
+      BillingEvent graceBillingEvent, DomainHistory historyEntryDomainDelete, DateTime eventTime) {
     assertBillingEvents(
         createAutorenewBillingEvent("TheRegistrar").setRecurrenceEndTime(eventTime).build(),
         graceBillingEvent,
-        new BillingEvent.Cancellation.Builder()
+        new BillingCancellation.Builder()
             .setReason(graceBillingEvent.getReason())
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
@@ -248,8 +248,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         createAutorenewBillingEvent(registrarId).setRecurrenceEndTime(clock.nowUtc()).build());
   }
 
-  private BillingEvent.OneTime createBillingEvent(Reason reason, Money cost) {
-    return new BillingEvent.OneTime.Builder()
+  private BillingEvent createBillingEvent(Reason reason, Money cost) {
+    return new BillingEvent.Builder()
         .setReason(reason)
         .setTargetId("example.tld")
         .setRegistrarId("TheRegistrar")
@@ -261,8 +261,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .build();
   }
 
-  private BillingEvent.Recurrence.Builder createAutorenewBillingEvent(String registrarId) {
-    return new BillingEvent.Recurrence.Builder()
+  private BillingRecurrence.Builder createAutorenewBillingEvent(String registrarId) {
+    return new BillingRecurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId("example.tld")
@@ -344,7 +344,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
       throws Exception {
     // Persist the billing event so it can be retrieved for cancellation generation and checking.
     setUpSuccessfulTest();
-    BillingEvent.OneTime graceBillingEvent =
+    BillingEvent graceBillingEvent =
         persistResource(createBillingEvent(Reason.CREATE, Money.of(USD, 123)));
     setUpGracePeriods(
         GracePeriod.forBillingEvent(gracePeriodStatus, domain.getRepoId(), graceBillingEvent));
@@ -418,7 +418,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
       String responseFilename, Map<String, String> substitutions) throws Exception {
     // Persist the billing event so it can be retrieved for cancellation generation and checking.
     setUpSuccessfulTest();
-    BillingEvent.OneTime renewBillingEvent =
+    BillingEvent renewBillingEvent =
         persistResource(createBillingEvent(Reason.RENEW, Money.of(USD, 456)));
     setUpGracePeriods(
         GracePeriod.forBillingEvent(GracePeriodStatus.RENEW, domain.getRepoId(), renewBillingEvent),
@@ -720,7 +720,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     sessionMetadata.setServiceExtensionUris(ImmutableSet.of());
     setUpSuccessfulTest();
     // Persist the billing event so it can be retrieved for cancellation generation and checking.
-    BillingEvent.OneTime graceBillingEvent =
+    BillingEvent graceBillingEvent =
         persistResource(createBillingEvent(Reason.CREATE, Money.of(USD, 123)));
     // Use a grace period so that the delete is immediate, simplifying the assertions below.
     setUpGracePeriods(
@@ -1238,7 +1238,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   void testSuccess_freeCreation_deletionDuringGracePeriod() throws Exception {
     // Deletion during the add grace period should still work even if the credit is 0
     setUpSuccessfulTest();
-    BillingEvent.OneTime graceBillingEvent =
+    BillingEvent graceBillingEvent =
         persistResource(createBillingEvent(Reason.CREATE, Money.of(USD, 0)));
     setUpGracePeriods(
         GracePeriod.forBillingEvent(GracePeriodStatus.ADD, domain.getRepoId(), graceBillingEvent));

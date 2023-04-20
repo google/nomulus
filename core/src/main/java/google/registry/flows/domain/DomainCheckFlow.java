@@ -59,7 +59,7 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTok
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.model.EppResource;
 import google.registry.model.ForeignKeyUtils;
-import google.registry.model.billing.BillingEvent.Recurrence;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Check;
 import google.registry.model.domain.fee.FeeCheckCommandExtension;
@@ -271,7 +271,7 @@ public final class DomainCheckFlow implements Flow {
         new ImmutableList.Builder<>();
     ImmutableMap<String, Domain> domainObjs =
         loadDomainsForRestoreChecks(feeCheck, domainNames, existingDomains);
-    ImmutableMap<String, Recurrence> recurrences = loadRecurrencesForDomains(domainObjs);
+    ImmutableMap<String, BillingRecurrence> recurrences = loadRecurrencesForDomains(domainObjs);
 
     for (FeeCheckCommandExtensionItem feeCheckItem : feeCheck.getItems()) {
       for (String domainName : getDomainNamesToCheckForFee(feeCheckItem, domainNames.keySet())) {
@@ -376,11 +376,11 @@ public final class DomainCheckFlow implements Flow {
         Maps.transformEntries(existingDomainsToLoad, (k, v) -> (Domain) loadedDomains.get(v)));
   }
 
-  private ImmutableMap<String, Recurrence> loadRecurrencesForDomains(
+  private ImmutableMap<String, BillingRecurrence> loadRecurrencesForDomains(
       ImmutableMap<String, Domain> domainObjs) {
     return tm().transact(
             () -> {
-              ImmutableMap<VKey<? extends Recurrence>, Recurrence> recurrences =
+              ImmutableMap<VKey<? extends BillingRecurrence>, BillingRecurrence> recurrences =
                   tm().loadByKeys(
                           domainObjs.values().stream()
                               .map(Domain::getAutorenewBillingEvent)

@@ -20,11 +20,12 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
+import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurrence;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -66,8 +67,8 @@ public final class DomainTransferUtils {
       // Unless superuser sets period to 0, add a transfer billing event.
       transferDataBuilder.setServerApproveBillingEvent(
           serverApproveEntities.stream()
-              .filter(BillingEvent.OneTime.class::isInstance)
-              .map(BillingEvent.OneTime.class::cast)
+              .filter(BillingEvent.class::isInstance)
+              .map(BillingEvent.class::cast)
               .collect(onlyElement())
               .createVKey());
     }
@@ -75,8 +76,8 @@ public final class DomainTransferUtils {
         .setTransferStatus(TransferStatus.PENDING)
         .setServerApproveAutorenewEvent(
             serverApproveEntities.stream()
-                .filter(Recurrence.class::isInstance)
-                .map(Recurrence.class::cast)
+                .filter(BillingRecurrence.class::isInstance)
+                .map(BillingRecurrence.class::cast)
                 .collect(onlyElement())
                 .createVKey())
         .setServerApproveAutorenewPollMessage(
@@ -110,7 +111,7 @@ public final class DomainTransferUtils {
       DateTime serverApproveNewExpirationTime,
       HistoryEntryId domainHistoryId,
       Domain existingDomain,
-      Recurrence existingRecurrence,
+      BillingRecurrence existingBillingRecurrence,
       Trid trid,
       String gainingRegistrarId,
       Optional<Money> transferCost,
@@ -146,12 +147,12 @@ public final class DomainTransferUtils {
         .add(
             createGainingClientAutorenewEvent(
                 existingDomain.getCurrentPackageToken().isPresent()
-                    ? existingRecurrence
+                    ? existingBillingRecurrence
                         .asBuilder()
                         .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
                         .setRenewalPrice(null)
                         .build()
-                    : existingRecurrence,
+                    : existingBillingRecurrence,
                 serverApproveNewExpirationTime,
                 domainHistoryId,
                 targetId,
@@ -246,21 +247,21 @@ public final class DomainTransferUtils {
         .build();
   }
 
-  private static Recurrence createGainingClientAutorenewEvent(
-      Recurrence existingRecurrence,
+  private static BillingRecurrence createGainingClientAutorenewEvent(
+      BillingRecurrence existingBillingRecurrence,
       DateTime serverApproveNewExpirationTime,
       HistoryEntryId domainHistoryId,
       String targetId,
       String gainingRegistrarId) {
-    return new Recurrence.Builder()
+    return new BillingRecurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(targetId)
         .setRegistrarId(gainingRegistrarId)
         .setEventTime(serverApproveNewExpirationTime)
         .setRecurrenceEndTime(END_OF_TIME)
-        .setRenewalPriceBehavior(existingRecurrence.getRenewalPriceBehavior())
-        .setRenewalPrice(existingRecurrence.getRenewalPrice().orElse(null))
+        .setRenewalPriceBehavior(existingBillingRecurrence.getRenewalPriceBehavior())
+        .setRenewalPrice(existingBillingRecurrence.getRenewalPrice().orElse(null))
         .setDomainHistoryId(domainHistoryId)
         .build();
   }
@@ -281,7 +282,7 @@ public final class DomainTransferUtils {
    * <p>For details on the policy justification, see b/19430703#comment17 and <a
    * href="https://www.icann.org/news/advisory-2002-06-06-en">this ICANN advisory</a>.
    */
-  private static Optional<BillingEvent.Cancellation> createOptionalAutorenewCancellation(
+  private static Optional<BillingCancellation> createOptionalAutorenewCancellation(
       DateTime automaticTransferTime,
       DateTime now,
       HistoryEntryId domainHistoryId,
@@ -294,8 +295,7 @@ public final class DomainTransferUtils {
             domainAtTransferTime.getGracePeriodsOfType(GracePeriodStatus.AUTO_RENEW), null);
     if (autorenewGracePeriod != null && transferCost.isPresent()) {
       return Optional.of(
-          BillingEvent.Cancellation.forGracePeriod(
-                  autorenewGracePeriod, now, domainHistoryId, targetId)
+          BillingCancellation.forGracePeriod(autorenewGracePeriod, now, domainHistoryId, targetId)
               .asBuilder()
               .setEventTime(automaticTransferTime)
               .build());
@@ -303,14 +303,14 @@ public final class DomainTransferUtils {
     return Optional.empty();
   }
 
-  private static BillingEvent.OneTime createTransferBillingEvent(
+  private static BillingEvent createTransferBillingEvent(
       DateTime automaticTransferTime,
       HistoryEntryId domainHistoryId,
       String targetId,
       String gainingRegistrarId,
       Tld registry,
       Money transferCost) {
-    return new BillingEvent.OneTime.Builder()
+    return new BillingEvent.Builder()
         .setReason(Reason.TRANSFER)
         .setTargetId(targetId)
         .setRegistrarId(gainingRegistrarId)

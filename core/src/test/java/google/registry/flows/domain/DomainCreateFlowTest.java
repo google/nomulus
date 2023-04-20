@@ -19,12 +19,12 @@ import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.flows.FlowTestCase.UserPrivileges.SUPERUSER;
-import static google.registry.model.billing.BillingEvent.Flag.ANCHOR_TENANT;
-import static google.registry.model.billing.BillingEvent.Flag.RESERVED;
-import static google.registry.model.billing.BillingEvent.Flag.SUNRISE;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.billing.BillingBase.Flag.ANCHOR_TENANT;
+import static google.registry.model.billing.BillingBase.Flag.RESERVED;
+import static google.registry.model.billing.BillingBase.Flag.SUNRISE;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
@@ -145,10 +145,12 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAlloca
 import google.registry.flows.exceptions.OnlyToolCanPassMetadataException;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
+import google.registry.model.billing.BillingBase;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -263,13 +265,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   private void assertSuccessfulCreate(
-      String domainTld, ImmutableSet<BillingEvent.Flag> expectedBillingFlags) throws Exception {
+      String domainTld, ImmutableSet<BillingBase.Flag> expectedBillingFlags) throws Exception {
     assertSuccessfulCreate(domainTld, expectedBillingFlags, null);
   }
 
   private void assertSuccessfulCreate(
       String domainTld,
-      ImmutableSet<BillingEvent.Flag> expectedBillingFlags,
+      ImmutableSet<BillingBase.Flag> expectedBillingFlags,
       @Nullable AllocationToken allocationToken)
       throws Exception {
     Domain domain = reloadResourceByForeignKey();
@@ -312,8 +314,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         DomainCreateFlow.getRenewalPriceInfo(
             isAnchorTenant, Optional.ofNullable(allocationToken), feesAndCredits);
     // There should be one bill for the create and one for the recurrence autorenew event.
-    BillingEvent.OneTime createBillingEvent =
-        new BillingEvent.OneTime.Builder()
+    BillingEvent createBillingEvent =
+        new BillingEvent.Builder()
             .setReason(Reason.CREATE)
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
@@ -326,8 +328,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setAllocationToken(allocationToken == null ? null : allocationToken.createVKey())
             .build();
 
-    BillingEvent.Recurrence renewBillingEvent =
-        new BillingEvent.Recurrence.Builder()
+    BillingRecurrence renewBillingEvent =
+        new BillingRecurrence.Builder()
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(getUniqueIdFromCommand())
@@ -339,14 +341,14 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setRenewalPrice(renewalPriceInfo.renewalPrice())
             .build();
 
-    ImmutableSet.Builder<BillingEvent> expectedBillingEvents =
-        new ImmutableSet.Builder<BillingEvent>().add(createBillingEvent).add(renewBillingEvent);
+    ImmutableSet.Builder<BillingBase> expectedBillingEvents =
+        new ImmutableSet.Builder<BillingBase>().add(createBillingEvent).add(renewBillingEvent);
 
     // If EAP is applied, a billing event for EAP should be present.
     // EAP fees are bypassed for anchor tenant domains.
     if (!isAnchorTenant && !eapFee.isZero()) {
-      BillingEvent.OneTime eapBillingEvent =
-          new BillingEvent.OneTime.Builder()
+      BillingEvent eapBillingEvent =
+          new BillingEvent.Builder()
               .setReason(Reason.FEE_EARLY_ACCESS)
               .setTargetId(getUniqueIdFromCommand())
               .setRegistrarId("TheRegistrar")
@@ -1570,8 +1572,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
-    BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    BillingEvent billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
   }
@@ -1620,8 +1622,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .put("CRDATE", "1999-04-03T22:00:00.0Z")
                 .put("EXDATE", "2004-04-03T22:00:00.0Z")
                 .build()));
-    BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    BillingEvent billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getCost()).isEqualTo(expectedPrice);
   }
@@ -1653,8 +1655,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         loadFile(
             "domain_create_response_premium.xml",
             ImmutableMap.of("EXDATE", "2002-04-03T22:00:00.0Z", "FEE", "104.00")));
-    BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    BillingEvent billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("rich.example");
     // 1yr @ $100 + 2yrs @ $100 * (1 - 0.98) = $104
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 104.00));
@@ -1686,8 +1688,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         loadFile(
             "domain_create_response_premium.xml",
             ImmutableMap.of("EXDATE", "2002-04-03T22:00:00.0Z", "FEE", "204.44")));
-    BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    BillingEvent billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("rich.example");
     // 2yrs @ $100 + 1yr @ $100 * (1 - 0.95555) = $204.44
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 204.44));
@@ -1855,8 +1857,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
-    BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    BillingEvent billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
     assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo("abc123");
@@ -1971,7 +1973,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDefaultPromoTokens(
                 ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
             .build());
-    BillingEvent.OneTime billingEvent = runTest_defaultToken("bbbbb");
+    BillingEvent billingEvent = runTest_defaultToken("bbbbb");
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
   }
 
@@ -2002,7 +2004,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
             .build());
     DatabaseHelper.deleteResource(defaultToken1);
-    BillingEvent.OneTime billingEvent = runTest_defaultToken("bbbbb");
+    BillingEvent billingEvent = runTest_defaultToken("bbbbb");
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
   }
 
@@ -2041,7 +2043,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest();
   }
 
-  BillingEvent.OneTime runTest_defaultToken(String token) throws Exception {
+  BillingEvent runTest_defaultToken(String token) throws Exception {
     setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlowAssertResponse(
         loadFile(
@@ -2051,8 +2053,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .put("CRDATE", "1999-04-03T22:00:00.0Z")
                 .put("EXDATE", "2001-04-03T22:00:00.0Z")
                 .build()));
-    BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    BillingEvent billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo(token);
     return billingEvent;

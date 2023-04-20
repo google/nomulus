@@ -39,14 +39,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
-/** Unit tests for {@link ExpandRecurrencesAction}. */
-public class ExpandRecurrencesActionTest extends BeamActionTestBase {
+/** Unit tests for {@link ExpandBillingRecurrencesAction}. */
+public class ExpandBillingRecurrencesActionTest extends BeamActionTestBase {
 
   private final DateTime cursorTime = DateTime.parse("2020-02-01T00:00:00Z");
   private final DateTime now = DateTime.parse("2020-02-02T00:00:00Z");
 
   private final FakeClock clock = new FakeClock(now);
-  private final ExpandRecurrencesAction action = new ExpandRecurrencesAction();
+  private final ExpandBillingRecurrencesAction action = new ExpandBillingRecurrencesAction();
   private final HashMap<String, String> expectedParameters = new HashMap<>();
 
   private final ArgumentCaptor<LaunchFlexTemplateRequest> launchRequest =

@@ -77,11 +77,11 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.model.ImmutableObject;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurrence;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.DomainCommand.Create;
@@ -348,7 +348,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
     HistoryEntryId domainHistoryId = new HistoryEntryId(repoId, historyRevisionId);
     historyBuilder.setRevisionId(historyRevisionId);
     // Bill for the create.
-    BillingEvent.OneTime createBillingEvent =
+    BillingEvent createBillingEvent =
         createOneTimeBillingEvent(
             tld,
             isAnchorTenant,
@@ -360,7 +360,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
             allocationToken,
             now);
     // Create a new autorenew billing event and poll message starting at the expiration time.
-    Recurrence autorenewBillingEvent =
+    BillingRecurrence autorenewBillingEvent =
         createAutorenewBillingEvent(
             domainHistoryId,
             registrationExpirationTime,
@@ -572,7 +572,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
     return historyBuilder.setType(DOMAIN_CREATE).setPeriod(period).setDomain(domain).build();
   }
 
-  private BillingEvent.OneTime createOneTimeBillingEvent(
+  private BillingEvent createOneTimeBillingEvent(
       Tld tld,
       boolean isAnchorTenant,
       boolean isSunriseCreate,
@@ -594,7 +594,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
       // it if it's reserved for other reasons.
       flagsBuilder.add(Flag.RESERVED);
     }
-    return new BillingEvent.OneTime.Builder()
+    return new BillingEvent.Builder()
         .setReason(Reason.CREATE)
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
@@ -612,11 +612,11 @@ public final class DomainCreateFlow implements TransactionalFlow {
         .build();
   }
 
-  private Recurrence createAutorenewBillingEvent(
+  private BillingRecurrence createAutorenewBillingEvent(
       HistoryEntryId domainHistoryId,
       DateTime registrationExpirationTime,
       RenewalPriceInfo renewalpriceInfo) {
-    return new Recurrence.Builder()
+    return new BillingRecurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(targetId)
@@ -640,9 +640,9 @@ public final class DomainCreateFlow implements TransactionalFlow {
         .build();
   }
 
-  private static BillingEvent.OneTime createEapBillingEvent(
-      FeesAndCredits feesAndCredits, BillingEvent.OneTime createBillingEvent) {
-    return new BillingEvent.OneTime.Builder()
+  private static BillingEvent createEapBillingEvent(
+      FeesAndCredits feesAndCredits, BillingEvent createBillingEvent) {
+    return new BillingEvent.Builder()
         .setReason(Reason.FEE_EARLY_ACCESS)
         .setTargetId(createBillingEvent.getTargetId())
         .setRegistrarId(createBillingEvent.getRegistrarId())
@@ -671,7 +671,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
 
   /**
    * Determines the {@link RenewalPriceBehavior} and the renewal price that needs be stored in the
-   * {@link Recurrence} billing events.
+   * {@link BillingRecurrence} billing events.
    *
    * <p>By default, the renewal price is calculated during the process of renewal. Renewal price
    * should be the createCost if and only if the renewal price behavior in the {@link
@@ -697,7 +697,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
     }
   }
 
-  /** A class to store renewal info used in {@link Recurrence} billing events. */
+  /** A class to store renewal info used in {@link BillingRecurrence} billing events. */
   @AutoValue
   public abstract static class RenewalPriceInfo {
     static DomainCreateFlow.RenewalPriceInfo create(

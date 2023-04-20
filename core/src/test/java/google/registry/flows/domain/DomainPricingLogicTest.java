@@ -15,10 +15,10 @@
 package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.billing.BillingEvent.Flag.AUTO_RENEW;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.billing.BillingBase.Flag.AUTO_RENEW;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.fee.BaseFee.FeeType.RENEW;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
@@ -40,9 +40,9 @@ import google.registry.flows.HttpSessionMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.custom.DomainPricingCustomLogic;
 import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurrence;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.fee.Fee;
@@ -98,7 +98,7 @@ public class DomainPricingLogicTest {
   }
 
   /** helps to set up the domain info and returns a recurrence billing event for testing */
-  private Recurrence persistDomainAndSetRecurrence(
+  private BillingRecurrence persistDomainAndSetRecurrence(
       String domainName, RenewalPriceBehavior renewalPriceBehavior, Optional<Money> renewalPrice) {
     domain =
         persistResource(
@@ -114,9 +114,9 @@ public class DomainPricingLogicTest {
                 .setModificationTime(DateTime.parse("1999-01-05T00:00:00Z"))
                 .setDomain(domain)
                 .build());
-    Recurrence recurrence =
+    BillingRecurrence billingRecurrence =
         persistResource(
-            new Recurrence.Builder()
+            new BillingRecurrence.Builder()
                 .setDomainHistory(historyEntry)
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .setEventTime(DateTime.parse("1999-01-05T00:00:00Z"))
@@ -128,8 +128,9 @@ public class DomainPricingLogicTest {
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setTargetId(domain.getDomainName())
                 .build());
-    persistResource(domain.asBuilder().setAutorenewBillingEvent(recurrence.createVKey()).build());
-    return recurrence;
+    persistResource(
+        domain.asBuilder().setAutorenewBillingEvent(billingRecurrence.createVKey()).build());
+    return billingRecurrence;
   }
 
   @Test
@@ -615,7 +616,8 @@ public class DomainPricingLogicTest {
                 .addFeeOrCredit(Fee.create(Money.of(USD, 1).getAmount(), RENEW, false))
                 .build());
     assertThat(
-            Iterables.getLast(DatabaseHelper.loadAllOf(Recurrence.class)).getRenewalPriceBehavior())
+            Iterables.getLast(DatabaseHelper.loadAllOf(BillingRecurrence.class))
+                .getRenewalPriceBehavior())
         .isEqualTo(SPECIFIED);
   }
 

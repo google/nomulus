@@ -61,11 +61,13 @@ import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.ImmutableObject;
+import google.registry.model.billing.BillingBase;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
+import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurrence;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.contact.Contact;
@@ -311,7 +313,9 @@ public final class DatabaseHelper {
     return persistResource(domain.asBuilder().setDeletionTime(deletionTime).build());
   }
 
-  /** Persists a {@link Recurrence} and {@link HistoryEntry} for a domain that already exists. */
+  /**
+   * Persists a {@link BillingRecurrence} and {@link HistoryEntry} for a domain that already exists.
+   */
   public static Domain persistBillingRecurrenceForDomain(
       Domain domain, RenewalPriceBehavior renewalPriceBehavior, @Nullable Money renewalPrice) {
     DomainHistory historyEntry =
@@ -322,9 +326,9 @@ public final class DatabaseHelper {
                 .setModificationTime(domain.getCreationTime())
                 .setDomain(domain)
                 .build());
-    Recurrence recurrence =
+    BillingRecurrence billingRecurrence =
         persistResource(
-            new Recurrence.Builder()
+            new BillingRecurrence.Builder()
                 .setDomainHistory(historyEntry)
                 .setRenewalPrice(renewalPrice)
                 .setRenewalPriceBehavior(renewalPriceBehavior)
@@ -337,7 +341,7 @@ public final class DatabaseHelper {
                 .setTargetId(domain.getDomainName())
                 .build());
     return persistResource(
-        domain.asBuilder().setAutorenewBillingEvent(recurrence.createVKey()).build());
+        domain.asBuilder().setAutorenewBillingEvent(billingRecurrence.createVKey()).build());
   }
 
   public static ReservedList persistReservedList(String listName, String... lines) {
@@ -442,14 +446,14 @@ public final class DatabaseHelper {
    * Deletes "domain" and all history records, billing events, poll messages and subordinate hosts.
    */
   public static void deleteTestDomain(Domain domain, DateTime now) {
-    Iterable<BillingEvent> billingEvents = getBillingEvents(domain);
+    Iterable<BillingBase> billingEvents = getBillingEvents(domain);
     Iterable<? extends HistoryEntry> historyEntries =
         HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey());
     Iterable<PollMessage> pollMessages = loadAllOf(PollMessage.class);
     tm().transact(
             () -> {
               deleteResource(domain);
-              for (BillingEvent event : billingEvents) {
+              for (BillingBase event : billingEvents) {
                 deleteResource(event);
               }
               for (PollMessage pollMessage : pollMessages) {
@@ -521,9 +525,9 @@ public final class DatabaseHelper {
         .build();
   }
 
-  public static BillingEvent.OneTime createBillingEventForTransfer(
+  public static BillingEvent createBillingEventForTransfer(
       Domain domain, DomainHistory historyEntry, DateTime costLookupTime, DateTime eventTime) {
-    return new BillingEvent.OneTime.Builder()
+    return new BillingEvent.Builder()
         .setReason(Reason.TRANSFER)
         .setTargetId(domain.getDomainName())
         .setEventTime(eventTime)
@@ -618,9 +622,9 @@ public final class DatabaseHelper {
                 .setDomain(domain)
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
-    Recurrence autorenewEvent =
+    BillingRecurrence autorenewEvent =
         persistResource(
-            new Recurrence.Builder()
+            new BillingRecurrence.Builder()
                 .setReason(Reason.RENEW)
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(domainName)
@@ -660,13 +664,13 @@ public final class DatabaseHelper {
                 .setDomain(domain)
                 .setRegistrarId("TheRegistrar")
                 .build());
-    BillingEvent.OneTime transferBillingEvent =
+    BillingEvent transferBillingEvent =
         persistResource(
             createBillingEventForTransfer(
                 domain, historyEntryDomainTransfer, requestTime, expirationTime));
-    Recurrence gainingClientAutorenewEvent =
+    BillingRecurrence gainingClientAutorenewEvent =
         persistResource(
-            new Recurrence.Builder()
+            new BillingRecurrence.Builder()
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setReason(Reason.RENEW)
                 .setTargetId(domain.getDomainName())
@@ -785,27 +789,27 @@ public final class DatabaseHelper {
     return newRegistrars.build();
   }
 
-  public static Iterable<BillingEvent> getBillingEvents() {
+  public static Iterable<BillingBase> getBillingEvents() {
     return tm().transact(
             () ->
                 Iterables.concat(
-                    tm().loadAllOf(BillingEvent.OneTime.class),
-                    tm().loadAllOf(Recurrence.class),
-                    tm().loadAllOf(BillingEvent.Cancellation.class)));
+                    tm().loadAllOf(BillingEvent.class),
+                    tm().loadAllOf(BillingRecurrence.class),
+                    tm().loadAllOf(BillingCancellation.class)));
   }
 
-  private static Iterable<BillingEvent> getBillingEvents(EppResource resource) {
+  private static Iterable<BillingBase> getBillingEvents(EppResource resource) {
     return tm().transact(
             () ->
                 Iterables.concat(
-                    tm().loadAllOfStream(BillingEvent.OneTime.class)
+                    tm().loadAllOfStream(BillingEvent.class)
                         .filter(oneTime -> oneTime.getDomainRepoId().equals(resource.getRepoId()))
                         .collect(toImmutableList()),
-                    tm().loadAllOfStream(Recurrence.class)
+                    tm().loadAllOfStream(BillingRecurrence.class)
                         .filter(
                             recurrence -> recurrence.getDomainRepoId().equals(resource.getRepoId()))
                         .collect(toImmutableList()),
-                    tm().loadAllOfStream(BillingEvent.Cancellation.class)
+                    tm().loadAllOfStream(BillingCancellation.class)
                         .filter(
                             cancellation ->
                                 cancellation.getDomainRepoId().equals(resource.getRepoId()))
@@ -813,33 +817,32 @@ public final class DatabaseHelper {
   }
 
   /** Assert that the actual billing event matches the expected one, ignoring IDs. */
-  public static void assertBillingEventsEqual(BillingEvent actual, BillingEvent expected) {
+  public static void assertBillingEventsEqual(BillingBase actual, BillingBase expected) {
     assertAboutImmutableObjects().that(actual).isEqualExceptFields(expected, "id");
   }
 
   /** Assert that the actual billing events match the expected ones, ignoring IDs and order. */
   public static void assertBillingEventsEqual(
-      Iterable<BillingEvent> actual, Iterable<BillingEvent> expected) {
+      Iterable<BillingBase> actual, Iterable<BillingBase> expected) {
     assertThat(actual)
         .comparingElementsUsing(immutableObjectCorrespondence("id"))
         .containsExactlyElementsIn(expected);
   }
 
   /** Assert that the expected billing events are exactly the ones found in test database. */
-  public static void assertBillingEvents(BillingEvent... expected) {
+  public static void assertBillingEvents(BillingBase... expected) {
     assertBillingEventsEqual(getBillingEvents(), asList(expected));
   }
 
   /** Assert that the expected billing events set is exactly the one found in test database. */
-  public static void assertBillingEvents(Set<BillingEvent> expected) {
+  public static void assertBillingEvents(Set<BillingBase> expected) {
     assertBillingEventsEqual(getBillingEvents(), expected);
   }
 
   /**
    * Assert that the expected billing events are exactly the ones found for the given EppResource.
    */
-  public static void assertBillingEventsForResource(
-      EppResource resource, BillingEvent... expected) {
+  public static void assertBillingEventsForResource(EppResource resource, BillingBase... expected) {
     assertBillingEventsEqual(getBillingEvents(resource), asList(expected));
   }
 
@@ -853,8 +856,8 @@ public final class DatabaseHelper {
    *
    * <p>Note: Prefer {@link #assertPollMessagesEqual} when that is suitable.
    */
-  public static BillingEvent stripBillingEventId(BillingEvent billingEvent) {
-    return billingEvent.asBuilder().setId(1L).build();
+  public static BillingBase stripBillingEventId(BillingBase billingBase) {
+    return billingBase.asBuilder().setId(1L).build();
   }
 
   /** Assert that the actual poll message matches the expected one, ignoring IDs. */

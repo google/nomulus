@@ -61,8 +61,9 @@ import google.registry.flows.custom.DomainDeleteFlowCustomLogic.BeforeResponseRe
 import google.registry.flows.custom.DomainDeleteFlowCustomLogic.BeforeSaveParameters;
 import google.registry.flows.custom.EntityChanges;
 import google.registry.model.ImmutableObject;
+import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Recurrence;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -232,12 +233,12 @@ public final class DomainDeleteFlow implements TransactionalFlow {
       // No cancellation is written if the grace period was not for a billable event.
       if (gracePeriod.hasBillingEvent()) {
         entitiesToSave.add(
-            BillingEvent.Cancellation.forGracePeriod(gracePeriod, now, domainHistoryId, targetId));
+            BillingCancellation.forGracePeriod(gracePeriod, now, domainHistoryId, targetId));
         if (gracePeriod.getOneTimeBillingEvent() != null) {
           // Take the amount of registration time being refunded off the expiration time.
           // This can be either add grace periods or renew grace periods.
-          BillingEvent.OneTime oneTime = tm().loadByKey(gracePeriod.getOneTimeBillingEvent());
-          newExpirationTime = newExpirationTime.minusYears(oneTime.getPeriodYears());
+          BillingEvent billingEvent = tm().loadByKey(gracePeriod.getOneTimeBillingEvent());
+          newExpirationTime = newExpirationTime.minusYears(billingEvent.getPeriodYears());
         } else if (gracePeriod.getRecurrenceBillingEvent() != null) {
           // Take 1 year off the registration if in the autorenew grace period (no need to load the
           // recurrence billing event; all autorenews are for 1 year).
@@ -253,10 +254,11 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     handlePendingTransferOnDelete(existingDomain, newDomain, now, domainHistory);
     // Close the autorenew billing event and poll message. This may delete the poll message.  Store
     // the updated recurrence billing event, we'll need it later and can't reload it.
-    Recurrence existingRecurrence = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
-    Recurrence recurrence =
+    BillingRecurrence existingBillingRecurrence =
+        tm().loadByKey(existingDomain.getAutorenewBillingEvent());
+    BillingRecurrence billingRecurrence =
         updateAutorenewRecurrenceEndTime(
-            existingDomain, existingRecurrence, now, domainHistory.getHistoryEntryId());
+            existingDomain, existingBillingRecurrence, now, domainHistory.getHistoryEntryId());
     // If there's a pending transfer, the gaining client's autorenew billing
     // event and poll message will already have been deleted in
     // ResourceDeleteFlow since it's listed in serverApproveEntities.
@@ -279,7 +281,8 @@ public final class DomainDeleteFlow implements TransactionalFlow {
                     newDomain.getDeletionTime().isAfter(now)
                         ? SUCCESS_WITH_ACTION_PENDING
                         : SUCCESS)
-                .setResponseExtensions(getResponseExtensions(recurrence, existingDomain, now))
+                .setResponseExtensions(
+                    getResponseExtensions(billingRecurrence, existingDomain, now))
                 .build());
     persistEntityChanges(entityChanges);
     return responseBuilder
@@ -379,7 +382,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
 
   @Nullable
   private ImmutableList<FeeTransformResponseExtension> getResponseExtensions(
-      Recurrence recurrence, Domain existingDomain, DateTime now) {
+      BillingRecurrence billingRecurrence, Domain existingDomain, DateTime now) {
     FeeTransformResponseExtension.Builder feeResponseBuilder = getDeleteResponseBuilder();
     if (feeResponseBuilder == null) {
       return ImmutableList.of();
@@ -387,7 +390,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     ImmutableList.Builder<Credit> creditsBuilder = new ImmutableList.Builder<>();
     for (GracePeriod gracePeriod : existingDomain.getGracePeriods()) {
       if (gracePeriod.hasBillingEvent()) {
-        Money cost = getGracePeriodCost(recurrence, gracePeriod, now);
+        Money cost = getGracePeriodCost(billingRecurrence, gracePeriod, now);
         creditsBuilder.add(Credit.create(
             cost.negated().getAmount(), FeeType.CREDIT, gracePeriod.getType().getXmlName()));
         feeResponseBuilder.setCurrency(checkNotNull(cost.getCurrencyUnit()));
@@ -400,10 +403,12 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     return ImmutableList.of(feeResponseBuilder.setCredits(credits).build());
   }
 
-  private Money getGracePeriodCost(Recurrence recurrence, GracePeriod gracePeriod, DateTime now) {
+  private Money getGracePeriodCost(
+      BillingRecurrence billingRecurrence, GracePeriod gracePeriod, DateTime now) {
     if (gracePeriod.getType() == GracePeriodStatus.AUTO_RENEW) {
       // If we updated the autorenew billing event, reuse it.
-      DateTime autoRenewTime = recurrence.getRecurrenceTimeOfYear().getLastInstanceBeforeOrAt(now);
+      DateTime autoRenewTime =
+          billingRecurrence.getRecurrenceTimeOfYear().getLastInstanceBeforeOrAt(now);
       return getDomainRenewCost(targetId, autoRenewTime, 1);
     }
     return tm().loadByKey(checkNotNull(gracePeriod.getOneTimeBillingEvent())).getCost();

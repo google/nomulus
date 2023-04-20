@@ -38,9 +38,8 @@ import com.google.common.collect.Ordering;
 import com.google.common.truth.Truth;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.OneTime;
-import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
@@ -361,24 +360,22 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "CODE", "2303", "MSG", "The domain with given ID (example.tld) doesn't exist."));
 
     // The expected one-time billing event, that should have an associated Cancellation.
-    OneTime oneTimeCreateBillingEvent = makeOneTimeCreateBillingEvent(domain, createTime);
-    OneTime oneTimeRenewBillingEvent = makeOneTimeRenewBillingEvent(domain, renewTime);
+    BillingEvent createBillingEvent = makeOneTimeCreateBillingEvent(domain, createTime);
+    BillingEvent renewBillingEvent = makeOneTimeRenewBillingEvent(domain, renewTime);
 
     // Verify that the OneTime billing event associated with the domain creation is canceled.
     assertBillingEventsForResource(
         domain,
         // There should be one-time billing events for the create and the renew.
-        oneTimeCreateBillingEvent,
-        oneTimeRenewBillingEvent,
+        createBillingEvent,
+        renewBillingEvent,
         // There should be two ended recurring billing events, one each from the create and renew.
         // (The former was ended by the renew and the latter was ended by the delete.)
         makeCreateRecurrence(domain, createTime.plusYears(2), renewTime),
         makeRenewRecurrence(domain, createTime.plusYears(5), deleteTime),
         // There should be Cancellations offsetting both of the one-times.
-        makeCancellationBillingEventForCreate(
-            domain, oneTimeCreateBillingEvent, createTime, deleteTime),
-        makeCancellationBillingEventForRenew(
-            domain, oneTimeRenewBillingEvent, renewTime, deleteTime));
+        makeCancellationBillingEventForCreate(domain, createBillingEvent, createTime, deleteTime),
+        makeCancellationBillingEventForRenew(domain, renewBillingEvent, renewTime, deleteTime));
 
     // Verify that the registration expiration time was set back to the creation time, because the
     // entire cost of registration was refunded. We have to do this through the DB instead of EPP
@@ -424,16 +421,15 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "CODE", "2303", "MSG", "The domain with given ID (example.tld) doesn't exist."));
 
     // The expected one-time billing event, that should have an associated Cancellation.
-    OneTime oneTimeCreateBillingEvent = makeOneTimeCreateBillingEvent(domain, createTime);
+    BillingEvent createBillingEvent = makeOneTimeCreateBillingEvent(domain, createTime);
     // Verify that the OneTime billing event associated with the domain creation is canceled.
     assertBillingEventsForResource(
         domain,
         // Check the existence of the expected create one-time billing event.
-        oneTimeCreateBillingEvent,
+        createBillingEvent,
         makeCreateRecurrence(domain, createTime.plusYears(2), deleteTime),
         // Check for the existence of a cancellation for the given one-time billing event.
-        makeCancellationBillingEventForCreate(
-            domain, oneTimeCreateBillingEvent, createTime, deleteTime));
+        makeCancellationBillingEventForCreate(domain, createBillingEvent, createTime, deleteTime));
 
     // Verify that the registration expiration time was set back to the creation time, because the
     // entire cost of registration was refunded. We have to do this through the DB instead of EPP
@@ -541,8 +537,8 @@ class EppLifecycleDomainTest extends EppTestCase {
 
     // Verify that the OneTime billing event associated with the base fee of domain registration and
     // is canceled and the autorenew is ended, but that the EAP fee is not canceled.
-    OneTime expectedCreateEapBillingEvent =
-        new BillingEvent.OneTime.Builder()
+    BillingEvent expectedCreateEapBillingEvent =
+        new BillingEvent.Builder()
             .setReason(Reason.FEE_EARLY_ACCESS)
             .setTargetId("example.tld")
             .setRegistrarId("NewRegistrar")
@@ -555,17 +551,17 @@ class EppLifecycleDomainTest extends EppTestCase {
             .build();
 
     // The expected one-time billing event, that should have an associated Cancellation.
-    OneTime expectedOneTimeCreateBillingEvent = makeOneTimeCreateBillingEvent(domain, createTime);
+    BillingEvent expectedCreateBillingEvent = makeOneTimeCreateBillingEvent(domain, createTime);
     assertBillingEventsForResource(
         domain,
         // Check for the expected create one-time billing event ...
-        expectedOneTimeCreateBillingEvent,
+        expectedCreateBillingEvent,
         // ... and the expected one-time EAP fee billing event ...
         expectedCreateEapBillingEvent,
         makeCreateRecurrence(domain, createTime.plusYears(2), deleteTime),
         // ... and verify that the create one-time billing event was canceled ...
         makeCancellationBillingEventForCreate(
-            domain, expectedOneTimeCreateBillingEvent, createTime, deleteTime));
+            domain, expectedCreateBillingEvent, createTime, deleteTime));
     // ... but there was NOT a Cancellation for the EAP fee, as this would fail if additional
     // billing events were present.
 

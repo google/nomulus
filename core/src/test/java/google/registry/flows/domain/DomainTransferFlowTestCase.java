@@ -32,9 +32,10 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.flows.Flow;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.model.EppResource;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -129,7 +130,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         getOnlyHistoryEntryOfType(domain, DOMAIN_CREATE, DomainHistory.class);
   }
 
-  BillingEvent.OneTime getBillingEventForImplicitTransfer() {
+  BillingEvent getBillingEventForImplicitTransfer() {
     DomainHistory historyEntry =
         getOnlyHistoryEntryOfType(
             domain, HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST, DomainHistory.class);
@@ -138,8 +139,8 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   }
 
   /** Get the autorenew event that the losing client will have after a SERVER_APPROVED transfer. */
-  BillingEvent.Recurrence getLosingClientAutorenewEvent() {
-    return new BillingEvent.Recurrence.Builder()
+  BillingRecurrence getLosingClientAutorenewEvent() {
+    return new BillingRecurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())
@@ -151,8 +152,8 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   }
 
   /** Get the autorenew event that the gaining client will have after a SERVER_APPROVED transfer. */
-  BillingEvent.Recurrence getGainingClientAutorenewEvent() {
-    return new BillingEvent.Recurrence.Builder()
+  BillingRecurrence getGainingClientAutorenewEvent() {
+    return new BillingRecurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())

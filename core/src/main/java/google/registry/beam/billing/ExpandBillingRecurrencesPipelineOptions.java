@@ -18,7 +18,7 @@ import google.registry.beam.common.RegistryPipelineOptions;
 import org.apache.beam.sdk.options.Default;
 import org.apache.beam.sdk.options.Description;
 
-public interface ExpandRecurrencesPipelineOptions extends RegistryPipelineOptions {
+public interface ExpandBillingRecurrencesPipelineOptions extends RegistryPipelineOptions {
   @Description(
       "The inclusive lower bound of on the range of event times that will be expanded, in ISO 8601"
           + " format")

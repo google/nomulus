@@ -249,7 +249,7 @@
   <!-- Action to expand Recurrences into OneTimes. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/expandRecurrences</url-pattern>
+    <url-pattern>/_dr/task/expandBillingRecurrences</url-pattern>
   </servlet-mapping>
 
   <!-- Background action to delete domains past end of autorenewal. -->
