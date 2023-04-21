@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.PackagePromotion;

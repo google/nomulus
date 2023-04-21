@@ -29,11 +29,11 @@ import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
 import com.google.api.services.dataflow.model.LaunchFlexTemplateResponse;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
-import google.registry.beam.billing.ExpandRecurringBillingEventsPipeline;
+import google.registry.beam.billing.ExpandBillingRecurrencesPipeline;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
-import google.registry.model.billing.BillingEvent.OneTime;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.common.Cursor;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
@@ -46,20 +46,20 @@ import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**
- * An action that kicks off a {@link ExpandRecurringBillingEventsPipeline} dataflow job to expand
- * {@link Recurring} billing events into synthetic {@link OneTime} events.
+ * An action that kicks off a {@link ExpandBillingRecurrencesPipeline} dataflow job to expand {@link
+ * BillingRecurrence} billing events into synthetic {@link BillingEvent} events.
  */
 @Action(
     service = Action.Service.BACKEND,
-    path = "/_dr/task/expandRecurringBillingEvents",
+    path = "/_dr/task/expandBillingRecurrences",
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
-public class ExpandRecurringBillingEventsAction implements Runnable {
+public class ExpandBillingRecurrencesAction implements Runnable {
 
   public static final String PARAM_START_TIME = "startTime";
   public static final String PARAM_END_TIME = "endTime";
   public static final String PARAM_ADVANCE_CURSOR = "advanceCursor";
 
-  private static final String PIPELINE_NAME = "expand_recurring_billing_events_pipeline";
+  private static final String PIPELINE_NAME = "expand_billing_recurrences_pipeline";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject Clock clock;
@@ -97,7 +97,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
   @Inject Response response;
 
   @Inject
-  ExpandRecurringBillingEventsAction() {}
+  ExpandBillingRecurrencesAction() {}
 
   @Override
   public void run() {
@@ -133,7 +133,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                     .put("advanceCursor", Boolean.toString(advanceCursor))
                     .build());
     logger.atInfo().log(
-        "Launching recurring billing event expansion pipeline for event time range [%s, %s)%s.",
+        "Launching recurrence expansion pipeline for event time range [%s, %s)%s.",
         startTime,
         endTime,
         isDryRun ? " in dry run mode" : advanceCursor ? "" : " without advancing the cursor");
@@ -152,8 +152,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
       response.setStatus(SC_OK);
       response.setPayload(
           String.format(
-              "Launched recurring billing event expansion pipeline: %s",
-              launchResponse.getJob().getId()));
+              "Launched recurrence expansion pipeline: %s", launchResponse.getJob().getId()));
     } catch (IOException e) {
       logger.atWarning().withCause(e).log("Pipeline Launch failed");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);

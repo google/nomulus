@@ -39,15 +39,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
-/** Unit tests for {@link ExpandRecurringBillingEventsAction}. */
-public class ExpandRecurringBillingEventsActionTest extends BeamActionTestBase {
+/** Unit tests for {@link ExpandBillingRecurrencesAction}. */
+public class ExpandBillingRecurrencesActionTest extends BeamActionTestBase {
 
   private final DateTime cursorTime = DateTime.parse("2020-02-01T00:00:00Z");
   private final DateTime now = DateTime.parse("2020-02-02T00:00:00Z");
 
   private final FakeClock clock = new FakeClock(now);
-  private final ExpandRecurringBillingEventsAction action =
-      new ExpandRecurringBillingEventsAction();
+  private final ExpandBillingRecurrencesAction action = new ExpandBillingRecurrencesAction();
   private final HashMap<String, String> expectedParameters = new HashMap<>();
 
   private final ArgumentCaptor<LaunchFlexTemplateRequest> launchRequest =
@@ -81,8 +80,7 @@ public class ExpandRecurringBillingEventsActionTest extends BeamActionTestBase {
   void testSuccess() throws Exception {
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.getPayload())
-        .isEqualTo("Launched recurring billing event expansion pipeline: jobid");
+    assertThat(response.getPayload()).isEqualTo("Launched recurrence expansion pipeline: jobid");
     verify(templates, times(1)).launch(eq("projectId"), eq("jobRegion"), launchRequest.capture());
     assertThat(launchRequest.getValue().getLaunchParameter().getParameters())
         .containsExactlyEntriesIn(expectedParameters);
@@ -94,8 +92,7 @@ public class ExpandRecurringBillingEventsActionTest extends BeamActionTestBase {
     expectedParameters.put("endTime", "2020-02-01T12:00:00.001Z");
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.getPayload())
-        .isEqualTo("Launched recurring billing event expansion pipeline: jobid");
+    assertThat(response.getPayload()).isEqualTo("Launched recurrence expansion pipeline: jobid");
     verify(templates, times(1)).launch(eq("projectId"), eq("jobRegion"), launchRequest.capture());
     assertThat(launchRequest.getValue().getLaunchParameter().getParameters())
         .containsExactlyEntriesIn(expectedParameters);
@@ -107,8 +104,7 @@ public class ExpandRecurringBillingEventsActionTest extends BeamActionTestBase {
     expectedParameters.put("startTime", "2020-01-01T12:00:00.001Z");
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.getPayload())
-        .isEqualTo("Launched recurring billing event expansion pipeline: jobid");
+    assertThat(response.getPayload()).isEqualTo("Launched recurrence expansion pipeline: jobid");
     verify(templates, times(1)).launch(eq("projectId"), eq("jobRegion"), launchRequest.capture());
     assertThat(launchRequest.getValue().getLaunchParameter().getParameters())
         .containsExactlyEntriesIn(expectedParameters);
@@ -120,8 +116,7 @@ public class ExpandRecurringBillingEventsActionTest extends BeamActionTestBase {
     expectedParameters.put("advanceCursor", "false");
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.getPayload())
-        .isEqualTo("Launched recurring billing event expansion pipeline: jobid");
+    assertThat(response.getPayload()).isEqualTo("Launched recurrence expansion pipeline: jobid");
     verify(templates, times(1)).launch(eq("projectId"), eq("jobRegion"), launchRequest.capture());
     assertThat(launchRequest.getValue().getLaunchParameter().getParameters())
         .containsExactlyEntriesIn(expectedParameters);
@@ -135,8 +130,7 @@ public class ExpandRecurringBillingEventsActionTest extends BeamActionTestBase {
     expectedParameters.put("advanceCursor", "false");
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.getPayload())
-        .isEqualTo("Launched recurring billing event expansion pipeline: jobid");
+    assertThat(response.getPayload()).isEqualTo("Launched recurrence expansion pipeline: jobid");
     verify(templates, times(1)).launch(eq("projectId"), eq("jobRegion"), launchRequest.capture());
     assertThat(launchRequest.getValue().getLaunchParameter().getParameters())
         .containsExactlyEntriesIn(expectedParameters);

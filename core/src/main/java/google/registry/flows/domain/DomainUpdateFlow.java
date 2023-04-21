@@ -64,8 +64,8 @@ import google.registry.flows.custom.EntityChanges;
 import google.registry.flows.domain.DomainFlowUtils.MissingRegistrantException;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
 import google.registry.model.ImmutableObject;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Update;
@@ -187,7 +187,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     }
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
     entitiesToSave.add(newDomain, domainHistory);
-    Optional<BillingEvent.OneTime> statusUpdateBillingEvent =
+    Optional<BillingEvent> statusUpdateBillingEvent =
         createBillingEventForStatusUpdates(existingDomain, newDomain, domainHistory, now);
     statusUpdateBillingEvent.ifPresent(entitiesToSave::add);
     Optional<PollMessage.OneTime> serverStatusUpdatePollMessage =
@@ -324,7 +324,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
   }
 
   /** Some status updates cost money. Bill only once no matter how many of them are changed. */
-  private Optional<BillingEvent.OneTime> createBillingEventForStatusUpdates(
+  private Optional<BillingEvent> createBillingEventForStatusUpdates(
       Domain existingDomain, Domain newDomain, DomainHistory historyEntry, DateTime now) {
     Optional<MetadataExtension> metadataExtension =
         eppInput.getSingleExtension(MetadataExtension.class);
@@ -334,7 +334,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
         if (statusValue.isChargedStatus()) {
           // Only charge once.
           return Optional.of(
-              new BillingEvent.OneTime.Builder()
+              new BillingEvent.Builder()
                   .setReason(Reason.SERVER_STATUS)
                   .setTargetId(targetId)
                   .setRegistrarId(registrarId)

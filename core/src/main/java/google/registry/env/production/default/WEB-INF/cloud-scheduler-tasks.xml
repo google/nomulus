@@ -122,12 +122,13 @@
   </task>
 
   <task>
-    <url><![CDATA[/_dr/task/expandRecurringBillingEvents?advanceCursor]]></url>
-    <name>expandRecurringBillingEvents</name>
+    <url><![CDATA[/_dr/task/expandBillingRecurrences?advanceCursor]]></url>
+    <name>expandBillingRecurrences</name>
     <description>
-      This job runs an action that creates synthetic OneTime billing events from Recurring billing
-      events. Events are created for all instances of Recurring billing events that should exist
-      between the RECURRING_BILLING cursor's time and the execution time of the action.
+      This job runs an action that creates synthetic one-time billing events
+      from billing recurrences. Events are created for all recurrences that
+      should exist between the RECURRING_BILLING cursor's time and the execution
+      time of the action.
     </description>
     <schedule>0 3 * * *</schedule>
   </task>
@@ -253,7 +254,7 @@
       reports to the associated registrars' drive folders.
       See GenerateInvoicesAction for more details.
     </description>
-    <!--WARNING: This must occur AFTER expandRecurringBillingEvents and AFTER exportSnapshot, as
+    <!--WARNING: This must occur AFTER expandBillingRecurrences and AFTER exportSnapshot, as
     it uses Bigquery as the source of truth for billable events. ExportSnapshot usually takes
     about 2 hours to complete, so we give 11 hours to be safe. Normally, we give 24+ hours (see
     icannReportingStaging), but the invoicing team prefers receiving the e-mail on the first of

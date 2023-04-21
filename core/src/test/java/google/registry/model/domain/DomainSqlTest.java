@@ -34,7 +34,7 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;

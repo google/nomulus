@@ -54,10 +54,9 @@ import google.registry.flows.custom.DomainRenewFlowCustomLogic.BeforeSaveParamet
 import google.registry.flows.custom.EntityChanges;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.model.ImmutableObject;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.OneTime;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Renew;
 import google.registry.model.domain.DomainHistory;
@@ -203,7 +202,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
     validateRegistrationPeriod(now, newExpirationTime);
     Optional<FeeRenewCommandExtension> feeRenew =
         eppInput.getSingleExtension(FeeRenewCommandExtension.class);
-    Recurring existingRecurringBillingEvent =
+    BillingRecurrence existingBillingRecurrence =
         tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     FeesAndCredits feesAndCredits =
         pricingLogic.getRenewPrice(
@@ -211,7 +210,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
             targetId,
             now,
             years,
-            existingRecurringBillingEvent,
+            existingBillingRecurrence,
             allocationToken);
     validateFeeChallenge(feeRenew, feesAndCredits, defaultTokenUsed);
     flowCustomLogic.afterValidation(
@@ -223,15 +222,15 @@ public final class DomainRenewFlow implements TransactionalFlow {
     HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
     // Bill for this explicit renew itself.
-    BillingEvent.OneTime explicitRenewEvent =
+    BillingEvent explicitRenewEvent =
         createRenewBillingEvent(
             tldStr, feesAndCredits.getTotalCost(), years, domainHistoryId, allocationToken, now);
     // Create a new autorenew billing event and poll message starting at the new expiration time.
-    BillingEvent.Recurring newAutorenewEvent =
+    BillingRecurrence newAutorenewEvent =
         newAutorenewBillingEvent(existingDomain)
             .setEventTime(newExpirationTime)
-            .setRenewalPrice(existingRecurringBillingEvent.getRenewalPrice().orElse(null))
-            .setRenewalPriceBehavior(existingRecurringBillingEvent.getRenewalPriceBehavior())
+            .setRenewalPrice(existingBillingRecurrence.getRenewalPrice().orElse(null))
+            .setRenewalPriceBehavior(existingBillingRecurrence.getRenewalPriceBehavior())
             .setDomainHistoryId(domainHistoryId)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
@@ -240,8 +239,8 @@ public final class DomainRenewFlow implements TransactionalFlow {
             .setDomainHistoryId(domainHistoryId)
             .build();
     // End the old autorenew billing event and poll message now. This may delete the poll message.
-    Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
-    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, now, domainHistoryId);
+    updateAutorenewRecurrenceEndTime(
+        existingDomain, existingBillingRecurrence, now, domainHistoryId);
     Domain newDomain =
         existingDomain
             .asBuilder()
@@ -338,14 +337,14 @@ public final class DomainRenewFlow implements TransactionalFlow {
     }
   }
 
-  private OneTime createRenewBillingEvent(
+  private BillingEvent createRenewBillingEvent(
       String tld,
       Money renewCost,
       int years,
       HistoryEntryId domainHistoryId,
       Optional<AllocationToken> allocationToken,
       DateTime now) {
-    return new BillingEvent.OneTime.Builder()
+    return new BillingEvent.Builder()
         .setReason(Reason.RENEW)
         .setTargetId(targetId)
         .setRegistrarId(registrarId)

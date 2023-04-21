@@ -19,7 +19,7 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
@@ -46,9 +46,10 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ImmutableObjectSubject;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
@@ -87,8 +88,8 @@ public class DomainTest {
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   private Domain domain;
-  private VKey<BillingEvent.OneTime> oneTimeBillKey;
-  private VKey<BillingEvent.Recurring> recurringBillKey;
+  private VKey<BillingEvent> oneTimeBillKey;
+  private VKey<BillingRecurrence> recurrenceBillKey;
   private DomainHistory domainHistory;
   private VKey<Contact> contact1Key, contact2Key;
 
@@ -113,7 +114,7 @@ public class DomainTest {
                 .build());
     oneTimeBillKey =
         persistResource(
-                new BillingEvent.OneTime.Builder()
+                new BillingEvent.Builder()
                     // Use SERVER_STATUS, so we don't have to add a period.
                     .setReason(Reason.SERVER_STATUS)
                     .setTargetId(domain.getDomainName())
@@ -137,8 +138,8 @@ public class DomainTest {
             .setRequestedByRegistrar(false)
             .setXmlBytes(new byte[0])
             .build();
-    BillingEvent.OneTime oneTimeBill =
-        new BillingEvent.OneTime.Builder()
+    BillingEvent billingEventBill =
+        new BillingEvent.Builder()
             .setId(500L)
             // Use SERVER_STATUS, so we don't have to add a period.
             .setReason(Reason.SERVER_STATUS)
@@ -149,9 +150,9 @@ public class DomainTest {
             .setEventTime(DateTime.now(UTC).plusYears(1))
             .setDomainHistory(historyEntry)
             .build();
-    oneTimeBillKey = oneTimeBill.createVKey();
-    BillingEvent.Recurring recurringBill =
-        new BillingEvent.Recurring.Builder()
+    oneTimeBillKey = billingEventBill.createVKey();
+    BillingRecurrence billingRecurrence =
+        new BillingRecurrence.Builder()
             .setId(200L)
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -161,8 +162,8 @@ public class DomainTest {
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistory(historyEntry)
             .build();
-    insertInDb(historyEntry, oneTimeBill, recurringBill);
-    recurringBillKey = recurringBill.createVKey();
+    insertInDb(historyEntry, billingEventBill, billingRecurrence);
+    recurrenceBillKey = billingRecurrence.createVKey();
     VKey<PollMessage.Autorenew> autorenewPollKey = VKey.create(PollMessage.Autorenew.class, 3L);
     VKey<PollMessage.OneTime> onetimePollKey = VKey.create(PollMessage.OneTime.class, 1L);
     // Set up a new persisted domain entity.
@@ -201,16 +202,17 @@ public class DomainTest {
                             .setServerApproveEntities(
                                 historyEntry.getRepoId(),
                                 historyEntry.getRevisionId(),
-                                ImmutableSet.of(oneTimeBillKey, recurringBillKey, autorenewPollKey))
+                                ImmutableSet.of(
+                                    oneTimeBillKey, recurrenceBillKey, autorenewPollKey))
                             .setServerApproveBillingEvent(oneTimeBillKey)
-                            .setServerApproveAutorenewEvent(recurringBillKey)
+                            .setServerApproveAutorenewEvent(recurrenceBillKey)
                             .setServerApproveAutorenewPollMessage(autorenewPollKey)
                             .setTransferRequestTime(fakeClock.nowUtc().plusDays(1))
                             .setTransferStatus(TransferStatus.SERVER_APPROVED)
                             .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
                             .build())
                     .setDeletePollMessage(onetimePollKey)
-                    .setAutorenewBillingEvent(recurringBillKey)
+                    .setAutorenewBillingEvent(recurrenceBillKey)
                     .setAutorenewPollMessage(autorenewPollKey)
                     .setSmdId("smdid")
                     .addGracePeriod(
@@ -385,7 +387,7 @@ public class DomainTest {
   }
 
   private void assertTransferred(
-      Domain domain, DateTime newExpirationTime, VKey<BillingEvent.Recurring> newAutorenewEvent) {
+      Domain domain, DateTime newExpirationTime, VKey<BillingRecurrence> newAutorenewEvent) {
     assertThat(domain.getTransferData().getTransferStatus())
         .isEqualTo(TransferStatus.SERVER_APPROVED);
     assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("TheRegistrar");
@@ -403,9 +405,9 @@ public class DomainTest {
                 .setRegistrarId(domain.getCurrentSponsorRegistrarId())
                 .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
                 .build());
-    BillingEvent.OneTime transferBillingEvent =
+    BillingEvent transferBillingEvent =
         persistResource(
-            new BillingEvent.OneTime.Builder()
+            new BillingEvent.Builder()
                 .setReason(Reason.TRANSFER)
                 .setRegistrarId("TheRegistrar")
                 .setTargetId(domain.getDomainName())
@@ -449,7 +451,7 @@ public class DomainTest {
             .build();
     Domain afterTransfer = domain.cloneProjectedAtTime(fakeClock.nowUtc().plusDays(1));
     DateTime newExpirationTime = oldExpirationTime.plusYears(1);
-    VKey<BillingEvent.Recurring> serverApproveAutorenewEvent =
+    VKey<BillingRecurrence> serverApproveAutorenewEvent =
         domain.getTransferData().getServerApproveAutorenewEvent();
     assertTransferred(afterTransfer, newExpirationTime, serverApproveAutorenewEvent);
     assertThat(afterTransfer.getGracePeriods())
@@ -689,7 +691,7 @@ public class DomainTest {
     assertThat(renewedThreeTimes.getLastEppUpdateTime()).isEqualTo(oldExpirationTime.plusYears(2));
     assertThat(renewedThreeTimes.getGracePeriods())
         .containsExactly(
-            GracePeriod.createForRecurring(
+            GracePeriod.createForRecurrence(
                 GracePeriodStatus.AUTO_RENEW,
                 domain.getRepoId(),
                 oldExpirationTime.plusYears(2).plus(Tld.get("com").getAutoRenewGracePeriodLength()),
@@ -921,7 +923,7 @@ public class DomainTest {
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
-            .setServerApproveAutorenewEvent(recurringBillKey)
+            .setServerApproveAutorenewEvent(recurrenceBillKey)
             .setServerApproveBillingEvent(oneTimeBillKey)
             .build();
     domain =
@@ -931,14 +933,14 @@ public class DomainTest {
                 .setRegistrationExpirationTime(previousExpiration)
                 .setGracePeriods(
                     ImmutableSet.of(
-                        GracePeriod.createForRecurring(
+                        GracePeriod.createForRecurrence(
                             GracePeriodStatus.AUTO_RENEW,
                             domain.getRepoId(),
                             now.plusDays(1),
                             "NewRegistrar",
-                            recurringBillKey)))
+                            recurrenceBillKey)))
                 .setTransferData(transferData)
-                .setAutorenewBillingEvent(recurringBillKey)
+                .setAutorenewBillingEvent(recurrenceBillKey)
                 .build());
     Domain clone = domain.cloneProjectedAtTime(now);
     assertThat(clone.getRegistrationExpirationTime())
@@ -959,12 +961,12 @@ public class DomainTest {
                 .setRegistrationExpirationTime(now.plusYears(1))
                 .setGracePeriods(
                     ImmutableSet.of(
-                        GracePeriod.createForRecurring(
+                        GracePeriod.createForRecurrence(
                             GracePeriodStatus.AUTO_RENEW,
                             domain.getRepoId(),
                             now.plusDays(1),
                             "NewRegistrar",
-                            recurringBillKey),
+                            recurrenceBillKey),
                         GracePeriod.create(
                             GracePeriodStatus.RENEW,
                             domain.getRepoId(),
@@ -974,26 +976,23 @@ public class DomainTest {
                 .build());
     ImmutableSet<BillEventInfo> historyIds =
         domain.getGracePeriods().stream()
-            .map(
-                gp -> new BillEventInfo(gp.getRecurringBillingEvent(), gp.getOneTimeBillingEvent()))
+            .map(gp -> new BillEventInfo(gp.getBillingRecurrence(), gp.getBillingEvent()))
             .collect(toImmutableSet());
     assertThat(historyIds)
         .isEqualTo(
             ImmutableSet.of(
                 new BillEventInfo(null, oneTimeBillKey),
-                new BillEventInfo(recurringBillKey, null)));
+                new BillEventInfo(recurrenceBillKey, null)));
   }
 
   static class BillEventInfo extends ImmutableObject {
-    VKey<BillingEvent.Recurring> billingEventRecurring;
-    Long billingEventRecurringHistoryId;
-    VKey<BillingEvent.OneTime> billingEventOneTime;
+    VKey<BillingRecurrence> recurrence;
+    Long recurrenceHistoryId;
+    VKey<BillingEvent> billingEventOneTime;
     Long billingEventOneTimeHistoryId;
 
-    BillEventInfo(
-        VKey<BillingEvent.Recurring> billingEventRecurring,
-        VKey<BillingEvent.OneTime> billingEventOneTime) {
-      this.billingEventRecurring = billingEventRecurring;
+    BillEventInfo(VKey<BillingRecurrence> recurrence, VKey<BillingEvent> billingEventOneTime) {
+      this.recurrence = recurrence;
       this.billingEventOneTime = billingEventOneTime;
     }
   }

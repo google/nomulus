@@ -43,7 +43,7 @@ import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestampEntity;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;

@@ -37,11 +37,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.beam.TestPipelineExtension;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.OneTime;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.common.Cursor;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -71,8 +70,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-/** Unit tests for {@link ExpandRecurringBillingEventsPipeline}. */
-public class ExpandRecurringBillingEventsPipelineTest {
+/** Unit tests for {@link ExpandBillingRecurrencesPipeline}. */
+public class ExpandBillingRecurrencesPipelineTest {
 
   private static final DateTimeFormatter DATE_TIME_FORMATTER =
       DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
@@ -87,7 +86,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
 
   private Domain domain;
 
-  private Recurring recurring;
+  private BillingRecurrence billingRecurrence;
 
   private final TestOptions options = PipelineOptionsFactory.create().as(TestOptions.class);
 
@@ -115,7 +114,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
 
     // Set up the database.
     createTld("tld");
-    recurring = createDomainAtTime("example.tld", startTime.minusYears(1).plusHours(12));
+    billingRecurrence = createDomainAtTime("example.tld", startTime.minusYears(1).plusHours(12));
     domain = loadByForeignKey(Domain.class, "example.tld", clock.nowUtc()).get();
   }
 
@@ -150,7 +149,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
     assertBillingEventsForResource(
         domain,
         defaultOneTime(getOnlyAutoRenewHistory()),
-        recurring
+        billingRecurrence
             .asBuilder()
             .setRecurrenceLastExpansion(domain.getCreationTime().plusYears(1))
             .build());
@@ -162,8 +161,9 @@ public class ExpandRecurringBillingEventsPipelineTest {
   @Test
   void testSuccess_expandSingleEvent_deletedDuringGracePeriod() {
     domain = persistResource(domain.asBuilder().setDeletionTime(endTime.minusHours(2)).build());
-    recurring =
-        persistResource(recurring.asBuilder().setRecurrenceEndTime(endTime.minusHours(2)).build());
+    billingRecurrence =
+        persistResource(
+            billingRecurrence.asBuilder().setRecurrenceEndTime(endTime.minusHours(2)).build());
     runPipeline();
 
     // Assert about DomainHistory, no transaction record should have been written.
@@ -174,7 +174,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
     assertBillingEventsForResource(
         domain,
         defaultOneTime(getOnlyAutoRenewHistory()),
-        recurring
+        billingRecurrence
             .asBuilder()
             .setRecurrenceLastExpansion(domain.getCreationTime().plusYears(1))
             .build());
@@ -199,7 +199,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
     assertBillingEventsForResource(
         domain,
         defaultOneTime(getOnlyAutoRenewHistory()),
-        recurring
+        billingRecurrence
             .asBuilder()
             .setRecurrenceLastExpansion(domain.getCreationTime().plusYears(1))
             .build());
@@ -210,11 +210,11 @@ public class ExpandRecurringBillingEventsPipelineTest {
 
   @Test
   void testSuccess_noExpansion_recurrenceClosedBeforeEventTime() {
-    recurring =
+    billingRecurrence =
         persistResource(
-            recurring
+            billingRecurrence
                 .asBuilder()
-                .setRecurrenceEndTime(recurring.getEventTime().minusDays(1))
+                .setRecurrenceEndTime(billingRecurrence.getEventTime().minusDays(1))
                 .build());
     runPipeline();
     assertNoExpansionsHappened();
@@ -222,19 +222,20 @@ public class ExpandRecurringBillingEventsPipelineTest {
 
   @Test
   void testSuccess_noExpansion_recurrenceClosedBeforeStartTime() {
-    recurring =
-        persistResource(recurring.asBuilder().setRecurrenceEndTime(startTime.minusDays(1)).build());
+    billingRecurrence =
+        persistResource(
+            billingRecurrence.asBuilder().setRecurrenceEndTime(startTime.minusDays(1)).build());
     runPipeline();
     assertNoExpansionsHappened();
   }
 
   @Test
   void testSuccess_noExpansion_recurrenceClosedBeforeNextExpansion() {
-    recurring =
+    billingRecurrence =
         persistResource(
-            recurring
+            billingRecurrence
                 .asBuilder()
-                .setEventTime(recurring.getEventTime().minusYears(1))
+                .setEventTime(billingRecurrence.getEventTime().minusYears(1))
                 .setRecurrenceEndTime(startTime.plusHours(6))
                 .build());
     runPipeline();
@@ -243,16 +244,17 @@ public class ExpandRecurringBillingEventsPipelineTest {
 
   @Test
   void testSuccess_noExpansion_eventTimeAfterEndTime() {
-    recurring = persistResource(recurring.asBuilder().setEventTime(endTime.plusDays(1)).build());
+    billingRecurrence =
+        persistResource(billingRecurrence.asBuilder().setEventTime(endTime.plusDays(1)).build());
     runPipeline();
     assertNoExpansionsHappened();
   }
 
   @Test
   void testSuccess_noExpansion_LastExpansionLessThanAYearAgo() {
-    recurring =
+    billingRecurrence =
         persistResource(
-            recurring
+            billingRecurrence
                 .asBuilder()
                 .setRecurrenceLastExpansion(startTime.minusYears(1).plusDays(1))
                 .build());
@@ -263,7 +265,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
   @Test
   void testSuccess_noExpansion_oneTimeAlreadyExists() {
     DomainHistory history = persistResource(defaultDomainHistory());
-    OneTime oneTime = persistResource(defaultOneTime(history));
+    BillingEvent billingEvent = persistResource(defaultOneTime(history));
     runPipeline();
 
     // Assert about DomainHistory.
@@ -271,7 +273,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
 
     // Assert about BillingEvents. No expansion happened, so last recurrence expansion time is
     // unchanged.
-    assertBillingEventsForResource(domain, oneTime, recurring);
+    assertBillingEventsForResource(domain, billingEvent, billingRecurrence);
 
     // Assert about Cursor.
     assertCursorAt(endTime);
@@ -296,7 +298,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
     assertBillingEventsForResource(
         domain,
         defaultOneTime(getOnlyAutoRenewHistory()),
-        recurring
+        billingRecurrence
             .asBuilder()
             .setRecurrenceLastExpansion(domain.getCreationTime().plusYears(1))
             .build());
@@ -306,7 +308,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
   }
 
   // We control the number of threads used in the pipeline to test if the batching behavior works
-  // properly. When two threads are used, the two recurrings are processed in different workers and
+  // properly. When two threads are used, the two recurrences are processed in different workers and
   // should be processed in parallel.
   @ParameterizedTest
   @ValueSource(ints = {1, 2})
@@ -318,7 +320,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
             .setPremiumList(persistPremiumList("premium", USD, "other,USD 100"))
             .build());
     DateTime otherCreateTime = startTime.minusYears(1).plusHours(5);
-    Recurring otherRecurring = createDomainAtTime("other.test", otherCreateTime);
+    BillingRecurrence otherBillingRecurrence = createDomainAtTime("other.test", otherCreateTime);
     Domain otherDomain = loadByForeignKey(Domain.class, "other.test", clock.nowUtc()).get();
 
     options.setTargetParallelism(numOfThreads);
@@ -334,14 +336,15 @@ public class ExpandRecurringBillingEventsPipelineTest {
     assertBillingEventsForResource(
         domain,
         defaultOneTime(getOnlyAutoRenewHistory()),
-        recurring
+        billingRecurrence
             .asBuilder()
             .setRecurrenceLastExpansion(domain.getCreationTime().plusYears(1))
             .build());
     assertBillingEventsForResource(
         otherDomain,
-        defaultOneTime(otherDomain, getOnlyAutoRenewHistory(otherDomain), otherRecurring, 100),
-        otherRecurring
+        defaultOneTime(
+            otherDomain, getOnlyAutoRenewHistory(otherDomain), otherBillingRecurrence, 100),
+        otherBillingRecurrence
             .asBuilder()
             .setRecurrenceLastExpansion(otherDomain.getCreationTime().plusYears(1))
             .build());
@@ -396,7 +399,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
             .setBillingTime(
                 domain.getCreationTime().plusYears(2).plus(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD))
             .build(),
-        recurring
+        billingRecurrence
             .asBuilder()
             .setRecurrenceLastExpansion(domain.getCreationTime().plusYears(2))
             .build());
@@ -406,9 +409,9 @@ public class ExpandRecurringBillingEventsPipelineTest {
   }
 
   private void runPipeline() {
-    ExpandRecurringBillingEventsPipeline expandRecurringBillingEventsPipeline =
-        new ExpandRecurringBillingEventsPipeline(options, clock);
-    expandRecurringBillingEventsPipeline.setupPipeline(pipeline);
+    ExpandBillingRecurrencesPipeline expandBillingRecurrencesPipeline =
+        new ExpandBillingRecurrencesPipeline(options, clock);
+    expandBillingRecurrencesPipeline.setupPipeline(pipeline);
     pipeline.run(options).waitUntilFinish();
   }
 
@@ -424,7 +427,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
     assertThat(persistedHistory.get(0).getType()).isEqualTo(DOMAIN_CREATE);
 
     // Only the original recurrence is present.
-    assertBillingEventsForResource(domain, recurring);
+    assertBillingEventsForResource(domain, billingRecurrence);
 
     // If this is not a dry run, the cursor should still be moved even though expansions happened,
     // because we still successfully processed all the needed expansions (none in this case) in the
@@ -458,13 +461,13 @@ public class ExpandRecurringBillingEventsPipelineTest {
         .build();
   }
 
-  private OneTime defaultOneTime(DomainHistory history) {
-    return defaultOneTime(domain, history, recurring, 11);
+  private BillingEvent defaultOneTime(DomainHistory history) {
+    return defaultOneTime(domain, history, billingRecurrence, 11);
   }
 
-  private OneTime defaultOneTime(
-      Domain domain, DomainHistory history, Recurring recurring, int cost) {
-    return new BillingEvent.OneTime.Builder()
+  private BillingEvent defaultOneTime(
+      Domain domain, DomainHistory history, BillingRecurrence billingRecurrence, int cost) {
+    return new BillingEvent.Builder()
         .setBillingTime(
             domain.getCreationTime().plusYears(1).plus(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD))
         .setRegistrarId("TheRegistrar")
@@ -474,7 +477,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
         .setPeriodYears(1)
         .setReason(Reason.RENEW)
         .setSyntheticCreationTime(endTime)
-        .setCancellationMatchingBillingEvent(recurring)
+        .setCancellationMatchingBillingEvent(billingRecurrence)
         .setTargetId(domain.getDomainName())
         .setDomainHistory(history)
         .build();
@@ -517,7 +520,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
     assertThat(cursor.getCursorTime()).isEqualTo(expectedCursorTime);
   }
 
-  private static Recurring createDomainAtTime(String domainName, DateTime createTime) {
+  private static BillingRecurrence createDomainAtTime(String domainName, DateTime createTime) {
     Domain domain = persistActiveDomain(domainName, createTime);
     DomainHistory domainHistory =
         persistResource(
@@ -528,7 +531,7 @@ public class ExpandRecurringBillingEventsPipelineTest {
                 .setDomain(domain)
                 .build());
     return persistResource(
-        new Recurring.Builder()
+        new BillingRecurrence.Builder()
             .setDomainHistory(domainHistory)
             .setRegistrarId(domain.getCreationRegistrarId())
             .setEventTime(createTime.plusYears(1))
@@ -539,5 +542,5 @@ public class ExpandRecurringBillingEventsPipelineTest {
             .build());
   }
 
-  public interface TestOptions extends ExpandRecurringBillingEventsPipelineOptions, DirectOptions {}
+  public interface TestOptions extends ExpandBillingRecurrencesPipelineOptions, DirectOptions {}
 }
