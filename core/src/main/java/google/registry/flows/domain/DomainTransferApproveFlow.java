@@ -45,11 +45,12 @@ import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.model.ImmutableObject;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
+import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -149,16 +150,18 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     String gainingRegistrarId = transferData.getGainingRegistrarId();
     // Create a transfer billing event for 1 year, unless the superuser extension was used to set
     // the transfer period to zero. There is not a transfer cost if the transfer period is zero.
-    Recurring existingRecurring = tm().loadByKey(existingDomain.getAutorenewBillingEvent());
+    BillingRecurrence existingBillingRecurrence =
+        tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
     boolean hasPackageToken = existingDomain.getCurrentPackageToken().isPresent();
-    Money renewalPrice = hasPackageToken ? null : existingRecurring.getRenewalPrice().orElse(null);
-    Optional<BillingEvent.OneTime> billingEvent =
+    Money renewalPrice =
+        hasPackageToken ? null : existingBillingRecurrence.getRenewalPrice().orElse(null);
+    Optional<BillingEvent> billingEvent =
         transferData.getTransferPeriod().getValue() == 0
             ? Optional.empty()
             : Optional.of(
-                new BillingEvent.OneTime.Builder()
+                new BillingEvent.Builder()
                     .setReason(Reason.TRANSFER)
                     .setTargetId(targetId)
                     .setRegistrarId(gainingRegistrarId)
@@ -170,9 +173,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                                 targetId,
                                 transferData.getTransferRequestTime(),
                                 // When removing a domain from a package it should return to the
-                                // default recurring billing behavior so the existing recurring
+                                // default recurrence billing behavior so the existing recurrence
                                 // billing event should not be passed in.
-                                hasPackageToken ? null : existingRecurring)
+                                hasPackageToken ? null : existingBillingRecurrence)
                             .getRenewCost())
                     .setEventTime(now)
                     .setBillingTime(now.plus(Tld.get(tldStr).getTransferGracePeriodLength()))
@@ -192,18 +195,18 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
       // still needs to be charged for the auto-renew.
       if (billingEvent.isPresent()) {
         entitiesToSave.add(
-            BillingEvent.Cancellation.forGracePeriod(
-                autorenewGrace, now, domainHistoryId, targetId));
+            BillingCancellation.forGracePeriod(autorenewGrace, now, domainHistoryId, targetId));
       }
     }
     // Close the old autorenew event and poll message at the transfer time (aka now). This may end
     // up deleting the poll message.
-    updateAutorenewRecurrenceEndTime(existingDomain, existingRecurring, now, domainHistoryId);
+    updateAutorenewRecurrenceEndTime(
+        existingDomain, existingBillingRecurrence, now, domainHistoryId);
     DateTime newExpirationTime =
         computeExDateForApprovalTime(existingDomain, now, transferData.getTransferPeriod());
     // Create a new autorenew event starting at the expiration time.
-    BillingEvent.Recurring autorenewEvent =
-        new BillingEvent.Recurring.Builder()
+    BillingRecurrence autorenewEvent =
+        new BillingRecurrence.Builder()
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(targetId)
@@ -212,7 +215,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setRenewalPriceBehavior(
                 hasPackageToken
                     ? RenewalPriceBehavior.DEFAULT
-                    : existingRecurring.getRenewalPriceBehavior())
+                    : existingBillingRecurrence.getRenewalPriceBehavior())
             .setRenewalPrice(renewalPrice)
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistoryId(domainHistoryId)
@@ -248,12 +251,10 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setGracePeriods(
                 billingEvent
                     .map(
-                        oneTime ->
+                        event ->
                             ImmutableSet.of(
                                 GracePeriod.forBillingEvent(
-                                    GracePeriodStatus.TRANSFER,
-                                    existingDomain.getRepoId(),
-                                    oneTime)))
+                                    GracePeriodStatus.TRANSFER, existingDomain.getRepoId(), event)))
                     .orElseGet(ImmutableSet::of))
             .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(registrarId)

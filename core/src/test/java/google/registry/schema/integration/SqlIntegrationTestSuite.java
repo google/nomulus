@@ -16,7 +16,7 @@ package google.registry.schema.integration;
 
 import static com.google.common.truth.Truth.assert_;
 
-import google.registry.model.billing.BillingEventTest;
+import google.registry.model.billing.BillingBaseTest;
 import google.registry.model.common.CursorTest;
 import google.registry.model.common.DnsRefreshRequestTest;
 import google.registry.model.console.UserTest;
@@ -81,7 +81,7 @@ import org.junit.runner.RunWith;
   // BeforeSuiteTest must be the first entry. See class javadoc for details.
   BeforeSuiteTest.class,
   AllocationTokenTest.class,
-  BillingEventTest.class,
+  BillingBaseTest.class,
   ClaimsListDaoTest.class,
   ContactHistoryTest.class,
   ContactTest.class,

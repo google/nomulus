@@ -29,7 +29,7 @@ import google.registry.flows.custom.DomainPricingCustomLogic.RenewPriceParameter
 import google.registry.flows.custom.DomainPricingCustomLogic.RestorePriceParameters;
 import google.registry.flows.custom.DomainPricingCustomLogic.TransferPriceParameters;
 import google.registry.flows.custom.DomainPricingCustomLogic.UpdatePriceParameters;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.fee.BaseFee;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
@@ -113,20 +113,20 @@ public final class DomainPricingLogic {
       String domainName,
       DateTime dateTime,
       int years,
-      @Nullable Recurring recurringBillingEvent,
+      @Nullable BillingRecurrence billingRecurrence,
       Optional<AllocationToken> allocationToken)
       throws AllocationTokenInvalidForPremiumNameException {
     checkArgument(years > 0, "Number of years must be positive");
     Money renewCost;
     DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
     boolean isRenewCostPremiumPrice;
-    // recurring billing event is null if the domain is still available. Billing events are created
+    // recurrence is null if the domain is still available. Billing events are created
     // in the process of domain creation.
-    if (recurringBillingEvent == null) {
+    if (billingRecurrence == null) {
       renewCost = getDomainRenewCostWithDiscount(domainPrices, years, allocationToken);
       isRenewCostPremiumPrice = domainPrices.isPremium();
     } else {
-      switch (recurringBillingEvent.getRenewalPriceBehavior()) {
+      switch (billingRecurrence.getRenewalPriceBehavior()) {
         case DEFAULT:
           renewCost = getDomainRenewCostWithDiscount(domainPrices, years, allocationToken);
           isRenewCostPremiumPrice = domainPrices.isPremium();
@@ -135,11 +135,11 @@ public final class DomainPricingLogic {
           // as the creation price, which is stored in the billing event as the renewal price
         case SPECIFIED:
           checkArgumentPresent(
-              recurringBillingEvent.getRenewalPrice(),
+              billingRecurrence.getRenewalPrice(),
               "Unexpected behavior: renewal price cannot be null when renewal behavior is"
                   + " SPECIFIED");
           // Don't apply allocation token to renewal price when SPECIFIED
-          renewCost = recurringBillingEvent.getRenewalPrice().get().multipliedBy(years);
+          renewCost = billingRecurrence.getRenewalPrice().get().multipliedBy(years);
           isRenewCostPremiumPrice = false;
           break;
           // if the renewal price behavior is nonpremium, it means that the domain should be renewed
@@ -157,7 +157,7 @@ public final class DomainPricingLogic {
           throw new IllegalArgumentException(
               String.format(
                   "Unknown RenewalPriceBehavior enum value: %s",
-                  recurringBillingEvent.getRenewalPriceBehavior()));
+                  billingRecurrence.getRenewalPriceBehavior()));
       }
     }
     return customLogic.customizeRenewPrice(
@@ -200,10 +200,10 @@ public final class DomainPricingLogic {
 
   /** Returns a new transfer price for the pricer. */
   FeesAndCredits getTransferPrice(
-      Tld tld, String domainName, DateTime dateTime, @Nullable Recurring recurringBillingEvent)
+      Tld tld, String domainName, DateTime dateTime, @Nullable BillingRecurrence billingRecurrence)
       throws EppException {
     FeesAndCredits renewPrice =
-        getRenewPrice(tld, domainName, dateTime, 1, recurringBillingEvent, Optional.empty());
+        getRenewPrice(tld, domainName, dateTime, 1, billingRecurrence, Optional.empty());
     return customLogic.customizeTransferPrice(
         TransferPriceParameters.newBuilder()
             .setFeesAndCredits(

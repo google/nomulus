@@ -72,8 +72,8 @@ The following cursor types are defined:
 *   **`RDE_UPLOAD`** - RDE (thick) escrow deposit upload
 *   **`RDE_UPLOAD_SFTP`** - Cursor that tracks the last time we talked to the
     escrow provider's SFTP server for a given TLD.
-*   **`RECURRING_BILLING`** - Expansion of `Recurring` (renew) billing events
-    into `OneTime` events.
+*   **`RECURRING_BILLING`** - Expansion of `BillingRecurrence` (renew) billing events
+    into one-time `BillingEvent`s.
 *   **`SYNC_REGISTRAR_SHEET`** - Tracks the last time the registrar spreadsheet
     was successfully synced.
 
@@ -254,21 +254,19 @@ full list of which is represented by `BillingEvent.Reason`):
 *   Server status changes
 *   Domain transfers
 
-A `BillingEvent` can also contain one or more `BillingEvent.Flag` flags that
+A `BillingBase` can also contain one or more `BillingBase.Flag` flags that
 provide additional metadata about the billing event (e.g. the application phase
 during which the domain was applied for).
 
-All `BillingEvent` entities contain a parent `Key<HistoryEntry>` to identify the
-mutation that spawned the `BillingEvent`.
+All `BillingBase` entities contain a parent `VKey<HistoryEntry>` to identify the
+mutation that spawned the `BillingBase`.
 
 There are 4 types of billing events, all of which extend the abstract
-`BillingEvent` base class:
+`BillingBase` base class:
 
-*   **`OneTime`**, a one-time billing event.
-*   **`Recurring`**, a recurring billing event (used for events such as domain
+*   **`BillingEvent`**, a one-time billing event.
+*   **`BillingRecurrence`**, a recurring billing event (used for events such as domain
     renewals).
-*   **`Cancellation`**, which represents the cancellation of either a `OneTime`
-    or `Recurring` billing event. This is implemented as a distinct event to
+*   **`BillingCancellation`**, which represents the cancellation of either a `OneTime`
+    or `BillingRecurrence` billing event. This is implemented as a distinct event to
     preserve the immutability of billing events.
-*   **`Modification`**, a change to an existing `OneTime` billing event (for
-    instance, to represent a discount or refund).

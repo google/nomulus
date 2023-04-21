@@ -17,6 +17,7 @@ package google.registry.model.domain;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.persistence.VKey;
 import javax.persistence.Access;
@@ -56,21 +57,21 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
   /**
    * The one-time billing event corresponding to the action that triggered this grace period, or
    * null if not applicable. Not set for autorenew grace periods (which instead use the field {@code
-   * billingEventRecurring}) or for redemption grace periods (since deletes have no cost).
+   * billingEventRecurrence}) or for redemption grace periods (since deletes have no cost).
    */
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Access(AccessType.FIELD)
   @Column(name = "billing_event_id")
-  VKey<BillingEvent.OneTime> billingEventOneTime = null;
+  VKey<BillingEvent> billingEvent = null;
 
   /**
-   * The recurring billing event corresponding to the action that triggered this grace period, if
-   * applicable - i.e. if the action was an autorenew - or null in all other cases.
+   * The Recurrence corresponding to the action that triggered this grace period, if applicable -
+   * i.e. if the action was an autorenew - or null in all other cases.
    */
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Access(AccessType.FIELD)
   @Column(name = "billing_recurrence_id")
-  VKey<BillingEvent.Recurring> billingEventRecurring = null;
+  VKey<BillingRecurrence> billingRecurrence = null;
 
   public long getGracePeriodId() {
     return gracePeriodId;
@@ -100,22 +101,22 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
 
   /** Returns true if this GracePeriod has an associated BillingEvent; i.e. if it's refundable. */
   public boolean hasBillingEvent() {
-    return billingEventOneTime != null || billingEventRecurring != null;
+    return billingEvent != null || billingRecurrence != null;
   }
 
   /**
    * Returns the one time billing event. The value will only be non-null if the type of this grace
    * period is not AUTO_RENEW.
    */
-  public VKey<BillingEvent.OneTime> getOneTimeBillingEvent() {
-    return billingEventOneTime;
+  public VKey<BillingEvent> getBillingEvent() {
+    return billingEvent;
   }
 
   /**
-   * Returns the recurring billing event. The value will only be non-null if the type of this grace
-   * period is AUTO_RENEW.
+   * Returns the Recurrence. The value will only be non-null if the type of this grace period is
+   * AUTO_RENEW.
    */
-  public VKey<BillingEvent.Recurring> getRecurringBillingEvent() {
-    return billingEventRecurring;
+  public VKey<BillingRecurrence> getBillingRecurrence() {
+    return billingRecurrence;
   }
 }

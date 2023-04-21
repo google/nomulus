@@ -34,7 +34,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
 import google.registry.flows.picker.FlowPicker;
-import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingBase;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppinput.EppInput;
@@ -169,10 +169,10 @@ public abstract class FlowTestCase<F extends Flow> {
    * the grace periods and the IDs on the billing events (by setting them all to the same dummy
    * values), since they will vary between instantiations even when the other data is the same.
    */
-  private static ImmutableMap<GracePeriod, BillingEvent> canonicalizeGracePeriods(
-      ImmutableMap<GracePeriod, ? extends BillingEvent> gracePeriods) {
-    ImmutableMap.Builder<GracePeriod, BillingEvent> builder = new ImmutableMap.Builder<>();
-    for (Map.Entry<GracePeriod, ? extends BillingEvent> entry : gracePeriods.entrySet()) {
+  private static ImmutableMap<GracePeriod, BillingBase> canonicalizeGracePeriods(
+      ImmutableMap<GracePeriod, ? extends BillingBase> gracePeriods) {
+    ImmutableMap.Builder<GracePeriod, BillingBase> builder = new ImmutableMap.Builder<>();
+    for (Map.Entry<GracePeriod, ? extends BillingBase> entry : gracePeriods.entrySet()) {
       builder.put(
           GracePeriod.create(
               entry.getKey().getType(),
@@ -186,7 +186,7 @@ public abstract class FlowTestCase<F extends Flow> {
     return builder.build();
   }
 
-  private static BillingEvent expandGracePeriod(GracePeriod gracePeriod) {
+  private static BillingBase expandGracePeriod(GracePeriod gracePeriod) {
     assertWithMessage("Billing event is present for grace period: " + gracePeriod)
         .that(gracePeriod.hasBillingEvent())
         .isTrue();
@@ -194,8 +194,7 @@ public abstract class FlowTestCase<F extends Flow> {
             () ->
                 tm().loadByKey(
                         firstNonNull(
-                            gracePeriod.getOneTimeBillingEvent(),
-                            gracePeriod.getRecurringBillingEvent())));
+                            gracePeriod.getBillingEvent(), gracePeriod.getBillingRecurrence())));
   }
 
   /**
@@ -204,7 +203,7 @@ public abstract class FlowTestCase<F extends Flow> {
    * on the grace periods and IDs on the billing events are ignored.
    */
   protected static void assertGracePeriods(
-      Iterable<GracePeriod> actual, ImmutableMap<GracePeriod, ? extends BillingEvent> expected) {
+      Iterable<GracePeriod> actual, ImmutableMap<GracePeriod, ? extends BillingBase> expected) {
     assertThat(canonicalizeGracePeriods(Maps.toMap(actual, FlowTestCase::expandGracePeriod)))
         .isEqualTo(canonicalizeGracePeriods(expected));
   }

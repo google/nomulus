@@ -38,10 +38,10 @@ import google.registry.flows.custom.CustomLogicModule;
 import google.registry.flows.domain.DomainPricingLogic;
 import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.model.ImmutableObject;
-import google.registry.model.billing.BillingEvent.Cancellation;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.OneTime;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingCancellation;
+import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.common.Cursor;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -77,48 +77,49 @@ import org.apache.beam.sdk.values.PDone;
 import org.joda.time.DateTime;
 
 /**
- * Definition of a Dataflow Flex pipeline template, which expands {@link Recurring} to {@link
- * OneTime} when an autorenew occurs within the given time frame.
+ * Definition of a Dataflow Flex pipeline template, which expands {@link BillingRecurrence} to
+ * {@link BillingEvent} when an autorenew occurs within the given time frame.
  *
  * <p>This pipeline works in three stages:
  *
  * <ul>
- *   <li>Gather the {@link Recurring}s that are in scope for expansion. The exact condition of
- *       {@link Recurring}s to include can be found in {@link #getRecurringsInScope(Pipeline)}.
- *   <li>Expand the {@link Recurring}s to {@link OneTime} (and corresponding {@link DomainHistory})
- *       that fall within the [{@link #startTime}, {@link #endTime}) window, excluding those that
- *       are already present (to make this pipeline idempotent when running with the same parameters
- *       multiple times, either in parallel or in sequence). The {@link Recurring} is also updated
- *       with the information on when it was last expanded, so it would not be in scope for
- *       expansion until at least a year later.
+ *   <li>Gather the {@link BillingRecurrence}s that are in scope for expansion. The exact condition
+ *       of {@link BillingRecurrence}s to include can be found in {@link
+ *       #getRecurrencesInScope(Pipeline)}.
+ *   <li>Expand the {@link BillingRecurrence}s to {@link BillingEvent} (and corresponding {@link
+ *       DomainHistory}) that fall within the [{@link #startTime}, {@link #endTime}) window,
+ *       excluding those that are already present (to make this pipeline idempotent when running
+ *       with the same parameters multiple times, either in parallel or in sequence). The {@link
+ *       BillingRecurrence} is also updated with the information on when it was last expanded, so it
+ *       would not be in scope for expansion until at least a year later.
  *   <li>If the cursor for billing events should be advanced, advance it to {@link #endTime} after
  *       all of the expansions in the previous step is done, only when it is currently at {@link
  *       #startTime}.
  * </ul>
  *
- * <p>Note that the creation of new {@link OneTime} and {@link DomainHistory} is done speculatively
- * as soon as its event time is in scope for expansion (i.e. within the window of operation). If a
- * domain is subsequently cancelled during the autorenew grace period, a {@link Cancellation} would
- * have been created to cancel the {@link OneTime} out. Similarly, a {@link DomainHistory} for the
- * delete will be created which negates the effect of the speculatively created {@link
- * DomainHistory}, specifically for the transaction records. Both the {@link OneTime} and {@link
- * DomainHistory} will only be used (and cancelled out) when the billing time becomes effective,
- * which is after the grace period, when the cancellations would have been written, if need be. This
- * is no different from what we do with manual renewals or normal creates, where entities are always
- * created for the action regardless of whether their effects will be negated later due to
- * subsequent actions within respective grace periods.
+ * <p>Note that the creation of new {@link BillingEvent} and {@link DomainHistory} is done
+ * speculatively as soon as its event time is in scope for expansion (i.e. within the window of
+ * operation). If a domain is subsequently cancelled during the autorenew grace period, a {@link
+ * BillingCancellation} would have been created to cancel the {@link BillingEvent} out. Similarly, a
+ * {@link DomainHistory} for the delete will be created which negates the effect of the
+ * speculatively created {@link DomainHistory}, specifically for the transaction records. Both the
+ * {@link BillingEvent} and {@link DomainHistory} will only be used (and cancelled out) when the
+ * billing time becomes effective, which is after the grace period, when the cancellations would
+ * have been written, if need be. This is no different from what we do with manual renewals or
+ * normal creates, where entities are always created for the action regardless of whether their
+ * effects will be negated later due to subsequent actions within respective grace periods.
  *
  * <p>To stage this template locally, run {@code ./nom_build :core:sBP --environment=alpha \
  * --pipeline=expandBilling}.
  *
  * <p>Then, you can run the staged template via the API client library, gCloud or a raw REST call.
  *
- * @see Cancellation#forGracePeriod
+ * @see BillingCancellation#forGracePeriod
  * @see google.registry.flows.domain.DomainFlowUtils#createCancelingRecords
  * @see <a href="https://cloud.google.com/dataflow/docs/guides/templates/using-flex-templates">Using
  *     Flex Templates</a>
  */
-public class ExpandRecurringBillingEventsPipeline implements Serializable {
+public class ExpandBillingRecurrencesPipeline implements Serializable {
 
   private static final long serialVersionUID = -5827984301386630194L;
 
@@ -128,7 +129,7 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
 
   static {
     PipelineComponent pipelineComponent =
-        DaggerExpandRecurringBillingEventsPipeline_PipelineComponent.create();
+        DaggerExpandBillingRecurrencesPipeline_PipelineComponent.create();
     domainPricingLogic = pipelineComponent.domainPricingLogic();
     batchSize = pipelineComponent.batchSize();
   }
@@ -139,8 +140,8 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
   private final DateTime endTime;
   private final boolean isDryRun;
   private final boolean advanceCursor;
-  private final Counter recurringsInScopeCounter =
-      Metrics.counter("ExpandBilling", "Recurrings in scope for expansion");
+  private final Counter recurrencesInScopeCounter =
+      Metrics.counter("ExpandBilling", "Recurrences in scope for expansion");
   // Note that this counter is only accurate when running in dry run mode. Because SQL persistence
   // is a side effect and not idempotent, a transaction to save OneTimes could be successful but the
   // transform that contains it could be still be retried, rolling back the counter increment. The
@@ -150,8 +151,7 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
   private final Counter oneTimesToExpandCounter =
       Metrics.counter("ExpandBilling", "OneTimes that would be expanded");
 
-  ExpandRecurringBillingEventsPipeline(
-      ExpandRecurringBillingEventsPipelineOptions options, Clock clock) {
+  ExpandBillingRecurrencesPipeline(ExpandBillingRecurrencesPipelineOptions options, Clock clock) {
     startTime = DateTime.parse(options.getStartTime());
     endTime = DateTime.parse(options.getEndTime());
     checkArgument(
@@ -170,16 +170,16 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
   }
 
   void setupPipeline(Pipeline pipeline) {
-    PCollection<KV<Integer, Long>> recurringIds = getRecurringsInScope(pipeline);
-    PCollection<Void> expanded = expandRecurrings(recurringIds);
+    PCollection<KV<Integer, Long>> recurrenceIds = getRecurrencesInScope(pipeline);
+    PCollection<Void> expanded = expandRecurrences(recurrenceIds);
     if (!isDryRun && advanceCursor) {
       advanceCursor(expanded);
     }
   }
 
-  PCollection<KV<Integer, Long>> getRecurringsInScope(Pipeline pipeline) {
+  PCollection<KV<Integer, Long>> getRecurrencesInScope(Pipeline pipeline) {
     return pipeline.apply(
-        "Read all Recurrings in scope",
+        "Read all Recurrences in scope",
         // Use native query because JPQL does not support timestamp arithmetics.
         RegistryJpaIO.read(
                 "SELECT billing_recurrence_id "
@@ -203,7 +203,7 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
                     endTime.minusYears(1)),
                 true,
                 (BigInteger id) -> {
-                  recurringsInScopeCounter.inc();
+                  recurrencesInScopeCounter.inc();
                   // Note that because all elements are mapped to the same dummy key, the next
                   // batching transform will effectively be serial. This however does not matter for
                   // our use case because the elements were obtained from a SQL read query, which
@@ -222,13 +222,13 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
             .withCoder(KvCoder.of(VarIntCoder.of(), VarLongCoder.of())));
   }
 
-  private PCollection<Void> expandRecurrings(PCollection<KV<Integer, Long>> recurringIds) {
-    return recurringIds
+  private PCollection<Void> expandRecurrences(PCollection<KV<Integer, Long>> recurrenceIds) {
+    return recurrenceIds
         .apply(
             "Group into batches",
             GroupIntoBatches.<Integer, Long>ofSize(batchSize).withShardedKey())
         .apply(
-            "Expand and save Recurrings into OneTimes and corresponding DomainHistories",
+            "Expand and save Recurrences into OneTimes and corresponding DomainHistories",
             MapElements.into(voids())
                 .via(
                     element -> {
@@ -237,7 +237,7 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
                               () -> {
                                 ImmutableSet.Builder<ImmutableObject> results =
                                     new ImmutableSet.Builder<>();
-                                ids.forEach(id -> expandOneRecurring(id, results));
+                                ids.forEach(id -> expandOneRecurrence(id, results));
                                 if (!isDryRun) {
                                   tm().putAll(results.build());
                                 }
@@ -246,14 +246,16 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
                     }));
   }
 
-  private void expandOneRecurring(Long recurringId, ImmutableSet.Builder<ImmutableObject> results) {
-    Recurring recurring = tm().loadByKey(Recurring.createVKey(recurringId));
+  private void expandOneRecurrence(
+      Long recurrenceId, ImmutableSet.Builder<ImmutableObject> results) {
+    BillingRecurrence billingRecurrence =
+        tm().loadByKey(BillingRecurrence.createVKey(recurrenceId));
 
-    // Determine the complete set of EventTimes this recurring event should expand to within
+    // Determine the complete set of EventTimes this recurrence event should expand to within
     // [max(recurrenceLastExpansion + 1 yr, startTime), min(recurrenceEndTime, endTime)).
     //
-    // This range should always be legal for recurrings that are returned from the query. However,
-    // it is possible that the recurring has changed between when the read transformation occurred
+    // This range should always be legal for recurrences that are returned from the query. However,
+    // it is possible that the recurrence has changed between when the read transformation occurred
     // and now. This could be caused by some out-of-process mutations (such as a domain deletion
     // closing out a previously open-ended recurrence), or more subtly, Beam could execute the same
     // work multiple times due to transient communication issues between workers and the scheduler.
@@ -264,23 +266,25 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
     // to work on the same batch. The second worker would see a new recurrence_last_expansion that
     // causes the range to be illegal.
     //
-    // The best way to handle any unexpected behavior is to simply drop the recurring from
+    // The best way to handle any unexpected behavior is to simply drop the recurrence from
     // expansion, if its new state still calls for an expansion, it would be picked up the next time
     // the pipeline runs.
     ImmutableSet<DateTime> eventTimes;
     try {
       eventTimes =
           ImmutableSet.copyOf(
-              recurring
+              billingRecurrence
                   .getRecurrenceTimeOfYear()
                   .getInstancesInRange(
                       Range.closedOpen(
-                          latestOf(recurring.getRecurrenceLastExpansion().plusYears(1), startTime),
-                          earliestOf(recurring.getRecurrenceEndTime(), endTime))));
+                          latestOf(
+                              billingRecurrence.getRecurrenceLastExpansion().plusYears(1),
+                              startTime),
+                          earliestOf(billingRecurrence.getRecurrenceEndTime(), endTime))));
     } catch (IllegalArgumentException e) {
       return;
     }
-    Domain domain = tm().loadByKey(Domain.createVKey(recurring.getDomainRepoId()));
+    Domain domain = tm().loadByKey(Domain.createVKey(billingRecurrence.getDomainRepoId()));
     Tld tld = Tld.get(domain.getTld());
 
     // Find the times for which the OneTime billing event are already created, making this expansion
@@ -292,7 +296,7 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
                     "SELECT eventTime FROM BillingEvent WHERE cancellationMatchingBillingEvent ="
                         + " :key",
                     DateTime.class)
-                .setParameter("key", recurring.createVKey())
+                .setParameter("key", billingRecurrence.createVKey())
                 .getResultList());
 
     Set<DateTime> eventTimesToExpand = difference(eventTimes, existingEventTimes);
@@ -301,7 +305,7 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
       return;
     }
 
-    DateTime recurrenceLastExpansionTime = recurring.getRecurrenceLastExpansion();
+    DateTime recurrenceLastExpansionTime = billingRecurrence.getRecurrenceLastExpansion();
 
     // Create new OneTime and DomainHistory for EventTimes that needs to be expanded.
     for (DateTime eventTime : eventTimesToExpand) {
@@ -333,7 +337,7 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
       DomainHistory historyEntry =
           new DomainHistory.Builder()
               .setBySuperuser(false)
-              .setRegistrarId(recurring.getRegistrarId())
+              .setRegistrarId(billingRecurrence.getRegistrarId())
               .setModificationTime(tm().getTransactionTime())
               .setDomain(domain)
               .setPeriod(Period.create(1, YEARS))
@@ -385,35 +389,43 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
       // It is OK to always create a OneTime, even though the domain might be deleted or transferred
       // later during autorenew grace period, as a cancellation will always be written out in those
       // instances.
-      OneTime oneTime = null;
+      BillingEvent billingEvent = null;
       try {
-        oneTime =
-            new OneTime.Builder()
+        billingEvent =
+            new BillingEvent.Builder()
                 .setBillingTime(billingTime)
-                .setRegistrarId(recurring.getRegistrarId())
+                .setRegistrarId(billingRecurrence.getRegistrarId())
                 // Determine the cost for a one-year renewal.
                 .setCost(
                     domainPricingLogic
                         .getRenewPrice(
-                            tld, recurring.getTargetId(), eventTime, 1, recurring, Optional.empty())
+                            tld,
+                            billingRecurrence.getTargetId(),
+                            eventTime,
+                            1,
+                            billingRecurrence,
+                            Optional.empty())
                         .getRenewCost())
                 .setEventTime(eventTime)
-                .setFlags(union(recurring.getFlags(), Flag.SYNTHETIC))
+                .setFlags(union(billingRecurrence.getFlags(), Flag.SYNTHETIC))
                 .setDomainHistory(historyEntry)
                 .setPeriodYears(1)
-                .setReason(recurring.getReason())
+                .setReason(billingRecurrence.getReason())
                 .setSyntheticCreationTime(endTime)
-                .setCancellationMatchingBillingEvent(recurring)
-                .setTargetId(recurring.getTargetId())
+                .setCancellationMatchingBillingEvent(billingRecurrence)
+                .setTargetId(billingRecurrence.getTargetId())
                 .build();
       } catch (AllocationTokenInvalidForPremiumNameException e) {
         // This should not be reached since we are not using an allocation token
         return;
       }
-      results.add(oneTime);
+      results.add(billingEvent);
     }
     results.add(
-        recurring.asBuilder().setRecurrenceLastExpansion(recurrenceLastExpansionTime).build());
+        billingRecurrence
+            .asBuilder()
+            .setRecurrenceLastExpansion(recurrenceLastExpansionTime)
+            .build());
   }
 
   private PDone advanceCursor(PCollection<Void> persisted) {
@@ -456,11 +468,11 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
   }
 
   public static void main(String[] args) {
-    PipelineOptionsFactory.register(ExpandRecurringBillingEventsPipelineOptions.class);
-    ExpandRecurringBillingEventsPipelineOptions options =
+    PipelineOptionsFactory.register(ExpandBillingRecurrencesPipelineOptions.class);
+    ExpandBillingRecurrencesPipelineOptions options =
         PipelineOptionsFactory.fromArgs(args)
             .withValidation()
-            .as(ExpandRecurringBillingEventsPipelineOptions.class);
+            .as(ExpandBillingRecurrencesPipelineOptions.class);
     // Hardcode the transaction level to be at serializable we do not want concurrent runs of the
     // pipeline for the same window to create duplicate OneTimes. This ensures that the set of
     // existing OneTimes do not change by the time new OneTimes are inserted within a transaction.
@@ -468,7 +480,7 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
     // Per PostgreSQL, serializable isolation level does not introduce any blocking beyond that
     // present in  repeatable read other than some overhead related to monitoring possible
     // serializable anomalies. Therefore, in most cases, since each worker of the same job works on
-    // a different set of recurrings, it is not possible for their execution order to affect
+    // a different set of recurrences, it is not possible for their execution order to affect
     // serialization outcome, and the performance penalty should be minimum when using serializable
     // compared to using repeatable read.
     //
@@ -480,7 +492,7 @@ public class ExpandRecurringBillingEventsPipeline implements Serializable {
     // See: https://www.postgresql.org/docs/current/transaction-iso.html
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_SERIALIZABLE);
     Pipeline pipeline = Pipeline.create(options);
-    new ExpandRecurringBillingEventsPipeline(options, new SystemClock()).run(pipeline);
+    new ExpandBillingRecurrencesPipeline(options, new SystemClock()).run(pipeline);
   }
 
   @Singleton

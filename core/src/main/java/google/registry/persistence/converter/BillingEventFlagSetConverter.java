@@ -14,7 +14,7 @@
 
 package google.registry.persistence.converter;
 
-import google.registry.model.billing.BillingEvent.Flag;
+import google.registry.model.billing.BillingBase.Flag;
 import java.util.Set;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
