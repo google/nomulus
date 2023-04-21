@@ -24,9 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import google.registry.model.billing.BillingEvent.Cancellation;
-import google.registry.model.billing.BillingEvent.OneTime;
-import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingCancellation;
+import google.registry.model.billing.BillingEvent;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -39,12 +39,12 @@ import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Tests for {@link CreateCancellationsForOneTimesCommand}. */
-public class CreateCancellationsForOneTimesCommandTest
-    extends CommandTestCase<CreateCancellationsForOneTimesCommand> {
+/** Tests for {@link CreateCancellationsForBillingEventsCommand}. */
+public class CreateCancellationsForBillingEventsCommandTest
+    extends CommandTestCase<CreateCancellationsForBillingEventsCommand> {
 
   private Domain domain;
-  private OneTime oneTimeToCancel;
+  private BillingEvent billingEventToCancel;
 
   @BeforeEach
   void beforeEach() {
@@ -58,61 +58,61 @@ public class CreateCancellationsForOneTimesCommandTest
             fakeClock.nowUtc(),
             fakeClock.nowUtc(),
             fakeClock.nowUtc().plusYears(2));
-    oneTimeToCancel = createOneTime();
+    billingEventToCancel = createBillingEvent();
   }
 
   @Test
   void testSimpleDelete() throws Exception {
-    assertThat(DatabaseHelper.loadAllOf(Cancellation.class)).isEmpty();
-    runCommandForced(String.valueOf(oneTimeToCancel.getId()));
+    assertThat(DatabaseHelper.loadAllOf(BillingCancellation.class)).isEmpty();
+    runCommandForced(String.valueOf(billingEventToCancel.getId()));
     assertBillingEventCancelled();
-    assertInStdout("Added Cancellation for OneTime with ID 9");
-    assertInStdout("Created 1 Cancellation event(s)");
+    assertInStdout("Added BillingCancellation for BillingEvent with ID 9");
+    assertInStdout("Created 1 BillingCancellation event(s)");
   }
 
   @Test
   void testSuccess_oneExistsOneDoesnt() throws Exception {
-    runCommandForced(String.valueOf(oneTimeToCancel.getId()), "9001");
+    runCommandForced(String.valueOf(billingEventToCancel.getId()), "9001");
     assertBillingEventCancelled();
-    assertInStdout("Found 1 OneTime(s) to cancel");
-    assertInStdout("Missing OneTime(s) for IDs [9001]");
-    assertInStdout("Added Cancellation for OneTime with ID 9");
-    assertInStdout("Created 1 Cancellation event(s)");
+    assertInStdout("Found 1 BillingEvent(s) to cancel");
+    assertInStdout("Missing BillingEvent(s) for IDs [9001]");
+    assertInStdout("Added BillingCancellation for BillingEvent with ID 9");
+    assertInStdout("Created 1 BillingCancellation event(s)");
   }
 
   @Test
   void testSuccess_multipleCancellations() throws Exception {
-    OneTime secondToCancel = createOneTime();
-    assertThat(DatabaseHelper.loadAllOf(Cancellation.class)).isEmpty();
+    BillingEvent secondToCancel = createBillingEvent();
+    assertThat(DatabaseHelper.loadAllOf(BillingCancellation.class)).isEmpty();
     runCommandForced(
-        String.valueOf(oneTimeToCancel.getId()), String.valueOf(secondToCancel.getId()));
-    assertBillingEventCancelled(oneTimeToCancel.getId());
+        String.valueOf(billingEventToCancel.getId()), String.valueOf(secondToCancel.getId()));
+    assertBillingEventCancelled(billingEventToCancel.getId());
     assertBillingEventCancelled(secondToCancel.getId());
-    assertInStdout("Create cancellations for 2 OneTime(s)?");
-    assertInStdout("Added Cancellation for OneTime with ID 9");
-    assertInStdout("Added Cancellation for OneTime with ID 10");
-    assertInStdout("Created 2 Cancellation event(s)");
+    assertInStdout("Create cancellations for 2 BillingEvent(s)?");
+    assertInStdout("Added BillingCancellation for BillingEvent with ID 9");
+    assertInStdout("Added BillingCancellation for BillingEvent with ID 10");
+    assertInStdout("Created 2 BillingCancellation event(s)");
   }
 
   @Test
   void testAlreadyCancelled() throws Exception {
     // multiple runs / cancellations should be a no-op
-    runCommandForced(String.valueOf(oneTimeToCancel.getId()));
+    runCommandForced(String.valueOf(billingEventToCancel.getId()));
     assertBillingEventCancelled();
-    runCommandForced(String.valueOf(oneTimeToCancel.getId()));
+    runCommandForced(String.valueOf(billingEventToCancel.getId()));
     assertBillingEventCancelled();
-    assertThat(DatabaseHelper.loadAllOf(Cancellation.class)).hasSize(1);
-    assertInStdout("Found 0 OneTime(s) to cancel");
-    assertInStdout("The following OneTime IDs were already cancelled: [9]");
+    assertThat(DatabaseHelper.loadAllOf(BillingCancellation.class)).hasSize(1);
+    assertInStdout("Found 0 BillingEvent(s) to cancel");
+    assertInStdout("The following BillingEvent IDs were already cancelled: [9]");
   }
 
   @Test
   void testFailure_doesntExist() throws Exception {
     runCommandForced("9001");
-    assertThat(DatabaseHelper.loadAllOf(Cancellation.class)).isEmpty();
-    assertInStdout("Found 0 OneTime(s) to cancel");
-    assertInStdout("Missing OneTime(s) for IDs [9001]");
-    assertInStdout("Created 0 Cancellation event(s)");
+    assertThat(DatabaseHelper.loadAllOf(BillingCancellation.class)).isEmpty();
+    assertInStdout("Found 0 BillingEvent(s) to cancel");
+    assertInStdout("Missing BillingEvent(s) for IDs [9001]");
+    assertInStdout("Created 0 BillingCancellation event(s)");
   }
 
   @Test
@@ -120,9 +120,9 @@ public class CreateCancellationsForOneTimesCommandTest
     assertThrows(ParameterException.class, this::runCommandForced);
   }
 
-  private OneTime createOneTime() {
+  private BillingEvent createBillingEvent() {
     return persistResource(
-        new OneTime.Builder()
+        new BillingEvent.Builder()
             .setReason(Reason.CREATE)
             .setTargetId(domain.getDomainName())
             .setRegistrarId("TheRegistrar")
@@ -139,13 +139,14 @@ public class CreateCancellationsForOneTimesCommandTest
   }
 
   private void assertBillingEventCancelled() {
-    assertBillingEventCancelled(oneTimeToCancel.getId());
+    assertBillingEventCancelled(billingEventToCancel.getId());
   }
 
-  private void assertBillingEventCancelled(long oneTimeId) {
+  private void assertBillingEventCancelled(long billingEventId) {
     assertThat(
-            DatabaseHelper.loadAllOf(Cancellation.class).stream()
-                .anyMatch(c -> c.getEventKey().equals(VKey.create(OneTime.class, oneTimeId))))
+            DatabaseHelper.loadAllOf(BillingCancellation.class).stream()
+                .anyMatch(
+                    c -> c.getEventKey().equals(VKey.create(BillingEvent.class, billingEventId))))
         .isTrue();
   }
 }

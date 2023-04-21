@@ -22,7 +22,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;

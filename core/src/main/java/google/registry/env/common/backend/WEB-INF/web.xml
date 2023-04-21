@@ -246,10 +246,10 @@
     <url-pattern>/_dr/task/refreshDnsOnHostRename</url-pattern>
   </servlet-mapping>
 
-  <!-- Action to expand recurring billing events into OneTimes. -->
+  <!-- Action to expand BillingRecurrences into BillingEvents. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/expandRecurringBillingEvents</url-pattern>
+    <url-pattern>/_dr/task/expandBillingRecurrences</url-pattern>
   </servlet-mapping>
 
   <!-- Background action to delete domains past end of autorenewal. -->

@@ -35,7 +35,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.Buildable;
 import google.registry.model.EntityTestCase;
-import google.registry.model.billing.BillingEvent.RenewalPriceBehavior;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;

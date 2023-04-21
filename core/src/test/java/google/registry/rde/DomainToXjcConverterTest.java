@@ -30,9 +30,10 @@ import static org.joda.money.CurrencyUnit.USD;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactPhoneNumber;
@@ -229,9 +230,9 @@ public class DomainToXjcConverterTest {
                 .setDomain(domain)
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
-    BillingEvent.OneTime billingEvent =
+    BillingEvent billingEvent =
         persistResource(
-            new BillingEvent.OneTime.Builder()
+            new BillingEvent.Builder()
                 .setReason(Reason.CREATE)
                 .setTargetId("example.xn--q9jyb4c")
                 .setRegistrarId("TheRegistrar")
@@ -290,7 +291,7 @@ public class DomainToXjcConverterTest {
                         GracePeriodStatus.RENEW,
                         domain.getRepoId(),
                         persistResource(
-                            new BillingEvent.OneTime.Builder()
+                            new BillingEvent.Builder()
                                 .setReason(Reason.RENEW)
                                 .setTargetId("love.xn--q9jyb4c")
                                 .setRegistrarId("TheRegistrar")
@@ -315,7 +316,7 @@ public class DomainToXjcConverterTest {
                     StatusValue.SERVER_UPDATE_PROHIBITED))
             .setAutorenewBillingEvent(
                 persistResource(
-                        new BillingEvent.Recurring.Builder()
+                        new BillingRecurrence.Builder()
                             .setReason(Reason.RENEW)
                             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                             .setTargetId("lol")
@@ -344,7 +345,7 @@ public class DomainToXjcConverterTest {
                     .setServerApproveBillingEvent(billingEvent.createVKey())
                     .setServerApproveAutorenewEvent(
                         persistResource(
-                                new BillingEvent.Recurring.Builder()
+                                new BillingRecurrence.Builder()
                                     .setReason(Reason.RENEW)
                                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                                     .setTargetId("example.xn--q9jyb4c")

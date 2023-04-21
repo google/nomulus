@@ -18,9 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
@@ -41,13 +41,13 @@ public class GracePeriodTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final DateTime now = DateTime.now(UTC);
-  private BillingEvent.OneTime onetime;
-  private VKey<BillingEvent.Recurring> recurringKey;
+  private BillingEvent onetime;
+  private VKey<BillingRecurrence> recurrenceKey;
 
   @BeforeEach
   void before() {
     onetime =
-        new BillingEvent.OneTime.Builder()
+        new BillingEvent.Builder()
             .setEventTime(now)
             .setBillingTime(now.plusDays(1))
             .setRegistrarId("TheRegistrar")
@@ -57,7 +57,7 @@ public class GracePeriodTest {
             .setPeriodYears(1)
             .setTargetId("foo.google")
             .build();
-    recurringKey = Recurring.createVKey(12345L);
+    recurrenceKey = BillingRecurrence.createVKey(12345L);
   }
 
   @Test
@@ -65,22 +65,22 @@ public class GracePeriodTest {
     GracePeriod gracePeriod = GracePeriod.forBillingEvent(GracePeriodStatus.ADD, "1-TEST", onetime);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.ADD);
     assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
-    assertThat(gracePeriod.getOneTimeBillingEvent()).isEqualTo(onetime.createVKey());
-    assertThat(gracePeriod.getRecurringBillingEvent()).isNull();
+    assertThat(gracePeriod.getBillingEvent()).isEqualTo(onetime.createVKey());
+    assertThat(gracePeriod.getBillingRecurrence()).isNull();
     assertThat(gracePeriod.getRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
     assertThat(gracePeriod.hasBillingEvent()).isTrue();
   }
 
   @Test
-  void testSuccess_forRecurringEvent() {
+  void testSuccess_forRecurrence() {
     GracePeriod gracePeriod =
-        GracePeriod.createForRecurring(
-            GracePeriodStatus.AUTO_RENEW, "1-TEST", now.plusDays(1), "TheRegistrar", recurringKey);
+        GracePeriod.createForRecurrence(
+            GracePeriodStatus.AUTO_RENEW, "1-TEST", now.plusDays(1), "TheRegistrar", recurrenceKey);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.AUTO_RENEW);
     assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
-    assertThat(gracePeriod.getOneTimeBillingEvent()).isNull();
-    assertThat(gracePeriod.getRecurringBillingEvent()).isEqualTo(recurringKey);
+    assertThat(gracePeriod.getBillingEvent()).isNull();
+    assertThat(gracePeriod.getBillingRecurrence()).isEqualTo(recurrenceKey);
     assertThat(gracePeriod.getRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
     assertThat(gracePeriod.hasBillingEvent()).isTrue();
@@ -93,8 +93,8 @@ public class GracePeriodTest {
             GracePeriodStatus.REDEMPTION, "1-TEST", now, "TheRegistrar");
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.REDEMPTION);
     assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
-    assertThat(gracePeriod.getOneTimeBillingEvent()).isNull();
-    assertThat(gracePeriod.getRecurringBillingEvent()).isNull();
+    assertThat(gracePeriod.getBillingEvent()).isNull();
+    assertThat(gracePeriod.getBillingRecurrence()).isNull();
     assertThat(gracePeriod.getRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(now);
     assertThat(gracePeriod.hasBillingEvent()).isFalse();
@@ -110,17 +110,17 @@ public class GracePeriodTest {
   }
 
   @Test
-  void testFailure_createForRecurring_notAutoRenew() {
+  void testFailure_createForRecurrence_notAutoRenew() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                GracePeriod.createForRecurring(
+                GracePeriod.createForRecurrence(
                     GracePeriodStatus.RENEW,
                     "1-TEST",
                     now.plusDays(1),
                     "TheRegistrar",
-                    recurringKey));
+                    recurrenceKey));
     assertThat(thrown).hasMessageThat().contains("autorenew");
   }
 }
