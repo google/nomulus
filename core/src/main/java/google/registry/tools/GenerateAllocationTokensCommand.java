@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -258,6 +259,10 @@ class GenerateAllocationTokensCommand implements Command {
     checkArgument(
         !(UNLIMITED_USE.equals(tokenType) && CollectionUtils.isNullOrEmpty(tokenStatusTransitions)),
         "For UNLIMITED_USE tokens, must specify --token_status_transitions");
+
+    checkArgument(
+        !(DEFAULT_PROMO.equals(tokenType) && CollectionUtils.isNullOrEmpty(tokenStatusTransitions)),
+        "For DEFAULT_PROMO tokens, must specify --token_status_transitions");
 
     // A list consisting solely of the empty string means user error when formatting parameters
     checkArgument(
