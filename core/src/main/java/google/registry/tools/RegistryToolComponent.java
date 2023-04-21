@@ -144,8 +144,6 @@ interface RegistryToolComponent {
 
   void inject(SendEscrowReportToIcannCommand command);
 
-  void inject(SetNumInstancesCommand command);
-
   void inject(SetupOteCommand command);
 
   void inject(UniformRapidSuspensionCommand command);

@@ -14,8 +14,6 @@
 
 package google.registry.util;
 
-import com.google.appengine.api.modules.ModulesService;
-import com.google.appengine.api.modules.ModulesServiceFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import dagger.Binds;
@@ -40,17 +38,6 @@ public abstract class UtilsModule {
   @Binds
   @Singleton
   abstract Clock provideClock(SystemClock clock);
-
-  @Provides
-  @Singleton
-  static ModulesService provideModulesService() {
-    return ModulesServiceFactory.getModulesService();
-  }
-
-  @Binds
-  @Singleton
-  abstract AppEngineServiceUtils provideAppEngineServiceUtils(
-      AppEngineServiceUtilsImpl appEngineServiceUtilsImpl);
 
   @Singleton
   @Provides
