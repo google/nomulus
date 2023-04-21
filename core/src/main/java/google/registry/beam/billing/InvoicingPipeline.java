@@ -22,8 +22,8 @@ import google.registry.beam.billing.BillingEvent.InvoiceGroupingKey;
 import google.registry.beam.billing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
 import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.common.RegistryJpaIO.Read;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.OneTime;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingEvent;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.reporting.billing.BillingModule;
@@ -86,29 +86,30 @@ public class InvoicingPipeline implements Serializable {
 
   void setupPipeline(Pipeline pipeline) {
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
-    PCollection<BillingEvent> billingEvents = readFromCloudSql(options, pipeline);
+    PCollection<google.registry.beam.billing.BillingEvent> billingEvents =
+        readFromCloudSql(options, pipeline);
     saveInvoiceCsv(billingEvents, options);
     saveDetailedCsv(billingEvents, options);
   }
 
-  static PCollection<BillingEvent> readFromCloudSql(
+  static PCollection<google.registry.beam.billing.BillingEvent> readFromCloudSql(
       InvoicingPipelineOptions options, Pipeline pipeline) {
-    Read<Object[], BillingEvent> read =
-        RegistryJpaIO.<Object[], BillingEvent>read(
+    Read<Object[], google.registry.beam.billing.BillingEvent> read =
+        RegistryJpaIO.<Object[], google.registry.beam.billing.BillingEvent>read(
                 makeCloudSqlQuery(options.getYearMonth()), false, row -> parseRow(row).orElse(null))
-            .withCoder(SerializableCoder.of(BillingEvent.class));
+            .withCoder(SerializableCoder.of(google.registry.beam.billing.BillingEvent.class));
 
-    PCollection<BillingEvent> billingEventsWithNulls =
+    PCollection<google.registry.beam.billing.BillingEvent> billingEventsWithNulls =
         pipeline.apply("Read BillingEvents from Cloud SQL", read);
 
     // Remove null billing events
     return billingEventsWithNulls.apply(Filter.by(Objects::nonNull));
   }
 
-  private static Optional<BillingEvent> parseRow(Object[] row) {
-    OneTime oneTime = (OneTime) row[0];
+  private static Optional<google.registry.beam.billing.BillingEvent> parseRow(Object[] row) {
+    BillingEvent billingEvent = (BillingEvent) row[0];
     Registrar registrar = (Registrar) row[1];
-    CurrencyUnit currency = oneTime.getCost().getCurrencyUnit();
+    CurrencyUnit currency = billingEvent.getCost().getCurrencyUnit();
     if (!registrar.getBillingAccountMap().containsKey(currency)) {
       logger.atSevere().log(
           "Registrar %s does not have a product account key for the currency unit: %s",
@@ -117,37 +118,40 @@ public class InvoicingPipeline implements Serializable {
     }
 
     return Optional.of(
-        BillingEvent.create(
-            oneTime.getId(),
-            oneTime.getBillingTime(),
-            oneTime.getEventTime(),
+        google.registry.beam.billing.BillingEvent.create(
+            billingEvent.getId(),
+            billingEvent.getBillingTime(),
+            billingEvent.getEventTime(),
             registrar.getRegistrarId(),
             registrar.getBillingAccountMap().get(currency),
             registrar.getPoNumber().orElse(""),
-            DomainNameUtils.getTldFromDomainName(oneTime.getTargetId()),
-            oneTime.getReason().toString(),
-            oneTime.getTargetId(),
-            oneTime.getDomainRepoId(),
-            Optional.ofNullable(oneTime.getPeriodYears()).orElse(0),
-            oneTime.getCost().getCurrencyUnit().toString(),
-            oneTime.getCost().getAmount().doubleValue(),
+            DomainNameUtils.getTldFromDomainName(billingEvent.getTargetId()),
+            billingEvent.getReason().toString(),
+            billingEvent.getTargetId(),
+            billingEvent.getDomainRepoId(),
+            Optional.ofNullable(billingEvent.getPeriodYears()).orElse(0),
+            billingEvent.getCost().getCurrencyUnit().toString(),
+            billingEvent.getCost().getAmount().doubleValue(),
             String.join(
-                " ", oneTime.getFlags().stream().map(Flag::toString).collect(toImmutableSet()))));
+                " ",
+                billingEvent.getFlags().stream().map(Flag::toString).collect(toImmutableSet()))));
   }
 
   /** Transform that converts a {@code BillingEvent} into an invoice CSV row. */
   private static class GenerateInvoiceRows
-      extends PTransform<PCollection<BillingEvent>, PCollection<String>> {
+      extends PTransform<
+          PCollection<google.registry.beam.billing.BillingEvent>, PCollection<String>> {
 
     private static final long serialVersionUID = -8090619008258393728L;
 
     @Override
-    public PCollection<String> expand(PCollection<BillingEvent> input) {
+    public PCollection<String> expand(
+        PCollection<google.registry.beam.billing.BillingEvent> input) {
       return input
           .apply(
               "Map to invoicing key",
               MapElements.into(TypeDescriptor.of(InvoiceGroupingKey.class))
-                  .via(BillingEvent::getInvoiceGroupingKey))
+                  .via(google.registry.beam.billing.BillingEvent::getInvoiceGroupingKey))
           .apply(
               "Filter out free events", Filter.by((InvoiceGroupingKey key) -> key.unitPrice() != 0))
           .setCoder(new InvoiceGroupingKeyCoder())
@@ -161,7 +165,8 @@ public class InvoicingPipeline implements Serializable {
 
   /** Saves the billing events to a single overall invoice CSV file. */
   static void saveInvoiceCsv(
-      PCollection<BillingEvent> billingEvents, InvoicingPipelineOptions options) {
+      PCollection<google.registry.beam.billing.BillingEvent> billingEvents,
+      InvoicingPipelineOptions options) {
     billingEvents
         .apply("Generate overall invoice rows", new GenerateInvoiceRows())
         .apply(
@@ -182,16 +187,17 @@ public class InvoicingPipeline implements Serializable {
 
   /** Saves the billing events to detailed report CSV files keyed by registrar-tld pairs. */
   static void saveDetailedCsv(
-      PCollection<BillingEvent> billingEvents, InvoicingPipelineOptions options) {
+      PCollection<google.registry.beam.billing.BillingEvent> billingEvents,
+      InvoicingPipelineOptions options) {
     String yearMonth = options.getYearMonth();
     billingEvents.apply(
         "Write detailed report for each registrar-tld pair",
-        FileIO.<String, BillingEvent>writeDynamic()
+        FileIO.<String, google.registry.beam.billing.BillingEvent>writeDynamic()
             .to(
                 String.format(
                     "%s/%s/%s",
                     options.getBillingBucketUrl(), BillingModule.INVOICES_DIRECTORY, yearMonth))
-            .by(BillingEvent::getDetailedReportGroupingKey)
+            .by(google.registry.beam.billing.BillingEvent::getDetailedReportGroupingKey)
             .withNumShards(1)
             .withDestinationCoder(StringUtf8Coder.of())
             .withNaming(
@@ -200,8 +206,8 @@ public class InvoicingPipeline implements Serializable {
                         String.format(
                             "%s_%s_%s.csv", BillingModule.DETAIL_REPORT_PREFIX, yearMonth, key))
             .via(
-                Contextful.fn(BillingEvent::toCsv),
-                TextIO.sink().withHeader(BillingEvent.getHeader())));
+                Contextful.fn(google.registry.beam.billing.BillingEvent::toCsv),
+                TextIO.sink().withHeader(google.registry.beam.billing.BillingEvent.getHeader())));
   }
 
   /** Create the Cloud SQL query for a given yearMonth at runtime. */

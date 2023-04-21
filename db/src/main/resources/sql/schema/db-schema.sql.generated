@@ -41,9 +41,9 @@
         flags text[],
         reason text not null,
         domain_name text not null,
-        billing_time timestamptz,
         billing_event_id int8,
         billing_recurrence_id int8,
+        billing_time timestamptz,
         primary key (billing_cancellation_id)
     );
 

@@ -40,7 +40,6 @@ import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.Modules.UrlFetchServiceModule;
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
-import google.registry.tools.javascrap.CreateCancellationsForOneTimesCommand;
 import google.registry.util.UtilsModule;
 import google.registry.whois.NonCachingWhoisModule;
 import javax.annotation.Nullable;
@@ -91,8 +90,6 @@ interface RegistryToolComponent {
   void inject(CountDomainsCommand command);
 
   void inject(CreateAnchorTenantCommand command);
-
-  void inject(CreateCancellationsForOneTimesCommand command);
 
   void inject(CreateCdnsTld command);
 

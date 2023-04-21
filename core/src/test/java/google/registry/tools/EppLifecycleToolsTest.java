@@ -23,8 +23,8 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.flows.EppTestCase;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
@@ -146,8 +146,8 @@ class EppLifecycleToolsTest extends EppTestCase {
     DateTime createTime = DateTime.parse("2000-06-01T00:02:00Z");
     Domain domain =
         loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2003-06-02T00:02:00Z")).get();
-    BillingEvent.OneTime renewBillingEvent =
-        new BillingEvent.OneTime.Builder()
+    BillingEvent renewBillingEvent =
+        new BillingEvent.Builder()
             .setReason(Reason.RENEW)
             .setTargetId(domain.getDomainName())
             .setRegistrarId(domain.getCurrentSponsorRegistrarId())
@@ -164,19 +164,19 @@ class EppLifecycleToolsTest extends EppTestCase {
         makeOneTimeCreateBillingEvent(domain, createTime),
         renewBillingEvent,
         // The initial autorenew billing event, which was closed at the time of the explicit renew.
-        makeRecurringBillingEvent(
+        makeRecurrence(
             domain,
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class),
             createTime.plusYears(2),
             DateTime.parse("2000-06-07T00:00:00.000Z")),
         // The renew's autorenew billing event, which was closed at the time of the unrenew.
-        makeRecurringBillingEvent(
+        makeRecurrence(
             domain,
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class),
             DateTime.parse("2006-06-01T00:02:00.000Z"),
             DateTime.parse("2001-06-07T00:00:00.000Z")),
         // The remaining active autorenew billing event which was created by the unrenew.
-        makeRecurringBillingEvent(
+        makeRecurrence(
             domain,
             getOnlyHistoryEntryOfType(domain, Type.SYNTHETIC, DomainHistory.class),
             DateTime.parse("2003-06-01T00:02:00.000Z"),

@@ -18,10 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Cancellation;
-import google.registry.model.billing.BillingEvent.OneTime;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
@@ -35,17 +34,17 @@ public class TransferDataTest {
 
   private final DateTime now = DateTime.now(UTC);
 
-  private VKey<BillingEvent.OneTime> transferBillingEventKey;
-  private VKey<BillingEvent.Cancellation> otherServerApproveBillingEventKey;
-  private VKey<BillingEvent.Recurring> recurringBillingEventKey;
+  private VKey<BillingEvent> transferBillingEventKey;
+  private VKey<BillingCancellation> otherServerApproveBillingEventKey;
+  private VKey<BillingRecurrence> recurrenceKey;
   private VKey<PollMessage.Autorenew> autorenewPollMessageKey;
   private VKey<PollMessage.OneTime> otherServerApprovePollMessageKey;
 
   @BeforeEach
   void beforeEach() {
-    transferBillingEventKey = OneTime.createVKey(12345L);
-    otherServerApproveBillingEventKey = Cancellation.createVKey(2468L);
-    recurringBillingEventKey = Recurring.createVKey(13579L);
+    transferBillingEventKey = BillingEvent.createVKey(12345L);
+    otherServerApproveBillingEventKey = BillingCancellation.createVKey(2468L);
+    recurrenceKey = BillingRecurrence.createVKey(13579L);
     autorenewPollMessageKey = VKey.create(PollMessage.Autorenew.class, 67890L);
     otherServerApprovePollMessageKey = VKey.create(PollMessage.OneTime.class, 314159L);
   }
@@ -72,11 +71,11 @@ public class TransferDataTest {
                 ImmutableSet.of(
                     transferBillingEventKey,
                     otherServerApproveBillingEventKey,
-                    recurringBillingEventKey,
+                    recurrenceKey,
                     autorenewPollMessageKey,
                     otherServerApprovePollMessageKey))
             .setServerApproveBillingEvent(transferBillingEventKey)
-            .setServerApproveAutorenewEvent(recurringBillingEventKey)
+            .setServerApproveAutorenewEvent(recurrenceKey)
             .setServerApproveAutorenewPollMessage(autorenewPollMessageKey)
             .build();
     // asBuilder() copies over all fields

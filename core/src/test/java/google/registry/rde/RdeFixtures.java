@@ -25,9 +25,10 @@ import static org.joda.money.CurrencyUnit.USD;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactPhoneNumber;
@@ -74,9 +75,9 @@ final class RdeFixtures {
                 .setRegistrarId("TheRegistrar")
                 .build());
     clock.advanceOneMilli();
-    BillingEvent.OneTime billingEvent =
+    BillingEvent billingEvent =
         persistResource(
-            new BillingEvent.OneTime.Builder()
+            new BillingEvent.Builder()
                 .setReason(Reason.CREATE)
                 .setTargetId("example." + tld)
                 .setRegistrarId("TheRegistrar")
@@ -129,7 +130,7 @@ final class RdeFixtures {
                         GracePeriodStatus.RENEW,
                         domain.getRepoId(),
                         persistResource(
-                            new BillingEvent.OneTime.Builder()
+                            new BillingEvent.Builder()
                                 .setReason(Reason.RENEW)
                                 .setTargetId("love." + tld)
                                 .setRegistrarId("TheRegistrar")
@@ -154,7 +155,7 @@ final class RdeFixtures {
                     StatusValue.SERVER_UPDATE_PROHIBITED))
             .setAutorenewBillingEvent(
                 persistResource(
-                        new BillingEvent.Recurring.Builder()
+                        new BillingRecurrence.Builder()
                             .setReason(Reason.RENEW)
                             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                             .setTargetId(tld)
@@ -183,7 +184,7 @@ final class RdeFixtures {
                     .setServerApproveBillingEvent(billingEvent.createVKey())
                     .setServerApproveAutorenewEvent(
                         persistResource(
-                                new BillingEvent.Recurring.Builder()
+                                new BillingRecurrence.Builder()
                                     .setReason(Reason.RENEW)
                                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                                     .setTargetId("example." + tld)

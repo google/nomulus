@@ -15,9 +15,9 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.DEFAULT;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.NONPREMIUM;
-import static google.registry.model.billing.BillingEvent.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
+import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.CANCELLED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;

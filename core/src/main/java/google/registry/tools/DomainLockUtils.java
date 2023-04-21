@@ -26,8 +26,8 @@ import com.google.common.collect.Sets;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.batch.RelockDomainAction;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
@@ -397,8 +397,8 @@ public final class DomainLockUtils {
     tm().update(domain);
     tm().insert(domainHistory);
     if (!lock.isSuperuser()) { // admin actions shouldn't affect billing
-      BillingEvent.OneTime oneTime =
-          new BillingEvent.OneTime.Builder()
+      BillingEvent billingEvent =
+          new BillingEvent.Builder()
               .setReason(Reason.SERVER_STATUS)
               .setTargetId(domain.getForeignKey())
               .setRegistrarId(domain.getCurrentSponsorRegistrarId())
@@ -407,7 +407,7 @@ public final class DomainLockUtils {
               .setBillingTime(now)
               .setDomainHistory(domainHistory)
               .build();
-      tm().insert(oneTime);
+      tm().insert(billingEvent);
     }
   }
 }

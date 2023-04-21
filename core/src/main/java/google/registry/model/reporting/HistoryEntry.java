@@ -17,6 +17,7 @@ package google.registry.model.reporting;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import google.registry.batch.ExpandBillingRecurrencesAction;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
@@ -81,7 +82,7 @@ public abstract class HistoryEntry extends ImmutableObject
     DOMAIN_ALLOCATE,
     /**
      * Used for domain registration autorenews explicitly logged by {@link
-     * google.registry.batch.ExpandRecurringBillingEventsAction}.
+     * ExpandBillingRecurrencesAction}.
      */
     DOMAIN_AUTORENEW,
     DOMAIN_CREATE,
