@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
+import static google.registry.dns.DnsUtils.getDnsAPlusAAAATtlForHost;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 
 import com.google.common.base.Joiner;
@@ -31,6 +32,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
 import google.registry.model.tld.Registries;
+import google.registry.model.tld.Tld;
 import google.registry.util.Clock;
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -185,12 +187,13 @@ public class DnsUpdateWriter extends BaseDnsWriter {
 
   private RRset makeDelegationSignerSet(Domain domain) {
     RRset signerSet = new RRset();
+    Tld tld = Tld.get(domain.getTld());
     for (DomainDsData signerData : domain.getDsData()) {
       DSRecord dsRecord =
           new DSRecord(
               toAbsoluteName(domain.getDomainName()),
               DClass.IN,
-              dnsDefaultDsTtl.getStandardSeconds(),
+              tld.getDnsDsTtl().orElse(dnsDefaultDsTtl).getStandardSeconds(),
               signerData.getKeyTag(),
               signerData.getAlgorithm(),
               signerData.getDigestType(),
@@ -224,12 +227,13 @@ public class DnsUpdateWriter extends BaseDnsWriter {
 
   private RRset makeNameServerSet(Domain domain) {
     RRset nameServerSet = new RRset();
+    Tld tld = Tld.get(domain.getTld());
     for (String hostName : domain.loadNameserverHostNames()) {
       NSRecord record =
           new NSRecord(
               toAbsoluteName(domain.getDomainName()),
               DClass.IN,
-              dnsDefaultNsTtl.getStandardSeconds(),
+              tld.getDnsNsTtl().orElse(dnsDefaultNsTtl).getStandardSeconds(),
               toAbsoluteName(hostName));
       nameServerSet.addRR(record);
     }
@@ -244,7 +248,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
             new ARecord(
                 toAbsoluteName(host.getHostName()),
                 DClass.IN,
-                dnsDefaultATtl.getStandardSeconds(),
+                getDnsAPlusAAAATtlForHost(host.getHostName(), dnsDefaultATtl),
                 address);
         addressSet.addRR(record);
       }
@@ -260,7 +264,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
             new AAAARecord(
                 toAbsoluteName(host.getHostName()),
                 DClass.IN,
-                dnsDefaultATtl.getStandardSeconds(),
+                getDnsAPlusAAAATtlForHost(host.getHostName(), dnsDefaultATtl),
                 address);
         addressSet.addRR(record);
       }

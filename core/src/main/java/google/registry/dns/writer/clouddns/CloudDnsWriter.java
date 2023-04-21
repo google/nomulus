@@ -16,6 +16,7 @@ package google.registry.dns.writer.clouddns;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.dns.DnsUtils.getDnsAPlusAAAATtlForHost;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.util.DomainNameUtils.getSecondLevelDomain;
 
@@ -40,6 +41,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
 import google.registry.model.tld.Registries;
+import google.registry.model.tld.Tld;
 import google.registry.util.Clock;
 import google.registry.util.Concurrent;
 import google.registry.util.Retrier;
@@ -131,6 +133,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
       return;
     }
 
+    Tld tld = Tld.get(domain.get().getTld());
     ImmutableSet.Builder<ResourceRecordSet> domainRecords = new ImmutableSet.Builder<>();
 
     // Construct DS records (if any).
@@ -145,7 +148,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
         domainRecords.add(
             new ResourceRecordSet()
                 .setName(absoluteDomainName)
-                .setTtl((int) defaultDsTtl.getStandardSeconds())
+                .setTtl((int) tld.getDnsDsTtl().orElse(defaultDsTtl).getStandardSeconds())
                 .setType("DS")
                 .setKind("dns#resourceRecordSet")
                 .setRrdatas(ImmutableList.copyOf(dsRrData)));
@@ -170,7 +173,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
         domainRecords.add(
             new ResourceRecordSet()
                 .setName(absoluteDomainName)
-                .setTtl((int) defaultNsTtl.getStandardSeconds())
+                .setTtl((int) (tld.getDnsNsTtl().orElse(defaultNsTtl).getStandardSeconds()))
                 .setType("NS")
                 .setKind("dns#resourceRecordSet")
                 .setRrdatas(ImmutableList.copyOf(nsRrData)));
@@ -216,7 +219,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
       domainRecords.add(
           new ResourceRecordSet()
               .setName(absoluteHostName)
-              .setTtl((int) defaultATtl.getStandardSeconds())
+              .setTtl((int) getDnsAPlusAAAATtlForHost(hostName, defaultATtl))
               .setType("A")
               .setKind("dns#resourceRecordSet")
               .setRrdatas(ImmutableList.copyOf(aRrData)));
@@ -226,7 +229,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
       domainRecords.add(
           new ResourceRecordSet()
               .setName(absoluteHostName)
-              .setTtl((int) defaultATtl.getStandardSeconds())
+              .setTtl((int) getDnsAPlusAAAATtlForHost(hostName, defaultATtl))
               .setType("AAAA")
               .setKind("dns#resourceRecordSet")
               .setRrdatas(ImmutableList.copyOf(aaaaRrData)));

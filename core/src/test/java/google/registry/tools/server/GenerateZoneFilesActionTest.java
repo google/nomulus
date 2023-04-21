@@ -35,6 +35,7 @@ import google.registry.gcs.GcsUtils;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -58,9 +59,26 @@ class GenerateZoneFilesActionTest {
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   @Test
-  void testGenerate() throws Exception {
-    DateTime now = DateTime.now(DateTimeZone.UTC).withTimeAtStartOfDay();
+  void testGenerate_defaultTtls() throws Exception {
     createTlds("tld", "com");
+    testGenerate("tld.zone");
+  }
+
+  @Test
+  void testGenerate_customTldTtls() throws Exception {
+    createTlds("tld", "com");
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setDnsAPlusAaaaTtl(Duration.standardSeconds(300))
+            .setDnsNsTtl(Duration.standardSeconds(400))
+            .setDnsDsTtl(Duration.standardSeconds(500))
+            .build());
+    testGenerate("tldCustomTtl.zone");
+  }
+
+  void testGenerate(String goldenFileName) throws Exception {
+    DateTime now = DateTime.now(DateTimeZone.UTC).withTimeAtStartOfDay();
 
     ImmutableSet<InetAddress> ips =
         ImmutableSet.of(InetAddress.getByName("127.0.0.1"), InetAddress.getByName("::1"));
@@ -145,7 +163,7 @@ class GenerateZoneFilesActionTest {
     // files with literal tabs irritate our build tools.
     Splitter splitter = Splitter.on('\n').omitEmptyStrings();
     Iterable<String> generatedFileLines = splitter.split(generatedFile.replaceAll("\t", " "));
-    Iterable<String> goldenFileLines = splitter.split(loadFile(getClass(), "tld.zone"));
+    Iterable<String> goldenFileLines = splitter.split(loadFile(getClass(), goldenFileName));
     // The first line needs to be the same as the golden file.
     assertThat(generatedFileLines.iterator().next()).isEqualTo(goldenFileLines.iterator().next());
     // The remaining lines can be in any order.

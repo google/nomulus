@@ -42,6 +42,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -76,9 +77,6 @@ public class CloudDnsWriterTest {
 
   private static final Inet4Address IPv4 = (Inet4Address) InetAddresses.forString("127.0.0.1");
   private static final Inet6Address IPv6 = (Inet6Address) InetAddresses.forString("::1");
-  private static final Duration DEFAULT_A_TTL = Duration.standardSeconds(11);
-  private static final Duration DEFAULT_NS_TTL = Duration.standardSeconds(222);
-  private static final Duration DEFAULT_DS_TTL = Duration.standardSeconds(3333);
 
   @Mock private Dns dnsConnection;
   @Mock private Dns.ResourceRecordSets resourceRecordSets;
@@ -119,14 +117,21 @@ public class CloudDnsWriterTest {
   @BeforeEach
   void beforeEach() throws Exception {
     createTld("tld");
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setDnsAPlusAaaaTtl(Duration.standardSeconds(11))
+            .setDnsNsTtl(Duration.standardSeconds(222))
+            .setDnsDsTtl(Duration.standardSeconds(3333))
+            .build());
     writer =
         new CloudDnsWriter(
             dnsConnection,
             "projectId",
             "triple.secret.tld", // used by testInvalidZoneNames()
-            DEFAULT_A_TTL,
-            DEFAULT_NS_TTL,
-            DEFAULT_DS_TTL,
+            Duration.ZERO,
+            Duration.ZERO,
+            Duration.ZERO,
             RateLimiter.create(20),
             10, // max num threads
             new SystemClock(),
@@ -370,6 +375,40 @@ public class CloudDnsWriterTest {
 
   @Test
   void testLoadDomain_withInBailiwickNs_IPv6() {
+    persistResource(
+        fakeDomain(
+                "example.tld",
+                ImmutableSet.of(persistResource(fakeHost("0.ip6.example.tld", IPv6))),
+                0)
+            .asBuilder()
+            .addSubordinateHost("0.ip6.example.tld")
+            .build());
+    writer.publishDomain("example.tld");
+
+    verifyZone(fakeDomainRecords("example.tld", 0, 1, 0, 0));
+  }
+
+  @Test
+  void testLoadDomain_defaultTtls() {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setDnsAPlusAaaaTtl(null)
+            .setDnsNsTtl(null)
+            .setDnsDsTtl(null)
+            .build());
+    writer =
+        new CloudDnsWriter(
+            dnsConnection,
+            "projectId",
+            "triple.secret.tld",
+            Duration.standardSeconds(11),
+            Duration.standardSeconds(222),
+            Duration.standardSeconds(3333),
+            RateLimiter.create(20),
+            10,
+            new SystemClock(),
+            new Retrier(new SystemSleeper(), 5));
     persistResource(
         fakeDomain(
                 "example.tld",
