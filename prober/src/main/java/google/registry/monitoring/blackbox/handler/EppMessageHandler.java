@@ -38,7 +38,7 @@ public class EppMessageHandler extends ChannelDuplexHandler {
   /**
    * Corresponding {@link EppResponseMessage} that we expect to receive back from server.
    *
-   * <p>We always expect the first response to be an {@link EppResponseMessage.Greeting}.
+   * <p>We always expect the first response to be a greeting.
    */
   private EppResponseMessage response;
 
