@@ -440,6 +440,16 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         .isEqualTo("For UNLIMITED_USE tokens, must specify --token_status_transitions");
   }
 
+  @Test
+  void testFailure_defaultPromoMustHaveTransitions() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> runCommand("--number", "999", "--type", "DEFAULT_PROMO")))
+        .hasMessageThat()
+        .isEqualTo("For DEFAULT_PROMO tokens, must specify --token_status_transitions");
+  }
+
   private AllocationToken createToken(
       String token,
       @Nullable HistoryEntryId redemptionHistoryEntryId,
