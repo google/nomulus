@@ -130,6 +130,7 @@ import google.registry.model.tld.label.ReservationType;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.persistence.VKey;
+import google.registry.pricing.PricingEngineProxy;
 import google.registry.tldconfig.idn.IdnLabelValidator;
 import google.registry.tools.DigestType;
 import google.registry.util.Idn;
@@ -1218,6 +1219,10 @@ public class DomainFlowUtils {
       try {
         AllocationTokenFlowUtils.validateToken(
             InternetDomainName.from(domainName), token.get(), commandName, registrarId, now);
+        if (PricingEngineProxy.isDomainPremium(domainName, now)
+            && !token.get().shouldDiscountPremiums()) {
+          continue;
+        }
       } catch (AssociationProhibitsOperationException | StatusProhibitsOperationException e) {
         // Allocation token was not valid for this registration, continue to check the next token in
         // the list
