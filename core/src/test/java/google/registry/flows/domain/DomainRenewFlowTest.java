@@ -1507,6 +1507,50 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   }
 
   @Test
+  void testSuccess_doesNotApplyNonPremiumDefaultTokenToPremiumName() throws Exception {
+    ImmutableMap<String, String> customFeeMap = updateSubstitutions(FEE_06_MAP, "FEE", "500");
+    setEppInput("domain_renew_fee.xml", customFeeMap);
+    persistDomain();
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
+            .setPremiumList(persistPremiumList("tld", USD, "example,USD 100"))
+            .build());
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response_fee.xml",
+            ImmutableMap.of(
+                "NAME",
+                "example.tld",
+                "PERIOD",
+                "5",
+                "EX_DATE",
+                "2005-04-03T22:00:00.0Z",
+                "FEE",
+                "500.0",
+                "CURRENCY",
+                "USD",
+                "FEE_VERSION",
+                "0.6",
+                "FEE_NS",
+                "fee")));
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
+    assertThat(billingEvent.getAllocationToken()).isEmpty();
+  }
+
+  @Test
   void testSuccess_onlyUsesFirstValidToken() throws Exception {
     setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistDomain();
