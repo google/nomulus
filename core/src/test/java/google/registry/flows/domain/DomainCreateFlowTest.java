@@ -2041,6 +2041,33 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest();
   }
 
+  @Test
+  void testSuccess_doesNotApplyNonPremiumDefaultTokenToPremiumName() throws Exception {
+    persistContactsAndHosts();
+    createTld("example");
+    AllocationToken defaultToken1 =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("aaaaa")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("example"))
+                .setDiscountFraction(0.5)
+                .setDiscountPremiums(false)
+                .build());
+    persistResource(
+        Tld.get("example")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
+            .build());
+    setEppInput("domain_create_premium.xml");
+    runFlowAssertResponse(
+        loadFile(
+            "domain_create_response_premium.xml",
+            ImmutableMap.of("EXDATE", "2001-04-03T22:00:00.0Z", "FEE", "200.00")));
+    assertSuccessfulCreate("example", ImmutableSet.of());
+  }
+
   BillingEvent.OneTime runTest_defaultToken(String token) throws Exception {
     setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlowAssertResponse(
