@@ -1221,13 +1221,14 @@ public class DomainFlowUtils {
       try {
         AllocationTokenFlowUtils.validateToken(
             InternetDomainName.from(domainName), token.get(), commandName, registrarId, now);
-        if (PricingEngineProxy.isDomainPremium(domainName, now)
-            && !token.get().shouldDiscountPremiums()) {
-          continue;
-        }
       } catch (AssociationProhibitsOperationException | StatusProhibitsOperationException e) {
         // Allocation token was not valid for this registration, continue to check the next token in
         // the list
+        continue;
+      }
+      // Don't apply token to premium names if token not valid for premiums
+      if (PricingEngineProxy.isDomainPremium(domainName, now)
+          && !token.get().shouldDiscountPremiums()) {
         continue;
       }
       // Only use the first valid token in the list
