@@ -81,6 +81,7 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.persistence.VKey;
+import google.registry.pricing.PricingEngineProxy;
 import google.registry.util.Clock;
 import java.util.HashSet;
 import java.util.Optional;
@@ -93,6 +94,8 @@ import org.joda.time.DateTime;
  *
  * <p>This flow also supports the EPP fee extension and can return pricing information.
  *
+ * @error {@link
+ *     google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException}
  * @error {@link google.registry.flows.exceptions.TooManyResourceChecksException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.FlowUtils.UnknownCurrencyEppException}
@@ -292,6 +295,7 @@ public final class DomainCheckFlow implements Flow {
                 allocationToken.get(),
                 feeCheckItem.getCommandName(),
                 registrarId,
+                PricingEngineProxy.isDomainPremium(domainName, now),
                 now);
           }
           handleFeeRequest(
