@@ -1544,8 +1544,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 "0.6",
                 "FEE_NS",
                 "fee")));
-    BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.OneTime.class));
+    BillingEvent billingEvent =
+        Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getAllocationToken()).isEmpty();
   }

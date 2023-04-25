@@ -69,6 +69,7 @@ import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.flows.domain.DomainFlowUtils.TransfersAreAlwaysForOneYearException;
 import google.registry.flows.domain.DomainFlowUtils.UnknownFeeCommandException;
+import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
@@ -405,6 +406,24 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
                 .put("COST_5YR", "230.00")
                 .put("FEE_CLASS", "<fee:class>premium</fee:class>")
                 .build()));
+  }
+
+  @Test
+  void testFailure_allocationTokenPromotion_PremiumsNotSet() throws Exception {
+    createTld("example");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("rich.example")
+            .setDiscountFraction(0.9)
+            .setDiscountYears(3)
+            .setDiscountPremiums(false)
+            .build());
+    setEppInput(
+        "domain_check_allocationtoken_promotion.xml", ImmutableMap.of("DOMAIN", "rich.example"));
+    EppException thrown =
+        assertThrows(AllocationTokenInvalidForPremiumNameException.class, this::runFlow);
   }
 
   @Test
