@@ -422,8 +422,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .build());
     setEppInput(
         "domain_check_allocationtoken_promotion.xml", ImmutableMap.of("DOMAIN", "rich.example"));
-    EppException thrown =
-        assertThrows(AllocationTokenInvalidForPremiumNameException.class, this::runFlow);
+    assertThrows(AllocationTokenInvalidForPremiumNameException.class, this::runFlow);
   }
 
   @Test
