@@ -74,6 +74,7 @@ import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.flows.EppException.RequiredParameterMissingException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.flows.EppException.UnimplementedOptionException;
+import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.EppResource;
@@ -131,7 +132,6 @@ import google.registry.model.tld.label.ReservationType;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.persistence.VKey;
-import google.registry.pricing.PricingEngineProxy;
 import google.registry.tldconfig.idn.IdnLabelValidator;
 import google.registry.tools.DigestType;
 import google.registry.util.Idn;
@@ -1220,15 +1220,17 @@ public class DomainFlowUtils {
     for (Optional<AllocationToken> token : tokenList) {
       try {
         AllocationTokenFlowUtils.validateToken(
-            InternetDomainName.from(domainName), token.get(), commandName, registrarId, now);
-      } catch (AssociationProhibitsOperationException | StatusProhibitsOperationException e) {
+            InternetDomainName.from(domainName),
+            token.get(),
+            commandName,
+            registrarId,
+            isDomainPremium(domainName, now),
+            now);
+      } catch (AssociationProhibitsOperationException
+          | StatusProhibitsOperationException
+          | AllocationTokenInvalidForPremiumNameException e) {
         // Allocation token was not valid for this registration, continue to check the next token in
         // the list
-        continue;
-      }
-      // Don't apply token to premium names if token not valid for premiums
-      if (PricingEngineProxy.isDomainPremium(domainName, now)
-          && !token.get().shouldDiscountPremiums()) {
         continue;
       }
       // Only use the first valid token in the list
