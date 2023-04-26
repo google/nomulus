@@ -32,6 +32,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.beust.jcommander.ParameterException;
+import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -1784,5 +1785,32 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Provided email lolcat is not a valid email address");
+  }
+
+  @Test
+  void testRotatePrimaryCertFlag_throwException() {
+    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    VerifyException thrown =
+        assertThrows(
+            VerifyException.class,
+            () ->
+                runCommandForced(
+                    "--name=blobio",
+                    "--password=some_password",
+                    "--registrar_type=REAL",
+                    "--iana_id=8",
+                    "--cert_file=" + getCertFilename(SAMPLE_CERT3),
+                    "--rotate_primary_cert",
+                    "--passcode=01234",
+                    "--icann_referral_email=foo@bar.test",
+                    "--street=\"123 Fake St\"",
+                    "--city Fakington",
+                    "--state MA",
+                    "--zip 00351",
+                    "--cc US",
+                    "clientz"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("--rotate_primary_cert cannot be set by create_registrar command.");
   }
 }

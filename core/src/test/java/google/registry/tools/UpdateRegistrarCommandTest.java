@@ -248,6 +248,43 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     // converting the result from a hex string to non-padded base64 encoded string.
     assertThat(registrar.getClientCertificate()).hasValue(SAMPLE_CERT3);
     assertThat(registrar.getClientCertificateHash()).hasValue(SAMPLE_CERT3_HASH);
+    assertThat(registrar.getFailoverClientCertificate()).isEmpty();
+    assertThat(registrar.getFailoverClientCertificateHash()).isEmpty();
+  }
+
+  @Test
+  void testSuccess_rotatePrimaryCert() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    persistResource(
+        loadRegistrar("NewRegistrar")
+            .asBuilder()
+            .setClientCertificate(SAMPLE_CERT3, fakeClock.nowUtc())
+            .setFailoverClientCertificate(null, fakeClock.nowUtc())
+            .build());
+
+    Registrar registrar = loadRegistrar("NewRegistrar");
+    assertThat(registrar.getFailoverClientCertificate()).isEmpty();
+    assertThat(registrar.getFailoverClientCertificateHash()).isEmpty();
+    runCommand(
+        "--cert_file=" + getCertFilename(SAMPLE_CERT3),
+        "--rotate_primary_cert",
+        "--force",
+        "NewRegistrar");
+
+    registrar = loadRegistrar("NewRegistrar");
+    assertThat(registrar.getFailoverClientCertificate()).hasValue(SAMPLE_CERT3);
+    assertThat(registrar.getFailoverClientCertificateHash()).hasValue(SAMPLE_CERT3_HASH);
+  }
+
+  @Test
+  public void test_rotatePrimaryCert_withoutNewCertFile_throws() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommand("--rotate_primary_cert", "--force", "NewRegistrar"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("--rotate_primary_cert must be used with --cert_file.");
   }
 
   @Test

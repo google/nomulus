@@ -17,6 +17,7 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.isNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.RegistrarUtils.normalizeRegistrarName;
@@ -129,6 +130,14 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       description = "File containing client certificate (X.509 PEM)",
       validateWith = PathParameter.InputFile.class)
   Path clientCertificateFilename;
+
+  @Nullable
+  @Parameter(
+      names = "--rotate_primary_cert",
+      description =
+          "Used together with --cert_file when updating an registrar. "
+              + "If True, current cert is saved as failover.")
+  private Boolean rotatePrimaryCert = Boolean.FALSE;
 
   @Nullable
   @Parameter(
@@ -341,7 +350,17 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
         if (!asciiCert.equals("")) {
           certificateChecker.validateCertificate(asciiCert);
         }
+        if (rotatePrimaryCert) {
+          verify(
+              oldRegistrar != null,
+              "--rotate_primary_cert cannot be set by create_registrar command.");
+          builder.setFailoverClientCertificate(
+              oldRegistrar.getClientCertificate().orElse(null), now);
+        }
         builder.setClientCertificate(asciiCert, now);
+      }
+      if (rotatePrimaryCert && clientCertificateFilename == null) {
+        throw new IllegalArgumentException("--rotate_primary_cert must be used with --cert_file.");
       }
 
       if (failoverClientCertificateFilename != null) {
