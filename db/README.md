@@ -243,6 +243,7 @@ From the root of the repository:
 
 ```
 $ TARGET_ENV=[alpha|crash]
+$ BUILDER_PROJECT=<project-where-the-builder-image-is-stored>
 $ ./nom_build :db:schema
 $ mkdir -p release/schema-deployer/flyway/jars release/schema-deployer/secrets
 $ gcloud secrets versions access latest \
@@ -255,7 +256,8 @@ $ nomulus -e ${TARGET_ENV} \
     --output release/schema-deployer/secrets/schema_deployer_credential.dec
 $ cp db/build/libs/schema.jar release/schema-deployer/flyway/jars
 $ cd release/schema-deployer
-$ docker build -t schema_deployer .
+$ docker build -t --build-arg PROJECT_ID=${BUILDER_PROJECT} \
+    --build-arg TAG_NAME=latest schema_deployer .
 $ docker run  -v `pwd`/secrets:/secrets \
     -v `pwd`/flyway/jars:/flyway/jars -w `pwd` \
     schema_deployer:latest \
