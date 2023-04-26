@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.isNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Verify.verify;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.RegistrarUtils.normalizeRegistrarName;
@@ -35,6 +36,7 @@ import google.registry.tools.params.OptionalLongParameter;
 import google.registry.tools.params.OptionalPhoneNumberParameter;
 import google.registry.tools.params.OptionalStringParameter;
 import google.registry.tools.params.PathParameter;
+import google.registry.tools.params.StringListParameter;
 import google.registry.util.CidrAddressBlock;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,12 +72,14 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   @Parameter(
       names = "--allowed_tlds",
-      description = "Comma-delimited list of TLDs which the registrar is allowed to use")
+      description = "Comma-delimited list of TLDs which the registrar is allowed to use",
+      listConverter = StringListParameter.class)
   List<String> allowedTlds = new ArrayList<>();
 
   @Parameter(
       names = "--add_allowed_tlds",
-      description = "Comma-delimited list of TLDs to add to TLDs a registrar is allowed to use")
+      description = "Comma-delimited list of TLDs to add to TLDs a registrar is allowed to use",
+      listConverter = StringListParameter.class)
   List<String> addAllowedTlds = new ArrayList<>();
 
   @Nullable
@@ -147,8 +151,9 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   @Parameter(
       names = "--ip_allow_list",
-      description = "Comma-delimited list of IP ranges. An empty string clears the allow list.")
-  List<String> ipAllowList = new ArrayList<>();
+      description = "Comma-delimited list of IP ranges. An empty string clears the allow list.",
+      listConverter = StringListParameter.class)
+  List<String> ipAllowList;
 
   @Nullable
   @Parameter(
@@ -256,7 +261,8 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       description =
           "Comma-delimited list of RDAP servers. An empty argument clears the list."
               + " Note that for real registrars this could get overridden periodically by"
-              + " ICANN-registered values.")
+              + " ICANN-registered values.",
+      listConverter = StringListParameter.class)
   List<String> rdapServers = new ArrayList<>();
 
   /** Returns the existing registrar (for update) or null (for creates). */
@@ -330,16 +336,9 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
         }
         builder.setAllowedTlds(allowedTldsBuilder.build());
       }
-      if (!ipAllowList.isEmpty()) {
-        ImmutableList.Builder<CidrAddressBlock> ipAllowListBuilder = new ImmutableList.Builder<>();
-        if (!(ipAllowList.size() == 1 && ipAllowList.get(0).contains("null"))) {
-          for (String ipRange : ipAllowList) {
-            if (!ipRange.isEmpty()) {
-              ipAllowListBuilder.add(CidrAddressBlock.create(ipRange));
-            }
-          }
-        }
-        builder.setIpAddressAllowList(ipAllowListBuilder.build());
+      if (ipAllowList != null) {
+        builder.setIpAddressAllowList(
+            ipAllowList.stream().map(CidrAddressBlock::create).collect(toImmutableList()));
       }
       if (clientCertificateFilename != null) {
         String asciiCert = new String(Files.readAllBytes(clientCertificateFilename), US_ASCII);

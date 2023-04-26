@@ -34,6 +34,7 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
+import google.registry.tools.params.StringListParameter;
 import google.registry.tools.params.TransitionListParameter.TokenStatusTransitions;
 import java.util.List;
 import java.util.Map;
@@ -54,21 +55,24 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
       names = {"--allowed_client_ids"},
       description =
           "Comma-separated list of allowed client IDs. Use the empty string to clear the "
-              + "existing list.")
+              + "existing list.",
+      listConverter = StringListParameter.class)
   private List<String> allowedClientIds;
 
   @Parameter(
       names = {"--allowed_tlds"},
       description =
           "Comma-separated list of allowed TLDs. Use the empty string to clear the "
-              + "existing list.")
+              + "existing list.",
+      listConverter = StringListParameter.class)
   private List<String> allowedTlds;
 
   @Parameter(
       names = {"--allowed_epp_actions"},
       description =
           "Comma-separated list of allowed EPP actions. Use an empty string to clear the existing"
-              + " list.")
+              + " list.",
+      listConverter = StringListParameter.class)
   private List<String> allowedEppActions;
 
   @Parameter(
@@ -128,18 +132,6 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
 
   @Override
   public void init() {
-    // A single entry with the empty string means that the user passed an empty argument to the
-    // lists, so we should clear them
-    if (ImmutableList.of("").equals(allowedClientIds)) {
-      allowedClientIds = ImmutableList.of();
-    }
-    if (ImmutableList.of("").equals(allowedTlds)) {
-      allowedTlds = ImmutableList.of();
-    }
-    if (ImmutableList.of("").equals(allowedEppActions)) {
-      allowedEppActions = ImmutableList.of();
-    }
-
     if (tokenStatusTransitions != null
         && (tokenStatusTransitions.containsValue(TokenStatus.ENDED)
             || tokenStatusTransitions.containsValue(TokenStatus.CANCELLED))) {

@@ -28,6 +28,7 @@ import com.google.common.collect.Maps;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
+import google.registry.tools.params.StringListParameter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,40 +40,47 @@ import org.joda.time.DateTimeZone;
 /** Command to update a TLD. */
 @Parameters(separators = " =", commandDescription = "Update existing TLD(s)")
 public class UpdateTldCommand extends CreateOrUpdateTldCommand {
+
   @Nullable
   @Parameter(
       names = "--add_reserved_lists",
-      description = "A comma-separated list of reserved list names to be added to the TLD")
+      description = "A comma-separated list of reserved list names to be added to the TLD",
+      listConverter = StringListParameter.class)
   List<String> reservedListsAdd;
 
   @Nullable
   @Parameter(
       names = "--remove_reserved_lists",
-      description = "A comma-separated list of reserved list names to be removed from the TLD")
+      description = "A comma-separated list of reserved list names to be removed from the TLD",
+      listConverter = StringListParameter.class)
   List<String> reservedListsRemove;
 
   @Nullable
   @Parameter(
       names = "--add_allowed_registrants",
-      description = "A comma-separated list of allowed registrants to be added to the TLD")
+      description = "A comma-separated list of allowed registrants to be added to the TLD",
+      listConverter = StringListParameter.class)
   List<String> allowedRegistrantsAdd;
 
   @Nullable
   @Parameter(
       names = "--remove_allowed_registrants",
-      description = "A comma-separated list of allowed registrants to be removed from the TLD")
+      description = "A comma-separated list of allowed registrants to be removed from the TLD",
+      listConverter = StringListParameter.class)
   List<String> allowedRegistrantsRemove;
 
   @Nullable
   @Parameter(
       names = "--add_allowed_nameservers",
-      description = "A comma-separated list of allowed nameservers to be added to the TLD")
+      description = "A comma-separated list of allowed nameservers to be added to the TLD",
+      listConverter = StringListParameter.class)
   List<String> allowedNameserversAdd;
 
   @Nullable
   @Parameter(
       names = "--remove_allowed_nameservers",
-      description = "A comma-separated list of allowed nameservers to be removed from the TLD")
+      description = "A comma-separated list of allowed nameservers to be removed from the TLD",
+      listConverter = StringListParameter.class)
   List<String> allowedNameserversRemove;
 
   @Nullable

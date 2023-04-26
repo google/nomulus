@@ -21,6 +21,7 @@ import com.beust.jcommander.Parameter;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import google.registry.tools.params.NameserversParameter;
+import google.registry.tools.params.StringListParameter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -53,15 +54,15 @@ abstract class CreateOrUpdateDomainCommand extends MutatingEppToolCommand {
   String registrant;
 
   @Parameter(
-    names = {"-a", "--admins"},
-    description = "Comma-separated list of admin contacts."
-  )
+      names = {"-a", "--admins"},
+      description = "Comma-separated list of admin contacts.",
+      listConverter = StringListParameter.class)
   List<String> admins = new ArrayList<>();
 
   @Parameter(
-    names = {"-t", "--techs"},
-    description = "Comma-separated list of technical contacts."
-  )
+      names = {"-t", "--techs"},
+      description = "Comma-separated list of technical contacts.",
+      listConverter = StringListParameter.class)
   List<String> techs = new ArrayList<>();
 
   @Parameter(

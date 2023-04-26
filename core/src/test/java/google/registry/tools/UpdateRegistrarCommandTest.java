@@ -208,21 +208,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   }
 
   @Test
-  void testSuccess_clearIpAllowList_useNull() throws Exception {
-    persistResource(
-        loadRegistrar("NewRegistrar")
-            .asBuilder()
-            .setIpAddressAllowList(
-                ImmutableList.of(
-                    CidrAddressBlock.create("192.168.1.1"),
-                    CidrAddressBlock.create("192.168.0.2/16")))
-            .build());
-    assertThat(loadRegistrar("NewRegistrar").getIpAddressAllowList()).isNotEmpty();
-    runCommand("--ip_allow_list=null", "--force", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").getIpAddressAllowList()).isEmpty();
-  }
-
-  @Test
   void testSuccess_clearIpAllowList_useEmpty() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar")

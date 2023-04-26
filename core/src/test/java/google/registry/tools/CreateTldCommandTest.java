@@ -452,6 +452,16 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
+  void testSuccess_emptyAllowedRegistrants() throws Exception {
+    runCommandForced(
+        "--allowed_registrants=",
+        "--roid_suffix=Q9JYB4C",
+        "--dns_writers=VoidDnsWriter",
+        "xn--q9jyb4c");
+    assertThat(Tld.get("xn--q9jyb4c").getAllowedRegistrantContactIds()).isEmpty();
+  }
+
+  @Test
   void testSuccess_setAllowedNameservers() throws Exception {
     runCommandForced(
         "--allowed_nameservers=ns1.example.com,ns2.example.com",
@@ -460,6 +470,16 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "xn--q9jyb4c");
     assertThat(Tld.get("xn--q9jyb4c").getAllowedFullyQualifiedHostNames())
         .containsExactly("ns1.example.com", "ns2.example.com");
+  }
+
+  @Test
+  void testSuccess_emptyAllowedNameservers() throws Exception {
+    runCommandForced(
+        "--allowed_nameservers=",
+        "--roid_suffix=Q9JYB4C",
+        "--dns_writers=FooDnsWriter",
+        "xn--q9jyb4c");
+    assertThat(Tld.get("xn--q9jyb4c").getAllowedFullyQualifiedHostNames()).isEmpty();
   }
 
   @Test

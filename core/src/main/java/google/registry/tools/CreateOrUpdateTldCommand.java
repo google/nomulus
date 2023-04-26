@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.tools.UpdateOrDeleteAllocationTokensCommand.getTokenKeys;
 import static google.registry.util.CollectionUtils.findDuplicates;
-import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 
 import com.beust.jcommander.Parameter;
@@ -37,6 +36,7 @@ import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.tools.params.OptionalStringParameter;
+import google.registry.tools.params.StringListParameter;
 import google.registry.tools.params.TransitionListParameter.BillingCostTransitions;
 import google.registry.tools.params.TransitionListParameter.TldStateTransitions;
 import java.util.Arrays;
@@ -195,19 +195,22 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
   @Nullable
   @Parameter(
       names = "--reserved_lists",
-      description = "A comma-separated list of reserved list names to be applied to the TLD")
+      description = "A comma-separated list of reserved list names to be applied to the TLD",
+      listConverter = StringListParameter.class)
   List<String> reservedListNames;
 
   @Nullable
   @Parameter(
       names = "--allowed_registrants",
-      description = "A comma-separated list of allowed registrants for the TLD")
+      description = "A comma-separated list of allowed registrants for the TLD",
+      listConverter = StringListParameter.class)
   List<String> allowedRegistrants;
 
   @Nullable
   @Parameter(
       names = "--allowed_nameservers",
-      description = "A comma-separated list of allowed nameservers for the TLD")
+      description = "A comma-separated list of allowed nameservers for the TLD",
+      listConverter = StringListParameter.class)
   List<String> allowedNameservers;
 
   @Parameter(
@@ -223,8 +226,9 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(
-    names = "--dns_writers",
-    description = "A comma-separated list of DnsWriter implementations to use")
+      names = "--dns_writers",
+      description = "A comma-separated list of DnsWriter implementations to use",
+      listConverter = StringListParameter.class)
   List<String> dnsWriters;
 
   @Nullable
@@ -262,7 +266,8 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
           "A comma-separated list of default allocation tokens to be applied to the TLD. The"
               + " ordering of this list will determine which token is used in the case where"
               + " multiple tokens are valid for a registration. Use an empty string to clear all"
-              + " present default tokens.")
+              + " present default tokens.",
+      listConverter = StringListParameter.class)
   List<String> defaultTokens;
 
   @Nullable
@@ -271,7 +276,8 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
       description =
           "A comma-separated list of the IDN tables to use for this TLD. Specify an empty list to"
               + " remove any previously-set tables and to use the default. All elements must be"
-              + " IdnTableEnum values")
+              + " IdnTableEnum values",
+      listConverter = StringListParameter.class)
   List<String> idnTables;
 
   /** Returns the existing tld (for update) or null (for creates). */
@@ -420,12 +426,8 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
 
       builder.setAllowedFullyQualifiedHostNames(getAllowedNameservers(oldTld));
 
-      if (!isNullOrEmpty(defaultTokens)) {
-        if (defaultTokens.equals(ImmutableList.of(""))) {
-          builder.setDefaultPromoTokens(ImmutableList.of());
-        } else {
-          builder.setDefaultPromoTokens(getTokenKeys(defaultTokens, null));
-        }
+      if (defaultTokens != null) {
+        builder.setDefaultPromoTokens(getTokenKeys(defaultTokens, null));
       }
       if (idnTables != null) {
         if (idnTables.equals(ImmutableList.of(""))) {
