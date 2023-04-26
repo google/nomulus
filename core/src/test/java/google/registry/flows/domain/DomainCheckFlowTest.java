@@ -582,6 +582,23 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
+  void testSuccess_premiumAnchorTenantWithToken() throws Exception {
+    setEppInput("domain_check_anchor_allocationtoken.xml");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("anchor.tld")
+            .build());
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld", USD, "anchor,USD 70"))
+            .build());
+    doCheckTest(create(true, "anchor.tld", null));
+  }
+
+  @Test
   void testSuccess_multipartTld_oneReserved() throws Exception {
     createTld("tld.foo");
     persistResource(
