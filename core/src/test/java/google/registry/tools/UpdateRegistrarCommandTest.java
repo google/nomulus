@@ -30,6 +30,7 @@ import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
+import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -274,6 +275,27 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getFailoverClientCertificate()).hasValue(SAMPLE_CERT3);
     assertThat(registrar.getFailoverClientCertificateHash()).hasValue(SAMPLE_CERT3_HASH);
+  }
+
+  @Test
+  void test_rotatePrimaryCert_noPrimaryCert() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    Registrar registrar = loadRegistrar("NewRegistrar");
+    assertThat(registrar.getClientCertificate()).isEmpty();
+    assertThat(registrar.getClientCertificateHash()).isEmpty();
+    VerifyException thrown =
+        assertThrows(
+            VerifyException.class,
+            () ->
+                runCommand(
+                    "--cert_file=" + getCertFilename(SAMPLE_CERT3),
+                    "--rotate_primary_cert",
+                    "--force",
+                    "NewRegistrar"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Primary cert is absent. Rotation may remove a failover certificate still in use.");
   }
 
   @Test

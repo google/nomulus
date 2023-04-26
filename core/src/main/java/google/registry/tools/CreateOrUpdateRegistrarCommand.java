@@ -354,6 +354,9 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
           verify(
               oldRegistrar != null,
               "--rotate_primary_cert cannot be set by create_registrar command.");
+          verify(
+              oldRegistrar.getClientCertificate().isPresent(),
+              "Primary cert is absent. Rotation may remove a failover certificate still in use.");
           builder.setFailoverClientCertificate(
               oldRegistrar.getClientCertificate().orElse(null), now);
         }
