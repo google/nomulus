@@ -17,6 +17,7 @@ package google.registry.flows;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
+import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -126,6 +127,20 @@ final class TlsCredentialsTest {
             .setFailoverClientCertificate(null, clock.nowUtc())
             .build());
     // This would throw a RegistrarCertificateNotConfiguredException if cert hashes wren't bypassed.
+    tls.validateCertificateHash(Registrar.loadByRegistrarId("TheRegistrar").get());
+  }
+
+  @Test
+  void test_validateCertificateHash_passWithFailOverCerticate() throws Exception {
+    TlsCredentials tls =
+        new TlsCredentials(
+            false, Optional.of(SAMPLE_CERT_HASH), Optional.of("192.168.1.1"), certificateChecker);
+    persistResource(
+        loadRegistrar("TheRegistrar")
+            .asBuilder()
+            .setClientCertificate(null, clock.nowUtc())
+            .setFailoverClientCertificate(SAMPLE_CERT, clock.nowUtc())
+            .build());
     tls.validateCertificateHash(Registrar.loadByRegistrarId("TheRegistrar").get());
   }
 }
