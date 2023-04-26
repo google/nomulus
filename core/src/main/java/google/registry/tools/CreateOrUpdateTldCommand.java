@@ -351,6 +351,14 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
             newTldStateTransitions.put(getTldStateTransitionToAdd().get()).build());
       }
 
+      // JCommander parses an empty argument as a list of the empty string, which is not desired
+      if (ImmutableList.of("").equals(allowedNameservers)) {
+        allowedNameservers = ImmutableList.of();
+      }
+      if (ImmutableList.of("").equals(allowedRegistrants)) {
+        allowedRegistrants = ImmutableList.of();
+      }
+
       if (!renewBillingCostTransitions.isEmpty()) {
         // TODO(b/20764952): need invoicing support for multiple renew billing costs.
         if (renewBillingCostTransitions.size() > 1) {
