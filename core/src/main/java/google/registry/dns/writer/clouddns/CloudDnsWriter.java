@@ -173,7 +173,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
         domainRecords.add(
             new ResourceRecordSet()
                 .setName(absoluteDomainName)
-                .setTtl((int) (tld.getDnsNsTtl().orElse(defaultNsTtl).getStandardSeconds()))
+                .setTtl((int) tld.getDnsNsTtl().orElse(defaultNsTtl).getStandardSeconds())
                 .setType("NS")
                 .setKind("dns#resourceRecordSet")
                 .setRrdatas(ImmutableList.copyOf(nsRrData)));
@@ -279,11 +279,12 @@ public class CloudDnsWriter extends BaseDnsWriter {
   }
 
   /** Returns the glue records for in-bailiwick nameservers for the given domain+records. */
-  private Stream<String> filterGlueRecords(String domainName, Stream<ResourceRecordSet> records) {
+  private static Stream<String> filterGlueRecords(
+      String domainName, Stream<ResourceRecordSet> records) {
     return records
-        .filter(record -> record.getType().equals("NS"))
+        .filter(record -> "NS".equals(record.getType()))
         .flatMap(record -> record.getRrdatas().stream())
-        .filter(hostName -> hostName.endsWith("." + domainName) && !hostName.equals(domainName));
+        .filter(hostName -> hostName.endsWith('.' + domainName) && !hostName.equals(domainName));
   }
 
   /** Mutate the zone with the provided map of hostnames to desired DNS records. */
@@ -366,8 +367,8 @@ public class CloudDnsWriter extends BaseDnsWriter {
    * <p>This call should be used in conjunction with {@link #getResourceRecordsForDomains} in a
    * get-and-set retry loop.
    *
-   * <p>See {@link "https://cloud.google.com/dns/troubleshooting"} for a list of errors produced by
-   * the Google Cloud DNS API.
+   * <p>See {@link "<a href="https://cloud.google.com/dns/troubleshooting">Troubleshoot Cloud
+   * DNS</a>"} for a list of errors produced by the Google Cloud DNS API.
    *
    * @throws ZoneStateException if the operation could not be completely successfully because the
    *     records to delete do not exist, already exist or have been modified with different
@@ -420,12 +421,12 @@ public class CloudDnsWriter extends BaseDnsWriter {
    * @param hostName the fully qualified hostname
    */
   private static String getAbsoluteHostName(String hostName) {
-    return hostName.endsWith(".") ? hostName : hostName + ".";
+    return hostName.endsWith(".") ? hostName : hostName + '.';
   }
 
   /** Zone state on Cloud DNS does not match the expected state. */
   static class ZoneStateException extends RuntimeException {
-    public ZoneStateException(String reason) {
+    ZoneStateException(String reason) {
       super("Zone state on Cloud DNS does not match the expected state: " + reason);
     }
   }
