@@ -28,9 +28,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.request.auth.RequestAuthenticator.AuthMethod;
-import google.registry.request.auth.RequestAuthenticator.AuthSettings;
-import google.registry.request.auth.RequestAuthenticator.UserPolicy;
 import google.registry.security.XsrfTokenManager;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeOAuthService;
@@ -50,52 +47,64 @@ class RequestAuthenticatorTest {
 
   private static final AuthSettings AUTH_NONE =
       AuthSettings.create(
-          ImmutableList.of(AuthMethod.INTERNAL), AuthLevel.NONE, UserPolicy.IGNORED);
+          ImmutableList.of(AuthSettings.AuthMethod.INTERNAL),
+          AuthSettings.AuthLevel.NONE,
+          AuthSettings.UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_INTERNAL_OR_ADMIN = AuthSettings.create(
-      ImmutableList.of(AuthMethod.INTERNAL),
-      AuthLevel.APP,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_INTERNAL_OR_ADMIN =
+      AuthSettings.create(
+          ImmutableList.of(AuthSettings.AuthMethod.INTERNAL),
+          AuthSettings.AuthLevel.APP,
+          AuthSettings.UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_ANY_USER_ANY_METHOD = AuthSettings.create(
-      ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY),
-      AuthLevel.USER,
-      UserPolicy.PUBLIC);
+  private static final AuthSettings AUTH_ANY_USER_ANY_METHOD =
+      AuthSettings.create(
+          ImmutableList.of(AuthSettings.AuthMethod.API, AuthSettings.AuthMethod.LEGACY),
+          AuthSettings.AuthLevel.USER,
+          AuthSettings.UserPolicy.PUBLIC);
 
-  private static final AuthSettings AUTH_ANY_USER_NO_LEGACY = AuthSettings.create(
-      ImmutableList.of(AuthMethod.API),
-      AuthLevel.USER,
-      UserPolicy.PUBLIC);
+  private static final AuthSettings AUTH_ANY_USER_NO_LEGACY =
+      AuthSettings.create(
+          ImmutableList.of(AuthSettings.AuthMethod.API),
+          AuthSettings.AuthLevel.USER,
+          AuthSettings.UserPolicy.PUBLIC);
 
-  private static final AuthSettings AUTH_ADMIN_USER_ANY_METHOD = AuthSettings.create(
-      ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY),
-      AuthLevel.USER,
-      UserPolicy.ADMIN);
+  private static final AuthSettings AUTH_ADMIN_USER_ANY_METHOD =
+      AuthSettings.create(
+          ImmutableList.of(AuthSettings.AuthMethod.API, AuthSettings.AuthMethod.LEGACY),
+          AuthSettings.AuthLevel.USER,
+          AuthSettings.UserPolicy.ADMIN);
 
-  private static final AuthSettings AUTH_NO_METHODS = AuthSettings.create(
-      ImmutableList.of(),
-      AuthLevel.APP,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_NO_METHODS =
+      AuthSettings.create(
+          ImmutableList.of(), AuthSettings.AuthLevel.APP, AuthSettings.UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_WRONG_METHOD_ORDERING = AuthSettings.create(
-      ImmutableList.of(AuthMethod.API, AuthMethod.INTERNAL),
-      AuthLevel.APP,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_WRONG_METHOD_ORDERING =
+      AuthSettings.create(
+          ImmutableList.of(AuthSettings.AuthMethod.API, AuthSettings.AuthMethod.INTERNAL),
+          AuthSettings.AuthLevel.APP,
+          AuthSettings.UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_DUPLICATE_METHODS = AuthSettings.create(
-      ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API, AuthMethod.API),
-      AuthLevel.APP,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_DUPLICATE_METHODS =
+      AuthSettings.create(
+          ImmutableList.of(
+              AuthSettings.AuthMethod.INTERNAL,
+              AuthSettings.AuthMethod.API,
+              AuthSettings.AuthMethod.API),
+          AuthSettings.AuthLevel.APP,
+          AuthSettings.UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_INTERNAL_WITH_USER = AuthSettings.create(
-      ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API),
-      AuthLevel.USER,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_INTERNAL_WITH_USER =
+      AuthSettings.create(
+          ImmutableList.of(AuthSettings.AuthMethod.INTERNAL, AuthSettings.AuthMethod.API),
+          AuthSettings.AuthLevel.USER,
+          AuthSettings.UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_WRONGLY_IGNORING_USER = AuthSettings.create(
-      ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API),
-      AuthLevel.APP,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_WRONGLY_IGNORING_USER =
+      AuthSettings.create(
+          ImmutableList.of(AuthSettings.AuthMethod.INTERNAL, AuthSettings.AuthMethod.API),
+          AuthSettings.AuthLevel.APP,
+          AuthSettings.UserPolicy.IGNORED);
 
   private final UserService mockUserService = mock(UserService.class);
   private final HttpServletRequest req = mock(HttpServletRequest.class);
@@ -139,7 +148,7 @@ class RequestAuthenticatorTest {
 
     verifyNoInteractions(mockUserService);
     assertThat(authResult).isPresent();
-    assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.NONE);
+    assertThat(authResult.get().authLevel()).isEqualTo(AuthSettings.AuthLevel.NONE);
   }
 
   @Test
@@ -150,7 +159,7 @@ class RequestAuthenticatorTest {
 
     verifyNoInteractions(mockUserService);
     assertThat(authResult).isPresent();
-    assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.APP);
+    assertThat(authResult.get().authLevel()).isEqualTo(AuthSettings.AuthLevel.APP);
     assertThat(authResult.get().userAuthInfo()).isEmpty();
   }
 
@@ -170,7 +179,7 @@ class RequestAuthenticatorTest {
 
     verifyNoInteractions(mockUserService);
     assertThat(authResult).isPresent();
-    assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.APP);
+    assertThat(authResult.get().authLevel()).isEqualTo(AuthSettings.AuthLevel.APP);
     assertThat(authResult.get().userAuthInfo()).isEmpty();
   }
 
@@ -209,7 +218,7 @@ class RequestAuthenticatorTest {
     Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_ANY_USER_ANY_METHOD);
 
     assertThat(authResult).isPresent();
-    assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.USER);
+    assertThat(authResult.get().authLevel()).isEqualTo(AuthSettings.AuthLevel.USER);
     assertThat(authResult.get().userAuthInfo()).isPresent();
     assertThat(authResult.get().userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(authResult.get().userAuthInfo().get().isUserAdmin()).isFalse();
@@ -224,7 +233,7 @@ class RequestAuthenticatorTest {
     Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_ANY_USER_ANY_METHOD);
 
     assertThat(authResult).isPresent();
-    assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.USER);
+    assertThat(authResult.get().authLevel()).isEqualTo(AuthSettings.AuthLevel.USER);
     assertThat(authResult.get().userAuthInfo()).isPresent();
     assertThat(authResult.get().userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo()).isEmpty();
@@ -264,7 +273,7 @@ class RequestAuthenticatorTest {
     Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_ADMIN_USER_ANY_METHOD);
 
     assertThat(authResult).isPresent();
-    assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.USER);
+    assertThat(authResult.get().authLevel()).isEqualTo(AuthSettings.AuthLevel.USER);
     assertThat(authResult.get().userAuthInfo()).isPresent();
     assertThat(authResult.get().userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(authResult.get().userAuthInfo().get().isUserAdmin()).isTrue();
@@ -280,7 +289,7 @@ class RequestAuthenticatorTest {
     Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_ANY_USER_NO_LEGACY);
 
     assertThat(authResult).isPresent();
-    assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.USER);
+    assertThat(authResult.get().authLevel()).isEqualTo(AuthSettings.AuthLevel.USER);
     assertThat(authResult.get().userAuthInfo()).isPresent();
     assertThat(authResult.get().userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(authResult.get().userAuthInfo().get().isUserAdmin()).isFalse();
@@ -303,7 +312,7 @@ class RequestAuthenticatorTest {
     Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_ANY_USER_NO_LEGACY);
 
     assertThat(authResult).isPresent();
-    assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.USER);
+    assertThat(authResult.get().authLevel()).isEqualTo(AuthSettings.AuthLevel.USER);
     assertThat(authResult.get().userAuthInfo()).isPresent();
     assertThat(authResult.get().userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(authResult.get().userAuthInfo().get().isUserAdmin()).isTrue();
@@ -372,7 +381,7 @@ class RequestAuthenticatorTest {
     Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_ANY_USER_NO_LEGACY);
 
     assertThat(authResult).isPresent();
-    assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.USER);
+    assertThat(authResult.get().authLevel()).isEqualTo(AuthSettings.AuthLevel.USER);
     assertThat(authResult.get().userAuthInfo()).isPresent();
     assertThat(authResult.get().userAuthInfo().get().appEngineUser()).hasValue(testUser);
     assertThat(authResult.get().userAuthInfo().get().isUserAdmin()).isFalse();

@@ -74,7 +74,7 @@ class AuthenticatedRegistrarAccessorTest {
 
   private static final AuthResult USER = createAuthResult(false);
   private static final AuthResult GAE_ADMIN = createAuthResult(true);
-  private static final AuthResult NO_USER = AuthResult.create(AuthLevel.NONE);
+  private static final AuthResult NO_USER = AuthResult.create(AuthSettings.AuthLevel.NONE);
   private static final Optional<String> SUPPORT_GROUP = Optional.of("support@registry.example");
   /** Registrar ID of a REAL registrar with a RegistrarContact for USER and GAE_ADMIN. */
   private static final String REGISTRAR_ID_WITH_CONTACT = "TheRegistrar";
@@ -94,7 +94,7 @@ class AuthenticatedRegistrarAccessorTest {
    */
   private static AuthResult createAuthResult(boolean isAdmin) {
     return AuthResult.create(
-        AuthLevel.USER,
+        AuthSettings.AuthLevel.USER,
         UserAuthInfo.create(new User("johndoe@theregistrar.com", "theregistrar.com"), isAdmin));
   }
 
@@ -295,7 +295,7 @@ class AuthenticatedRegistrarAccessorTest {
     expectGetRegistrarSuccess(
         REGISTRAR_ID_WITH_CONTACT,
         AuthResult.create(
-            AuthLevel.USER,
+            AuthSettings.AuthLevel.USER,
             UserAuthInfo.create(new User("JohnDoe@theregistrar.com", "theregistrar.com"), false)),
         "user JohnDoe@theregistrar.com has [OWNER] access to registrar TheRegistrar");
     verify(lazyGroupsConnection).get();
@@ -421,7 +421,8 @@ class AuthenticatedRegistrarAccessorTest {
             .setUserRoles(
                 new UserRoles.Builder().setIsAdmin(true).setGlobalRole(GlobalRole.FTE).build())
             .build();
-    AuthResult authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    AuthResult authResult =
+        AuthResult.create(AuthSettings.AuthLevel.USER, UserAuthInfo.create(consoleUser));
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
             authResult, ADMIN_REGISTRAR_ID, SUPPORT_GROUP, lazyGroupsConnection);
@@ -447,7 +448,8 @@ class AuthenticatedRegistrarAccessorTest {
             .setEmailAddress("email@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
             .build();
-    AuthResult authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    AuthResult authResult =
+        AuthResult.create(AuthSettings.AuthLevel.USER, UserAuthInfo.create(consoleUser));
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
             authResult, ADMIN_REGISTRAR_ID, SUPPORT_GROUP, lazyGroupsConnection);
@@ -473,7 +475,8 @@ class AuthenticatedRegistrarAccessorTest {
                             RegistrarRole.ACCOUNT_MANAGER))
                     .build())
             .build();
-    AuthResult authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    AuthResult authResult =
+        AuthResult.create(AuthSettings.AuthLevel.USER, UserAuthInfo.create(consoleUser));
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
             authResult, ADMIN_REGISTRAR_ID, SUPPORT_GROUP, lazyGroupsConnection);

@@ -27,13 +27,13 @@ import javax.annotation.Nullable;
 @AutoValue
 public abstract class AuthResult {
 
-  public abstract AuthLevel authLevel();
+  public abstract AuthSettings.AuthLevel authLevel();
 
   /** Information about the authenticated user, if there is one. */
   public abstract Optional<UserAuthInfo> userAuthInfo();
 
   public boolean isAuthenticated() {
-    return authLevel() != AuthLevel.NONE;
+    return authLevel() != AuthSettings.AuthLevel.NONE;
   }
 
   public String userIdForLogging() {
@@ -46,12 +46,13 @@ public abstract class AuthResult {
         .orElse("<logged-out user>");
   }
 
-  public static AuthResult create(AuthLevel authLevel) {
+  public static AuthResult create(AuthSettings.AuthLevel authLevel) {
     return new AutoValue_AuthResult(authLevel, Optional.empty());
   }
 
-  public static AuthResult create(AuthLevel authLevel, @Nullable UserAuthInfo userAuthInfo) {
-    if (authLevel == AuthLevel.USER) {
+  public static AuthResult create(
+      AuthSettings.AuthLevel authLevel, @Nullable UserAuthInfo userAuthInfo) {
+    if (authLevel == AuthSettings.AuthLevel.USER) {
       checkNotNull(userAuthInfo);
     }
     return new AutoValue_AuthResult(authLevel, Optional.ofNullable(userAuthInfo));
@@ -66,6 +67,5 @@ public abstract class AuthResult {
    * returns NOT_AUTHENTICATED in this case, as opposed to absent() if authentication failed and was
    * required. So as a return from an authorization check, this can be treated as a success.
    */
-  public static final AuthResult NOT_AUTHENTICATED =
-      AuthResult.create(AuthLevel.NONE);
+  public static final AuthResult NOT_AUTHENTICATED = create(AuthSettings.AuthLevel.NONE);
 }
