@@ -40,6 +40,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
 import google.registry.util.JdkLoggerConfig;
 import java.util.Optional;
@@ -421,7 +422,8 @@ class AuthenticatedRegistrarAccessorTest {
             .setUserRoles(
                 new UserRoles.Builder().setIsAdmin(true).setGlobalRole(GlobalRole.FTE).build())
             .build();
-    AuthResult authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    AuthResult authResult =
+        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
             authResult, ADMIN_REGISTRAR_ID, SUPPORT_GROUP, lazyGroupsConnection);
@@ -447,7 +449,8 @@ class AuthenticatedRegistrarAccessorTest {
             .setEmailAddress("email@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
             .build();
-    AuthResult authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    AuthResult authResult =
+        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
             authResult, ADMIN_REGISTRAR_ID, SUPPORT_GROUP, lazyGroupsConnection);
@@ -473,7 +476,8 @@ class AuthenticatedRegistrarAccessorTest {
                             RegistrarRole.ACCOUNT_MANAGER))
                     .build())
             .build();
-    AuthResult authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    AuthResult authResult =
+        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
             authResult, ADMIN_REGISTRAR_ID, SUPPORT_GROUP, lazyGroupsConnection);

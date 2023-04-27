@@ -14,6 +14,9 @@
 
 package google.registry.request.auth;
 
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static com.google.common.net.HttpHeaders.PROXY_AUTHORIZATION;
+
 import com.google.appengine.api.oauth.OAuthService;
 import com.google.appengine.api.oauth.OAuthServiceFactory;
 import com.google.auth.oauth2.TokenVerifier;
@@ -21,35 +24,38 @@ import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.request.auth.OidcTokenAuthenticationMechanism.BearerHeaderAuthenticationMechanism;
+import google.registry.request.auth.OidcTokenAuthenticationMechanism.IapHeaderAuthenticationMechanism;
+import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenExtractor;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 
-/**
- * Dagger module for authentication routines.
- */
+/** Dagger module for authentication routines. */
 @Module
 public class AuthModule {
 
+  public static final String IAP_HEADER_NAME = "X-Goog-IAP-JWT-Assertion";
+  public static final String BEARER_PREFIX = "Bearer ";
   private static final String IAP_ISSUER_URL = "https://cloud.google.com/iap";
   private static final String SA_ISSUER_URL = "https://accounts.google.com";
 
-  /** Provides the custom authentication mechanisms (including OAuth). */
+  /** Provides the custom authentication mechanisms (including OAuth and OIDC). */
   @Provides
   ImmutableList<AuthenticationMechanism> provideApiAuthenticationMechanisms(
       OAuthAuthenticationMechanism oauthAuthenticationMechanism,
       IapHeaderAuthenticationMechanism iapHeaderAuthenticationMechanism,
-      ServiceAccountAuthenticationMechanism serviceAccountAuthenticationMechanism) {
+      BearerHeaderAuthenticationMechanism bearerHeaderAuthenticationMechanism) {
     return ImmutableList.of(
         oauthAuthenticationMechanism,
         iapHeaderAuthenticationMechanism,
-        serviceAccountAuthenticationMechanism);
+        bearerHeaderAuthenticationMechanism);
   }
 
   @Qualifier
   @interface IAP {}
 
   @Qualifier
-  @interface ServiceAccount {}
+  @interface Bearer {}
 
   /** Provides the OAuthService instance. */
   @Provides
@@ -60,16 +66,39 @@ public class AuthModule {
   @Provides
   @IAP
   @Singleton
-  TokenVerifier provideTokenVerifier(
+  TokenVerifier provideIapTokenVerifier(
       @Config("projectId") String projectId, @Config("projectIdNumber") long projectIdNumber) {
     String audience = String.format("/projects/%d/apps/%s", projectIdNumber, projectId);
     return TokenVerifier.newBuilder().setAudience(audience).setIssuer(IAP_ISSUER_URL).build();
   }
 
   @Provides
-  @ServiceAccount
+  @Bearer
   @Singleton
-  TokenVerifier provideServiceAccountTokenVerifier(@Config("projectId") String projectId) {
+  TokenVerifier provideBearerkenVerifier(@Config("projectId") String projectId) {
     return TokenVerifier.newBuilder().setAudience(projectId).setIssuer(SA_ISSUER_URL).build();
+  }
+
+  @Provides
+  @IAP
+  @Singleton
+  TokenExtractor providesIapTokenExtractor() {
+    return request -> request.getHeader(IAP_HEADER_NAME);
+  }
+
+  @Provides
+  @Bearer
+  @Singleton
+  TokenExtractor providesBearerTokenExtractor() {
+    return request -> {
+      String rawToken = request.getHeader(PROXY_AUTHORIZATION);
+      if (rawToken == null) {
+        rawToken = request.getHeader(AUTHORIZATION);
+      }
+      if (rawToken != null && rawToken.startsWith(BEARER_PREFIX)) {
+        return rawToken.substring(BEARER_PREFIX.length());
+      }
+      return null;
+    };
   }
 }
