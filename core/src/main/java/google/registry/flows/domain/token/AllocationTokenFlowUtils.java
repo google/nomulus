@@ -130,7 +130,7 @@ public class AllocationTokenFlowUtils {
     if (!TokenBehavior.DEFAULT.equals(token.getTokenBehavior())) {
       return;
     }
-    validateForPremiums(Optional.of(token), isPremium);
+    validateTokenForPossiblePremiumName(Optional.of(token), isPremium);
     if (!token.getAllowedEppActions().isEmpty()
         && !token.getAllowedEppActions().contains(commandName)) {
       throw new AllocationTokenNotValidForCommandException();
@@ -155,8 +155,9 @@ public class AllocationTokenFlowUtils {
     }
   }
 
-  /** Validates that the given token is valid for a premium name. */
-  public static void validateForPremiums(Optional<AllocationToken> token, boolean isPremium)
+  /** Validates that the given token is valid for a premium name if the name is premium. */
+  public static void validateTokenForPossiblePremiumName(
+      Optional<AllocationToken> token, boolean isPremium)
       throws AllocationTokenInvalidForPremiumNameException {
     if (token.isPresent()
         && token.get().getDiscountFraction() != 0.0
