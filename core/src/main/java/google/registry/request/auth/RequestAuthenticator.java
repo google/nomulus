@@ -16,11 +16,12 @@ package google.registry.request.auth;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.google.common.flogger.FluentLogger;
-import com.google.errorprone.annotations.Immutable;
+import google.registry.request.auth.AuthSettings.AuthLevel;
+import google.registry.request.auth.AuthSettings.AuthMethod;
+import google.registry.request.auth.AuthSettings.UserPolicy;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -42,57 +43,6 @@ public class RequestAuthenticator {
     this.appEngineInternalAuthenticationMechanism = appEngineInternalAuthenticationMechanism;
     this.apiAuthenticationMechanisms = apiAuthenticationMechanisms;
     this.legacyAuthenticationMechanism = legacyAuthenticationMechanism;
-  }
-
-  /**
-   * Parameters used to configure the authenticator.
-   *
-   * AuthSettings shouldn't be used directly, instead - use one of the predefined {@link Auth} enum
-   * values.
-   */
-  @Immutable
-  @AutoValue
-  public abstract static class AuthSettings {
-
-    public abstract ImmutableList<AuthMethod> methods();
-    public abstract AuthLevel minimumLevel();
-    public abstract UserPolicy userPolicy();
-
-    static AuthSettings create(
-        ImmutableList<AuthMethod> methods, AuthLevel minimumLevel, UserPolicy userPolicy) {
-      return new AutoValue_RequestAuthenticator_AuthSettings(methods, minimumLevel, userPolicy);
-    }
-  }
-
-  /** Available methods for authentication. */
-  public enum AuthMethod {
-
-    /** App Engine internal authentication. Must always be provided as the first method. */
-    INTERNAL,
-
-    /** Authentication methods suitable for API-style access, such as OAuth 2. */
-    API,
-
-    /** Legacy authentication using cookie-based App Engine Users API. Must come last if present. */
-    LEGACY
-  }
-
-  /** User authorization policy options. */
-  public enum UserPolicy {
-
-    /** This action ignores end users; the only configured auth method must be INTERNAL. */
-    IGNORED,
-
-    /** No user policy is enforced; anyone can access this action. */
-    PUBLIC,
-
-    /**
-     * If there is a user, it must be an admin, as determined by isUserAdmin().
-     *
-     * <p>Note that, according to App Engine, anybody with access to the app in the GCP Console,
-     * including editors and viewers, is an admin.
-     */
-    ADMIN
   }
 
   /**
@@ -169,7 +119,7 @@ public class RequestAuthenticator {
             return authResult;
           }
           break;
-        // API-based user authentication mechanisms, such as OAuth
+          // API-based user authentication mechanisms, such as OAuth
         case API:
           // checkAuthConfig will have insured that the user policy is not IGNORED.
           for (AuthenticationMechanism authMechanism : apiAuthenticationMechanisms) {
@@ -181,7 +131,7 @@ public class RequestAuthenticator {
             }
           }
           break;
-        // Legacy authentication via UserService
+          // Legacy authentication via UserService
         case LEGACY:
           // checkAuthConfig will have insured that the user policy is not IGNORED.
           authResult = legacyAuthenticationMechanism.authenticate(req);
@@ -209,7 +159,7 @@ public class RequestAuthenticator {
         "Actions with INTERNAL auth method may not require USER auth level");
     checkArgument(
         !(auth.userPolicy().equals(UserPolicy.IGNORED)
-          && !authMethods.equals(ImmutableList.of(AuthMethod.INTERNAL))),
+            && !authMethods.equals(ImmutableList.of(AuthMethod.INTERNAL))),
         "Actions with auth methods beyond INTERNAL must not specify the IGNORED user policy");
   }
 }
