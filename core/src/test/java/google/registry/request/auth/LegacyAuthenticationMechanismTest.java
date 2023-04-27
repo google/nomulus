@@ -26,6 +26,7 @@ import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.security.XsrfTokenManager;
 import google.registry.testing.FakeClock;
 import javax.servlet.http.HttpServletRequest;

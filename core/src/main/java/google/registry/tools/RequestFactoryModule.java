@@ -48,8 +48,8 @@ class RequestFactoryModule {
    *
    * <p>If we need to have an IAP-enabled audience, we can use the existing refresh token and the
    * IAP client ID audience to request an IAP-enabled ID token. This token is read and used by
-   * {@link google.registry.request.auth.IapHeaderAuthenticationMechanism}, and it requires that the
-   * user have a {@link google.registry.model.console.User} object present in the database.
+   * {@link IapHeaderAuthenticationMechanismMechanism}, and it requires that the user have a {@link
+   * google.registry.model.console.User} object present in the database.
    */
   private static final GenericUrl TOKEN_SERVER_URL =
       new GenericUrl(URI.create("https://oauth2.googleapis.com/token"));

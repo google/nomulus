@@ -24,7 +24,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.monitoring.metrics.EventMetric;
 import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
-import google.registry.request.auth.AuthLevel;
+import google.registry.request.auth.AuthSettings.AuthLevel;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.joda.time.Duration;
