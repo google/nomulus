@@ -88,7 +88,7 @@ final class LegacyAuthenticationMechanismTest {
   void testAuthenticate_notLoggedIn() {
     when(userService.isUserLoggedIn()).thenReturn(false);
     assertThat(legacyAuthenticationMechanism.authenticate(req).authLevel())
-        .isEqualTo(AuthLevel.NONE);
+        .isEqualTo(AuthSettings.AuthLevel.NONE);
   }
 
   @Test
@@ -96,7 +96,7 @@ final class LegacyAuthenticationMechanismTest {
     when(userService.isUserLoggedIn()).thenReturn(true);
     when(req.getMethod()).thenReturn("GET");
     assertThat(legacyAuthenticationMechanism.authenticate(req).authLevel())
-        .isEqualTo(AuthLevel.USER);
+        .isEqualTo(AuthSettings.AuthLevel.USER);
   }
 
   @Test
@@ -104,7 +104,7 @@ final class LegacyAuthenticationMechanismTest {
     when(userService.isUserLoggedIn()).thenReturn(true);
     when(req.getMethod()).thenReturn("HEAD");
     assertThat(legacyAuthenticationMechanism.authenticate(req).authLevel())
-        .isEqualTo(AuthLevel.USER);
+        .isEqualTo(AuthSettings.AuthLevel.USER);
   }
 
   @Test
@@ -113,7 +113,7 @@ final class LegacyAuthenticationMechanismTest {
     when(userService.isUserLoggedIn()).thenReturn(true);
     when(req.getMethod()).thenReturn("POST");
     assertThat(legacyAuthenticationMechanism.authenticate(req).authLevel())
-        .isEqualTo(AuthLevel.NONE);
+        .isEqualTo(AuthSettings.AuthLevel.NONE);
 
     // Make sure we looked for the token in all relevant places before giving up
     verify(req).getHeader("X-CSRF-Token");
@@ -126,7 +126,7 @@ final class LegacyAuthenticationMechanismTest {
     when(req.getMethod()).thenReturn("POST");
     when(req.getHeader("X-CSRF-Token")).thenReturn(goodToken);
     assertThat(legacyAuthenticationMechanism.authenticate(req).authLevel())
-        .isEqualTo(AuthLevel.USER);
+        .isEqualTo(AuthSettings.AuthLevel.USER);
 
     // Make sure we didn't call getParameter (we already verify it in the @After, but we're doing it
     // here explicitly as well for clarity, since this is important in this test)
@@ -140,7 +140,7 @@ final class LegacyAuthenticationMechanismTest {
     when(req.getMethod()).thenReturn("POST");
     when(req.getHeader("X-CSRF-Token")).thenReturn("bad");
     assertThat(legacyAuthenticationMechanism.authenticate(req).authLevel())
-        .isEqualTo(AuthLevel.NONE);
+        .isEqualTo(AuthSettings.AuthLevel.NONE);
 
     // Make sure we didn't call getParameter (we already verify it in the @After, but we're doing it
     // here explicitly as well for clarity, since this is important in this test)
@@ -153,7 +153,7 @@ final class LegacyAuthenticationMechanismTest {
     when(req.getMethod()).thenReturn("POST");
     when(req.getParameter("xsrfToken")).thenReturn(goodToken);
     assertThat(legacyAuthenticationMechanism.authenticate(req).authLevel())
-        .isEqualTo(AuthLevel.USER);
+        .isEqualTo(AuthSettings.AuthLevel.USER);
 
     // we allow getParameter to be called in this case (we verify it so it's not caught in the
     // @After's verifyNoMoreInteractions)
@@ -167,7 +167,7 @@ final class LegacyAuthenticationMechanismTest {
     when(req.getMethod()).thenReturn("POST");
     when(req.getParameter("xsrfToken")).thenReturn("bad");
     assertThat(legacyAuthenticationMechanism.authenticate(req).authLevel())
-        .isEqualTo(AuthLevel.NONE);
+        .isEqualTo(AuthSettings.AuthLevel.NONE);
 
     // we allow getParameter to be called in this case (we verify it so it's not caught in the
     // @After's verifyNoMoreInteractions)
