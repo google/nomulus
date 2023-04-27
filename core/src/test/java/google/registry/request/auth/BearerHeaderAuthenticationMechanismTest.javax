@@ -34,18 +34,18 @@ import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class ServiceAccountAuthenticationMechanismTest {
+class BearerHeaderAuthenticationMechanismTest {
 
   @Mock private TokenVerifier tokenVerifier;
   @Mock private HttpServletRequest request;
 
   private JsonWebSignature token;
-  private ServiceAccountAuthenticationMechanism serviceAccountAuthenticationMechanism;
+  private BearerHeaderAuthenticationMechanismMechanism bearerHeaderAuthenticationMechanism;
 
   @BeforeEach
   void beforeEach() throws Exception {
-    serviceAccountAuthenticationMechanism =
-        new ServiceAccountAuthenticationMechanism(
+    bearerHeaderAuthenticationMechanism =
+        new BearerHeaderAuthenticationMechanismMechanism(
             tokenVerifier, ImmutableList.of("sa-prefix@email.com", "cloud-tasks@email.com"));
     when(request.getHeader(AUTHORIZATION)).thenReturn("Bearer jwtValue");
     Payload payload = new Payload();
@@ -56,9 +56,9 @@ class ServiceAccountAuthenticationMechanismTest {
 
   @Test
   void testSuccess_authenticates() throws Exception {
-    AuthResult authResult = serviceAccountAuthenticationMechanism.authenticate(request);
+    AuthResult authResult = bearerHeaderAuthenticationMechanism.authenticate(request);
     assertThat(authResult.isAuthenticated()).isTrue();
-    assertThat(authResult.authLevel()).isEqualTo(AuthLevel.APP);
+    assertThat(authResult.authLevel()).isEqualTo(AuthSettings.AuthLevel.APP);
   }
 
   @Test
@@ -68,22 +68,22 @@ class ServiceAccountAuthenticationMechanismTest {
     token = new JsonWebSignature(new Header(), payload, new byte[0], new byte[0]);
     when(tokenVerifier.verify("jwtValue")).thenReturn(token);
 
-    AuthResult authResult = serviceAccountAuthenticationMechanism.authenticate(request);
+    AuthResult authResult = bearerHeaderAuthenticationMechanism.authenticate(request);
     assertThat(authResult.isAuthenticated()).isTrue();
-    assertThat(authResult.authLevel()).isEqualTo(AuthLevel.APP);
+    assertThat(authResult.authLevel()).isEqualTo(AuthSettings.AuthLevel.APP);
   }
 
   @Test
   void testFails_authenticateWrongEmail() throws Exception {
     token.getPayload().set("email", "not-service-account-email@email.com");
-    AuthResult authResult = serviceAccountAuthenticationMechanism.authenticate(request);
+    AuthResult authResult = bearerHeaderAuthenticationMechanism.authenticate(request);
     assertThat(authResult.isAuthenticated()).isFalse();
   }
 
   @Test
   void testFails_authenticateWrongHeader() throws Exception {
     when(request.getHeader(AUTHORIZATION)).thenReturn("BEARER asd");
-    AuthResult authResult = serviceAccountAuthenticationMechanism.authenticate(request);
+    AuthResult authResult = bearerHeaderAuthenticationMechanism.authenticate(request);
     assertThat(authResult.isAuthenticated()).isFalse();
   }
 }
