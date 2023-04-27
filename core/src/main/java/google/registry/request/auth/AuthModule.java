@@ -14,6 +14,9 @@
 
 package google.registry.request.auth;
 
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static com.google.common.net.HttpHeaders.PROXY_AUTHORIZATION;
+
 import com.google.appengine.api.oauth.OAuthService;
 import com.google.appengine.api.oauth.OAuthServiceFactory;
 import com.google.auth.oauth2.TokenVerifier;
@@ -21,35 +24,41 @@ import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.request.auth.OidcTokenAuthenticationMechanism.IapOidcAuthenticationMechanism;
+import google.registry.request.auth.OidcTokenAuthenticationMechanism.RegularOidcAuthenticationMechanism;
+import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenExtractor;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 
-/**
- * Dagger module for authentication routines.
- */
+/** Dagger module for authentication routines. */
 @Module
 public class AuthModule {
 
+  public static final String IAP_HEADER_NAME = "X-Goog-IAP-JWT-Assertion";
+  public static final String BEARER_PREFIX = "Bearer ";
+  // TODO: Change the IAP audience format once we are on GKE.
+  // See: https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload
+  private static final String IAP_AUDIENCE_FORMAT = "/projects/%d/apps/%s";
   private static final String IAP_ISSUER_URL = "https://cloud.google.com/iap";
   private static final String SA_ISSUER_URL = "https://accounts.google.com";
 
-  /** Provides the custom authentication mechanisms (including OAuth). */
+  /** Provides the custom authentication mechanisms (including OAuth and OIDC). */
   @Provides
   ImmutableList<AuthenticationMechanism> provideApiAuthenticationMechanisms(
       OAuthAuthenticationMechanism oauthAuthenticationMechanism,
-      IapHeaderAuthenticationMechanism iapHeaderAuthenticationMechanism,
-      ServiceAccountAuthenticationMechanism serviceAccountAuthenticationMechanism) {
+      IapOidcAuthenticationMechanism iapOidcAuthenticationMechanism,
+      RegularOidcAuthenticationMechanism regularOidcAuthenticationMechanism) {
     return ImmutableList.of(
         oauthAuthenticationMechanism,
-        iapHeaderAuthenticationMechanism,
-        serviceAccountAuthenticationMechanism);
+        iapOidcAuthenticationMechanism,
+        regularOidcAuthenticationMechanism);
   }
 
   @Qualifier
-  @interface IAP {}
+  @interface IapOidc {}
 
   @Qualifier
-  @interface ServiceAccount {}
+  @interface RegularOidc {}
 
   /** Provides the OAuthService instance. */
   @Provides
@@ -58,18 +67,42 @@ public class AuthModule {
   }
 
   @Provides
-  @IAP
+  @IapOidc
   @Singleton
-  TokenVerifier provideTokenVerifier(
+  TokenVerifier provideIapTokenVerifier(
       @Config("projectId") String projectId, @Config("projectIdNumber") long projectIdNumber) {
-    String audience = String.format("/projects/%d/apps/%s", projectIdNumber, projectId);
+    String audience = String.format(IAP_AUDIENCE_FORMAT, projectIdNumber, projectId);
     return TokenVerifier.newBuilder().setAudience(audience).setIssuer(IAP_ISSUER_URL).build();
   }
 
   @Provides
-  @ServiceAccount
+  @RegularOidc
   @Singleton
-  TokenVerifier provideServiceAccountTokenVerifier(@Config("projectId") String projectId) {
+  TokenVerifier provideRegularTokenVerifier(@Config("projectId") String projectId) {
     return TokenVerifier.newBuilder().setAudience(projectId).setIssuer(SA_ISSUER_URL).build();
+  }
+
+  @Provides
+  @IapOidc
+  @Singleton
+  TokenExtractor provideIapTokenExtractor() {
+    return request -> request.getHeader(IAP_HEADER_NAME);
+  }
+
+  @Provides
+  @RegularOidc
+  @Singleton
+  TokenExtractor provideRegularTokenExtractor() {
+    return request -> {
+      // TODO: only check the Authorizaiton header after the migration to OIDC is complete.
+      String rawToken = request.getHeader(PROXY_AUTHORIZATION);
+      if (rawToken == null) {
+        rawToken = request.getHeader(AUTHORIZATION);
+      }
+      if (rawToken != null && rawToken.startsWith(BEARER_PREFIX)) {
+        return rawToken.substring(BEARER_PREFIX.length());
+      }
+      return null;
+    };
   }
 }
