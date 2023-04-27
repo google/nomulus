@@ -16,7 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.flows.domain.DomainFlowUtils.zeroInCurrency;
-import static google.registry.flows.domain.token.AllocationTokenFlowUtils.validateForPremiums;
+import static google.registry.flows.domain.token.AllocationTokenFlowUtils.validateTokenForPossiblePremiumName;
 import static google.registry.pricing.PricingEngineProxy.getPricesForDomainName;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
@@ -258,7 +258,7 @@ public final class DomainPricingLogic {
   private Money getDomainCostWithDiscount(
       boolean isPremium, int years, Optional<AllocationToken> allocationToken, Money oneYearCost)
       throws AllocationTokenInvalidForPremiumNameException {
-    validateForPremiums(allocationToken, isPremium);
+    validateTokenForPossiblePremiumName(allocationToken, isPremium);
     Money totalDomainFlowCost = oneYearCost.multipliedBy(years);
 
     // Apply the allocation token discount, if applicable.
