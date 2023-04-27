@@ -27,6 +27,9 @@ gcpProject:
   serviceAccountEmails:
   - default-service-account-email@email.com
   - cloud-scheduler-email@email.com
+  # The default service account with which the service is running. For example,
+  # on GAE this would be {project-id}@appspot.gserviceaccount.com
+  defaultServiceAccount: null
 
 gSuite:
   # Publicly accessible domain name of the running G Suite instance.

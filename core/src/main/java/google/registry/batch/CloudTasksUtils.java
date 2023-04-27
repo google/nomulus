@@ -16,6 +16,7 @@ package google.registry.batch;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.tools.ServiceConnection.getServer;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.api.gax.rpc.ApiException;
@@ -23,6 +24,8 @@ import com.google.cloud.tasks.v2.AppEngineHttpRequest;
 import com.google.cloud.tasks.v2.AppEngineRouting;
 import com.google.cloud.tasks.v2.CloudTasksClient;
 import com.google.cloud.tasks.v2.HttpMethod;
+import com.google.cloud.tasks.v2.HttpRequest;
+import com.google.cloud.tasks.v2.OidcToken;
 import com.google.cloud.tasks.v2.QueueName;
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.base.Joiner;
@@ -46,7 +49,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import org.joda.time.Duration;
 
@@ -61,6 +67,9 @@ public class CloudTasksUtils implements Serializable {
   private final Clock clock;
   private final String projectId;
   private final String locationId;
+  // defaultServiceAccount and iapClientId are nullable because Optional isn't serializable
+  @Nullable private final String defaultServiceAccount;
+  @Nullable private final String iapClientId;
   private final SerializableCloudTasksClient client;
 
   @Inject
@@ -69,11 +78,15 @@ public class CloudTasksUtils implements Serializable {
       Clock clock,
       @Config("projectId") String projectId,
       @Config("locationId") String locationId,
+      @Config("defaultServiceAccount") Optional<String> defaultServiceAccount,
+      @Config("iapClientId") Optional<String> iapClientId,
       SerializableCloudTasksClient client) {
     this.retrier = retrier;
     this.clock = clock;
     this.projectId = projectId;
     this.locationId = locationId;
+    this.defaultServiceAccount = defaultServiceAccount.orElse(null);
+    this.iapClientId = iapClientId.orElse(null);
     this.client = client;
   }
 
@@ -96,6 +109,74 @@ public class CloudTasksUtils implements Serializable {
 
   public ImmutableList<Task> enqueue(String queue, Task... tasks) {
     return enqueue(queue, Arrays.asList(tasks));
+  }
+
+  /**
+   * Converts a (possible) set of params into an HTTP request via the appropriate method.
+   *
+   * <p>For GET requests we add them on to the URL, and for POST requests we add them in the body of
+   * the request.
+   *
+   * <p>The parameters {@code putHeadersFunction} and {@code setBodyFunction} are used so that this
+   * method can be called with either an AppEngine HTTP request or a standard non-AppEngine HTTP
+   * request. The two objects do not have the same methods, but both have ways of setting headers /
+   * body.
+   *
+   * @return the resulting path (unchanged for POST requests, with params added for GET requests)
+   */
+  private String processRequestParameters(
+      String path,
+      HttpMethod method,
+      Multimap<String, String> params,
+      BiConsumer<String, String> putHeadersFunction,
+      Consumer<ByteString> setBodyFunction) {
+    if (CollectionUtils.isNullOrEmpty(params)) {
+      return path;
+    }
+    Escaper escaper = UrlEscapers.urlPathSegmentEscaper();
+    String encodedParams =
+        Joiner.on("&")
+            .join(
+                params.entries().stream()
+                    .map(
+                        entry ->
+                            String.format(
+                                "%s=%s",
+                                escaper.escape(entry.getKey()), escaper.escape(entry.getValue())))
+                    .collect(toImmutableList()));
+    if (method.equals(HttpMethod.GET)) {
+      return String.format("%s?%s", path, encodedParams);
+    }
+    putHeadersFunction.accept(HttpHeaders.CONTENT_TYPE, MediaType.FORM_DATA.toString());
+    setBodyFunction.accept(ByteString.copyFrom(encodedParams, StandardCharsets.UTF_8));
+    return path;
+  }
+
+  /**
+   * Creates a {@link Task} that does not use AppEngine for submission.
+   *
+   * <p>This uses the standard Cloud Tasks auth format to create and send an OIDC ID token set to
+   * the default service account. That account must have permission to submit tasks to Cloud Tasks.
+   */
+  private Task createNonAppEngineTask(
+      String path, HttpMethod method, Service service, Multimap<String, String> params) {
+    HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().setHttpMethod(method);
+    path =
+        processRequestParameters(
+            path, method, params, requestBuilder::putHeaders, requestBuilder::setBody);
+    OidcToken.Builder oidcTokenBuilder =
+        OidcToken.newBuilder().setServiceAccountEmail(defaultServiceAccount);
+    // If the service is using IAP, add that as the audience for the token so the request can be
+    // appropriately authed. Otherwise, use the project name.
+    if (iapClientId != null) {
+      oidcTokenBuilder.setAudience(iapClientId);
+    } else {
+      oidcTokenBuilder.setAudience(projectId);
+    }
+    requestBuilder.setOidcToken(oidcTokenBuilder.build());
+    String totalPath = String.format("%s%s", getServer(service), path);
+    requestBuilder.setUrl(totalPath);
+    return Task.newBuilder().setHttpRequest(requestBuilder.build()).build();
   }
 
   /**
@@ -123,34 +204,21 @@ public class CloudTasksUtils implements Serializable {
         method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST),
         "HTTP method %s is used. Only GET and POST are allowed.",
         method);
-    AppEngineHttpRequest.Builder requestBuilder =
-        AppEngineHttpRequest.newBuilder()
-            .setHttpMethod(method)
-            .setAppEngineRouting(
-                AppEngineRouting.newBuilder().setService(service.toString()).build());
-
-    if (!CollectionUtils.isNullOrEmpty(params)) {
-      Escaper escaper = UrlEscapers.urlPathSegmentEscaper();
-      String encodedParams =
-          Joiner.on("&")
-              .join(
-                  params.entries().stream()
-                      .map(
-                          entry ->
-                              String.format(
-                                  "%s=%s",
-                                  escaper.escape(entry.getKey()), escaper.escape(entry.getValue())))
-                      .collect(toImmutableList()));
-      if (method == HttpMethod.GET) {
-        path = String.format("%s?%s", path, encodedParams);
-      } else {
-        requestBuilder
-            .putHeaders(HttpHeaders.CONTENT_TYPE, MediaType.FORM_DATA.toString())
-            .setBody(ByteString.copyFrom(encodedParams, StandardCharsets.UTF_8));
-      }
+    // If the default service account is configured, send a standard non-AppEngine HTTP request
+    if (defaultServiceAccount != null) {
+      return createNonAppEngineTask(path, method, service, params);
+    } else {
+      AppEngineHttpRequest.Builder requestBuilder =
+          AppEngineHttpRequest.newBuilder()
+              .setHttpMethod(method)
+              .setAppEngineRouting(
+                  AppEngineRouting.newBuilder().setService(service.toString()).build());
+      path =
+          processRequestParameters(
+              path, method, params, requestBuilder::putHeaders, requestBuilder::setBody);
+      requestBuilder.setRelativeUri(path);
+      return Task.newBuilder().setAppEngineHttpRequest(requestBuilder.build()).build();
     }
-    requestBuilder.setRelativeUri(path);
-    return Task.newBuilder().setAppEngineHttpRequest(requestBuilder.build()).build();
   }
 
   /**

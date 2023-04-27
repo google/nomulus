@@ -55,6 +55,7 @@ public class RegistryConfigSettings {
     public String toolsServiceUrl;
     public String pubapiServiceUrl;
     public List<String> serviceAccountEmails;
+    public String defaultServiceAccount;
   }
 
   /** Configuration options for OAuth settings for authenticating users. */
