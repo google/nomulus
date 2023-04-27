@@ -1,0 +1,95 @@
+package google.registry.request.auth;
+
+import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
+import com.google.errorprone.annotations.Immutable;
+
+/**
+ * Parameters used to configure the authenticator.
+ *
+ * <p>AuthSettings shouldn't be used directly, instead - use one of the predefined {@link Auth} enum
+ * values.
+ */
+@Immutable
+@AutoValue
+public abstract class AuthSettings {
+
+  public abstract ImmutableList<AuthMethod> methods();
+
+  public abstract AuthLevel minimumLevel();
+
+  public abstract UserPolicy userPolicy();
+
+  static AuthSettings create(
+      ImmutableList<AuthMethod> methods, AuthLevel minimumLevel, UserPolicy userPolicy) {
+    return new AutoValue_AuthSettings(methods, minimumLevel, userPolicy);
+  }
+
+  /** Available methods for authentication. */
+  public enum AuthMethod {
+
+    /** App Engine internal authentication. Must always be provided as the first method. */
+    INTERNAL,
+
+    /** Authentication methods suitable for API-style access, such as OAuth 2. */
+    API,
+
+    /** Legacy authentication using cookie-based App Engine Users API. Must come last if present. */
+    LEGACY
+  }
+
+  /**
+   * Authentication level.
+   *
+   * <p>Used by {@link Auth} to specify what authentication is required, and by {@link AuthResult})
+   * to specify what authentication was found. These are a series of levels, from least to most
+   * authentication required. The lowest level of requirement, NONE, can be satisfied by any level
+   * of authentication, while the highest level, USER, can only be satisfied by the authentication
+   * of a specific user. The level returned may be higher than what was required, if more
+   * authentication turns out to be possible. For instance, if an authenticated user is found, USER
+   * will be returned even if no authentication was required.
+   */
+  public enum AuthLevel {
+
+    /** No authentication was required/found. */
+    NONE,
+
+    /**
+     * Authentication required, but user not required.
+     *
+     * <p>In Auth: Authentication is required, but app-internal authentication (which isn't
+     * associated with a specific user) is permitted.
+     *
+     * <p>In AuthResult: App-internal authentication was successful.
+     */
+    APP,
+
+    /**
+     * Authentication required, user required.
+     *
+     * <p>In Auth: Authentication is required, and app-internal authentication is forbidden, meaning
+     * that a valid authentication result will contain specific user information.
+     *
+     * <p>In AuthResult: A valid user was authenticated.
+     */
+    USER
+  }
+
+  /** User authorization policy options. */
+  public enum UserPolicy {
+
+    /** This action ignores end users; the only configured auth method must be INTERNAL. */
+    IGNORED,
+
+    /** No user policy is enforced; anyone can access this action. */
+    PUBLIC,
+
+    /**
+     * If there is a user, it must be an admin, as determined by isUserAdmin().
+     *
+     * <p>Note that, according to App Engine, anybody with access to the app in the GCP Console,
+     * including editors and viewers, is an admin.
+     */
+    ADMIN
+  }
+}
