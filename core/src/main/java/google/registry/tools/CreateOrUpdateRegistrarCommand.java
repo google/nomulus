@@ -131,7 +131,6 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       validateWith = PathParameter.InputFile.class)
   Path clientCertificateFilename;
 
-  @Nullable
   @Parameter(
       names = "--rotate_primary_cert",
       description =
@@ -357,8 +356,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
           verify(
               oldRegistrar.getClientCertificate().isPresent(),
               "Primary cert is absent. Rotation may remove a failover certificate still in use.");
-          builder.setFailoverClientCertificate(
-              oldRegistrar.getClientCertificate().orElse(null), now);
+          builder.setFailoverClientCertificate(oldRegistrar.getClientCertificate().get(), now);
         }
         builder.setClientCertificate(asciiCert, now);
       }
