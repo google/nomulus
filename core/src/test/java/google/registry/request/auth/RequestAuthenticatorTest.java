@@ -28,9 +28,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.request.auth.RequestAuthenticator.AuthMethod;
-import google.registry.request.auth.RequestAuthenticator.AuthSettings;
-import google.registry.request.auth.RequestAuthenticator.UserPolicy;
+import google.registry.request.auth.AuthSettings.AuthLevel;
+import google.registry.request.auth.AuthSettings.AuthMethod;
+import google.registry.request.auth.AuthSettings.UserPolicy;
 import google.registry.security.XsrfTokenManager;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeOAuthService;
@@ -52,50 +52,42 @@ class RequestAuthenticatorTest {
       AuthSettings.create(
           ImmutableList.of(AuthMethod.INTERNAL), AuthLevel.NONE, UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_INTERNAL_OR_ADMIN = AuthSettings.create(
-      ImmutableList.of(AuthMethod.INTERNAL),
-      AuthLevel.APP,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_INTERNAL_OR_ADMIN =
+      AuthSettings.create(ImmutableList.of(AuthMethod.INTERNAL), AuthLevel.APP, UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_ANY_USER_ANY_METHOD = AuthSettings.create(
-      ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY),
-      AuthLevel.USER,
-      UserPolicy.PUBLIC);
+  private static final AuthSettings AUTH_ANY_USER_ANY_METHOD =
+      AuthSettings.create(
+          ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY), AuthLevel.USER, UserPolicy.PUBLIC);
 
-  private static final AuthSettings AUTH_ANY_USER_NO_LEGACY = AuthSettings.create(
-      ImmutableList.of(AuthMethod.API),
-      AuthLevel.USER,
-      UserPolicy.PUBLIC);
+  private static final AuthSettings AUTH_ANY_USER_NO_LEGACY =
+      AuthSettings.create(ImmutableList.of(AuthMethod.API), AuthLevel.USER, UserPolicy.PUBLIC);
 
-  private static final AuthSettings AUTH_ADMIN_USER_ANY_METHOD = AuthSettings.create(
-      ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY),
-      AuthLevel.USER,
-      UserPolicy.ADMIN);
+  private static final AuthSettings AUTH_ADMIN_USER_ANY_METHOD =
+      AuthSettings.create(
+          ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY), AuthLevel.USER, UserPolicy.ADMIN);
 
-  private static final AuthSettings AUTH_NO_METHODS = AuthSettings.create(
-      ImmutableList.of(),
-      AuthLevel.APP,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_NO_METHODS =
+      AuthSettings.create(ImmutableList.of(), AuthLevel.APP, UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_WRONG_METHOD_ORDERING = AuthSettings.create(
-      ImmutableList.of(AuthMethod.API, AuthMethod.INTERNAL),
-      AuthLevel.APP,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_WRONG_METHOD_ORDERING =
+      AuthSettings.create(
+          ImmutableList.of(AuthMethod.API, AuthMethod.INTERNAL), AuthLevel.APP, UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_DUPLICATE_METHODS = AuthSettings.create(
-      ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API, AuthMethod.API),
-      AuthLevel.APP,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_DUPLICATE_METHODS =
+      AuthSettings.create(
+          ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API, AuthMethod.API),
+          AuthLevel.APP,
+          UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_INTERNAL_WITH_USER = AuthSettings.create(
-      ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API),
-      AuthLevel.USER,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_INTERNAL_WITH_USER =
+      AuthSettings.create(
+          ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API),
+          AuthLevel.USER,
+          UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_WRONGLY_IGNORING_USER = AuthSettings.create(
-      ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API),
-      AuthLevel.APP,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_WRONGLY_IGNORING_USER =
+      AuthSettings.create(
+          ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API), AuthLevel.APP, UserPolicy.IGNORED);
 
   private final UserService mockUserService = mock(UserService.class);
   private final HttpServletRequest req = mock(HttpServletRequest.class);

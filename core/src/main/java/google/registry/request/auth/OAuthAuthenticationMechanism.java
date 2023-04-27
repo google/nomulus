@@ -15,8 +15,8 @@
 package google.registry.request.auth;
 
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
-import static google.registry.request.auth.AuthLevel.NONE;
-import static google.registry.request.auth.AuthLevel.USER;
+import static google.registry.request.auth.AuthSettings.AuthLevel.NONE;
+import static google.registry.request.auth.AuthSettings.AuthLevel.USER;
 
 import com.google.appengine.api.oauth.OAuthRequestException;
 import com.google.appengine.api.oauth.OAuthService;
