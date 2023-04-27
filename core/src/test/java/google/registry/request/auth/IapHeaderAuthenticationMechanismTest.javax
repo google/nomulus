@@ -38,7 +38,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-/** Tests for {@link IapHeaderAuthenticationMechanism}. */
+/** Tests for {@link IapHeaderAuthenticationMechanismMechanism}. */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class IapHeaderAuthenticationMechanismTest {
@@ -51,11 +51,11 @@ public class IapHeaderAuthenticationMechanismTest {
   @Mock private HttpServletRequest request;
 
   private JsonWebSignature token;
-  private IapHeaderAuthenticationMechanism authenticationMechanism;
+  private IapHeaderAuthenticationMechanismMechanism authenticationMechanism;
 
   @BeforeEach
   void beforeEach() throws Exception {
-    authenticationMechanism = new IapHeaderAuthenticationMechanism(tokenVerifier);
+    authenticationMechanism = new IapHeaderAuthenticationMechanismMechanism(tokenVerifier);
     when(request.getHeader("X-Goog-IAP-JWT-Assertion")).thenReturn("jwtValue");
     Payload payload = new Payload();
     payload.setEmail("email@email.com");
