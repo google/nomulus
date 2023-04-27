@@ -16,8 +16,8 @@ package google.registry.request.auth;
 
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.base.Strings.nullToEmpty;
-import static google.registry.request.auth.AuthLevel.NONE;
-import static google.registry.request.auth.AuthLevel.USER;
+import static google.registry.request.auth.AuthSettings.AuthLevel.NONE;
+import static google.registry.request.auth.AuthSettings.AuthLevel.USER;
 import static google.registry.security.XsrfTokenManager.P_CSRF_TOKEN;
 import static google.registry.security.XsrfTokenManager.X_CSRF_TOKEN;
 

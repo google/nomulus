@@ -14,8 +14,8 @@
 
 package google.registry.request.auth;
 
-import static google.registry.request.auth.AuthLevel.APP;
-import static google.registry.request.auth.AuthLevel.NONE;
+import static google.registry.request.auth.AuthSettings.AuthLevel.APP;
+import static google.registry.request.auth.AuthSettings.AuthLevel.NONE;
 
 import com.google.appengine.api.users.UserService;
 import javax.inject.Inject;

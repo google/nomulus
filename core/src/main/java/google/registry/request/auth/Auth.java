@@ -15,9 +15,9 @@
 package google.registry.request.auth;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.request.auth.RequestAuthenticator.AuthMethod;
-import google.registry.request.auth.RequestAuthenticator.AuthSettings;
-import google.registry.request.auth.RequestAuthenticator.UserPolicy;
+import google.registry.request.auth.AuthSettings.AuthLevel;
+import google.registry.request.auth.AuthSettings.AuthMethod;
+import google.registry.request.auth.AuthSettings.UserPolicy;
 
 /** Enum used to configure authentication settings for Actions. */
 public enum Auth {
@@ -25,21 +25,18 @@ public enum Auth {
   /**
    * Allows anyone access, doesn't attempt to authenticate user.
    *
-   * Will never return absent(), but only authenticates access from App Engine task-queues. For
+   * <p>Will never return absent(), but only authenticates access from App Engine task-queues. For
    * everyone else - returns NOT_AUTHENTICATED.
    */
-  AUTH_PUBLIC_ANONYMOUS(
-      ImmutableList.of(AuthMethod.INTERNAL),
-      AuthLevel.NONE,
-      UserPolicy.PUBLIC),
+  AUTH_PUBLIC_ANONYMOUS(ImmutableList.of(AuthMethod.INTERNAL), AuthLevel.NONE, UserPolicy.PUBLIC),
 
   /**
-   * Allows anyone access, does attempt to authenticate user.
+   * Allows anyone to access, does attempt to authenticate user.
    *
-   * If a user is logged in, will authenticate (and return) them. Otherwise, access is still
+   * <p>If a user is logged in, will authenticate (and return) them. Otherwise, access is still
    * granted, but NOT_AUTHENTICATED is returned.
    *
-   * Will never return absent().
+   * <p>Will never return absent().
    */
   AUTH_PUBLIC(
       ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API, AuthMethod.LEGACY),
@@ -47,17 +44,15 @@ public enum Auth {
       UserPolicy.PUBLIC),
 
   /**
-   * Allows anyone access, as long as they are logged in.
+   * Allows anyone to access, as long as they are logged in.
    *
-   * Does not allow access from App Engine task-queues.
+   * <p>Does not allow access from App Engine task-queues.
    */
   AUTH_PUBLIC_LOGGED_IN(
-      ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY),
-      AuthLevel.USER,
-      UserPolicy.PUBLIC),
+      ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY), AuthLevel.USER, UserPolicy.PUBLIC),
 
   /**
-   * Allows anyone access, as long as they use OAuth to authenticate.
+   * Allows anyone to access, as long as they use OAuth to authenticate.
    *
    * <p>Also allows access from App Engine task-queue. Note that OAuth client ID still needs to be
    * allow-listed in the config file for OAuth-based authentication to succeed.
@@ -80,10 +75,7 @@ public enum Auth {
 
   private final AuthSettings authSettings;
 
-  Auth(
-      ImmutableList<AuthMethod> methods,
-      AuthLevel minimumLevel,
-      UserPolicy userPolicy) {
+  Auth(ImmutableList<AuthMethod> methods, AuthLevel minimumLevel, UserPolicy userPolicy) {
     authSettings = AuthSettings.create(methods, minimumLevel, userPolicy);
   }
 
