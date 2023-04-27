@@ -35,11 +35,13 @@ import dagger.Lazy;
 import google.registry.groups.GroupsConnection;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.User.Builder;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
 import google.registry.util.JdkLoggerConfig;
 import java.util.Optional;
@@ -415,7 +417,7 @@ class AuthenticatedRegistrarAccessorTest {
   @Test
   void testConsoleUser_admin() {
     google.registry.model.console.User consoleUser =
-        new google.registry.model.console.User.Builder()
+        new Builder()
             .setGaiaId("gaiaId")
             .setEmailAddress("email@email.com")
             .setUserRoles(
@@ -442,7 +444,7 @@ class AuthenticatedRegistrarAccessorTest {
     // Users with global roles shouldn't necessarily have access to specific registrars if they're
     // not admins
     google.registry.model.console.User consoleUser =
-        new google.registry.model.console.User.Builder()
+        new Builder()
             .setGaiaId("gaiaId")
             .setEmailAddress("email@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
@@ -460,7 +462,7 @@ class AuthenticatedRegistrarAccessorTest {
   void testConsoleUser_registrarRoles() {
     // Registrar employees should have OWNER access to their registrars
     google.registry.model.console.User consoleUser =
-        new google.registry.model.console.User.Builder()
+        new Builder()
             .setGaiaId("gaiaId")
             .setEmailAddress("email@email.com")
             .setUserRoles(

@@ -24,7 +24,10 @@ import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
-import google.registry.request.auth.IapHeaderAuthenticationMechanism;
+import google.registry.request.auth.AuthResult;
+import google.registry.request.auth.AuthSettings.AuthLevel;
+import google.registry.request.auth.OidcTokenAuthenticationMechanism;
+import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.UserInfo;
 import google.registry.testing.UserServiceExtension;
 import google.registry.tools.params.HostAndPortParameter;
@@ -145,7 +148,8 @@ public final class RegistryTestServerMain {
             .setUserRoles(userRoles)
             .setRegistryLockPassword("registryLockPassword")
             .build();
-    IapHeaderAuthenticationMechanism.setUserAuthInfoForTestServer(user);
+    OidcTokenAuthenticationMechanism.setAuthResultForTesting(
+        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user)));
     new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);
     JpaTransactionManagerExtension.loadInitialData();
     System.out.printf("%sLoading fixtures...%s\n", BLUE, RESET);
