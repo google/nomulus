@@ -15,8 +15,9 @@
 package google.registry.request.auth;
 
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
-import static google.registry.request.auth.AuthLevel.NONE;
-import static google.registry.request.auth.AuthLevel.USER;
+import static google.registry.request.auth.AuthModule.BEARER_PREFIX;
+import static google.registry.request.auth.AuthSettings.AuthLevel.NONE;
+import static google.registry.request.auth.AuthSettings.AuthLevel.USER;
 
 import com.google.appengine.api.oauth.OAuthRequestException;
 import com.google.appengine.api.oauth.OAuthService;
@@ -34,8 +35,6 @@ import javax.servlet.http.HttpServletRequest;
  * Only OAuth version 2 is supported.
  */
 public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
-
-  private static final String BEARER_PREFIX = "Bearer ";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
