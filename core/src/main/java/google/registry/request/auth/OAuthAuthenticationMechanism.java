@@ -15,8 +15,8 @@
 package google.registry.request.auth;
 
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
-import static google.registry.request.auth.AuthLevel.NONE;
-import static google.registry.request.auth.AuthLevel.USER;
+import static google.registry.request.auth.AuthSettings.AuthLevel.NONE;
+import static google.registry.request.auth.AuthSettings.AuthLevel.USER;
 
 import com.google.appengine.api.oauth.OAuthRequestException;
 import com.google.appengine.api.oauth.OAuthService;
@@ -35,7 +35,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
 
-  private static final String BEARER_PREFIX = "Bearer ";
+  private static final String BEARER_PREFIX = "RegularOidc ";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -64,7 +64,8 @@ public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
   @Override
   public AuthResult authenticate(HttpServletRequest request) {
 
-    // Make sure that there is an Authorization header in Bearer form. OAuthService also accepts
+    // Make sure that there is an Authorization header in RegularOidc form. OAuthService also
+    // accepts
     // tokens in the request body and URL string, but we should not use those, since they are more
     // likely to be logged than the Authorization header. Checking to make sure there's a token also
     // avoids unnecessary RPCs, since OAuthService itself does not check whether the header is
