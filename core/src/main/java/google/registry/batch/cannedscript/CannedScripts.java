@@ -111,7 +111,7 @@ public class CannedScripts {
   interface CannedScriptsComponent {
     Bigquery bigQuery();
 
-    java.util.function.Supplier<CloudTasksClient> cloudtasksClient();
+    Supplier<CloudTasksClient> cloudtasksClient();
 
     Dataflow dataflow();
 
@@ -181,9 +181,9 @@ public class CannedScripts {
     }
 
     @Provides
-    public static java.util.function.Supplier<CloudTasksClient> provideCloudTasksClientSupplier(
+    public static Supplier<CloudTasksClient> provideCloudTasksClientSupplier(
         @ApplicationDefaultCredential GoogleCredentialsBundle credentials) {
-      return (java.util.function.Supplier<CloudTasksClient> & Serializable)
+      return (Supplier<CloudTasksClient> & Serializable)
           () -> {
             CloudTasksClient client;
             try {
