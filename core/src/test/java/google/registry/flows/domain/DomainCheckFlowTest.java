@@ -69,7 +69,6 @@ import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.flows.domain.DomainFlowUtils.TransfersAreAlwaysForOneYearException;
 import google.registry.flows.domain.DomainFlowUtils.UnknownFeeCommandException;
-import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
@@ -415,14 +414,17 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
-            .setDomainName("rich.example")
             .setDiscountFraction(0.9)
             .setDiscountYears(3)
             .setDiscountPremiums(false)
             .build());
     setEppInput(
-        "domain_check_allocationtoken_promotion.xml", ImmutableMap.of("DOMAIN", "rich.example"));
-    assertThrows(AllocationTokenInvalidForPremiumNameException.class, this::runFlow);
+        "domain_check_allocationtoken_multiname_promotion.xml",
+        ImmutableMap.of("DOMAIN", "rich.example"));
+    doCheckTest(
+        create(true, "example1.example", null),
+        create(false, "rich.example", "Token invalid for premium name"),
+        create(true, "example3.example", null));
   }
 
   @Test
