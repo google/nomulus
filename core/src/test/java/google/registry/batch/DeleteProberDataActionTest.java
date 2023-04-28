@@ -36,8 +36,8 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryEnvironment;
 import google.registry.dns.DnsUtils;
 import google.registry.model.ImmutableObject;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.poll.PollMessage;
@@ -290,9 +290,9 @@ class DeleteProberDataActionTest {
                 .setRegistrarId("TheRegistrar")
                 .setModificationTime(DELETION_TIME.minusYears(3))
                 .build());
-    BillingEvent.OneTime billingEvent =
+    BillingEvent billingEvent =
         persistSimpleResource(
-            new BillingEvent.OneTime.Builder()
+            new BillingEvent.Builder()
                 .setDomainHistory(historyEntry)
                 .setBillingTime(DELETION_TIME.plusYears(1))
                 .setCost(Money.parse("USD 10"))

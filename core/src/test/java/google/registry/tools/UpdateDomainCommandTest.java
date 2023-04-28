@@ -32,9 +32,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
@@ -324,9 +324,9 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 .setDomain(domain)
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
-    BillingEvent.Recurring autorenewBillingEvent =
+    BillingRecurrence autorenewBillingEvent =
         persistResource(
-            new BillingEvent.Recurring.Builder()
+            new BillingRecurrence.Builder()
                 .setReason(Reason.RENEW)
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId("example.tld")
@@ -342,7 +342,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
             .setGracePeriods(
                 ImmutableSet.of(
-                    GracePeriod.createForRecurring(
+                    GracePeriod.createForRecurrence(
                         AUTO_RENEW,
                         domain.getRepoId(),
                         fakeClock.nowUtc().plusDays(40),

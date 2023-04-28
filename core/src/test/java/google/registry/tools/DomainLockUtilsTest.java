@@ -35,8 +35,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableList;
 import google.registry.batch.RelockDomainAction;
+import google.registry.model.billing.BillingBase;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
@@ -558,11 +559,11 @@ public final class DomainLockUtilsTest {
   }
 
   private void assertBillingEvents(ImmutableList<DomainHistory> historyEntries) {
-    Set<BillingEvent> expectedEvents =
+    Set<BillingBase> expectedEvents =
         historyEntries.stream()
             .map(
                 entry ->
-                    new BillingEvent.OneTime.Builder()
+                    new BillingEvent.Builder()
                         .setReason(Reason.SERVER_STATUS)
                         .setTargetId(domain.getForeignKey())
                         .setRegistrarId(domain.getCurrentSponsorRegistrarId())

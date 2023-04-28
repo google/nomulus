@@ -32,8 +32,8 @@ import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
@@ -313,7 +313,7 @@ final class RegistryLockVerifyActionTest {
 
   private void assertBillingEvent(DomainHistory historyEntry) {
     DatabaseHelper.assertBillingEvents(
-        new BillingEvent.OneTime.Builder()
+        new BillingEvent.Builder()
             .setReason(Reason.SERVER_STATUS)
             .setTargetId(domain.getForeignKey())
             .setRegistrarId(domain.getCurrentSponsorRegistrarId())

@@ -36,11 +36,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.testing.TestLogHandler;
 import google.registry.beam.TestPipelineExtension;
-import google.registry.model.billing.BillingEvent.Cancellation;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.OneTime;
-import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingCancellation;
+import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.registrar.Registrar;
@@ -89,9 +89,9 @@ class InvoicingPipelineTest {
   private static final String YEAR_MONTH = "2017-10";
   private static final String INVOICE_FILE_PREFIX = "REG-INV";
 
-  private static final ImmutableList<BillingEvent> INPUT_EVENTS =
+  private static final ImmutableList<google.registry.beam.billing.BillingEvent> INPUT_EVENTS =
       ImmutableList.of(
-          BillingEvent.create(
+          google.registry.beam.billing.BillingEvent.create(
               1,
               DateTime.parse("2017-10-04T00:00:00Z"),
               DateTime.parse("2017-10-04T00:00:00Z"),
@@ -106,7 +106,7 @@ class InvoicingPipelineTest {
               "USD",
               20.5,
               ""),
-          BillingEvent.create(
+          google.registry.beam.billing.BillingEvent.create(
               2,
               DateTime.parse("2017-10-04T00:00:00Z"),
               DateTime.parse("2017-10-04T00:00:00Z"),
@@ -121,7 +121,7 @@ class InvoicingPipelineTest {
               "USD",
               20.5,
               ""),
-          BillingEvent.create(
+          google.registry.beam.billing.BillingEvent.create(
               3,
               DateTime.parse("2017-10-02T00:00:00Z"),
               DateTime.parse("2017-09-29T00:00:00Z"),
@@ -136,7 +136,7 @@ class InvoicingPipelineTest {
               "JPY",
               70.0,
               ""),
-          BillingEvent.create(
+          google.registry.beam.billing.BillingEvent.create(
               4,
               DateTime.parse("2017-10-04T00:00:00Z"),
               DateTime.parse("2017-10-04T00:00:00Z"),
@@ -151,7 +151,7 @@ class InvoicingPipelineTest {
               "USD",
               20.5,
               ""),
-          BillingEvent.create(
+          google.registry.beam.billing.BillingEvent.create(
               5,
               DateTime.parse("2017-10-04T00:00:00Z"),
               DateTime.parse("2017-10-04T00:00:00Z"),
@@ -166,7 +166,7 @@ class InvoicingPipelineTest {
               "USD",
               0.0,
               "SUNRISE ANCHOR_TENANT"),
-          BillingEvent.create(
+          google.registry.beam.billing.BillingEvent.create(
               6,
               DateTime.parse("2017-10-04T00:00:00Z"),
               DateTime.parse("2017-10-04T00:00:00Z"),
@@ -181,7 +181,7 @@ class InvoicingPipelineTest {
               "USD",
               0.0,
               ""),
-          BillingEvent.create(
+          google.registry.beam.billing.BillingEvent.create(
               7,
               DateTime.parse("2017-10-04T00:00:00Z"),
               DateTime.parse("2017-10-04T00:00:00Z"),
@@ -237,7 +237,7 @@ class InvoicingPipelineTest {
       PipelineOptionsFactory.create().as(InvoicingPipelineOptions.class);
 
   private File billingBucketUrl;
-  private PCollection<BillingEvent> billingEvents;
+  private PCollection<google.registry.beam.billing.BillingEvent> billingEvents;
   private final TestLogHandler logHandler = new TestLogHandler();
 
   private final Logger loggerToIntercept =
@@ -251,7 +251,9 @@ class InvoicingPipelineTest {
     options.setYearMonth(YEAR_MONTH);
     options.setInvoiceFilePrefix(INVOICE_FILE_PREFIX);
     billingEvents =
-        pipeline.apply(Create.of(INPUT_EVENTS).withCoder(SerializableCoder.of(BillingEvent.class)));
+        pipeline.apply(
+            Create.of(INPUT_EVENTS)
+                .withCoder(SerializableCoder.of(google.registry.beam.billing.BillingEvent.class)));
   }
 
   @Test
@@ -274,7 +276,8 @@ class InvoicingPipelineTest {
   @Test
   void testSuccess_readFromCloudSql() throws Exception {
     setupCloudSql();
-    PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
+    PCollection<google.registry.beam.billing.BillingEvent> billingEvents =
+        InvoicingPipeline.readFromCloudSql(options, pipeline);
     billingEvents = billingEvents.apply(new ChangeDomainRepo());
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
     pipeline.run().waitUntilFinish();
@@ -299,8 +302,9 @@ class InvoicingPipelineTest {
     persistResource(test);
     Domain domain = persistActiveDomain("mycanadiandomain.test");
 
-    persistOneTimeBillingEvent(25, domain, registrar, Reason.RENEW, 3, Money.of(CAD, 20.5));
-    PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
+    persistBillingEvent(25, domain, registrar, Reason.RENEW, 3, Money.of(CAD, 20.5));
+    PCollection<google.registry.beam.billing.BillingEvent> billingEvents =
+        InvoicingPipeline.readFromCloudSql(options, pipeline);
     billingEvents = billingEvents.apply(new ChangeDomainRepo());
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
     pipeline.run().waitUntilFinish();
@@ -352,9 +356,9 @@ class InvoicingPipelineTest {
                 + "JOIN Registrar r ON b.clientId = r.registrarId\n"
                 + "JOIN Domain d ON b.domainRepoId = d.repoId\n"
                 + "JOIN Tld t ON t.tldStr = d.tld\n"
-                + "LEFT JOIN BillingCancellation c ON b.id = c.refOneTime\n"
+                + "LEFT JOIN BillingCancellation c ON b.id = c.billingEvent\n"
                 + "LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent ="
-                + " cr.refRecurring\n"
+                + " cr.billingRecurrence\n"
                 + "WHERE r.billingAccountMap IS NOT NULL\n"
                 + "AND r.type = 'REAL'\n"
                 + "AND t.invoicingEnabled IS TRUE\n"
@@ -416,9 +420,9 @@ class InvoicingPipelineTest {
     Domain domain6 = persistActiveDomain("locked.test");
     Domain domain7 = persistActiveDomain("update-prohibited.test");
 
-    persistOneTimeBillingEvent(1, domain1, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
-    persistOneTimeBillingEvent(2, domain2, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
-    persistOneTimeBillingEvent(
+    persistBillingEvent(1, domain1, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
+    persistBillingEvent(2, domain2, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
+    persistBillingEvent(
         3,
         domain3,
         registrar1,
@@ -427,8 +431,8 @@ class InvoicingPipelineTest {
         Money.ofMajor(JPY, 70),
         DateTime.parse("2017-09-29T00:00:00.0Z"),
         DateTime.parse("2017-10-02T00:00:00.0Z"));
-    persistOneTimeBillingEvent(4, domain4, registrar2, Reason.RENEW, 1, Money.of(USD, 20.5));
-    persistOneTimeBillingEvent(
+    persistBillingEvent(4, domain4, registrar2, Reason.RENEW, 1, Money.of(USD, 20.5));
+    persistBillingEvent(
         5,
         domain5,
         registrar3,
@@ -439,15 +443,15 @@ class InvoicingPipelineTest {
         DateTime.parse("2017-10-04T00:00:00.0Z"),
         Flag.SUNRISE,
         Flag.ANCHOR_TENANT);
-    persistOneTimeBillingEvent(6, domain6, registrar1, Reason.SERVER_STATUS, 0, Money.of(USD, 0));
-    persistOneTimeBillingEvent(7, domain7, registrar1, Reason.SERVER_STATUS, 0, Money.of(USD, 20));
+    persistBillingEvent(6, domain6, registrar1, Reason.SERVER_STATUS, 0, Money.of(USD, 0));
+    persistBillingEvent(7, domain7, registrar1, Reason.SERVER_STATUS, 0, Money.of(USD, 20));
 
     // Add billing event for a non-billable registrar
     Registrar registrar4 = persistNewRegistrar("noBillRegistrar");
     registrar4 = registrar4.asBuilder().setBillingAccountMap(null).build();
     persistResource(registrar4);
     Domain domain8 = persistActiveDomain("non-billable.test");
-    persistOneTimeBillingEvent(8, domain8, registrar4, Reason.RENEW, 3, Money.of(USD, 20.5));
+    persistBillingEvent(8, domain8, registrar4, Reason.RENEW, 3, Money.of(USD, 20.5));
 
     // Add billing event for a non-real registrar
     Registrar registrar5 = persistNewRegistrar("notRealRegistrar");
@@ -460,16 +464,16 @@ class InvoicingPipelineTest {
             .build();
     persistResource(registrar5);
     Domain domain9 = persistActiveDomain("not-real.test");
-    persistOneTimeBillingEvent(9, domain9, registrar5, Reason.RENEW, 3, Money.of(USD, 20.5));
+    persistBillingEvent(9, domain9, registrar5, Reason.RENEW, 3, Money.of(USD, 20.5));
 
     // Add billing event for a non-invoicing TLD
     createTld("nobill");
     Domain domain10 = persistActiveDomain("test.nobill");
-    persistOneTimeBillingEvent(10, domain10, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
+    persistBillingEvent(10, domain10, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
 
     // Add billing event before October 2017
     Domain domain11 = persistActiveDomain("july.test");
-    persistOneTimeBillingEvent(
+    persistBillingEvent(
         11,
         domain11,
         registrar1,
@@ -481,64 +485,64 @@ class InvoicingPipelineTest {
 
     // Add a billing event with a corresponding cancellation
     Domain domain12 = persistActiveDomain("cancel.test");
-    OneTime oneTime =
-        persistOneTimeBillingEvent(12, domain12, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
+    BillingEvent billingEvent =
+        persistBillingEvent(12, domain12, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
     DomainHistory domainHistory = persistDomainHistory(domain12, registrar1);
 
-    Cancellation cancellation =
-        new Cancellation()
+    BillingCancellation cancellation =
+        new BillingCancellation()
             .asBuilder()
             .setId(1)
             .setRegistrarId(registrar1.getRegistrarId())
             .setEventTime(DateTime.parse("2017-10-05T00:00:00.0Z"))
             .setBillingTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
-            .setOneTimeEventKey(oneTime.createVKey())
+            .setBillingEvent(billingEvent.createVKey())
             .setTargetId(domain12.getDomainName())
             .setReason(Reason.RENEW)
             .setDomainHistory(domainHistory)
             .build();
     persistResource(cancellation);
 
-    // Add billing event with a corresponding recurring billing event and cancellation
-    Domain domain13 = persistActiveDomain("cancel-recurring.test");
-    DomainHistory domainHistoryRecurring = persistDomainHistory(domain13, registrar1);
+    // Add billing event with a corresponding recurrence billing event and cancellation
+    Domain domain13 = persistActiveDomain("cancel-recurrence.test");
+    DomainHistory domainHistoryRecurrence = persistDomainHistory(domain13, registrar1);
 
-    Recurring recurring =
-        new Recurring()
+    BillingRecurrence billingRecurrence =
+        new BillingRecurrence()
             .asBuilder()
             .setRegistrarId(registrar1.getRegistrarId())
             .setRecurrenceEndTime(END_OF_TIME)
             .setId(1)
-            .setDomainHistory(domainHistoryRecurring)
+            .setDomainHistory(domainHistoryRecurrence)
             .setTargetId(domain13.getDomainName())
             .setEventTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
             .setReason(Reason.RENEW)
             .build();
-    persistResource(recurring);
-    OneTime oneTimeRecurring =
-        persistOneTimeBillingEvent(13, domain13, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
-    oneTimeRecurring =
-        oneTimeRecurring
+    persistResource(billingRecurrence);
+    BillingEvent billingEventRecurrence =
+        persistBillingEvent(13, domain13, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
+    billingEventRecurrence =
+        billingEventRecurrence
             .asBuilder()
-            .setCancellationMatchingBillingEvent(recurring)
+            .setCancellationMatchingBillingEvent(billingRecurrence)
             .setFlags(ImmutableSet.of(Flag.SYNTHETIC))
             .setSyntheticCreationTime(DateTime.parse("2017-10-03T00:00:00.0Z"))
             .build();
-    persistResource(oneTimeRecurring);
+    persistResource(billingEventRecurrence);
 
-    Cancellation cancellationRecurring =
-        new Cancellation()
+    BillingCancellation cancellationRecurrence =
+        new BillingCancellation()
             .asBuilder()
             .setId(2)
             .setRegistrarId(registrar1.getRegistrarId())
             .setEventTime(DateTime.parse("2017-10-05T00:00:00.0Z"))
             .setBillingTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
-            .setRecurringEventKey(recurring.createVKey())
+            .setBillingRecurrence(billingRecurrence.createVKey())
             .setTargetId(domain13.getDomainName())
             .setReason(Reason.RENEW)
-            .setDomainHistory(domainHistoryRecurring)
+            .setDomainHistory(domainHistoryRecurrence)
             .build();
-    persistResource(cancellationRecurring);
+    persistResource(cancellationRecurrence);
   }
 
   private static DomainHistory persistDomainHistory(Domain domain, Registrar registrar) {
@@ -552,9 +556,9 @@ class InvoicingPipelineTest {
     return persistResource(domainHistory);
   }
 
-  private static OneTime persistOneTimeBillingEvent(
+  private static BillingEvent persistBillingEvent(
       int id, Domain domain, Registrar registrar, Reason reason, int years, Money money) {
-    return persistOneTimeBillingEvent(
+    return persistBillingEvent(
         id,
         domain,
         registrar,
@@ -565,7 +569,7 @@ class InvoicingPipelineTest {
         DateTime.parse("2017-10-04T00:00:00.0Z"));
   }
 
-  private static OneTime persistOneTimeBillingEvent(
+  private static BillingEvent persistBillingEvent(
       int id,
       Domain domain,
       Registrar registrar,
@@ -575,8 +579,8 @@ class InvoicingPipelineTest {
       DateTime eventTime,
       DateTime billingTime,
       Flag... flags) {
-    OneTime.Builder billingEventBuilder =
-        new OneTime()
+    BillingEvent.Builder billingEventBuilder =
+        new BillingEvent()
             .asBuilder()
             .setId(id)
             .setBillingTime(billingTime)
@@ -596,18 +600,21 @@ class InvoicingPipelineTest {
   }
 
   private static class ChangeDomainRepo
-      extends PTransform<PCollection<BillingEvent>, PCollection<BillingEvent>> {
+      extends PTransform<
+          PCollection<google.registry.beam.billing.BillingEvent>,
+          PCollection<google.registry.beam.billing.BillingEvent>> {
 
     private static final long serialVersionUID = 2695033474967615250L;
 
     @Override
-    public PCollection<BillingEvent> expand(PCollection<BillingEvent> input) {
+    public PCollection<google.registry.beam.billing.BillingEvent> expand(
+        PCollection<google.registry.beam.billing.BillingEvent> input) {
       return input.apply(
           "Map to invoicing key",
-          MapElements.into(TypeDescriptor.of(BillingEvent.class))
+          MapElements.into(TypeDescriptor.of(google.registry.beam.billing.BillingEvent.class))
               .via(
                   billingEvent ->
-                      BillingEvent.create(
+                      google.registry.beam.billing.BillingEvent.create(
                           billingEvent.id(),
                           billingEvent.billingTime(),
                           billingEvent.eventTime(),

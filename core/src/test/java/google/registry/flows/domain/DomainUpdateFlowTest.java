@@ -88,8 +88,8 @@ import google.registry.flows.exceptions.OnlyToolCanPassMetadataException;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.model.ImmutableObject;
+import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -827,7 +827,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
 
     if (isBillable) {
       assertBillingEvents(
-          new BillingEvent.OneTime.Builder()
+          new BillingEvent.Builder()
               .setReason(Reason.SERVER_STATUS)
               .setTargetId("example.tld")
               .setRegistrarId("TheRegistrar")

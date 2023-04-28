@@ -29,9 +29,9 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.flows.DaggerEppTestComponent;
 import google.registry.flows.EppController;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
-import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Flag;
-import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.billing.BillingBase.Flag;
+import google.registry.model.billing.BillingBase.Reason;
+import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.poll.PollMessage;
@@ -173,7 +173,7 @@ class DeleteExpiredDomainsActionTest {
                 .setModificationTime(clock.nowUtc().minusMonths(9))
                 .setRegistrarId(pendingExpirationDomain.getCreationRegistrarId())
                 .build());
-    BillingEvent.Recurring autorenewBillingEvent =
+    BillingRecurrence autorenewBillingEvent =
         persistResource(createAutorenewBillingEvent(createHistoryEntry).build());
     PollMessage.Autorenew autorenewPollMessage =
         persistResource(createAutorenewPollMessage(createHistoryEntry).build());
@@ -189,9 +189,8 @@ class DeleteExpiredDomainsActionTest {
     return pendingExpirationDomain;
   }
 
-  private BillingEvent.Recurring.Builder createAutorenewBillingEvent(
-      DomainHistory createHistoryEntry) {
-    return new BillingEvent.Recurring.Builder()
+  private BillingRecurrence.Builder createAutorenewBillingEvent(DomainHistory createHistoryEntry) {
+    return new BillingRecurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId("fizz.tld")
