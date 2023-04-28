@@ -35,7 +35,6 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.UtilsModule;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Optional;
 import javax.inject.Singleton;
 
@@ -87,7 +86,7 @@ public class CannedScripts {
       logger.atSevere().withCause(ioe).log("Failed to access dns.");
     }
     try {
-      CloudTasksClient client = component.cloudtasksClient().get();
+      CloudTasksClient client = component.cloudtasksClient();
       com.google.cloud.tasks.v2.Queue queue =
           client.getQueue(
               String.format(
@@ -111,7 +110,7 @@ public class CannedScripts {
   interface CannedScriptsComponent {
     Bigquery bigQuery();
 
-    Supplier<CloudTasksClient> cloudtasksClient();
+    CloudTasksClient cloudtasksClient();
 
     Dataflow dataflow();
 
@@ -181,23 +180,20 @@ public class CannedScripts {
     }
 
     @Provides
-    public static Supplier<CloudTasksClient> provideCloudTasksClientSupplier(
+    public static CloudTasksClient provideCloudTasksClient(
         @ApplicationDefaultCredential GoogleCredentialsBundle credentials) {
-      return (Supplier<CloudTasksClient> & Serializable)
-          () -> {
-            CloudTasksClient client;
-            try {
-              client =
-                  CloudTasksClient.create(
-                      CloudTasksSettings.newBuilder()
-                          .setCredentialsProvider(
-                              FixedCredentialsProvider.create(credentials.getGoogleCredentials()))
-                          .build());
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-            return client;
-          };
+      CloudTasksClient client;
+      try {
+        client =
+            CloudTasksClient.create(
+                CloudTasksSettings.newBuilder()
+                    .setCredentialsProvider(
+                        FixedCredentialsProvider.create(credentials.getGoogleCredentials()))
+                    .build());
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      return client;
     }
   }
 }
