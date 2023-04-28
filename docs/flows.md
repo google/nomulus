@@ -245,7 +245,6 @@ information.
 ### Errors
 
 *   2002
-    *   An allocation token was provided that is invalid for premium domains.
     *   Registrar is not logged in.
     *   Command is not allowed in the current registry phase.
 *   2004
