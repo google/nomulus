@@ -278,7 +278,7 @@ public final class DomainPricingLogic {
   public static class AllocationTokenInvalidForPremiumNameException
       extends CommandUseErrorException {
     public AllocationTokenInvalidForPremiumNameException() {
-      super("A nonzero discount code cannot be applied to premium domains");
+      super("Token invalid for premium name");
     }
   }
 }
