@@ -24,7 +24,7 @@ import com.google.api.client.util.GenericData;
 import com.google.auth.oauth2.UserCredentials;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.config.CredentialModule.DefaultCredential;
+import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
@@ -56,7 +56,7 @@ class RequestFactoryModule {
 
   @Provides
   static HttpRequestFactory provideHttpRequestFactory(
-      @DefaultCredential GoogleCredentialsBundle credentialsBundle,
+      @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle,
       @Config("iapClientId") Optional<String> iapClientId) {
     if (RegistryConfig.areServersLocal()) {
       return new NetHttpTransport()
