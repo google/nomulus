@@ -50,6 +50,7 @@ import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.custom.DomainCheckFlowCustomLogic;
 import google.registry.flows.custom.DomainCheckFlowCustomLogic.BeforeResponseParameters;
 import google.registry.flows.custom.DomainCheckFlowCustomLogic.BeforeResponseReturnData;
+import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.flows.domain.token.AllocationTokenDomainCheckResults;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
@@ -81,6 +82,7 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.persistence.VKey;
+import google.registry.pricing.PricingEngineProxy;
 import google.registry.util.Clock;
 import java.util.HashSet;
 import java.util.Optional;
@@ -291,6 +293,7 @@ public final class DomainCheckFlow implements Flow {
                 allocationToken.get(),
                 feeCheckItem.getCommandName(),
                 registrarId,
+                PricingEngineProxy.isDomainPremium(domainName, now),
                 now);
           }
           handleFeeRequest(
@@ -305,7 +308,8 @@ public final class DomainCheckFlow implements Flow {
               availableDomains.contains(domainName),
               recurrences.getOrDefault(domainName, null));
           responseItems.add(builder.setDomainNameIfSupported(domainName).build());
-        } catch (AllocationTokenNotValidForCommandException
+        } catch (AllocationTokenInvalidForPremiumNameException
+            | AllocationTokenNotValidForCommandException
             | AllocationTokenNotValidForDomainException
             | AllocationTokenNotValidForRegistrarException
             | AllocationTokenNotValidForTldException

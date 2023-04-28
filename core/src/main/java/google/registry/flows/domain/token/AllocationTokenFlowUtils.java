@@ -16,6 +16,7 @@ package google.registry.flows.domain.token;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -26,6 +27,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
+import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
@@ -79,7 +81,13 @@ public class AllocationTokenFlowUtils {
     ImmutableMap.Builder<InternetDomainName, String> resultsBuilder = new ImmutableMap.Builder<>();
     for (InternetDomainName domainName : domainNames) {
       try {
-        validateToken(domainName, tokenEntity, CommandName.CREATE, registrarId, now);
+        validateToken(
+            domainName,
+            tokenEntity,
+            CommandName.CREATE,
+            registrarId,
+            isDomainPremium(domainName.toString(), now),
+            now);
         validDomainNames.add(domainName);
       } catch (EppException e) {
         resultsBuilder.put(domainName, e.getMessage());
@@ -105,7 +113,7 @@ public class AllocationTokenFlowUtils {
   /**
    * Validates a given token. The token could be invalid if it has allowed client IDs or TLDs that
    * do not include this client ID / TLD, or if the token has a promotion that is not currently
-   * running.
+   * running, or the token is not valid for a premium name when necessary.
    *
    * @throws EppException if the token is invalid in any way
    */
@@ -114,33 +122,48 @@ public class AllocationTokenFlowUtils {
       AllocationToken token,
       CommandName commandName,
       String registrarId,
+      boolean isPremium,
       DateTime now)
       throws EppException {
 
     // Only tokens with default behavior require validation
-    if (TokenBehavior.DEFAULT.equals(token.getTokenBehavior())) {
-      if (!token.getAllowedEppActions().isEmpty()
-          && !token.getAllowedEppActions().contains(commandName)) {
-        throw new AllocationTokenNotValidForCommandException();
-      }
-      if (!token.getAllowedRegistrarIds().isEmpty()
-          && !token.getAllowedRegistrarIds().contains(registrarId)) {
-        throw new AllocationTokenNotValidForRegistrarException();
-      }
-      if (!token.getAllowedTlds().isEmpty()
-          && !token.getAllowedTlds().contains(domainName.parent().toString())) {
-        throw new AllocationTokenNotValidForTldException();
-      }
-      if (token.getDomainName().isPresent()
-          && !token.getDomainName().get().equals(domainName.toString())) {
-        throw new AllocationTokenNotValidForDomainException();
-      }
-      // Tokens without status transitions will just have a single-entry NOT_STARTED map, so only
-      // check the status transitions map if it's non-trivial.
-      if (token.getTokenStatusTransitions().size() > 1
-          && !TokenStatus.VALID.equals(token.getTokenStatusTransitions().getValueAtTime(now))) {
-        throw new AllocationTokenNotInPromotionException();
-      }
+    if (!TokenBehavior.DEFAULT.equals(token.getTokenBehavior())) {
+      return;
+    }
+    validateTokenForPossiblePremiumName(Optional.of(token), isPremium);
+    if (!token.getAllowedEppActions().isEmpty()
+        && !token.getAllowedEppActions().contains(commandName)) {
+      throw new AllocationTokenNotValidForCommandException();
+    }
+    if (!token.getAllowedRegistrarIds().isEmpty()
+        && !token.getAllowedRegistrarIds().contains(registrarId)) {
+      throw new AllocationTokenNotValidForRegistrarException();
+    }
+    if (!token.getAllowedTlds().isEmpty()
+        && !token.getAllowedTlds().contains(domainName.parent().toString())) {
+      throw new AllocationTokenNotValidForTldException();
+    }
+    if (token.getDomainName().isPresent()
+        && !token.getDomainName().get().equals(domainName.toString())) {
+      throw new AllocationTokenNotValidForDomainException();
+    }
+    // Tokens without status transitions will just have a single-entry NOT_STARTED map, so only
+    // check the status transitions map if it's non-trivial.
+    if (token.getTokenStatusTransitions().size() > 1
+        && !TokenStatus.VALID.equals(token.getTokenStatusTransitions().getValueAtTime(now))) {
+      throw new AllocationTokenNotInPromotionException();
+    }
+  }
+
+  /** Validates that the given token is valid for a premium name if the name is premium. */
+  public static void validateTokenForPossiblePremiumName(
+      Optional<AllocationToken> token, boolean isPremium)
+      throws AllocationTokenInvalidForPremiumNameException {
+    if (token.isPresent()
+        && token.get().getDiscountFraction() != 0.0
+        && isPremium
+        && !token.get().shouldDiscountPremiums()) {
+      throw new AllocationTokenInvalidForPremiumNameException();
     }
   }
 
@@ -187,6 +210,7 @@ public class AllocationTokenFlowUtils {
         tokenEntity,
         CommandName.CREATE,
         registrarId,
+        isDomainPremium(command.getDomainName(), now),
         now);
     return Optional.of(tokenCustomLogic.validateToken(command, tokenEntity, tld, registrarId, now));
   }
@@ -209,6 +233,7 @@ public class AllocationTokenFlowUtils {
         tokenEntity,
         commandName,
         registrarId,
+        isDomainPremium(existingDomain.getDomainName(), now),
         now);
     return Optional.of(
         tokenCustomLogic.validateToken(existingDomain, tokenEntity, tld, registrarId, now));

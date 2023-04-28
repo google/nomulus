@@ -408,6 +408,26 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
+  void testFailure_allocationTokenPromotion_PremiumsNotSet() throws Exception {
+    createTld("example");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDiscountFraction(0.9)
+            .setDiscountYears(3)
+            .setDiscountPremiums(false)
+            .build());
+    setEppInput(
+        "domain_check_allocationtoken_multiname_promotion.xml",
+        ImmutableMap.of("DOMAIN", "rich.example"));
+    doCheckTest(
+        create(true, "example1.example", null),
+        create(false, "rich.example", "Token not valid for premium name"),
+        create(true, "example3.example", null));
+  }
+
+  @Test
   void testSuccess_allocationTokenPromotion_multiYear() throws Exception {
     createTld("tld");
     persistResource(
@@ -559,6 +579,23 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
             .setDomainName("anchor.tld")
+            .build());
+    doCheckTest(create(true, "anchor.tld", null));
+  }
+
+  @Test
+  void testSuccess_premiumAnchorTenantWithToken() throws Exception {
+    setEppInput("domain_check_anchor_allocationtoken.xml");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("anchor.tld")
+            .build());
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setPremiumList(persistPremiumList("tld", USD, "anchor,USD 70"))
             .build());
     doCheckTest(create(true, "anchor.tld", null));
   }
@@ -1001,6 +1038,29 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     runFlowAssertResponse(loadFile("domain_check_fee_premium_response_v06.xml"));
   }
 
+  /** Test the same as {@link #testFeeExtension_multipleCommands_v06} with premium labels. */
+  @Test
+  void testFeeExtension_premiumLabels_doesNotApplyDefaultToken_v06() throws Exception {
+    createTld("example");
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("example"))
+                .setDiscountPremiums(false)
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Tld.get("example")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .build());
+    setEppInput("domain_check_fee_premium_v06.xml");
+    runFlowAssertResponse(loadFile("domain_check_fee_premium_response_v06.xml"));
+  }
+
   @Test
   void testFeeExtension_existingPremiumDomain_withNonPremiumRenewalBehavior() throws Exception {
     createTld("example");
@@ -1080,6 +1140,28 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
+  void testFeeExtension_premiumLabels_doesNotApplyDefaultToken_v11() throws Exception {
+    createTld("example");
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("example"))
+                .setDiscountPremiums(false)
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Tld.get("example")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .build());
+    setEppInput("domain_check_fee_premium_v11_create.xml");
+    runFlowAssertResponse(loadFile("domain_check_fee_premium_response_v11_create.xml"));
+  }
+
+  @Test
   void testFeeExtension_premiumLabels_v11_renew() throws Exception {
     createTld("example");
     setEppInput("domain_check_fee_premium_v11_renew.xml");
@@ -1119,6 +1201,28 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testFeeExtension_premiumLabels_v12() throws Exception {
     createTld("example");
+    setEppInput("domain_check_fee_premium_v12.xml");
+    runFlowAssertResponse(loadFile("domain_check_fee_premium_response_v12.xml"));
+  }
+
+  @Test
+  void testFeeExtension_premiumLabels_doesNotApplyDefaultToken_v12() throws Exception {
+    createTld("example");
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("example"))
+                .setDiscountPremiums(false)
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Tld.get("example")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .build());
     setEppInput("domain_check_fee_premium_v12.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_premium_response_v12.xml"));
   }
