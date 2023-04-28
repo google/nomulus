@@ -54,6 +54,7 @@ import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidFor
 import google.registry.flows.domain.token.AllocationTokenDomainCheckResults;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForCommandException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
@@ -311,6 +312,7 @@ public final class DomainCheckFlow implements Flow {
               recurrences.getOrDefault(domainName, null));
           responseItems.add(builder.setDomainNameIfSupported(domainName).build());
         } catch (AllocationTokenInvalidForPremiumNameException
+            | AllocationTokenNotValidForCommandException
             | AllocationTokenNotValidForDomainException
             | AllocationTokenNotValidForRegistrarException
             | AllocationTokenNotValidForTldException
