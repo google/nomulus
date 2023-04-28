@@ -423,7 +423,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         ImmutableMap.of("DOMAIN", "rich.example"));
     doCheckTest(
         create(true, "example1.example", null),
-        create(false, "rich.example", "Token invalid for premium name"),
+        create(false, "rich.example", "Token not valid for premium name"),
         create(true, "example3.example", null));
   }
 
