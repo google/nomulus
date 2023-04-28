@@ -95,8 +95,6 @@ import org.joda.time.DateTime;
  *
  * <p>This flow also supports the EPP fee extension and can return pricing information.
  *
- * @error {@link
- *     google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException}
  * @error {@link google.registry.flows.exceptions.TooManyResourceChecksException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.FlowUtils.UnknownCurrencyEppException}
