@@ -430,6 +430,17 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
+  void testSuccess_emptyAllowedRegistrants() throws Exception {
+    persistResource(
+        Tld.get("xn--q9jyb4c")
+            .asBuilder()
+            .setAllowedRegistrantContactIds(ImmutableSet.of("jane", "john"))
+            .build());
+    runCommandForced("--allowed_registrants=", "xn--q9jyb4c");
+    assertThat(Tld.get("xn--q9jyb4c").getAllowedRegistrantContactIds()).isEmpty();
+  }
+
+  @Test
   void testSuccess_addAllowedRegistrants() throws Exception {
     persistResource(
         Tld.get("xn--q9jyb4c")
@@ -481,6 +492,17 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
     runCommandForced("--allowed_nameservers=ns1.example.com,ns2.example.com", "xn--q9jyb4c");
     assertThat(Tld.get("xn--q9jyb4c").getAllowedFullyQualifiedHostNames())
         .containsExactly("ns1.example.com", "ns2.example.com");
+  }
+
+  @Test
+  void testSuccess_emptyAllowedNameservers() throws Exception {
+    persistResource(
+        Tld.get("xn--q9jyb4c")
+            .asBuilder()
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("ns1.example.com"))
+            .build());
+    runCommandForced("--allowed_nameservers=", "xn--q9jyb4c");
+    assertThat(Tld.get("xn--q9jyb4c").getAllowedFullyQualifiedHostNames()).isEmpty();
   }
 
   @Test

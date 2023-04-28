@@ -32,6 +32,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.tools.params.OptionalPhoneNumberParameter;
 import google.registry.tools.params.PathParameter;
+import google.registry.tools.params.StringListParameter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -72,8 +73,10 @@ final class RegistrarPocCommand extends MutatingCommand {
   @Nullable
   @Parameter(
       names = "--contact_type",
-      description = "Type of communications for this contact; separate multiple with commas."
-          + " Allowed values are ABUSE, ADMIN, BILLING, LEGAL, MARKETING, TECH, WHOIS.")
+      description =
+          "Type of communications for this contact; separate multiple with commas."
+              + " Allowed values are ABUSE, ADMIN, BILLING, LEGAL, MARKETING, TECH, WHOIS.",
+      listConverter = StringListParameter.class)
   private List<String> contactTypeNames;
 
   @Nullable
@@ -177,15 +180,6 @@ final class RegistrarPocCommand extends MutatingCommand {
     // If the contact_type parameter is not specified, we should not make any changes.
     if (contactTypeNames == null) {
       contactTypes = null;
-      // It appears that when the user specifies "--contact_type=" with no types following,
-      // JCommander sets contactTypeNames to a one-element list containing the empty string. This is
-      // strange, but we need to handle this by setting the contact types to the empty set. Also do
-      // this if contactTypeNames is empty, which is what I would hope JCommander would return in
-      // some future, better world.
-    } else //noinspection UnnecessaryParentheses
-    if (contactTypeNames.isEmpty()
-        || (contactTypeNames.size() == 1 && contactTypeNames.get(0).isEmpty())) {
-      contactTypes = ImmutableSet.of();
     } else {
       contactTypes =
           contactTypeNames.stream()

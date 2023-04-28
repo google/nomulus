@@ -322,28 +322,6 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   }
 
   @Test
-  void testSuccess_ipAllowListFlagNull() throws Exception {
-    runCommandForced(
-        "--name=blobio",
-        "--password=some_password",
-        "--registrar_type=REAL",
-        "--iana_id=8",
-        "--ip_allow_list=null",
-        "--passcode=01234",
-        "--icann_referral_email=foo@bar.test",
-        "--street=\"123 Fake St\"",
-        "--city Fakington",
-        "--state MA",
-        "--zip 00351",
-        "--cc US",
-        "clientz");
-
-    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
-    assertThat(registrar).isPresent();
-    assertThat(registrar.get().getIpAddressAllowList()).isEmpty();
-  }
-
-  @Test
   void testSuccess_clientCertFileFlag() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     runCommandForced(
