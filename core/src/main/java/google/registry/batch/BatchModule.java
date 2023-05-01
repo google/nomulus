@@ -17,7 +17,6 @@ package google.registry.batch;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
-import static google.registry.batch.CannedScriptExecutionAction.SCRIPT_PARAM;
 import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
 import static google.registry.request.RequestParameters.extractLongParameter;
@@ -138,12 +137,5 @@ public class BatchModule {
   @Parameter(PARAM_DRY_RUN)
   static boolean provideIsDryRun(HttpServletRequest req) {
     return extractBooleanParameter(req, PARAM_DRY_RUN);
-  }
-
-  // TODO(b/234424397): remove method after credential changes are rolled out.
-  @Provides
-  @Parameter(SCRIPT_PARAM)
-  static String provideScriptName(HttpServletRequest req) {
-    return extractRequiredParameter(req, SCRIPT_PARAM);
   }
 }

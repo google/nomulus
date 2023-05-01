@@ -16,11 +16,9 @@ package google.registry.batch;
 
 import static google.registry.request.Action.Method.POST;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
-import google.registry.batch.cannedscript.GroupsApiChecker;
+import google.registry.batch.cannedscript.CannedScripts;
 import google.registry.request.Action;
-import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import javax.inject.Inject;
 
@@ -35,7 +33,7 @@ import javax.inject.Inject;
  * <p>This action can be invoked using the Nomulus CLI command: {@code nomulus -e ${env} curl
  * --service BACKEND -X POST -u '/_dr/task/executeCannedScript?script=${script_name}'}
  */
-// TODO(b/234424397): remove class after credential changes are rolled out.
+// TODO(b/277239043): remove class after credential changes are rolled out.
 @Action(
     service = Action.Service.BACKEND,
     path = "/_dr/task/executeCannedScript",
@@ -45,29 +43,18 @@ import javax.inject.Inject;
 public class CannedScriptExecutionAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  static final String SCRIPT_PARAM = "script";
-
-  static final ImmutableMap<String, Runnable> SCRIPTS =
-      ImmutableMap.of("runGroupsApiChecks", GroupsApiChecker::runGroupsApiChecks);
-
-  private final String scriptName;
-
   @Inject
-  CannedScriptExecutionAction(@Parameter(SCRIPT_PARAM) String scriptName) {
-    logger.atInfo().log("Received request to run script %s", scriptName);
-    this.scriptName = scriptName;
+  CannedScriptExecutionAction() {
+    logger.atInfo().log("Received request to run scripts.");
   }
 
   @Override
   public void run() {
-    if (!SCRIPTS.containsKey(scriptName)) {
-      throw new IllegalArgumentException("Script not found:" + scriptName);
-    }
     try {
-      SCRIPTS.get(scriptName).run();
-      logger.atInfo().log("Finished running %s.", scriptName);
+      CannedScripts.runAllChecks();
+      logger.atInfo().log("Finished running scripts.");
     } catch (Throwable t) {
-      logger.atWarning().withCause(t).log("Error executing %s", scriptName);
+      logger.atWarning().withCause(t).log("Error executing scripts.");
       throw new RuntimeException("Execution failed.");
     }
   }
