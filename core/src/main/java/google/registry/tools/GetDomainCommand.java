@@ -15,16 +15,22 @@
 package google.registry.tools;
 
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.domain.Domain;
+import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.util.DomainNameUtils;
 import java.util.List;
+import java.util.Optional;
 
 /** Command to show a domain resource. */
 @Parameters(separators = " =", commandDescription = "Show domain resource(s)")
 final class GetDomainCommand extends GetEppResourceCommand {
+
+  @Parameter(names = "--show_deleted", description = "Include deleted domains in the print out")
+  private boolean showDeleted = false;
 
   @Parameter(
       description = "Fully qualified domain name(s)",
@@ -35,10 +41,24 @@ final class GetDomainCommand extends GetEppResourceCommand {
   public void runAndPrint() {
     for (String domainName : mainParameters) {
       String canonicalDomain = DomainNameUtils.canonicalizeHostname(domainName);
-      printResource(
-          "Domain",
-          canonicalDomain,
-          loadByForeignKey(Domain.class, canonicalDomain, readTimestamp));
+      if (showDeleted) {
+        tm().transact(
+                () ->
+                    tm()
+                        .createQueryComposer(Domain.class)
+                        .where("domainName", Comparator.EQ, canonicalDomain)
+                        .orderBy("creationTime")
+                        .stream()
+                        .forEach(
+                            d -> {
+                              printResource("Domain", canonicalDomain, Optional.of(d));
+                            }));
+      } else {
+        printResource(
+            "Domain",
+            canonicalDomain,
+            loadByForeignKey(Domain.class, canonicalDomain, readTimestamp));
+      }
     }
   }
 }
