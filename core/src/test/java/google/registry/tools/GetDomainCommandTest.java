@@ -116,4 +116,12 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     assertInStdout("domainName=example.tld");
     assertInStdout("Domain 'example.com' does not exist or is deleted");
   }
+
+  @Test
+  void testSuccess_printDeletedDomain() throws Exception {
+    persistDeletedDomain("example.tld", fakeClock.nowUtc().minusDays(1));
+    runCommand("--show-deleted", "example.tld");
+    assertInStdout("domainName=example.tld");
+    assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTItVExE");
+  }
 }
