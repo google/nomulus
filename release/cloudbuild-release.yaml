@@ -126,7 +126,8 @@ steps:
     docker push gcr.io/${PROJECT_ID}/schema_verifier:latest
     docker push gcr.io/${PROJECT_ID}/schema_verifier:${TAG_NAME}
   dir: 'release/schema-verifier/'
-# Do text replacement in the schema-deploy and schema-verify configs.
+# Do text replacement in the schema-deploy, schema-verify and
+# prober_cert_updater configs.
 - name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: /bin/bash
   args:
@@ -142,10 +143,16 @@ steps:
     schema_verifier_digest=$( \
       gcloud container images list-tags gcr.io/${PROJECT_ID}/schema_verifier \
       --format='get(digest)' --filter='tags = ${TAG_NAME}')
+    prober_cert_updater_digest=$( \
+      gcloud container images list-tags \
+      gcr.io/${PROJECT_ID}/prober_cert_updater \
+      --format='get(digest)' --filter='tags = ${TAG_NAME}')
     sed -i s/builder:latest/builder@$builder_digest/g \
       release/cloudbuild-schema-deploy.yaml
     sed -i s/builder:latest/builder@$builder_digest/g \
       release/cloudbuild-schema-verify.yaml
+    sed -i s/builder:latest/builder@$builder_digest/g \
+      release/cloudbuild-renew-prober-certs.yaml
     sed -i s/schema_deployer:latest/schema_deployer@$schema_deployer_digest/g \
       release/cloudbuild-schema-deploy.yaml
     sed -i s/schema_verifier:latest/schema_verifier@$schema_verifier_digest/g \
@@ -156,6 +163,8 @@ steps:
         > release/cloudbuild-schema-deploy-${environment}.yaml
       sed s/'$${_ENV}'/${environment}/g release/cloudbuild-schema-verify.yaml \
         > release/cloudbuild-schema-verify-${environment}.yaml
+      sed s/'$${_ENV}'/${environment}/g release/cloudbuild-renew-prober-certs.yaml \
+        > release/cloudbuild-renew-prober-certs-${environment}.yaml
     done
 # Upload the gradle binary to GCS if it does not exist and point URL in gradle wrapper to it.
 - name: 'gcr.io/cloud-builders/gsutil'
