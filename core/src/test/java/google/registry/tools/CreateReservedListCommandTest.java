@@ -190,8 +190,8 @@ class CreateReservedListCommandTest
     command.init();
     assertThat(command.prompt())
         .contains(
-            "reservedListMap={baddies=baddies,FULLY_BLOCKED, "
-                + "ford=ford,FULLY_BLOCKED # random comment}");
+            "reservedListMap=[(baddies,FULLY_BLOCKED), "
+                + "(ford,FULLY_BLOCKED # random comment)]");
   }
 
   @Test
@@ -201,6 +201,6 @@ class CreateReservedListCommandTest
     CreateReservedListCommand command = new CreateReservedListCommand();
     command.input = tmpPath;
     command.init();
-    assertThat(command.prompt()).contains("reservedListMap={}");
+    assertThat(command.prompt()).contains("reservedListMap=[]");
   }
 }
