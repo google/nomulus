@@ -22,7 +22,6 @@ import com.google.common.base.Strings;
 import google.registry.model.tld.label.ReservedList;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /** Command to safely update {@link ReservedList}. */
 @Parameters(separators = " =", commandDescription = "Update a ReservedList.")
@@ -52,17 +51,11 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
     if (!existingReservedList
         .getReservedListEntries()
         .equals(reservedList.getReservedListEntries())) {
-      String oldEntries =
-          existingReservedList.getReservedListEntries().entrySet().stream()
-              .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
-              .collect(Collectors.joining(", "));
-      String newEntries =
-          reservedList.getReservedListEntries().entrySet().stream()
-              .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
-              .collect(Collectors.joining(", "));
       return String.format(
-          "Update reserved list for %s?\nOld List: %s\n New List: %s",
-          name, oldEntries, newEntries);
+          "Update reserved list for %s?\nOld list: %s\n New list: %s",
+          name,
+          outputReservedListEntries(existingReservedList),
+          outputReservedListEntries(reservedList));
     }
     return "No entity changes to apply.";
   }

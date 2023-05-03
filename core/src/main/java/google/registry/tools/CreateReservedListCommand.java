@@ -28,7 +28,6 @@ import com.google.common.base.Strings;
 import google.registry.model.tld.label.ReservedList;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.joda.time.DateTime;
 
 /** Command to create a {@link ReservedList}. */
@@ -64,11 +63,8 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
             .setCreationTimestamp(now)
             .build();
 
-    String entries =
-        reservedList.getReservedListEntries().entrySet().stream()
-            .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
-            .collect(Collectors.joining(", "));
-    return String.format("%s\nreservedListMap={%s}\n", reservedList, entries);
+    return String.format(
+        "%s\nreservedListMap=%s\n", reservedList, outputReservedListEntries(reservedList));
   }
 
   private static void validateListName(String name) {
