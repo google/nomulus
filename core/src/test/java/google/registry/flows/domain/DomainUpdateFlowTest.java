@@ -22,15 +22,21 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_DELETE_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_HOLD;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_RENEW_PROHIBITED;
+import static google.registry.model.eppcommon.StatusValue.CLIENT_TRANSFER_PROHIBITED;
+import static google.registry.model.eppcommon.StatusValue.CLIENT_UPDATE_PROHIBITED;
+import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_DELETE_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
+import static google.registry.model.eppcommon.StatusValue.SERVER_RENEW_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
+import static google.registry.testing.DatabaseHelper.assertDomainDnsRequests;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
+import static google.registry.testing.DatabaseHelper.assertNoDnsRequests;
 import static google.registry.testing.DatabaseHelper.assertPollMessagesForResource;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
@@ -96,7 +102,6 @@ import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.secdns.DomainDsData;
-import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
@@ -204,7 +209,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     // Check that the domain was updated. These values came from the xml.
     assertAboutDomains()
         .that(domain)
-        .hasStatusValue(StatusValue.CLIENT_HOLD)
+        .hasStatusValue(CLIENT_HOLD)
         .and()
         .hasAuthInfoPwd("2BARfoo")
         .and()
@@ -216,7 +221,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         .and()
         .hasNoAutorenewEndTime();
     assertNoBillingEvents();
-    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
+    assertDomainDnsRequests("example.tld");
     assertLastHistoryContainsResource(reloadResourceByForeignKey());
   }
 
@@ -345,7 +350,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertThat(domain.getContacts()).hasSize(3);
     assertThat(loadByKey(domain.getRegistrant()).getContactId()).isEqualTo("max_test_7");
     assertNoBillingEvents();
-    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
+    assertDomainDnsRequests("example.tld");
   }
 
   @Test
@@ -453,13 +458,13 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         persistDomain()
             .asBuilder()
-            .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_UPDATE_PROHIBITED))
+            .setStatusValues(ImmutableSet.of(CLIENT_UPDATE_PROHIBITED))
             .build());
     clock.advanceOneMilli();
     runFlow();
     assertAboutDomains()
         .that(reloadResourceByForeignKey())
-        .doesNotHaveStatusValue(StatusValue.CLIENT_UPDATE_PROHIBITED);
+        .doesNotHaveStatusValue(CLIENT_UPDATE_PROHIBITED);
   }
 
   private void doSecDnsSuccessfulTest(
@@ -496,9 +501,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 .map(ds -> ds.cloneWithDomainRepoId(resource.getRepoId()))
                 .collect(toImmutableSet()));
     if (dnsTaskEnqueued) {
-      dnsUtilsHelper.assertDomainDnsRequests("example.tld");
+      assertDomainDnsRequests("example.tld");
     } else {
-      dnsUtilsHelper.assertNoMoreDnsRequests();
+      assertNoDnsRequests();
     }
   }
 
@@ -855,8 +860,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   void testSuccess_noBillingOnPreExistingServerStatus() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     Domain addStatusDomain = persistActiveDomain(getUniqueIdFromCommand());
-    persistResource(
-        addStatusDomain.asBuilder().addStatusValue(StatusValue.SERVER_RENEW_PROHIBITED).build());
+    persistResource(addStatusDomain.asBuilder().addStatusValue(SERVER_RENEW_PROHIBITED).build());
     doServerStatusBillingTest("domain_update_add_server_status.xml", false);
   }
 
@@ -865,8 +869,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     eppRequestSource = EppRequestSource.TOOL;
     persistReferencedEntities();
     Domain removeStatusDomain = persistDomain();
-    persistResource(
-        removeStatusDomain.asBuilder().addStatusValue(StatusValue.SERVER_RENEW_PROHIBITED).build());
+    persistResource(removeStatusDomain.asBuilder().addStatusValue(SERVER_RENEW_PROHIBITED).build());
     doServerStatusBillingTest("domain_update_remove_server_status.xml", true);
   }
 
@@ -875,8 +878,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     eppRequestSource = EppRequestSource.TOOL;
     persistReferencedEntities();
     Domain changeStatusDomain = persistDomain();
-    persistResource(
-        changeStatusDomain.asBuilder().addStatusValue(StatusValue.SERVER_RENEW_PROHIBITED).build());
+    persistResource(changeStatusDomain.asBuilder().addStatusValue(SERVER_RENEW_PROHIBITED).build());
     doServerStatusBillingTest("domain_update_change_server_status.xml", true);
   }
 
@@ -906,14 +908,14 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         persistActiveDomain(getUniqueIdFromCommand())
             .asBuilder()
-            .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_UPDATE_PROHIBITED))
+            .setStatusValues(ImmutableSet.of(CLIENT_UPDATE_PROHIBITED))
             .build());
     clock.advanceOneMilli();
     runFlowAssertResponse(
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
     assertAboutDomains()
         .that(reloadResourceByForeignKey())
-        .hasStatusValue(StatusValue.CLIENT_UPDATE_PROHIBITED)
+        .hasStatusValue(CLIENT_UPDATE_PROHIBITED)
         .and()
         .hasStatusValue(SERVER_HOLD);
   }
@@ -1318,7 +1320,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
-            .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_UPDATE_PROHIBITED))
+            .setStatusValues(ImmutableSet.of(CLIENT_UPDATE_PROHIBITED))
             .build());
     EppException thrown =
         assertThrows(ResourceHasClientUpdateProhibitedException.class, this::runFlow);
@@ -1345,7 +1347,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
             .setDeletionTime(clock.nowUtc().plusDays(1))
-            .addStatusValue(StatusValue.PENDING_DELETE)
+            .addStatusValue(PENDING_DELETE)
             .build());
     ResourceStatusProhibitsOperationException thrown =
         assertThrows(ResourceStatusProhibitsOperationException.class, this::runFlow);
@@ -1500,7 +1502,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         loadByForeignKey(Contact.class, "mak21", clock.nowUtc())
             .get()
             .asBuilder()
-            .addStatusValue(StatusValue.PENDING_DELETE)
+            .addStatusValue(PENDING_DELETE)
             .build());
     clock.advanceOneMilli();
     LinkedResourceInPendingDeleteProhibitsOperationException thrown =
@@ -1516,7 +1518,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         loadByForeignKey(Host.class, "ns2.example.foo", clock.nowUtc())
             .get()
             .asBuilder()
-            .addStatusValue(StatusValue.PENDING_DELETE)
+            .addStatusValue(PENDING_DELETE)
             .build());
     clock.advanceOneMilli();
     LinkedResourceInPendingDeleteProhibitsOperationException thrown =
@@ -1681,9 +1683,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistReferencedEntities();
     persistDomain();
     doSuccessfulTest();
-    assertAboutDomains()
-        .that(reloadResourceByForeignKey())
-        .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
+    assertAboutDomains().that(reloadResourceByForeignKey()).hasExactlyStatusValues(CLIENT_HOLD);
   }
 
   @Test
@@ -1756,10 +1756,10 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         persistDomain()
             .asBuilder()
             .setDomainName("example.tld")
-            .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_TRANSFER_PROHIBITED))
+            .setStatusValues(ImmutableSet.of(CLIENT_TRANSFER_PROHIBITED))
             .build());
     runFlowAsSuperuser();
-    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
+    assertDomainDnsRequests("example.tld");
   }
 
   @Test
@@ -1772,10 +1772,10 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         persistDomain()
             .asBuilder()
             .setDomainName("example.tld")
-            .setStatusValues(ImmutableSet.of(StatusValue.SERVER_HOLD))
+            .setStatusValues(ImmutableSet.of(SERVER_HOLD))
             .build());
     runFlowAsSuperuser();
-    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
+    assertDomainDnsRequests("example.tld");
   }
 
   @Test
@@ -1788,9 +1788,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         persistDomain()
             .asBuilder()
             .setDomainName("example.tld")
-            .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE, StatusValue.SERVER_HOLD))
+            .setStatusValues(ImmutableSet.of(PENDING_DELETE, SERVER_HOLD))
             .build());
     runFlowAsSuperuser();
-    dnsUtilsHelper.assertNoMoreDnsRequests();
+    assertNoDnsRequests();
   }
 }

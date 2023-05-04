@@ -20,6 +20,7 @@ import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tld.label.ReservedListDao;
 import google.registry.tools.params.PathParameter;
 import java.nio.file.Path;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 /**
@@ -68,5 +69,13 @@ public abstract class CreateOrUpdateReservedListCommand extends ConfirmingComman
       logger.atSevere().withCause(e).log(message);
     }
     return message;
+  }
+
+  String outputReservedListEntries(ReservedList rl) {
+    return "["
+        + rl.getReservedListEntries().values().stream()
+            .map(rle -> String.format("(%s)", rle.toString()))
+            .collect(Collectors.joining(", "))
+        + "]";
   }
 }

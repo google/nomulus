@@ -17,6 +17,7 @@ package google.registry.flows.domain;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
+import static google.registry.testing.DatabaseHelper.assertDomainDnsRequests;
 import static google.registry.testing.DatabaseHelper.assertPollMessages;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
@@ -188,7 +189,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         .and()
         .hasLastEppUpdateRegistrarId("TheRegistrar");
     assertThat(domain.getGracePeriods()).isEmpty();
-    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
+    assertDomainDnsRequests("example.tld");
     // The poll message for the delete should now be gone. The only poll message should be the new
     // autorenew poll message.
     assertPollMessages(
@@ -256,7 +257,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         .and()
         .hasLastEppUpdateRegistrarId("TheRegistrar");
     assertThat(domain.getGracePeriods()).isEmpty();
-    dnsUtilsHelper.assertDomainDnsRequests("example.tld");
+    assertDomainDnsRequests("example.tld");
     // The poll message for the delete should now be gone. The only poll message should be the new
     // autorenew poll message.
     assertPollMessages(

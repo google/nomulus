@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static com.google.common.collect.Sets.symmetricDifference;
 import static com.google.common.collect.Sets.union;
+import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.checkSameValuesNotAddedAndRemoved;
@@ -49,7 +50,6 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.net.InternetDomainName;
-import google.registry.dns.DnsUtils;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
@@ -156,7 +156,6 @@ public final class DomainUpdateFlow implements TransactionalFlow {
   @Inject @Superuser boolean isSuperuser;
   @Inject Trid trid;
   @Inject DomainHistory.Builder historyBuilder;
-  @Inject DnsUtils dnsUtils;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainUpdateFlowCustomLogic flowCustomLogic;
   @Inject DomainPricingLogic pricingLogic;
@@ -183,7 +182,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
         historyBuilder.setType(DOMAIN_UPDATE).setDomain(newDomain).build();
     validateNewState(newDomain);
     if (requiresDnsUpdate(existingDomain, newDomain)) {
-      dnsUtils.requestDomainDnsRefresh(targetId);
+      requestDomainDnsRefresh(targetId);
     }
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
     entitiesToSave.add(newDomain, domainHistory);
@@ -207,7 +206,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
   }
 
   /** Determines if any of the changes to new domain should trigger DNS update. */
-  private boolean requiresDnsUpdate(Domain existingDomain, Domain newDomain) {
+  private static boolean requiresDnsUpdate(Domain existingDomain, Domain newDomain) {
     return existingDomain.shouldPublishToDns() != newDomain.shouldPublishToDns()
         || !Objects.equals(newDomain.getDsData(), existingDomain.getDsData())
         || !Objects.equals(newDomain.getNsHosts(), existingDomain.getNsHosts());
@@ -256,7 +255,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     // We have to verify no duplicate contacts _before_ constructing the domain because it is
     // illegal to construct a domain with duplicate contacts.
     Sets.SetView<DesignatedContact> newContacts =
-        Sets.union(Sets.difference(domain.getContacts(), remove.getContacts()), add.getContacts());
+        union(Sets.difference(domain.getContacts(), remove.getContacts()), add.getContacts());
     validateNoDuplicateContacts(newContacts);
 
     Domain.Builder domainBuilder =
@@ -301,7 +300,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     return domainBuilder.build();
   }
 
-  private void validateRegistrantIsntBeingRemoved(Change change) throws EppException {
+  private static void validateRegistrantIsntBeingRemoved(Change change) throws EppException {
     if (change.getRegistrantContactId() != null && change.getRegistrantContactId().isEmpty()) {
       throw new MissingRegistrantException();
     }
@@ -314,7 +313,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
    * compliant with the additions or amendments, otherwise existing data can become invalid and
    * cause Domain update failure.
    */
-  private void validateNewState(Domain newDomain) throws EppException {
+  private static void validateNewState(Domain newDomain) throws EppException {
     validateRequiredContactsPresent(newDomain.getRegistrant(), newDomain.getContacts());
     validateDsData(newDomain.getDsData());
     validateNameserversCountForTld(
@@ -368,17 +367,17 @@ public final class DomainUpdateFlow implements TransactionalFlow {
             .collect(toImmutableSortedSet(Ordering.natural()));
 
     String msg;
-    if (addedServerStatuses.size() > 0 && removedServerStatuses.size() > 0) {
+    if (!addedServerStatuses.isEmpty() && !removedServerStatuses.isEmpty()) {
       msg =
           String.format(
               "The registry administrator has added the status(es) %s and removed the status(es)"
                   + " %s.",
               addedServerStatuses, removedServerStatuses);
-    } else if (addedServerStatuses.size() > 0) {
+    } else if (!addedServerStatuses.isEmpty()) {
       msg =
           String.format(
               "The registry administrator has added the status(es) %s.", addedServerStatuses);
-    } else if (removedServerStatuses.size() > 0) {
+    } else if (!removedServerStatuses.isEmpty()) {
       msg =
           String.format(
               "The registry administrator has removed the status(es) %s.", removedServerStatuses);

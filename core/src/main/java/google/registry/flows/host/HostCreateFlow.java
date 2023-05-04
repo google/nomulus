@@ -14,6 +14,7 @@
 
 package google.registry.flows.host;
 
+import static google.registry.dns.DnsUtils.requestHostDnsRefresh;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist;
 import static google.registry.flows.host.HostFlowUtils.lookupSuperordinateDomain;
@@ -28,7 +29,6 @@ import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.dns.DnsUtils;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValueRangeErrorException;
 import google.registry.flows.EppException.RequiredParameterMissingException;
@@ -85,7 +85,6 @@ public final class HostCreateFlow implements TransactionalFlow {
   @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject HostHistory.Builder historyBuilder;
-  @Inject DnsUtils dnsUtils;
   @Inject EppResponse.Builder responseBuilder;
 
   @Inject
@@ -138,7 +137,7 @@ public final class HostCreateFlow implements TransactionalFlow {
                   .build());
       // Only update DNS if this is a subordinate host. External hosts have no glue to write, so
       // they are only written as NS records from the referencing domain.
-      dnsUtils.requestHostDnsRefresh(targetId);
+      requestHostDnsRefresh(targetId);
     }
     tm().insertAll(entitiesToSave);
     return responseBuilder.setResData(HostCreateData.create(targetId, now)).build();
