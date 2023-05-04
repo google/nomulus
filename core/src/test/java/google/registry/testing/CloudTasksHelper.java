@@ -48,6 +48,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.util.Retrier;
 import java.io.Serializable;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,11 +69,6 @@ import org.joda.time.DateTime;
 
 /**
  * Static utility functions for testing task queues.
- *
- * <p>This class is mostly derived from {@link TaskQueueHelper}. It does not implement as many
- * helper methods because we have not yet encountered all the use cases with Cloud Tasks. As more
- * and more Task Queue API usage is migrated to Cloud Tasks we may replicate more methods from the
- * latter.
  *
  * <p>Note the use of {@link AtomicInteger} {@code nextInstanceId} here. When a {@link
  * FakeCloudTasksClient} instance, and by extension the {@link CloudTasksHelper} instance that
@@ -101,7 +97,7 @@ public class CloudTasksHelper implements Serializable {
   private final CloudTasksUtils cloudTasksUtils;
 
   public CloudTasksHelper(FakeClock clock) {
-    this.cloudTasksUtils =
+    cloudTasksUtils =
         new CloudTasksUtils(
             new Retrier(new FakeSleeper(clock), 1),
             clock,
@@ -246,7 +242,7 @@ public class CloudTasksHelper implements Serializable {
             new URI(
                 String.format(
                     "https://nomulus.foo%s", task.getAppEngineHttpRequest().getRelativeUri()));
-      } catch (java.net.URISyntaxException e) {
+      } catch (URISyntaxException e) {
         throw new IllegalArgumentException(e);
       }
       taskName = task.getName();
@@ -291,7 +287,7 @@ public class CloudTasksHelper implements Serializable {
       builder.put("headers", headers);
       builder.put("params", params);
       builder.put("scheduleTime", scheduleTime);
-      return Maps.filterValues(builder, not(in(asList(null, "", Collections.EMPTY_MAP))));
+      return Maps.filterValues(builder, not(in(asList(null, "", Collections.emptyMap()))));
     }
   }
 
@@ -388,7 +384,7 @@ public class CloudTasksHelper implements Serializable {
           .join(
               Maps.transformValues(
                   expected.toMap(),
-                  input -> "\t" + String.valueOf(input).replaceAll("\n", "\n\t")));
+                  input -> '\t' + String.valueOf(input).replaceAll("\n", "\n\t")));
     }
   }
 }

@@ -16,7 +16,9 @@ package google.registry.flows.host;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.testing.DatabaseHelper.assertHostDnsRequests;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
+import static google.registry.testing.DatabaseHelper.assertNoDnsRequests;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.newHost;
@@ -116,7 +118,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
   void testSuccess_externalNeverExisted() throws Exception {
     doSuccessfulTest();
     assertAboutHosts().that(reloadResourceByForeignKey()).hasSuperordinateDomain(null);
-    dnsUtilsHelper.assertNoMoreDnsRequests();
+    assertNoDnsRequests();
   }
 
   @Test
@@ -127,7 +129,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
         loadByForeignKey(Domain.class, "example.tld", clock.nowUtc()).get();
     assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
-    dnsUtilsHelper.assertHostDnsRequests("ns1.example.tld");
+    assertHostDnsRequests("ns1.example.tld");
   }
 
   @Test
@@ -144,7 +146,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
     persistDeletedHost(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     doSuccessfulTest();
     assertAboutHosts().that(reloadResourceByForeignKey()).hasSuperordinateDomain(null);
-    dnsUtilsHelper.assertNoMoreDnsRequests();
+    assertNoDnsRequests();
   }
 
   @Test
@@ -156,7 +158,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
         loadByForeignKey(Domain.class, "example.tld", clock.nowUtc()).get();
     assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
-    dnsUtilsHelper.assertHostDnsRequests("ns1.example.tld");
+    assertHostDnsRequests("ns1.example.tld");
   }
 
   @Test

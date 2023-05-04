@@ -15,7 +15,6 @@
 package google.registry.dns;
 
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
-import static google.registry.dns.DnsConstants.DNS_PUBLISH_PUSH_QUEUE_NAME;
 import static google.registry.dns.DnsModule.PARAM_DNS_JITTER_SECONDS;
 import static google.registry.dns.DnsModule.PARAM_DNS_WRITER;
 import static google.registry.dns.DnsModule.PARAM_DOMAINS;
@@ -24,6 +23,9 @@ import static google.registry.dns.DnsModule.PARAM_LOCK_INDEX;
 import static google.registry.dns.DnsModule.PARAM_NUM_PUBLISH_LOCKS;
 import static google.registry.dns.DnsModule.PARAM_PUBLISH_TASK_ENQUEUED;
 import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_TIME;
+import static google.registry.dns.DnsUtils.DNS_PUBLISH_PUSH_QUEUE_NAME;
+import static google.registry.dns.DnsUtils.deleteRequests;
+import static google.registry.dns.DnsUtils.readAndUpdateRequestsWithLatestProcessTime;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -39,7 +41,7 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.dns.DnsConstants.TargetType;
+import google.registry.dns.DnsUtils.TargetType;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.model.tld.Tld;
 import google.registry.request.Action;
@@ -72,7 +74,6 @@ public final class ReadDnsRefreshRequestsAction implements Runnable {
   private final Optional<Integer> jitterSeconds;
   private final String tld;
   private final Clock clock;
-  private final DnsUtils dnsUtils;
   private final HashFunction hashFunction;
   private final CloudTasksUtils cloudTasksUtils;
 
@@ -83,7 +84,6 @@ public final class ReadDnsRefreshRequestsAction implements Runnable {
       @Parameter(PARAM_DNS_JITTER_SECONDS) Optional<Integer> jitterSeconds,
       @Parameter(PARAM_TLD) String tld,
       Clock clock,
-      DnsUtils dnsUtils,
       HashFunction hashFunction,
       CloudTasksUtils cloudTasksUtils) {
     this.tldUpdateBatchSize = tldUpdateBatchSize;
@@ -91,7 +91,6 @@ public final class ReadDnsRefreshRequestsAction implements Runnable {
     this.jitterSeconds = jitterSeconds;
     this.tld = tld;
     this.clock = clock;
-    this.dnsUtils = dnsUtils;
     this.hashFunction = hashFunction;
     this.cloudTasksUtils = cloudTasksUtils;
   }
@@ -112,7 +111,7 @@ public final class ReadDnsRefreshRequestsAction implements Runnable {
     int processBatchSize = tldUpdateBatchSize * Tld.get(tld).getNumDnsPublishLocks();
     while (requestedEndTime.isAfter(clock.nowUtc())) {
       ImmutableList<DnsRefreshRequest> requests =
-          dnsUtils.readAndUpdateRequestsWithLatestProcessTime(
+          readAndUpdateRequestsWithLatestProcessTime(
               tld, requestedMaximumDuration, processBatchSize);
       logger.atInfo().log("Read %d DNS update requests for TLD %s.", requests.size(), tld);
       if (!requests.isEmpty()) {
@@ -138,7 +137,7 @@ public final class ReadDnsRefreshRequestsAction implements Runnable {
             (lockIndex, bucketedRequests) -> {
               try {
                 enqueueUpdates(lockIndex, numPublishLocks, bucketedRequests);
-                dnsUtils.deleteRequests(bucketedRequests);
+                deleteRequests(bucketedRequests);
                 logger.atInfo().log(
                     "Processed %d DNS update requests for TLD %s.", bucketedRequests.size(), tld);
               } catch (Exception e) {

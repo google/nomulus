@@ -33,6 +33,7 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.ResourceTransferUtils.createTransferResponse;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
+import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.difference;
@@ -56,6 +57,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.net.InetAddresses;
+import google.registry.dns.DnsUtils;
+import google.registry.dns.DnsUtils.TargetType;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
@@ -70,6 +73,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.model.common.DnsRefreshRequest;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactHistory;
@@ -124,7 +128,7 @@ import org.joda.time.Duration;
 /** Static utils for setting up test resources. */
 public final class DatabaseHelper {
 
-  // If the clock is defined, it will always be advanced by one millsecond after a transaction.
+  // If the clock is defined, it will always be advanced by one millisecond after a transaction.
   private static FakeClock clock;
 
   private static final Supplier<String[]> DEFAULT_PREMIUM_LIST_CONTENTS =
@@ -1350,6 +1354,50 @@ public final class DatabaseHelper {
                         new DatabaseMigrationStateSchedule(
                             DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP)));
     DatabaseMigrationStateSchedule.CACHE.invalidateAll();
+  }
+
+  private static ImmutableList<String> getDnsRefreshRequests(TargetType type, String... names) {
+    return tm().transact(
+            () ->
+                tm().createQueryComposer(DnsRefreshRequest.class).where("type", EQ, type).stream()
+                    .map(DnsRefreshRequest::getName)
+                    .filter(e -> ImmutableList.copyOf(names).contains(e))
+                    .collect(toImmutableList()));
+  }
+
+  public static void assertDomainDnsRequests(String... domainNames) {
+    assertThat(getDnsRefreshRequests(DnsUtils.TargetType.DOMAIN, domainNames))
+        .containsExactlyElementsIn(domainNames);
+  }
+
+  public static void assertHostDnsRequests(String... hostNames) {
+    assertThat(getDnsRefreshRequests(DnsUtils.TargetType.HOST, hostNames))
+        .containsExactlyElementsIn(hostNames);
+  }
+
+  public static void assertNoDnsRequestsExcept(String... names) {
+    assertThat(
+            loadAllOf(DnsRefreshRequest.class).stream()
+                .filter(e -> !ImmutableList.copyOf(names).contains(e.getName()))
+                .count())
+        .isEqualTo(0);
+  }
+
+  public static void assertNoDnsRequests() {
+    assertNoDnsRequestsExcept();
+  }
+
+  public static void assertDomainDnsRequestWithRequestTime(
+      String domainName, DateTime requestTime) {
+    assertThat(
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(DnsRefreshRequest.class)
+                            .where("type", EQ, DnsUtils.TargetType.DOMAIN)
+                            .where("name", EQ, domainName)
+                            .where("requestTime", EQ, requestTime)
+                            .count()))
+        .isEqualTo(1);
   }
 
   private DatabaseHelper() {}

@@ -35,7 +35,7 @@ import javax.inject.Singleton;
       VoidDnsWriterModule.class,
     })
 interface DnsTestComponent {
-  DnsQueue dnsQueue();
   RefreshDnsAction refreshDns();
-  ReadDnsQueueAction readDnsQueueAction();
+
+  ReadDnsRefreshRequestsAction readDnsRefreshRequestsAction();
 }

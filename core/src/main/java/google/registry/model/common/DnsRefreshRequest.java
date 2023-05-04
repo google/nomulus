@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
-import google.registry.dns.DnsConstants.TargetType;
+import google.registry.dns.DnsUtils.TargetType;
 import google.registry.dns.PublishDnsUpdatesAction;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
