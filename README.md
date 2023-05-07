@@ -24,7 +24,7 @@ number of TLDs in a single shared registry system using horizontal scaling. Its
 source code is publicly available in this repository under the [Apache 2.0 free
 and open source license](https://www.apache.org/licenses/LICENSE-2.0).
 
-Here's a more organized way to present the information:
+
 
 ## Getting Started with Nomulus
 
