@@ -1,10 +1,11 @@
 # Nomulus
 
-| Internal Build | FOSS Build | License | Code Search |
-|:--------------:|:----------:|:-------:|:-----------:|
-|[![Build Status for Google Registry internal build](https://storage.googleapis.com/domain-registry-kokoro/internal/build.svg)](https://storage.googleapis.com/domain-registry-kokoro/internal/index.html)|[![Build Status for the open source build](https://storage.googleapis.com/domain-registry-kokoro/foss/build.svg)](https://storage.googleapis.com/domain-registry-kokoro/foss/index.html)|[![License for this repo](https://img.shields.io/github/license/google/nomulus.svg)](https://github.com/google/nomulus/blob/master/LICENSE)|[![Link to Code Search](https://www.gstatic.com/devopsconsole/images/oss/favicons/oss-32x32.png)](https://cs.opensource.google/nomulus/nomulus)|
+|      logo      | Internal Build | FOSS Build | License | Code Search |
+|:--------------:|:--------------:|:----------:|:-------:|:-----------:|
+![Nomulus logo](./nomulus-logo.png) | [![Build Status for Google Registry internal build](https://storage.googleapis.com/domain-registry-kokoro/internal/build.svg)](https://storage.googleapis.com/domain-registry-kokoro/internal/index.html) | [![Build Status for the open source build](https://storage.googleapis.com/domain-registry-kokoro/foss/build.svg)](https://storage.googleapis.com/domain-registry-kokoro/foss/index.html) | [![License for this repo](https://img.shields.io/github/license/google/nomulus.svg)](https://github.com/google/nomulus/blob/master/LICENSE) | [![Link to Code Search](https://www.gstatic.com/devopsconsole/images/oss/favicons/oss-32x32.png)](https://cs.opensource.google/nomulus/nomulus) | 
 
-![Nomulus logo](./nomulus-logo.png)
+
+
 
 ## Overview
 
@@ -23,26 +24,20 @@ number of TLDs in a single shared registry system using horizontal scaling. Its
 source code is publicly available in this repository under the [Apache 2.0 free
 and open source license](https://www.apache.org/licenses/LICENSE-2.0).
 
-## Getting started
+Here's a more organized way to present the information:
 
-The following resources provide information on getting the code and setting up a
-running system:
+## Getting Started with Nomulus
 
-*   [Install
-    guide](https://github.com/google/nomulus/blob/master/docs/install.md)
-*   View the source code for the [GAE app](https://github.com/google/nomulus/tree/master/core/src/main/java/google/registry)
-    and for the [GKE proxy](https://github.com/google/nomulus/tree/master/proxy/src/main/java/google/registry)
-*   [Other docs](https://github.com/google/nomulus/tree/master/docs)
-*   [Javadoc](https://javadoc.nomulus.foo/)
-*   [Nomulus discussion
-    group](https://groups.google.com/forum/#!forum/nomulus-discuss), for any
-    other questions
+If you're interested in using Nomulus, here are some resources to help you get started:
 
-If you are thinking about running a production registry service using our
-platform, please drop by the user group and introduce yourself and your use
-case. To report issues or make contributions, use GitHub issues and pull
-requests.
+*   **Installation Guide:** Follow the [installation guide](https://github.com/google/nomulus/blob/master/docs/install.md) to install Nomulus and set up a running system.
+*   **Source Code:** Check out the source code for the [GAE app](https://github.com/google/nomulus/tree/master/core/src/main/java/google/registry) and for the [GKE proxy](https://github.com/google/nomulus/tree/master/proxy/src/main/java/google/registry) on GitHub.
+*   **Documentation:** View additional documentation on [GitHub](https://github.com/google/nomulus/tree/master/docs).
+*   **Javadoc:** Access the [Nomulus Javadoc](https://javadoc.nomulus.foo/) for further reference.
+*   **Discussion Group:** Join the [Nomulus discussion group](https://groups.google.com/forum/#!forum/nomulus-discuss) to ask questions and connect with other users.
+*   **Reporting Issues/Contributing:** Use GitHub issues and pull requests to report issues and make contributions.
 
+If you're planning to run a production registry service using Nomulus, be sure to introduce yourself and your use case on the user group.
 ## Capabilities
 
 Nomulus has the following capabilities:
@@ -127,20 +122,26 @@ additional components that are need to be configured separately.
 
 ## Outside references
 
-*   [Donuts](http://donuts.domains) Registry has helped review the code and
-    provided valuable feedback
-*   [CoCCa](http://cocca.org.nz) and [FRED](https://fred.nic.cz) are other
-    open-source registry platforms in use by many TLDs
-*   We are not aware of any fully open source domain registrar projects, but
-    open source EPP Toolkits (not yet tested with Nomulus; may require
-    integration work) include:
-    *   [EPP RTK Project](http://epp-rtk.sourceforge.net/)
-    *   [CentralNic](https://www.centralnic.com/registry/labs)
-    *   [ari-toolkit](https://github.com/AusRegistry/ari-toolkit)
-    *   [Net::DRI](https://metacpan.org/pod/Net::DRI)
-*   Some Open Source DNS Projects that may be useful, but which we have not
-    tested:
-    *   [AtomiaDNS](http://atomiadns.com/)
-    *   [PowerDNS](https://doc.powerdns.com/md/)
+### Registries
 
-[gae]:https://cloud.google.com/appengine/docs/about-the-standard-environment
+* [Donuts](http://donuts.domains) Registry - reviewed the code and provided valuable feedback
+* [CoCCa](http://cocca.org.nz) - open-source registry platform in use by many TLDs
+* [FRED](https://fred.nic.cz) - open-source registry platform in use by many TLDs
+
+### EPP Toolkits
+
+These are open-source EPP Toolkits that have not yet been tested with Nomulus and may require integration work:
+
+* [EPP RTK Project](http://epp-rtk.sourceforge.net/)
+* [CentralNic](https://www.centralnic.com/registry/labs)
+* [ari-toolkit](https://github.com/AusRegistry/ari-toolkit)
+* [Net::DRI](https://metacpan.org/pod/Net::DRI)
+
+### DNS Projects
+
+These are open-source DNS Projects that may be useful, but which have not been tested:
+
+* [AtomiaDNS](http://atomiadns.com/)
+* [PowerDNS](https://doc.powerdns.com/md/)
+
+
