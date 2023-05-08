@@ -71,8 +71,6 @@ import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.common.DatabaseMigrationStateSchedule;
-import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
@@ -123,7 +121,6 @@ import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.Duration;
 
 /** Static utils for setting up test resources. */
 public final class DatabaseHelper {
@@ -1314,46 +1311,6 @@ public final class DatabaseHelper {
   public static <T> T assertDetachedFromEntityManager(T entity) {
     assertThat(tm().getEntityManager().contains(entity)).isFalse();
     return entity;
-  }
-
-  /**
-   * Sets a SQL_PRIMARY state on the {@link DatabaseMigrationStateSchedule}.
-   *
-   * <p>In order to allow for tests to manipulate the clock how they need, we start the transitions
-   * one millisecond after the clock's current time (in case the clock's current value is
-   * START_OF_TIME). We then advance the clock one second so that we're in the SQL_PRIMARY phase.
-   *
-   * <p>We must use the current time, otherwise the setting of the migration state will fail due to
-   * an invalid transition.
-   */
-  public static void setMigrationScheduleToSqlPrimary(FakeClock fakeClock) {
-    DateTime now = fakeClock.nowUtc();
-    tm().transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    ImmutableSortedMap.of(
-                        START_OF_TIME,
-                        MigrationState.DATASTORE_ONLY,
-                        now.plusMillis(1),
-                        MigrationState.DATASTORE_PRIMARY,
-                        now.plusMillis(2),
-                        MigrationState.DATASTORE_PRIMARY_NO_ASYNC,
-                        now.plusMillis(3),
-                        MigrationState.DATASTORE_PRIMARY_READ_ONLY,
-                        now.plusMillis(4),
-                        MigrationState.SQL_PRIMARY)));
-    fakeClock.advanceBy(Duration.standardSeconds(1));
-  }
-
-  /** Removes the database migration schedule, in essence transitioning to DATASTORE_ONLY. */
-  public static void removeDatabaseMigrationSchedule() {
-    // use the raw calls because going SQL_PRIMARY -> DATASTORE_ONLY is not valid
-    tm().transact(
-            () ->
-                tm().put(
-                        new DatabaseMigrationStateSchedule(
-                            DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP)));
-    DatabaseMigrationStateSchedule.CACHE.invalidateAll();
   }
 
   private static ImmutableList<String> getDnsRefreshRequests(TargetType type, String... names) {
