@@ -224,13 +224,13 @@ class InvoicingPipelineTest {
 
   private static final ImmutableList<String> EXPECTED_INVOICE_OUTPUT =
       ImmutableList.of(
-          "2017-10-01,2020-09-30,234,41.00,USD,10125,1,PURCHASE,theRegistrar - test,2,"
+          "2017-10-01,2020-09-30,234,41.00,USD,10125,1,PURCHASE,theRegistrar,2,"
               + "RENEW | TLD: test | TERM: 3-year,20.50,USD,",
-          "2017-10-01,2022-09-30,234,70.00,JPY,10125,1,PURCHASE,theRegistrar - hello,1,"
+          "2017-10-01,2022-09-30,234,70.00,JPY,10125,1,PURCHASE,theRegistrar,1,"
               + "CREATE | TLD: hello | TERM: 5-year,70.00,JPY,",
-          "2017-10-01,,234,20.00,USD,10125,1,PURCHASE,theRegistrar - test,1,"
+          "2017-10-01,,234,20.00,USD,10125,1,PURCHASE,theRegistrar,1,"
               + "SERVER_STATUS | TLD: test | TERM: 0-year,20.00,USD,",
-          "2017-10-01,2018-09-30,456,20.50,USD,10125,1,PURCHASE,bestdomains - test,1,"
+          "2017-10-01,2018-09-30,456,20.50,USD,10125,1,PURCHASE,bestdomains,1,"
               + "RENEW | TLD: test | TERM: 1-year,20.50,USD,116688");
 
   private final InvoicingPipelineOptions options =

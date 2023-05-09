@@ -189,7 +189,7 @@ public abstract class BillingEvent implements Serializable {
                 .minusDays(1)
                 .toString(),
         billingId(),
-        String.format("%s - %s", registrarId(), tld()),
+        registrarId(),
         String.format("%s | TLD: %s | TERM: %d-year", action(), tld(), years()),
         amount(),
         currency(),
@@ -233,7 +233,7 @@ public abstract class BillingEvent implements Serializable {
     /** Returns the billing account id, which is the {@code BillingEvent.billingId}. */
     abstract String productAccountKey();
 
-    /** Returns the invoice grouping key, which is in the format "registrarId - tld". */
+    /** Returns the invoice grouping key, which is the registrar ID. */
     abstract String usageGroupingKey();
 
     /** Returns a description of the item, formatted as "action | TLD: tld | TERM: n-year." */
