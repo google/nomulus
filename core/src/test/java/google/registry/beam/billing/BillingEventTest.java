@@ -83,7 +83,7 @@ class BillingEventTest {
     assertThat(invoiceKey.startDate()).isEqualTo("2017-10-01");
     assertThat(invoiceKey.endDate()).isEqualTo("2022-09-30");
     assertThat(invoiceKey.productAccountKey()).isEqualTo("12345-CRRHELLO");
-    assertThat(invoiceKey.usageGroupingKey()).isEqualTo("myRegistrar - test");
+    assertThat(invoiceKey.usageGroupingKey()).isEqualTo("myRegistrar");
     assertThat(invoiceKey.description()).isEqualTo("RENEW | TLD: test | TERM: 5-year");
     assertThat(invoiceKey.unitPrice()).isEqualTo(20.5);
     assertThat(invoiceKey.unitPriceCurrency()).isEqualTo("USD");
@@ -104,7 +104,7 @@ class BillingEventTest {
     assertThat(invoiceKey.toCsv(3L))
         .isEqualTo(
             "2017-10-01,2022-09-30,12345-CRRHELLO,61.50,USD,10125,1,PURCHASE,"
-                + "myRegistrar - test,3,RENEW | TLD: test | TERM: 5-year,20.50,USD,");
+                + "myRegistrar,3,RENEW | TLD: test | TERM: 5-year,20.50,USD,");
   }
 
   @Test
@@ -114,7 +114,7 @@ class BillingEventTest {
     assertThat(invoiceKey.toCsv(3L))
         .isEqualTo(
             "2017-10-01,,12345-CRRHELLO,61.50,USD,10125,1,PURCHASE,"
-                + "myRegistrar - test,3,RENEW | TLD: test | TERM: 0-year,20.50,USD,");
+                + "myRegistrar,3,RENEW | TLD: test | TERM: 0-year,20.50,USD,");
   }
 
   @Test
