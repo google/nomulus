@@ -109,12 +109,6 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("serviceAccountEmails")
-    public static ImmutableList<String> provideServiceAccountEmails(RegistryConfigSettings config) {
-      return ImmutableList.copyOf(config.gcpProject.serviceAccountEmails);
-    }
-
-    @Provides
     @Config("projectIdNumber")
     public static long provideProjectIdNumber(RegistryConfigSettings config) {
       return config.gcpProject.projectIdNumber;
@@ -124,6 +118,18 @@ public final class RegistryConfig {
     @Config("locationId")
     public static String provideLocationId(RegistryConfigSettings config) {
       return config.gcpProject.locationId;
+    }
+
+    @Provides
+    @Config("serviceAccountEmails")
+    public static ImmutableList<String> provideServiceAccountEmails(RegistryConfigSettings config) {
+      return ImmutableList.copyOf(config.gcpProject.serviceAccountEmails);
+    }
+
+    @Provides
+    @Config("defaultServiceAccount")
+    public static Optional<String> provideDefaultServiceAccount(RegistryConfigSettings config) {
+      return Optional.ofNullable(config.gcpProject.defaultServiceAccount);
     }
 
     /**

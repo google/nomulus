@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.cloud.tasks.v2.HttpMethod;
+import com.google.cloud.tasks.v2.OidcToken;
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
@@ -46,9 +47,15 @@ public class CloudTasksUtilsTest {
   private final LinkedListMultimap<String, String> params = LinkedListMultimap.create();
   private final SerializableCloudTasksClient mockClient = mock(SerializableCloudTasksClient.class);
   private final FakeClock clock = new FakeClock(DateTime.parse("2021-11-08"));
-  private final CloudTasksUtils cloudTasksUtils =
+  private CloudTasksUtils cloudTasksUtils =
       new CloudTasksUtils(
-          new Retrier(new FakeSleeper(clock), 1), clock, "project", "location", mockClient);
+          new Retrier(new FakeSleeper(clock), 1),
+          clock,
+          "project",
+          "location",
+          Optional.empty(),
+          Optional.empty(),
+          mockClient);
 
   @BeforeEach
   void beforeEach() {
@@ -347,5 +354,256 @@ public class CloudTasksUtilsTest {
     cloudTasksUtils.enqueue("test-queue", ImmutableList.of(task1, task2));
     verify(mockClient).enqueue("project", "location", "test-queue", task1);
     verify(mockClient).enqueue("project", "location", "test-queue", task2);
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createGetTasks() {
+    createOidcTasksUtils();
+    Task task = cloudTasksUtils.createGetTask("/the/path", Service.BACKEND, params);
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getHttpRequest().getUrl())
+        .isEqualTo("https://localhost/the/path?key1=val1&key2=val2&key1=val3");
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createPostTasks() {
+    createOidcTasksUtils();
+    Task task = cloudTasksUtils.createPostTask("/the/path", Service.BACKEND, params);
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getHttpRequest().getUrl()).isEqualTo("https://localhost/the/path");
+    assertThat(task.getHttpRequest().getHeadersMap().get("Content-Type"))
+        .isEqualTo("application/x-www-form-urlencoded");
+    assertThat(task.getHttpRequest().getBody().toString(StandardCharsets.UTF_8))
+        .isEqualTo("key1=val1&key2=val2&key1=val3");
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createGetTasks_withNullParams() {
+    createOidcTasksUtils();
+    Task task = cloudTasksUtils.createGetTask("/the/path", Service.BACKEND, null);
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getHttpRequest().getUrl()).isEqualTo("https://localhost/the/path");
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createPostTasks_withNullParams() {
+    createOidcTasksUtils();
+    Task task = cloudTasksUtils.createPostTask("/the/path", Service.BACKEND, null);
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getHttpRequest().getUrl()).isEqualTo("https://localhost/the/path");
+    assertThat(task.getHttpRequest().getBody().toString(StandardCharsets.UTF_8)).isEmpty();
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createGetTasks_withEmptyParams() {
+    createOidcTasksUtils();
+    Task task = cloudTasksUtils.createGetTask("/the/path", Service.BACKEND, ImmutableMultimap.of());
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getHttpRequest().getUrl()).isEqualTo("https://localhost/the/path");
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createPostTasks_withEmptyParams() {
+    createOidcTasksUtils();
+    Task task =
+        cloudTasksUtils.createPostTask("/the/path", Service.BACKEND, ImmutableMultimap.of());
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getHttpRequest().getUrl()).isEqualTo("https://localhost/the/path");
+    assertThat(task.getHttpRequest().getBody().toString(StandardCharsets.UTF_8)).isEmpty();
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @SuppressWarnings("ProtoTimestampGetSecondsGetNano")
+  @Test
+  void testSuccess_nonAppEngine_createGetTasks_withJitterSeconds() {
+    createOidcTasksUtils();
+    Task task =
+        cloudTasksUtils.createGetTaskWithJitter(
+            "/the/path", Service.BACKEND, params, Optional.of(100));
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getHttpRequest().getUrl())
+        .isEqualTo("https://localhost/the/path?key1=val1&key2=val2&key1=val3");
+    verifyOidcToken(task);
+
+    Instant scheduleTime = Instant.ofEpochSecond(task.getScheduleTime().getSeconds());
+    Instant lowerBoundTime = Instant.ofEpochMilli(clock.nowUtc().getMillis());
+    Instant upperBound = Instant.ofEpochMilli(clock.nowUtc().plusSeconds(100).getMillis());
+
+    assertThat(scheduleTime.isBefore(lowerBoundTime)).isFalse();
+    assertThat(upperBound.isBefore(scheduleTime)).isFalse();
+  }
+
+  @SuppressWarnings("ProtoTimestampGetSecondsGetNano")
+  @Test
+  void testSuccess_nonAppEngine_createPostTasks_withJitterSeconds() {
+    createOidcTasksUtils();
+    Task task =
+        cloudTasksUtils.createPostTaskWithJitter(
+            "/the/path", Service.BACKEND, params, Optional.of(1));
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getHttpRequest().getUrl()).isEqualTo("https://localhost/the/path");
+    assertThat(task.getHttpRequest().getHeadersMap().get("Content-Type"))
+        .isEqualTo("application/x-www-form-urlencoded");
+    assertThat(task.getHttpRequest().getBody().toString(StandardCharsets.UTF_8))
+        .isEqualTo("key1=val1&key2=val2&key1=val3");
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isNotEqualTo(0);
+
+    Instant scheduleTime = Instant.ofEpochSecond(task.getScheduleTime().getSeconds());
+    Instant lowerBoundTime = Instant.ofEpochMilli(clock.nowUtc().getMillis());
+    Instant upperBound = Instant.ofEpochMilli(clock.nowUtc().plusSeconds(1).getMillis());
+
+    assertThat(scheduleTime.isBefore(lowerBoundTime)).isFalse();
+    assertThat(upperBound.isBefore(scheduleTime)).isFalse();
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createPostTasks_withEmptyJitterSeconds() {
+    createOidcTasksUtils();
+    Task task =
+        cloudTasksUtils.createPostTaskWithJitter(
+            "/the/path", Service.BACKEND, params, Optional.empty());
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getHttpRequest().getUrl()).isEqualTo("https://localhost/the/path");
+    assertThat(task.getHttpRequest().getHeadersMap().get("Content-Type"))
+        .isEqualTo("application/x-www-form-urlencoded");
+    assertThat(task.getHttpRequest().getBody().toString(StandardCharsets.UTF_8))
+        .isEqualTo("key1=val1&key2=val2&key1=val3");
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createGetTasks_withEmptyJitterSeconds() {
+    createOidcTasksUtils();
+    Task task =
+        cloudTasksUtils.createGetTaskWithJitter(
+            "/the/path", Service.BACKEND, params, Optional.empty());
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getHttpRequest().getUrl())
+        .isEqualTo("https://localhost/the/path?key1=val1&key2=val2&key1=val3");
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createPostTasks_withZeroJitterSeconds() {
+    createOidcTasksUtils();
+    Task task =
+        cloudTasksUtils.createPostTaskWithJitter(
+            "/the/path", Service.BACKEND, params, Optional.of(0));
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getHttpRequest().getUrl()).isEqualTo("https://localhost/the/path");
+    assertThat(task.getHttpRequest().getHeadersMap().get("Content-Type"))
+        .isEqualTo("application/x-www-form-urlencoded");
+    assertThat(task.getHttpRequest().getBody().toString(StandardCharsets.UTF_8))
+        .isEqualTo("key1=val1&key2=val2&key1=val3");
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createGetTasks_withZeroJitterSeconds() {
+    createOidcTasksUtils();
+    Task task =
+        cloudTasksUtils.createGetTaskWithJitter(
+            "/the/path", Service.BACKEND, params, Optional.of(0));
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getHttpRequest().getUrl())
+        .isEqualTo("https://localhost/the/path?key1=val1&key2=val2&key1=val3");
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createGetTasks_withDelay() {
+    createOidcTasksUtils();
+    Task task =
+        cloudTasksUtils.createGetTaskWithDelay(
+            "/the/path", Service.BACKEND, params, Duration.standardMinutes(10));
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getHttpRequest().getUrl())
+        .isEqualTo("https://localhost/the/path?key1=val1&key2=val2&key1=val3");
+    verifyOidcToken(task);
+    assertThat(Instant.ofEpochSecond(task.getScheduleTime().getSeconds()))
+        .isEqualTo(Instant.ofEpochMilli(clock.nowUtc().plusMinutes(10).getMillis()));
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createPostTasks_withDelay() {
+    createOidcTasksUtils();
+    Task task =
+        cloudTasksUtils.createPostTaskWithDelay(
+            "/the/path", Service.BACKEND, params, Duration.standardMinutes(10));
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getHttpRequest().getUrl()).isEqualTo("https://localhost/the/path");
+    assertThat(task.getHttpRequest().getHeadersMap().get("Content-Type"))
+        .isEqualTo("application/x-www-form-urlencoded");
+    assertThat(task.getHttpRequest().getBody().toString(StandardCharsets.UTF_8))
+        .isEqualTo("key1=val1&key2=val2&key1=val3");
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isNotEqualTo(0);
+    assertThat(Instant.ofEpochSecond(task.getScheduleTime().getSeconds()))
+        .isEqualTo(Instant.ofEpochMilli(clock.nowUtc().plusMinutes(10).getMillis()));
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createPostTasks_withZeroDelay() {
+    createOidcTasksUtils();
+    Task task =
+        cloudTasksUtils.createPostTaskWithDelay(
+            "/the/path", Service.BACKEND, params, Duration.ZERO);
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getHttpRequest().getUrl()).isEqualTo("https://localhost/the/path");
+    assertThat(task.getHttpRequest().getHeadersMap().get("Content-Type"))
+        .isEqualTo("application/x-www-form-urlencoded");
+    assertThat(task.getHttpRequest().getBody().toString(StandardCharsets.UTF_8))
+        .isEqualTo("key1=val1&key2=val2&key1=val3");
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_nonAppEngine_createGetTasks_withZeroDelay() {
+    createOidcTasksUtils();
+    Task task =
+        cloudTasksUtils.createGetTaskWithDelay("/the/path", Service.BACKEND, params, Duration.ZERO);
+    assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getHttpRequest().getUrl())
+        .isEqualTo("https://localhost/the/path?key1=val1&key2=val2&key1=val3");
+    verifyOidcToken(task);
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  private void createOidcTasksUtils() {
+    cloudTasksUtils =
+        new CloudTasksUtils(
+            new Retrier(new FakeSleeper(clock), 1),
+            clock,
+            "project",
+            "location",
+            Optional.of("defaultServiceAccount"),
+            Optional.of("iapClientId"),
+            mockClient);
+  }
+
+  private void verifyOidcToken(Task task) {
+    assertThat(task.getHttpRequest().getOidcToken())
+        .isEqualTo(
+            OidcToken.newBuilder()
+                .setServiceAccountEmail("defaultServiceAccount")
+                .setAudience("iapClientId")
+                .build());
   }
 }

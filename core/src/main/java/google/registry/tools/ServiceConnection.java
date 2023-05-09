@@ -85,7 +85,7 @@ public class ServiceConnection {
   private String internalSend(
       String endpoint, Map<String, ?> params, MediaType contentType, @Nullable byte[] payload)
       throws IOException {
-    GenericUrl url = new GenericUrl(String.format("%s%s", getServer(), endpoint));
+    GenericUrl url = new GenericUrl(String.format("%s%s", getServer(service), endpoint));
     url.putAll(params);
     HttpRequest request =
         (payload != null)
@@ -141,7 +141,7 @@ public class ServiceConnection {
     return (Map<String, Object>) JSONValue.parse(response.substring(JSON_SAFETY_PREFIX.length()));
   }
 
-  public URL getServer() {
+  public static URL getServer(Service service) {
     switch (service) {
       case DEFAULT:
         return RegistryConfig.getDefaultServer();
