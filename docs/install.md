@@ -141,7 +141,7 @@ pipelines already based on flex-template, deployment in the testing environments
 (alpha and crash) can be done using the following command:
 
 ```shell
-./nom_build :core:stage_beam_pipelines --environment=alpha
+./nom_build :core:stageBeamPipelines --environment=alpha
 ```
 
 Pipeline deployment in other environments are through CloudBuild. Please refer
