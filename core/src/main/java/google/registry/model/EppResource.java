@@ -416,7 +416,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    */
   public static <T extends EppResource> T loadCached(VKey<T> key) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return tm().loadByKey(key);
+      return tm().transact(() -> tm().loadByKey(key));
     }
     // Safe to cast because loading a Key<T> returns an entity of type T.
     @SuppressWarnings("unchecked")
