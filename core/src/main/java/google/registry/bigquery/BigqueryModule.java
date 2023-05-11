@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.Multibinds;
-import google.registry.config.CredentialModule.DefaultCredential;
+import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
 import java.util.Map;
@@ -34,7 +34,7 @@ public abstract class BigqueryModule {
 
   @Provides
   static Bigquery provideBigquery(
-      @DefaultCredential GoogleCredentialsBundle credentialsBundle,
+      @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle,
       @Config("projectId") String projectId) {
     return new Bigquery.Builder(
             credentialsBundle.getHttpTransport(),

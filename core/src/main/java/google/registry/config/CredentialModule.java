@@ -67,38 +67,6 @@ public abstract class CredentialModule {
   }
 
   /**
-   * Provides the default {@link GoogleCredentialsBundle} from the Google Cloud runtime.
-   *
-   * <p>The credential returned depends on the runtime environment:
-   *
-   * <ul>
-   *   <li>On AppEngine, returns the service account credential for
-   *       PROJECT_ID@appspot.gserviceaccount.com
-   *   <li>On Compute Engine, returns the service account credential for
-   *       PROJECT_NUMBER-compute@developer.gserviceaccount.com
-   *   <li>On end user host, this returns the credential downloaded by gcloud. Please refer to <a
-   *       href="https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login">Cloud
-   *       SDK documentation</a> for details.
-   * </ul>
-   */
-  @DefaultCredential
-  @Provides
-  @Singleton
-  public static GoogleCredentialsBundle provideDefaultCredential(
-      @Config("defaultCredentialOauthScopes") ImmutableList<String> requiredScopes) {
-    GoogleCredentials credential;
-    try {
-      credential = GoogleCredentials.getApplicationDefault();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    if (credential.createScopedRequired()) {
-      credential = credential.createScoped(requiredScopes);
-    }
-    return GoogleCredentialsBundle.create(credential);
-  }
-
-  /**
    * Provides a {@link GoogleCredentialsBundle} for accessing Google Workspace APIs, such as Drive
    * and Sheets.
    */
@@ -161,13 +129,6 @@ public abstract class CredentialModule {
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
   public @interface ApplicationDefaultCredential {}
-
-  /** Dagger qualifier for the Application Default Credential. */
-  @Qualifier
-  @Documented
-  @Retention(RetentionPolicy.RUNTIME)
-  @Deprecated // Switching to @ApplicationDefaultCredential
-  public @interface DefaultCredential {}
 
   /** Dagger qualifier for the credential for Google Workspace APIs. */
   @Qualifier

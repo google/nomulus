@@ -21,7 +21,7 @@ import static google.registry.request.RequestParameters.extractRequiredParameter
 import com.google.api.services.dataflow.Dataflow;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.config.CredentialModule.DefaultCredential;
+import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
@@ -134,7 +134,7 @@ public class ReportingModule {
   /** Constructs a {@link Dataflow} API client with default settings. */
   @Provides
   static Dataflow provideDataflow(
-      @DefaultCredential GoogleCredentialsBundle credentialsBundle,
+      @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle,
       @Config("projectId") String projectId) {
     return new Dataflow.Builder(
             credentialsBundle.getHttpTransport(),

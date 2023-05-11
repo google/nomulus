@@ -17,7 +17,6 @@ package google.registry.batch;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.common.flogger.FluentLogger;
-import google.registry.batch.cannedscript.CannedScripts;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import javax.inject.Inject;
@@ -25,15 +24,15 @@ import javax.inject.Inject;
 /**
  * Action that executes a canned script specified by the caller.
  *
- * <p>This class is introduced to help the safe rollout of credential changes. The delegated
- * credentials in particular, benefit from this: they require manual configuration of the peer
- * system in each environment, and may wait hours or even days after deployment until triggered by
- * user activities.
+ * <p>This class provides a hook for invoking hard-coded methods. The main use case is to verify in
+ * Sandbox and Production environments new features that depend on environment-specific
+ * configurations. For example, the {@code DelegatedCredential}, which requires correct GWorkspace
+ * configuration, has been tested this way. Since it is a hassle to add or remove endpoints, we keep
+ * this class all the time.
  *
  * <p>This action can be invoked using the Nomulus CLI command: {@code nomulus -e ${env} curl
- * --service BACKEND -X POST -u '/_dr/task/executeCannedScript?script=${script_name}'}
+ * --service BACKEND -X POST -u '/_dr/task/executeCannedScript}'}
  */
-// TODO(b/277239043): remove class after credential changes are rolled out.
 @Action(
     service = Action.Service.BACKEND,
     path = "/_dr/task/executeCannedScript",
@@ -51,7 +50,7 @@ public class CannedScriptExecutionAction implements Runnable {
   @Override
   public void run() {
     try {
-      CannedScripts.runAllChecks();
+      // Invoke canned scripts here.
       logger.atInfo().log("Finished running scripts.");
     } catch (Throwable t) {
       logger.atWarning().withCause(t).log("Error executing scripts.");
