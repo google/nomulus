@@ -28,7 +28,6 @@ import javax.servlet.http.HttpServletRequest;
 /** Top-level authentication/authorization class; calls authentication mechanisms as needed. */
 public class RequestAuthenticator {
 
-  private final AppEngineInternalAuthenticationMechanism appEngineInternalAuthenticationMechanism;
   private final ImmutableList<AuthenticationMechanism> apiAuthenticationMechanisms;
   private final LegacyAuthenticationMechanism legacyAuthenticationMechanism;
 
@@ -36,10 +35,8 @@ public class RequestAuthenticator {
 
   @Inject
   public RequestAuthenticator(
-      AppEngineInternalAuthenticationMechanism appEngineInternalAuthenticationMechanism,
       ImmutableList<AuthenticationMechanism> apiAuthenticationMechanisms,
       LegacyAuthenticationMechanism legacyAuthenticationMechanism) {
-    this.appEngineInternalAuthenticationMechanism = appEngineInternalAuthenticationMechanism;
     this.apiAuthenticationMechanisms = apiAuthenticationMechanisms;
     this.legacyAuthenticationMechanism = legacyAuthenticationMechanism;
   }
@@ -160,15 +157,6 @@ public class RequestAuthenticator {
     for (AuthMethod authMethod : auth.methods()) {
       AuthResult authResult;
       switch (authMethod) {
-          // App Engine internal authentication, using the queue name header
-        case INTERNAL:
-          // checkAuthConfig will have insured that the user policy is not USER.
-          authResult = appEngineInternalAuthenticationMechanism.authenticate(req);
-          if (authResult.isAuthenticated()) {
-            logger.atInfo().log("Authenticated via internal auth: %s", authResult);
-            return authResult;
-          }
-          break;
         // API-based user authentication mechanisms, such as OAuth
         case API:
           // checkAuthConfig will have insured that the user policy is not IGNORED.
