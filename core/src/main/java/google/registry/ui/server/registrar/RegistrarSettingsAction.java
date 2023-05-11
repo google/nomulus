@@ -473,7 +473,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    *
    * @throws FormException if the checks fail.
    */
-  void checkContactRequirements(
+  public static void checkContactRequirements(
       ImmutableSet<RegistrarPoc> existingContacts, ImmutableSet<RegistrarPoc> updatedContacts) {
     // Check that no two contacts use the same email address.
     Set<String> emails = new HashSet<>();
