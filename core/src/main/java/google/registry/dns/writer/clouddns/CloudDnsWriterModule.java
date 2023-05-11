@@ -22,7 +22,7 @@ import dagger.Provides;
 import dagger.multibindings.IntoMap;
 import dagger.multibindings.IntoSet;
 import dagger.multibindings.StringKey;
-import google.registry.config.CredentialModule.DefaultCredential;
+import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.util.GoogleCredentialsBundle;
@@ -35,7 +35,7 @@ public abstract class CloudDnsWriterModule {
 
   @Provides
   static Dns provideDns(
-      @DefaultCredential GoogleCredentialsBundle credentialsBundle,
+      @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle,
       @Config("projectId") String projectId,
       @Config("cloudDnsRootUrl") Optional<String> rootUrl,
       @Config("cloudDnsServicePath") Optional<String> servicePath) {

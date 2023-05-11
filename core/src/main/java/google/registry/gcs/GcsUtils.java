@@ -31,7 +31,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
-import google.registry.config.CredentialModule.DefaultCredential;
+import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.util.GoogleCredentialsBundle;
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,7 +64,7 @@ public class GcsUtils implements Serializable {
   }
 
   @Inject
-  public GcsUtils(@DefaultCredential GoogleCredentialsBundle credentialsBundle) {
+  public GcsUtils(@ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle) {
     this(
         StorageOptions.newBuilder()
             .setCredentials(credentialsBundle.getGoogleCredentials())
