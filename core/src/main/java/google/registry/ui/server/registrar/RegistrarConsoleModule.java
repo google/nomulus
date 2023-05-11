@@ -162,4 +162,16 @@ public final class RegistrarConsoleModule {
   static String provideDomain(HttpServletRequest req) {
     return extractRequiredParameter(req, "domain");
   }
+
+  @Provides
+  @Parameter("contacts")
+  static String provideContacts(HttpServletRequest req) {
+    return extractRequiredParameter(req, "contacts");
+  }
+
+  @Provides
+  @Parameter("registrarId")
+  static String provideRegistrarId(HttpServletRequest req) {
+    return extractRequiredParameter(req, "registrarId");
+  }
 }
