@@ -190,7 +190,7 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
       checkArgument(
           !domain.getStatusValues().contains(SERVER_UPDATE_PROHIBITED),
           "The domain '%s' has status SERVER_UPDATE_PROHIBITED. Verify that you are allowed "
-              + "to make updates, and if so, use the domain_unlock command to enable updates.",
+              + "to make updates, and if so, use the unlock_domain command to enable updates.",
           domainName);
       checkArgument(
           !domain.getStatusValues().contains(PENDING_DELETE) || forceInPendingDelete,
