@@ -19,11 +19,17 @@ import static google.registry.request.RequestParameters.extractOptionalIntParame
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.gson.Gson;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.model.registrar.RegistrarPoc;
+import google.registry.request.JsonPayload;
 import google.registry.request.Parameter;
+import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
+import org.json.simple.JSONArray;
 
 /** Dagger module for the Registrar Console parameters. */
 @Module
@@ -161,5 +167,25 @@ public final class RegistrarConsoleModule {
   @Parameter("domain")
   static String provideDomain(HttpServletRequest req) {
     return extractRequiredParameter(req, "domain");
+  }
+
+  @Provides
+  @Parameter("contacts")
+  public static Optional<ImmutableSet<RegistrarPoc>> provideContacts(
+      Gson gson, @JsonPayload Map<String, Object> payload) {
+
+    if (payload != null && payload.containsKey("contacts")) {
+      return Optional.of(
+          ImmutableSet.copyOf(
+              gson.fromJson(
+                  ((JSONArray) payload.get("contacts")).toJSONString(), RegistrarPoc[].class)));
+    }
+    return Optional.empty();
+  }
+
+  @Provides
+  @Parameter("registrarId")
+  static String provideRegistrarId(HttpServletRequest req) {
+    return extractRequiredParameter(req, "registrarId");
   }
 }
