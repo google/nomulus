@@ -31,6 +31,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.protobuf.ByteString;
 import dagger.Module;
 import dagger.Provides;
@@ -246,5 +248,16 @@ public final class RequestModule {
   @Header(CLOUD_TASKS_RETRY_HEADER)
   static Optional<Integer> provideCloudTasksRetryCount(HttpServletRequest req) {
     return extractOptionalHeader(req, CLOUD_TASKS_RETRY_HEADER).map(Integer::parseInt);
+  }
+
+  @Provides
+  @JsonPayload
+  public static Optional<JsonObject> provideJsonBody(HttpServletRequest req, Gson gson) {
+    try {
+      JsonObject body = gson.fromJson(req.getReader(), JsonObject.class);
+      return Optional.of(body);
+    } catch (Exception e) {
+    }
+    return Optional.empty();
   }
 }
