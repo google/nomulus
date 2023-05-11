@@ -277,7 +277,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       if (!registrarAccessor.hasRoleOnRegistrar(Role.OWNER, registrar.getRegistrarId())) {
         throw new ForbiddenException("Only OWNERs can update the contacts");
       }
-      checkContactRequirements(contacts, updatedContacts);
+      RegistrarSettingsAction.checkContactRequirements(contacts, updatedContacts);
       RegistrarPoc.updateContacts(updatedRegistrar, updatedContacts);
       updatedRegistrar = updatedRegistrar.asBuilder().setContactsRequireSyncing(true).build();
     }
@@ -473,7 +473,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    *
    * @throws FormException if the checks fail.
    */
-  void checkContactRequirements(
+  public static void checkContactRequirements(
       ImmutableSet<RegistrarPoc> existingContacts, ImmutableSet<RegistrarPoc> updatedContacts) {
     // Check that no two contacts use the same email address.
     Set<String> emails = new HashSet<>();

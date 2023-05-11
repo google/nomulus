@@ -35,7 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Tests for {@link google.registry.ui.server.console.ConsoleDomainGetAction}. */
+/** Tests for {@link google.registry.ui.server.console.settings.ContactGetAction}. */
 public class ConsoleDomainGetActionTest {
 
   private static final Gson GSON = UtilsModule.provideGson();
