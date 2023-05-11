@@ -193,9 +193,8 @@ public final class RequestModule {
   @Provides
   @JsonPayload
   @SuppressWarnings("unchecked")
-  static Map<String, Object> provideJsonPayload(
-      @Header("Content-Type") MediaType contentType,
-      @Payload String payload) {
+  public static Map<String, Object> provideJsonPayload(
+      @Header("Content-Type") MediaType contentType, @Payload String payload) {
     if (!JSON_UTF_8.is(contentType.withCharset(UTF_8))) {
       throw new UnsupportedMediaTypeException(
           String.format("Expected %s Content-Type", JSON_UTF_8.withoutParameters()));
@@ -247,4 +246,5 @@ public final class RequestModule {
   static Optional<Integer> provideCloudTasksRetryCount(HttpServletRequest req) {
     return extractOptionalHeader(req, CLOUD_TASKS_RETRY_HEADER).map(Integer::parseInt);
   }
+
 }
