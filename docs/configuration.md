@@ -4,7 +4,7 @@ There are multiple different kinds of configuration that go into getting a
 working registry system up and running. Broadly speaking, configuration works in
 two ways -- globally, for the entire sytem, and per-TLD. Global configuration is
 managed by editing code and deploying a new version, whereas per-TLD
-configuration is data that lives in the database in `Registry` entities, and is
+configuration is data that lives in the database in `Tld` entities, and is
 updated by running `nomulus` commands without having to deploy a new version.
 
 ## Initial configuration
@@ -177,7 +177,7 @@ SecretManager to configure accordingly, for example:
 
 ## Per-TLD configuration
 
-`Registry` entities, which are persisted to the database, are used for per-TLD
+`Tld` entities, which are persisted to the database, are used for per-TLD
 configuration. They contain any kind of configuration that is specific to a TLD,
 such as the create/renew price of a domain name, the pricing engine
 implementation, the DNS writer implementation, whether escrow exports are
@@ -194,8 +194,7 @@ and thus do not require code pushes to update.
 
 ## Cloud SQL Configuration
 
-Nomulus is in the process of being ported to Cloud SQL.  As such, parts of the
-system already require access to Cloud SQL and the necessary configuration
+Nomulus requires access to Cloud SQL and thus the necessary configuration
 must be applied.
 
 ### Create Postgres Cloud SQL Instance
