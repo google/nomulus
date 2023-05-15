@@ -1,0 +1,166 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Registry Console API",
+        "version": "1.0.0"
+    },
+    "schemes": [
+        "https"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "paths": {
+        "/console-api/user": {
+            "get": {
+                "summary": "Provides user type to UI",
+                "responses": {
+                    "200": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "enum":[
+                                        "ADMIN",
+                                        "USER"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/console-api/registrars": {
+            "get": {
+                "summary": "Provides list of available registrars to UI",
+                "responses": {
+                    "200": {
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "registrarId": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/console-api/settings/contacts/get": {
+            "get": {
+                "summary": "GET settings contact page",
+                "responses": {
+                    "200": {
+                        "description": "Provides list of contacts per registrar",
+                        "schema": {
+                            "$ref": "#/definitions/settingsContacts"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "registrarId",
+                        "in": "path",
+                        "required": true,
+                        "type": "string",
+                        "format": "string"
+                    }
+                ]
+            }
+        },
+        "/console-api/settings/contacts/upd": {
+            "post": {
+                "summary": "Creates, updates or delete registrar contacts",
+                "responses": {
+                    "200": {
+                        "schema": {
+                            "$ref": "#/definitions/settingsContacts"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "registrarId",
+                        "in": "body",
+                        "required": true,
+                        "type": "string",
+                        "format": "string"
+                    },
+                    {
+                        "name": "contacts",
+                        "in": "body",
+                        "required": true,
+                        "type": "array",
+                        "schema": {
+                            "$ref": "#/definitions/settingsContacts"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "definitions": {
+        "settingsContacts": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "emailAddress": {
+                        "type": "string"
+                    },
+                    "registrarId": {
+                        "type": "string"
+                    },
+                    "registryLockEmailAddress": {
+                        "type": "string"
+                    },
+                    "phoneNumber": {
+                        "type": "string"
+                    },
+                    "faxNumber": {
+                        "type": "string"
+                    },
+                    "types": {
+                        "type": "string",
+                        "enum": [
+                            "ABUSE",
+                            "ADMIN",
+                            "BILLING",
+                            "LEGAL",
+                            "MARKETING",
+                            "TECH",
+                            "WHOIS"
+                        ]
+                    },
+                    "visibleInWhoisAsAdmin": {
+                        "type": "boolean"
+                    },
+                    "visibleInWhoisAsTech": {
+                        "type": "boolean"
+                    },
+                    "visibleInDomainWhoisAsAbuse": {
+                        "type": "boolean"
+                    },
+                    "allowedToSetRegistryLockPassword": {
+                        "type": "boolean"
+                    }
+                }
+            }
+        }
+    }
+}
