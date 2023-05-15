@@ -16,6 +16,10 @@ package google.registry.model.console;
 
 /** Permissions that users may have in the UI, either per-registrar or globally. */
 public enum ConsolePermission {
+  /** View basic information about a registrar. */
+  VIEW_REGISTRAR_DETAILS,
+  /** Edit basic information about a registrar. */
+  EDIT_REGISTRAR_DETAILS,
   /** Add, update, or remove other console users. */
   MANAGE_USERS,
   /** Add, update, or remove registrars. */
