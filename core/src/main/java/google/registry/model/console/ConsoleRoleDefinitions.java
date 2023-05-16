@@ -27,6 +27,8 @@ public class ConsoleRoleDefinitions {
   /** Permissions for a registry support agent. */
   static final ImmutableSet<ConsolePermission> SUPPORT_AGENT_PERMISSIONS =
       ImmutableSet.of(
+          ConsolePermission.VIEW_REGISTRAR_DETAILS,
+          ConsolePermission.EDIT_REGISTRAR_DETAILS,
           ConsolePermission.MANAGE_USERS,
           ConsolePermission.MANAGE_ACCREDITATION,
           ConsolePermission.CONFIGURE_EPP_CONNECTION,
@@ -69,6 +71,7 @@ public class ConsoleRoleDefinitions {
   /** Permissions for a registrar partner account manager. */
   static final ImmutableSet<ConsolePermission> ACCOUNT_MANAGER_PERMISSIONS =
       ImmutableSet.of(
+          ConsolePermission.VIEW_REGISTRAR_DETAILS,
           ConsolePermission.DOWNLOAD_DOMAINS,
           ConsolePermission.VIEW_TLD_PORTFOLIO,
           ConsolePermission.CONTACT_SUPPORT,
@@ -89,6 +92,7 @@ public class ConsoleRoleDefinitions {
       new ImmutableSet.Builder<ConsolePermission>()
           .addAll(ACCOUNT_MANAGER_WITH_REGISTRY_LOCK_PERMISSIONS)
           .add(
+              ConsolePermission.EDIT_REGISTRAR_DETAILS,
               ConsolePermission.MANAGE_ACCREDITATION,
               ConsolePermission.CONFIGURE_EPP_CONNECTION,
               ConsolePermission.CHANGE_NOMULUS_PASSWORD,
