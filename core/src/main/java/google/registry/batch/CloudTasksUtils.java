@@ -20,8 +20,6 @@ import static google.registry.tools.ServiceConnection.getServer;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.api.gax.rpc.ApiException;
-import com.google.cloud.tasks.v2.AppEngineHttpRequest;
-import com.google.cloud.tasks.v2.AppEngineRouting;
 import com.google.cloud.tasks.v2.CloudTasksClient;
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.cloud.tasks.v2.HttpRequest;
@@ -52,7 +50,6 @@ import java.util.Random;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import org.joda.time.Duration;
 
@@ -67,9 +64,7 @@ public class CloudTasksUtils implements Serializable {
   private final Clock clock;
   private final String projectId;
   private final String locationId;
-  // defaultServiceAccount and iapClientId are nullable because Optional isn't serializable
-  @Nullable private final String defaultServiceAccount;
-  @Nullable private final String iapClientId;
+  private final String clientId;
   private final SerializableCloudTasksClient client;
 
   @Inject
@@ -78,15 +73,13 @@ public class CloudTasksUtils implements Serializable {
       Clock clock,
       @Config("projectId") String projectId,
       @Config("locationId") String locationId,
-      @Config("defaultServiceAccount") Optional<String> defaultServiceAccount,
-      @Config("iapClientId") Optional<String> iapClientId,
+      @Config("oauthClientId") String clientId,
       SerializableCloudTasksClient client) {
     this.retrier = retrier;
     this.clock = clock;
     this.projectId = projectId;
     this.locationId = locationId;
-    this.defaultServiceAccount = defaultServiceAccount.orElse(null);
-    this.iapClientId = iapClientId.orElse(null);
+    this.clientId = clientId;
     this.client = client;
   }
 
@@ -124,7 +117,7 @@ public class CloudTasksUtils implements Serializable {
    *
    * @return the resulting path (unchanged for POST requests, with params added for GET requests)
    */
-  private String processRequestParameters(
+  private static String processRequestParameters(
       String path,
       HttpMethod method,
       Multimap<String, String> params,
@@ -153,34 +146,11 @@ public class CloudTasksUtils implements Serializable {
   }
 
   /**
-   * Creates a {@link Task} that does not use AppEngine for submission.
-   *
-   * <p>This uses the standard Cloud Tasks auth format to create and send an OIDC ID token set to
-   * the default service account. That account must have permission to submit tasks to Cloud Tasks.
-   */
-  private Task createNonAppEngineTask(
-      String path, HttpMethod method, Service service, Multimap<String, String> params) {
-    HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().setHttpMethod(method);
-    path =
-        processRequestParameters(
-            path, method, params, requestBuilder::putHeaders, requestBuilder::setBody);
-    OidcToken.Builder oidcTokenBuilder =
-        OidcToken.newBuilder().setServiceAccountEmail(defaultServiceAccount);
-    // If the service is using IAP, add that as the audience for the token so the request can be
-    // appropriately authed. Otherwise, use the project name.
-    if (iapClientId != null) {
-      oidcTokenBuilder.setAudience(iapClientId);
-    } else {
-      oidcTokenBuilder.setAudience(projectId);
-    }
-    requestBuilder.setOidcToken(oidcTokenBuilder.build());
-    String totalPath = String.format("%s%s", getServer(service), path);
-    requestBuilder.setUrl(totalPath);
-    return Task.newBuilder().setHttpRequest(requestBuilder.build()).build();
-  }
-
-  /**
    * Create a {@link Task} to be enqueued.
+   *
+   * <p>This uses the standard Cloud Tasks auth format to create and send an OIDC ID token with the
+   * default service account as the principal. That account must have permission to submit tasks to
+   * Cloud Tasks.
    *
    * @param path the relative URI (staring with a slash and ending without one).
    * @param method the HTTP method to be used for the request, only GET and POST are supported.
@@ -188,7 +158,7 @@ public class CloudTasksUtils implements Serializable {
    *     Queue API if no service is specified, the service which enqueues the task will be used to
    *     process the task. Cloud Tasks API does not support this feature so the service will always
    *     needs to be explicitly specified.
-   * @param params a multi-map of URL query parameters. Duplicate keys are saved as is, and it is up
+   * @param params a multimap of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
    * @return the enqueued task.
    * @see <a
@@ -204,21 +174,17 @@ public class CloudTasksUtils implements Serializable {
         method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST),
         "HTTP method %s is used. Only GET and POST are allowed.",
         method);
-    // If the default service account is configured, send a standard non-AppEngine HTTP request
-    if (defaultServiceAccount != null) {
-      return createNonAppEngineTask(path, method, service, params);
-    } else {
-      AppEngineHttpRequest.Builder requestBuilder =
-          AppEngineHttpRequest.newBuilder()
-              .setHttpMethod(method)
-              .setAppEngineRouting(
-                  AppEngineRouting.newBuilder().setService(service.toString()).build());
-      path =
-          processRequestParameters(
-              path, method, params, requestBuilder::putHeaders, requestBuilder::setBody);
-      requestBuilder.setRelativeUri(path);
-      return Task.newBuilder().setAppEngineHttpRequest(requestBuilder.build()).build();
-    }
+    HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().setHttpMethod(method);
+    path =
+        processRequestParameters(
+            path, method, params, requestBuilder::putHeaders, requestBuilder::setBody);
+    OidcToken.Builder oidcTokenBuilder =
+        OidcToken.newBuilder().setServiceAccountEmail(projectId + "@appspot.gserviceaccount.com");
+    oidcTokenBuilder.setAudience(clientId);
+    requestBuilder.setOidcToken(oidcTokenBuilder.build());
+    String totalPath = String.format("%s%s", getServer(service), path);
+    requestBuilder.setUrl(totalPath);
+    return Task.newBuilder().setHttpRequest(requestBuilder.build()).build();
   }
 
   /**
@@ -230,7 +196,7 @@ public class CloudTasksUtils implements Serializable {
    *     Queue API if no service is specified, the service which enqueues the task will be used to
    *     process the task. Cloud Tasks API does not support this feature so the service will always
    *     needs to be explicitly specified.
-   * @param params a multi-map of URL query parameters. Duplicate keys are saved as is, and it is up
+   * @param params a multimap of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
    * @param jitterSeconds the number of seconds that a task is randomly delayed up to.
    * @return the enqueued task.
@@ -264,7 +230,7 @@ public class CloudTasksUtils implements Serializable {
    *     Queue API if no service is specified, the service which enqueues the task will be used to
    *     process the task. Cloud Tasks API does not support this feature so the service will always
    *     needs to be explicitly specified.
-   * @param params a multi-map of URL query parameters. Duplicate keys are saved as is, and it is up
+   * @param params a multimap of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
    * @param delay the amount of time that a task needs to delayed for.
    * @return the enqueued task.
@@ -330,6 +296,9 @@ public class CloudTasksUtils implements Serializable {
   }
 
   public abstract static class SerializableCloudTasksClient implements Serializable {
+
+    private static final long serialVersionUID = 7872861868968535498L;
+
     public abstract Task enqueue(String projectId, String locationId, String queueName, Task task);
   }
 

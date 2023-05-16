@@ -58,7 +58,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -104,8 +103,7 @@ public class CloudTasksHelper implements Serializable {
             clock,
             PROJECT_ID,
             LOCATION_ID,
-            Optional.empty(),
-            Optional.empty(),
+            "client.id",
             new FakeCloudTasksClient());
     testTasks.put(instanceId, Multimaps.synchronizedListMultimap(LinkedListMultimap.create()));
   }

@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
-import google.registry.testing.FakeClock;
 import google.registry.util.SelfSignedCaCertificate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -90,7 +89,7 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
   }
 
   /** Get a {@link ByteBuf} that represents the raw epp request with the given content. */
-  private ByteBuf getByteBufFromContent(byte[] content) {
+  private static ByteBuf getByteBufFromContent(byte[] content) {
     ByteBuf buffer = Unpooled.buffer();
     buffer.writeInt(content.length + HEADER_LENGTH);
     buffer.writeBytes(content);
@@ -102,18 +101,17 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
         new String(content, UTF_8),
         PROXY_CONFIG.epp.relayHost,
         PROXY_CONFIG.epp.relayPath,
-        TestModule.provideFakeCredentials().get(),
+        TestModule.provideFakeIdToken().get(),
         getCertificateHash(certificate),
         CLIENT_ADDRESS,
-        TestModule.provideIapClientId(),
         cookies);
   }
 
-  private FullHttpResponse makeEppHttpResponse(byte[] content, Cookie... cookies) {
+  private static FullHttpResponse makeEppHttpResponse(byte[] content, Cookie... cookies) {
     return makeEppHttpResponse(content, HttpResponseStatus.OK, cookies);
   }
 
-  private FullHttpResponse makeEppHttpResponse(
+  private static FullHttpResponse makeEppHttpResponse(
       byte[] content, HttpResponseStatus status, Cookie... cookies) {
     return TestUtils.makeEppHttpResponse(new String(content, UTF_8), status, cookies);
   }
@@ -121,7 +119,7 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
   @BeforeEach
   @Override
   void beforeEach() throws Exception {
-    testComponent = makeTestComponent(new FakeClock());
+    testComponent = makeTestComponent();
     certificate = SelfSignedCaCertificate.create().cert();
     initializeChannel(
         ch -> {
@@ -129,6 +127,7 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
           ch.attr(CLIENT_CERTIFICATE_PROMISE_KEY).set(ch.eventLoop().newPromise());
           addAllTestableHandlers(ch);
         });
+    @SuppressWarnings("unused")
     Promise<X509Certificate> unusedPromise =
         channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().setSuccess(certificate);
   }
