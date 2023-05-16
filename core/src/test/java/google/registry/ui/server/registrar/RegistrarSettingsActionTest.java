@@ -70,7 +70,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
     cloudTasksHelper.assertTasksEnqueued(
         "sheet",
         new TaskMatcher()
-            .url(SyncRegistrarsSheetAction.PATH)
+            .path(SyncRegistrarsSheetAction.PATH)
             .service("Backend")
             .method(HttpMethod.GET));
     assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");

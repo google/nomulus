@@ -91,14 +91,14 @@ class TldFanoutActionTest {
             .map(
                 namespace ->
                     new TaskMatcher()
-                        .url(ENDPOINT)
+                        .path(ENDPOINT)
                         .header("content-type", "application/x-www-form-urlencoded")
                         .param("tld", namespace))
             .collect(toImmutableList()));
   }
 
   private void assertTaskWithoutTld() {
-    cloudTasksHelper.assertTasksEnqueued(QUEUE, new TaskMatcher().url(ENDPOINT));
+    cloudTasksHelper.assertTasksEnqueued(QUEUE, new TaskMatcher().path(ENDPOINT));
   }
 
   @Test
@@ -211,7 +211,7 @@ class TldFanoutActionTest {
   void testSuccess_additionalArgsFlowThroughToPostParams() {
     run(getParamsMap("forEachTestTld", "", "newkey", "newval"));
     cloudTasksHelper.assertTasksEnqueued(
-        QUEUE, new TaskMatcher().url("/the/servlet").param("newkey", "newval"));
+        QUEUE, new TaskMatcher().path("/the/servlet").param("newkey", "newval"));
   }
 
   @Test

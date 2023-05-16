@@ -187,7 +187,7 @@ public class GenerateEscrowDepositCommandTest
     cloudTasksHelper.assertTasksEnqueued(
         "rde-report",
         new TaskMatcher()
-            .url("/_dr/task/rdeStaging")
+            .path("/_dr/task/rdeStaging")
             .param("mode", "THIN")
             .param("lenient", "true")
             .param("watermarks", "2017-01-01T00:00:00.000Z")
@@ -204,7 +204,7 @@ public class GenerateEscrowDepositCommandTest
     cloudTasksHelper.assertTasksEnqueued(
         "rde-report",
         new TaskMatcher()
-            .url("/_dr/task/rdeStaging")
+            .path("/_dr/task/rdeStaging")
             .param("mode", "THIN")
             .param("lenient", "false")
             .param("watermarks", "2017-01-01T00:00:00.000Z")
@@ -221,7 +221,7 @@ public class GenerateEscrowDepositCommandTest
     cloudTasksHelper.assertTasksEnqueued(
         "rde-report",
         new TaskMatcher()
-            .url("/_dr/task/rdeStaging")
+            .path("/_dr/task/rdeStaging")
             .param("lenient", "false")
             .param("mode", "THIN")
             .param("watermarks", "2017-01-01T00:00:00.000Z")
@@ -237,7 +237,7 @@ public class GenerateEscrowDepositCommandTest
     cloudTasksHelper.assertTasksEnqueued(
         "rde-report",
         new TaskMatcher()
-            .url("/_dr/task/rdeStaging")
+            .path("/_dr/task/rdeStaging")
             .param("mode", "FULL")
             .param("lenient", "false")
             .param("watermarks", "2017-01-01T00:00:00.000Z")
@@ -259,7 +259,7 @@ public class GenerateEscrowDepositCommandTest
     cloudTasksHelper.assertTasksEnqueued(
         "rde-report",
         new TaskMatcher()
-            .url("/_dr/task/rdeStaging")
+            .path("/_dr/task/rdeStaging")
             .param("mode", "THIN")
             .param("lenient", "false")
             .param("watermarks", "2017-01-01T00:00:00.000Z,2017-01-02T00:00:00.000Z")

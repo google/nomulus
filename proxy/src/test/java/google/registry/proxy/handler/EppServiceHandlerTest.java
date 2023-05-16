@@ -25,14 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
-import com.google.auth.oauth2.AccessToken;
-import com.google.auth.oauth2.ComputeEngineCredentials;
-import com.google.auth.oauth2.IdToken;
-import com.google.auth.oauth2.IdTokenProvider.Option;
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
 import google.registry.proxy.TestUtils;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
 import google.registry.proxy.metric.FrontendMetrics;
@@ -52,7 +46,6 @@ import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.util.concurrent.Promise;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -69,27 +62,18 @@ class EppServiceHandlerTest {
   private static final String RELAY_PATH = "/epp";
   private static final String CLIENT_ADDRESS = "epp.client.tld";
   private static final String PROTOCOL = "epp";
-  private static final String IAP_CLIENT_ID = "iapClientId";
-
-  private static final ComputeEngineCredentials mockCredentials =
-      mock(ComputeEngineCredentials.class);
+  private static final String ID_TOKEN = "fake.id.token";
 
   private X509Certificate clientCertificate;
 
   private final FrontendMetrics metrics = mock(FrontendMetrics.class);
 
   private final EppServiceHandler eppServiceHandler =
-      new EppServiceHandler(
-          RELAY_HOST,
-          RELAY_PATH,
-          () -> mockCredentials,
-          Optional.of(IAP_CLIENT_ID),
-          HELLO.getBytes(UTF_8),
-          metrics);
+      new EppServiceHandler(RELAY_HOST, RELAY_PATH, () -> ID_TOKEN, HELLO.getBytes(UTF_8), metrics);
 
   private EmbeddedChannel channel;
 
-  private void setHandshakeSuccess(EmbeddedChannel channel, X509Certificate certificate) {
+  private static void setHandshakeSuccess(EmbeddedChannel channel, X509Certificate certificate) {
     @SuppressWarnings("unused")
     Promise<X509Certificate> unusedPromise =
         channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().setSuccess(certificate);
@@ -99,7 +83,8 @@ class EppServiceHandlerTest {
     setHandshakeSuccess(channel, clientCertificate);
   }
 
-  private void setHandshakeFailure(EmbeddedChannel channel) {
+  private static void setHandshakeFailure(EmbeddedChannel channel) {
+    @SuppressWarnings("unused")
     Promise<X509Certificate> unusedPromise =
         channel
             .attr(CLIENT_CERTIFICATE_PROMISE_KEY)
@@ -116,25 +101,19 @@ class EppServiceHandlerTest {
         content,
         RELAY_HOST,
         RELAY_PATH,
-        mockCredentials,
+        ID_TOKEN,
         getCertificateHash(clientCertificate),
         CLIENT_ADDRESS,
-        Optional.of(IAP_CLIENT_ID),
         cookies);
   }
 
   @BeforeEach
   void beforeEach() throws Exception {
-    when(mockCredentials.getAccessToken()).thenReturn(new AccessToken("this.access.token", null));
-    IdToken mockIdToken = mock(IdToken.class);
-    when(mockIdToken.getTokenValue()).thenReturn("fake.test.id.token");
-    when(mockCredentials.idTokenWithAudience(IAP_CLIENT_ID, ImmutableList.of(Option.FORMAT_FULL)))
-        .thenReturn(mockIdToken);
     clientCertificate = SelfSignedCaCertificate.create().cert();
     channel = setUpNewChannel(eppServiceHandler);
   }
 
-  private EmbeddedChannel setUpNewChannel(EppServiceHandler handler) {
+  private static EmbeddedChannel setUpNewChannel(EppServiceHandler handler) {
     return new EmbeddedChannel(
         DefaultChannelId.newInstance(),
         new ChannelInitializer<EmbeddedChannel>() {
@@ -165,12 +144,7 @@ class EppServiceHandlerTest {
     // Set up the second channel.
     EppServiceHandler eppServiceHandler2 =
         new EppServiceHandler(
-            RELAY_HOST,
-            RELAY_PATH,
-            () -> mockCredentials,
-            Optional.empty(),
-            HELLO.getBytes(UTF_8),
-            metrics);
+            RELAY_HOST, RELAY_PATH, () -> ID_TOKEN, HELLO.getBytes(UTF_8), metrics);
     EmbeddedChannel channel2 = setUpNewChannel(eppServiceHandler2);
     setHandshakeSuccess(channel2, clientCertificate);
 
@@ -190,12 +164,7 @@ class EppServiceHandlerTest {
     // Set up the second channel.
     EppServiceHandler eppServiceHandler2 =
         new EppServiceHandler(
-            RELAY_HOST,
-            RELAY_PATH,
-            () -> mockCredentials,
-            Optional.empty(),
-            HELLO.getBytes(UTF_8),
-            metrics);
+            RELAY_HOST, RELAY_PATH, () -> ID_TOKEN, HELLO.getBytes(UTF_8), metrics);
     EmbeddedChannel channel2 = setUpNewChannel(eppServiceHandler2);
     X509Certificate clientCertificate2 = SelfSignedCaCertificate.create().cert();
     setHandshakeSuccess(channel2, clientCertificate2);
@@ -356,40 +325,6 @@ class EppServiceHandlerTest {
     // Nothing further to pass to the next handler.
     assertThat((Object) channel.readInbound()).isNull();
     assertThat((Object) channel.readOutbound()).isNull();
-    assertThat(channel.isActive()).isTrue();
-  }
-
-  @Test
-  void testSuccess_withoutIapClientId() throws Exception {
-    // Without an IAP client ID configured, we shouldn't include the proxy-authorization header
-    EppServiceHandler nonIapServiceHandler =
-        new EppServiceHandler(
-            RELAY_HOST,
-            RELAY_PATH,
-            () -> mockCredentials,
-            Optional.empty(),
-            HELLO.getBytes(UTF_8),
-            metrics);
-    channel = setUpNewChannel(nonIapServiceHandler);
-
-    setHandshakeSuccess();
-    // First inbound message is hello.
-    channel.readInbound();
-    String content = "<epp>stuff</epp>";
-    channel.writeInbound(Unpooled.wrappedBuffer(content.getBytes(UTF_8)));
-    FullHttpRequest request = channel.readInbound();
-    assertThat(request)
-        .isEqualTo(
-            TestUtils.makeEppHttpRequest(
-                content,
-                RELAY_HOST,
-                RELAY_PATH,
-                mockCredentials,
-                getCertificateHash(clientCertificate),
-                CLIENT_ADDRESS,
-                Optional.empty()));
-    // Nothing further to pass to the next handler.
-    assertThat((Object) channel.readInbound()).isNull();
     assertThat(channel.isActive()).isTrue();
   }
 }

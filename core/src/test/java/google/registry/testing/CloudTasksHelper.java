@@ -25,6 +25,7 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.joining;
 
 import com.google.cloud.tasks.v2.HttpMethod;
+import com.google.cloud.tasks.v2.HttpRequest;
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.base.Ascii;
 import com.google.common.base.Joiner;
@@ -58,12 +59,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import javax.inject.Singleton;
 import org.joda.time.DateTime;
@@ -104,8 +106,7 @@ public class CloudTasksHelper implements Serializable {
             clock,
             PROJECT_ID,
             LOCATION_ID,
-            Optional.empty(),
-            Optional.empty(),
+            "client.id",
             new FakeCloudTasksClient());
     testTasks.put(instanceId, Multimaps.synchronizedListMultimap(LinkedListMultimap.create()));
   }
@@ -222,15 +223,12 @@ public class CloudTasksHelper implements Serializable {
   /** An adapter to clean up a {@link Task} for ease of matching. */
   private static class MatchableTask extends ImmutableObject {
 
+    private static final Pattern HOSTNAME_PATTERN =
+        Pattern.compile("(?<=https://)[a-z]+(?=\\.example\\.com)");
     String taskName;
     String service;
-    // App Engine TaskOption methods default to "POST".  This isn't obvious from the code, so we
-    // default it to POST here so that we don't accidentally create an entry with a GET method when
-    // converting to CloudTasksUtils, which requires that the method be specified explicitly.
-    // Should we ever actually want to do a GET, we'll likewise have to set this explicitly for the
-    // tests.
-    HttpMethod method = HttpMethod.POST;
-    String url;
+    HttpMethod method;
+    String path;
     Timestamp scheduleTime;
     Multimap<String, String> headers = ArrayListMultimap.create();
     Multimap<String, String> params = ArrayListMultimap.create();
@@ -238,24 +236,24 @@ public class CloudTasksHelper implements Serializable {
     MatchableTask() {}
 
     MatchableTask(Task task) {
+      HttpRequest request = task.getHttpRequest();
+      taskName = task.getName();
+      String url = request.getUrl();
+      // URI class provides helper method to extract query parameters.
       URI uri;
       try {
-        // Construct a fake full URI for parsing purpose. The relative URI must start with a slash.
-        uri =
-            new URI(
-                String.format(
-                    "https://nomulus.foo%s", task.getAppEngineHttpRequest().getRelativeUri()));
+        uri = new URI(url);
       } catch (URISyntaxException e) {
         throw new IllegalArgumentException(e);
       }
-      taskName = task.getName();
-      service =
-          Ascii.toLowerCase(task.getAppEngineHttpRequest().getAppEngineRouting().getService());
-      method = task.getAppEngineHttpRequest().getHttpMethod();
-      url = uri.getPath();
+      Matcher hostnameMatcher = HOSTNAME_PATTERN.matcher(url);
+      assertThat(hostnameMatcher.find()).isTrue();
+      service = Ascii.toLowerCase(hostnameMatcher.group());
+      path = url.substring(String.format("https://%s.example.com", service).length());
+      method = request.getHttpMethod();
       scheduleTime = task.getScheduleTime();
       ImmutableMultimap.Builder<String, String> headerBuilder = new ImmutableMultimap.Builder<>();
-      task.getAppEngineHttpRequest()
+      request
           .getHeadersMap()
           .forEach(
               (key, value) -> {
@@ -269,14 +267,13 @@ public class CloudTasksHelper implements Serializable {
       // where parameters are not properly URL-encoded); it always does a best-effort parse.
       if (method == HttpMethod.GET && uri.getQuery() != null) {
         paramBuilder.putAll(UriParameters.parse(uri.getQuery()));
-      } else if (method == HttpMethod.POST && !task.getAppEngineHttpRequest().getBody().isEmpty()) {
+      } else if (method == HttpMethod.POST && !request.getBody().isEmpty()) {
         assertThat(
                 headers.containsEntry(
                     Ascii.toLowerCase(HttpHeaders.CONTENT_TYPE), MediaType.FORM_DATA.toString()))
             .isTrue();
         paramBuilder.putAll(
-            UriParameters.parse(
-                task.getAppEngineHttpRequest().getBody().toString(StandardCharsets.UTF_8)));
+            UriParameters.parse(request.getBody().toString(StandardCharsets.UTF_8)));
       }
       params = paramBuilder.build();
     }
@@ -286,7 +283,7 @@ public class CloudTasksHelper implements Serializable {
       builder.put("taskName", taskName);
       builder.put("method", method);
       builder.put("service", service);
-      builder.put("url", url);
+      builder.put("path", path);
       builder.put("headers", headers);
       builder.put("params", params);
       builder.put("scheduleTime", scheduleTime);
@@ -310,8 +307,8 @@ public class CloudTasksHelper implements Serializable {
       return this;
     }
 
-    public TaskMatcher url(String url) {
-      expected.url = url;
+    public TaskMatcher path(String path) {
+      expected.path = path;
       return this;
     }
 
@@ -371,7 +368,7 @@ public class CloudTasksHelper implements Serializable {
     public boolean test(@Nonnull Task task) {
       MatchableTask actual = new MatchableTask(task);
       return (expected.taskName == null || Objects.equals(expected.taskName, actual.taskName))
-          && (expected.url == null || Objects.equals(expected.url, actual.url))
+          && (expected.path == null || Objects.equals(expected.path, actual.path))
           && (expected.method == null || Objects.equals(expected.method, actual.method))
           && (expected.service == null || Objects.equals(expected.service, actual.service))
           && (expected.scheduleTime == null
