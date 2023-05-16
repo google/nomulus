@@ -74,7 +74,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
     cloudTasksHelper.assertTasksEnqueued(
         "beam-reporting",
         new TaskMatcher()
-            .url("/_dr/task/publishInvoices")
+            .path("/_dr/task/publishInvoices")
             .method(HttpMethod.POST)
             .param("jobId", "jobid")
             .param("yearMonth", "2017-10")

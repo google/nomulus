@@ -40,7 +40,7 @@ public class ProxyConfig {
   private static final String CUSTOM_CONFIG_FORMATTER = "config/proxy-config-%s.yaml";
 
   public String projectId;
-  public String iapClientId;
+  public String oauthClientId;
   public List<String> gcpScopes;
   public int serverCertificateCacheSeconds;
   public Gcs gcs;

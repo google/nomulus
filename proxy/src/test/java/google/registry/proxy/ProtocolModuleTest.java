@@ -17,14 +17,7 @@ package google.registry.proxy;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.proxy.ProxyConfig.Environment.LOCAL;
 import static google.registry.proxy.ProxyConfig.getProxyConfig;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import com.google.auth.oauth2.AccessToken;
-import com.google.auth.oauth2.ComputeEngineCredentials;
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.auth.oauth2.IdToken;
-import com.google.auth.oauth2.IdTokenProvider.Option;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -59,9 +52,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.timeout.ReadTimeoutHandler;
-import java.io.IOException;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -80,14 +71,14 @@ import org.junit.jupiter.api.BeforeEach;
  * correctly performed by various handlers attached to its pipeline. Non-business essential handlers
  * should be excluded.
  *
- * <p>Subclass should implement an no-arg constructor that calls constructors of this class,
+ * <p>Subclass should implement a no-arg constructor that calls constructors of this class,
  * providing the method reference of the {@link TestComponent} method to call to obtain the list of
  * {@link ChannelHandler} providers for the {@link Protocol} to test, and optionally a set of {@link
  * ChannelHandler} classes to exclude from testing.
  */
 public abstract class ProtocolModuleTest {
 
-  static final ProxyConfig PROXY_CONFIG = getProxyConfig(Environment.LOCAL);
+  static final ProxyConfig PROXY_CONFIG = getProxyConfig(LOCAL);
 
   TestComponent testComponent;
 
@@ -112,7 +103,7 @@ public abstract class ProtocolModuleTest {
           FullHttpResponseRelayHandler.class,
           // This handler is tested in its own unit tests. It is installed in web whois redirect
           // protocols. The end-to-end tests for the rest of the handlers in its pipeline need to
-          // be able to emit incoming requests out of the channel for assertions. Therefore this
+          // be able to emit incoming requests out of the channel for assertions. Therefore, this
           // handler is removed from the pipeline.
           WebWhoisRedirectHandler.class,
           // The rest are not part of business logic and do not need to be tested, obviously.
@@ -150,7 +141,7 @@ public abstract class ProtocolModuleTest {
     this(handlerProvidersMethod, DEFAULT_EXCLUDED_HANDLERS);
   }
 
-  /** Excludes handler providers that are not of interested for testing. */
+  /** Excludes handler providers that are not of interest for testing. */
   private ImmutableList<Provider<? extends ChannelHandler>> excludeHandlerProvidersForTesting(
       ImmutableList<Provider<? extends ChannelHandler>> handlerProviders) {
     return handlerProviders.stream()
@@ -177,7 +168,7 @@ public abstract class ProtocolModuleTest {
     }
   }
 
-  static TestComponent makeTestComponent(FakeClock fakeClock) {
+  static TestComponent makeTestComponent() {
     return DaggerProtocolModuleTest_TestComponent.builder()
         .testModule(new TestModule(new FakeClock()))
         .build();
@@ -185,7 +176,7 @@ public abstract class ProtocolModuleTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    testComponent = makeTestComponent(new FakeClock());
+    testComponent = makeTestComponent();
     initializeChannel(this::addAllTestableHandlers);
   }
 
@@ -244,10 +235,11 @@ public abstract class ProtocolModuleTest {
       this.fakeClock = fakeClock;
     }
 
+    @Singleton
     @Provides
-    @Named("iapClientId")
-    public static Optional<String> provideIapClientId() {
-      return Optional.of("iapClientId");
+    @Named("clientId")
+    public static String provideClientId() {
+      return "clientId";
     }
 
     @Singleton
@@ -264,19 +256,9 @@ public abstract class ProtocolModuleTest {
 
     @Singleton
     @Provides
-    static Supplier<GoogleCredentials> provideFakeCredentials() {
-      ComputeEngineCredentials mockCredentials = mock(ComputeEngineCredentials.class);
-      when(mockCredentials.getAccessToken()).thenReturn(new AccessToken("fake.test.token", null));
-      IdToken mockIdToken = mock(IdToken.class);
-      when(mockIdToken.getTokenValue()).thenReturn("fake.test.id.token");
-      try {
-        when(mockCredentials.idTokenWithAudience(
-                "iapClientId", ImmutableList.of(Option.FORMAT_FULL)))
-            .thenReturn(mockIdToken);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-      return Suppliers.ofInstance(mockCredentials);
+    @Named("idToken")
+    static Supplier<String> provideFakeIdToken() {
+      return Suppliers.ofInstance("fake.test.id.token");
     }
 
     @Singleton
@@ -306,7 +288,7 @@ public abstract class ProtocolModuleTest {
     @Singleton
     @Provides
     static Environment provideEnvironment() {
-      return Environment.LOCAL;
+      return LOCAL;
     }
 
     @Singleton

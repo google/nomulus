@@ -464,7 +464,7 @@ public class RdePipelineTest {
     cloudTasksHelper.assertTasksEnqueued(
         "brda",
         new TaskMatcher()
-            .url("/_dr/task/brdaCopy")
+            .path("/_dr/task/brdaCopy")
             .service("backend")
             .param("tld", "soy")
             .param("watermark", now.toString())
@@ -472,7 +472,7 @@ public class RdePipelineTest {
     cloudTasksHelper.assertTasksEnqueued(
         "rde-upload",
         new TaskMatcher()
-            .url("/_dr/task/rdeUpload")
+            .path("/_dr/task/rdeUpload")
             .service("backend")
             .param("tld", "soy")
             .param("prefix", "rde-job/"));

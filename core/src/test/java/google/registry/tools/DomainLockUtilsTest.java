@@ -259,7 +259,7 @@ public final class DomainLockUtilsTest {
     cloudTasksHelper.assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
-            .url(RelockDomainAction.PATH)
+            .path(RelockDomainAction.PATH)
             .method(HttpMethod.POST)
             .service("backend")
             .param(
@@ -481,7 +481,7 @@ public final class DomainLockUtilsTest {
     cloudTasksHelper.assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new CloudTasksHelper.TaskMatcher()
-            .url(RelockDomainAction.PATH)
+            .path(RelockDomainAction.PATH)
             .method(HttpMethod.POST)
             .service("backend")
             .param(

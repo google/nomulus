@@ -207,7 +207,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     cloudTasksHelper.assertTasksEnqueued(
         QUEUE_HOST_RENAME,
         new TaskMatcher()
-            .url(RefreshDnsOnHostRenameAction.PATH)
+            .path(RefreshDnsOnHostRenameAction.PATH)
             .method(HttpMethod.POST)
             .service("backend")
             .param(PARAM_HOST_KEY, renamedHost.createVKey().stringify()));
