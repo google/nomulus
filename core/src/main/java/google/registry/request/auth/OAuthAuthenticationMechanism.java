@@ -32,7 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * OAuth authentication mechanism, using the OAuthService interface.
  *
- * Only OAuth version 2 is supported.
+ * <p>Only OAuth version 2 is supported.
  */
 public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
 
