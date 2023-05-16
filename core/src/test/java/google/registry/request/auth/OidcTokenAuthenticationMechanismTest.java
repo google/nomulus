@@ -222,9 +222,16 @@ public class OidcTokenAuthenticationMechanismTest {
 
     @Provides
     @Singleton
-    @Config("serviceAccountEmails")
-    ImmutableList<String> provideServiceAccountEmails() {
+    @Config("allowedServiceAccountEmails")
+    ImmutableList<String> provideAllowedServiceAccountEmails() {
       return serviceAccounts;
+    }
+
+    @Provides
+    @Singleton
+    @Config("oauthClientId")
+    String provideOauthClientId() {
+      return "client-id";
     }
   }
 }
