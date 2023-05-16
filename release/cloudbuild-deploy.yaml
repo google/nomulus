@@ -43,8 +43,9 @@ steps:
     fi
     gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/${_ENV}.tar .
     tar -xvf ${_ENV}.tar
-    deployCloudSchedulerAndQueue default/WEB-INF/cloud-scheduler-tasks.xml $project_id
-    deployCloudSchedulerAndQueue default/WEB-INF/cloud-tasks-queue.xml $project_id
+    unzip default/WEB-INF/lib/core.jar
+    deployCloudSchedulerAndQueue google/registry/config/files/nomulus-config-${_ENV}.yaml default/WEB-INF/cloud-scheduler-tasks.xml $project_id
+    deployCloudSchedulerAndQueue google/registry/config/files/nomulus-config-${_ENV}.yaml default/WEB-INF/cloud-tasks-queue.xml $project_id
 # Deploy the GAE config files.
 # First authorize the gcloud tool to use the credential json file, then
 # download and unzip the tarball that contains the relevant config files

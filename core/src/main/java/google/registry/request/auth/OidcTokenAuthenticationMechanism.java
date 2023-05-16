@@ -19,7 +19,7 @@ import static google.registry.request.auth.AuthSettings.AuthLevel.APP;
 import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.auth.oauth2.TokenVerifier;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
@@ -57,10 +57,10 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
 
   protected final TokenExtractor tokenExtractor;
 
-  private final ImmutableList<String> serviceAccountEmails;
+  private final ImmutableSet<String> serviceAccountEmails;
 
   protected OidcTokenAuthenticationMechanism(
-      ImmutableList<String> serviceAccountEmails,
+      ImmutableSet<String> serviceAccountEmails,
       TokenVerifier tokenVerifier,
       TokenExtractor tokenExtractor) {
     this.serviceAccountEmails = serviceAccountEmails;
@@ -83,7 +83,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     try {
       token = tokenVerifier.verify(rawIdToken);
     } catch (Exception e) {
-      logger.atInfo().withCause(e).log("Error when verifying access token");
+      logger.atInfo().withCause(e).log("Failed OIDC verification attempt:\n%s", rawIdToken);
       return AuthResult.NOT_AUTHENTICATED;
     }
     String email = (String) token.getPayload().get("email");
@@ -95,6 +95,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     if (maybeUser.isPresent()) {
       return AuthResult.create(AuthLevel.USER, UserAuthInfo.create(maybeUser.get()));
     }
+    // TODO: implement caching so we don't have to look up the database for every request.
     logger.atInfo().log("No end user found for email address %s", email);
     if (serviceAccountEmails.stream().anyMatch(e -> e.equals(email))) {
       return AuthResult.create(APP);
@@ -136,7 +137,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
 
     @Inject
     protected IapOidcAuthenticationMechanism(
-        @Config("serviceAccountEmails") ImmutableList<String> serviceAccountEmails,
+        @Config("allowedServiceAccountEmails") ImmutableSet<String> serviceAccountEmails,
         @IapOidc TokenVerifier tokenVerifier,
         @IapOidc TokenExtractor tokenExtractor) {
       super(serviceAccountEmails, tokenVerifier, tokenExtractor);
@@ -164,7 +165,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
 
     @Inject
     protected RegularOidcAuthenticationMechanism(
-        @Config("serviceAccountEmails") ImmutableList<String> serviceAccountEmails,
+        @Config("allowedServiceAccountEmails") ImmutableSet<String> serviceAccountEmails,
         @RegularOidc TokenVerifier tokenVerifier,
         @RegularOidc TokenExtractor tokenExtractor) {
       super(serviceAccountEmails, tokenVerifier, tokenExtractor);

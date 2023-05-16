@@ -140,25 +140,13 @@ public final class TldFanoutAction implements Runnable {
     for (String tld : tlds) {
       Task task = createTask(tld, flowThruParams);
       Task createdTask = cloudTasksUtils.enqueue(queue, task);
-      if (createdTask.hasAppEngineHttpRequest()) {
-        outputPayload.append(
-            String.format(
-                "- Task: '%s', tld: '%s', endpoint: '%s'\n",
-                createdTask.getName(),
-                tld,
-                createdTask.getAppEngineHttpRequest().getRelativeUri()));
-        logger.atInfo().log(
-            "Task: '%s', tld: '%s', endpoint: '%s'.",
-            createdTask.getName(), tld, createdTask.getAppEngineHttpRequest().getRelativeUri());
-      } else {
-        outputPayload.append(
-            String.format(
-                "- Task: '%s', tld: '%s', endpoint: '%s'\n",
-                createdTask.getName(), tld, createdTask.getHttpRequest().getUrl()));
-        logger.atInfo().log(
-            "Task: '%s', tld: '%s', endpoint: '%s'.",
-            createdTask.getName(), tld, createdTask.getHttpRequest().getUrl());
-      }
+      outputPayload.append(
+          String.format(
+              "- Task: '%s', tld: '%s', endpoint: '%s'\n",
+              createdTask.getName(), tld, createdTask.getHttpRequest().getUrl()));
+      logger.atInfo().log(
+          "Task: '%s', tld: '%s', endpoint: '%s'.",
+          createdTask.getName(), tld, createdTask.getHttpRequest().getUrl());
     }
     response.setContentType(PLAIN_TEXT_UTF_8);
     response.setPayload(outputPayload.toString());
