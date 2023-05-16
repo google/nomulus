@@ -78,7 +78,7 @@ class IcannReportingStagingActionTest {
     cloudTasksHelper.assertTasksEnqueued(
         "retryable-cron-tasks",
         new TaskMatcher()
-            .url("/_dr/task/icannReportingUpload")
+            .path("/_dr/task/icannReportingUpload")
             .method(HttpMethod.POST)
             .scheduleTime(clock.nowUtc().plus(Duration.standardMinutes(2))));
   }

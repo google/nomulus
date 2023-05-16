@@ -252,7 +252,7 @@ class NordnUploadActionTest {
     cloudTasksHelper.assertTasksEnqueued(
         NordnVerifyAction.QUEUE,
         new TaskMatcher()
-            .url(NordnVerifyAction.PATH)
+            .path(NordnVerifyAction.PATH)
             .param(NordnVerifyAction.NORDN_URL_PARAM, LOCATION_URL)
             .param(RequestParameters.PARAM_TLD, "tld")
             .header(CONTENT_TYPE, FORM_DATA.toString()));

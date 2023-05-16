@@ -18,18 +18,10 @@ gcpProject:
   # whether to use local/test credentials when connecting to the servers
   isLocal: true
   # URLs of the services for the project.
-  defaultServiceUrl: https://localhost
-  backendServiceUrl: https://localhost
-  toolsServiceUrl: https://localhost
-  pubapiServiceUrl: https://localhost
-  # Service accounts eligible for authorization (e.g. default service account,
-  # account used by Cloud Scheduler) to send authenticated requests.
-  serviceAccountEmails:
-  - default-service-account-email@email.com
-  - cloud-scheduler-email@email.com
-  # The default service account with which the service is running. For example,
-  # on GAE this would be {project-id}@appspot.gserviceaccount.com
-  defaultServiceAccount: null
+  defaultServiceUrl: https://default.example.com
+  backendServiceUrl: https://backend.example.com
+  toolsServiceUrl: https://tools.example.com
+  pubapiServiceUrl: https://pubapi.example.com
 
 gSuite:
   # Publicly accessible domain name of the running G Suite instance.
@@ -295,24 +287,42 @@ caching:
   # long duration is acceptable because claims lists don't change frequently.
   claimsListCachingSeconds: 21600 # six hours
 
-oAuth:
+auth:
+  # Deprecated: Use OIDC-based auth instead. This field is for OAuth-based auth
+  # that should only be used by the old registrar console.
   # OAuth scopes to detect on access tokens. Superset of requiredOauthScopes.
   availableOauthScopes:
   - https://www.googleapis.com/auth/userinfo.email
 
+  # Deprecated: Use OIDC-based auth instead. This field is for OAuth-based auth
+  # that should only be used by the old registrar console.
   # OAuth scopes required for authenticating. Subset of availableOauthScopes.
   requiredOauthScopes:
   - https://www.googleapis.com/auth/userinfo.email
 
+  # Deprecated: Use OIDC-based auth instead. This field is for OAuth-based auth
+  # that should only be used by the old registrar console.
   # OAuth client IDs that are allowed to authenticate and communicate with
-  # backend services, e. g. nomulus tool, EPP proxy, etc. The client_id value
+  # backend services, e.g. nomulus tool, EPP proxy, etc. The client_id value
   # used in registryTool.clientId field for associated tooling should be included
   # in this list. Client IDs are typically of the format
   # numbers-alphanumerics.apps.googleusercontent.com
   allowedOauthClientIds: []
-  # GCP Identity-Aware Proxy client ID, if set up (note: this requires manual setup
-  # of User objects in the database for Nomulus tool users)
-  iapClientId: null
+
+  # Service accounts (e.g. default service account, account used by Cloud
+  # Scheduler) allowed to send authenticated requests.
+  allowedServiceAccountEmails:
+  - default-service-account-email@email.com
+  - cloud-scheduler-email@email.com
+
+  # OAuth 2.0 client ID that will be used as the audience in OIDC ID tokens sent
+  # from clients (e.g. proxy, nomulus tool, cloud tasks) for authentication. The
+  # same ID is the only one accepted by the regular OIDC or IAP authentication
+  # mechanisms. In most cases we should use the client ID created for IAP here,
+  # as it allows requests bearing a token with this audience to be accepted by
+  # both IAP or regular OIDC. The clientId value in proxy config file should be
+  # the same as this one.
+  oauthClientId: iap-oauth-clientid
 
 credentialOAuth:
   # OAuth scopes required for accessing Google APIs using the default
