@@ -16,7 +16,6 @@ package google.registry.proxy;
 
 import static google.registry.util.ResourceUtils.readResourceBytes;
 
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
@@ -44,7 +43,6 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
@@ -116,7 +114,7 @@ public final class EppProtocolModule {
         config.epp.headerLengthBytes,
         // Adjustment applied to the header field value in order to obtain message length.
         -config.epp.headerLengthBytes,
-        // Initial bytes to strip (i. e. strip the length header).
+        // Initial bytes to strip (i.e. strip the length header).
         config.epp.headerLengthBytes);
   }
 
@@ -149,18 +147,12 @@ public final class EppProtocolModule {
 
   @Provides
   static EppServiceHandler provideEppServiceHandler(
-      Supplier<GoogleCredentials> refreshedCredentialsSupplier,
-      @Named("iapClientId") Optional<String> iapClientId,
+      @Named("idToken") Supplier<String> idTokenSupplier,
       @Named("hello") byte[] helloBytes,
       FrontendMetrics metrics,
       ProxyConfig config) {
     return new EppServiceHandler(
-        config.epp.relayHost,
-        config.epp.relayPath,
-        refreshedCredentialsSupplier,
-        iapClientId,
-        helloBytes,
-        metrics);
+        config.epp.relayHost, config.epp.relayPath, idTokenSupplier, helloBytes, metrics);
   }
 
   @Singleton

@@ -35,7 +35,6 @@ import com.google.auth.oauth2.UserCredentials;
 import google.registry.config.RegistryConfig;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.GoogleCredentialsBundle;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -65,7 +64,8 @@ public class RequestFactoryModuleTest {
     RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = true;
     try {
       HttpRequestFactory factory =
-          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, Optional.empty());
+          RequestFactoryModule.provideHttpRequestFactory(
+              credentialsBundle, "client-id", "projectId");
       HttpRequestInitializer initializer = factory.getInitializer();
       assertThat(initializer).isNotNull();
       HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
@@ -84,7 +84,8 @@ public class RequestFactoryModuleTest {
     RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = false;
     try {
       HttpRequestFactory factory =
-          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, Optional.empty());
+          RequestFactoryModule.provideHttpRequestFactory(
+              credentialsBundle, "client-id", "projectId");
       HttpRequestInitializer initializer = factory.getInitializer();
       assertThat(initializer).isNotNull();
       // HttpRequestFactory#buildGetRequest() calls initialize() once.
@@ -122,7 +123,7 @@ public class RequestFactoryModuleTest {
     try {
       HttpRequestFactory factory =
           RequestFactoryModule.provideHttpRequestFactory(
-              credentialsBundle, Optional.of("iapClientId"));
+              credentialsBundle, "clientId", "projectId");
       HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
       assertThat(request.getHeaders().get("Proxy-Authorization")).isEqualTo("Bearer iapIdToken");
       assertThat(request.getConnectTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);

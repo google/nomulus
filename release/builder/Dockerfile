@@ -23,8 +23,9 @@
 
 FROM golang:1.19 as deployCloudSchedulerAndQueueBuilder
 WORKDIR /usr/src/deployCloudSchedulerAndQueue
-RUN go mod init deployCloudSchedulerAndQueue
-COPY *.go ./
+COPY deployCloudSchedulerAndQueue.go ./
+COPY go.sum ./
+COPY go.mod ./
 RUN go build -o /deployCloudSchedulerAndQueue
 
 FROM marketplace.gcr.io/google/debian10
