@@ -14,7 +14,6 @@
 
 package google.registry.proxy;
 
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
@@ -35,7 +34,6 @@ import google.registry.util.Clock;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.timeout.ReadTimeoutHandler;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
@@ -46,7 +44,9 @@ import javax.inject.Singleton;
 
 /** A module that provides the {@link FrontendProtocol} used for whois protocol. */
 @Module
-public class WhoisProtocolModule {
+public final class WhoisProtocolModule {
+
+  private WhoisProtocolModule() {}
 
   /** Dagger qualifier to provide whois protocol related handlers and other bindings. */
   @Qualifier
@@ -93,15 +93,10 @@ public class WhoisProtocolModule {
   @Provides
   static WhoisServiceHandler provideWhoisServiceHandler(
       ProxyConfig config,
-      Supplier<GoogleCredentials> refreshedCredentialsSupplier,
-      @Named("iapClientId") Optional<String> iapClientId,
+      @Named("idToken") Supplier<String> idTokenSupplier,
       FrontendMetrics metrics) {
     return new WhoisServiceHandler(
-        config.whois.relayHost,
-        config.whois.relayPath,
-        refreshedCredentialsSupplier,
-        iapClientId,
-        metrics);
+        config.whois.relayHost, config.whois.relayPath, idTokenSupplier, metrics);
   }
 
   @Provides

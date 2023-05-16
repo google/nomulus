@@ -28,6 +28,7 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
 import com.google.cloud.storage.StorageOptions;
+import com.google.common.base.Suppliers;
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
 import dagger.Module;
@@ -45,6 +46,7 @@ import google.registry.proxy.handler.ProxyProtocolHandler;
 import google.registry.util.Clock;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.JdkLoggerConfig;
+import google.registry.util.OidcTokenUtils;
 import google.registry.util.SystemClock;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
@@ -59,6 +61,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
@@ -126,7 +129,8 @@ public class ProxyModule {
       // corresponds to Level.FINE (JUL log level). It uses a JUL logger with the name
       // "io.netty.handler.logging.LoggingHandler" to actually process the logs. This JUL logger is
       // set to Level.FINE if the --log parameter is passed, so that it does not filter out logs
-      // that the LoggingHandler writes. Otherwise the logs are silently ignored because the default
+      // that the LoggingHandler writes. Otherwise, the logs are silently ignored because the
+      // default
       // JUL logger level is Level.INFO.
       JdkLoggerConfig.getConfig(LoggingHandler.class).setLevel(Level.FINE);
       // Log source IP information if --log parameter is passed. This is considered PII and should
@@ -158,10 +162,10 @@ public class ProxyModule {
   }
 
   @Provides
-  @Named("iapClientId")
+  @Named("clientId")
   @Singleton
-  Optional<String> provideIapClientId(ProxyConfig config) {
-    return Optional.ofNullable(config.iapClientId);
+  String provideClientId(ProxyConfig config) {
+    return config.clientId;
   }
 
   @Provides
@@ -240,6 +244,23 @@ public class ProxyModule {
       }
       return credentials;
     };
+  }
+
+  /**
+   * Provides an OIDC token with the given OAuth client ID as audience used for authentication.
+   *
+   * <p>The token is cached for 1 hour to reduce repeated calls to the metadata server.
+   *
+   * @see <a href="https://cloud.google.com/docs/authentication/token-types#id-lifetime">ID token
+   *     lifetime</a>
+   */
+  @Singleton
+  @Provides
+  @Named("idToken")
+  static Supplier<String> provideOidcToken(
+      GoogleCredentialsBundle credentialsBundle, @Named("clientId") String clientId) {
+    return Suppliers.memoizeWithExpiration(
+        () -> OidcTokenUtils.createOidcToken(credentialsBundle, clientId), 1, TimeUnit.HOURS);
   }
 
   @Singleton

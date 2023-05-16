@@ -26,9 +26,13 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 var projectName string
+
+var clientId string
 
 const GcpLocation = "us-central1"
 
@@ -72,6 +76,12 @@ type QueuesSyncManager struct {
 type TasksSyncManager struct {
 	Tasks               []Task
 	ServiceAccountEmail string
+}
+
+type YamlEntries struct {
+	Auth struct {
+		OauthClientId string `yaml:"oauthClientId"`
+	} `yaml:"auth"`
 }
 
 type XmlEntries struct {
@@ -180,7 +190,7 @@ func (manager TasksSyncManager) getArgs(task Task, operationType string) []strin
 		"--description", description,
 		"--http-method", "get",
 		"--oidc-service-account-email", getCloudSchedulerServiceAccountEmail(),
-		"--oidc-token-audience", projectName,
+		"--oidc-token-audience", clientId,
 	}
 }
 
@@ -301,21 +311,37 @@ func getExistingEntries(cmd *exec.Cmd) ExistingEntries {
 }
 
 func main() {
-	if len(os.Args) < 3 || os.Args[1] == "" || os.Args[2] == "" {
-		panic("Error - Invalid Parameters.\nRequired params: 1 - config file path; 2 - project name;")
+	if len(os.Args) < 4 || os.Args[1] == "" || os.Args[2] == "" || os.Args[3] == "" {
+		panic("Error - Invalid Parameters.\n" +
+			"Required params: 1 - Nomulu config YAML path; 2 - config XML path; 3 - project name;")
 	}
-	// Config file path
-	configFileLocation := os.Args[1]
+	// Nomulus YAML config file path, used to extract OAuth client ID.
+	nomulusConfigFileLocation := os.Args[1]
+	// XML config file path
+	configFileLocation := os.Args[2]
 	// Project name where to submit the tasks
-	projectName = os.Args[2]
+	projectName = os.Args[3]
 
-	log.Default().Println("Filepath " + configFileLocation)
+	log.Default().Println("YAML Filepath " + nomulusConfigFileLocation)
+	yamlFile, err := os.Open(nomulusConfigFileLocation)
+	if err != nil {
+		panic(err)
+	}
+	defer yamlFile.Close()
+	byteValue, _ := io.ReadAll(yamlFile)
+	var yamlEntries YamlEntries
+	if err := yaml.Unmarshal(byteValue, &yamlEntries); err != nil {
+		panic("Failed to parse YAML file entries: " + err.Error())
+	}
+	clientId = yamlEntries.Auth.OauthClientId
+
+	log.Default().Println("XML Filepath " + configFileLocation)
 	xmlFile, err := os.Open(configFileLocation)
 	if err != nil {
 		panic(err)
 	}
 	defer xmlFile.Close()
-	byteValue, _ := io.ReadAll(xmlFile)
+	byteValue, _ = io.ReadAll(xmlFile)
 	var xmlEntries XmlEntries
 	if err := xml.Unmarshal(byteValue, &xmlEntries); err != nil {
 		panic("Failed to parse xml file entries: " + err.Error())

@@ -102,6 +102,8 @@ public final class RegistryConfig {
   @Module
   public static final class ConfigModule {
 
+    private ConfigModule() {}
+
     @Provides
     @Config("projectId")
     public static String provideProjectId(RegistryConfigSettings config) {
@@ -120,17 +122,6 @@ public final class RegistryConfig {
       return config.gcpProject.locationId;
     }
 
-    @Provides
-    @Config("serviceAccountEmails")
-    public static ImmutableList<String> provideServiceAccountEmails(RegistryConfigSettings config) {
-      return ImmutableList.copyOf(config.gcpProject.serviceAccountEmails);
-    }
-
-    @Provides
-    @Config("defaultServiceAccount")
-    public static Optional<String> provideDefaultServiceAccount(RegistryConfigSettings config) {
-      return Optional.ofNullable(config.gcpProject.defaultServiceAccount);
-    }
 
     /**
      * The filename of the logo to be displayed in the header of the registrar console.
@@ -257,7 +248,7 @@ public final class RegistryConfig {
     @Provides
     @Config("databaseRetention")
     public static Duration provideDatabaseRetention() {
-      return RegistryConfig.getDatabaseRetention();
+      return getDatabaseRetention();
     }
 
     /**
@@ -304,7 +295,7 @@ public final class RegistryConfig {
      * The maximum number of domain and host updates to batch together to send to
      * PublishDnsUpdatesAction, to avoid exceeding HTTP request timeout limits.
      *
-     * @see google.registry.dns.ReadDnsRefreshRequestsAction
+     * @see ReadDnsRefreshRequestsAction
      */
     @Provides
     @Config("dnsTldUpdateBatchSize")
@@ -1144,7 +1135,7 @@ public final class RegistryConfig {
     @Provides
     @Config("availableOauthScopes")
     public static ImmutableSet<String> provideAvailableOauthScopes(RegistryConfigSettings config) {
-      return ImmutableSet.copyOf(config.oAuth.availableOauthScopes);
+      return ImmutableSet.copyOf(config.auth.availableOauthScopes);
     }
 
     /**
@@ -1157,27 +1148,38 @@ public final class RegistryConfig {
      * API, which requires at least one of:
      *
      * <ul>
-     *   <li>https://www.googleapis.com/auth/appengine.apis
-     *   <li>https://www.googleapis.com/auth/cloud-platform
+     *   <li>{@code https://www.googleapis.com/auth/appengine.apis}
+     *   <li>{@code https://www.googleapis.com/auth/cloud-platform}
      * </ul>
      */
     @Provides
     @Config("requiredOauthScopes")
     public static ImmutableSet<String> provideRequiredOauthScopes(RegistryConfigSettings config) {
-      return ImmutableSet.copyOf(config.oAuth.requiredOauthScopes);
+      return ImmutableSet.copyOf(config.auth.requiredOauthScopes);
+    }
+
+    /**
+     * Provides service account email addresses allowed to authenticate with the app at {@link
+     * google.registry.request.auth.AuthSettings.AuthLevel#APP} level.
+     */
+    @Provides
+    @Config("allowedServiceAccountEmails")
+    public static ImmutableSet<String> provideAllowedServiceAccountEmails(
+        RegistryConfigSettings config) {
+      return ImmutableSet.copyOf(config.auth.allowedServiceAccountEmails);
     }
 
     /** Provides the allowed OAuth client IDs (could be multibinding). */
     @Provides
     @Config("allowedOauthClientIds")
     public static ImmutableSet<String> provideAllowedOauthClientIds(RegistryConfigSettings config) {
-      return ImmutableSet.copyOf(config.oAuth.allowedOauthClientIds);
+      return ImmutableSet.copyOf(config.auth.allowedOauthClientIds);
     }
 
     @Provides
-    @Config("iapClientId")
-    public static Optional<String> provideIapClientId(RegistryConfigSettings config) {
-      return Optional.ofNullable(config.oAuth.iapClientId);
+    @Config("oauthClientId")
+    public static String provideOauthClientId(RegistryConfigSettings config) {
+      return config.auth.oauthClientId;
     }
 
     /**
@@ -1253,7 +1255,7 @@ public final class RegistryConfig {
               toImmutableSortedMap(
                   naturalOrder(),
                   e ->
-                      e.getKey().equals("START_OF_TIME")
+                      "START_OF_TIME".equals(e.getKey())
                           ? START_OF_TIME
                           : DateTime.parse(e.getKey()),
                   Entry::getValue));
@@ -1373,6 +1375,12 @@ public final class RegistryConfig {
     @Config("packageDomainLimitUpgradeEmailBody")
     public static String providePackageDomainLimitUpgradeEmailBody(RegistryConfigSettings config) {
       return config.packageMonitoring.packageDomainLimitUpgradeEmailBody;
+    }
+
+    private static String formatComments(String text) {
+      return Splitter.on('\n').omitEmptyStrings().trimResults().splitToList(text).stream()
+          .map(s -> "# " + s)
+          .collect(Collectors.joining("\n"));
     }
   }
 
@@ -1539,9 +1547,9 @@ public final class RegistryConfig {
    * one single INSERT statement which can dramatically increase speed in situations with many
    * inserts.
    *
-   * <p>Hibernate docs, i.e.
-   * https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html,
-   * recommend between 10 and 50.
+   * <p><a
+   * href="https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html">Hibernate
+   * User Guide</a> recommends between 10 and 50.
    */
   public static int getHibernateJdbcBatchSize() {
     return CONFIG_SETTINGS.get().hibernate.jdbcBatchSize;
@@ -1578,11 +1586,7 @@ public final class RegistryConfig {
   public static final Supplier<RegistryConfigSettings> CONFIG_SETTINGS =
       memoize(RegistryConfig::getConfigSettings);
 
-  private static String formatComments(String text) {
-    return Splitter.on('\n').omitEmptyStrings().trimResults().splitToList(text).stream()
-        .map(s -> "# " + s)
-        .collect(Collectors.joining("\n"));
-  }
+
 
   private static InternetAddress parseEmailAddress(String email) {
     try {
