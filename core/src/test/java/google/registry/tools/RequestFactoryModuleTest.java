@@ -35,7 +35,6 @@ import com.google.auth.oauth2.UserCredentials;
 import google.registry.config.RegistryConfig;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.GoogleCredentialsBundle;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -65,7 +64,7 @@ public class RequestFactoryModuleTest {
     RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = true;
     try {
       HttpRequestFactory factory =
-          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, Optional.empty());
+          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, "client-id");
       HttpRequestInitializer initializer = factory.getInitializer();
       assertThat(initializer).isNotNull();
       HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
@@ -79,29 +78,7 @@ public class RequestFactoryModuleTest {
   @Test
   void test_provideHttpRequestFactory_remote() throws Exception {
     when(credentialsBundle.getHttpRequestInitializer()).thenReturn(httpRequestInitializer);
-    // Make sure that example.com creates a request factory with the UNITTEST client id but no
-    boolean origIsLocal = RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal;
-    RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = false;
-    try {
-      HttpRequestFactory factory =
-          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, Optional.empty());
-      HttpRequestInitializer initializer = factory.getInitializer();
-      assertThat(initializer).isNotNull();
-      // HttpRequestFactory#buildGetRequest() calls initialize() once.
-      HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
-      verify(httpRequestInitializer).initialize(request);
-      assertThat(request.getConnectTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
-      assertThat(request.getReadTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
-      verifyNoMoreInteractions(httpRequestInitializer);
-    } finally {
-      RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = origIsLocal;
-    }
-  }
-
-  @Test
-  void test_provideHttpRequestFactory_remote_withIap() throws Exception {
-    when(credentialsBundle.getHttpRequestInitializer()).thenReturn(httpRequestInitializer);
-    // Mock the request/response to/from the IAP server requesting an ID token
+    // Mock the request/response to/from the OIDC server requesting an ID token
     UserCredentials mockUserCredentials = mock(UserCredentials.class);
     when(credentialsBundle.getGoogleCredentials()).thenReturn(mockUserCredentials);
     HttpTransport mockTransport = mock(HttpTransport.class);
@@ -114,17 +91,16 @@ public class RequestFactoryModuleTest {
     HttpResponse mockResponse = mock(HttpResponse.class);
     when(mockPostRequest.execute()).thenReturn(mockResponse);
     GenericData genericDataResponse = new GenericData();
-    genericDataResponse.set("id_token", "iapIdToken");
+    genericDataResponse.set("id_token", "oidc.token");
     when(mockResponse.parseAs(GenericData.class)).thenReturn(genericDataResponse);
 
     boolean origIsLocal = RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal;
     RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = false;
     try {
       HttpRequestFactory factory =
-          RequestFactoryModule.provideHttpRequestFactory(
-              credentialsBundle, Optional.of("iapClientId"));
+          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, "clientId");
       HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
-      assertThat(request.getHeaders().get("Proxy-Authorization")).isEqualTo("Bearer iapIdToken");
+      assertThat(request.getHeaders().get("Proxy-Authorization")).isEqualTo("Bearer oidc.token");
       assertThat(request.getConnectTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
       assertThat(request.getReadTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
       verify(httpRequestInitializer).initialize(request);

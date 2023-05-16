@@ -17,10 +17,6 @@ package google.registry.proxy;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.auth.oauth2.IdTokenProvider;
-import com.google.auth.oauth2.IdTokenProvider.Option;
-import com.google.common.collect.ImmutableList;
 import google.registry.util.ProxyHttpHeaders;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -39,10 +35,11 @@ import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import java.io.IOException;
-import java.util.Optional;
 
 /** Utility class for various helper methods used in testing. */
-public class TestUtils {
+public final class TestUtils {
+
+  private TestUtils() {}
 
   public static FullHttpRequest makeHttpPostRequest(String content, String host, String path) {
     ByteBuf buf = Unpooled.wrappedBuffer(content.getBytes(US_ASCII));
@@ -77,19 +74,13 @@ public class TestUtils {
   }
 
   public static FullHttpRequest makeWhoisHttpRequest(
-      String content,
-      String host,
-      String path,
-      GoogleCredentials credentials,
-      Optional<String> iapClientId)
-      throws IOException {
+      String content, String host, String path, String idToken) throws IOException {
     FullHttpRequest request = makeHttpPostRequest(content, host, path);
     request
         .headers()
-        .set("authorization", "Bearer " + credentials.getAccessToken().getTokenValue())
+        .set("authorization", "Bearer " + idToken)
         .set(HttpHeaderNames.CONTENT_TYPE, "text/plain")
         .set("accept", "text/plain");
-    maybeSetProxyAuthForIap(request, credentials, iapClientId);
     return request;
   }
 
@@ -97,21 +88,19 @@ public class TestUtils {
       String content,
       String host,
       String path,
-      GoogleCredentials credentials,
+      String idToken,
       String sslClientCertificateHash,
       String clientAddress,
-      Optional<String> iapClientId,
       Cookie... cookies)
       throws IOException {
     FullHttpRequest request = makeHttpPostRequest(content, host, path);
     request
         .headers()
-        .set("authorization", "Bearer " + credentials.getAccessToken().getTokenValue())
+        .set("authorization", "Bearer " + idToken)
         .set(HttpHeaderNames.CONTENT_TYPE, "application/epp+xml")
         .set("accept", "application/epp+xml")
         .set(ProxyHttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
         .set(ProxyHttpHeaders.IP_ADDRESS, clientAddress);
-    maybeSetProxyAuthForIap(request, credentials, iapClientId);
     if (cookies.length != 0) {
       request.headers().set("cookie", ClientCookieEncoder.STRICT.encode(cookies));
     }
@@ -140,7 +129,7 @@ public class TestUtils {
    * <p>This method is needed because an HTTP message decoded and aggregated from inbound {@link
    * ByteBuf} is of a different class than the one written to the outbound {@link ByteBuf}, and The
    * {@link ByteBuf} implementations that hold the content of the HTTP messages are different, even
-   * though the actual content, headers, etc are the same.
+   * though the actual content, headers, etc. are the same.
    *
    * <p>This method is not type-safe, msg1 & msg2 can be a request and a response, respectively. Do
    * not use this method directly.
@@ -160,17 +149,5 @@ public class TestUtils {
 
   public static void assertHttpRequestEquivalent(HttpRequest req1, HttpRequest req2) {
     assertHttpMessageEquivalent(req1, req2);
-  }
-
-  private static void maybeSetProxyAuthForIap(
-      FullHttpRequest request, GoogleCredentials credentials, Optional<String> iapClientId)
-      throws IOException {
-    if (iapClientId.isPresent()) {
-      String idTokenValue =
-          ((IdTokenProvider) credentials)
-              .idTokenWithAudience(iapClientId.get(), ImmutableList.of(Option.FORMAT_FULL))
-              .getTokenValue();
-      request.headers().set("proxy-authorization", "Bearer " + idTokenValue);
-    }
   }
 }
