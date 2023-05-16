@@ -20,7 +20,6 @@ import static google.registry.networking.handler.SslServerInitializer.CLIENT_CER
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 import static google.registry.util.X509Utils.getCertificateHash;
 
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.flogger.FluentLogger;
 import google.registry.proxy.metric.FrontendMetrics;
 import google.registry.util.ProxyHttpHeaders;
@@ -37,7 +36,6 @@ import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Promise;
 import java.security.cert.X509Certificate;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 /** Handler that processes EPP protocol logic. */
@@ -62,12 +60,11 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
   public EppServiceHandler(
       String relayHost,
       String relayPath,
-      Supplier<GoogleCredentials> refreshedCredentialsSupplier,
-      Optional<String> iapClientId,
+      Supplier<String> idTokenSupplier,
       byte[] helloBytes,
       FrontendMetrics metrics) {
-    super(relayHost, relayPath, refreshedCredentialsSupplier, iapClientId, metrics);
-    this.helloBytes = helloBytes;
+    super(relayHost, relayPath, idTokenSupplier, metrics);
+    this.helloBytes = helloBytes.clone();
   }
 
   /**
@@ -91,6 +88,7 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
    */
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    @SuppressWarnings("unused")
     Promise<X509Certificate> unusedPromise =
         ctx.channel()
             .attr(CLIENT_CERTIFICATE_PROMISE_KEY)
@@ -110,6 +108,7 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
                     logger.atWarning().withCause(promise.cause()).log(
                         "Cannot finish handshake for channel %s, remote IP %s",
                         ctx.channel(), ctx.channel().attr(REMOTE_ADDRESS_KEY).get());
+                    @SuppressWarnings("unused")
                     ChannelFuture unusedFuture = ctx.close();
                   }
                 });
@@ -136,7 +135,7 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
     checkArgument(msg instanceof HttpResponse);
     HttpResponse response = (HttpResponse) msg;
     String sessionAliveValue = response.headers().get(ProxyHttpHeaders.EPP_SESSION);
-    if (sessionAliveValue != null && sessionAliveValue.equals("close")) {
+    if ("close".equals(sessionAliveValue)) {
       promise.addListener(ChannelFutureListener.CLOSE);
     }
     super.write(ctx, msg, promise);
