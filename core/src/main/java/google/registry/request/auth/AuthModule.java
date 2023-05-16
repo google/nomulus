@@ -44,7 +44,7 @@ public class AuthModule {
   // See: https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload
   private static final String IAP_AUDIENCE_FORMAT = "/projects/%d/apps/%s";
   private static final String IAP_ISSUER_URL = "https://cloud.google.com/iap";
-  private static final String SA_ISSUER_URL = "https://accounts.google.com";
+  private static final String REGULAR_ISSUER_URL = "https://accounts.google.com";
 
   /** Provides the custom authentication mechanisms (including OAuth and OIDC). */
   @Provides
@@ -82,8 +82,8 @@ public class AuthModule {
   @Provides
   @RegularOidc
   @Singleton
-  TokenVerifier provideRegularTokenVerifier(@Config("projectId") String projectId) {
-    return TokenVerifier.newBuilder().setAudience(projectId).setIssuer(SA_ISSUER_URL).build();
+  TokenVerifier provideRegularTokenVerifier(@Config("oauthClientId") String clientId) {
+    return TokenVerifier.newBuilder().setAudience(clientId).setIssuer(REGULAR_ISSUER_URL).build();
   }
 
   @Provides

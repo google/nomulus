@@ -29,7 +29,7 @@ import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.api.client.json.webtoken.JsonWebSignature.Header;
 import com.google.auth.oauth2.TokenVerifier;
 import com.google.auth.oauth2.TokenVerifier.VerificationException;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
@@ -54,8 +54,8 @@ public class OidcTokenAuthenticationMechanismTest {
   private static final String rawToken = "this-token";
   private static final String email = "user@email.test";
   private static final String gaiaId = "gaia-id";
-  private static final ImmutableList<String> serviceAccounts =
-      ImmutableList.of("service@email.test", "email@service.goog");
+  private static final ImmutableSet<String> serviceAccounts =
+      ImmutableSet.of("service@email.test", "email@service.goog");
 
   private final Payload payload = new Payload();
   private final User user =
@@ -222,9 +222,16 @@ public class OidcTokenAuthenticationMechanismTest {
 
     @Provides
     @Singleton
-    @Config("serviceAccountEmails")
-    ImmutableList<String> provideServiceAccountEmails() {
+    @Config("allowedServiceAccountEmails")
+    ImmutableSet<String> provideAllowedServiceAccountEmails() {
       return serviceAccounts;
+    }
+
+    @Provides
+    @Singleton
+    @Config("oauthClientId")
+    String provideOauthClientId() {
+      return "client-id";
     }
   }
 }

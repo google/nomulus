@@ -91,14 +91,14 @@ class TldFanoutActionTest {
             .map(
                 namespace ->
                     new TaskMatcher()
-                        .url(ENDPOINT)
+                        .path(ENDPOINT)
                         .header("content-type", "application/x-www-form-urlencoded")
                         .param("tld", namespace))
             .collect(toImmutableList()));
   }
 
   private void assertTaskWithoutTld() {
-    cloudTasksHelper.assertTasksEnqueued(QUEUE, new TaskMatcher().url(ENDPOINT));
+    cloudTasksHelper.assertTasksEnqueued(QUEUE, new TaskMatcher().path(ENDPOINT));
   }
 
   @Test
@@ -211,7 +211,7 @@ class TldFanoutActionTest {
   void testSuccess_additionalArgsFlowThroughToPostParams() {
     run(getParamsMap("forEachTestTld", "", "newkey", "newval"));
     cloudTasksHelper.assertTasksEnqueued(
-        QUEUE, new TaskMatcher().url("/the/servlet").param("newkey", "newval"));
+        QUEUE, new TaskMatcher().path("/the/servlet").param("newkey", "newval"));
   }
 
   @Test
@@ -224,9 +224,9 @@ class TldFanoutActionTest {
     String expectedResponse =
         String.format(
             "OK: Launched the following 3 tasks in queue the-queue\n"
-                + "- Task: '%s', tld: 'com', endpoint: '/the/servlet'\n"
-                + "- Task: '%s', tld: 'net', endpoint: '/the/servlet'\n"
-                + "- Task: '%s', tld: 'org', endpoint: '/the/servlet'\n",
+                + "- Task: '%s', tld: 'com', endpoint: 'https://backend.example.com/the/servlet'\n"
+                + "- Task: '%s', tld: 'net', endpoint: 'https://backend.example.com/the/servlet'\n"
+                + "- Task: '%s', tld: 'org', endpoint: 'https://backend.example.com/the/servlet'\n",
             taskList.get(0).getName(), taskList.get(1).getName(), taskList.get(2).getName());
     assertThat(response.getPayload()).isEqualTo(expectedResponse);
   }
@@ -241,7 +241,7 @@ class TldFanoutActionTest {
     String expectedResponse =
         String.format(
             "OK: Launched the following 1 tasks in queue the-queue\n"
-                + "- Task: '%s', tld: '', endpoint: '/the/servlet'\n",
+                + "- Task: '%s', tld: '', endpoint: 'https://backend.example.com/the/servlet'\n",
             taskList.get(0).getName());
     assertThat(response.getPayload()).isEqualTo(expectedResponse);
   }

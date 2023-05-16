@@ -53,8 +53,7 @@ class WhoisProtocolModuleTest extends ProtocolModuleTest {
             "test.tld",
             PROXY_CONFIG.whois.relayHost,
             PROXY_CONFIG.whois.relayPath,
-            TestModule.provideFakeCredentials().get(),
-            TestModule.provideIapClientId());
+            TestModule.provideFakeIdToken().get());
     assertThat(actualRequest).isEqualTo(expectedRequest);
     assertThat(channel.isActive()).isTrue();
     // Nothing more to read.
@@ -89,8 +88,7 @@ class WhoisProtocolModuleTest extends ProtocolModuleTest {
             "test1.tld",
             PROXY_CONFIG.whois.relayHost,
             PROXY_CONFIG.whois.relayPath,
-            TestModule.provideFakeCredentials().get(),
-            TestModule.provideIapClientId());
+            TestModule.provideFakeIdToken().get());
     assertThat(actualRequest1).isEqualTo(expectedRequest1);
     // No more message at this point.
     assertThat((Object) channel.readInbound()).isNull();
@@ -104,8 +102,7 @@ class WhoisProtocolModuleTest extends ProtocolModuleTest {
             "test2.tld",
             PROXY_CONFIG.whois.relayHost,
             PROXY_CONFIG.whois.relayPath,
-            TestModule.provideFakeCredentials().get(),
-            TestModule.provideIapClientId());
+            TestModule.provideFakeIdToken().get());
     assertThat(actualRequest2).isEqualTo(expectedRequest2);
     // The third message is not complete yet.
     assertThat(channel.isActive()).isTrue();

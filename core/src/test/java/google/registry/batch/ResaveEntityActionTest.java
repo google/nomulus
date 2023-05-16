@@ -136,7 +136,7 @@ public class ResaveEntityActionTest {
     cloudTasksHelper.assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
-            .url(ResaveEntityAction.PATH)
+            .path(ResaveEntityAction.PATH)
             .method(HttpMethod.POST)
             .service("backend")
             .header("content-type", "application/x-www-form-urlencoded")
