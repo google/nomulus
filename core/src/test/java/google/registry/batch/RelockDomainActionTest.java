@@ -305,7 +305,7 @@ public class RelockDomainActionTest {
     cloudTasksHelper.assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
-            .url(RelockDomainAction.PATH)
+            .path(RelockDomainAction.PATH)
             .method(HttpMethod.POST)
             .param(
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,

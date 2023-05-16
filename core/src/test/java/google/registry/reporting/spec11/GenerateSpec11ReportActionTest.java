@@ -86,7 +86,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
     cloudTasksHelper.assertTasksEnqueued(
         "beam-reporting",
         new TaskMatcher()
-            .url("/_dr/task/publishSpec11")
+            .path("/_dr/task/publishSpec11")
             .method(HttpMethod.POST)
             .param("jobId", "jobid")
             .param("date", "2018-06-11")

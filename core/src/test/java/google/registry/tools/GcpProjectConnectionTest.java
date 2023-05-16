@@ -73,7 +73,7 @@ final class GcpProjectConnectionTest {
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       getStreamingContent().writeTo(output);
       output.close();
-      return new String(output.toByteArray(), UTF_8);
+      return output.toString(UTF_8);
     }
   }
 
@@ -97,7 +97,7 @@ final class GcpProjectConnectionTest {
         .isEqualTo("MyContent");
     assertThat(httpTransport.method).isEqualTo("GET");
     assertThat(httpTransport.url)
-        .isEqualTo("https://localhost/my/path?query&key1=value1&key2=value2");
+        .isEqualTo("https://tools.example.com/my/path?query&key1=value1&key2=value2");
     assertThat(lowLevelHttpRequest.headers).containsEntry("Cache-Control", "no-cache");
     assertThat(lowLevelHttpRequest.headers).containsEntry("x-requested-with", "RegistryTool");
   }
@@ -113,7 +113,7 @@ final class GcpProjectConnectionTest {
         .isEqualTo("MyContent");
     assertThat(httpTransport.method).isEqualTo("POST");
     assertThat(httpTransport.url)
-        .isEqualTo("https://localhost/my/path?query&key1=value1&key2=value2");
+        .isEqualTo("https://tools.example.com/my/path?query&key1=value1&key2=value2");
     assertThat(lowLevelHttpRequest.getContentType()).isEqualTo("text/plain; charset=utf-8");
     assertThat(lowLevelHttpRequest.getContentString()).isEqualTo("some data");
     assertThat(lowLevelHttpRequest.headers).containsEntry("Cache-Control", "no-cache");
@@ -130,7 +130,7 @@ final class GcpProjectConnectionTest {
                 "/my/path?query", ImmutableMap.of("string", "value1", "bool", true)))
         .containsExactly("key", "value");
     assertThat(httpTransport.method).isEqualTo("POST");
-    assertThat(httpTransport.url).isEqualTo("https://localhost/my/path?query");
+    assertThat(httpTransport.url).isEqualTo("https://tools.example.com/my/path?query");
     assertThat(lowLevelHttpRequest.getContentType()).isEqualTo("application/json; charset=utf-8");
     assertThat(lowLevelHttpRequest.getContentString())
         .isEqualTo("{\"string\":\"value1\",\"bool\":true}");
