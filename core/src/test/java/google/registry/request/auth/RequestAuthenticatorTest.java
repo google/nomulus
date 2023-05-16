@@ -116,7 +116,7 @@ class RequestAuthenticatorTest {
                 fakeOAuthService,
                 ImmutableSet.of("test-scope1", "test-scope2", "test-scope3"),
                 ImmutableSet.of("test-scope1", "test-scope2"),
-                ImmutableSet.of("test-client-id", "other-test-client-id"))),
+                ImmutableList.of("test-client-id", "other-test-client-id"))),
         new LegacyAuthenticationMechanism(userService, xsrfTokenManager));
   }
 

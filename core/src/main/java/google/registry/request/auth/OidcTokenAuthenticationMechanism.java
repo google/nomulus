@@ -79,11 +79,14 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     if (rawIdToken == null) {
       return AuthResult.NOT_AUTHENTICATED;
     }
-    JsonWebSignature token;
+    JsonWebSignature token = null;
     try {
       token = tokenVerifier.verify(rawIdToken);
     } catch (Exception e) {
-      logger.atInfo().withCause(e).log("Error when verifying access token");
+      logger.atInfo().withCause(e).log("Failed OIDC verification attempt:\n%s", rawIdToken);
+    }
+
+    if (token == null) {
       return AuthResult.NOT_AUTHENTICATED;
     }
     String email = (String) token.getPayload().get("email");
@@ -95,6 +98,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     if (maybeUser.isPresent()) {
       return AuthResult.create(AuthLevel.USER, UserAuthInfo.create(maybeUser.get()));
     }
+    // TODO: implement caching so we don't have to look up the database for every request.
     logger.atInfo().log("No end user found for email address %s", email);
     if (serviceAccountEmails.stream().anyMatch(e -> e.equals(email))) {
       return AuthResult.create(APP);
@@ -136,7 +140,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
 
     @Inject
     protected IapOidcAuthenticationMechanism(
-        @Config("serviceAccountEmails") ImmutableList<String> serviceAccountEmails,
+        @Config("allowedServiceAccountEmails") ImmutableList<String> serviceAccountEmails,
         @IapOidc TokenVerifier tokenVerifier,
         @IapOidc TokenExtractor tokenExtractor) {
       super(serviceAccountEmails, tokenVerifier, tokenExtractor);
@@ -164,7 +168,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
 
     @Inject
     protected RegularOidcAuthenticationMechanism(
-        @Config("serviceAccountEmails") ImmutableList<String> serviceAccountEmails,
+        @Config("allowedServiceAccountEmails") ImmutableList<String> serviceAccountEmails,
         @RegularOidc TokenVerifier tokenVerifier,
         @RegularOidc TokenExtractor tokenExtractor) {
       super(serviceAccountEmails, tokenVerifier, tokenExtractor);

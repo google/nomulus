@@ -8,14 +8,17 @@
 # GCP project ID
 projectId: your-gcp-project-id
 
-# IAP client ID, if IAP is enabled for this project
-iapClientId: null
+# OAuth client ID set as the audience of the OIDC token. Usually this should be
+# the IAP client ID, to allow the request to access IAP protected endpoints.
+# Regular OIDC authentication mechanism also checks for this audience. This value
+# should be the same as the auth.oauthClientId value in Nomulus config file.
+clientId: iap-client-id
 
 # OAuth scope that the GoogleCredential will be constructed with. This list
 # should include all service scopes that the proxy depends on.
 gcpScopes:
   # The default OAuth scope granted to GCE instances. Local development instance
-  # needs this scope to mimic running on GCE. Currently it is used to access
+  # needs this scope to mimic running on GCE. Currently, it is used to access
   # Cloud KMS and Stackdriver Monitoring APIs.
   - https://www.googleapis.com/auth/cloud-platform
 
@@ -25,8 +28,8 @@ gcpScopes:
 
 # Server certificate is cached for 30 minutes.
 #
-# Encrypted server server certificate and private keys are stored on GCS. They
-# are cached and shared for all connections for 30 minutes. We not not cache
+# Encrypted server certificate and private keys are stored on GCS. They
+# are cached and shared for all connections for 30 minutes. We do not cache
 # the certificate indefinitely because if we upload a new one to GCS, all
 # existing instances need to be killed if they cache the old one indefinitely.
 serverCertificateCacheSeconds: 1800
@@ -59,8 +62,8 @@ epp:
   # The first 4 bytes in a message is the total length of message, in bytes.
   #
   # We accept a message up to 1 GB, which should be plentiful, if not over the
-  # top. In fact we should probably limit this to a more reasonable number, as a
-  # 1 GB message will likely cause the proxy to go out of memory.
+  # top. In fact, we should probably limit this to a more reasonable number, as
+  # a 1 GB message will likely cause the proxy to go out of memory.
   #
   # See also: RFC 5734 4 Data Unit Format
   # (https://tools.ietf.org/html/rfc5734#section-4).
@@ -76,7 +79,7 @@ epp:
   # Time after which an idle connection will be closed.
   #
   # The RFC gives registry discretionary power to set a timeout period. 1 hr
-  # should be reasonable enough for any registrar to login and submit their
+  # should be reasonable enough for any registrar to log in and submit their
   # request.
   readTimeoutSeconds: 3600
 
@@ -91,7 +94,7 @@ epp:
     # Default quota for any userId not matched in customQuota.
     defaultQuota:
 
-      # List of identifiers, e. g. IP address, certificate hash.
+      # List of identifiers, e.g. IP address, certificate hash.
       #
       # userId for defaultQuota should always be an empty list. Any value
       # in the list will be discarded.
@@ -129,7 +132,7 @@ whois:
   # (http://www.freesoft.org/CIE/RFC/1035/9.htm).
   maxMessageLengthBytes: 512
 
-  # Whois protocol is transient, the client should not establish a long lasting
+  # Whois protocol is transient, the client should not establish a long-lasting
   # idle connection.
   readTimeoutSeconds: 60
 
@@ -144,7 +147,7 @@ whois:
     # Default quota for any userId not matched in customQuota.
     defaultQuota:
 
-      # List of identifiers, e. g. IP address, certificate hash.
+      # List of identifiers, e.g. IP address, certificate hash.
       #
       # userId for defaultQuota should always be an empty list.
       userId: []

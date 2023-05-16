@@ -23,6 +23,7 @@ import com.google.appengine.api.oauth.OAuthRequestException;
 import com.google.appengine.api.oauth.OAuthService;
 import com.google.appengine.api.oauth.OAuthServiceFailureException;
 import com.google.appengine.api.users.User;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
@@ -32,7 +33,7 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * OAuth authentication mechanism, using the OAuthService interface.
  *
- * Only OAuth version 2 is supported.
+ * <p>Only OAuth version 2 is supported.
  */
 public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
 
@@ -46,14 +47,14 @@ public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
   /** The OAuth scopes which must all be present for authentication to succeed. */
   private final ImmutableSet<String> requiredOauthScopes;
 
-  private final ImmutableSet<String> allowedOauthClientIds;
+  private final ImmutableList<String> allowedOauthClientIds;
 
   @Inject
   public OAuthAuthenticationMechanism(
       OAuthService oauthService,
       @Config("availableOauthScopes") ImmutableSet<String> availableOauthScopes,
       @Config("requiredOauthScopes") ImmutableSet<String> requiredOauthScopes,
-      @Config("allowedOauthClientIds") ImmutableSet<String> allowedOauthClientIds) {
+      @Config("allowedOauthClientIds") ImmutableList<String> allowedOauthClientIds) {
     this.oauthService = oauthService;
     this.availableOauthScopes = availableOauthScopes;
     this.requiredOauthScopes = requiredOauthScopes;

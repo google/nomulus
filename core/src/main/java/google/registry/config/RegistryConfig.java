@@ -120,17 +120,6 @@ public final class RegistryConfig {
       return config.gcpProject.locationId;
     }
 
-    @Provides
-    @Config("serviceAccountEmails")
-    public static ImmutableList<String> provideServiceAccountEmails(RegistryConfigSettings config) {
-      return ImmutableList.copyOf(config.gcpProject.serviceAccountEmails);
-    }
-
-    @Provides
-    @Config("defaultServiceAccount")
-    public static Optional<String> provideDefaultServiceAccount(RegistryConfigSettings config) {
-      return Optional.ofNullable(config.gcpProject.defaultServiceAccount);
-    }
 
     /**
      * The filename of the logo to be displayed in the header of the registrar console.
@@ -1144,7 +1133,7 @@ public final class RegistryConfig {
     @Provides
     @Config("availableOauthScopes")
     public static ImmutableSet<String> provideAvailableOauthScopes(RegistryConfigSettings config) {
-      return ImmutableSet.copyOf(config.oAuth.availableOauthScopes);
+      return ImmutableSet.copyOf(config.auth.availableOauthScopes);
     }
 
     /**
@@ -1164,20 +1153,32 @@ public final class RegistryConfig {
     @Provides
     @Config("requiredOauthScopes")
     public static ImmutableSet<String> provideRequiredOauthScopes(RegistryConfigSettings config) {
-      return ImmutableSet.copyOf(config.oAuth.requiredOauthScopes);
+      return ImmutableSet.copyOf(config.auth.requiredOauthScopes);
+    }
+
+    /**
+     * Provides service account email addresses allowed to authenticate with the app at {@link
+     * google.registry.request.auth.AuthSettings.AuthLevel#APP} level.
+     */
+    @Provides
+    @Config("allowedServiceAccountEmails")
+    public static ImmutableList<String> provideAllowedServiceAccountEmails(
+        RegistryConfigSettings config) {
+      return ImmutableList.copyOf(config.auth.allowedServiceAccountEmails);
     }
 
     /** Provides the allowed OAuth client IDs (could be multibinding). */
     @Provides
     @Config("allowedOauthClientIds")
-    public static ImmutableSet<String> provideAllowedOauthClientIds(RegistryConfigSettings config) {
-      return ImmutableSet.copyOf(config.oAuth.allowedOauthClientIds);
+    public static ImmutableList<String> provideAllowedOauthClientIds(
+        RegistryConfigSettings config) {
+      return ImmutableList.copyOf(config.auth.allowedOauthClientIds);
     }
 
     @Provides
-    @Config("iapClientId")
-    public static Optional<String> provideIapClientId(RegistryConfigSettings config) {
-      return Optional.ofNullable(config.oAuth.iapClientId);
+    @Config("oauthClientId")
+    public static String provideOauthClientId(RegistryConfigSettings config) {
+      return config.auth.oauthClientId;
     }
 
     /**

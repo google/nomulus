@@ -53,8 +53,7 @@ public class CloudTasksUtilsTest {
           clock,
           "project",
           "location",
-          Optional.empty(),
-          Optional.empty(),
+          "clientId",
           mockClient);
 
   @BeforeEach
@@ -593,12 +592,11 @@ public class CloudTasksUtilsTest {
             clock,
             "project",
             "location",
-            Optional.of("defaultServiceAccount"),
-            Optional.of("iapClientId"),
+            "defaultServiceAccount",
             mockClient);
   }
 
-  private void verifyOidcToken(Task task) {
+  private static void verifyOidcToken(Task task) {
     assertThat(task.getHttpRequest().getOidcToken())
         .isEqualTo(
             OidcToken.newBuilder()
