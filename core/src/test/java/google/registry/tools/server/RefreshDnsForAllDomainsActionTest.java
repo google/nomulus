@@ -87,6 +87,17 @@ public class RefreshDnsForAllDomainsActionTest {
   }
 
   @Test
+  void test_runAction_refreshesDeletedDomainWithIncludeDeleted() throws Exception {
+    persistActiveDomain("foo.bar");
+    persistDeletedDomain("deleted.bar", clock.nowUtc().minusYears(1));
+    action.tlds = ImmutableSet.of("bar");
+    action.includeDeleted = true;
+    action.run();
+    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
+    assertDomainDnsRequestWithRequestTime("deleted.bar", clock.nowUtc());
+  }
+
+  @Test
   void test_runAction_ignoresDomainsOnOtherTlds() throws Exception {
     createTld("baz");
     persistActiveDomain("foo.bar");
