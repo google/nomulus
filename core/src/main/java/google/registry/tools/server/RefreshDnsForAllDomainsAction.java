@@ -29,6 +29,7 @@ import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import java.util.Random;
 import javax.inject.Inject;
+import javax.persistence.TypedQuery;
 import org.apache.http.HttpStatus;
 import org.joda.time.Duration;
 
@@ -66,6 +67,11 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   @Parameter("smearMinutes")
   int smearMinutes;
 
+  /** Include deleted domain names. */
+  @Inject
+  @Parameter("includeDeleted")
+  boolean includeDeleted;
+
   @Inject Clock clock;
   @Inject Random random;
 
@@ -76,27 +82,31 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   public void run() {
     assertTldsExist(tlds);
     checkArgument(smearMinutes > 0, "Must specify a positive number of smear minutes");
+    StringBuilder query = new StringBuilder("SELECT domainName FROM Domain WHERE tld IN (:tlds)");
+    if (!includeDeleted) {
+      query.append(" AND deletionTime > :now");
+    }
     tm().transact(
-            () ->
-                tm().query(
-                        "SELECT domainName FROM Domain "
-                            + "WHERE tld IN (:tlds) "
-                            + "AND deletionTime > :now",
-                        String.class)
-                    .setParameter("tlds", tlds)
-                    .setParameter("now", clock.nowUtc())
-                    .getResultStream()
-                    .forEach(
-                        domainName -> {
-                          try {
-                            // Smear the task execution time over the next N minutes.
-                            requestDomainDnsRefresh(
-                                domainName, Duration.standardMinutes(random.nextInt(smearMinutes)));
-                          } catch (Throwable t) {
-                            logger.atSevere().withCause(t).log(
-                                "Error while enqueuing DNS refresh for domain '%s'.", domainName);
-                            response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                          }
-                        }));
+            () -> {
+              TypedQuery<String> typedQuery =
+                  tm().query(query.toString(), String.class).setParameter("tlds", tlds);
+              if (!includeDeleted) {
+                typedQuery.setParameter("now", clock.nowUtc());
+              }
+              typedQuery
+                  .getResultStream()
+                  .forEach(
+                      domainName -> {
+                        try {
+                          // Smear the task execution time over the next N minutes.
+                          requestDomainDnsRefresh(
+                              domainName, Duration.standardMinutes(random.nextInt(smearMinutes)));
+                        } catch (Throwable t) {
+                          logger.atSevere().withCause(t).log(
+                              "Error while enqueuing DNS refresh for domain '%s'.", domainName);
+                          response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                        }
+                      });
+            });
   }
 }
