@@ -15,7 +15,6 @@
 package google.registry.tools.server;
 
 import static com.google.common.base.Strings.emptyToNull;
-import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
@@ -80,11 +79,5 @@ public class ToolsServerModule {
   @Parameter("smearMinutes")
   static int provideSmearMinutes(HttpServletRequest req) {
     return extractIntParameter(req, "smearMinutes");
-  }
-
-  @Provides
-  @Parameter("includeDeleted")
-  static boolean provideIncludeDeleted(HttpServletRequest req) {
-    return extractBooleanParameter(req, "includeDeleted");
   }
 }
