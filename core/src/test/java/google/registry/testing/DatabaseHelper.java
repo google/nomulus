@@ -1357,5 +1357,16 @@ public final class DatabaseHelper {
         .isEqualTo(1);
   }
 
+  public static void assertDnsRequestsWithRequestTime(DateTime requestTime, int numOfDomains) {
+    assertThat(
+            tm().transact(
+                    () ->
+                        tm().createQueryComposer(DnsRefreshRequest.class)
+                            .where("type", EQ, DnsUtils.TargetType.DOMAIN)
+                            .where("requestTime", EQ, requestTime)
+                            .count()))
+        .isEqualTo(numOfDomains);
+  }
+
   private DatabaseHelper() {}
 }
