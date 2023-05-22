@@ -15,6 +15,7 @@
 package google.registry.tools.server;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatabaseHelper.assertDnsRequestsWithRequestTime;
 import static google.registry.testing.DatabaseHelper.assertDomainDnsRequestWithRequestTime;
 import static google.registry.testing.DatabaseHelper.assertNoDnsRequestsExcept;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -72,8 +73,8 @@ public class RefreshDnsForAllDomainsActionTest {
     action.tlds = ImmutableSet.of("bar");
     action.smearMinutes = 1000;
     action.run();
-    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc().plusMinutes(450));
-    assertDomainDnsRequestWithRequestTime("low.bar", clock.nowUtc().plusMinutes(782));
+    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc().plusMinutes(782));
+    assertDomainDnsRequestWithRequestTime("low.bar", clock.nowUtc().plusMinutes(450));
   }
 
   @Test
@@ -84,17 +85,6 @@ public class RefreshDnsForAllDomainsActionTest {
     action.run();
     assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
     assertNoDnsRequestsExcept("foo.bar");
-  }
-
-  @Test
-  void test_runAction_refreshesDeletedDomainWithIncludeDeleted() throws Exception {
-    persistActiveDomain("foo.bar");
-    persistDeletedDomain("deleted.bar", clock.nowUtc().minusYears(1));
-    action.tlds = ImmutableSet.of("bar");
-    action.includeDeleted = true;
-    action.run();
-    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
-    assertDomainDnsRequestWithRequestTime("deleted.bar", clock.nowUtc());
   }
 
   @Test
@@ -119,5 +109,15 @@ public class RefreshDnsForAllDomainsActionTest {
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Must specify a positive number of smear minutes");
+  }
+
+  @Test
+  void test_successfullyBatchesNames() {
+    for (int i = 0; i <= RefreshDnsForAllDomainsAction.BATCH_SIZE; i++) {
+      persistActiveDomain(String.format("test%s.bar", i));
+    }
+    action.tlds = ImmutableSet.of("bar");
+    action.run();
+    assertDnsRequestsWithRequestTime(clock.nowUtc(), RefreshDnsForAllDomainsAction.BATCH_SIZE + 1);
   }
 }
