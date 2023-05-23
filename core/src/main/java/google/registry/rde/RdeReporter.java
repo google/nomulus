@@ -43,6 +43,7 @@ import java.io.ByteArrayInputStream;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.util.Arrays;
 import javax.inject.Inject;
 
 /**
@@ -86,22 +87,23 @@ public class RdeReporter {
         retrier.callWithRetry(
             () -> {
               HTTPResponse rsp1 = urlFetchService.fetch(req);
-              switch (rsp1.getResponseCode()) {
-                case SC_OK:
-                case SC_BAD_REQUEST:
-                  break;
-                default:
-                  throw new RuntimeException("PUT failed");
+              int responseCode = rsp1.getResponseCode();
+              if (responseCode != SC_OK && responseCode != SC_BAD_REQUEST) {
+                logger.atSevere().log(
+                    "Failure when trying to PUT RDE report to ICANN server: %d\n%s",
+                    responseCode, Arrays.toString(rsp1.getContent()));
+                throw new RuntimeException("Error uploading deposits to ICANN");
               }
               return rsp1;
             },
             SocketTimeoutException.class);
 
-    // Ensure the XML response is valid.
+    // Ensure the XML response is valid. The EPP result code would not be 1000 if we get an
+    // SC_BAD_REQUEST as the HTTP response code.
     XjcIirdeaResult result = parseResult(rsp.getContent());
     if (result.getCode().getValue() != 1000) {
       logger.atWarning().log(
-          "PUT rejected: %d %s\n%s",
+          "Rejected when trying to PUT RDE report to ICANN server: %d %s\n%s",
           result.getCode().getValue(), result.getMsg(), result.getDescription());
       throw new InternalServerErrorException(result.getMsg());
     }
