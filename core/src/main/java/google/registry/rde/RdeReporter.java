@@ -89,9 +89,9 @@ public class RdeReporter {
               HTTPResponse rsp1 = urlFetchService.fetch(req);
               int responseCode = rsp1.getResponseCode();
               if (responseCode != SC_OK && responseCode != SC_BAD_REQUEST) {
-                throw new RuntimeException(
-                    String.format(
-                        "PUT failed: %d\n%s", responseCode, Arrays.toString(rsp1.getContent())));
+                logger.atSevere().log(
+                    "PUT failed: %d\n%s", responseCode, Arrays.toString(rsp1.getContent()));
+                throw new RuntimeException("Error uploading deposits to ICANN");
               }
               return rsp1;
             },
