@@ -87,17 +87,18 @@ public class RdeReporter {
         retrier.callWithRetry(
             () -> {
               HTTPResponse rsp1 = urlFetchService.fetch(req);
-              if (rsp1.getResponseCode() != SC_OK) {
+              int responseCode = rsp1.getResponseCode();
+              if (responseCode != SC_OK && responseCode != SC_BAD_REQUEST) {
                 throw new RuntimeException(
                     String.format(
-                        "PUT failed: %d\n%s",
-                        rsp1.getResponseCode(), Arrays.toString(rsp1.getContent())));
+                        "PUT failed: %d\n%s", responseCode, Arrays.toString(rsp1.getContent())));
               }
               return rsp1;
             },
             SocketTimeoutException.class);
 
-    // Ensure the XML response is valid.
+    // Ensure the XML response is valid. The EPP result code would not be 1000 if we get an
+    // SC_BAD_REQUEST as the HTTP response code.
     XjcIirdeaResult result = parseResult(rsp.getContent());
     if (result.getCode().getValue() != 1000) {
       logger.atWarning().log(
