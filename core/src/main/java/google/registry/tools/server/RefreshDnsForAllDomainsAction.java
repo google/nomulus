@@ -20,9 +20,11 @@ import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.model.tld.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
@@ -58,7 +60,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  static final int BATCH_SIZE = 10;
+  static final int BATCH_SIZE = 250;
 
   @Inject Response response;
 
@@ -81,38 +83,40 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
     assertTldsExist(tlds);
     checkArgument(smearMinutes > 0, "Must specify a positive number of smear minutes");
     String lastInPreviousBatch = "";
-    while (true) {
+    int lastBatchSize;
+    do {
       String previousLastName = lastInPreviousBatch;
       ImmutableList<String> domainBatch =
-          ImmutableList.copyOf(
-              tm().transact(
-                      () ->
-                          tm().query(
-                                  "SELECT domainName FROM Domain WHERE tld IN (:tlds) AND"
-                                      + " deletionTime > :now  AND domainName >"
-                                      + " :lastInPreviousBatch ORDER BY domainName ASC",
-                                  String.class)
-                              .setParameter("tlds", tlds)
-                              .setParameter("now", clock.nowUtc())
-                              .setParameter("lastInPreviousBatch", previousLastName)
-                              .setMaxResults(BATCH_SIZE)
-                              .getResultStream()
-                              .collect(toImmutableList())));
-
-      if (domainBatch.isEmpty()) break;
-      domainBatch.forEach(
-          domainName -> {
-            try {
-              // Smear the task execution time over the next N minutes.
-              requestDomainDnsRefresh(
-                  domainName, Duration.standardMinutes(random.nextInt(smearMinutes)));
-            } catch (Throwable t) {
-              logger.atSevere().withCause(t).log(
-                  "Error while enqueuing DNS refresh for domain '%s'.", domainName);
-              response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-          });
-      lastInPreviousBatch = domainBatch.get(domainBatch.size() - 1);
-    }
+          tm().transact(
+                  () ->
+                      tm().query(
+                              "SELECT domainName FROM Domain WHERE tld IN (:tlds) AND"
+                                  + " deletionTime = :endOfTime  AND domainName >"
+                                  + " :lastInPreviousBatch ORDER BY domainName ASC",
+                              String.class)
+                          .setParameter("tlds", tlds)
+                          .setParameter("endOfTime", END_OF_TIME)
+                          .setParameter("lastInPreviousBatch", previousLastName)
+                          .setMaxResults(BATCH_SIZE)
+                          .getResultStream()
+                          .collect(toImmutableList()));
+      lastBatchSize = domainBatch.size();
+      tm().transact(
+              () -> {
+                domainBatch.forEach(
+                    domainName -> {
+                      try {
+                        // Smear the task execution time over the next N minutes.
+                        requestDomainDnsRefresh(
+                            domainName, Duration.standardMinutes(random.nextInt(smearMinutes)));
+                      } catch (Throwable t) {
+                        logger.atSevere().withCause(t).log(
+                            "Error while enqueuing DNS refresh for domain '%s'.", domainName);
+                        response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                      }
+                    });
+              });
+      lastInPreviousBatch = Iterables.getLast(domainBatch);
+    } while (lastBatchSize == BATCH_SIZE);
   }
 }
