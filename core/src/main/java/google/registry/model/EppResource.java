@@ -403,7 +403,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   public static ImmutableMap<VKey<? extends EppResource>, EppResource> loadCached(
       Iterable<VKey<? extends EppResource>> keys) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return tm().loadByKeys(keys);
+      return tm().transact(() -> tm().loadByKeys(keys));
     }
     return ImmutableMap.copyOf(cacheEppResources.getAll(keys));
   }
@@ -416,7 +416,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    */
   public static <T extends EppResource> T loadCached(VKey<T> key) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return tm().loadByKey(key);
+      return tm().transact(() -> tm().loadByKey(key));
     }
     // Safe to cast because loading a Key<T> returns an entity of type T.
     @SuppressWarnings("unchecked")

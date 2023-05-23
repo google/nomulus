@@ -319,16 +319,6 @@ CREATE TABLE public."Cursor" (
 
 
 --
--- Name: DatabaseMigrationStateSchedule; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."DatabaseMigrationStateSchedule" (
-    id bigint NOT NULL,
-    migration_transitions public.hstore
-);
-
-
---
 -- Name: DelegationSignerData; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1302,14 +1292,6 @@ ALTER TABLE ONLY public."Cursor"
 
 
 --
--- Name: DatabaseMigrationStateSchedule DatabaseMigrationStateSchedule_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DatabaseMigrationStateSchedule"
-    ADD CONSTRAINT "DatabaseMigrationStateSchedule_pkey" PRIMARY KEY (id);
-
-
---
 -- Name: DelegationSignerData DelegationSignerData_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1570,13 +1552,6 @@ ALTER TABLE ONLY public."User"
 --
 
 CREATE INDEX allocation_token_domain_name_idx ON public."AllocationToken" USING btree (domain_name);
-
-
---
--- Name: database_migration_state_schedule_singleton; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX database_migration_state_schedule_singleton ON public."DatabaseMigrationStateSchedule" USING btree ((true));
 
 
 --
