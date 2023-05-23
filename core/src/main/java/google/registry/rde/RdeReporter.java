@@ -90,7 +90,8 @@ public class RdeReporter {
               int responseCode = rsp1.getResponseCode();
               if (responseCode != SC_OK && responseCode != SC_BAD_REQUEST) {
                 logger.atSevere().log(
-                    "PUT failed: %d\n%s", responseCode, Arrays.toString(rsp1.getContent()));
+                    "Failure when trying to PUT RDE report to ICANN server: %d\n%s",
+                    responseCode, Arrays.toString(rsp1.getContent()));
                 throw new RuntimeException("Error uploading deposits to ICANN");
               }
               return rsp1;
@@ -102,7 +103,7 @@ public class RdeReporter {
     XjcIirdeaResult result = parseResult(rsp.getContent());
     if (result.getCode().getValue() != 1000) {
       logger.atWarning().log(
-          "PUT rejected: %d %s\n%s",
+          "Rejected when trying to PUT RDE report PUT to ICANN server: %d %s\n%s",
           result.getCode().getValue(), result.getMsg(), result.getDescription());
       throw new InternalServerErrorException(result.getMsg());
     }
