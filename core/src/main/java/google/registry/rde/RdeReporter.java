@@ -91,7 +91,8 @@ public class RdeReporter {
                 case SC_BAD_REQUEST:
                   break;
                 default:
-                  throw new RuntimeException("PUT failed");
+                  throw new RuntimeException(
+                      String.format("PUT failed: %d", rsp1.getResponseCode()));
               }
               return rsp1;
             },
