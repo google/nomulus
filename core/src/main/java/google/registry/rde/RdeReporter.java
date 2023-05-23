@@ -43,6 +43,7 @@ import java.io.ByteArrayInputStream;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.util.Arrays;
 import javax.inject.Inject;
 
 /**
@@ -86,13 +87,11 @@ public class RdeReporter {
         retrier.callWithRetry(
             () -> {
               HTTPResponse rsp1 = urlFetchService.fetch(req);
-              switch (rsp1.getResponseCode()) {
-                case SC_OK:
-                case SC_BAD_REQUEST:
-                  break;
-                default:
-                  throw new RuntimeException(
-                      String.format("PUT failed: %d", rsp1.getResponseCode()));
+              if (rsp1.getResponseCode() != SC_OK) {
+                throw new RuntimeException(
+                    String.format(
+                        "PUT failed: %d\n%s",
+                        rsp1.getResponseCode(), Arrays.toString(rsp1.getContent())));
               }
               return rsp1;
             },
