@@ -44,11 +44,11 @@ public final class Tlds {
 
   private Tlds() {}
 
-  /** Supplier of a cached Tlds map. */
+  /** Supplier of a cached TLDs map. */
   private static Supplier<ImmutableMap<String, TldType>> cache = createFreshCache();
 
   /**
-   * Returns a newly-created Supplier of a Tlds to types map.
+   * Returns a newly-created Supplier of a TLDs to types map.
    *
    * <p>The supplier's get() method enters a transactionless context briefly to avoid enrolling the
    * query inside an unrelated client-affecting transaction.
@@ -84,7 +84,7 @@ public final class Tlds {
     return ImmutableSet.copyOf(filterValues(cache.get(), equalTo(type)).keySet());
   }
 
-  /** Returns the Tld entities themselves of the given type loaded fresh from the database. */
+  /** Returns the TLD entities themselves of the given type loaded fresh from the database. */
   public static ImmutableSet<Tld> getTldEntitiesOfType(TldType type) {
     return Tld.get(filterValues(cache.get(), equalTo(type)).keySet());
   }
