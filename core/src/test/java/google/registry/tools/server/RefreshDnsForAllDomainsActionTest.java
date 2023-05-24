@@ -53,6 +53,7 @@ public class RefreshDnsForAllDomainsActionTest {
     action.random.setSeed(123L);
     action.clock = clock;
     action.response = response;
+    action.batchSize = 10;
     createTld("bar");
   }
 
@@ -113,11 +114,13 @@ public class RefreshDnsForAllDomainsActionTest {
 
   @Test
   void test_successfullyBatchesNames() {
-    for (int i = 0; i <= RefreshDnsForAllDomainsAction.BATCH_SIZE; i++) {
+    int batchSize = 3;
+    action.batchSize = batchSize;
+    for (int i = 0; i <= batchSize; i++) {
       persistActiveDomain(String.format("test%s.bar", i));
     }
     action.tlds = ImmutableSet.of("bar");
     action.run();
-    assertDnsRequestsWithRequestTime(clock.nowUtc(), RefreshDnsForAllDomainsAction.BATCH_SIZE + 1);
+    assertDnsRequestsWithRequestTime(clock.nowUtc(), batchSize + 1);
   }
 }
