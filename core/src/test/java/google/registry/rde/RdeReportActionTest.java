@@ -63,6 +63,7 @@ import google.registry.xjc.rdereport.XjcRdeReportReport;
 import google.registry.xml.XmlException;
 import java.io.ByteArrayInputStream;
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -95,7 +96,7 @@ public class RdeReportActionTest {
       new FakeKeyringModule().get().getRdeStagingEncryptionKey();
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final BlobId reportFile =
-      BlobId.of("tub", "test_2006-06-06_full_S1_R0-report.xml.ghostryde");
+      BlobId.of("tub", "job-name/test_2006-06-06_full_S1_R0-report.xml.ghostryde");
   private Tld registry;
 
   private RdeReportAction createAction() {
@@ -114,7 +115,7 @@ public class RdeReportActionTest {
     action.timeout = standardSeconds(30);
     action.stagingDecryptionKey = new FakeKeyringModule().get().getRdeStagingDecryptionKey();
     action.runner = runner;
-    action.prefix = Optional.empty();
+    action.prefix = Optional.of("job-name/");
     return action;
   }
 
@@ -170,11 +171,54 @@ public class RdeReportActionTest {
     when(httpResponse.getContent()).thenReturn(IIRDEA_GOOD_XML.read());
     when(urlFetchService.fetch(request.capture())).thenReturn(httpResponse);
     RdeReportAction action = createAction();
-    action.prefix = Optional.of("job-name/");
+    action.runWithLock(loadRdeReportCursor());
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
+    assertThat(response.getPayload()).isEqualTo("OK test 2006-06-06T00:00:00.000Z\n");
+
+    // Verify the HTTP request was correct.
+    assertThat(request.getValue().getMethod()).isSameInstanceAs(PUT);
+    assertThat(request.getValue().getURL().getProtocol()).isEqualTo("https");
+    assertThat(request.getValue().getURL().getPath()).endsWith("/test/20101017001");
+    Map<String, String> headers = mapifyHeaders(request.getValue().getHeaders());
+    assertThat(headers).containsEntry("CONTENT_TYPE", "text/xml");
+    assertThat(headers).containsEntry("AUTHORIZATION", "Basic dGVzdF9yeTpmb28=");
+
+    // Verify the payload XML was the same as what's in testdata/report.xml.
+    XjcRdeReportReport report = parseReport(request.getValue().getPayload());
+    assertThat(report.getId()).isEqualTo("20101017001");
+    assertThat(report.getCrDate()).isEqualTo(DateTime.parse("2010-10-17T00:15:00.0Z"));
+    assertThat(report.getWatermark()).isEqualTo(DateTime.parse("2010-10-17T00:00:00Z"));
+  }
+
+  @Test
+  void testRunWithLock_withoutPrefix_noPrefixFound() throws Exception {
+    RdeReportAction action = createAction();
+    action.prefix = Optional.empty();
+    assertThrows(NoContentException.class, () -> action.runWithLock(loadRdeReportCursor()));
+  }
+
+  @Test
+  void testRunWithLock_withoutPrefix() throws Exception {
+    when(httpResponse.getResponseCode()).thenReturn(SC_OK);
+    when(httpResponse.getContent()).thenReturn(IIRDEA_GOOD_XML.read());
+    when(urlFetchService.fetch(request.capture())).thenReturn(httpResponse);
+    RdeReportAction action = createAction();
+    action.prefix = Optional.empty();
     gcsUtils.delete(reportFile);
+    BlobId otherReportFile1 =
+        BlobId.of(
+            "tub", "rde-2006-06-06t00-00-00z-1/test_2006-06-06_full_S1_R0-report.xml.ghostryde");
+    BlobId otherReportFile2 =
+        BlobId.of(
+            "tub", "rde-2006-06-06t00-00-00z-2/test_2006-06-06_full_S1_R1-report.xml.ghostryde");
+    // This file's content is not correct, if it is read, the action should throw.
     gcsUtils.createFromBytes(
-        BlobId.of("tub", "job-name/test_2006-06-06_full_S1_R0-report.xml.ghostryde"),
-        Ghostryde.encode(REPORT_XML.read(), encryptKey));
+        otherReportFile1,
+        Ghostryde.encode(
+            ByteSource.wrap("BAD DATA".getBytes(StandardCharsets.UTF_8)).read(), encryptKey));
+    gcsUtils.createFromBytes(otherReportFile2, Ghostryde.encode(REPORT_XML.read(), encryptKey));
+    tm().transact(() -> RdeRevision.saveRevision("test", DateTime.parse("2006-06-06TZ"), FULL, 1));
     action.runWithLock(loadRdeReportCursor());
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
@@ -198,7 +242,7 @@ public class RdeReportActionTest {
   @Test
   void testRunWithLock_regeneratedReport() throws Exception {
     gcsUtils.delete(reportFile);
-    BlobId newReport = BlobId.of("tub", "test_2006-06-06_full_S1_R1-report.xml.ghostryde");
+    BlobId newReport = BlobId.of("tub", "job-name/test_2006-06-06_full_S1_R1-report.xml.ghostryde");
     PGPPublicKey encryptKey = new FakeKeyringModule().get().getRdeStagingEncryptionKey();
     gcsUtils.createFromBytes(newReport, Ghostryde.encode(REPORT_XML.read(), encryptKey));
     tm().transact(() -> RdeRevision.saveRevision("test", DateTime.parse("2006-06-06TZ"), FULL, 1));

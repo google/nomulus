@@ -17,9 +17,12 @@ package google.registry.rde;
 import static google.registry.util.HexDumper.dumpHex;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.Ordering;
 import com.google.common.io.BaseEncoding;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
+import google.registry.gcs.GcsUtils;
+import google.registry.request.HttpException.NoContentException;
 import google.registry.xjc.rde.XjcRdeRrType;
 import google.registry.xml.XmlException;
 import java.io.BufferedInputStream;
@@ -31,7 +34,7 @@ import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
 /** Helper methods for RDE. */
-public final class RdeUtil {
+public final class RdeUtils {
 
   /** Number of bytes in head of XML deposit that will contain the information we want. */
   private static final int PEEK_SIZE = 2048;
@@ -70,6 +73,32 @@ public final class RdeUtil {
     return DATETIME_FORMATTER.parseDateTime(watermarkMatcher.group(1));
   }
 
+  /** Find the most recent folder in the given GCS bucket for the given watermark. */
+  public static String findMostRecentPrefixForWatermark(
+      DateTime watermark, String bucket, String tld, GcsUtils gcsUtils) throws NoContentException {
+    // The prefix is always in the format of: rde-2022-02-21t00-00-00z-2022-02-21t00-07-33z, where
+    // the first datetime is the watermark and the second one is the time when the RDE beam job
+    // launched. We search for the latest folder that starts with "rde-[watermark]".
+    String partialPrefix = String.format("rde-%s", watermark.toString("yyyy-MM-dd't'HH-mm-ss'z'"));
+    String latestFilenameSuffix = null;
+    try {
+      latestFilenameSuffix =
+          gcsUtils.listFolderObjects(bucket, partialPrefix).stream()
+              .max(Ordering.natural())
+              .orElse(null);
+    } catch (IOException e) {
+      throw new NoContentException(
+          String.format(
+              "Error reading folders starting with %s in bucket %s", partialPrefix, bucket));
+    }
+    if (latestFilenameSuffix == null) {
+      throw new NoContentException(
+          String.format("RDE deposit for TLD %s on %s does not exist", tld, watermark));
+    }
+    int firstSlashPosition = latestFilenameSuffix.indexOf('/');
+    return partialPrefix + latestFilenameSuffix.substring(0, firstSlashPosition + 1);
+  }
+
   /**
    * Generates an ID matching the regex {@code \w&lbrace;1,13&rbrace; } from a millisecond
    * timestamp.
@@ -89,5 +118,5 @@ public final class RdeUtil {
     return bean;
   }
 
-  private RdeUtil() {}
+  private RdeUtils() {}
 }

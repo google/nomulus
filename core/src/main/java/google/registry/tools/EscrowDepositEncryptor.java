@@ -20,7 +20,7 @@ import com.google.common.io.ByteStreams;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeNamingUtils;
-import google.registry.rde.RdeUtil;
+import google.registry.rde.RdeUtils;
 import google.registry.rde.RydeEncoder;
 import google.registry.xml.XmlException;
 import java.io.BufferedInputStream;
@@ -59,7 +59,7 @@ final class EscrowDepositEncryptor {
       throws IOException, XmlException {
     try (InputStream xmlFileInput = Files.newInputStream(xmlFile);
         BufferedInputStream xmlInput = new BufferedInputStream(xmlFileInput, PEEK_BUFFER_SIZE)) {
-      DateTime watermark = RdeUtil.peekWatermark(xmlInput);
+      DateTime watermark = RdeUtils.peekWatermark(xmlInput);
       String name = RdeNamingUtils.makeRydeFilename(tld, watermark, mode, 1, revision);
       Path rydePath = outdir.resolve(name + ".ryde");
       Path sigPath = outdir.resolve(name + ".sig");

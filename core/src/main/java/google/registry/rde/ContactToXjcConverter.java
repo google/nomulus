@@ -112,8 +112,8 @@ final class ContactToXjcConverter {
   private static XjcRdeContactTransferDataType convertTransferData(TransferData model) {
     XjcRdeContactTransferDataType bean = new XjcRdeContactTransferDataType();
     bean.setTrStatus(XjcEppcomTrStatusType.fromValue(model.getTransferStatus().getXmlName()));
-    bean.setReRr(RdeUtil.makeXjcRdeRrType(model.getGainingRegistrarId()));
-    bean.setAcRr(RdeUtil.makeXjcRdeRrType(model.getLosingRegistrarId()));
+    bean.setReRr(RdeUtils.makeXjcRdeRrType(model.getGainingRegistrarId()));
+    bean.setAcRr(RdeUtils.makeXjcRdeRrType(model.getLosingRegistrarId()));
     bean.setReDate(model.getTransferRequestTime());
     bean.setAcDate(model.getPendingTransferExpirationTime());
     return bean;

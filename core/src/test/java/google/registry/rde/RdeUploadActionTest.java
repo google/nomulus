@@ -343,7 +343,7 @@ public class RdeUploadActionTest {
     gcsUtils.delete(GHOSTRYDE_FILE);
     gcsUtils.delete(LENGTH_FILE);
     gcsUtils.delete(REPORT_FILE);
-    // Add a folder that is alphabetically before the desired folder and fill it will nonsense data.
+    // Add a folder that is alphabetically before the desired folder and fill it with nonsense data.
     // It should NOT be picked up.
     BlobId ghostrydeFileWithPrefixBefore =
         BlobId.of("bucket", JOB_PREFIX + "-job-nama/tld_2010-10-17_full_S1_R0.xml.ghostryde");
@@ -464,7 +464,7 @@ public class RdeUploadActionTest {
     action.sftpCooldown = standardHours(2);
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    DateTime sftpCursor = uploadCursor.minusMinutes(97); // Within the 2 hour cooldown period.
+    DateTime sftpCursor = uploadCursor.minusMinutes(97); // Within the 2-hour cooldown period.
     persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
     persistResource(Cursor.createScoped(RDE_UPLOAD_SFTP, sftpCursor, Tld.get("tld")));
     NoContentException thrown =
@@ -477,7 +477,7 @@ public class RdeUploadActionTest {
                 + " ago)");
   }
 
-  private String slurp(InputStream is) throws IOException {
+  private static String slurp(InputStream is) throws IOException {
     return CharStreams.toString(new InputStreamReader(is, UTF_8));
   }
 }
