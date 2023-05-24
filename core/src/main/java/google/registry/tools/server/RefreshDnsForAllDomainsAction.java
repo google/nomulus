@@ -60,13 +60,15 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  static final int BATCH_SIZE = 250;
-
   @Inject Response response;
 
   @Inject
   @Parameter(PARAM_TLDS)
   ImmutableSet<String> tlds;
+
+  @Inject
+  @Parameter("batchSize")
+  int batchSize;
 
   @Inject
   @Parameter("smearMinutes")
@@ -82,6 +84,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   public void run() {
     assertTldsExist(tlds);
     checkArgument(smearMinutes > 0, "Must specify a positive number of smear minutes");
+    checkArgument(batchSize > 0, "Must specify a positive number for batch size");
     String lastInPreviousBatch = "";
     int lastBatchSize;
     do {
@@ -97,7 +100,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                           .setParameter("tlds", tlds)
                           .setParameter("endOfTime", END_OF_TIME)
                           .setParameter("lastInPreviousBatch", previousLastName)
-                          .setMaxResults(BATCH_SIZE)
+                          .setMaxResults(batchSize)
                           .getResultStream()
                           .collect(toImmutableList()));
       lastBatchSize = domainBatch.size();
@@ -117,6 +120,6 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                     });
               });
       lastInPreviousBatch = Iterables.getLast(domainBatch);
-    } while (lastBatchSize == BATCH_SIZE);
+    } while (lastBatchSize == batchSize);
   }
 }
