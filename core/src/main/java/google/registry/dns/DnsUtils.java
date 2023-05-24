@@ -20,8 +20,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.common.DnsRefreshRequest;
-import google.registry.model.tld.Registries;
 import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tlds;
 import java.util.Collection;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -38,7 +38,7 @@ public final class DnsUtils {
   private static void requestDnsRefresh(String name, TargetType type, Duration delay) {
     // Throws an IllegalArgumentException if the name is not under a managed TLD -- we only update
     // DNS for names that are under our management.
-    String tld = Registries.findTldForNameOrThrow(InternetDomainName.from(name)).toString();
+    String tld = Tlds.findTldForNameOrThrow(InternetDomainName.from(name)).toString();
     tm().transact(
             () ->
                 tm().insert(
@@ -114,7 +114,7 @@ public final class DnsUtils {
   }
 
   public static long getDnsAPlusAAAATtlForHost(String host, Duration dnsDefaultATtl) {
-    Optional<InternetDomainName> tldName = Registries.findTldForName(InternetDomainName.from(host));
+    Optional<InternetDomainName> tldName = Tlds.findTldForName(InternetDomainName.from(host));
     Duration dnsAPlusAaaaTtl = dnsDefaultATtl;
     if (tldName.isPresent()) {
       Tld tld = Tld.get(tldName.get().toString());

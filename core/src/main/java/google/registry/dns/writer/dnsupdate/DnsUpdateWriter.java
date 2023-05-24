@@ -31,8 +31,8 @@ import google.registry.dns.writer.DnsWriterZone;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
-import google.registry.model.tld.Registries;
 import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tlds;
 import google.registry.util.Clock;
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -154,7 +154,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
     // Get the superordinate domain name of the host.
     InternetDomainName host = InternetDomainName.from(hostName);
     ImmutableList<String> hostParts = host.parts();
-    Optional<InternetDomainName> tld = Registries.findTldForName(host);
+    Optional<InternetDomainName> tld = Tlds.findTldForName(host);
 
     // host not managed by our registry, no need to update DNS.
     if (!tld.isPresent()) {

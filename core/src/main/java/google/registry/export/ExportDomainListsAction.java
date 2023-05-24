@@ -15,7 +15,7 @@
 package google.registry.export;
 
 import static com.google.common.base.Verify.verifyNotNull;
-import static google.registry.model.tld.Registries.getTldsOfType;
+import static google.registry.model.tld.Tlds.getTldsOfType;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.UTF_8;

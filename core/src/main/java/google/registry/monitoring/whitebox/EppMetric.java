@@ -20,7 +20,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import google.registry.model.eppoutput.Result.Code;
-import google.registry.model.tld.Registries;
+import google.registry.model.tld.Tlds;
 import google.registry.util.Clock;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -104,7 +104,7 @@ public abstract class EppMetric {
           String tld = Iterables.getOnlyElement(tlds);
           // Only record TLDs that actually exist, otherwise we can blow up cardinality by recording
           // an arbitrarily large number of strings.
-          setTld(Optional.ofNullable(Registries.getTlds().contains(tld) ? tld : "_invalid"));
+          setTld(Optional.ofNullable(Tlds.getTlds().contains(tld) ? tld : "_invalid"));
           break;
         default:
           setTld("_various");

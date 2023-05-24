@@ -40,8 +40,8 @@ import google.registry.dns.writer.DnsWriterZone;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
-import google.registry.model.tld.Registries;
 import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tlds;
 import google.registry.util.Clock;
 import google.registry.util.Concurrent;
 import google.registry.util.Retrier;
@@ -248,7 +248,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
   public void publishHost(String hostName) {
     // Get the superordinate domain name of the host.
     InternetDomainName host = InternetDomainName.from(hostName);
-    Optional<InternetDomainName> tld = Registries.findTldForName(host);
+    Optional<InternetDomainName> tld = Tlds.findTldForName(host);
 
     // Host not managed by our registry, no need to update DNS.
     if (!tld.isPresent()) {

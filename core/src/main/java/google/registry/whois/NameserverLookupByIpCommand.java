@@ -25,7 +25,7 @@ import com.google.common.collect.Streams;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.host.Host;
-import google.registry.model.tld.Registries;
+import google.registry.model.tld.Tlds;
 import java.net.InetAddress;
 import org.joda.time.DateTime;
 
@@ -72,8 +72,7 @@ final class NameserverLookupByIpCommand implements WhoisCommand {
         Streams.stream(hostsFromDb)
             .filter(
                 host ->
-                    Registries.findTldForName(InternetDomainName.from(host.getHostName()))
-                        .isPresent())
+                    Tlds.findTldForName(InternetDomainName.from(host.getHostName())).isPresent())
             .collect(toImmutableList());
     if (hosts.isEmpty()) {
       throw new WhoisException(now, SC_NOT_FOUND, "No nameservers found.");

@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.tld.Registries.getTlds;
+import static google.registry.model.tld.Tlds.getTlds;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 

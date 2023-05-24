@@ -40,15 +40,15 @@ import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 
 /** Utilities for finding and listing {@link Tld} entities. */
-public final class Registries {
+public final class Tlds {
 
-  private Registries() {}
+  private Tlds() {}
 
-  /** Supplier of a cached registries map. */
+  /** Supplier of a cached TLDs map. */
   private static Supplier<ImmutableMap<String, TldType>> cache = createFreshCache();
 
   /**
-   * Returns a newly-created Supplier of a registries to types map.
+   * Returns a newly-created Supplier of a TLDs to types map.
    *
    * <p>The supplier's get() method enters a transactionless context briefly to avoid enrolling the
    * query inside an unrelated client-affecting transaction.
@@ -84,7 +84,7 @@ public final class Registries {
     return ImmutableSet.copyOf(filterValues(cache.get(), equalTo(type)).keySet());
   }
 
-  /** Returns the Registry entities themselves of the given type loaded fresh from the database. */
+  /** Returns the TLD entities themselves of the given type loaded fresh from the database. */
   public static ImmutableSet<Tld> getTldEntitiesOfType(TldType type) {
     return Tld.get(filterValues(cache.get(), equalTo(type)).keySet());
   }

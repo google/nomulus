@@ -28,10 +28,10 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
-import google.registry.model.tld.Registries;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.Tld.TldType;
+import google.registry.model.tld.Tlds;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.tldconfig.idn.IdnTableEnum;
@@ -459,8 +459,8 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
     } finally {
       // Manually reset the cache here so that subsequent commands (e.g. in SetupOteCommand) see
       // the latest version of the data.
-      // TODO(b/24903801): change all those places to use uncached code paths to get Registries.
-      Registries.resetCache();
+      // TODO(b/24903801): change all those places to use uncached code paths to get TLDs.
+      Tlds.resetCache();
     }
   }
 
