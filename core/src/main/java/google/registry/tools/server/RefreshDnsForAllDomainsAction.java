@@ -16,7 +16,7 @@ package google.registry.tools.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
-import static google.registry.model.tld.Registries.assertTldsExist;
+import static google.registry.model.tld.Tlds.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 

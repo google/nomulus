@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
-import static google.registry.model.tld.Registries.assertTldExists;
+import static google.registry.model.tld.Tlds.assertTldExists;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 
 import com.beust.jcommander.Parameter;

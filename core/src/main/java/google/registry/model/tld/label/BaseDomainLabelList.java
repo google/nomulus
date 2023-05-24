@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.tld.Registries.getTlds;
+import static google.registry.model.tld.Tlds.getTlds;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;

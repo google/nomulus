@@ -28,8 +28,8 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for {@link Registries}. */
-class RegistriesTest {
+/** Unit tests for {@link Tlds}. */
+class TldsTest {
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -42,51 +42,51 @@ class RegistriesTest {
   @Test
   void testGetTlds() {
     initTestTlds();
-    assertThat(Registries.getTlds()).containsExactly("foo", "a.b.c");
+    assertThat(Tlds.getTlds()).containsExactly("foo", "a.b.c");
   }
 
   @Test
   void test_getTldEntities() {
     initTestTlds();
     persistResource(newTld("testtld", "TESTTLD").asBuilder().setTldType(TldType.TEST).build());
-    assertThat(Registries.getTldEntitiesOfType(TldType.REAL))
+    assertThat(Tlds.getTldEntitiesOfType(TldType.REAL))
         .containsExactly(Tld.get("foo"), Tld.get("a.b.c"));
-    assertThat(Registries.getTldEntitiesOfType(TldType.TEST)).containsExactly(Tld.get("testtld"));
+    assertThat(Tlds.getTldEntitiesOfType(TldType.TEST)).containsExactly(Tld.get("testtld"));
   }
 
   @Test
   void testGetTlds_withNoRegistriesPersisted_returnsEmptySet() {
-    assertThat(Registries.getTlds()).isEmpty();
+    assertThat(Tlds.getTlds()).isEmpty();
   }
 
   @Test
   void testAssertTldExists_doesExist() {
     initTestTlds();
-    Registries.assertTldExists("foo");
-    Registries.assertTldExists("a.b.c");
+    Tlds.assertTldExists("foo");
+    Tlds.assertTldExists("a.b.c");
   }
 
   @Test
   void testAssertTldExists_doesntExist() {
     initTestTlds();
-    assertThrows(IllegalArgumentException.class, () -> Registries.assertTldExists("baz"));
+    assertThrows(IllegalArgumentException.class, () -> Tlds.assertTldExists("baz"));
   }
 
   @Test
   void testFindTldForName() {
     initTestTlds();
-    assertThat(Registries.findTldForName(InternetDomainName.from("example.foo")).get().toString())
+    assertThat(Tlds.findTldForName(InternetDomainName.from("example.foo")).get().toString())
         .isEqualTo("foo");
-    assertThat(Registries.findTldForName(InternetDomainName.from("x.y.a.b.c")).get().toString())
+    assertThat(Tlds.findTldForName(InternetDomainName.from("x.y.a.b.c")).get().toString())
         .isEqualTo("a.b.c");
     // We don't have an "example" tld.
-    assertThat(Registries.findTldForName(InternetDomainName.from("foo.example"))).isEmpty();
+    assertThat(Tlds.findTldForName(InternetDomainName.from("foo.example"))).isEmpty();
     // A tld is not a match for itself.
-    assertThat(Registries.findTldForName(InternetDomainName.from("foo"))).isEmpty();
+    assertThat(Tlds.findTldForName(InternetDomainName.from("foo"))).isEmpty();
     // The name must match the entire tld.
-    assertThat(Registries.findTldForName(InternetDomainName.from("x.y.a.b"))).isEmpty();
-    assertThat(Registries.findTldForName(InternetDomainName.from("x.y.b.c"))).isEmpty();
+    assertThat(Tlds.findTldForName(InternetDomainName.from("x.y.a.b"))).isEmpty();
+    assertThat(Tlds.findTldForName(InternetDomainName.from("x.y.b.c"))).isEmpty();
     // Substring tld matches aren't considered.
-    assertThat(Registries.findTldForName(InternetDomainName.from("example.barfoo"))).isEmpty();
+    assertThat(Tlds.findTldForName(InternetDomainName.from("example.barfoo"))).isEmpty();
   }
 }

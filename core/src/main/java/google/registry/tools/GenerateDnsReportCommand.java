@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.BaseEncoding.base16;
-import static google.registry.model.tld.Registries.assertTldExists;
+import static google.registry.model.tld.Tlds.assertTldExists;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.nio.charset.StandardCharsets.US_ASCII;

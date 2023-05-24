@@ -26,7 +26,7 @@ import static com.google.common.collect.Sets.immutableEnumSet;
 import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.config.RegistryConfig.getDefaultRegistrarWhoisServer;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
-import static google.registry.model.tld.Registries.assertTldsExist;
+import static google.registry.model.tld.Tlds.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;

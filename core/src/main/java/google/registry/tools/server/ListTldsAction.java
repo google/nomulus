@@ -15,7 +15,7 @@
 package google.registry.tools.server;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.tld.Registries.getTlds;
+import static google.registry.model.tld.Tlds.getTlds;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 

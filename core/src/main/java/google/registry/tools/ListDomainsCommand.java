@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.tld.Registries.getTldsOfType;
+import static google.registry.model.tld.Tlds.getTldsOfType;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.beust.jcommander.Parameter;
