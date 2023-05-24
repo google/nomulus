@@ -80,4 +80,10 @@ public class ToolsServerModule {
   static int provideSmearMinutes(HttpServletRequest req) {
     return extractIntParameter(req, "smearMinutes");
   }
+
+  @Provides
+  @Parameter("batchSize")
+  static int provideBatchSize(HttpServletRequest req) {
+    return extractIntParameter(req, "batchSize");
+  }
 }
