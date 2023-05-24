@@ -459,7 +459,7 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
     } finally {
       // Manually reset the cache here so that subsequent commands (e.g. in SetupOteCommand) see
       // the latest version of the data.
-      // TODO(b/24903801): change all those places to use uncached code paths to get Tlds.
+      // TODO(b/24903801): change all those places to use uncached code paths to get TLDs.
       Tlds.resetCache();
     }
   }
