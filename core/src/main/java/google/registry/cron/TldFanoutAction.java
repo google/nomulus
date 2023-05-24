@@ -27,9 +27,9 @@ import static google.registry.cron.CronModule.FOR_EACH_TEST_TLD_PARAM;
 import static google.registry.cron.CronModule.JITTER_SECONDS_PARAM;
 import static google.registry.cron.CronModule.QUEUE_PARAM;
 import static google.registry.cron.CronModule.RUN_IN_EMPTY_PARAM;
-import static google.registry.model.tld.Registries.getTldsOfType;
 import static google.registry.model.tld.Tld.TldType.REAL;
 import static google.registry.model.tld.Tld.TldType.TEST;
+import static google.registry.model.tld.Tlds.getTldsOfType;
 
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ArrayListMultimap;

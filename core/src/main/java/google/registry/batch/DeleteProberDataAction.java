@@ -21,7 +21,7 @@ import static google.registry.batch.BatchModule.PARAM_DRY_RUN;
 import static google.registry.config.RegistryEnvironment.PRODUCTION;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_DELETE;
-import static google.registry.model.tld.Registries.getTldsOfType;
+import static google.registry.model.tld.Tlds.getTldsOfType;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLDS;

@@ -29,9 +29,9 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.tld.Registries;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
+import google.registry.model.tld.Tlds;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.HttpException.ServiceUnavailableException;
@@ -203,7 +203,7 @@ public final class IcannReportingUploadAction implements Runnable {
   /** Returns a map of each cursor to the tld. */
   private ImmutableMap<Cursor, String> loadCursors() {
 
-    ImmutableSet<Tld> registries = Registries.getTldEntitiesOfType(TldType.REAL);
+    ImmutableSet<Tld> registries = Tlds.getTldEntitiesOfType(TldType.REAL);
 
     ImmutableMap<VKey<? extends Cursor>, Tld> activityKeyMap =
         loadKeyMap(registries, CursorType.ICANN_UPLOAD_ACTIVITY);

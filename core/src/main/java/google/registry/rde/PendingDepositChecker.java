@@ -23,9 +23,9 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeMode;
-import google.registry.model.tld.Registries;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
+import google.registry.model.tld.Tlds;
 import google.registry.util.Clock;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -83,7 +83,7 @@ public final class PendingDepositChecker {
     ImmutableSetMultimap.Builder<String, PendingDeposit> builder =
         new ImmutableSetMultimap.Builder<>();
     DateTime now = clock.nowUtc();
-    for (String tldStr : Registries.getTldsOfType(TldType.REAL)) {
+    for (String tldStr : Tlds.getTldsOfType(TldType.REAL)) {
       Tld tld = Tld.get(tldStr);
       if (!tld.getEscrowEnabled()) {
         continue;

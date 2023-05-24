@@ -58,8 +58,8 @@ public final class DomainNameUtils {
    * <p>This function is compatible with multi-part tlds, e.g. {@code co.uk}. This function will
    * also work on domains for which the registry is not authoritative. If you are certain that the
    * input will be under a TLD this registry controls, then it is preferable to use {@link
-   * google.registry.model.tld.Registries#findTldForName(InternetDomainName)
-   * Registries#findTldForName}, which will work on hostnames in addition to domains.
+   * google.registry.model.tld.Tlds#findTldForName(InternetDomainName) Registries#findTldForName},
+   * which will work on hostnames in addition to domains.
    *
    * @param domainName must be a punycode SLD (not a host or unicode)
    * @throws IllegalArgumentException if there is no TLD

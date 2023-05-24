@@ -42,9 +42,9 @@ import google.registry.config.RegistryConfig;
 import google.registry.model.EntityTestCase;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
-import google.registry.model.tld.Registries;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
+import google.registry.model.tld.Tlds;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.SerializeUtils;
 import java.math.BigDecimal;
@@ -603,14 +603,14 @@ class RegistrarTest extends EntityTestCase {
       // Cache duration in tests is 0. To make sure the data isn't in the cache we have to set it
       // to a higher value and reset the cache.
       RegistryConfig.CONFIG_SETTINGS.get().caching.singletonCacheRefreshSeconds = 600;
-      Registries.resetCache();
+      Tlds.resetCache();
       // Make sure the TLD we want to create doesn't exist yet.
       // This is also important because getTlds fills out the cache when used.
-      assertThat(Registries.getTlds()).doesNotContain("newtld");
+      assertThat(Tlds.getTlds()).doesNotContain("newtld");
       // We can't use createTld here because it fails when the cache is used.
       persistResource(newTld("newtld", "NEWTLD"));
       // Make sure we set up the cache correctly, so the newly created TLD isn't in the cache
-      assertThat(Registries.getTlds()).doesNotContain("newtld");
+      assertThat(Tlds.getTlds()).doesNotContain("newtld");
 
       // Test that the uncached version works
       assertThat(
@@ -633,11 +633,11 @@ class RegistrarTest extends EntityTestCase {
 
       // Make sure the cache hasn't expired during the test and "newtld" is still not in the cached
       // TLDs
-      assertThat(Registries.getTlds()).doesNotContain("newtld");
+      assertThat(Tlds.getTlds()).doesNotContain("newtld");
     } finally {
       RegistryConfig.CONFIG_SETTINGS.get().caching.singletonCacheRefreshSeconds =
           origSingletonCacheRefreshSeconds;
-      Registries.resetCache();
+      Tlds.resetCache();
     }
   }
 

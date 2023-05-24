@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
 import google.registry.loadtest.LoadTestAction;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.tld.Registries;
+import google.registry.model.tld.Tlds;
 
 /** Command to initiate a load-test. */
 @Parameters(separators = " =", commandDescription = "Run a load test.")
@@ -91,7 +91,7 @@ class LoadTestCommand extends ConfirmingCommand implements CommandWithConnection
     }
 
     // Check validity of TLD and Client Id.
-    if (!Registries.getTlds().contains(tld)) {
+    if (!Tlds.getTlds().contains(tld)) {
       System.err.printf("No such TLD: %s\n", tld);
       return false;
     }

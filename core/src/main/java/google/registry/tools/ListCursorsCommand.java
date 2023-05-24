@@ -23,9 +23,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.tld.Registries;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
+import google.registry.model.tld.Tlds;
 import google.registry.persistence.VKey;
 import java.util.Map;
 import java.util.Optional;
@@ -53,7 +53,7 @@ final class ListCursorsCommand implements Command {
   public void run() {
     Map<String, VKey<Cursor>> cursorKeys =
         cursorType.isScoped()
-            ? Registries.getTlds().stream()
+            ? Tlds.getTlds().stream()
                 .map(Tld::get)
                 .filter(r -> r.getTldType() == filterTldType)
                 .filter(r -> !filterEscrowEnabled || r.getEscrowEnabled())

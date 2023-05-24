@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.model.tld.Registries.assertTldsExist;
+import static google.registry.model.tld.Tlds.assertTldsExist;
 import static google.registry.rde.RdeModule.PARAM_DIRECTORY;
 import static google.registry.rde.RdeModule.PARAM_LENIENT;
 import static google.registry.rde.RdeModule.PARAM_MANUAL;
