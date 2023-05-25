@@ -19,6 +19,7 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.rde.RdeUtils.findMostRecentPrefixForWatermark;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
@@ -98,8 +99,10 @@ public final class RdeReportAction implements Runnable, EscrowTask {
         RdeRevision.getCurrentRevision(tld, watermark, FULL)
             .orElseThrow(
                 () -> new IllegalStateException("RdeRevision was not set on generated deposit"));
-    String name =
-        prefix.orElse("") + RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, revision);
+    if (!prefix.isPresent()) {
+      prefix = Optional.of(findMostRecentPrefixForWatermark(watermark, bucket, tld, gcsUtils));
+    }
+    String name = prefix.get() + RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, revision);
     BlobId reportFilename = BlobId.of(bucket, name + "-report.xml.ghostryde");
     verify(gcsUtils.existsAndNotEmpty(reportFilename), "Missing file: %s", reportFilename);
     reporter.send(readReportFromGcs(reportFilename));

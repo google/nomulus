@@ -43,7 +43,7 @@ import google.registry.rde.RdeMarshaller;
 import google.registry.rde.RdeModule;
 import google.registry.rde.RdeResourceType;
 import google.registry.rde.RdeUploadAction;
-import google.registry.rde.RdeUtil;
+import google.registry.rde.RdeUtils;
 import google.registry.request.Action.Service;
 import google.registry.request.RequestParameters;
 import google.registry.tldconfig.idn.IdnTableEnum;
@@ -166,7 +166,7 @@ public class RdeIO {
       final int revision =
           Optional.ofNullable(key.revision())
               .orElseGet(() -> RdeRevision.getNextRevision(tld, watermark, mode));
-      String id = RdeUtil.timestampToId(watermark);
+      String id = RdeUtils.timestampToId(watermark);
       String prefix =
           options.getJobName()
               + '/'
