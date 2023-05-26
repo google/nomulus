@@ -182,7 +182,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
         historyBuilder.setType(DOMAIN_UPDATE).setDomain(newDomain).build();
     validateNewState(newDomain);
     if (requiresDnsUpdate(existingDomain, newDomain)) {
-      requestDomainDnsRefresh(targetId);
+      requestDomainDnsRefresh(targetId, tm().getTransactionTime());
     }
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
     entitiesToSave.add(newDomain, domainHistory);

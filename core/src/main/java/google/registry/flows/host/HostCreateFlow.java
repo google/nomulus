@@ -137,7 +137,7 @@ public final class HostCreateFlow implements TransactionalFlow {
                   .build());
       // Only update DNS if this is a subordinate host. External hosts have no glue to write, so
       // they are only written as NS records from the referencing domain.
-      requestHostDnsRefresh(targetId);
+      requestHostDnsRefresh(targetId, tm().getTransactionTime());
     }
     tm().insertAll(entitiesToSave);
     return responseBuilder.setResData(HostCreateData.create(targetId, now)).build();

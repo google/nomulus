@@ -74,7 +74,10 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
                     .stream()
                     .map(domainKey -> tm().loadByKey(domainKey))
                     .filter(Domain::shouldPublishToDns)
-                    .forEach(domain -> requestDomainDnsRefresh(domain.getDomainName()));
+                    .forEach(
+                        domain ->
+                            requestDomainDnsRefresh(
+                                domain.getDomainName(), tm().getTransactionTime()));
               }
 
               if (!hostValid) {

@@ -26,6 +26,7 @@ import static google.registry.dns.DnsUtils.DNS_PUBLISH_PUSH_QUEUE_NAME;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.dns.DnsUtils.requestHostDnsRefresh;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.util.CollectionUtils.nullToEmpty;
@@ -355,10 +356,10 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   private void requeueBatch() {
     logger.atInfo().log("Requeueing batch for retry.");
     for (String domain : nullToEmpty(domains)) {
-      requestDomainDnsRefresh(domain);
+      tm().transact(() -> requestDomainDnsRefresh(domain, tm().getTransactionTime()));
     }
     for (String host : nullToEmpty(hosts)) {
-      requestHostDnsRefresh(host);
+      tm().transact(() -> requestHostDnsRefresh(host, tm().getTransactionTime()));
     }
   }
 
