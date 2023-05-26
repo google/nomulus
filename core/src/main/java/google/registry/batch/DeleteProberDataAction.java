@@ -262,6 +262,6 @@ public class DeleteProberDataAction implements Runnable {
     // messages, or auto-renews because those will all be hard-deleted the next time the job runs
     // anyway.
     tm().putAll(ImmutableList.of(deletedDomain, historyEntry));
-    requestDomainDnsRefresh(deletedDomain.getDomainName());
+    requestDomainDnsRefresh(deletedDomain.getDomainName(), tm().getTransactionTime());
   }
 }

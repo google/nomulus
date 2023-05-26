@@ -103,7 +103,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
     }
     Host newHost = existingHost.asBuilder().setStatusValues(null).setDeletionTime(now).build();
     if (existingHost.isSubordinate()) {
-      requestHostDnsRefresh(existingHost.getHostName());
+      requestHostDnsRefresh(existingHost.getHostName(), tm().getTransactionTime());
       tm().update(
               tm().loadByKey(existingHost.getSuperordinateDomain())
                   .asBuilder()
