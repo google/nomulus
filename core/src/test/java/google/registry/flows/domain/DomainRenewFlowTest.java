@@ -404,7 +404,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .build());
     persistDomain(SPECIFIED, Money.of(USD, 2));
     setRegistrarIdForFlow("NewRegistrar");
-    ImmutableMap<String, String> customFeeMap = updateSubstitutions(FEE_06_MAP, "FEE", "10.0");
+    ImmutableMap<String, String> customFeeMap = updateSubstitutions(FEE_06_MAP, "FEE", "10.00");
     setEppInput("domain_renew_fee.xml", customFeeMap);
     doSuccessfulTest(
         "domain_renew_response_fee.xml",
@@ -441,7 +441,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .build());
     persistDomain(NONPREMIUM, null);
     setRegistrarIdForFlow("NewRegistrar");
-    ImmutableMap<String, String> customFeeMap = updateSubstitutions(FEE_06_MAP, "FEE", "55.0");
+    ImmutableMap<String, String> customFeeMap = updateSubstitutions(FEE_06_MAP, "FEE", "55.00");
     setEppInput("domain_renew_fee.xml", customFeeMap);
     doSuccessfulTest(
         "domain_renew_response_fee.xml",
@@ -1537,7 +1537,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 "EX_DATE",
                 "2005-04-03T22:00:00.0Z",
                 "FEE",
-                "500.0",
+                "500.00",
                 "CURRENCY",
                 "USD",
                 "FEE_VERSION",

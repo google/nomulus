@@ -865,7 +865,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     doSuccessfulTest(
         "domain_info_fee_response.xml",
         false,
-        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "11.0", "PERIOD", "1"),
+        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "11.00", "PERIOD", "1"),
         true);
   }
 
@@ -885,7 +885,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     doSuccessfulTest(
         "domain_info_fee_response.xml",
         false,
-        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "3.0", "PERIOD", "1"),
+        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "3.00", "PERIOD", "1"),
         true);
   }
 
@@ -905,7 +905,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     doSuccessfulTest(
         "domain_info_fee_response.xml",
         false,
-        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "33.0", "PERIOD", "3"),
+        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "33.00", "PERIOD", "3"),
         true);
   }
 
@@ -925,7 +925,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     doSuccessfulTest(
         "domain_info_fee_response.xml",
         false,
-        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "9.0", "PERIOD", "3"),
+        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "9.00", "PERIOD", "3"),
         true);
   }
 
@@ -940,7 +940,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     doSuccessfulTest(
         "domain_info_fee_response.xml",
         false,
-        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "3.0", "PERIOD", "1"),
+        ImmutableMap.of("COMMAND", "renew", "DESCRIPTION", "renew", "FEE", "3.00", "PERIOD", "1"),
         true);
   }
 
