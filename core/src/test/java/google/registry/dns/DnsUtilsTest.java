@@ -16,6 +16,10 @@ package google.registry.dns;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.dns.DnsUtils.deleteRequests;
+import static google.registry.dns.DnsUtils.readAndUpdateRequestsWithLatestProcessTime;
+import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
+import static google.registry.dns.DnsUtils.requestHostDnsRefresh;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
@@ -61,9 +65,7 @@ public class DnsUtilsTest {
         IllegalArgumentException.class,
         () ->
             tm().transact(
-                    () ->
-                        DnsUtils.requestHostDnsRefresh(
-                            unmanagedHostName, tm().getTransactionTime())));
+                    () -> requestHostDnsRefresh(unmanagedHostName, tm().getTransactionTime())));
     assertThat(loadAllOf(DnsRefreshRequest.class)).isEmpty();
   }
 
@@ -74,22 +76,34 @@ public class DnsUtilsTest {
         IllegalArgumentException.class,
         () ->
             tm().transact(
-                    () ->
-                        DnsUtils.requestDomainDnsRefresh(
-                            unmanagedDomainName, tm().getTransactionTime())));
+                    () -> requestDomainDnsRefresh(unmanagedDomainName, tm().getTransactionTime())));
     assertThat(loadAllOf(DnsRefreshRequest.class)).isEmpty();
   }
 
   @Test
   void testSuccess_hostRefresh() {
-    tm().transact(() -> DnsUtils.requestHostDnsRefresh(hostName, tm().getTransactionTime()));
+    tm().transact(() -> requestHostDnsRefresh(hostName, tm().getTransactionTime()));
     DnsRefreshRequest request = Iterables.getOnlyElement(loadAllOf(DnsRefreshRequest.class));
     assertRequest(request, TargetType.HOST, hostName, tld, clock.nowUtc());
   }
 
   @Test
   void testSuccess_domainRefresh() {
-    tm().transact(() -> DnsUtils.requestDomainDnsRefresh(domainName, tm().getTransactionTime()));
+    tm().transact(
+            () ->
+                requestDomainDnsRefresh(
+                    ImmutableList.of(domainName, "test2.tld", "test3.tld"),
+                    tm().getTransactionTime()));
+    ImmutableList<DnsRefreshRequest> requests = loadAllOf(DnsRefreshRequest.class);
+    assertThat(requests.size()).isEqualTo(3);
+    assertRequest(requests.get(0), TargetType.DOMAIN, domainName, tld, clock.nowUtc());
+    assertRequest(requests.get(1), TargetType.DOMAIN, "test2.tld", tld, clock.nowUtc());
+    assertRequest(requests.get(2), TargetType.DOMAIN, "test3.tld", tld, clock.nowUtc());
+  }
+
+  @Test
+  void testSuccess_domainRefreshMultipleDomains() {
+    tm().transact(() -> requestDomainDnsRefresh(domainName, tm().getTransactionTime()));
     DnsRefreshRequest request = Iterables.getOnlyElement(loadAllOf(DnsRefreshRequest.class));
     assertRequest(request, TargetType.DOMAIN, domainName, tld, clock.nowUtc());
   }
@@ -98,7 +112,7 @@ public class DnsUtilsTest {
   void testSuccess_domainRefreshWithDelay() {
     tm().transact(
             () ->
-                DnsUtils.requestDomainDnsRefresh(
+                requestDomainDnsRefresh(
                     domainName, Duration.standardMinutes(3), tm().getTransactionTime()));
     DnsRefreshRequest request = Iterables.getOnlyElement(loadAllOf(DnsRefreshRequest.class));
     assertRequest(request, TargetType.DOMAIN, domainName, tld, clock.nowUtc().plusMinutes(3));
@@ -145,8 +159,7 @@ public class DnsUtilsTest {
     clock.advanceOneMilli();
 
     // Requests within cooldown period not included.
-    requests =
-        DnsUtils.readAndUpdateRequestsWithLatestProcessTime("tld", Duration.standardMinutes(1), 4);
+    requests = readAndUpdateRequestsWithLatestProcessTime("tld", Duration.standardMinutes(1), 4);
     assertThat(requests.size()).isEqualTo(1);
     assertRequest(
         requests.get(0),
@@ -159,7 +172,7 @@ public class DnsUtilsTest {
 
   @Test
   void testSuccess_deleteRequests() {
-    DnsUtils.deleteRequests(processRequests());
+    deleteRequests(processRequests());
     ImmutableList<DnsRefreshRequest> remainingRequests =
         loadAllOf(DnsRefreshRequest.class).stream()
             .sorted(Comparator.comparing(DnsRefreshRequest::getRequestTime))
@@ -186,7 +199,7 @@ public class DnsUtilsTest {
     tm().transact(() -> tm().delete(remainingRequests.get(2)));
     assertThat(loadAllOf(DnsRefreshRequest.class).size()).isEqualTo(2);
     // Should not throw even though one of the request is already deleted.
-    DnsUtils.deleteRequests(remainingRequests);
+    deleteRequests(remainingRequests);
     assertThat(loadAllOf(DnsRefreshRequest.class).size()).isEqualTo(0);
   }
 
@@ -195,31 +208,30 @@ public class DnsUtilsTest {
     // Domain Included.
     tm().transact(
             () ->
-                DnsUtils.requestDomainDnsRefresh(
+                requestDomainDnsRefresh(
                     "test1.tld", Duration.standardMinutes(1), tm().getTransactionTime()));
     // This one should be returned before test1.tld, even though it's added later, because of
     // the delay specified in test1.tld.
-    tm().transact(() -> DnsUtils.requestDomainDnsRefresh("test2.tld", tm().getTransactionTime()));
+    tm().transact(() -> requestDomainDnsRefresh("test2.tld", tm().getTransactionTime()));
     // Not included because the TLD is not under management.
     tm().transact(
             () ->
-                DnsUtils.requestDomainDnsRefresh(
+                requestDomainDnsRefresh(
                     "something.example", Duration.standardMinutes(2), tm().getTransactionTime()));
     clock.advanceBy(Duration.standardMinutes(3));
     // Host included.
-    tm().transact(() -> DnsUtils.requestHostDnsRefresh("ns1.test2.tld", tm().getTransactionTime()));
+    tm().transact(() -> requestHostDnsRefresh("ns1.test2.tld", tm().getTransactionTime()));
     // Not included because the request time is in the future
     tm().transact(
             () ->
-                DnsUtils.requestDomainDnsRefresh(
+                requestDomainDnsRefresh(
                     "test4.tld", Duration.standardMinutes(2), tm().getTransactionTime()));
     // Included after the previous one. Same request time, order by insertion order (i.e. ID);
-    tm().transact(() -> DnsUtils.requestDomainDnsRefresh("test5.tld", tm().getTransactionTime()));
+    tm().transact(() -> requestDomainDnsRefresh("test5.tld", tm().getTransactionTime()));
     // Not included because batch size is exceeded;
-    tm().transact(() -> DnsUtils.requestDomainDnsRefresh("test6.tld", tm().getTransactionTime()));
+    tm().transact(() -> requestDomainDnsRefresh("test6.tld", tm().getTransactionTime()));
     clock.advanceBy(Duration.standardMinutes(1));
-    return DnsUtils.readAndUpdateRequestsWithLatestProcessTime(
-        "tld", Duration.standardMinutes(1), 4);
+    return readAndUpdateRequestsWithLatestProcessTime("tld", Duration.standardMinutes(1), 4);
   }
 
   private static void assertRequest(

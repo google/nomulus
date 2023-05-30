@@ -37,10 +37,26 @@ public final class DnsUtils {
 
   private static void requestDnsRefresh(
       String name, TargetType type, Duration delay, DateTime transactionTime) {
+    tm().assertInTransaction();
     // Throws an IllegalArgumentException if the name is not under a managed TLD -- we only update
     // DNS for names that are under our management.
     String tld = Tlds.findTldForNameOrThrow(InternetDomainName.from(name)).toString();
     tm().insert(new DnsRefreshRequest(type, name, tld, transactionTime.plus(delay)));
+  }
+
+  private static void requestDnsRefresh(
+      ImmutableList<String> names, TargetType type, Duration delay, DateTime transactionTime) {
+    tm().assertInTransaction();
+    tm().insertAll(
+            names.stream()
+                .map(
+                    name ->
+                        new DnsRefreshRequest(
+                            type,
+                            name,
+                            Tlds.findTldForNameOrThrow(InternetDomainName.from(name)).toString(),
+                            transactionTime.plus(delay)))
+                .collect(toImmutableList()));
   }
 
   public static void requestDomainDnsRefresh(
@@ -48,8 +64,18 @@ public final class DnsUtils {
     requestDnsRefresh(domainName, TargetType.DOMAIN, delay, transactionTime);
   }
 
+  public static void requestDomainDnsRefresh(
+      ImmutableList<String> names, Duration delay, DateTime transactionTime) {
+    requestDnsRefresh(names, TargetType.DOMAIN, delay, transactionTime);
+  }
+
   public static void requestDomainDnsRefresh(String domainName, DateTime transactionTime) {
     requestDomainDnsRefresh(domainName, Duration.ZERO, transactionTime);
+  }
+
+  public static void requestDomainDnsRefresh(
+      ImmutableList<String> names, DateTime transactionTime) {
+    requestDomainDnsRefresh(names, Duration.ZERO, transactionTime);
   }
 
   public static void requestHostDnsRefresh(String hostName, DateTime transactionTime) {
