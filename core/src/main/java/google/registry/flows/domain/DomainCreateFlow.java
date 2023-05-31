@@ -425,7 +425,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
               allocationToken.get(), domainHistory.getHistoryEntryId()));
     }
     if (domain.shouldPublishToDns()) {
-      requestDomainDnsRefresh(domain.getDomainName(), tm().getTransactionTime());
+      requestDomainDnsRefresh(domain.getDomainName());
     }
     EntityChanges entityChanges =
         flowCustomLogic.beforeSave(

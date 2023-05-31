@@ -356,10 +356,10 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   private void requeueBatch() {
     logger.atInfo().log("Requeueing batch for retry.");
     for (String domain : nullToEmpty(domains)) {
-      tm().transact(() -> requestDomainDnsRefresh(domain, tm().getTransactionTime()));
+      tm().transact(() -> requestDomainDnsRefresh(domain));
     }
     for (String host : nullToEmpty(hosts)) {
-      tm().transact(() -> requestHostDnsRefresh(host, tm().getTransactionTime()));
+      tm().transact(() -> requestHostDnsRefresh(host));
     }
   }
 
