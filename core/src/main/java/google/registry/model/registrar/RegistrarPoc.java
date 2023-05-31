@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.joining;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
+import com.google.gson.annotations.Expose;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
@@ -94,7 +95,7 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
   }
 
   /** The name of the contact. */
-  String name;
+  @Expose String name;
 
   /**
    * The contact email address of the contact.
@@ -102,24 +103,24 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
    * <p>This is different from the login email which is assgined to the regstrar and cannot be
    * changed.
    */
-  @Id String emailAddress;
+  @Expose @Id String emailAddress;
 
-  @Id String registrarId;
+  @Expose @Id public String registrarId;
 
   /** External email address of this contact used for registry lock confirmations. */
   String registryLockEmailAddress;
 
   /** The voice number of the contact. */
-  String phoneNumber;
+  @Expose String phoneNumber;
 
   /** The fax number of the contact. */
-  String faxNumber;
+  @Expose String faxNumber;
 
   /**
    * Multiple types are used to associate the registrar contact with various mailing groups. This
    * data is internal to the registry.
    */
-  Set<Type> types;
+  @Expose Set<Type> types;
 
   /** A GAIA email address that was assigned to the registrar for console login purpose. */
   String loginEmailAddress;
@@ -127,19 +128,19 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
   /**
    * Whether this contact is publicly visible in WHOIS registrar query results as an Admin contact.
    */
-  boolean visibleInWhoisAsAdmin = false;
+  @Expose boolean visibleInWhoisAsAdmin = false;
 
   /**
    * Whether this contact is publicly visible in WHOIS registrar query results as a Technical
    * contact.
    */
-  boolean visibleInWhoisAsTech = false;
+  @Expose boolean visibleInWhoisAsTech = false;
 
   /**
    * Whether this contact's phone number and email address is publicly visible in WHOIS domain query
    * results as registrar abuse contact info.
    */
-  boolean visibleInDomainWhoisAsAbuse = false;
+  @Expose boolean visibleInDomainWhoisAsAbuse = false;
 
   /**
    * Whether the contact is allowed to set their registry lock password through the registrar
