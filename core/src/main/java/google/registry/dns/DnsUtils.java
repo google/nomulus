@@ -46,6 +46,7 @@ public final class DnsUtils {
   private static void requestDnsRefresh(
       ImmutableList<String> names, TargetType type, Duration delay) {
     tm().assertInTransaction();
+    DateTime requestTime = tm().getTransactionTime().plus(delay);
     tm().insertAll(
             names.stream()
                 .map(
@@ -54,7 +55,7 @@ public final class DnsUtils {
                             type,
                             name,
                             Tlds.findTldForNameOrThrow(InternetDomainName.from(name)).toString(),
-                            tm().getTransactionTime().plus(delay)))
+                            requestTime))
                 .collect(toImmutableList()));
   }
 
