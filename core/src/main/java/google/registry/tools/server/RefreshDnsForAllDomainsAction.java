@@ -21,10 +21,10 @@ import static google.registry.model.tld.Tlds.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static com.google.common.collect.Iterables.getLast;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
@@ -115,11 +115,11 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                       } catch (Throwable t) {
                         logger.atSevere().withCause(t).log(
                             "Error while enqueuing DNS refresh for domain '%s'.", domainName);
-                        response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                        response.setStatus(HttpStatus.SC_OK);
                       }
                     });
               });
-      lastInPreviousBatch = Iterables.getLast(domainBatch);
+      lastInPreviousBatch = getLast(domainBatch);
     } while (lastBatchSize == batchSize);
   }
 }
