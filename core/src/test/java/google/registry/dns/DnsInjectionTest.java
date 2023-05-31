@@ -69,7 +69,7 @@ public final class DnsInjectionTest {
   void testReadDnsRefreshRequestsAction_injectsAndWorks() {
     persistActiveSubordinateHost("ns1.example.lol", persistActiveDomain("example.lol"));
     clock.advanceOneMilli();
-    tm().transact(() -> DnsUtils.requestDomainDnsRefresh("example.lol", tm().getTransactionTime()));
+    tm().transact(() -> DnsUtils.requestDomainDnsRefresh("example.lol"));
     when(req.getParameter("tld")).thenReturn("lol");
     clock.advanceOneMilli();
     component.readDnsRefreshRequestsAction().run();

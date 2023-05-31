@@ -91,9 +91,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                           try {
                             // Smear the task execution time over the next N minutes.
                             requestDomainDnsRefresh(
-                                domainName,
-                                Duration.standardMinutes(random.nextInt(smearMinutes)),
-                                tm().getTransactionTime());
+                                domainName, Duration.standardMinutes(random.nextInt(smearMinutes)));
                           } catch (Throwable t) {
                             logger.atSevere().withCause(t).log(
                                 "Error while enqueuing DNS refresh for domain '%s'.", domainName);

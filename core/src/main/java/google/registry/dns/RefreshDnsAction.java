@@ -65,11 +65,11 @@ public final class RefreshDnsAction implements Runnable {
               switch (type) {
                 case DOMAIN:
                   loadAndVerifyExistence(Domain.class, domainOrHostName);
-                  requestDomainDnsRefresh(domainOrHostName, tm().getTransactionTime());
+                  requestDomainDnsRefresh(domainOrHostName);
                   break;
                 case HOST:
                   verifyHostIsSubordinate(loadAndVerifyExistence(Host.class, domainOrHostName));
-                  requestHostDnsRefresh(domainOrHostName, tm().getTransactionTime());
+                  requestHostDnsRefresh(domainOrHostName);
                   break;
                 default:
                   throw new BadRequestException("Unsupported type: " + type);
