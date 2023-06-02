@@ -51,6 +51,8 @@ public final class RegistryTestServer {
           route("/rdap/*", FrontendServlet.class),
           route("/check", FrontendServlet.class),
 
+          route("/console-api/*", FrontendServlet.class),
+
           // Proxy Services
           route("/_dr/epp", FrontendServlet.class),
           route("/_dr/whois", FrontendServlet.class),
