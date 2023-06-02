@@ -48,7 +48,7 @@ import javax.servlet.http.HttpServletRequest;
     method = {GET, POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ContactAction implements JsonGetAction {
-  static final String PATH = "/console-api/settings/contacts/";
+  static final String PATH = "/console-api/settings/contacts";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final HttpServletRequest req;
   private final AuthResult authResult;
