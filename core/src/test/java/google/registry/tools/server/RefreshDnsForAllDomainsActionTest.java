@@ -15,6 +15,8 @@
 package google.registry.tools.server;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertDnsRequestsWithRequestTime;
 import static google.registry.testing.DatabaseHelper.assertDomainDnsRequestWithRequestTime;
 import static google.registry.testing.DatabaseHelper.assertNoDnsRequestsExcept;
@@ -23,7 +25,10 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.dns.DnsUtils;
+import google.registry.model.common.DnsRefreshRequest;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
@@ -47,21 +52,15 @@ public class RefreshDnsForAllDomainsActionTest {
 
   @BeforeEach
   void beforeEach() {
-    action = new RefreshDnsForAllDomainsAction();
-    action.smearMinutes = 1;
-    action.random = new Random();
-    action.random.setSeed(123L);
-    action.clock = clock;
-    action.response = response;
-    action.batchSize = 10;
     createTld("bar");
+    action =
+        new RefreshDnsForAllDomainsAction(response, ImmutableSet.of("bar"), 10, 1, new Random());
   }
 
   @Test
   void test_runAction_successfullyEnqueuesDnsRefreshes() throws Exception {
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
-    action.tlds = ImmutableSet.of("bar");
     action.run();
     assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
     assertDomainDnsRequestWithRequestTime("low.bar", clock.nowUtc());
@@ -71,18 +70,25 @@ public class RefreshDnsForAllDomainsActionTest {
   void test_runAction_smearsOutDnsRefreshes() throws Exception {
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
-    action.tlds = ImmutableSet.of("bar");
-    action.smearMinutes = 1000;
+    // Set batch size to 1 since each batch will be enqueud at the same time
+    action =
+        new RefreshDnsForAllDomainsAction(response, ImmutableSet.of("bar"), 1, 1000, new Random());
     action.run();
-    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc().plusMinutes(782));
-    assertDomainDnsRequestWithRequestTime("low.bar", clock.nowUtc().plusMinutes(450));
+    ImmutableList<DnsRefreshRequest> refreshRequests =
+        tm().transact(
+                () ->
+                    tm().createQueryComposer(DnsRefreshRequest.class)
+                        .where("type", EQ, DnsUtils.TargetType.DOMAIN)
+                        .list());
+    assertThat(refreshRequests.size()).isEqualTo(2);
+    assertThat(refreshRequests.get(0).getRequestTime())
+        .isNotEqualTo(refreshRequests.get(1).getRequestTime());
   }
 
   @Test
   void test_runAction_doesntRefreshDeletedDomain() throws Exception {
     persistActiveDomain("foo.bar");
     persistDeletedDomain("deleted.bar", clock.nowUtc().minusYears(1));
-    action.tlds = ImmutableSet.of("bar");
     action.run();
     assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
     assertNoDnsRequestsExcept("foo.bar");
@@ -94,7 +100,6 @@ public class RefreshDnsForAllDomainsActionTest {
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
     persistActiveDomain("ignore.baz");
-    action.tlds = ImmutableSet.of("bar");
     action.run();
     assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
     assertDomainDnsRequestWithRequestTime("low.bar", clock.nowUtc());
@@ -103,8 +108,8 @@ public class RefreshDnsForAllDomainsActionTest {
 
   @Test
   void test_smearMinutesMustBeSpecified() {
-    action.tlds = ImmutableSet.of("bar");
-    action.smearMinutes = 0;
+    action =
+        new RefreshDnsForAllDomainsAction(response, ImmutableSet.of("bar"), 10, 0, new Random());
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> action.run());
     assertThat(thrown)
@@ -114,13 +119,10 @@ public class RefreshDnsForAllDomainsActionTest {
 
   @Test
   void test_successfullyBatchesNames() {
-    int batchSize = 3;
-    action.batchSize = batchSize;
-    for (int i = 0; i <= batchSize; i++) {
+    for (int i = 0; i <= 10; i++) {
       persistActiveDomain(String.format("test%s.bar", i));
     }
-    action.tlds = ImmutableSet.of("bar");
     action.run();
-    assertDnsRequestsWithRequestTime(clock.nowUtc(), batchSize + 1);
+    assertDnsRequestsWithRequestTime(clock.nowUtc(), 11);
   }
 }

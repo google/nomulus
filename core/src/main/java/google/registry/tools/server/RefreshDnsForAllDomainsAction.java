@@ -16,12 +16,12 @@ package google.registry.tools.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Iterables.getLast;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.model.tld.Tlds.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static com.google.common.collect.Iterables.getLast;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -30,7 +30,6 @@ import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.util.Clock;
 import java.util.Random;
 import javax.inject.Inject;
 import org.apache.http.HttpStatus;
@@ -51,6 +50,9 @@ import org.joda.time.Duration;
  * doesn't get overloaded. A rough rule of thumb for Cloud DNS is 1 minute per every 1,000 domains.
  * This smears the updates out over the next N minutes. For small TLDs consisting of fewer than
  * 1,000 domains, passing in 1 is fine (which will execute all the updates immediately).
+ *
+ * <p>You may pass in a {@code batchSize} for the batched read of domains from the database. This is
+ * recommended to be somewhere between 200 and 500. The default value is 250.
  */
 @Action(
     service = Action.Service.TOOLS,
@@ -60,66 +62,65 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Inject Response response;
+  private final Response response;
+  private final ImmutableSet<String> tlds;
+
+  // Recommended value for batch size is between 200 and 500
+  private final int batchSize;
+  private final int smearMinutes;
+  private final Random random;
 
   @Inject
-  @Parameter(PARAM_TLDS)
-  ImmutableSet<String> tlds;
-
-  @Inject
-  @Parameter("batchSize")
-  int batchSize;
-
-  @Inject
-  @Parameter("smearMinutes")
-  int smearMinutes;
-
-  @Inject Clock clock;
-  @Inject Random random;
-
-  @Inject
-  RefreshDnsForAllDomainsAction() {}
+  RefreshDnsForAllDomainsAction(
+      Response response,
+      @Parameter(PARAM_TLDS) ImmutableSet<String> tlds,
+      @Parameter("batchSize") int batchSize,
+      @Parameter("smearMinutes") int smearMinutes,
+      Random random) {
+    this.response = response;
+    this.tlds = tlds;
+    this.batchSize = batchSize;
+    this.smearMinutes = smearMinutes;
+    this.random = random;
+  }
 
   @Override
   public void run() {
     assertTldsExist(tlds);
     checkArgument(smearMinutes > 0, "Must specify a positive number of smear minutes");
     checkArgument(batchSize > 0, "Must specify a positive number for batch size");
-    String lastInPreviousBatch = "";
-    int lastBatchSize;
+    ImmutableList<String> previousBatch = ImmutableList.of("");
     do {
-      String previousLastName = lastInPreviousBatch;
-      ImmutableList<String> domainBatch =
-          tm().transact(
-                  () ->
-                      tm().query(
-                              "SELECT domainName FROM Domain WHERE tld IN (:tlds) AND"
-                                  + " deletionTime = :endOfTime  AND domainName >"
-                                  + " :lastInPreviousBatch ORDER BY domainName ASC",
-                              String.class)
-                          .setParameter("tlds", tlds)
-                          .setParameter("endOfTime", END_OF_TIME)
-                          .setParameter("lastInPreviousBatch", previousLastName)
-                          .setMaxResults(batchSize)
-                          .getResultStream()
-                          .collect(toImmutableList()));
-      lastBatchSize = domainBatch.size();
-      tm().transact(
-              () -> {
-                domainBatch.forEach(
-                    domainName -> {
-                      try {
-                        // Smear the task execution time over the next N minutes.
-                        requestDomainDnsRefresh(
-                            domainName, Duration.standardMinutes(random.nextInt(smearMinutes)));
-                      } catch (Throwable t) {
-                        logger.atSevere().withCause(t).log(
-                            "Error while enqueuing DNS refresh for domain '%s'.", domainName);
-                        response.setStatus(HttpStatus.SC_OK);
-                      }
-                    });
-              });
-      lastInPreviousBatch = getLast(domainBatch);
-    } while (lastBatchSize == batchSize);
+      // This temp variable is required since Java requires that an effectively final variable is
+      // used in the lambda expression below
+      ImmutableList<String> finalPreviousBatch = previousBatch;
+      previousBatch = tm().transact(() -> refreshBatch(ImmutableList.copyOf(finalPreviousBatch)));
+    } while (previousBatch.size() == batchSize);
+  }
+
+  private ImmutableList<String> getBatch(ImmutableList<String> previousBatch) {
+    return tm().query(
+            "SELECT domainName FROM Domain WHERE tld IN (:tlds) AND"
+                + " deletionTime = :endOfTime  AND domainName >"
+                + " :lastInPreviousBatch ORDER BY domainName ASC",
+            String.class)
+        .setParameter("tlds", tlds)
+        .setParameter("endOfTime", END_OF_TIME)
+        .setParameter("lastInPreviousBatch", getLast(previousBatch))
+        .setMaxResults(batchSize)
+        .getResultStream()
+        .collect(toImmutableList());
+  }
+
+  private ImmutableList<String> refreshBatch(ImmutableList<String> previousBatch) {
+    ImmutableList<String> domainBatch = getBatch(previousBatch);
+    try {
+      // Smear the task execution time over the next N minutes.
+      requestDomainDnsRefresh(domainBatch, Duration.standardMinutes(random.nextInt(smearMinutes)));
+    } catch (Throwable t) {
+      logger.atSevere().withCause(t).log("Error while enqueuing DNS refresh batch");
+      response.setStatus(HttpStatus.SC_OK);
+    }
+    return domainBatch;
   }
 }
