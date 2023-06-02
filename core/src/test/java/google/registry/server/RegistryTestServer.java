@@ -50,6 +50,7 @@ public final class RegistryTestServer {
           route("/whois/*", FrontendServlet.class),
           route("/rdap/*", FrontendServlet.class),
           route("/check", FrontendServlet.class),
+          route("/console-api/*", FrontendServlet.class),
 
           // Proxy Services
           route("/_dr/epp", FrontendServlet.class),
