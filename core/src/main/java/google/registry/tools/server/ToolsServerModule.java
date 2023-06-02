@@ -16,6 +16,7 @@ package google.registry.tools.server;
 
 import static com.google.common.base.Strings.emptyToNull;
 import static google.registry.request.RequestParameters.extractIntParameter;
+import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 
@@ -84,6 +85,6 @@ public class ToolsServerModule {
   @Provides
   @Parameter("batchSize")
   static int provideBatchSize(HttpServletRequest req) {
-    return extractIntParameter(req, "batchSize");
+    return extractOptionalIntParameter(req, "batchSize").orElse(250);
   }
 }
