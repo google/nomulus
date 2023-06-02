@@ -142,3 +142,4 @@ V141__add_ttl_columns_to_tld.sql
 V142__drop_request_log_id.sql
 V143__idn_per_tld.sql
 V144__drop_database_migration_state_schedule_table.sql
+V145__add_breakglass_mode_to_tld_table.sql
