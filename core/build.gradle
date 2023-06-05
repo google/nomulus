@@ -181,6 +181,7 @@ dependencies {
   implementation deps['com.google.apis:google-api-services-dataflow']
   implementation deps['com.google.apis:google-api-services-dns']
   implementation deps['com.google.apis:google-api-services-drive']
+  implementation deps['com.google.apis:google-api-services-gmail']
   implementation deps['com.google.apis:google-api-services-groupssettings']
   implementation deps['com.google.apis:google-api-services-monitoring']
   implementation deps['com.google.apis:google-api-services-sheets']

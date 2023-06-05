@@ -44,6 +44,7 @@ ext {
       'com.google.apis:google-api-services-dns:v2beta1-rev99-1.25.0',
       'com.google.apis:google-api-services-admin-directory:directory_v1-rev118-1.25.0',
       'com.google.apis:google-api-services-drive:v2-rev393-1.25.0',
+      'com.google.apis:google-api-services-gmail:v1-rev20220404-2.0.0',
       'com.thoughtworks.qdox:qdox:1.12.1',
       'jline:jline:1.0',
 
