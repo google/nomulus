@@ -17,6 +17,7 @@ package google.registry.dns;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.common.DnsRefreshRequest;
@@ -44,7 +45,7 @@ public final class DnsUtils {
   }
 
   private static void requestDnsRefresh(
-      ImmutableList<String> names, TargetType type, Duration delay) {
+      ImmutableCollection<String> names, TargetType type, Duration delay) {
     tm().assertInTransaction();
     DateTime requestTime = tm().getTransactionTime().plus(delay);
     tm().insertAll(
@@ -63,7 +64,7 @@ public final class DnsUtils {
     requestDnsRefresh(domainName, TargetType.DOMAIN, delay);
   }
 
-  public static void requestDomainDnsRefresh(ImmutableList<String> names, Duration delay) {
+  public static void requestDomainDnsRefresh(ImmutableCollection<String> names, Duration delay) {
     requestDnsRefresh(names, TargetType.DOMAIN, delay);
   }
 
@@ -71,12 +72,16 @@ public final class DnsUtils {
     requestDomainDnsRefresh(domainName, Duration.ZERO);
   }
 
-  public static void requestDomainDnsRefresh(ImmutableList<String> names) {
+  public static void requestDomainDnsRefresh(ImmutableCollection<String> names) {
     requestDomainDnsRefresh(names, Duration.ZERO);
   }
 
   public static void requestHostDnsRefresh(String hostName) {
     requestDnsRefresh(hostName, TargetType.HOST, Duration.ZERO);
+  }
+
+  public static void requestHostDnsRefresh(ImmutableCollection<String> hostNames) {
+    requestDnsRefresh(hostNames, TargetType.HOST, Duration.ZERO);
   }
 
   /**

@@ -35,6 +35,7 @@ import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import dagger.Lazy;
@@ -355,12 +356,11 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   /** Adds all the domains and hosts in the batch back to the queue to be processed later. */
   private void requeueBatch() {
     logger.atInfo().log("Requeueing batch for retry.");
-    for (String domain : nullToEmpty(domains)) {
-      tm().transact(() -> requestDomainDnsRefresh(domain));
-    }
-    for (String host : nullToEmpty(hosts)) {
-      tm().transact(() -> requestHostDnsRefresh(host));
-    }
+    tm().transact(
+            () -> {
+              requestDomainDnsRefresh(ImmutableSet.copyOf(nullToEmpty(domains)));
+              requestHostDnsRefresh(ImmutableSet.copyOf(nullToEmpty(hosts)));
+            });
   }
 
   /** Returns if the lock parameters are valid for this action. */
