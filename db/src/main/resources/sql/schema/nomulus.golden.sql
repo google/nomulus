@@ -1086,7 +1086,7 @@ CREATE TABLE public."Tld" (
     dns_ds_ttl interval,
     dns_ns_ttl interval,
     idn_tables text[],
-    breakglass_mode boolean NOT NULL
+    breakglass_mode boolean DEFAULT false NOT NULL
 );
 
 
