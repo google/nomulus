@@ -37,8 +37,8 @@ export class ContactService {
   constructor(private backend: BackendService) {}
 
   // TODO: Come up with a better handling for registrarId
-  fetchContacts(registrarId: String): Observable<Contact[]> {
-    return this.backend.getContacts<Contact[]>(registrarId).pipe(
+  fetchContacts(registrarId: string): Observable<Contact[]> {
+    return this.backend.getContacts(registrarId).pipe(
       tap((contacts) => {
         this.contacts = contacts;
       })
@@ -47,10 +47,10 @@ export class ContactService {
 
   saveContacts(
     contacts: Contact[],
-    registrarId?: String
+    registrarId?: string
   ): Observable<Contact[]> {
     return this.backend
-      .postContacts<Contact[]>(registrarId || 'default', contacts)
+      .postContacts(registrarId || 'default', contacts)
       .pipe(
         tap((_) => {
           this.contacts = contacts;

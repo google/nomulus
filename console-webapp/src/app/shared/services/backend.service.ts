@@ -15,6 +15,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, of } from 'rxjs';
+import { Contact } from '../../settings/contact/contact.service';
 
 @Injectable()
 export class BackendService {
@@ -39,7 +40,7 @@ export class BackendService {
     return of(<Type>mockData);
   }
 
-  getContacts<Type>(registrarId: String): Observable<Type> {
+  getContacts(registrarId: string): Observable<Contact[]> {
     const mockData = [
       {
         name: 'Name Lastname',
@@ -61,12 +62,12 @@ export class BackendService {
       },
     ];
     return this.http
-      .get<Type>(`/console-api/settings/contacts?registrarId=${registrarId}`)
-      .pipe(catchError((err) => this.errorCatcher<Type>(err, <Type>mockData)));
+      .get<Contact[]>(`/console-api/settings/contacts?registrarId=${registrarId}`)
+      .pipe(catchError((err) => this.errorCatcher<Contact[]>(err, <Contact[]>mockData)));
   }
 
-  postContacts<Type>(registrarId: String, contacts: Type): Observable<Type> {
-    return this.http.post<Type>(
+  postContacts(registrarId: string, contacts: Contact[]): Observable<Contact[]> {
+    return this.http.post<Contact[]>(
       `/console-api/settings/contacts?registrarId=${registrarId}`,
       { contacts }
     );
