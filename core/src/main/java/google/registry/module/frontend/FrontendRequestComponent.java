@@ -26,6 +26,7 @@ import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
 import google.registry.request.RequestScope;
 import google.registry.ui.server.console.ConsoleDomainGetAction;
+import google.registry.ui.server.console.RegistrarsAction;
 import google.registry.ui.server.console.settings.ContactAction;
 import google.registry.ui.server.registrar.ConsoleOteSetupAction;
 import google.registry.ui.server.registrar.ConsoleRegistrarCreatorAction;
@@ -66,6 +67,8 @@ interface FrontendRequestComponent {
   ConsoleDomainGetAction consoleDomainGetAction();
 
   ContactAction contactAction();
+
+  RegistrarsAction registrarsAction();
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<FrontendRequestComponent> {

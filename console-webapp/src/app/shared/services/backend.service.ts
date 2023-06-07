@@ -62,11 +62,20 @@ export class BackendService {
       },
     ];
     return this.http
-      .get<Contact[]>(`/console-api/settings/contacts?registrarId=${registrarId}`)
-      .pipe(catchError((err) => this.errorCatcher<Contact[]>(err, <Contact[]>mockData)));
+      .get<Contact[]>(
+        `/console-api/settings/contacts?registrarId=${registrarId}`
+      )
+      .pipe(
+        catchError((err) =>
+          this.errorCatcher<Contact[]>(err, <Contact[]>mockData)
+        )
+      );
   }
 
-  postContacts(registrarId: string, contacts: Contact[]): Observable<Contact[]> {
+  postContacts(
+    registrarId: string,
+    contacts: Contact[]
+  ): Observable<Contact[]> {
     return this.http.post<Contact[]>(
       `/console-api/settings/contacts?registrarId=${registrarId}`,
       { contacts }
