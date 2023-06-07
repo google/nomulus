@@ -27,6 +27,7 @@ public class ConsoleRoleDefinitions {
   /** Permissions for a registry support agent. */
   static final ImmutableSet<ConsolePermission> SUPPORT_AGENT_PERMISSIONS =
       ImmutableSet.of(
+          ConsolePermission.VIEW_REGISTRARS,
           ConsolePermission.VIEW_REGISTRAR_DETAILS,
           ConsolePermission.EDIT_REGISTRAR_DETAILS,
           ConsolePermission.MANAGE_USERS,
