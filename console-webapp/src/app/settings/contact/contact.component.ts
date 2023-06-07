@@ -40,11 +40,6 @@ interface GroupedContacts {
   contacts: Array<Contact>;
 }
 
-interface iContactDetailsEventsResponder {
-  onClose: Function;
-  setRef: Function;
-}
-
 let isMobile: boolean;
 
 const contactTypes: Array<GroupedContacts> = [
@@ -57,7 +52,7 @@ const contactTypes: Array<GroupedContacts> = [
   { value: 'WHOIS', label: 'WHOIS-Inquiry contact', contacts: [] },
 ];
 
-class ContactDetailsEventsResponder implements iContactDetailsEventsResponder {
+class ContactDetailsEventsResponder {
   private ref?: MatDialogRef<any> | MatBottomSheetRef;
   constructor() {
     this.onClose = this.onClose.bind(this);
@@ -184,6 +179,7 @@ export default class ContactComponent {
     operation: Operations = Operations.UPDATE
   ) {
     e.preventDefault();
+    // TODO: handle orientation change
     isMobile = this.breakpointObserver.isMatched('(max-width: 599px)');
     const responder = new ContactDetailsEventsResponder();
     const config = { data: { onClose: responder.onClose, contact, operation } };
