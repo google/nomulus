@@ -20,12 +20,14 @@ import dagger.Provides;
 import google.registry.config.CredentialModule.AdcDelegatedCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
+import javax.inject.Singleton;
 
 /** Dagger module providing {@link Gmail} API. */
 @Module
 public class GmailModule {
 
   @Provides
+  @Singleton
   Gmail provideGmail(
       @AdcDelegatedCredential GoogleCredentialsBundle credentialsBundle,
       @Config("projectId") String projectId) {
