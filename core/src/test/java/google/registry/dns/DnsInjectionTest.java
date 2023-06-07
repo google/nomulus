@@ -15,6 +15,7 @@
 package google.registry.dns;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertHostDnsRequests;
 import static google.registry.testing.DatabaseHelper.assertNoDnsRequests;
 import static google.registry.testing.DatabaseHelper.assertNoDnsRequestsExcept;
@@ -68,7 +69,7 @@ public final class DnsInjectionTest {
   void testReadDnsRefreshRequestsAction_injectsAndWorks() {
     persistActiveSubordinateHost("ns1.example.lol", persistActiveDomain("example.lol"));
     clock.advanceOneMilli();
-    DnsUtils.requestDomainDnsRefresh("example.lol");
+    tm().transact(() -> DnsUtils.requestDomainDnsRefresh("example.lol"));
     when(req.getParameter("tld")).thenReturn("lol");
     clock.advanceOneMilli();
     component.readDnsRefreshRequestsAction().run();

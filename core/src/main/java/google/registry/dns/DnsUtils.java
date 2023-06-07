@@ -17,6 +17,7 @@ package google.registry.dns;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.common.DnsRefreshRequest;
@@ -36,26 +37,51 @@ public final class DnsUtils {
   private DnsUtils() {}
 
   private static void requestDnsRefresh(String name, TargetType type, Duration delay) {
+    tm().assertInTransaction();
     // Throws an IllegalArgumentException if the name is not under a managed TLD -- we only update
     // DNS for names that are under our management.
     String tld = Tlds.findTldForNameOrThrow(InternetDomainName.from(name)).toString();
-    tm().transact(
-            () ->
-                tm().insert(
+    tm().insert(new DnsRefreshRequest(type, name, tld, tm().getTransactionTime().plus(delay)));
+  }
+
+  private static void requestDnsRefresh(
+      ImmutableCollection<String> names, TargetType type, Duration delay) {
+    tm().assertInTransaction();
+    DateTime requestTime = tm().getTransactionTime().plus(delay);
+    tm().insertAll(
+            names.stream()
+                .map(
+                    name ->
                         new DnsRefreshRequest(
-                            type, name, tld, tm().getTransactionTime().plus(delay))));
+                            type,
+                            name,
+                            Tlds.findTldForNameOrThrow(InternetDomainName.from(name)).toString(),
+                            requestTime))
+                .collect(toImmutableList()));
   }
 
   public static void requestDomainDnsRefresh(String domainName, Duration delay) {
     requestDnsRefresh(domainName, TargetType.DOMAIN, delay);
   }
 
+  public static void requestDomainDnsRefresh(ImmutableCollection<String> names, Duration delay) {
+    requestDnsRefresh(names, TargetType.DOMAIN, delay);
+  }
+
   public static void requestDomainDnsRefresh(String domainName) {
     requestDomainDnsRefresh(domainName, Duration.ZERO);
   }
 
+  public static void requestDomainDnsRefresh(ImmutableCollection<String> names) {
+    requestDomainDnsRefresh(names, Duration.ZERO);
+  }
+
   public static void requestHostDnsRefresh(String hostName) {
     requestDnsRefresh(hostName, TargetType.HOST, Duration.ZERO);
+  }
+
+  public static void requestHostDnsRefresh(ImmutableCollection<String> hostNames) {
+    requestDnsRefresh(hostNames, TargetType.HOST, Duration.ZERO);
   }
 
   /**

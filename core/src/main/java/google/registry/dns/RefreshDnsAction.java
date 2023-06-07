@@ -17,6 +17,7 @@ package google.registry.dns;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.dns.DnsUtils.requestHostDnsRefresh;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import google.registry.dns.DnsUtils.TargetType;
 import google.registry.model.EppResource;
@@ -59,18 +60,21 @@ public final class RefreshDnsAction implements Runnable {
     if (!domainOrHostName.contains(".")) {
       throw new BadRequestException("URL parameter 'name' must be fully qualified");
     }
-    switch (type) {
-      case DOMAIN:
-        loadAndVerifyExistence(Domain.class, domainOrHostName);
-        requestDomainDnsRefresh(domainOrHostName);
-        break;
-      case HOST:
-        verifyHostIsSubordinate(loadAndVerifyExistence(Host.class, domainOrHostName));
-        requestHostDnsRefresh(domainOrHostName);
-        break;
-      default:
-        throw new BadRequestException("Unsupported type: " + type);
-    }
+    tm().transact(
+            () -> {
+              switch (type) {
+                case DOMAIN:
+                  loadAndVerifyExistence(Domain.class, domainOrHostName);
+                  requestDomainDnsRefresh(domainOrHostName);
+                  break;
+                case HOST:
+                  verifyHostIsSubordinate(loadAndVerifyExistence(Host.class, domainOrHostName));
+                  requestHostDnsRefresh(domainOrHostName);
+                  break;
+                default:
+                  throw new BadRequestException("Unsupported type: " + type);
+              }
+            });
   }
 
   private <T extends EppResource & ForeignKeyedEppResource>
