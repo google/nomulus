@@ -74,7 +74,7 @@ class ContactActionTest {
   private final HttpServletRequest request = mock(HttpServletRequest.class);
   private RegistrarPoc testRegistrarPoc;
   private static final Gson GSON = UtilsModule.provideGson();
-  private static final FakeResponse RESPONSE = new FakeResponse();
+  private static FakeResponse RESPONSE;
 
   @RegisterExtension
   final JpaTestExtensions.JpaIntegrationTestExtension jpa =
@@ -82,6 +82,7 @@ class ContactActionTest {
 
   @BeforeEach
   void beforeEach() {
+    RESPONSE = new FakeResponse();
     testRegistrar = saveRegistrar("registrarId");
     testRegistrarPoc =
         new RegistrarPoc.Builder()
@@ -112,6 +113,24 @@ class ContactActionTest {
     action.run();
     assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     assertThat(RESPONSE.getPayload()).isEqualTo("[" + jsonRegistrar1 + "]");
+  }
+
+  @Test
+  void testSuccess_onlyContactsWithNonEmptyType() throws IOException {
+    testRegistrarPoc = testRegistrarPoc.asBuilder().setTypes(ImmutableSet.of()).build();
+    insertInDb(testRegistrarPoc);
+    ContactAction action =
+        createAction(
+            Action.Method.GET,
+            AuthResult.create(
+                AuthLevel.USER,
+                UserAuthInfo.create(
+                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+            testRegistrar.getRegistrarId(),
+            null);
+    action.run();
+    assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(RESPONSE.getPayload()).isEqualTo("[]");
   }
 
   @Test
