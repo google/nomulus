@@ -23,7 +23,6 @@ import static google.registry.testing.DatabaseHelper.assertNoDnsRequestsExcept;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -53,8 +52,7 @@ public class RefreshDnsForAllDomainsActionTest {
   @BeforeEach
   void beforeEach() {
     createTld("bar");
-    action =
-        new RefreshDnsForAllDomainsAction(response, ImmutableSet.of("bar"), 10, 1, new Random());
+    action = new RefreshDnsForAllDomainsAction(response, ImmutableSet.of("bar"), 10, new Random());
   }
 
   @Test
@@ -71,9 +69,9 @@ public class RefreshDnsForAllDomainsActionTest {
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
     // Set batch size to 1 since each batch will be enqueud at the same time
-    action =
-        new RefreshDnsForAllDomainsAction(response, ImmutableSet.of("bar"), 1, 1000, new Random());
-    action.run();
+    action = new RefreshDnsForAllDomainsAction(response, ImmutableSet.of("bar"), 1, new Random());
+    tm().transact(() -> action.refreshBatch(ImmutableList.of(""), 1000));
+    tm().transact(() -> action.refreshBatch(ImmutableList.of(""), 1000));
     ImmutableList<DnsRefreshRequest> refreshRequests =
         tm().transact(
                 () ->
@@ -104,17 +102,6 @@ public class RefreshDnsForAllDomainsActionTest {
     assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
     assertDomainDnsRequestWithRequestTime("low.bar", clock.nowUtc());
     assertNoDnsRequestsExcept("foo.bar", "low.bar");
-  }
-
-  @Test
-  void test_smearMinutesMustBeSpecified() {
-    action =
-        new RefreshDnsForAllDomainsAction(response, ImmutableSet.of("bar"), 10, 0, new Random());
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> action.run());
-    assertThat(thrown)
-        .hasMessageThat()
-        .isEqualTo("Must specify a positive number of smear minutes");
   }
 
   @Test

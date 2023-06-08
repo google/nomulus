@@ -77,12 +77,6 @@ public class ToolsServerModule {
   }
 
   @Provides
-  @Parameter("smearMinutes")
-  static int provideSmearMinutes(HttpServletRequest req) {
-    return extractIntParameter(req, "smearMinutes");
-  }
-
-  @Provides
   @Parameter("batchSize")
   static int provideBatchSize(HttpServletRequest req) {
     return extractOptionalIntParameter(req, "batchSize").orElse(250);

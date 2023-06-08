@@ -32,6 +32,7 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import java.util.Random;
 import javax.inject.Inject;
+import org.apache.arrow.util.VisibleForTesting;
 import org.apache.http.HttpStatus;
 import org.joda.time.Duration;
 
@@ -45,11 +46,6 @@ import org.joda.time.Duration;
  * <p>Because there are no auth settings in the {@link Action} annotation, this command can only be
  * run internally, or by pretending to be internal by setting the X-AppEngine-QueueName header,
  * which only admin users can do.
- *
- * <p>You must pass in a number of {@code smearMinutes} as a URL parameter so that the DNS queue
- * doesn't get overloaded. A rough rule of thumb for Cloud DNS is 1 minute per every 1,000 domains.
- * This smears the updates out over the next N minutes. For small TLDs consisting of fewer than
- * 1,000 domains, passing in 1 is fine (which will execute all the updates immediately).
  *
  * <p>You may pass in a {@code batchSize} for the batched read of domains from the database. This is
  * recommended to be somewhere between 200 and 500. The default value is 250.
@@ -67,7 +63,6 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
 
   // Recommended value for batch size is between 200 and 500
   private final int batchSize;
-  private final int smearMinutes;
   private final Random random;
 
   @Inject
@@ -75,27 +70,41 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
       Response response,
       @Parameter(PARAM_TLDS) ImmutableSet<String> tlds,
       @Parameter("batchSize") int batchSize,
-      @Parameter("smearMinutes") int smearMinutes,
       Random random) {
     this.response = response;
     this.tlds = tlds;
     this.batchSize = batchSize;
-    this.smearMinutes = smearMinutes;
     this.random = random;
   }
 
   @Override
   public void run() {
     assertTldsExist(tlds);
-    checkArgument(smearMinutes > 0, "Must specify a positive number of smear minutes");
     checkArgument(batchSize > 0, "Must specify a positive number for batch size");
+    int smearMinutes = tm().transact(this::calculateSmearMinutes);
     ImmutableList<String> previousBatch = ImmutableList.of("");
     do {
       // This temp variable is required since Java requires that an effectively final variable is
       // used in the lambda expression below
       ImmutableList<String> finalPreviousBatch = previousBatch;
-      previousBatch = tm().transact(() -> refreshBatch(ImmutableList.copyOf(finalPreviousBatch)));
+      previousBatch =
+          tm().transact(() -> refreshBatch(ImmutableList.copyOf(finalPreviousBatch), smearMinutes));
     } while (previousBatch.size() == batchSize);
+  }
+
+  /**
+   * Calculates the number of smear minutes to enqueue refreshes so that the DNS queue does not get
+   * overloaded.
+   */
+  private int calculateSmearMinutes() {
+    Long activeDomains =
+        tm().query(
+                "SELECT COUNT(*) FROM Domain WHERE tld IN (:tlds) AND deletionTime = :endOfTime",
+                Long.class)
+            .setParameter("tlds", tlds)
+            .setParameter("endOfTime", END_OF_TIME)
+            .getSingleResult();
+    return Math.max(activeDomains.intValue() / 1000, 1);
   }
 
   private ImmutableList<String> getBatch(ImmutableList<String> previousBatch) {
@@ -112,7 +121,8 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
         .collect(toImmutableList());
   }
 
-  private ImmutableList<String> refreshBatch(ImmutableList<String> previousBatch) {
+  @VisibleForTesting
+  ImmutableList<String> refreshBatch(ImmutableList<String> previousBatch, int smearMinutes) {
     ImmutableList<String> domainBatch = getBatch(previousBatch);
     try {
       // Smear the task execution time over the next N minutes.
