@@ -475,6 +475,9 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   /** An allowlist of hosts allowed to be used on domains on this TLD (ignored if empty). */
   @Nullable Set<String> allowedFullyQualifiedHostNames;
 
+  @Column(nullable = false)
+  boolean breakglassMode = false;
+
   /**
    * References to allocation tokens that can be used on the TLD if no other token is passed in on a
    * domain create.
@@ -699,6 +702,10 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   public ImmutableSet<IdnTableEnum> getIdnTables() {
     return nullToEmptyImmutableCopy(idnTables);
+  }
+
+  public boolean getBreakglassMode() {
+    return breakglassMode;
   }
 
   @Override
@@ -1001,6 +1008,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setIdnTables(ImmutableSet<IdnTableEnum> idnTables) {
       getInstance().idnTables = idnTables;
+      return this;
+    }
+
+    public Builder setBreakglassMode(boolean breakglassMode) {
+      getInstance().breakglassMode = breakglassMode;
       return this;
     }
 
