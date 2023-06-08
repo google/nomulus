@@ -74,7 +74,7 @@ class ContactActionTest {
   private final HttpServletRequest request = mock(HttpServletRequest.class);
   private RegistrarPoc testRegistrarPoc;
   private static final Gson GSON = UtilsModule.provideGson();
-  private static final FakeResponse RESPONSE = new FakeResponse();
+  private FakeResponse response;
 
   @RegisterExtension
   final JpaTestExtensions.JpaIntegrationTestExtension jpa =
@@ -82,6 +82,7 @@ class ContactActionTest {
 
   @BeforeEach
   void beforeEach() {
+    response = new FakeResponse();
     testRegistrar = saveRegistrar("registrarId");
     testRegistrarPoc =
         new RegistrarPoc.Builder()
@@ -110,8 +111,26 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             null);
     action.run();
-    assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
-    assertThat(RESPONSE.getPayload()).isEqualTo("[" + jsonRegistrar1 + "]");
+    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getPayload()).isEqualTo("[" + jsonRegistrar1 + "]");
+  }
+
+  @Test
+  void testSuccess_onlyContactsWithNonEmptyType() throws IOException {
+    testRegistrarPoc = testRegistrarPoc.asBuilder().setTypes(ImmutableSet.of()).build();
+    insertInDb(testRegistrarPoc);
+    ContactAction action =
+        createAction(
+            Action.Method.GET,
+            AuthResult.create(
+                AuthLevel.USER,
+                UserAuthInfo.create(
+                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+            testRegistrar.getRegistrarId(),
+            null);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getPayload()).isEqualTo("[]");
   }
 
   @Test
@@ -126,7 +145,7 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar1 + "," + jsonRegistrar2 + "]");
     action.run();
-    assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     assertThat(
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
@@ -149,7 +168,7 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar1 + "," + jsonRegistrar2 + "]");
     action.run();
-    assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     HashMap<String, String> testResult = new HashMap<>();
     loadAllOf(RegistrarPoc.class).stream()
         .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
@@ -175,7 +194,7 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar2 + "]");
     action.run();
-    assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     assertThat(
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
@@ -202,7 +221,7 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar2 + "]");
     action.run();
-    assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
   }
 
   private User createUser(UserRoles userRoles) {
@@ -218,14 +237,14 @@ class ContactActionTest {
       throws IOException {
     when(request.getMethod()).thenReturn(method.toString());
     if (method.equals(Action.Method.GET)) {
-      return new ContactAction(request, authResult, RESPONSE, GSON, registrarId, Optional.empty());
+      return new ContactAction(request, authResult, response, GSON, registrarId, Optional.empty());
     } else {
       when(request.getReader())
           .thenReturn(new BufferedReader(new StringReader("{\"contacts\":" + contacts + "}")));
       Optional<ImmutableSet<RegistrarPoc>> maybeContacts =
           RegistrarConsoleModule.provideContacts(
               GSON, RequestModule.provideJsonBody(request, GSON));
-      return new ContactAction(request, authResult, RESPONSE, GSON, registrarId, maybeContacts);
+      return new ContactAction(request, authResult, response, GSON, registrarId, maybeContacts);
     }
   }
 }

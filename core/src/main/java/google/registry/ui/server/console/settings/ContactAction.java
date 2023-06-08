@@ -92,9 +92,12 @@ public class ContactAction implements JsonGetAction {
     ImmutableList<RegistrarPoc> am =
         tm().transact(
                 () ->
-                    tm().createQueryComposer(RegistrarPoc.class)
+                    tm()
+                        .createQueryComposer(RegistrarPoc.class)
                         .where("registrarId", Comparator.EQ, registrarId)
-                        .list());
+                        .stream()
+                        .filter(r -> !r.getTypes().isEmpty())
+                        .collect(toImmutableList()));
 
     response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
     response.setPayload(gson.toJson(am));
