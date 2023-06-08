@@ -98,7 +98,6 @@ public class RegistryConfigSettings {
     public String tmchCaMode;
     public String tmchCrlUrl;
     public String tmchMarksDbUrl;
-    public String checkApiServletClientId;
     public String registryAdminClientId;
     public String premiumTermsExportDisclaimer;
     public String reservedTermsExportDisclaimer;
@@ -212,14 +211,6 @@ public class RegistryConfigSettings {
   /** Configuration for keyrings (used to store secrets outside of source). */
   public static class Keyring {
     public String activeKeyring;
-    // TODO(b/257276342): Remove after config files in nomulus-internal are updated.
-    public Kms kms;
-  }
-
-  /** Configuration for Cloud KMS. */
-  public static class Kms {
-    public String keyringName;
-    public String projectId;
   }
 
   /** Configuration options for the registry tool. */

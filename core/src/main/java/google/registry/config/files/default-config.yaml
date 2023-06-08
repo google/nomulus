@@ -96,10 +96,6 @@ registryPolicy:
   # URL for the MarksDB registry interface.
   tmchMarksDbUrl: https://test-ry.marksdb.org
 
-  # Registry’s operations registrar, used for front-end availability/premium
-  # domain checks.
-  checkApiServletClientId: TheRegistrar
-
   # The registry admin's registrar. Admins are granted permission to log in
   # using this registrar automatically if they are not associated with any
   # registrar
@@ -455,16 +451,6 @@ keyring:
   # The name of the active keyring, either "Dummy" or "CSM". The latter stands
   # for Cloud SecretManager.
   activeKeyring: Dummy
-
-  # Configuration options specific to Google Cloud KMS.
-  kms:
-    # GCP project containing the KMS keyring. Should only be used for KMS in
-    # order to keep a simple locked down IAM configuration.
-    projectId: registry-kms-project-id
-
-    # The name to use for the Cloud KMS KeyRing which will store encryption keys
-    # for Nomulus secrets.
-    keyringName: nomulus
 
 # Configuration options relevant to the "nomulus" registry tool.
 registryTool:
