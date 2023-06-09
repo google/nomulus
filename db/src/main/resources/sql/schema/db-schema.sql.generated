@@ -704,6 +704,7 @@
         anchor_tenant_add_grace_period_length interval not null,
         auto_renew_grace_period_length interval not null,
         automatic_transfer_length interval not null,
+        breakglass_mode boolean not null,
         claims_period_end timestamptz not null,
         create_billing_cost_amount numeric(19, 2),
         create_billing_cost_currency text,
