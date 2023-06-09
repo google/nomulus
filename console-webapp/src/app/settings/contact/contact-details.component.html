@@ -1,0 +1,105 @@
+<h3 mat-dialog-title>Contact details</h3>
+<div mat-dialog-content>
+  <form>
+    <div>
+      <mat-form-field class="contact-details__input">
+        <mat-label>Name: </mat-label>
+        <input
+          matInput
+          [(ngModel)]="contact.name"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </div>
+
+    <div>
+      <mat-form-field class="contact-details__input">
+        <mat-label>Primary account email: </mat-label>
+        <input
+          type="email"
+          matInput
+          [email]="true"
+          [(ngModel)]="contact.emailAddress"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </div>
+
+    <div>
+      <mat-form-field class="contact-details__input">
+        <mat-label>Phone: </mat-label>
+        <input
+          matInput
+          [(ngModel)]="contact.phoneNumber"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </div>
+
+    <div>
+      <mat-form-field class="contact-details__input">
+        <mat-label>Fax: </mat-label>
+        <input
+          matInput
+          [(ngModel)]="contact.faxNumber"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </div>
+
+    <div class="contact-details__group">
+      <label>Contact type:</label>
+      <div class="contact-details__group-content">
+        <mat-checkbox
+          *ngFor="let contactType of contactTypes"
+          [checked]="contact.types.includes(contactType.value)"
+          (change)="
+            $event.checked
+              ? contact.types.push(contactType.value)
+              : contact.types.splice(
+                  contact.types.indexOf(contactType.value),
+                  1
+                )
+          "
+          [disabled]="
+            contact.types.length === 1 && contact.types[0] === contactType.value
+          "
+        >
+          {{ contactType.label }}
+        </mat-checkbox>
+      </div>
+    </div>
+
+    <section>
+      <mat-checkbox
+        [(ngModel)]="contact.visibleInWhoisAsAdmin"
+        [ngModelOptions]="{ standalone: true }"
+        >Show in Registrar WHOIS record as admin contact</mat-checkbox
+      >
+    </section>
+
+    <section>
+      <mat-checkbox
+        [(ngModel)]="contact.visibleInWhoisAsTech"
+        [ngModelOptions]="{ standalone: true }"
+        >Show in Registrar WHOIS record as technical contact</mat-checkbox
+      >
+    </section>
+
+    <section>
+      <mat-checkbox
+        [(ngModel)]="contact.visibleInDomainWhoisAsAbuse"
+        [ngModelOptions]="{ standalone: true }"
+        >Show Phone and Email in Domain WHOIS Record as registrar abuse contact
+        (per CL&D requirements)</mat-checkbox
+      >
+    </section>
+  </form>
+
+  <p></p>
+
+  <mat-dialog-actions>
+    <button mat-button (click)="onClose()">Cancel</button>
+    <button mat-button (click)="saveAndClose()">Save</button>
+  </mat-dialog-actions>
+</div>

@@ -50,5 +50,12 @@ task buildConsoleWebappProd(type: Exec) {
   args 'run', 'build'
 }
 
+task applyFormatting() {
+  exec {
+    workingDir "${consoleDir}/"
+    commandLine 'npm', 'run', 'prettify'
+  }
+}
+
 tasks.runConsoleWebappUnitTests.dependsOn(tasks.npmInstallDeps)
 tasks.buildConsoleWebappProd.dependsOn(tasks.npmInstallDeps)

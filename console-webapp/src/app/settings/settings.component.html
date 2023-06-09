@@ -1,0 +1,24 @@
+<div class="console-settings">
+  <h1>Settings</h1>
+  <nav mat-tab-nav-bar [tabPanel]="tabPanel">
+    <a mat-tab-link routerLink="contact" routerLinkActive="active-link"
+      >Contact Info</a
+    >
+    <a mat-tab-link routerLink="whois" routerLinkActive="active-link"
+      >WHOIS Info</a
+    >
+    <a mat-tab-link routerLink="security" routerLinkActive="active-link"
+      >Security</a
+    >
+    <a mat-tab-link routerLink="epp-password" routerLinkActive="active-link"
+      >EPP Password</a
+    >
+    <a mat-tab-link routerLink="users" routerLinkActive="active-link">Users</a>
+    <a mat-tab-link routerLink="registrars" routerLinkActive="active-link"
+      >Registrars</a
+    >
+  </nav>
+  <mat-tab-nav-panel #tabPanel>
+    <router-outlet></router-outlet>
+  </mat-tab-nav-panel>
+</div>

@@ -1,4 +1,4 @@
-// Copyright 2022 The Nomulus Authors. All Rights Reserved.
+// Copyright 2023 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { TldsComponent } from './tlds.component';
-import {MaterialModule} from '../material.module';
+import { MaterialModule } from '../material.module';
 
 describe('TldsComponent', () => {
   let component: TldsComponent;
@@ -24,9 +24,8 @@ describe('TldsComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MaterialModule],
-      declarations: [ TldsComponent ]
-    })
-    .compileComponents();
+      declarations: [TldsComponent],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(TldsComponent);
     component = fixture.componentInstance;
