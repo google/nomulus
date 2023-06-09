@@ -334,6 +334,8 @@ credentialOAuth:
   - https://www.googleapis.com/auth/admin.directory.group
   # View and manage group settings in Group Settings API.
   - https://www.googleapis.com/auth/apps.groups.settings
+  # Send email through Gmail.
+  - https://www.googleapis.com/auth/gmail.send
   # OAuth scopes required to create a credential locally in for the nomulus tool.
   localCredentialOauthScopes:
   # View and manage data in all Google Cloud APIs.
