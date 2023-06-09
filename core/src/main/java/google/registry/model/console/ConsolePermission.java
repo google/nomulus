@@ -22,6 +22,8 @@ public enum ConsolePermission {
   EDIT_REGISTRAR_DETAILS,
   /** Add, update, or remove other console users. */
   MANAGE_USERS,
+  /** View registrars. */
+  VIEW_REGISTRARS,
   /** Add, update, or remove registrars. */
   MANAGE_REGISTRARS,
   /** Manage related registrars, e.g. when one registrar owns another. */

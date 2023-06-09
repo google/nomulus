@@ -49,13 +49,11 @@ export class ContactService {
     contacts: Contact[],
     registrarId?: string
   ): Observable<Contact[]> {
-    return this.backend
-      .postContacts(registrarId || 'default', contacts)
-      .pipe(
-        tap((_) => {
-          this.contacts = contacts;
-        })
-      );
+    return this.backend.postContacts(registrarId || 'default', contacts).pipe(
+      tap((_) => {
+        this.contacts = contacts;
+      })
+    );
   }
 
   updateContact(index: number, contact: Contact) {
