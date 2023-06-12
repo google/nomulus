@@ -41,35 +41,11 @@ export class BackendService {
   }
 
   getContacts(registrarId: string): Observable<Contact[]> {
-    const mockData = [
-      {
-        name: 'Name Lastname',
-        emailAddress: 'test@google.com',
-        registrarId: 'zoomco',
-        types: ['ADMIN'],
-        visibleInWhoisAsAdmin: false,
-        visibleInWhoisAsTech: false,
-        visibleInDomainWhoisAsAbuse: false,
-      },
-      {
-        name: 'Testname testlastname',
-        emailAddress: 'testasd@google.com',
-        registrarId: 'zoomco',
-        visibleInWhoisAsAdmin: false,
-        visibleInWhoisAsTech: false,
-        visibleInDomainWhoisAsAbuse: false,
-        types: ['BILLING'],
-      },
-    ];
     return this.http
       .get<Contact[]>(
         `/console-api/settings/contacts?registrarId=${registrarId}`
       )
-      .pipe(
-        catchError((err) =>
-          this.errorCatcher<Contact[]>(err, <Contact[]>mockData)
-        )
-      );
+      .pipe(catchError((err) => this.errorCatcher<Contact[]>(err)));
   }
 
   postContacts(
@@ -80,5 +56,11 @@ export class BackendService {
       `/console-api/settings/contacts?registrarId=${registrarId}`,
       { contacts }
     );
+  }
+
+  getRegistrars(): Observable<string[]> {
+    return this.http
+      .get<string[]>('/console-api/registrars')
+      .pipe(catchError((err) => this.errorCatcher<string[]>(err)));
   }
 }
