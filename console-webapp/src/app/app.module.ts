@@ -31,6 +31,8 @@ import SettingsContactComponent, {
   ContactDetailsDialogComponent,
 } from './settings/contact/contact.component';
 import { HttpClientModule } from '@angular/common/http';
+import { RegistrarComponent } from './registrar/registrar.component';
+import { RegistrarGuard } from './registrar/registrar.guard';
 
 @NgModule({
   declarations: [
@@ -41,6 +43,7 @@ import { HttpClientModule } from '@angular/common/http';
     SettingsComponent,
     SettingsContactComponent,
     ContactDetailsDialogComponent,
+    RegistrarComponent,
   ],
   imports: [
     HttpClientModule,
@@ -50,7 +53,7 @@ import { HttpClientModule } from '@angular/common/http';
     AppRoutingModule,
     BrowserAnimationsModule,
   ],
-  providers: [BackendService],
+  providers: [BackendService, RegistrarGuard],
   bootstrap: [AppComponent],
 })
 export class AppModule {}
