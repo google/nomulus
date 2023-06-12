@@ -22,14 +22,18 @@ import SettingsRegistrarsComponent from './settings/registrars/registrars.compon
 import SettingsWhoisComponent from './settings/whois/whois.component';
 import SettingsUsersComponent from './settings/users/users.component';
 import SettingsSecurityComponent from './settings/security/security.component';
+import { RegistrarGuard } from './registrar/registrar.guard';
+import { RegistrarComponent } from './registrar/registrar.component';
 
 const routes: Routes = [
-  { path: '', redirectTo: '/settings/contact', pathMatch: 'full' },
-  { path: 'home', component: HomeComponent },
-  { path: 'tlds', component: TldsComponent },
+  { path: '', redirectTo: '/home', pathMatch: 'full' },
+  { path: 'registrars', component: RegistrarComponent },
+  { path: 'home', component: HomeComponent, canActivate: [RegistrarGuard] },
+  { path: 'tlds', component: TldsComponent, canActivate: [RegistrarGuard] },
   {
     path: 'settings',
     component: SettingsComponent,
+    canActivate: [RegistrarGuard],
     children: [
       {
         path: '',
