@@ -81,4 +81,21 @@ export class BackendService {
       { contacts }
     );
   }
+
+  getRegistrars(): Observable<string[]> {
+    return this.http
+      .get<string[]>('/console-api/registrars')
+      .pipe(
+        catchError((err) =>
+          this.errorCatcher<string[]>(err, <string[]>[
+            'registrar1',
+            'asd',
+            'registrar2',
+            'jjgasd',
+            'gfdfad',
+            'asa',
+          ])
+        )
+      );
+  }
 }

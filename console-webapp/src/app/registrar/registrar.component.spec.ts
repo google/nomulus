@@ -14,18 +14,26 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import SecurityComponent from './security.component';
+import { RegistrarComponent } from './registrar.component';
+import { BackendService } from '../shared/services/backend.service';
+import { ActivatedRoute } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-describe('SecurityComponent', () => {
-  let component: SecurityComponent;
-  let fixture: ComponentFixture<SecurityComponent>;
+describe('RegistrarComponent', () => {
+  let component: RegistrarComponent;
+  let fixture: ComponentFixture<RegistrarComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [SecurityComponent],
+      declarations: [RegistrarComponent],
+      imports: [HttpClientTestingModule],
+      providers: [
+        BackendService,
+        { provide: ActivatedRoute, useValue: {} as ActivatedRoute },
+      ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(SecurityComponent);
+    fixture = TestBed.createComponent(RegistrarComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

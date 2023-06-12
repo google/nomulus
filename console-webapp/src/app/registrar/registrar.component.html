@@ -1,0 +1,20 @@
+<div class="console-app__registrar">
+  <h4 class="console-app__title">
+    {{ registrarService.activeRegistrarId === "" ? "Select" : "Switch" }}
+    registrar:
+  </h4>
+  <mat-form-field>
+    <mat-label>Registrar</mat-label>
+    <mat-select
+      [(ngModel)]="registrarService.activeRegistrarId"
+      [ngModelOptions]="{ standalone: true }"
+    >
+      <mat-option
+        *ngFor="let registrar of registrarService.registrars"
+        [value]="registrar"
+      >
+        {{ registrar }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+</div>

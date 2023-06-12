@@ -14,6 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
+import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
 
 export interface Contact {
@@ -34,26 +35,30 @@ export interface Contact {
 export class ContactService {
   contacts: Contact[] = [];
 
-  constructor(private backend: BackendService) {}
+  constructor(
+    private backend: BackendService,
+    private registrarService: RegistrarService
+  ) {}
 
   // TODO: Come up with a better handling for registrarId
-  fetchContacts(registrarId: string): Observable<Contact[]> {
-    return this.backend.getContacts(registrarId).pipe(
-      tap((contacts) => {
-        this.contacts = contacts;
-      })
-    );
+  fetchContacts(): Observable<Contact[]> {
+    return this.backend
+      .getContacts(this.registrarService.activeRegistrarId)
+      .pipe(
+        tap((contacts) => {
+          this.contacts = contacts;
+        })
+      );
   }
 
-  saveContacts(
-    contacts: Contact[],
-    registrarId?: string
-  ): Observable<Contact[]> {
-    return this.backend.postContacts(registrarId || 'default', contacts).pipe(
-      tap((_) => {
-        this.contacts = contacts;
-      })
-    );
+  saveContacts(contacts: Contact[]): Observable<Contact[]> {
+    return this.backend
+      .postContacts(this.registrarService.activeRegistrarId, contacts)
+      .pipe(
+        tap((_) => {
+          this.contacts = contacts;
+        })
+      );
   }
 
   updateContact(index: number, contact: Contact) {

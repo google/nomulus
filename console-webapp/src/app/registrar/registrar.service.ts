@@ -12,25 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Injectable } from '@angular/core';
+import { BackendService } from '../shared/services/backend.service';
 
-import SecurityComponent from './security.component';
-
-describe('SecurityComponent', () => {
-  let component: SecurityComponent;
-  let fixture: ComponentFixture<SecurityComponent>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [SecurityComponent],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(SecurityComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-});
+@Injectable({
+  providedIn: 'root',
+})
+export class RegistrarService {
+  activeRegistrarId: string = '';
+  registrars: string[] = [];
+  constructor(private backend: BackendService) {
+    this.backend.getRegistrars().subscribe((r) => {
+      this.registrars = r;
+    });
+  }
+}
