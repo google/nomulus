@@ -12,25 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Injectable } from '@angular/core';
+import { Router, RouterStateSnapshot, UrlTree } from '@angular/router';
+import { RegistrarService } from './registrar.service';
 
-import SecurityComponent from './security.component';
+@Injectable({
+  providedIn: 'root',
+})
+export class RegistrarGuard {
+  constructor(
+    private router: Router,
+    private registrarService: RegistrarService
+  ) {}
 
-describe('SecurityComponent', () => {
-  let component: SecurityComponent;
-  let fixture: ComponentFixture<SecurityComponent>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [SecurityComponent],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(SecurityComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-});
+  canActivate(state: RouterStateSnapshot): Promise<boolean> | boolean {
+    if (this.registrarService.activeRegistrarId) {
+      return true;
+    }
+    return this.router.navigate([`/registrars`, { nextUrl: state.url }]);
+  }
+}

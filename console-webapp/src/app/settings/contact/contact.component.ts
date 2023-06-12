@@ -143,7 +143,7 @@ export default class ContactComponent {
   ) {
     // TODO: Refactor to registrarId service
     this.loading = true;
-    this.contactService.fetchContacts('zoomco').subscribe(() => {
+    this.contactService.fetchContacts().subscribe(() => {
       this.loading = false;
     });
   }

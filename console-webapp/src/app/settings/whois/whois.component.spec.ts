@@ -14,7 +14,7 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { WhoisComponent } from './whois.component';
+import WhoisComponent from './whois.component';
 
 describe('WhoisComponent', () => {
   let component: WhoisComponent;
