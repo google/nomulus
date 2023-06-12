@@ -14,7 +14,11 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ContactComponent } from './contact.component';
+import ContactComponent from './contact.component';
+import { MaterialModule } from 'src/app/material.module';
+import { ContactService } from './contact.service';
+import { BackendService } from 'src/app/shared/services/backend.service';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('ContactComponent', () => {
   let component: ContactComponent;
@@ -23,8 +27,9 @@ describe('ContactComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [ContactComponent],
+      imports: [HttpClientTestingModule, MaterialModule],
+      providers: [BackendService],
     }).compileComponents();
-
     fixture = TestBed.createComponent(ContactComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
