@@ -60,21 +60,18 @@ public final class RefreshDnsAction implements Runnable {
     if (!domainOrHostName.contains(".")) {
       throw new BadRequestException("URL parameter 'name' must be fully qualified");
     }
-    tm().transact(
-            () -> {
-              switch (type) {
-                case DOMAIN:
-                  loadAndVerifyExistence(Domain.class, domainOrHostName);
-                  requestDomainDnsRefresh(domainOrHostName);
-                  break;
-                case HOST:
-                  verifyHostIsSubordinate(loadAndVerifyExistence(Host.class, domainOrHostName));
-                  requestHostDnsRefresh(domainOrHostName);
-                  break;
-                default:
-                  throw new BadRequestException("Unsupported type: " + type);
-              }
-            });
+    switch (type) {
+      case DOMAIN:
+        loadAndVerifyExistence(Domain.class, domainOrHostName);
+        tm().transact(() -> requestDomainDnsRefresh(domainOrHostName));
+        break;
+      case HOST:
+        verifyHostIsSubordinate(loadAndVerifyExistence(Host.class, domainOrHostName));
+        tm().transact(() -> requestHostDnsRefresh(domainOrHostName));
+        break;
+      default:
+        throw new BadRequestException("Unsupported type: " + type);
+    }
   }
 
   private <T extends EppResource & ForeignKeyedEppResource>
