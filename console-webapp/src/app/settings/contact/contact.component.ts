@@ -104,7 +104,11 @@ export class ContactDetailsDialogComponent {
     this.operation = data.operation;
   }
 
-  saveAndClose() {
+  saveAndClose(e: any) {
+    e.preventDefault();
+    if (!e.target.checkValidity()) {
+      return;
+    }
     let operationObservable;
     if (this.operation === Operations.ADD) {
       operationObservable = this.contactService.addContact(this.contact);
@@ -143,7 +147,7 @@ export default class ContactComponent {
   ) {
     // TODO: Refactor to registrarId service
     this.loading = true;
-    this.contactService.fetchContacts('zoomco').subscribe(() => {
+    this.contactService.fetchContacts().subscribe(() => {
       this.loading = false;
     });
   }
@@ -160,7 +164,9 @@ export default class ContactComponent {
   }
 
   deleteContact(contact: Contact) {
-    this.contactService.deleteContact(contact);
+    if (confirm(`Please confirm contact ${contact.name} delete`)) {
+      this.contactService.deleteContact(contact).subscribe();
+    }
   }
 
   openCreateNew(e: Event) {

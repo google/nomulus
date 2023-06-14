@@ -1,7 +1,7 @@
 {
-  "/registrar":
+  "/console-api":
   {
-    "target": "http://localhost:8080/registrar",
-    "secure": false
+    "target": "http://localhost:8080",
+    "secure": true
   }
 }
