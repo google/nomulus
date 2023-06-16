@@ -276,16 +276,24 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
     boolean isAnchorTenant = expectedBillingFlags.contains(ANCHOR_TENANT);
     // Set up the creation cost.
+    BigDecimal createCost =
+        isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc())
+            ? BigDecimal.valueOf(200)
+            : BigDecimal.valueOf(26);
+    if (isAnchorTenant) {
+      createCost = BigDecimal.ZERO;
+    }
+    if (expectedBillingFlags.contains(SUNRISE)) {
+      createCost =
+          createCost.multiply(
+              BigDecimal.valueOf(1 - RegistryConfig.getSunriseDomainCreateDiscount()));
+    }
     FeesAndCredits feesAndCredits =
         new FeesAndCredits.Builder()
             .setCurrency(USD)
             .addFeeOrCredit(
                 Fee.create(
-                    isAnchorTenant
-                        ? BigDecimal.valueOf(0)
-                        : isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc())
-                            ? BigDecimal.valueOf(200)
-                            : BigDecimal.valueOf(26),
+                    createCost,
                     FeeType.CREATE,
                     isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc())))
             .build();
