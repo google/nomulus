@@ -22,6 +22,7 @@ import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.google.common.net.InternetDomainName;
+import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.custom.DomainPricingCustomLogic;
@@ -38,6 +39,7 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenBehavior;
 import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
 import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
 import java.math.RoundingMode;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -76,22 +78,28 @@ public final class DomainPricingLogic {
       throws EppException {
     CurrencyUnit currency = tld.getCurrency();
 
-    BaseFee createFeeOrCredit;
+    BaseFee createFee;
     // Domain create cost is always zero for anchor tenants
     if (isAnchorTenant) {
-      createFeeOrCredit = Fee.create(zeroInCurrency(currency), FeeType.CREATE, false);
+      createFee = Fee.create(zeroInCurrency(currency), FeeType.CREATE, false);
     } else {
       DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
       Money domainCreateCost =
           getDomainCreateCostWithDiscount(domainPrices, years, allocationToken);
-      createFeeOrCredit =
+      // We might want to apply a discount to domains created during sunrise
+      if (tld.getTldState(dateTime).equals(TldState.START_DATE_SUNRISE)) {
+        domainCreateCost =
+            domainCreateCost.multipliedBy(
+                1 - RegistryConfig.getSunriseDomainCreateDiscount(), RoundingMode.HALF_EVEN);
+      }
+      createFee =
           Fee.create(domainCreateCost.getAmount(), FeeType.CREATE, domainPrices.isPremium());
     }
 
     // Create fees for the cost and the EAP fee, if any.
     Fee eapFee = tld.getEapFeeFor(dateTime);
     FeesAndCredits.Builder feesBuilder =
-        new FeesAndCredits.Builder().setCurrency(currency).addFeeOrCredit(createFeeOrCredit);
+        new FeesAndCredits.Builder().setCurrency(currency).addFeeOrCredit(createFee);
     // Don't charge anchor tenants EAP fees.
     if (!isAnchorTenant && !eapFee.hasZeroCost()) {
       feesBuilder.addFeeOrCredit(eapFee);

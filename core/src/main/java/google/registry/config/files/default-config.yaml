@@ -188,6 +188,10 @@ registryPolicy:
   # should generally be true for production environments, for added security.
   requireSslCertificates: true
 
+  # A discount, if any, to be provided to all domain creates that occur during
+  # the sunrise period. If this is 0, there will be no discount applied.
+  sunriseDomainCreateDiscount: 0.15
+
 hibernate:
   # Make 'SERIALIZABLE' the default isolation level to ensure correctness.
   #

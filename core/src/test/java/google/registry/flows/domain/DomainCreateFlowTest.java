@@ -276,16 +276,24 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
     boolean isAnchorTenant = expectedBillingFlags.contains(ANCHOR_TENANT);
     // Set up the creation cost.
+    BigDecimal createCost =
+        isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc())
+            ? BigDecimal.valueOf(200)
+            : BigDecimal.valueOf(26);
+    if (isAnchorTenant) {
+      createCost = BigDecimal.ZERO;
+    }
+    if (expectedBillingFlags.contains(SUNRISE)) {
+      createCost =
+          createCost.multiply(
+              BigDecimal.valueOf(1 - RegistryConfig.getSunriseDomainCreateDiscount()));
+    }
     FeesAndCredits feesAndCredits =
         new FeesAndCredits.Builder()
             .setCurrency(USD)
             .addFeeOrCredit(
                 Fee.create(
-                    isAnchorTenant
-                        ? BigDecimal.valueOf(0)
-                        : isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc())
-                            ? BigDecimal.valueOf(200)
-                            : BigDecimal.valueOf(26),
+                    createCost,
                     FeeType.CREATE,
                     isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc())))
             .build();
@@ -2259,8 +2267,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testSuccess_superuserStartDateSunrise_isSuperuser() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     persistContactsAndHosts();
-    doSuccessfulTest(
-        "tld", "domain_create_response.xml", SUPERUSER, ImmutableMap.of("DOMAIN", "example.tld"));
+    assertTransactionalFlow(true);
+    runFlowAssertResponse(
+        CommitMode.LIVE,
+        SUPERUSER,
+        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
+    assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE));
+    assertNoLordn();
   }
 
   @Test
@@ -2635,8 +2648,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     createTld("tld", START_DATE_SUNRISE);
     setEppInput("domain_create_registration_sunrise.xml");
     persistContactsAndHosts();
-    doSuccessfulTest(
-        "tld", "domain_create_response.xml", SUPERUSER, ImmutableMap.of("DOMAIN", "example.tld"));
+    assertTransactionalFlow(true);
+    runFlowAssertResponse(
+        CommitMode.LIVE,
+        SUPERUSER,
+        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
+    assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE));
+    assertNoLordn();
   }
 
   @Test

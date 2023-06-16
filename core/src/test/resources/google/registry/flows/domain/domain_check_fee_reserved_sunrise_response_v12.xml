@@ -66,7 +66,7 @@
           </fee:object>
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
-            <fee:fee description="create">13.00</fee:fee>
+            <fee:fee description="create">11.05</fee:fee>
           </fee:command>
         </fee:cd>
         <fee:cd>
@@ -102,7 +102,7 @@
           </fee:object>
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
-            <fee:fee description="create">13.00</fee:fee>
+            <fee:fee description="create">11.05</fee:fee>
             <fee:class>collision</fee:class>
           </fee:command>
         </fee:cd>
@@ -142,7 +142,7 @@
           </fee:object>
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
-            <fee:fee description="create">70.00</fee:fee>
+            <fee:fee description="create">59.50</fee:fee>
             <fee:class>premium-collision</fee:class>
           </fee:command>
         </fee:cd>
