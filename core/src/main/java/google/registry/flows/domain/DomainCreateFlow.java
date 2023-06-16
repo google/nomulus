@@ -337,7 +337,8 @@ public final class DomainCreateFlow implements TransactionalFlow {
     Optional<FeeCreateCommandExtension> feeCreate =
         eppInput.getSingleExtension(FeeCreateCommandExtension.class);
     FeesAndCredits feesAndCredits =
-        pricingLogic.getCreatePrice(tld, targetId, now, years, isAnchorTenant, allocationToken);
+        pricingLogic.getCreatePrice(
+            tld, targetId, now, years, isAnchorTenant, isSunriseCreate, allocationToken);
     validateFeeChallenge(feeCreate, feesAndCredits, defaultTokenUsed);
     Optional<SecDnsCreateExtension> secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));

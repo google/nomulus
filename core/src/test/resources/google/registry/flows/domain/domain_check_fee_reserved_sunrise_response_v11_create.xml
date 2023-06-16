@@ -40,7 +40,7 @@
           <fee:command>create</fee:command>
           <fee:currency>USD</fee:currency>
           <fee:period unit="y">1</fee:period>
-          <fee:fee description="create">13.00</fee:fee>
+          <fee:fee description="create">11.05</fee:fee>
         </fee:cd>
         <fee:cd avail="1">
           <fee:object>
@@ -49,7 +49,7 @@
           <fee:command>create</fee:command>
           <fee:currency>USD</fee:currency>
           <fee:period unit="y">1</fee:period>
-          <fee:fee description="create">13.00</fee:fee>
+          <fee:fee description="create">11.05</fee:fee>
           <fee:class>collision</fee:class>
         </fee:cd>
         <fee:cd avail="1">
@@ -59,7 +59,7 @@
           <fee:command>create</fee:command>
           <fee:currency>USD</fee:currency>
           <fee:period unit="y">1</fee:period>
-          <fee:fee description="create">70.00</fee:fee>
+          <fee:fee description="create">59.50</fee:fee>
           <fee:class>premium-collision</fee:class>
         </fee:cd>
       </fee:chkData>

@@ -1568,6 +1568,11 @@ public final class RegistryConfig {
     return Duration.standardDays(CONFIG_SETTINGS.get().registryPolicy.contactAutomaticTransferDays);
   }
 
+  /** A discount for all sunrise domain creates, between 0.0 (no discount) and 1.0 (free). */
+  public static double getSunriseDomainCreateDiscount() {
+    return CONFIG_SETTINGS.get().registryPolicy.sunriseDomainCreateDiscount;
+  }
+
   /**
    * Memoizes loading of the {@link RegistryConfigSettings} POJO.
    *
