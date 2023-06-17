@@ -50,6 +50,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
+import com.google.gson.annotations.Expose;
 import com.google.re2j.Pattern;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
@@ -253,7 +254,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   // Authentication.
 
   /** X.509 PEM client certificate(s) used to authenticate registrar to EPP service. */
-  String clientCertificate;
+  @Expose String clientCertificate;
 
   /** Base64 encoded SHA256 hash of {@link #clientCertificate}. */
   String clientCertificateHash;
@@ -263,13 +264,13 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    *
    * <p>This allows registrars to migrate certificates without downtime.
    */
-  String failoverClientCertificate;
+  @Expose String failoverClientCertificate;
 
   /** Base64 encoded SHA256 hash of {@link #failoverClientCertificate}. */
   String failoverClientCertificateHash;
 
   /** An allow list of netmasks (in CIDR notation) which the client is allowed to connect from. */
-  List<CidrAddressBlock> ipAddressAllowList;
+  @Expose List<CidrAddressBlock> ipAddressAllowList;
 
   /** A hashed password for EPP access. The hash is a base64 encoded SHA256 string. */
   String passwordHash;

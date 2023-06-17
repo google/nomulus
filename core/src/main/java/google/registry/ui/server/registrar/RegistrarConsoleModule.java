@@ -24,6 +24,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.OptionalJsonPayload;
 import google.registry.request.Parameter;
@@ -186,5 +187,16 @@ public final class RegistrarConsoleModule {
   @Parameter("registrarId")
   static String provideRegistrarId(HttpServletRequest req) {
     return extractRequiredParameter(req, "registrarId");
+  }
+
+  @Provides
+  @Parameter("registrar")
+  public static Optional<Registrar> provideRegistrar(
+      Gson gson, @OptionalJsonPayload Optional<JsonObject> payload) {
+    if (payload.isPresent() && payload.get().has("registrar")) {
+      return Optional.of(gson.fromJson(payload.get().get("registrar"), Registrar.class));
+    }
+
+    return Optional.empty();
   }
 }
