@@ -3,6 +3,7 @@ PATH                           CLASS                         METHODS  OK AUTH_ME
 /console-api/domain            ConsoleDomainGetAction        GET      n  API,LEGACY          USER PUBLIC
 /console-api/registrars        RegistrarsAction              GET      n  API,LEGACY          USER PUBLIC
 /console-api/settings/contacts ContactAction                 GET,POST n  API,LEGACY          USER PUBLIC
+/console-api/settings/security SecurityAction                GET,POST n  API,LEGACY          USER PUBLIC
 /registrar                     ConsoleUiAction               GET      n  INTERNAL,API,LEGACY NONE PUBLIC
 /registrar-create              ConsoleRegistrarCreatorAction POST,GET n  INTERNAL,API,LEGACY NONE PUBLIC
 /registrar-ote-setup           ConsoleOteSetupAction         POST,GET n  INTERNAL,API,LEGACY NONE PUBLIC
