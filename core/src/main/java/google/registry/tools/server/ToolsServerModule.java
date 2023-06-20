@@ -78,7 +78,7 @@ public class ToolsServerModule {
 
   @Provides
   @Parameter("batchSize")
-  static int provideBatchSize(HttpServletRequest req) {
-    return extractOptionalIntParameter(req, "batchSize").orElse(250);
+  static Optional<Integer> provideBatchSize(HttpServletRequest req) {
+    return extractOptionalIntParameter(req, "batchSize");
   }
 }

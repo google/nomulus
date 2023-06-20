@@ -30,6 +30,7 @@ import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import java.util.Optional;
 import java.util.Random;
 import javax.inject.Inject;
 import org.apache.arrow.util.VisibleForTesting;
@@ -58,6 +59,8 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  private static final int DEFAULT_BATCH_SIZE = 250;
+
   private final Response response;
   private final ImmutableSet<String> tlds;
 
@@ -69,11 +72,11 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   RefreshDnsForAllDomainsAction(
       Response response,
       @Parameter(PARAM_TLDS) ImmutableSet<String> tlds,
-      @Parameter("batchSize") int batchSize,
+      @Parameter("batchSize") Optional<Integer> batchSize,
       Random random) {
     this.response = response;
     this.tlds = tlds;
-    this.batchSize = batchSize;
+    this.batchSize = batchSize.orElse(DEFAULT_BATCH_SIZE);
     this.random = random;
   }
 
@@ -84,11 +87,8 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
     int smearMinutes = tm().transact(this::calculateSmearMinutes);
     ImmutableList<String> previousBatch = ImmutableList.of("");
     do {
-      // This temp variable is required since Java requires that an effectively final variable is
-      // used in the lambda expression below
-      ImmutableList<String> finalPreviousBatch = previousBatch;
-      previousBatch =
-          tm().transact(() -> refreshBatch(ImmutableList.copyOf(finalPreviousBatch), smearMinutes));
+      String lastInPreviousBatch = getLast(previousBatch);
+      previousBatch = tm().transact(() -> refreshBatch(lastInPreviousBatch, smearMinutes));
     } while (previousBatch.size() == batchSize);
   }
 
@@ -107,7 +107,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
     return Math.max(activeDomains.intValue() / 1000, 1);
   }
 
-  private ImmutableList<String> getBatch(ImmutableList<String> previousBatch) {
+  private ImmutableList<String> getBatch(String lastInPreviousBatch) {
     return tm().query(
             "SELECT domainName FROM Domain WHERE tld IN (:tlds) AND"
                 + " deletionTime = :endOfTime  AND domainName >"
@@ -115,15 +115,15 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
             String.class)
         .setParameter("tlds", tlds)
         .setParameter("endOfTime", END_OF_TIME)
-        .setParameter("lastInPreviousBatch", getLast(previousBatch))
+        .setParameter("lastInPreviousBatch", lastInPreviousBatch)
         .setMaxResults(batchSize)
         .getResultStream()
         .collect(toImmutableList());
   }
 
   @VisibleForTesting
-  ImmutableList<String> refreshBatch(ImmutableList<String> previousBatch, int smearMinutes) {
-    ImmutableList<String> domainBatch = getBatch(previousBatch);
+  ImmutableList<String> refreshBatch(String lastInPreviousBatch, int smearMinutes) {
+    ImmutableList<String> domainBatch = getBatch(lastInPreviousBatch);
     try {
       // Smear the task execution time over the next N minutes.
       requestDomainDnsRefresh(domainBatch, Duration.standardMinutes(random.nextInt(smearMinutes)));

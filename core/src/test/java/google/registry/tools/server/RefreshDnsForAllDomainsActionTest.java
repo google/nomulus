@@ -32,6 +32,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
+import java.util.Optional;
 import java.util.Random;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +53,9 @@ public class RefreshDnsForAllDomainsActionTest {
   @BeforeEach
   void beforeEach() {
     createTld("bar");
-    action = new RefreshDnsForAllDomainsAction(response, ImmutableSet.of("bar"), 10, new Random());
+    action =
+        new RefreshDnsForAllDomainsAction(
+            response, ImmutableSet.of("bar"), Optional.of(10), new Random());
   }
 
   @Test
@@ -69,9 +72,11 @@ public class RefreshDnsForAllDomainsActionTest {
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
     // Set batch size to 1 since each batch will be enqueud at the same time
-    action = new RefreshDnsForAllDomainsAction(response, ImmutableSet.of("bar"), 1, new Random());
-    tm().transact(() -> action.refreshBatch(ImmutableList.of(""), 1000));
-    tm().transact(() -> action.refreshBatch(ImmutableList.of(""), 1000));
+    action =
+        new RefreshDnsForAllDomainsAction(
+            response, ImmutableSet.of("bar"), Optional.of(1), new Random());
+    tm().transact(() -> action.refreshBatch("", 1000));
+    tm().transact(() -> action.refreshBatch("", 1000));
     ImmutableList<DnsRefreshRequest> refreshRequests =
         tm().transact(
                 () ->
