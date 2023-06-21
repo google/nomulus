@@ -15,6 +15,8 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Verify.verify;
 import static com.google.common.net.HttpHeaders.X_REQUESTED_WITH;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static google.registry.security.JsonHttp.JSON_SAFETY_PREFIX;
@@ -26,6 +28,7 @@ import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
@@ -36,6 +39,7 @@ import google.registry.config.RegistryConfig;
 import google.registry.request.Action.Service;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -55,20 +59,23 @@ public class ServiceConnection {
 
   @Inject HttpRequestFactory requestFactory;
   private final Service service;
+  private final boolean useCanary;
 
   @Inject
   ServiceConnection() {
     service = Service.TOOLS;
+    useCanary = false;
   }
 
-  private ServiceConnection(Service service, HttpRequestFactory requestFactory) {
+  private ServiceConnection(Service service, HttpRequestFactory requestFactory, boolean useCanary) {
     this.service = service;
     this.requestFactory = requestFactory;
+    this.useCanary = useCanary;
   }
 
-  /** Returns a copy of this connection that talks to a different service. */
-  public ServiceConnection withService(Service service) {
-    return new ServiceConnection(service, requestFactory);
+  /** Returns a copy of this connection that talks to a different service endpoint. */
+  public ServiceConnection withService(Service service, boolean isCanary) {
+    return new ServiceConnection(service, requestFactory, isCanary);
   }
 
   /** Returns the contents of the title tag in the given HTML, or null if not found. */
@@ -85,7 +92,7 @@ public class ServiceConnection {
   private String internalSend(
       String endpoint, Map<String, ?> params, MediaType contentType, @Nullable byte[] payload)
       throws IOException {
-    GenericUrl url = new GenericUrl(String.format("%s%s", getServer(service), endpoint));
+    GenericUrl url = new GenericUrl(String.format("%s%s", getServer(), endpoint));
     url.putAll(params);
     HttpRequest request =
         (payload != null)
@@ -118,6 +125,20 @@ public class ServiceConnection {
         response.disconnect();
       }
     }
+  }
+
+  @VisibleForTesting
+  URL getServer() {
+    URL url = getServer(service);
+    if (useCanary) {
+      verify(!isNullOrEmpty(url.getHost()), "Null host in url");
+      try {
+        return new URL(url.getProtocol(), "nomulus-dot-" + url.getHost(), url.getFile());
+      } catch (MalformedURLException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return url;
   }
 
   public String sendPostRequest(

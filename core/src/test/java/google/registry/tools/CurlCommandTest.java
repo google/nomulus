@@ -22,6 +22,7 @@ import static google.registry.request.Action.Service.TOOLS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
+import google.registry.request.Action.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -46,7 +48,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   @BeforeEach
   void beforeEach() {
     command.setConnection(connection);
-    when(connection.withService(any())).thenReturn(connectionForService);
+    when(connection.withService(any(Service.class), anyBoolean())).thenReturn(connectionForService);
   }
 
   @Captor ArgumentCaptor<ImmutableMap<String, String>> urlParamCaptor;
@@ -54,7 +56,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   @Test
   void testGetInvocation() throws Exception {
     runCommand("--path=/foo/bar?a=1&b=2", "--service=TOOLS");
-    verify(connection).withService(TOOLS);
+    verify(connection).withService(eq(TOOLS), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendGetRequest(eq("/foo/bar?a=1&b=2"), eq(ImmutableMap.<String, String>of()));
@@ -63,7 +65,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   @Test
   void testExplicitGetInvocation() throws Exception {
     runCommand("--path=/foo/bar?a=1&b=2", "--request=GET", "--service=BACKEND");
-    verify(connection).withService(BACKEND);
+    verify(connection).withService(eq(BACKEND), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendGetRequest(eq("/foo/bar?a=1&b=2"), eq(ImmutableMap.<String, String>of()));
@@ -72,7 +74,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   @Test
   void testPostInvocation() throws Exception {
     runCommand("--path=/foo/bar?a=1&b=2", "--data=some data", "--service=DEFAULT");
-    verify(connection).withService(DEFAULT);
+    verify(connection).withService(eq(DEFAULT), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendPostRequest(
@@ -89,7 +91,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
         "--data=some data",
         "--service=DEFAULT",
         "--content-type=application/json");
-    verify(connection).withService(DEFAULT);
+    verify(connection).withService(eq(DEFAULT), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendPostRequest(
@@ -118,7 +120,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   void testMultiDataPost() throws Exception {
     runCommand(
         "--path=/foo/bar?a=1&b=2", "--data=first=100", "-d", "second=200", "--service=PUBAPI");
-    verify(connection).withService(PUBAPI);
+    verify(connection).withService(eq(PUBAPI), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendPostRequest(
@@ -132,7 +134,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   void testDataDoesntSplit() throws Exception {
     runCommand(
         "--path=/foo/bar?a=1&b=2", "--data=one,two", "--service=PUBAPI");
-    verify(connection).withService(PUBAPI);
+    verify(connection).withService(eq(PUBAPI), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendPostRequest(
@@ -145,7 +147,20 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   @Test
   void testExplicitPostInvocation() throws Exception {
     runCommand("--path=/foo/bar?a=1&b=2", "--request=POST", "--service=TOOLS");
-    verify(connection).withService(TOOLS);
+    verify(connection).withService(eq(TOOLS), eq(false));
+    verifyNoMoreInteractions(connection);
+    verify(connectionForService)
+        .sendPostRequest(
+            eq("/foo/bar?a=1&b=2"),
+            eq(ImmutableMap.<String, String>of()),
+            eq(MediaType.PLAIN_TEXT_UTF_8),
+            eq("".getBytes(UTF_8)));
+  }
+
+  @Test
+  void testCanaryInvocation() throws Exception {
+    runCommand("--path=/foo/bar?a=1&b=2", "--request=POST", "--service=TOOLS", "--canary");
+    verify(connection).withService(eq(TOOLS), eq(true));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendPostRequest(
