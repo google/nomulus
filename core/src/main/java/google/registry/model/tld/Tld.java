@@ -296,6 +296,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * <p>When this field is null, the "dnsDefaultDsTtl" value from the config file will be used.
    */
   Duration dnsDsTtl;
+
   /**
    * The unicode-aware representation of the TLD associated with this {@link Tld}.
    *
@@ -688,6 +689,14 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return Optional.ofNullable(dnsDsTtl);
   }
 
+  public String getTldUnicode() {
+    return tldUnicode;
+  }
+
+  public boolean getInvoicingEnabled() {
+    return invoicingEnabled;
+  }
+
   public ImmutableSet<String> getAllowedRegistrantContactIds() {
     return nullToEmptyImmutableCopy(allowedRegistrantContactIds);
   }
@@ -806,6 +815,14 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
           addGracePeriodLength.isLongerThan(Duration.ZERO),
           "addGracePeriodLength must be non-zero");
       getInstance().addGracePeriodLength = addGracePeriodLength;
+      return this;
+    }
+
+    public Builder setAnchorTenantAddGracePeriodLength(Duration anchorTenantAddGracePeriodLength) {
+      checkArgument(
+          anchorTenantAddGracePeriodLength.isLongerThan(Duration.ZERO),
+          "anchorTenantAddGracePeriodLength must be non-zero");
+      getInstance().anchorTenantAddGracePeriodLength = anchorTenantAddGracePeriodLength;
       return this;
     }
 

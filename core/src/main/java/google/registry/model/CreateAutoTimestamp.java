@@ -46,6 +46,14 @@ public class CreateAutoTimestamp extends ImmutableObject implements UnsafeSerial
     return creationTime;
   }
 
+  @Override
+  public String toString() {
+    if (creationTime == null) {
+      return null;
+    }
+    return creationTime.toString();
+  }
+
   public static CreateAutoTimestamp create(@Nullable DateTime creationTime) {
     CreateAutoTimestamp instance = new CreateAutoTimestamp();
     instance.creationTime = creationTime;
