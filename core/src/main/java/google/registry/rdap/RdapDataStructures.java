@@ -367,7 +367,7 @@ final class RdapDataStructures {
     PENDING_RESTORE("pending restore"),
     REDEMPTION_PERIOD("redemption period"),
     RENEW_PERIOD("renew period"),
-    SERVER_DELETE_PROHIBITED("server deleted prohibited"),
+    SERVER_DELETE_PROHIBITED("server delete prohibited"),
     SERVER_RENEW_PROHIBITED("server renew prohibited"),
     SERVER_TRANSFER_PROHIBITED("server transfer prohibited"),
     SERVER_UPDATE_PROHIBITED("server update prohibited"),

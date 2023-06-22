@@ -1000,7 +1000,7 @@ public class RdapJsonFormatter {
     // Gustavo Lozano of ICANN, the one we should use is an embedded array of street address lines
     // if there is more than one line:
     //
-    //   RFC7095 provides two examples of structured addresses, and one of the examples shows a
+    //   RFC 7095 provides two examples of structured addresses, and one of the examples shows a
     //   street JSON element that contains several data elements. The example showing (see below)
     //   several data elements is the expected output when two or more <contact:street> elements
     //   exists in the contact object.

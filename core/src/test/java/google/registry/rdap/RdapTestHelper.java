@@ -139,13 +139,12 @@ class RdapTestHelper {
                 "RDDS Inaccuracy Complaint Form",
                 "description",
                 ImmutableList.of(
-                    "URL of the ICANN RDDS Inaccuracy Complaint Form:"
-                        + " https://www.icann.org/wicf"),
+                    "URL of the ICANN RDDS Inaccuracy Complaint Form: https://icann.org/wicf"),
                 "links",
                 ImmutableList.of(
                     ImmutableMap.of(
                         "rel", "alternate",
-                        "href", "https://www.icann.org/wicf",
+                        "href", "https://icann.org/wicf",
                         "type", "text/html")))));
   }
 
