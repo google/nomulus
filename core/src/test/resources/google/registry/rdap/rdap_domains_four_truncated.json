@@ -156,12 +156,12 @@
     },
     {
       "title": "RDDS Inaccuracy Complaint Form",
-      "description" : ["URL of the ICANN RDDS Inaccuracy Complaint Form: https://www.icann.org/wicf"],
+      "description" : ["URL of the ICANN RDDS Inaccuracy Complaint Form: https://icann.org/wicf"],
       "links" :
       [
         {
           "rel" : "alternate",
-          "href" : "https://www.icann.org/wicf",
+          "href" : "https://icann.org/wicf",
           "type" : "text/html"
         }
       ]

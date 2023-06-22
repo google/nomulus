@@ -54,12 +54,11 @@ public class RdapIcannStandardInformation {
   private static final Notice INACCURACY_COMPLAINT_FORM_NOTICE =
       Notice.builder()
           .setTitle("RDDS Inaccuracy Complaint Form")
-          .setDescription(
-              "URL of the ICANN RDDS Inaccuracy Complaint Form: https://www.icann.org/wicf")
+          .setDescription("URL of the ICANN RDDS Inaccuracy Complaint Form: https://icann.org/wicf")
           .addLink(
               Link.builder()
                   .setRel("alternate")
-                  .setHref("https://www.icann.org/wicf")
+                  .setHref("https://icann.org/wicf")
                   .setType("text/html")
                   .build())
           .build();
