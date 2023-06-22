@@ -75,6 +75,11 @@ class CurlCommand implements CommandWithConnection {
       required = true)
   private Service service;
 
+  @Parameter(
+      names = {"--canary"},
+      description = "If set, use the canary end-point; otherwise use the regular end-point.")
+  private Boolean canary = Boolean.FALSE;
+
   @Override
   public void setConnection(ServiceConnection connection) {
     this.connection = connection;
@@ -90,7 +95,7 @@ class CurlCommand implements CommandWithConnection {
       throw new IllegalArgumentException("You may not specify a body for a get method.");
     }
 
-    ServiceConnection connectionToService = connection.withService(service);
+    ServiceConnection connectionToService = connection.withService(service, canary);
     String response =
         (method == Method.GET)
             ? connectionToService.sendGetRequest(path, ImmutableMap.<String, String>of())
