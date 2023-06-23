@@ -32,7 +32,9 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import java.util.Optional;
 import java.util.Random;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.persistence.TypedQuery;
 import org.apache.arrow.util.VisibleForTesting;
 import org.apache.http.HttpStatus;
 import org.joda.time.Duration;
@@ -85,11 +87,14 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
     assertTldsExist(tlds);
     checkArgument(batchSize > 0, "Must specify a positive number for batch size");
     int smearMinutes = tm().transact(this::calculateSmearMinutes);
-    ImmutableList<String> previousBatch = ImmutableList.of("");
+
+    ImmutableList<String> domainsBatch;
+    @Nullable String lastInPreviousBatch = null;
     do {
-      String lastInPreviousBatch = getLast(previousBatch);
-      previousBatch = tm().transact(() -> refreshBatch(lastInPreviousBatch, smearMinutes));
-    } while (previousBatch.size() == batchSize);
+      Optional<String> lastInPreviousBatchOpt = Optional.ofNullable(lastInPreviousBatch);
+      domainsBatch = tm().transact(() -> refreshBatch(lastInPreviousBatchOpt, smearMinutes));
+      lastInPreviousBatch = domainsBatch.isEmpty() ? null : getLast(domainsBatch);
+    } while (domainsBatch.size() == batchSize);
   }
 
   /**
@@ -107,22 +112,24 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
     return Math.max(activeDomains.intValue() / 1000, 1);
   }
 
-  private ImmutableList<String> getBatch(String lastInPreviousBatch) {
-    return tm().query(
+  private ImmutableList<String> getBatch(Optional<String> lastInPreviousBatch) {
+    String sql =
+        String.format(
             "SELECT domainName FROM Domain WHERE tld IN (:tlds) AND"
-                + " deletionTime = :endOfTime  AND domainName >"
-                + " :lastInPreviousBatch ORDER BY domainName ASC",
-            String.class)
-        .setParameter("tlds", tlds)
-        .setParameter("endOfTime", END_OF_TIME)
-        .setParameter("lastInPreviousBatch", lastInPreviousBatch)
-        .setMaxResults(batchSize)
-        .getResultStream()
-        .collect(toImmutableList());
+                + " deletionTime = :endOfTime %s ORDER BY domainName ASC",
+            lastInPreviousBatch.isPresent() ? "AND domainName > :lastInPreviousBatch" : "");
+    TypedQuery<String> query =
+        tm().query(sql, String.class)
+            .setParameter("tlds", tlds)
+            .setParameter("endOfTime", END_OF_TIME);
+    if (lastInPreviousBatch.isPresent()) {
+      query = query.setParameter("lastInPreviousBatch", lastInPreviousBatch);
+    }
+    return query.setMaxResults(batchSize).getResultStream().collect(toImmutableList());
   }
 
   @VisibleForTesting
-  ImmutableList<String> refreshBatch(String lastInPreviousBatch, int smearMinutes) {
+  ImmutableList<String> refreshBatch(Optional<String> lastInPreviousBatch, int smearMinutes) {
     ImmutableList<String> domainBatch = getBatch(lastInPreviousBatch);
     try {
       // Smear the task execution time over the next N minutes.
