@@ -564,14 +564,18 @@ task deployCloudSchedulerAndQueue {
     def env = environment
     if (!prodOrSandboxEnv) {
       exec {
+        workingDir "${rootDir}/release/builder/"
         commandLine 'go', 'run',
-                "${rootDir}/release/builder/deployCloudSchedulerAndQueue.go",
+                "./deployCloudSchedulerAndQueue.go",
+                "${rootDir}/core/src/main/java/google/registry/config/files/nomulus-config-${env}.yaml",
                 "${rootDir}/core/src/main/java/google/registry/env/${env}/default/WEB-INF/cloud-scheduler-tasks.xml",
                 "domain-registry-${env}"
       }
       exec {
+        workingDir "${rootDir}/release/builder/"
         commandLine 'go', 'run',
-                "${rootDir}/release/builder/deployCloudSchedulerAndQueue.go",
+                "./deployCloudSchedulerAndQueue.go",
+                "${rootDir}/core/src/main/java/google/registry/config/files/nomulus-config-${env}.yaml",
                 "${rootDir}/core/src/main/java/google/registry/env/common/default/WEB-INF/cloud-tasks-queue.xml",
                 "domain-registry-${env}"
       }

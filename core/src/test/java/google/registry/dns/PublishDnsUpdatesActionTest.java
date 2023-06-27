@@ -294,7 +294,7 @@ public class PublishDnsUpdatesActionTest {
     cloudTasksHelper.assertTasksEnqueued(
         DNS_PUBLISH_PUSH_QUEUE_NAME,
         new TaskMatcher()
-            .url(PublishDnsUpdatesAction.PATH)
+            .path(PublishDnsUpdatesAction.PATH)
             .param(PARAM_TLD, "xn--q9jyb4c")
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
@@ -305,7 +305,7 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_HOSTS, "")
             .header("content-type", "application/x-www-form-urlencoded"),
         new TaskMatcher()
-            .url(PublishDnsUpdatesAction.PATH)
+            .path(PublishDnsUpdatesAction.PATH)
             .param(PARAM_TLD, "xn--q9jyb4c")
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
@@ -333,7 +333,7 @@ public class PublishDnsUpdatesActionTest {
     cloudTasksHelper.assertTasksEnqueued(
         DNS_PUBLISH_PUSH_QUEUE_NAME,
         new TaskMatcher()
-            .url(PublishDnsUpdatesAction.PATH)
+            .path(PublishDnsUpdatesAction.PATH)
             .param(PARAM_TLD, "xn--q9jyb4c")
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
@@ -344,7 +344,7 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_HOSTS, "")
             .header("content-type", "application/x-www-form-urlencoded"),
         new TaskMatcher()
-            .url(PublishDnsUpdatesAction.PATH)
+            .path(PublishDnsUpdatesAction.PATH)
             .param(PARAM_TLD, "xn--q9jyb4c")
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
@@ -370,7 +370,7 @@ public class PublishDnsUpdatesActionTest {
     cloudTasksHelper.assertTasksEnqueued(
         DNS_PUBLISH_PUSH_QUEUE_NAME,
         new TaskMatcher()
-            .url(PublishDnsUpdatesAction.PATH)
+            .path(PublishDnsUpdatesAction.PATH)
             .param(PARAM_TLD, "xn--q9jyb4c")
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
@@ -381,7 +381,7 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_HOSTS, "")
             .header("content-type", "application/x-www-form-urlencoded"),
         new TaskMatcher()
-            .url(PublishDnsUpdatesAction.PATH)
+            .path(PublishDnsUpdatesAction.PATH)
             .param(PARAM_TLD, "xn--q9jyb4c")
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")

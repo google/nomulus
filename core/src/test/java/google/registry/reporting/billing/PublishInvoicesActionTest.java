@@ -83,7 +83,7 @@ class PublishInvoicesActionTest {
     verify(emailUtils).emailOverallInvoice();
     TaskMatcher matcher =
         new TaskMatcher()
-            .url("/_dr/task/copyDetailReports")
+            .path("/_dr/task/copyDetailReports")
             .method(HttpMethod.POST)
             .param("yearMonth", "2017-10");
     cloudTasksHelper.assertTasksEnqueued("retryable-cron-tasks", matcher);

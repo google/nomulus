@@ -26,13 +26,13 @@ public class ServiceConnectionTest {
   void testServerUrl_notCanary() {
     ServiceConnection connection = new ServiceConnection().withService(DEFAULT, false);
     String serverUrl = connection.getServer().toString();
-    assertThat(serverUrl).isEqualTo("https://localhost"); // See default-config.yaml
+    assertThat(serverUrl).isEqualTo("https://default.example.com"); // See default-config.yaml
   }
 
   @Test
   void testServerUrl_canary() {
     ServiceConnection connection = new ServiceConnection().withService(DEFAULT, true);
     String serverUrl = connection.getServer().toString();
-    assertThat(serverUrl).isEqualTo("https://nomulus-dot-localhost");
+    assertThat(serverUrl).isEqualTo("https://nomulus-dot-default.example.com");
   }
 }

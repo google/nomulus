@@ -227,7 +227,7 @@ public class RdeUploadActionTest {
             action, Tld.get("lol"), standardSeconds(23), CursorType.RDE_UPLOAD, standardDays(1));
     cloudTasksHelper.assertTasksEnqueued(
         "rde-report",
-        new TaskMatcher().url(RdeReportAction.PATH).param(RequestParameters.PARAM_TLD, "lol"));
+        new TaskMatcher().path(RdeReportAction.PATH).param(RequestParameters.PARAM_TLD, "lol"));
     verifyNoMoreInteractions(runner);
   }
 
@@ -244,7 +244,7 @@ public class RdeUploadActionTest {
     cloudTasksHelper.assertTasksEnqueued(
         "rde-report",
         new TaskMatcher()
-            .url(RdeReportAction.PATH)
+            .path(RdeReportAction.PATH)
             .param(RequestParameters.PARAM_TLD, "lol")
             .param(RdeModule.PARAM_PREFIX, "job-name/"));
     verifyNoMoreInteractions(runner);

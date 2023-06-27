@@ -23,7 +23,7 @@ public class RegistryConfigSettings {
 
   public GcpProject gcpProject;
   public GSuite gSuite;
-  public OAuth oAuth;
+  public Auth auth;
   public CredentialOAuth credentialOAuth;
   public RegistryPolicy registryPolicy;
   public Hibernate hibernate;
@@ -54,16 +54,15 @@ public class RegistryConfigSettings {
     public String backendServiceUrl;
     public String toolsServiceUrl;
     public String pubapiServiceUrl;
-    public List<String> serviceAccountEmails;
-    public String defaultServiceAccount;
   }
 
-  /** Configuration options for OAuth settings for authenticating users. */
-  public static class OAuth {
+  /** Configuration options for authenticating users. */
+  public static class Auth {
     public List<String> availableOauthScopes;
     public List<String> requiredOauthScopes;
     public List<String> allowedOauthClientIds;
-    public String iapClientId;
+    public List<String> allowedServiceAccountEmails;
+    public String oauthClientId;
   }
 
   /** Configuration options for accessing Google APIs. */

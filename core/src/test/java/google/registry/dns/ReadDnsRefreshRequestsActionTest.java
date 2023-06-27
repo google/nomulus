@@ -225,7 +225,7 @@ public class ReadDnsRefreshRequestsActionTest {
     cloudTasksHelper.assertTasksEnqueued(
         "dns-publish",
         new TaskMatcher()
-            .url("/_dr/task/publishDnsUpdates")
+            .path("/_dr/task/publishDnsUpdates")
             .service("BACKEND")
             .param("tld", "tld")
             .param("dnsWriter", "FooWriter")
@@ -236,7 +236,7 @@ public class ReadDnsRefreshRequestsActionTest {
             .param("domains", "domain.tld,future.tld")
             .param("hosts", "ns1.domain.tld"),
         new TaskMatcher()
-            .url("/_dr/task/publishDnsUpdates")
+            .path("/_dr/task/publishDnsUpdates")
             .service("BACKEND")
             .param("tld", "tld")
             .param("dnsWriter", "BarWriter")

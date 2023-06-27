@@ -20,6 +20,7 @@ import com.google.api.client.googleapis.util.Utils;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
+import com.google.auth.ServiceAccountSigner;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 import java.io.Serializable;
@@ -31,12 +32,13 @@ import java.io.Serializable;
  */
 public class GoogleCredentialsBundle implements Serializable {
 
+  private static final long serialVersionUID = -7184513645423688942L;
   private static final HttpTransport HTTP_TRANSPORT = Utils.getDefaultTransport();
   private static final JsonFactory JSON_FACTORY = Utils.getDefaultJsonFactory();
 
-  private GoogleCredentials googleCredentials;
+  private final GoogleCredentials googleCredentials;
 
-  private GoogleCredentialsBundle(GoogleCredentials googleCredentials) {
+  protected GoogleCredentialsBundle(GoogleCredentials googleCredentials) {
     checkNotNull(googleCredentials);
     this.googleCredentials = googleCredentials;
   }
@@ -44,6 +46,21 @@ public class GoogleCredentialsBundle implements Serializable {
   /** Creates a {@link GoogleCredentialsBundle} instance from given {@link GoogleCredentials}. */
   public static GoogleCredentialsBundle create(GoogleCredentials credentials) {
     return new GoogleCredentialsBundle(credentials);
+  }
+
+  /**
+   * Returns the service account email address of the underlying {@link} GoogleCredentials, if
+   * possible.
+   */
+  public String serviceAccount() {
+    if (googleCredentials instanceof ServiceAccountSigner) {
+      return ((ServiceAccountSigner) googleCredentials).getAccount();
+    } else {
+      throw new RuntimeException(
+          String.format(
+              "%s is a %s, not a service account.",
+              googleCredentials, googleCredentials.getClass().getSimpleName()));
+    }
   }
 
   /** Returns the same {@link GoogleCredentials} used to create this object. */
