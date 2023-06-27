@@ -19,6 +19,7 @@ import static google.registry.model.billing.BillingBase.Flag.AUTO_RENEW;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.domain.fee.BaseFee.FeeType.CREATE;
 import static google.registry.model.domain.fee.BaseFee.FeeType.RENEW;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
@@ -28,7 +29,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -49,6 +49,7 @@ import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldState;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
@@ -72,11 +73,11 @@ public class DomainPricingLogicTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  @Inject Clock clock = new FakeClock(DateTime.now(UTC));
+  @Inject Clock clock = new FakeClock(DateTime.parse("2023-05-13T00:00:00.000Z"));
   @Mock EppInput eppInput;
   SessionMetadata sessionMetadata;
   @Mock FlowMetadata flowMetadata;
-  Tld registry;
+  Tld tld;
   Domain domain;
 
   @BeforeEach
@@ -86,7 +87,7 @@ public class DomainPricingLogicTest {
     domainPricingLogic =
         new DomainPricingLogic(
             new DomainPricingCustomLogic(eppInput, sessionMetadata, flowMetadata));
-    registry =
+    tld =
         persistResource(
             Tld.get("example")
                 .asBuilder()
@@ -134,11 +135,31 @@ public class DomainPricingLogicTest {
   }
 
   @Test
+  void testGetDomainCreatePrice_sunrise_appliesDiscount() throws EppException {
+    ImmutableSortedMap<DateTime, TldState> transitions =
+        ImmutableSortedMap.<DateTime, TldState>naturalOrder()
+            .put(START_OF_TIME, TldState.PREDELEGATION)
+            .put(clock.nowUtc().minusHours(1), TldState.START_DATE_SUNRISE)
+            .put(clock.nowUtc().plusHours(1), TldState.GENERAL_AVAILABILITY)
+            .build();
+    Tld sunriseTld = createTld("sunrise", transitions);
+    assertThat(
+            domainPricingLogic.getCreatePrice(
+                sunriseTld, "domain.sunrise", clock.nowUtc(), 2, false, true, Optional.empty()))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                // 13 * 2 * 0.85 == 22.1
+                .addFeeOrCredit(Fee.create(Money.of(USD, 22.1).getAmount(), CREATE, false))
+                .build());
+  }
+
+  @Test
   void testGetDomainRenewPrice_oneYear_standardDomain_noBilling_isStandardPrice()
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry, "standard.example", clock.nowUtc(), 1, null, Optional.empty()))
+                tld, "standard.example", clock.nowUtc(), 1, null, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -151,7 +172,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry, "standard.example", clock.nowUtc(), 5, null, Optional.empty()))
+                tld, "standard.example", clock.nowUtc(), 5, null, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -164,7 +185,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry, "premium.example", clock.nowUtc(), 1, null, Optional.empty()))
+                tld, "premium.example", clock.nowUtc(), 1, null, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -177,7 +198,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry, "premium.example", clock.nowUtc(), 5, null, Optional.empty()))
+                tld, "premium.example", clock.nowUtc(), 5, null, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -189,7 +210,7 @@ public class DomainPricingLogicTest {
   void testGetDomainRenewPrice_oneYear_premiumDomain_default_isPremiumPrice() throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 1,
@@ -215,7 +236,7 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 1,
@@ -244,7 +265,7 @@ public class DomainPricingLogicTest {
         AllocationTokenInvalidForPremiumNameException.class,
         () ->
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 1,
@@ -256,7 +277,7 @@ public class DomainPricingLogicTest {
   void testGetDomainRenewPrice_multiYear_premiumDomain_default_isPremiumCost() throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 5,
@@ -283,7 +304,7 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 5,
@@ -313,7 +334,7 @@ public class DomainPricingLogicTest {
         AllocationTokenInvalidForPremiumNameException.class,
         () ->
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 5,
@@ -326,7 +347,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 1,
@@ -352,7 +373,7 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 1,
@@ -370,7 +391,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 5,
@@ -397,7 +418,7 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 5,
@@ -415,7 +436,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 1,
@@ -442,7 +463,7 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 1,
@@ -460,7 +481,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 5,
@@ -488,7 +509,7 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 5,
@@ -506,7 +527,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 1,
@@ -524,7 +545,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 5,
@@ -542,7 +563,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 1,
@@ -570,7 +591,7 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 1,
@@ -601,7 +622,7 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 1,
@@ -626,7 +647,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 5,
@@ -654,7 +675,7 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 5,
@@ -673,7 +694,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 1,
@@ -692,7 +713,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 5,
@@ -713,15 +734,14 @@ public class DomainPricingLogicTest {
             IllegalArgumentException.class,
             () ->
                 domainPricingLogic.getRenewPrice(
-                    registry, "standard.example", clock.nowUtc(), -1, null, Optional.empty()));
+                    tld, "standard.example", clock.nowUtc(), -1, null, Optional.empty()));
     assertThat(thrown).hasMessageThat().isEqualTo("Number of years must be positive");
   }
 
   @Test
   void testGetDomainTransferPrice_standardDomain_default_noBilling_defaultRenewalPrice()
       throws EppException {
-    assertThat(
-            domainPricingLogic.getTransferPrice(registry, "standard.example", clock.nowUtc(), null))
+    assertThat(domainPricingLogic.getTransferPrice(tld, "standard.example", clock.nowUtc(), null))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -732,8 +752,7 @@ public class DomainPricingLogicTest {
   @Test
   void testGetDomainTransferPrice_premiumDomain_default_noBilling_premiumRenewalPrice()
       throws EppException {
-    assertThat(
-            domainPricingLogic.getTransferPrice(registry, "premium.example", clock.nowUtc(), null))
+    assertThat(domainPricingLogic.getTransferPrice(tld, "premium.example", clock.nowUtc(), null))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -745,7 +764,7 @@ public class DomainPricingLogicTest {
   void testGetDomainTransferPrice_standardDomain_default_defaultRenewalPrice() throws EppException {
     assertThat(
             domainPricingLogic.getTransferPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty())))
@@ -760,7 +779,7 @@ public class DomainPricingLogicTest {
   void testGetDomainTransferPrice_premiumDomain_default_premiumRenewalPrice() throws EppException {
     assertThat(
             domainPricingLogic.getTransferPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty())))
@@ -776,7 +795,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getTransferPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 persistDomainAndSetRecurrence("standard.example", NONPREMIUM, Optional.empty())))
@@ -792,7 +811,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getTransferPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 persistDomainAndSetRecurrence("premium.example", NONPREMIUM, Optional.empty())))
@@ -808,7 +827,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getTransferPrice(
-                registry,
+                tld,
                 "standard.example",
                 clock.nowUtc(),
                 persistDomainAndSetRecurrence(
@@ -825,7 +844,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getTransferPrice(
-                registry,
+                tld,
                 "premium.example",
                 clock.nowUtc(),
                 persistDomainAndSetRecurrence(

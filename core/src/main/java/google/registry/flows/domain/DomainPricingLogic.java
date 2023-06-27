@@ -22,6 +22,7 @@ import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.google.common.net.InternetDomainName;
+import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.custom.DomainPricingCustomLogic;
@@ -72,26 +73,33 @@ public final class DomainPricingLogic {
       DateTime dateTime,
       int years,
       boolean isAnchorTenant,
+      boolean isSunriseCreate,
       Optional<AllocationToken> allocationToken)
       throws EppException {
     CurrencyUnit currency = tld.getCurrency();
 
-    BaseFee createFeeOrCredit;
+    BaseFee createFee;
     // Domain create cost is always zero for anchor tenants
     if (isAnchorTenant) {
-      createFeeOrCredit = Fee.create(zeroInCurrency(currency), FeeType.CREATE, false);
+      createFee = Fee.create(zeroInCurrency(currency), FeeType.CREATE, false);
     } else {
       DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
       Money domainCreateCost =
           getDomainCreateCostWithDiscount(domainPrices, years, allocationToken);
-      createFeeOrCredit =
+      // Apply a sunrise discount if configured and applicable
+      if (isSunriseCreate) {
+        domainCreateCost =
+            domainCreateCost.multipliedBy(
+                1.0d - RegistryConfig.getSunriseDomainCreateDiscount(), RoundingMode.HALF_EVEN);
+      }
+      createFee =
           Fee.create(domainCreateCost.getAmount(), FeeType.CREATE, domainPrices.isPremium());
     }
 
     // Create fees for the cost and the EAP fee, if any.
     Fee eapFee = tld.getEapFeeFor(dateTime);
     FeesAndCredits.Builder feesBuilder =
-        new FeesAndCredits.Builder().setCurrency(currency).addFeeOrCredit(createFeeOrCredit);
+        new FeesAndCredits.Builder().setCurrency(currency).addFeeOrCredit(createFee);
     // Don't charge anchor tenants EAP fees.
     if (!isAnchorTenant && !eapFee.hasZeroCost()) {
       feesBuilder.addFeeOrCredit(eapFee);

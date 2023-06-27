@@ -107,6 +107,7 @@ public class RegistryConfigSettings {
     public String registryName;
     public List<String> spec11WebResources;
     public boolean requireSslCertificates;
+    public double sunriseDomainCreateDiscount;
   }
 
   /** Configuration for Hibernate. */

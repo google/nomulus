@@ -690,6 +690,7 @@ public class DomainFlowUtils {
                       now,
                       years,
                       isAnchorTenant(domainName, allocationToken, Optional.empty()),
+                      isSunrise,
                       allocationToken)
                   .getFees();
         }
