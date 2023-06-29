@@ -38,7 +38,7 @@ import javax.inject.Inject;
     service = Action.Service.BACKEND,
     path = "/_dr/dnsRefresh",
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public final class RefreshDnsAction implements Runnable {
 
   private final Clock clock;

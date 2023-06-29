@@ -52,7 +52,7 @@ import javax.mail.internet.InternetAddress;
     path = "/_dr/task/executeCannedScript",
     method = POST,
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public class CannedScriptExecutionAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
