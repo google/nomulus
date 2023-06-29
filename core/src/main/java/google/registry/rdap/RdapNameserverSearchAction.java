@@ -59,7 +59,7 @@ import javax.inject.Inject;
     service = Action.Service.PUBAPI,
     path = "/rdap/nameservers",
     method = {GET, HEAD},
-    auth = Auth.AUTH_PUBLIC_ANONYMOUS)
+    auth = Auth.AUTH_PUBLIC)
 public class RdapNameserverSearchAction extends RdapSearchActionBase {
 
   public static final String PATH = "/rdap/nameservers";

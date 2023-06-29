@@ -33,7 +33,7 @@ import javax.inject.Inject;
     path = "/rdap/help",
     method = {GET, HEAD},
     isPrefix = true,
-    auth = Auth.AUTH_PUBLIC_ANONYMOUS)
+    auth = Auth.AUTH_PUBLIC)
 public class RdapHelpAction extends RdapActionBase {
 
   /** The help path for the RDAP terms of service. */

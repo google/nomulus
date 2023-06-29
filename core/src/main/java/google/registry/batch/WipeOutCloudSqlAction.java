@@ -44,7 +44,7 @@ import javax.inject.Inject;
 @Action(
     service = Action.Service.BACKEND,
     path = "/_dr/task/wipeOutCloudSql",
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public class WipeOutCloudSqlAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

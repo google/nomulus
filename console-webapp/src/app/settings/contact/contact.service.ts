@@ -37,7 +37,7 @@ export class ContactService {
 
   constructor(
     private backend: BackendService,
-    private registrarService: RegistrarService
+    private registrarService: RegistrarService,
   ) {}
 
   // TODO: Come up with a better handling for registrarId
@@ -47,7 +47,7 @@ export class ContactService {
       .pipe(
         tap((contacts) => {
           this.contacts = contacts;
-        })
+        }),
       );
   }
 
@@ -57,13 +57,13 @@ export class ContactService {
       .pipe(
         tap((_) => {
           this.contacts = contacts;
-        })
+        }),
       );
   }
 
   updateContact(index: number, contact: Contact) {
     const newContacts = this.contacts.map((c, i) =>
-      i === index ? contact : c
+      i === index ? contact : c,
     );
     return this.saveContacts(newContacts);
   }

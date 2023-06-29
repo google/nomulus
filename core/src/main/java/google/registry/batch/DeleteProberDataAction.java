@@ -58,7 +58,7 @@ import org.joda.time.Duration;
     service = Action.Service.BACKEND,
     path = "/_dr/task/deleteProberData",
     method = POST,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public class DeleteProberDataAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

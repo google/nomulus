@@ -33,7 +33,7 @@ import javax.servlet.http.HttpServletRequest;
     service = Action.Service.TOOLS,
     path = EppToolAction.PATH,
     method = Method.POST,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public class EppToolAction implements Runnable {
 
   public static final String PATH = "/_dr/epptool";
