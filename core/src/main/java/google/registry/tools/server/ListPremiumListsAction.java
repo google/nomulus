@@ -35,7 +35,7 @@ import javax.inject.Inject;
     service = Action.Service.TOOLS,
     path = ListPremiumListsAction.PATH,
     method = {GET, POST},
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public final class ListPremiumListsAction extends ListObjectsAction<PremiumList> {
 
   public static final String PATH = "/_dr/admin/list/premiumLists";
