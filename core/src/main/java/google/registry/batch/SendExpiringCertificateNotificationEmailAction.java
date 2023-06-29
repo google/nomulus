@@ -53,7 +53,7 @@ import org.joda.time.format.DateTimeFormatter;
 @Action(
     service = Action.Service.BACKEND,
     path = SendExpiringCertificateNotificationEmailAction.PATH,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public class SendExpiringCertificateNotificationEmailAction implements Runnable {
 
   public static final String PATH = "/_dr/task/sendExpiringCertificateNotificationEmail";

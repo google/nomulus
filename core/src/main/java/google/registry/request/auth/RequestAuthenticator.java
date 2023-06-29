@@ -15,6 +15,7 @@
 package google.registry.request.auth;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.request.auth.AuthSettings.AuthLevel.NONE;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
@@ -29,7 +30,6 @@ import javax.servlet.http.HttpServletRequest;
 /** Top-level authentication/authorization class; calls authentication mechanisms as needed. */
 public class RequestAuthenticator {
 
-  private final AppEngineInternalAuthenticationMechanism appEngineInternalAuthenticationMechanism;
   private final ImmutableList<AuthenticationMechanism> apiAuthenticationMechanisms;
   private final LegacyAuthenticationMechanism legacyAuthenticationMechanism;
 
@@ -37,10 +37,8 @@ public class RequestAuthenticator {
 
   @Inject
   public RequestAuthenticator(
-      AppEngineInternalAuthenticationMechanism appEngineInternalAuthenticationMechanism,
       ImmutableList<AuthenticationMechanism> apiAuthenticationMechanisms,
       LegacyAuthenticationMechanism legacyAuthenticationMechanism) {
-    this.appEngineInternalAuthenticationMechanism = appEngineInternalAuthenticationMechanism;
     this.apiAuthenticationMechanisms = apiAuthenticationMechanisms;
     this.legacyAuthenticationMechanism = legacyAuthenticationMechanism;
   }
@@ -77,12 +75,6 @@ public class RequestAuthenticator {
         break;
     }
     switch (auth.userPolicy()) {
-      case IGNORED:
-        if (authResult.authLevel() == AuthLevel.USER) {
-          logger.atWarning().log("Not authorized; user policy is IGNORED, but a user was found.");
-          return Optional.empty();
-        }
-        break;
       case PUBLIC:
         // Any user auth result is okay.
         break;
@@ -110,18 +102,8 @@ public class RequestAuthenticator {
     for (AuthMethod authMethod : auth.methods()) {
       AuthResult authResult;
       switch (authMethod) {
-          // App Engine internal authentication, using the queue name header
-        case INTERNAL:
-          // checkAuthConfig will have insured that the user policy is not USER.
-          authResult = appEngineInternalAuthenticationMechanism.authenticate(req);
-          if (authResult.isAuthenticated()) {
-            logger.atInfo().log("Authenticated via internal auth: %s", authResult);
-            return authResult;
-          }
-          break;
-          // API-based user authentication mechanisms, such as OAuth
+          // API-based user authentication mechanisms, such as OAuth and OIDC.
         case API:
-          // checkAuthConfig will have insured that the user policy is not IGNORED.
           for (AuthenticationMechanism authMechanism : apiAuthenticationMechanisms) {
             authResult = authMechanism.authenticate(req);
             if (authResult.isAuthenticated()) {
@@ -133,7 +115,6 @@ public class RequestAuthenticator {
           break;
           // Legacy authentication via UserService
         case LEGACY:
-          // checkAuthConfig will have insured that the user policy is not IGNORED.
           authResult = legacyAuthenticationMechanism.authenticate(req);
           if (authResult.isAuthenticated()) {
             logger.atInfo().log("Authenticated via legacy auth: %s", authResult);
@@ -151,15 +132,10 @@ public class RequestAuthenticator {
     ImmutableList<AuthMethod> authMethods = ImmutableList.copyOf(auth.methods());
     checkArgument(!authMethods.isEmpty(), "Must specify at least one auth method");
     checkArgument(
-        Ordering.explicit(AuthMethod.INTERNAL, AuthMethod.API, AuthMethod.LEGACY)
-            .isStrictlyOrdered(authMethods),
-        "Auth methods must be unique and strictly in order - INTERNAL, API, LEGACY");
+        Ordering.explicit(AuthMethod.API, AuthMethod.LEGACY).isStrictlyOrdered(authMethods),
+        "Auth methods must be unique and strictly in order - API, LEGACY");
     checkArgument(
-        !(authMethods.contains(AuthMethod.INTERNAL) && auth.minimumLevel().equals(AuthLevel.USER)),
-        "Actions with INTERNAL auth method may not require USER auth level");
-    checkArgument(
-        !(auth.userPolicy().equals(UserPolicy.IGNORED)
-            && !authMethods.equals(ImmutableList.of(AuthMethod.INTERNAL))),
-        "Actions with auth methods beyond INTERNAL must not specify the IGNORED user policy");
+        (auth.minimumLevel() != NONE) || (auth.userPolicy() != UserPolicy.ADMIN),
+        "Actions with minimal auth level at NONE should not specify ADMIN user policy");
   }
 }
