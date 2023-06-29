@@ -44,17 +44,13 @@ import org.joda.time.Duration;
  * are responsible for enqueuing refresh tasks for subordinate hosts. So this action thus refreshes
  * DNS for everything applicable under all TLDs under management.
  *
- * <p>Because there are no auth settings in the {@link Action} annotation, this command can only be
- * run internally, or by pretending to be internal by setting the X-AppEngine-QueueName header,
- * which only admin users can do.
- *
  * <p>You may pass in a {@code batchSize} for the batched read of domains from the database. This is
  * recommended to be somewhere between 200 and 500. The default value is 250.
  */
 @Action(
     service = Action.Service.TOOLS,
     path = "/_dr/task/refreshDnsForAllDomains",
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public class RefreshDnsForAllDomainsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
