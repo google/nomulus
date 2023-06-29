@@ -92,10 +92,7 @@ public class CloudTasksUtils implements Serializable {
     return retrier.callWithRetry(
         () -> {
           logger.atInfo().log(
-              "Enqueuing queue='%s' endpoint='%s' service='%s'",
-              queue,
-              task.getAppEngineHttpRequest().getRelativeUri(),
-              task.getAppEngineHttpRequest().getAppEngineRouting().getService());
+              "Enqueuing queue='%s' endpoint='%s'", queue, task.getHttpRequest().getUrl());
           return client.enqueue(projectId, locationId, queue, task);
         },
         ApiException.class);
@@ -159,10 +156,7 @@ public class CloudTasksUtils implements Serializable {
    *
    * @param path the relative URI (staring with a slash and ending without one).
    * @param method the HTTP method to be used for the request, only GET and POST are supported.
-   * @param service the App Engine service to route the request to. Note that with App Engine Task
-   *     Queue API if no service is specified, the service which enqueues the task will be used to
-   *     process the task. Cloud Tasks API does not support this feature so the service will always
-   *     needs to be explicitly specified.
+   * @param service the App Engine service to route the request to.
    * @param params a multimap of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
    * @return the enqueued task.
@@ -198,10 +192,7 @@ public class CloudTasksUtils implements Serializable {
    *
    * @param path the relative URI (staring with a slash and ending without one).
    * @param method the HTTP method to be used for the request, only GET and POST are supported.
-   * @param service the App Engine service to route the request to. Note that with App Engine Task
-   *     Queue API if no service is specified, the service which enqueues the task will be used to
-   *     process the task. Cloud Tasks API does not support this feature so the service will always
-   *     needs to be explicitly specified.
+   * @param service the App Engine service to route the request to.
    * @param params a multimap of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
    * @param jitterSeconds the number of seconds that a task is randomly delayed up to.
@@ -232,10 +223,7 @@ public class CloudTasksUtils implements Serializable {
    *
    * @param path the relative URI (staring with a slash and ending without one).
    * @param method the HTTP method to be used for the request, only GET and POST are supported.
-   * @param service the App Engine service to route the request to. Note that with App Engine Task
-   *     Queue API if no service is specified, the service which enqueues the task will be used to
-   *     process the task. Cloud Tasks API does not support this feature so the service will always
-   *     needs to be explicitly specified.
+   * @param service the App Engine service to route the request to.
    * @param params a multimap of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
    * @param delay the amount of time that a task needs to delayed for.
