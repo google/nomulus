@@ -94,11 +94,11 @@ export class ContactDetailsDialogComponent {
       onClose: Function;
       contact: Contact;
       operation: Operations;
-    }
+    },
   ) {
     this.onClose = data.onClose;
     this.contactIndex = contactService.contacts.findIndex(
-      (c) => c === data.contact
+      (c) => c === data.contact,
     );
     this.contact = JSON.parse(JSON.stringify(data.contact));
     this.operation = data.operation;
@@ -115,7 +115,7 @@ export class ContactDetailsDialogComponent {
     } else if (this.operation === Operations.UPDATE) {
       operationObservable = this.contactService.updateContact(
         this.contactIndex,
-        this.contact
+        this.contact,
       );
     } else {
       throw 'Unknown operation type';
@@ -143,7 +143,7 @@ export default class ContactComponent {
     private dialog: MatDialog,
     private bottomSheet: MatBottomSheet,
     private breakpointObserver: BreakpointObserver,
-    public contactService: ContactService
+    public contactService: ContactService,
   ) {
     // TODO: Refactor to registrarId service
     this.loading = true;
@@ -153,14 +153,17 @@ export default class ContactComponent {
   }
 
   public get groupedData() {
-    return this.contactService.contacts.reduce((acc, contact) => {
-      contact.types.forEach((type) => {
-        acc
-          .find((group: GroupedContacts) => group.value === type)
-          ?.contacts.push(contact);
-      });
-      return acc;
-    }, JSON.parse(JSON.stringify(contactTypes)));
+    return this.contactService.contacts.reduce(
+      (acc, contact) => {
+        contact.types.forEach((type) => {
+          acc
+            .find((group: GroupedContacts) => group.value === type)
+            ?.contacts.push(contact);
+        });
+        return acc;
+      },
+      JSON.parse(JSON.stringify(contactTypes)),
+    );
   }
 
   deleteContact(contact: Contact) {
@@ -182,7 +185,7 @@ export default class ContactComponent {
   openDetails(
     e: Event,
     contact: Contact,
-    operation: Operations = Operations.UPDATE
+    operation: Operations = Operations.UPDATE,
   ) {
     e.preventDefault();
     // TODO: handle orientation change
@@ -193,7 +196,7 @@ export default class ContactComponent {
     if (isMobile) {
       const bottomSheetRef = this.bottomSheet.open(
         ContactDetailsDialogComponent,
-        config
+        config,
       );
       responder.setRef(bottomSheetRef);
     } else {

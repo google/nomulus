@@ -69,7 +69,7 @@ import org.joda.time.Duration;
     path = NordnUploadAction.PATH,
     method = Action.Method.POST,
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public final class NordnUploadAction implements Runnable {
 
   static final String PATH = "/_dr/task/nordnUpload";

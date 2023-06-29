@@ -47,7 +47,7 @@ class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapT
       service = Action.Service.PUBAPI,
       path = "/rdap/test/",
       method = {GET, HEAD},
-      auth = Auth.AUTH_PUBLIC_ANONYMOUS)
+      auth = Auth.AUTH_PUBLIC)
   public static class RdapTestAction extends RdapActionBase {
 
     public RdapTestAction() {

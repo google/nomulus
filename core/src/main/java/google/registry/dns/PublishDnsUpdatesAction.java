@@ -76,7 +76,7 @@ import org.joda.time.Duration;
     path = PublishDnsUpdatesAction.PATH,
     method = POST,
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   public static final String PATH = "/_dr/task/publishDnsUpdates";

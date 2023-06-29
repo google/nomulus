@@ -22,7 +22,7 @@ import { RegistrarService } from './registrar.service';
 export class RegistrarGuard {
   constructor(
     private router: Router,
-    private registrarService: RegistrarService
+    private registrarService: RegistrarService,
   ) {}
 
   canActivate(state: RouterStateSnapshot): Promise<boolean> | boolean {

@@ -23,7 +23,7 @@ export class BackendService {
 
   errorCatcher<Type>(
     error: HttpErrorResponse,
-    mockData?: Type
+    mockData?: Type,
   ): Observable<Type> {
     if (error.error instanceof Error) {
       // A client-side or network error occurred. Handle it accordingly.
@@ -32,7 +32,7 @@ export class BackendService {
       // The backend returned an unsuccessful response code.
       // The response body may contain clues as to what went wrong,
       console.error(
-        `Backend returned code ${error.status}, body was: ${error.error}`
+        `Backend returned code ${error.status}, body was: ${error.error}`,
       );
     }
 
@@ -43,18 +43,18 @@ export class BackendService {
   getContacts(registrarId: string): Observable<Contact[]> {
     return this.http
       .get<Contact[]>(
-        `/console-api/settings/contacts?registrarId=${registrarId}`
+        `/console-api/settings/contacts?registrarId=${registrarId}`,
       )
       .pipe(catchError((err) => this.errorCatcher<Contact[]>(err)));
   }
 
   postContacts(
     registrarId: string,
-    contacts: Contact[]
+    contacts: Contact[],
   ): Observable<Contact[]> {
     return this.http.post<Contact[]>(
       `/console-api/settings/contacts?registrarId=${registrarId}`,
-      { contacts }
+      { contacts },
     );
   }
 
