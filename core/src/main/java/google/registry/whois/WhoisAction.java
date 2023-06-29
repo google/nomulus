@@ -51,7 +51,7 @@ import org.joda.time.DateTime;
     service = Action.Service.PUBAPI,
     path = "/_dr/whois",
     method = POST,
-    auth = Auth.AUTH_PUBLIC_OR_INTERNAL)
+    auth = Auth.AUTH_API_PUBLIC)
 public class WhoisAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

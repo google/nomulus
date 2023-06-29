@@ -15,63 +15,65 @@
 package google.registry.request.auth;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.flows.EppTlsAction;
+import google.registry.flows.TlsCredentials;
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthSettings.AuthMethod;
 import google.registry.request.auth.AuthSettings.UserPolicy;
+import google.registry.ui.server.registrar.HtmlAction;
+import google.registry.ui.server.registrar.JsonGetAction;
 
 /** Enum used to configure authentication settings for Actions. */
 public enum Auth {
 
   /**
-   * Allows anyone access, doesn't attempt to authenticate user.
-   *
-   * <p>Will never return absent(), but only authenticates access from App Engine task-queues. For
-   * everyone else - returns NOT_AUTHENTICATED.
-   */
-  AUTH_PUBLIC_ANONYMOUS(ImmutableList.of(AuthMethod.INTERNAL), AuthLevel.NONE, UserPolicy.PUBLIC),
-
-  /**
-   * Allows anyone to access, does attempt to authenticate user.
+   * Allows anyone to access.
    *
    * <p>If a user is logged in, will authenticate (and return) them. Otherwise, access is still
    * granted, but NOT_AUTHENTICATED is returned.
    *
-   * <p>Will never return absent().
+   * <p>This is used for public HTML endpoints like RDAP, the check API, and web WHOIS.
+   *
+   * <p>User-facing legacy console endpoints (those that extend {@link HtmlAction}) also use it.
+   * They need to allow requests from signed-out users so that they can redirect users to the login
+   * page. After a user is logged in, they check if the user actually has access to the specific
+   * console using {@link AuthenticatedRegistrarAccessor}.
+   *
+   * @see HtmlAction
    */
   AUTH_PUBLIC(
-      ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API, AuthMethod.LEGACY),
-      AuthLevel.NONE,
-      UserPolicy.PUBLIC),
+      ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY), AuthLevel.NONE, UserPolicy.PUBLIC),
 
   /**
    * Allows anyone to access, as long as they are logged in.
    *
-   * <p>Does not allow access from App Engine task-queues.
+   * <p>This is used by legacy registrar console programmatic endpoints (those that extend {@link
+   * JsonGetAction}, which are accessed via XHR requests sent from a logged-in user when performing
+   * actions on the console.
    */
   AUTH_PUBLIC_LOGGED_IN(
       ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY), AuthLevel.USER, UserPolicy.PUBLIC),
 
   /**
-   * Allows anyone to access, as long as they use OAuth to authenticate.
+   * Allows any client to access, as long as they are logged in via API-based authentication
+   * mechanisms.
    *
-   * <p>Also allows access from App Engine task-queue. Note that OAuth client ID still needs to be
-   * allow-listed in the config file for OAuth-based authentication to succeed.
+   * <p>This is used by the proxy to access Nomulus endpoints. The proxy service account does NOT
+   * have admin privileges. For EPP, we handle client authentication within {@link EppTlsAction},
+   * using {@link TlsCredentials}. For WHOIS, anyone connecting to the proxy can access.
+   *
+   * <p>Note that the proxy service account DOES need to be allow-listed in the {@code
+   * auth.allowedServiceAccountEmails} field in the config YAML file in order for OIDC-based
+   * authentication to pass.
    */
-  AUTH_PUBLIC_OR_INTERNAL(
-      ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API), AuthLevel.APP, UserPolicy.PUBLIC),
-
-  /** Allows only admins or App Engine task-queue access. */
-  AUTH_INTERNAL_OR_ADMIN(
-      ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API), AuthLevel.APP, UserPolicy.ADMIN),
+  AUTH_API_PUBLIC(ImmutableList.of(AuthMethod.API), AuthLevel.APP, UserPolicy.PUBLIC),
 
   /**
-   * Allows only App Engine task-queue access.
+   * Allows only admins to access.
    *
-   * <p>In general, prefer AUTH_INTERNAL_OR_ADMIN. This level of access should be reserved for
-   * endpoints that have some sensitivity (it was introduced to mitigate a remote-shell
-   * vulnerability).
+   * <p>This applies to the majority of the endpoints.
    */
-  AUTH_INTERNAL_ONLY(ImmutableList.of(AuthMethod.INTERNAL), AuthLevel.APP, UserPolicy.IGNORED);
+  AUTH_API_ADMIN(ImmutableList.of(AuthMethod.API), AuthLevel.APP, UserPolicy.ADMIN);
 
   private final AuthSettings authSettings;
 
