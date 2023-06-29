@@ -37,7 +37,7 @@ import org.joda.time.DateTime;
     service = Service.BACKEND,
     path = PATH,
     method = Action.Method.POST,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public class RefreshDnsOnHostRenameAction implements Runnable {
 
   public static final String QUEUE_HOST_RENAME = "async-host-rename";

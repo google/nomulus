@@ -69,7 +69,7 @@ import org.joda.time.DateTime;
  * user controlled, lest it open an XSS vector. Do not modify this to return the domain name in the
  * response.
  */
-@Action(service = Action.Service.PUBAPI, path = "/check", auth = Auth.AUTH_PUBLIC_ANONYMOUS)
+@Action(service = Action.Service.PUBAPI, path = "/check", auth = Auth.AUTH_PUBLIC)
 public class CheckApiAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

@@ -38,7 +38,7 @@ import javax.inject.Inject;
     path = "/rdap/nameserver/",
     method = {GET, HEAD},
     isPrefix = true,
-    auth = Auth.AUTH_PUBLIC_ANONYMOUS)
+    auth = Auth.AUTH_PUBLIC)
 public class RdapNameserverAction extends RdapActionBase {
 
   @Inject public RdapNameserverAction() {

@@ -42,9 +42,6 @@ public abstract class AuthSettings {
   /** Available methods for authentication. */
   public enum AuthMethod {
 
-    /** App Engine internal authentication. Must always be provided as the first method. */
-    INTERNAL,
-
     /** Authentication methods suitable for API-style access, such as OAuth 2. */
     API,
 
@@ -55,7 +52,7 @@ public abstract class AuthSettings {
   /**
    * Authentication level.
    *
-   * <p>Used by {@link Auth} to specify what authentication is required, and by {@link AuthResult})
+   * <p>Used by {@link Auth} to specify what authentication is required, and by {@link AuthResult}
    * to specify what authentication was found. These are a series of levels, from least to most
    * authentication required. The lowest level of requirement, NONE, can be satisfied by any level
    * of authentication, while the highest level, USER, can only be satisfied by the authentication
@@ -91,9 +88,6 @@ public abstract class AuthSettings {
 
   /** User authorization policy options. */
   public enum UserPolicy {
-
-    /** This action ignores end users; the only configured auth method must be INTERNAL. */
-    IGNORED,
 
     /** No user policy is enforced; anyone can access this action. */
     PUBLIC,

@@ -35,7 +35,7 @@ import javax.inject.Inject;
     path = "/rdap/ip/",
     method = {GET, HEAD},
     isPrefix = true,
-    auth = Auth.AUTH_PUBLIC_ANONYMOUS)
+    auth = Auth.AUTH_PUBLIC)
 public class RdapIpAction extends RdapActionBase {
 
   @Inject RdapIpAction() {

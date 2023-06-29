@@ -27,7 +27,7 @@ export class RegistrarComponent {
   constructor(
     private route: ActivatedRoute,
     protected registrarService: RegistrarService,
-    private router: Router
+    private router: Router,
   ) {
     this.lastActiveRegistrarId = registrarService.activeRegistrarId;
   }
