@@ -67,7 +67,7 @@ import org.joda.time.format.DateTimeFormat;
     service = Action.Service.BACKEND,
     path = IcannReportingStagingAction.PATH,
     method = POST,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public final class IcannReportingStagingAction implements Runnable {
 
   static final String PATH = "/_dr/task/icannReportingStaging";

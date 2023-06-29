@@ -49,7 +49,7 @@ import org.apache.commons.csv.CSVRecord;
     service = Action.Service.BACKEND,
     path = "/_dr/task/updateRegistrarRdapBaseUrls",
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
 
   private static final GenericUrl RDAP_IDS_URL =

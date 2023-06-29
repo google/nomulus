@@ -55,7 +55,7 @@ import javax.inject.Inject;
     service = Action.Service.BACKEND,
     path = "/_dr/task/syncGroupMembers",
     method = POST,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public final class SyncGroupMembersAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

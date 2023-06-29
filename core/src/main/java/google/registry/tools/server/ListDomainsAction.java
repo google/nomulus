@@ -39,7 +39,7 @@ import javax.inject.Inject;
     service = Action.Service.TOOLS,
     path = ListDomainsAction.PATH,
     method = {GET, POST},
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public final class ListDomainsAction extends ListObjectsAction<Domain> {
 
   /** An App Engine limitation on how many subqueries can be used in a single query. */

@@ -30,7 +30,7 @@ import javax.inject.Inject;
     service = Action.Service.TOOLS,
     path = ListRegistrarsAction.PATH,
     method = {GET, POST},
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public final class ListRegistrarsAction extends ListObjectsAction<Registrar> {
 
   public static final String PATH = "/_dr/admin/list/registrars";

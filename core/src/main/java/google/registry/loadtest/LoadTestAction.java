@@ -58,7 +58,7 @@ import org.joda.time.DateTime;
     path = LoadTestAction.PATH,
     method = Action.Method.POST,
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public class LoadTestAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
