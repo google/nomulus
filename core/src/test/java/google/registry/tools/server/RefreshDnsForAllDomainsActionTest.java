@@ -75,8 +75,8 @@ public class RefreshDnsForAllDomainsActionTest {
     action =
         new RefreshDnsForAllDomainsAction(
             response, ImmutableSet.of("bar"), Optional.of(1), new Random());
-    tm().transact(() -> action.refreshBatch("", 1000));
-    tm().transact(() -> action.refreshBatch("", 1000));
+    tm().transact(() -> action.refreshBatch(Optional.empty(), 1000));
+    tm().transact(() -> action.refreshBatch(Optional.empty(), 1000));
     ImmutableList<DnsRefreshRequest> refreshRequests =
         tm().transact(
                 () ->
