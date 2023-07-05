@@ -15,7 +15,6 @@
 package google.registry.request;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static google.registry.dns.PublishDnsUpdatesAction.APP_ENGINE_RETRY_HEADER;
 import static google.registry.dns.PublishDnsUpdatesAction.CLOUD_TASKS_RETRY_HEADER;
 import static google.registry.model.tld.Tlds.assertTldExists;
 import static google.registry.model.tld.Tlds.assertTldsExist;
@@ -131,8 +130,8 @@ public final class RequestModule {
   @FullServletPath
   static String provideFullServletPath(HttpServletRequest req) {
     // Include the port only if it differs from the default for the scheme.
-    if ((req.getScheme().equals("http") && (req.getServerPort() == 80))
-        || (req.getScheme().equals("https") && (req.getServerPort() == 443))) {
+    if (("http".equals(req.getScheme()) && (req.getServerPort() == 80))
+        || ("https".equals(req.getScheme()) && (req.getServerPort() == 443))) {
       return String.format("%s://%s%s", req.getScheme(), req.getServerName(), req.getServletPath());
     } else {
       return String.format(
@@ -235,12 +234,6 @@ public final class RequestModule {
       }
     }
     return params.build();
-  }
-
-  @Provides
-  @Header(APP_ENGINE_RETRY_HEADER)
-  static Optional<Integer> provideAppEngineRetryCount(HttpServletRequest req) {
-    return extractOptionalHeader(req, APP_ENGINE_RETRY_HEADER).map(Integer::parseInt);
   }
 
   @Provides

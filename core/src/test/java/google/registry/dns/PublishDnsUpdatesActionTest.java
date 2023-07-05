@@ -162,7 +162,6 @@ public class PublishDnsUpdatesActionTest {
         registryCcEmail,
         outgoingRegistry,
         Optional.ofNullable(retryCount),
-        Optional.empty(),
         new DnsWriterProxy(ImmutableMap.of("correctWriter", dnsWriter)),
         dnsMetrics,
         lockHandler,

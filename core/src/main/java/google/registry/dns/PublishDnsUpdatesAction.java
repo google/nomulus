@@ -81,9 +81,6 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   public static final String PATH = "/_dr/task/publishDnsUpdates";
   public static final String LOCK_NAME = "DNS updates";
-  // TODO(b/236726584): Remove App Engine header once CloudTasksUtils is refactored to create HTTP
-  // tasks.
-  public static final String APP_ENGINE_RETRY_HEADER = "X-AppEngine-TaskRetryCount";
   public static final String CLOUD_TASKS_RETRY_HEADER = "X-CloudTasks-TaskRetryCount";
   public static final int RETRIES_BEFORE_PERMANENT_FAILURE = 20;
 
@@ -140,7 +137,6 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       @Config("registrySupportEmail") Lazy<InternetAddress> registrySupportEmail,
       @Config("registryCcEmail") Lazy<InternetAddress> registryCcEmail,
       @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress,
-      @Header(APP_ENGINE_RETRY_HEADER) Optional<Integer> appEngineRetryCount,
       @Header(CLOUD_TASKS_RETRY_HEADER) Optional<Integer> cloudTasksRetryCount,
       DnsWriterProxy dnsWriterProxy,
       DnsMetrics dnsMetrics,
@@ -154,9 +150,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     this.timeout = timeout;
     this.sendEmailService = sendEmailService;
     retryCount =
-        cloudTasksRetryCount.orElse(
-            appEngineRetryCount.orElseThrow(
-                () -> new IllegalStateException("Missing a valid retry count header")));
+        cloudTasksRetryCount.orElseThrow(
+            () -> new IllegalStateException("Missing a valid retry count header"));
     this.dnsWriter = dnsWriter;
     this.enqueuedTime = enqueuedTime;
     this.itemsCreateTime = itemsCreateTime;
