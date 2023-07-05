@@ -24,7 +24,6 @@ import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.tld.label.PremiumListUtils;
 import java.nio.file.Files;
-import java.util.Optional;
 
 /** Command to safely update {@link PremiumList} in Database for a given TLD. */
 @Parameters(separators = " =", commandDescription = "Update a PremiumList in Database.")
@@ -33,16 +32,19 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
   @Override
   protected String prompt() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
-    Optional<PremiumList> list = PremiumListDao.getLatestRevision(name);
-    checkArgument(
-        list.isPresent(),
-        String.format("Could not update premium list %s because it doesn't exist.", name));
+    PremiumList existingList =
+        PremiumListDao.getLatestRevision(name)
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        String.format(
+                            "Could not update premium list %s because it doesn't exist", name)));
     inputData = Files.readAllLines(inputFile, UTF_8);
     checkArgument(!inputData.isEmpty(), "New premium list data cannot be empty");
-    currency = list.get().getCurrency();
+    currency = existingList.getCurrency();
     PremiumList updatedPremiumList = PremiumListUtils.parseToPremiumList(name, currency, inputData);
     return String.format(
         "Update premium list for %s?\n Old List: %s\n New List: %s",
-        name, list, updatedPremiumList);
+        name, existingList, updatedPremiumList);
   }
 }
