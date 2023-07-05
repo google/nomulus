@@ -64,7 +64,6 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.Lazies;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
-import java.util.Optional;
 import java.util.Set;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
@@ -161,8 +160,7 @@ public class PublishDnsUpdatesActionTest {
         registrySupportEmail,
         registryCcEmail,
         outgoingRegistry,
-        Optional.ofNullable(retryCount),
-        Optional.empty(),
+        retryCount,
         new DnsWriterProxy(ImmutableMap.of("correctWriter", dnsWriter)),
         dnsMetrics,
         lockHandler,
@@ -447,20 +445,6 @@ public class PublishDnsUpdatesActionTest {
             "Body The Registrar ns1.example.xn--q9jyb4c host registry@test.com awesomeRegistry");
     assertThat(emailMessage.bccs().stream().findFirst().get().toString())
         .isEqualTo("registry-cc@test.com");
-  }
-
-  @Test
-  void testTaskMissingRetryHeaders_throwsException() {
-    IllegalStateException thrown =
-        assertThrows(
-            IllegalStateException.class,
-            () ->
-                createAction(
-                    "xn--q9jyb4c",
-                    ImmutableSet.of(),
-                    ImmutableSet.of("ns1.example.xn--q9jyb4c"),
-                    null));
-    assertThat(thrown).hasMessageThat().contains("Missing a valid retry count header");
   }
 
   @Test
