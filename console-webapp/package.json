@@ -10,6 +10,7 @@
     "test": "ng test --browsers=ChromeHeadless --watch=false",
     "run:dev": "",
     "prettify": "npx prettier --write ./src/",
+    "prettify:check": "npx prettier --check ./src/",
     "start:dev": "concurrently \"./../gradlew :core:runTestServer\" \"ng serve --proxy-config dev-proxy.config.json\"",
     "lint": "ng lint"
   },
