@@ -134,15 +134,13 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
 
   @Test
   void commandPrompt_failureNoPreviousVersion() {
-    String fileName = "random";
-    registry = createTld(fileName, null, null);
+    registry = createTld("random", null, null);
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
-    command.name = fileName;
+    command.name = "random";
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo(
-            String.format("Could not update premium list %s because it doesn't exist.", fileName));
+        .isEqualTo("Could not update premium list random because it doesn't exist");
   }
 
   @Test
@@ -153,27 +151,22 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
 
   @Test
   void commandPrompt_failureTldFromNameDoesNotExist() {
-    String fileName = "random";
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
-    command.name = fileName;
+    command.name = "random2";
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo(
-            String.format("Could not update premium list %s because it doesn't exist.", fileName));
+        .isEqualTo("Could not update premium list random2 because it doesn't exist");
   }
 
   @Test
   void commandPrompt_failureTldFromInputFileDoesNotExist() {
-    String fileName = "random";
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     // using tld extracted from file name but this tld is not part of the registry
-    command.inputFile =
-        Paths.get(tmpDir.resolve(String.format("%s.txt", fileName)).toFile().getPath());
+    command.inputFile = Paths.get(tmpDir.resolve("random3.txt").toFile().getPath());
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo(
-            String.format("Could not update premium list %s because it doesn't exist.", fileName));
+        .isEqualTo("Could not update premium list random3 because it doesn't exist");
   }
 }
