@@ -153,7 +153,7 @@
     },
     {
       "objectClassName": "entity",
-      "handle": "REDACTED FOR PRIVACY",
+      "handle": "",
       "roles":["administrative"],
       "remarks": [
         {
@@ -183,18 +183,14 @@
         "vcard",
         [
           ["version", {}, "text", "4.0"],
-          ["fn", {}, "text", "REDACTED FOR PRIVACY"],
-          ["org", {}, "text", "REDACTED FOR PRIVACY"],
-          ["adr", {}, "text", ["", "", "REDACTED FOR PRIVACY", "REDACTED FOR PRIVACY", "REDACTED FOR PRIVACY", "REDACTED FOR PRIVACY", "XX"]],
-          ["tel", {"type":["voice"]}, "uri", "tel:REDACTED FOR PRIVACY"],
-          ["tel", {"type":["fax"]}, "uri", "tel:REDACTED FOR PRIVACY"]
+          ["fn", {}, "text", ""]
         ]
       ]
     },
 
     {
       "objectClassName":"entity",
-      "handle":"REDACTED FOR PRIVACY",
+      "handle":"",
       "remarks":[
         {
           "title":"REDACTED FOR PRIVACY",
@@ -224,18 +220,13 @@
         "vcard",
         [
           ["version", {}, "text", "4.0"],
-          ["fn", {}, "text", "REDACTED FOR PRIVACY"],
-          ["org", {}, "text", "REDACTED FOR PRIVACY"],
-          ["adr", {}, "text", ["", "", "REDACTED FOR PRIVACY", "REDACTED FOR PRIVACY", "REDACTED FOR PRIVACY", "REDACTED FOR PRIVACY", "XX"]],
-          ["tel", {"type":["voice"]}, "uri", "tel:REDACTED FOR PRIVACY"],
-          ["tel", {"type":["fax"]}, "uri", "tel:REDACTED FOR PRIVACY"]
-        ]
+          ["fn", {}, "text", ""]        ]
       ]
     },
 
     {
       "objectClassName":"entity",
-      "handle":"REDACTED FOR PRIVACY",
+      "handle":"",
       "remarks":[
         {
           "title":"REDACTED FOR PRIVACY",
@@ -265,11 +256,7 @@
         "vcard",
         [
           ["version", {}, "text", "4.0"],
-          ["fn", {}, "text", "REDACTED FOR PRIVACY"],
-          ["org", {}, "text", "REDACTED FOR PRIVACY"],
-          ["adr", {}, "text", ["", "", "REDACTED FOR PRIVACY", "REDACTED FOR PRIVACY", "REDACTED FOR PRIVACY", "REDACTED FOR PRIVACY", "XX"]],
-          ["tel", {"type":["voice"]}, "uri", "tel:REDACTED FOR PRIVACY"],
-          ["tel", {"type":["fax"]}, "uri", "tel:REDACTED FOR PRIVACY"]
+          ["fn", {}, "text", ""]
         ]
       ]
     }

@@ -21,7 +21,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
-import static google.registry.rdap.RdapIcannStandardInformation.CONTACT_REDACTED_VALUE;
 import static google.registry.util.CollectionUtils.union;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -39,7 +38,6 @@ import com.google.gson.JsonArray;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
 import google.registry.model.contact.Contact;
-import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
@@ -519,69 +517,68 @@ public class RdapJsonFormatter {
     boolean isAuthorized =
         rdapAuthorization.isAuthorizedForRegistrar(contact.getCurrentSponsorRegistrarId());
 
-    // ROID needs to be redacted if we aren't authorized, so we can't have a self-link for
-    // unauthorized users
+    VcardArray.Builder vcardBuilder = VcardArray.builder();
+
     if (isAuthorized) {
-      contactBuilder.linksBuilder().add(makeSelfLink("entity", contact.getRepoId()));
-    }
-
-    // Only show the "summary data remark" if the user is authorized to see this data - because
-    // unauthorized users don't have a self link meaning they can't navigate to the full data.
-    if (outputDataType != OutputDataType.FULL && isAuthorized) {
-      contactBuilder.remarksBuilder().add(RdapIcannStandardInformation.SUMMARY_DATA_REMARK);
-    }
-
-    // GTLD Registration Data Temp Spec 17may18, Appendix A, 2.3, 2.4 and RDAP Response Profile
-    // 2.7.4.1, 2.7.4.2 - the following fields must be redacted:
-    // for REGISTRANT:
-    // handle (ROID), FN (name), TEL (telephone/fax and extension), street, city, postal code
-    // for ADMIN, TECH:
-    // handle (ROID), FN (name), TEL (telephone/fax and extension), Organization, street, city,
-    // state/province, postal code, country
-    //
-    // Note that in theory we have to show the Organization and state/province and country for the
-    // REGISTRANT. For now, we won't do that until we make sure it's really OK for GDPR
-    //
-    if (!isAuthorized) {
+      fillRdapContactEntityWhenAuthorized(contactBuilder, vcardBuilder, contact, outputDataType);
+    } else {
+      // GTLD Registration Data Temp Spec 17may18, Appendix A, 2.3, 2.4 and RDAP Response Profile
+      // 2.7.4.1, 2.7.4.2 - the following fields must be redacted:
+      // for REGISTRANT:
+      // handle (ROID), FN (name), TEL (telephone/fax and extension), street, city, postal code
+      // for ADMIN, TECH:
+      // handle (ROID), FN (name), TEL (telephone/fax and extension), Organization, street, city,
+      // state/province, postal code, country
+      //
+      // Note that in theory we have to show the Organization and state/province and country for the
+      // REGISTRANT. For now, we won't do that until we make sure it's really OK for GDPR
+      //
       // RDAP Response Profile 2.7.4.3: if we redact values from the contact, we MUST include a
       // remark
       contactBuilder
           .remarksBuilder()
           .add(RdapIcannStandardInformation.CONTACT_PERSONAL_DATA_HIDDEN_DATA_REMARK);
-      // to make sure we don't accidentally display data we shouldn't - we replace the
-      // contact with a safe resource. Then we can add any information we need (e.g. the
-      // Organization / state / country of the registrant), although we currently don't do that.
-      contact =
-          new Contact.Builder()
-              .setRepoId(CONTACT_REDACTED_VALUE)
-              .setVoiceNumber(
-                  new ContactPhoneNumber.Builder().setPhoneNumber(CONTACT_REDACTED_VALUE).build())
-              .setFaxNumber(
-                  new ContactPhoneNumber.Builder().setPhoneNumber(CONTACT_REDACTED_VALUE).build())
-              .setInternationalizedPostalInfo(
-                  new PostalInfo.Builder()
-                      .setName(CONTACT_REDACTED_VALUE)
-                      .setOrg(CONTACT_REDACTED_VALUE)
-                      .setType(PostalInfo.Type.INTERNATIONALIZED)
-                      .setAddress(
-                          new ContactAddress.Builder()
-                              .setStreet(ImmutableList.of(CONTACT_REDACTED_VALUE))
-                              .setCity(CONTACT_REDACTED_VALUE)
-                              .setState(CONTACT_REDACTED_VALUE)
-                              .setZip(CONTACT_REDACTED_VALUE)
-                              .setCountryCode("XX")
-                              .build())
-                      .build())
-              .build();
+      contactBuilder.setHandle("");
+      // The VCard format requires a "fn" entry even if it is empty (redacted)
+      vcardBuilder.add(Vcard.create("fn", "text", ""));
     }
 
-    // RDAP Response Profile 2.7.3 - we MUST provide a handle set with the ROID, subject to the
-    // redaction above.
-    contactBuilder.setHandle(contact.getRepoId());
+    contactBuilder.setVcardArray(vcardBuilder.build());
+    contactBuilder.rolesBuilder().addAll(roles);
 
-    // RDAP Response Profile doesn't mention status for contacts, so we only show it if we're both
-    // FULL and Authorized.
-    if (outputDataType == OutputDataType.FULL && isAuthorized) {
+    // RDAP Response Profile 2.7.5.1, 2.7.5.3:
+    // email MUST be omitted, and we MUST have a Remark saying so
+    contactBuilder
+        .remarksBuilder()
+        .add(RdapIcannStandardInformation.CONTACT_EMAIL_REDACTED_FOR_DOMAIN);
+
+    if (outputDataType != OutputDataType.INTERNAL) {
+      // Rdap Response Profile 2.7.6 must have "last update of RDAP database" response. But this is
+      // only for direct query responses and not for internal objects. I'm not sure why it's in that
+      // section at all...
+      contactBuilder.setLastUpdateOfRdapDatabaseEvent(
+          Event.builder()
+              .setEventAction(EventAction.LAST_UPDATE_OF_RDAP_DATABASE)
+              .setEventDate(getRequestTime())
+              .build());
+    }
+    return contactBuilder.build();
+  }
+
+  private void fillRdapContactEntityWhenAuthorized(
+      RdapContactEntity.Builder contactBuilder,
+      VcardArray.Builder vcardBuilder,
+      Contact contact,
+      OutputDataType outputDataType) {
+    // ROID needs to be redacted if we aren't authorized, so we can't have a self-link for
+    // unauthorized users
+    contactBuilder.linksBuilder().add(makeSelfLink("entity", contact.getRepoId()));
+    // RDAP Response Profile 2.7.3 - we MUST provide a handle set with the ROID, subject to
+    // redaction.
+    contactBuilder.setHandle(contact.getRepoId());
+    if (outputDataType.equals(OutputDataType.FULL)) {
+      // RDAP Response Profile doesn't mention status for contacts, so we only show it if we're both
+      // FULL and Authorized.
       contactBuilder
           .statusBuilder()
           .addAll(
@@ -591,12 +588,18 @@ public class RdapJsonFormatter {
                       : contact.getStatusValues(),
                   false,
                   contact.getDeletionTime().isBefore(getRequestTime())));
+      // If we are outputting all data (not just summary data), also add events taken from the
+      // history entries. This isn't strictly required.
+      //
+      // We also only add it for authorized users because millisecond times can fingerprint a user
+      // just as much as the handle can.
+      contactBuilder.eventsBuilder().addAll(makeOptionalEvents(contact));
+    } else {
+      // Only show the "summary data remark" if the user is authorized to see this data - because
+      // unauthorized users don't have a self link meaning they can't navigate to the full data.
+      contactBuilder.remarksBuilder().add(RdapIcannStandardInformation.SUMMARY_DATA_REMARK);
     }
-
-    contactBuilder.rolesBuilder().addAll(roles);
-
-    VcardArray.Builder vcardBuilder = VcardArray.builder();
-    // Adding the VCard members subject to the redaction above.
+    // Adding the VCard members when not redacted.
     //
     // RDAP Response Profile 2.7.3 - we MUST have FN, ADR, TEL, EMAIL.
     //
@@ -622,33 +625,6 @@ public class RdapJsonFormatter {
     if (faxPhoneNumber != null) {
       vcardBuilder.add(makePhoneEntry(PHONE_TYPE_FAX, makePhoneString(faxPhoneNumber)));
     }
-    // RDAP Response Profile 2.7.5.1, 2.7.5.3:
-    // email MUST be omitted, and we MUST have a Remark saying so
-    contactBuilder
-        .remarksBuilder()
-        .add(RdapIcannStandardInformation.CONTACT_EMAIL_REDACTED_FOR_DOMAIN);
-    contactBuilder.setVcardArray(vcardBuilder.build());
-
-    if (outputDataType != OutputDataType.INTERNAL) {
-      // Rdap Response Profile 2.7.6 must have "last update of RDAP database" response. But this is
-      // only for direct query responses and not for internal objects. I'm not sure why it's in that
-      // section at all...
-      contactBuilder.setLastUpdateOfRdapDatabaseEvent(
-          Event.builder()
-              .setEventAction(EventAction.LAST_UPDATE_OF_RDAP_DATABASE)
-              .setEventDate(getRequestTime())
-              .build());
-    }
-
-    // If we are outputting all data (not just summary data), also add events taken from the history
-    // entries. This isn't strictly required.
-    //
-    // We also only add it for authorized users because millisecond times can fingerprint a user
-    // just as much as the handle can.
-    if (outputDataType == OutputDataType.FULL && isAuthorized) {
-      contactBuilder.eventsBuilder().addAll(makeOptionalEvents(contact));
-    }
-    return contactBuilder.build();
   }
 
   /**

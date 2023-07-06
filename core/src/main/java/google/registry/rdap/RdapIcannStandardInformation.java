@@ -150,14 +150,6 @@ public class RdapIcannStandardInformation {
           .build();
 
   /**
-   * String that replaces GDPR redacted values.
-   *
-   * <p>GTLD Registration Data Temp Spec 17may18, Appendix A, 2.2: Fields required to be "redacted"
-   * MUST privide in the value section text similar to "REDACTED FOR PRIVACY"
-   */
-  static final String CONTACT_REDACTED_VALUE = "REDACTED FOR PRIVACY";
-
-  /**
    * Included in ALL contact responses, even if the user is authorized.
    *
    * <p>Format required by ICANN RDAP Response Profile 15feb19 section 2.7.5.3.
