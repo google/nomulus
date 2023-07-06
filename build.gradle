@@ -505,6 +505,7 @@ task javaIncrementalFormatCheck {
       println("Omitting format check: not in a git directory.")
     }
   }
+  dependsOn('console-webapp:checkFormatting')
 }
 
 // Shows how modified lines in Java source files will change after formatting.
@@ -522,6 +523,7 @@ task javaIncrementalFormatApply {
   doLast {
     invokeJavaDiffFormatScript("format")
   }
+  dependsOn('console-webapp:applyFormatting')
 }
 
 task javadoc(type: Javadoc) {
