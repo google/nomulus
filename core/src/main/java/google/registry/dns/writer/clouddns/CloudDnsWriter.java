@@ -144,15 +144,13 @@ public class CloudDnsWriter extends BaseDnsWriter {
         dsRrData.add(ds.toRrData());
       }
 
-      if (!dsRrData.isEmpty()) {
-        domainRecords.add(
-            new ResourceRecordSet()
-                .setName(absoluteDomainName)
-                .setTtl((int) tld.getDnsDsTtl().orElse(defaultDsTtl).getStandardSeconds())
-                .setType("DS")
-                .setKind("dns#resourceRecordSet")
-                .setRrdatas(ImmutableList.copyOf(dsRrData)));
-      }
+      domainRecords.add(
+          new ResourceRecordSet()
+              .setName(absoluteDomainName)
+              .setTtl((int) tld.getDnsDsTtl().orElse(defaultDsTtl).getStandardSeconds())
+              .setType("DS")
+              .setKind("dns#resourceRecordSet")
+              .setRrdatas(ImmutableList.copyOf(dsRrData)));
     }
 
     // Construct NS records (if any).
@@ -169,15 +167,13 @@ public class CloudDnsWriter extends BaseDnsWriter {
         }
       }
 
-      if (!nsRrData.isEmpty()) {
-        domainRecords.add(
-            new ResourceRecordSet()
-                .setName(absoluteDomainName)
-                .setTtl((int) tld.getDnsNsTtl().orElse(defaultNsTtl).getStandardSeconds())
-                .setType("NS")
-                .setKind("dns#resourceRecordSet")
-                .setRrdatas(ImmutableList.copyOf(nsRrData)));
-      }
+      domainRecords.add(
+          new ResourceRecordSet()
+              .setName(absoluteDomainName)
+              .setTtl((int) tld.getDnsNsTtl().orElse(defaultNsTtl).getStandardSeconds())
+              .setType("NS")
+              .setKind("dns#resourceRecordSet")
+              .setRrdatas(ImmutableList.copyOf(nsRrData)));
     }
 
     desiredRecords.put(absoluteDomainName, domainRecords.build());
