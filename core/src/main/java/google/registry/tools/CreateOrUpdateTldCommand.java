@@ -58,7 +58,10 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
   @Named("dnsWriterNames")
   Set<String> validDnsWriterNames;
 
-  @Parameter(description = "Names of the TLDs", required = true)
+  @Parameter(
+      description = "Names of the TLDs",
+      required = true,
+      listConverter = StringListParameter.class)
   List<String> mainParameters;
 
   @Parameter(

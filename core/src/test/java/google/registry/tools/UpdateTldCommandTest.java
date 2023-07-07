@@ -136,6 +136,18 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
+  void testSuccess_multipleArgumentsWithComma() throws Exception {
+    assertThat(Tld.get("xn--q9jyb4c").getAddGracePeriodLength()).isNotEqualTo(standardMinutes(5));
+    createTld("example");
+    assertThat(Tld.get("example").getAddGracePeriodLength()).isNotEqualTo(standardMinutes(5));
+
+    runCommandForced("--add_grace_period=PT300S", "xn--q9jyb4c,example");
+
+    assertThat(Tld.get("xn--q9jyb4c").getAddGracePeriodLength()).isEqualTo(standardMinutes(5));
+    assertThat(Tld.get("example").getAddGracePeriodLength()).isEqualTo(standardMinutes(5));
+  }
+
+  @Test
   void testSuccess_addGracePeriodFlag() throws Exception {
     assertThat(Tld.get("xn--q9jyb4c").getAddGracePeriodLength()).isNotEqualTo(standardMinutes(5));
     runCommandForced("--add_grace_period=PT300S", "xn--q9jyb4c");

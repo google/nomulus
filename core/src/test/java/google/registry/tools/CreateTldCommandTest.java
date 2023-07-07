@@ -104,6 +104,17 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
+  void testFailure_multipleArgumentsUsingComma() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--roid_suffix=BLAH", "--dns_writers=VoidDnsWriter", "xn--q9jyb4c,test"));
+    assertThat(thrown).hasMessageThat().contains("Can't create more than one TLD at a time");
+  }
+
+  @Test
   void testFailure_multipleDuplicateArguments() {
     IllegalArgumentException thrown =
         assertThrows(
