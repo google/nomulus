@@ -288,6 +288,10 @@
       "moduleName": "com.fasterxml.jackson:jackson-bom"
     },
     {
+      "moduleLicense": null,
+      "moduleName": "com.google.guava:guava-parent"
+    },
+    {
       // "Apache License, Version 2.0". The plugin is able to parse up to
       // 2.0.33.Final but not this verson.
       "moduleLicense": null,
