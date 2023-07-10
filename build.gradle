@@ -332,6 +332,17 @@ subprojects {
     }
   }
 
+  // 'listenablefuture' is folded into guava since v32. This block is required
+  // until all transitive dependencies have upgraded past guava v32.
+  // TODO(periodically): remove this block and see if build succeeds.
+  configurations.all {
+    resolutionStrategy
+            .capabilitiesResolution
+            .withCapability("com.google.guava:listenablefuture") {
+      select("com.google.guava:guava:0")
+    }
+  }
+
   def services = [':services:default',
                   ':services:backend',
                   ':services:tools',

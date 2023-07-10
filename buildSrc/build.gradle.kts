@@ -69,6 +69,17 @@ apply(from = "../dependencies.gradle")
 apply(from = "../dependency_lic.gradle")
 apply(from = "../java_common.gradle")
 
+// 'listenablefuture' is folded into guava since v32. This block is required
+// until all transitive dependencies have upgraded past guava v32.
+// TODO(periodically): remove this block and see if build succeeds.
+configurations.all {
+  resolutionStrategy
+      .capabilitiesResolution
+      .withCapability("com.google.guava:listenablefuture") {
+      select("com.google.guava:guava:0")
+  }
+}
+
 project.the<SourceSetContainer>()["main"].java {
   srcDir("${project.buildDir}/generated/source/apt/main")
 }
