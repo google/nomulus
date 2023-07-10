@@ -288,6 +288,8 @@
       "moduleName": "com.fasterxml.jackson:jackson-bom"
     },
     {
+      // Part of Guava with "Apache License, Version 2.0". The plugin is unable
+      // to parse its license for unknown reason.
       "moduleLicense": null,
       "moduleName": "com.google.guava:guava-parent"
     },
