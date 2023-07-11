@@ -45,7 +45,7 @@ class ActivityReportingQueryBuilderTest {
   }
 
   @Test
-  void testIntermediaryQueryMatch_cloud_sql() {
+  void testIntermediaryQueryMatch_cloudSql() {
     ImmutableList<String> expectedQueryNames =
         ImmutableList.of(
             ActivityReportingQueryBuilder.REGISTRAR_OPERATING_STATUS,
