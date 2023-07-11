@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.tools.javascrap.CreateCancellationsForBillingEventsCommand;
+import google.registry.tools.javascrap.RecreateBillingRecurrencesCommand;
 
 /** Container class to create and run remote commands against a server instance. */
 public final class RegistryTool {
@@ -93,6 +94,7 @@ public final class RegistryTool {
           .put("login", LoginCommand.class)
           .put("logout", LogoutCommand.class)
           .put("pending_escrow", PendingEscrowCommand.class)
+          .put("recreate_billing_recurrences", RecreateBillingRecurrencesCommand.class)
           .put("registrar_poc", RegistrarPocCommand.class)
           .put("renew_domain", RenewDomainCommand.class)
           .put("save_sql_credential", SaveSqlCredentialCommand.class)
