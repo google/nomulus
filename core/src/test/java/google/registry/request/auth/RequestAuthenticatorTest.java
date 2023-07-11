@@ -49,11 +49,7 @@ class RequestAuthenticatorTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private static final AuthSettings AUTH_NONE =
-      AuthSettings.create(
-          ImmutableList.of(AuthMethod.INTERNAL), AuthLevel.NONE, UserPolicy.IGNORED);
-
-  private static final AuthSettings AUTH_INTERNAL_OR_ADMIN =
-      AuthSettings.create(ImmutableList.of(AuthMethod.INTERNAL), AuthLevel.APP, UserPolicy.IGNORED);
+      AuthSettings.create(ImmutableList.of(AuthMethod.API), AuthLevel.NONE, UserPolicy.PUBLIC);
 
   private static final AuthSettings AUTH_ANY_USER_ANY_METHOD =
       AuthSettings.create(
@@ -67,27 +63,18 @@ class RequestAuthenticatorTest {
           ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY), AuthLevel.USER, UserPolicy.ADMIN);
 
   private static final AuthSettings AUTH_NO_METHODS =
-      AuthSettings.create(ImmutableList.of(), AuthLevel.APP, UserPolicy.IGNORED);
+      AuthSettings.create(ImmutableList.of(), AuthLevel.APP, UserPolicy.PUBLIC);
 
   private static final AuthSettings AUTH_WRONG_METHOD_ORDERING =
       AuthSettings.create(
-          ImmutableList.of(AuthMethod.API, AuthMethod.INTERNAL), AuthLevel.APP, UserPolicy.IGNORED);
+          ImmutableList.of(AuthMethod.LEGACY, AuthMethod.API), AuthLevel.APP, UserPolicy.PUBLIC);
 
   private static final AuthSettings AUTH_DUPLICATE_METHODS =
       AuthSettings.create(
-          ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API, AuthMethod.API),
-          AuthLevel.APP,
-          UserPolicy.IGNORED);
+          ImmutableList.of(AuthMethod.API, AuthMethod.API), AuthLevel.APP, UserPolicy.PUBLIC);
 
-  private static final AuthSettings AUTH_INTERNAL_WITH_USER =
-      AuthSettings.create(
-          ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API),
-          AuthLevel.USER,
-          UserPolicy.IGNORED);
-
-  private static final AuthSettings AUTH_WRONGLY_IGNORING_USER =
-      AuthSettings.create(
-          ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API), AuthLevel.APP, UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_NONE_REQUIRES_ADMIN =
+      AuthSettings.create(ImmutableList.of(AuthMethod.API), AuthLevel.NONE, UserPolicy.ADMIN);
 
   private final UserService mockUserService = mock(UserService.class);
   private final HttpServletRequest req = mock(HttpServletRequest.class);
@@ -96,12 +83,13 @@ class RequestAuthenticatorTest {
   private final FakeUserService fakeUserService = new FakeUserService();
   private final XsrfTokenManager xsrfTokenManager =
       new XsrfTokenManager(new FakeClock(), fakeUserService);
-  private final FakeOAuthService fakeOAuthService = new FakeOAuthService(
-      false /* isOAuthEnabled */,
-      testUser,
-      false /* isUserAdmin */,
-      "test-client-id",
-      ImmutableList.of("test-scope1", "test-scope2", "nontest-scope"));
+  private final FakeOAuthService fakeOAuthService =
+      new FakeOAuthService(
+          false /* isOAuthEnabled */,
+          testUser,
+          false /* isUserAdmin */,
+          "test-client-id",
+          ImmutableList.of("test-scope1", "test-scope2", "nontest-scope"));
 
   @BeforeEach
   void beforeEach() {
@@ -110,7 +98,6 @@ class RequestAuthenticatorTest {
 
   private RequestAuthenticator createRequestAuthenticator(UserService userService) {
     return new RequestAuthenticator(
-        new AppEngineInternalAuthenticationMechanism(fakeUserService),
         ImmutableList.of(
             new OAuthAuthenticationMechanism(
                 fakeOAuthService,
@@ -121,8 +108,7 @@ class RequestAuthenticatorTest {
   }
 
   private Optional<AuthResult> runTest(UserService userService, AuthSettings auth) {
-    return createRequestAuthenticator(userService)
-        .authorize(auth, req);
+    return createRequestAuthenticator(userService).authorize(auth, req);
   }
 
   @Test
@@ -132,48 +118,6 @@ class RequestAuthenticatorTest {
     verifyNoInteractions(mockUserService);
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.NONE);
-  }
-
-  @Test
-  void testNoAuthNeeded_internalFound() {
-    when(req.getHeader("X-AppEngine-QueueName")).thenReturn("__cron");
-
-    Optional<AuthResult> authResult = runTest(mockUserService, AUTH_NONE);
-
-    verifyNoInteractions(mockUserService);
-    assertThat(authResult).isPresent();
-    assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.APP);
-    assertThat(authResult.get().userAuthInfo()).isEmpty();
-  }
-
-  @Test
-  void testInternalAuth_notInvokedInternally() {
-    Optional<AuthResult> authResult = runTest(mockUserService, AUTH_INTERNAL_OR_ADMIN);
-
-    verifyNoInteractions(mockUserService);
-    assertThat(authResult).isEmpty();
-  }
-
-  @Test
-  void testInternalAuth_success() {
-    when(req.getHeader("X-AppEngine-QueueName")).thenReturn("__cron");
-
-    Optional<AuthResult> authResult = runTest(mockUserService, AUTH_INTERNAL_OR_ADMIN);
-
-    verifyNoInteractions(mockUserService);
-    assertThat(authResult).isPresent();
-    assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.APP);
-    assertThat(authResult.get().userAuthInfo()).isEmpty();
-  }
-
-  @Test
-  void testInternalAuth_failForAdminUser() {
-    when(req.getHeader("X-AppEngine-QueueName")).thenReturn("__cron");
-    fakeUserService.setUser(testUser, true /* isAdmin */);
-
-    Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_INTERNAL_OR_ADMIN);
-
-    assertThat(authResult).isEmpty();
   }
 
   @Test
@@ -280,9 +224,9 @@ class RequestAuthenticatorTest {
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo().get().authorizedScopes())
         .containsAtLeast("test-scope1", "test-scope2");
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo().get().oauthClientId())
-      .isEqualTo("test-client-id");
+        .isEqualTo("test-client-id");
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo().get().rawAccessToken())
-      .isEqualTo("TOKEN");
+        .isEqualTo("TOKEN");
   }
 
   @Test
@@ -303,9 +247,9 @@ class RequestAuthenticatorTest {
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo().get().authorizedScopes())
         .containsAtLeast("test-scope1", "test-scope2");
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo().get().oauthClientId())
-      .isEqualTo("test-client-id");
+        .isEqualTo("test-client-id");
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo().get().rawAccessToken())
-      .isEqualTo("TOKEN");
+        .isEqualTo("TOKEN");
   }
 
   @Test
@@ -372,9 +316,9 @@ class RequestAuthenticatorTest {
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo().get().authorizedScopes())
         .containsAtLeast("test-scope1", "test-scope2", "test-scope3");
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo().get().oauthClientId())
-      .isEqualTo("test-client-id");
+        .isEqualTo("test-client-id");
     assertThat(authResult.get().userAuthInfo().get().oauthTokenInfo().get().rawAccessToken())
-      .isEqualTo("TOKEN");
+        .isEqualTo("TOKEN");
   }
 
   @Test
@@ -387,7 +331,7 @@ class RequestAuthenticatorTest {
   }
 
   @Test
-  void testCheckAuthConfig_NoMethods_failure() {
+  void testCheckAuthConfig_noMethods_failure() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -396,14 +340,25 @@ class RequestAuthenticatorTest {
   }
 
   @Test
-  void testCheckAuthConfig_WrongMethodOrdering_failure() {
+  void testCheckAuthConfig_wrongMethodOrdering_failure() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
             () -> RequestAuthenticator.checkAuthConfig(AUTH_WRONG_METHOD_ORDERING));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Auth methods must be unique and strictly in order - INTERNAL, API, LEGACY");
+        .contains("Auth methods must be unique and strictly in order - API, LEGACY");
+  }
+
+  @Test
+  void testCheckAuthConfig_noneAuthLevelRequiresAdmin_failure() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> RequestAuthenticator.checkAuthConfig(AUTH_NONE_REQUIRES_ADMIN));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Actions with minimal auth level at NONE should not specify ADMIN user policy");
   }
 
   @Test
@@ -414,29 +369,6 @@ class RequestAuthenticatorTest {
             () -> RequestAuthenticator.checkAuthConfig(AUTH_DUPLICATE_METHODS));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Auth methods must be unique and strictly in order - INTERNAL, API, LEGACY");
-  }
-
-  @Test
-  void testCheckAuthConfig_InternalWithUser_failure() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> RequestAuthenticator.checkAuthConfig(AUTH_INTERNAL_WITH_USER));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("Actions with INTERNAL auth method may not require USER auth level");
-  }
-
-  @Test
-  void testCheckAuthConfig_WronglyIgnoringUser_failure() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> RequestAuthenticator.checkAuthConfig(AUTH_WRONGLY_IGNORING_USER));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "Actions with auth methods beyond INTERNAL must not specify the IGNORED user policy");
+        .contains("Auth methods must be unique and strictly in order - API, LEGACY");
   }
 }

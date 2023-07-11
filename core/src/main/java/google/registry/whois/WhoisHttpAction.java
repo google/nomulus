@@ -97,7 +97,7 @@ import org.joda.time.Duration;
     service = Action.Service.PUBAPI,
     path = WhoisHttpAction.PATH,
     isPrefix = true,
-    auth = Auth.AUTH_PUBLIC_ANONYMOUS)
+    auth = Auth.AUTH_PUBLIC)
 public final class WhoisHttpAction implements Runnable {
 
   public static final String PATH = "/whois/";

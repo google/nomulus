@@ -124,7 +124,7 @@ public final class ConsoleUiAction extends HtmlAction {
       // requireFeeExtension) - to make sure the user indeed has access to the guessed registrar.
       //
       // Note that not doing so (and just passing the "clientId" as given) isn't a security issue
-      // since we double check the access to the registrar on any read / update request. We have to
+      // since we double-check the access to the registrar on any read / update request. We have to
       // - since the access might get revoked between the initial page load and the request! (also
       // because the requests come from the browser, and can easily be faked)
       registrarAccessor.getRegistrar(clientId);

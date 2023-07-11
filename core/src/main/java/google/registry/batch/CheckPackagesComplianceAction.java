@@ -41,7 +41,7 @@ import org.joda.time.Days;
 @Action(
     service = Service.BACKEND,
     path = CheckPackagesComplianceAction.PATH,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_API_ADMIN)
 public class CheckPackagesComplianceAction implements Runnable {
 
   public static final String PATH = "/_dr/task/checkPackagesCompliance";
