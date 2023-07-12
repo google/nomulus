@@ -17,17 +17,16 @@ package google.registry.model.tld;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
+import static com.google.common.collect.Ordering.natural;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static java.util.Comparator.naturalOrder;
+import static google.registry.util.CollectionUtils.nullSafeImmutableCopy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.Tld.TldType;
@@ -104,7 +103,6 @@ public class TldSettings {
         tld.getTldStateTransitions().entrySet().stream()
             .collect(toMap(entry -> entry.getKey().toString(), entry -> entry.getValue().name()));
     this.creationTime = tld.getCreationTime() != null ? tld.getCreationTime().toString() : "";
-    this.reservedListNames = tld.getReservedListNames();
     this.premiumListName = tld.getPremiumListName().orElse("");
     this.escrowEnabled = tld.getEscrowEnabled();
     this.dnsPaused = tld.getDnsPaused();
@@ -131,13 +129,19 @@ public class TldSettings {
                 toMap(entry -> entry.getKey().toString(), entry -> entry.getValue().toString()));
     this.lordnUsername = tld.getLordnUsername();
     this.claimsPeriodEnd = tld.getClaimsPeriodEnd().toString();
-    this.allowedRegistrantContactIds = tld.getAllowedRegistrantContactIds();
-    this.allowedFullyQualifiedHostNames = tld.getAllowedFullyQualifiedHostNames();
+
+    // Not using the getters in order to preserve nullness
+    this.allowedRegistrantContactIds = tld.allowedRegistrantContactIds;
+    this.allowedFullyQualifiedHostNames = tld.allowedFullyQualifiedHostNames;
+    this.reservedListNames = tld.reservedListNames;
     this.defaultPromoTokens =
-        tld.getDefaultPromoTokens().stream()
-            .map(vKey -> vKey.getKey().toString())
-            .collect(toList());
-    this.idnTables = tld.getIdnTables().stream().map(Enum::toString).collect(toSet());
+        tld.defaultPromoTokens == null
+            ? null
+            : tld.defaultPromoTokens.stream()
+                .map(vKey -> vKey.getKey().toString())
+                .collect(toList());
+    this.idnTables =
+        tld.idnTables == null ? null : tld.idnTables.stream().map(Enum::toString).collect(toSet());
     return this;
   }
 
@@ -178,10 +182,10 @@ public class TldSettings {
             tldStateTransitions.keySet().stream()
                 .collect(
                     toImmutableSortedMap(
-                        naturalOrder(),
+                        natural(),
                         DateTime::parse,
                         key -> TldState.valueOf(tldStateTransitions.get(key)))))
-        .setReservedListsByName(reservedListNames)
+        .setNullableReservedListsByName(reservedListNames)
         .setPremiumList(premiumList)
         .setEscrowEnabled(escrowEnabled)
         .setDnsPaused(dnsPaused)
@@ -199,27 +203,31 @@ public class TldSettings {
         .setServerStatusChangeBillingCost(Money.parse(serverStatusChangeBillingCost))
         .setRegistryLockOrUnlockBillingCost(Money.parse(registryLockOrUnlockBillingCost))
         .setRenewBillingCostTransitions(
-            (ImmutableSortedMap<DateTime, Money>)
-                renewBillingCostTransitions.keySet().stream()
-                    .collect(
-                        toImmutableMap(
-                            DateTime::parse,
-                            key -> Money.parse(renewBillingCostTransitions.get(key)))))
+            renewBillingCostTransitions.keySet().stream()
+                .collect(
+                    toImmutableSortedMap(
+                        natural(),
+                        DateTime::parse,
+                        key -> Money.parse(renewBillingCostTransitions.get(key)))))
         .setEapFeeSchedule(
-            (ImmutableSortedMap<DateTime, Money>)
-                eapFeeSchedule.keySet().stream()
-                    .collect(
-                        toImmutableMap(
-                            DateTime::parse, key -> Money.parse(eapFeeSchedule.get(key)))))
+            eapFeeSchedule.keySet().stream()
+                .collect(
+                    toImmutableSortedMap(
+                        natural(), DateTime::parse, key -> Money.parse(eapFeeSchedule.get(key)))))
         .setLordnUsername(lordnUsername)
         .setClaimsPeriodEnd(DateTime.parse(claimsPeriodEnd))
-        .setAllowedRegistrantContactIds(ImmutableSet.copyOf(allowedRegistrantContactIds))
-        .setAllowedFullyQualifiedHostNames(ImmutableSet.copyOf(allowedFullyQualifiedHostNames))
+        .setAllowedRegistrantContactIds(nullSafeImmutableCopy(allowedRegistrantContactIds))
+        .setAllowedFullyQualifiedHostNames(nullSafeImmutableCopy(allowedFullyQualifiedHostNames))
         .setDefaultPromoTokens(
-            defaultPromoTokens.stream()
-                .map(token -> VKey.create(AllocationToken.class, token))
-                .collect(toImmutableList()))
-        .setIdnTables(idnTables.stream().map(IdnTableEnum::valueOf).collect(toImmutableSet()))
+            defaultPromoTokens == null
+                ? null
+                : defaultPromoTokens.stream()
+                    .map(token -> VKey.create(AllocationToken.class, token))
+                    .collect(toImmutableList()))
+        .setIdnTables(
+            idnTables == null
+                ? null
+                : idnTables.stream().map(IdnTableEnum::valueOf).collect(toImmutableSet()))
         .build();
   }
 }

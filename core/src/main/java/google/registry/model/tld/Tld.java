@@ -886,6 +886,13 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       return this;
     }
 
+    public Builder setNullableReservedListsByName(@Nullable Set<String> reservedListNames) {
+      if (reservedListNames == null) {
+        return setNullReservedLists();
+      }
+      return setReservedListsByName(reservedListNames);
+    }
+
     public Builder setReservedListsByName(Set<String> reservedListNames) {
       checkArgument(reservedListNames != null, "reservedListNames must not be null");
       ImmutableSet.Builder<ReservedList> builder = new ImmutableSet.Builder<>();
@@ -912,6 +919,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
         nameBuilder.add(reservedList.getName());
       }
       getInstance().reservedListNames = nameBuilder.build();
+      return this;
+    }
+
+    public Builder setNullReservedLists() {
+      getInstance().reservedListNames = null;
       return this;
     }
 
@@ -1001,7 +1013,12 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       return this;
     }
 
-    public Builder setDefaultPromoTokens(ImmutableList<VKey<AllocationToken>> promoTokens) {
+    public Builder setDefaultPromoTokens(
+        @Nullable ImmutableList<VKey<AllocationToken>> promoTokens) {
+      if (promoTokens == null) {
+        getInstance().defaultPromoTokens = null;
+        return this;
+      }
       tm().transact(
               () -> {
                 for (VKey<AllocationToken> tokenKey : promoTokens) {
@@ -1023,7 +1040,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       return this;
     }
 
-    public Builder setIdnTables(ImmutableSet<IdnTableEnum> idnTables) {
+    public Builder setIdnTables(@Nullable ImmutableSet<IdnTableEnum> idnTables) {
       getInstance().idnTables = idnTables;
       return this;
     }
