@@ -19,6 +19,7 @@ import com.google.gson.GsonBuilder;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.util.CidrAddressBlock.CidrAddressBlockAdapter;
 import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.SecureRandom;
@@ -79,6 +80,7 @@ public abstract class UtilsModule {
   public static Gson provideGson() {
     return new GsonBuilder()
         .registerTypeAdapter(DateTime.class, new DateTimeTypeAdapter())
+        .registerTypeAdapter(CidrAddressBlock.class, new CidrAddressBlockAdapter())
         .excludeFieldsWithoutExposeAnnotation()
         .create();
   }
