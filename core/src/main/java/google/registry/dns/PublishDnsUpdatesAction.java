@@ -154,9 +154,10 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     this.timeout = timeout;
     this.sendEmailService = sendEmailService;
     retryCount =
-        cloudTasksRetryCount.orElse(
-            appEngineRetryCount.orElseThrow(
-                () -> new IllegalStateException("Missing a valid retry count header")));
+        cloudTasksRetryCount.orElseGet(
+            () ->
+                appEngineRetryCount.orElseThrow(
+                    () -> new IllegalStateException("Missing a valid retry count header")));
     this.dnsWriter = dnsWriter;
     this.enqueuedTime = enqueuedTime;
     this.itemsCreateTime = itemsCreateTime;
